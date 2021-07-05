@@ -23,9 +23,9 @@ npm-debug.log*
 
 .eslintcache
 src/tailwind.output.css
-server-ts/cache
-server-ts/config.ts
-server-ts/scratch.ts
+server/cache
+server/config.ts
+server/scratch.ts
 public/data
 
 /dist/backend

@@ -23,7 +23,7 @@
     }
   },
   "ignorePatterns": [
-    "server-ts/cache/**/*"
+    "server/cache/**/*"
   ],
   "rules": {
     "consistent-return": "off",

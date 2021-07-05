@@ -35,6 +35,6 @@
     "ChildIndicator.ts"
   ],
   "exclude": [
-    "server-ts/cache"
+    "server/cache"
   ]
 }
