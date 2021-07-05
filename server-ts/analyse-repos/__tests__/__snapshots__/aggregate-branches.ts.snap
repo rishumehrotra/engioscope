@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`aggregate-branches with a single old branch behind trunk 1`] = `
+Object {
+  "indicators": Array [
+    Object {
+      "name": "Total",
+      "rating": 100,
+      "tooltip": "Total numbers of branches in the repository",
+      "value": 1,
+    },
+    Object {
+      "name": "Active",
+      "rating": 100,
+      "tooltip": "Active development branches which are in-sync with master",
+      "value": 0,
+    },
+    Object {
+      "name": "Stale",
+      "rating": 90,
+      "tooltip": "Inactive development branches which are out-of-sync with master",
+      "value": 1,
+    },
+    Object {
+      "name": "Abandoned",
+      "rating": 100,
+      "tooltip": "Inactive development branches which are out-of-sync with master, but contain commits which are not present on master",
+      "value": 0,
+    },
+    Object {
+      "name": "Delete candidates",
+      "rating": 100,
+      "tooltip": "Inactive development branches which are in-sync with master",
+      "value": 0,
+    },
+  ],
+  "name": "Branches",
+  "rating": 98,
+}
+`;

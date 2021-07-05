@@ -1,0 +1,91 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`aggregate-builds-by-repo 1`] = `
+Object {
+  "indicators": Array [
+    Object {
+      "name": "Total successful",
+      "rating": 0,
+      "value": 0,
+    },
+    Object {
+      "name": "Number of executions",
+      "rating": 2,
+      "value": 1,
+    },
+    Object {
+      "name": "Success rate",
+      "rating": 0,
+      "value": "0%",
+    },
+    Object {
+      "additionalValue": "1 m",
+      "name": "Average duration",
+      "rating": 0,
+      "value": "1 m",
+    },
+  ],
+  "name": "Builds",
+  "rating": 1,
+}
+`;
+
+exports[`aggregate-builds-by-repo 2`] = `
+Object {
+  "indicators": Array [
+    Object {
+      "name": "Total successful",
+      "rating": 2,
+      "value": 1,
+    },
+    Object {
+      "name": "Number of executions",
+      "rating": 4,
+      "value": 2,
+    },
+    Object {
+      "name": "Success rate",
+      "rating": 50,
+      "value": "50%",
+    },
+    Object {
+      "additionalValue": "1 m - 5 m",
+      "name": "Average duration",
+      "rating": 1,
+      "value": "3 m",
+    },
+  ],
+  "name": "Builds",
+  "rating": 15,
+}
+`;
+
+exports[`aggregate-builds-by-repo 3`] = `
+Object {
+  "indicators": Array [
+    Object {
+      "name": "Total successful",
+      "rating": 0,
+      "value": 0,
+    },
+    Object {
+      "name": "Number of executions",
+      "rating": 0,
+      "value": 0,
+    },
+    Object {
+      "name": "Success rate",
+      "rating": 0,
+      "value": "0%",
+    },
+    Object {
+      "additionalValue": "-",
+      "name": "Average duration",
+      "rating": 0,
+      "value": "-",
+    },
+  ],
+  "name": "Builds",
+  "rating": 0,
+}
+`;

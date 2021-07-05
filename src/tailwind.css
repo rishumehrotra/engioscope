@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-200;
+}
+
+.accordian-content {
+  max-height: 0;
+  -webkit-transition: max-height .55s;
+  -o-transition: max-height .55s;
+  transition: max-height .55s;
+}

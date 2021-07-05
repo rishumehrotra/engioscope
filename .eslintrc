@@ -1,0 +1,154 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "airbnb"
+  ],
+  "env": {
+    "browser": true,
+    "node": true,
+    "jest": true
+  },
+  "plugins": [
+    "babel",
+    "react",
+    "react-hooks"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true
+    }
+  },
+  "ignorePatterns": [
+    "server-ts/cache/**/*"
+  ],
+  "rules": {
+    "consistent-return": "off",
+    "comma-dangle": [
+      "error",
+      "never"
+    ],
+    "quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true
+      }
+    ],
+    "react/jsx-uses-vars": "error",
+    "react/prop-types": "off",
+    "indent": "off",
+    "@typescript-eslint/indent": [
+      "error",
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "no-trailing-spaces": "error",
+    "semi": [
+      "error",
+      "always"
+    ],
+    "no-multiple-empty-lines": [
+      "error",
+      {
+        "max": 1,
+        "maxEOF": 1,
+        "maxBOF": 1
+      }
+    ],
+    "eol-last": [
+      "error",
+      "always"
+    ],
+    "no-multi-spaces": "error",
+    "object-curly-spacing": [
+      "error",
+      "always"
+    ],
+    "no-param-reassign": [
+      "error",
+      {
+        "props": false
+      }
+    ],
+    "no-extra-parens": "off",
+    "react/jsx-fragments": "error",
+    "react/jsx-curly-newline": "warn",
+    "react/state-in-constructor": "warn",
+    "react/static-property-placement": "warn",
+    "react/jsx-props-no-spreading": "warn",
+    "react/jsx-filename-extension": "off",
+    "import/no-unresolved": "off",
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "devDependencies": [
+          "src/setupTests.ts",
+          "vite.config.js"
+        ]
+      }
+    ],
+    "react/react-in-jsx-scope": "off",
+    "import/prefer-default-export": "off",
+    "no-shadow": "off",
+    "max-len": [
+      "error",
+      {
+        "code": 140
+      }
+    ],
+    "no-bitwise": [
+      "error",
+      {
+        "allow": [
+          "~"
+        ]
+      }
+    ],
+    "no-unused-expressions": [
+      "error",
+      {
+        "allowShortCircuit": true,
+        "allowTernary": true
+      }
+    ],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "error",
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": "error",
+    "jsx-a11y/label-has-associated-control": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "no-nested-ternary": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "react/no-array-index-key": "warn",
+    "import/extensions": "off",
+    "jsx-a11y/control-has-associated-label": "warn",
+    "react/no-unescaped-entities": "off",
+    "jsx-props-no-spreading": "off",
+    "arrow-parens": [
+      "error",
+      "as-needed"
+    ],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "react/destructuring-assignment": "off",
+    "react/button-has-type": "off",
+    "jsx-a11y/no-noninteractive-element-interactions": "warn",
+    "@typescript-eslint/consistent-type-definitions": [
+      "error",
+      "type"
+    ],
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}
