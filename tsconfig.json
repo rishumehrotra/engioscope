@@ -30,8 +30,8 @@
     }
   },
   "include": [
-    "src",
-    "server-ts",
+    "ui",
+    "server",
     "ChildIndicator.ts"
   ],
   "exclude": [

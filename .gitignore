@@ -6,9 +6,6 @@
 # testing
 /coverage
 
-# production
-/build
-
 # misc
 .DS_Store
 .env.local
@@ -22,10 +19,10 @@ npm-debug.log*
 *.code-workspace
 
 .eslintcache
-src/tailwind.output.css
+ui/tailwind.output.css
 server/cache
 server/config.ts
 server/scratch.ts
 public/data
 
-/dist/backend
+dist

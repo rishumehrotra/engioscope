@@ -6,7 +6,8 @@ export default defineConfig({
   // This changes the output dir from dist to build
   // comment this out if that isn't relevant for your project
   build: {
-    outDir: 'build'
+    outDir: '../dist/ui'
   },
+  root: 'ui',
   plugins: [reactRefresh()]
 });
