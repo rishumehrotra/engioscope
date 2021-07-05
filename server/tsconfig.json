@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig-base.json",
+  "compilerOptions": {
+    "lib": [
+      "esnext"
+    ],
+    "types": [
+      "jest",
+      "node"
+    ],
+    "module": "commonjs",
+    "noEmit": false,
+    "outDir": "../dist"
+  },
+  "exclude": [
+    "server/cache"
+  ]
+}

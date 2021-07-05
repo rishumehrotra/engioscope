@@ -23,7 +23,8 @@
     }
   },
   "ignorePatterns": [
-    "server/cache/**/*"
+    "server/cache/**/*",
+    "dist/**/*"
   ],
   "rules": {
     "consistent-return": "off",
