@@ -2,3 +2,5 @@
 !/dist
 dist/config.json
 __tests__
+dist/server/start-dev-server.js
+dist/server/dev-scrape.js
