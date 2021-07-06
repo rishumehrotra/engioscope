@@ -1,6 +1,6 @@
 {
   "name": "project-health-tool",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "watch:tailwind": "chokidar 'ui/**/*.css' 'ui/**/*.scss' --ignore ui/tailwind.output.css -c 'npm run build:tailwind'",
     "start:react": "vite --open",
