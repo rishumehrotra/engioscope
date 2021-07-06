@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { prop } from 'ramda';
 import { RepoAnalysis, TopLevelIndicator } from '../../shared-types';
-import config from '../config';
 import azure from '../azure';
 import aggregateBuildsByRepo from './aggregate-builds-by-repo';
 import aggregateBranches from './aggregate-branches';
@@ -9,12 +8,8 @@ import aggregatePrs from './aggregate-prs';
 import aggregateCoverageByRepo from './aggregate-coverage-by-repo';
 import aggregateReleases from './aggregate-releases';
 import aggregateCodeQuality from './aggregate-code-quality';
-import initialiseSonar from '../sonar';
-
-const {
-  getRepositories, getBuilds, getBranches, getPRs,
-  getTestRuns, getTestCoverage, getReleases
-} = azure(config);
+import sonar from '../sonar';
+import { Config } from '../types';
 
 const ratingWeightage = {
   Branches: {
@@ -57,7 +52,13 @@ const withOverallRating = (repoAnalysis: Omit<RepoAnalysis, 'rating'>): RepoAnal
   rating: computeRating(repoAnalysis.indicators)
 });
 
-export default async (collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
+export default async (config: Config, collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
+  const {
+    getRepositories, getBuilds, getBranches, getPRs,
+    getTestRuns, getTestCoverage, getReleases
+  } = azure(config);
+  const initialiseSonar = sonar(config);
+
   const [
     repos,
     { buildByRepoId, buildByBuildId },

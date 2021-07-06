@@ -4,9 +4,9 @@ import { EnvironmentStatus, Release, ReleaseExpands } from 'azure-devops-node-ap
 import LRU from 'lru-cache';
 import fetch from 'node-fetch';
 import qs from 'qs';
-import { Config } from './config';
+import { Config } from './types';
 import { pastDate } from './utils';
-import withDiskCache from './with-disk-cache';
+import usingDiskCache from './using-disk-cache';
 
 const connectionCache = (config: Config) => {
   const collectionConnectionCache = new LRU<string, azdev.WebApi>(50);
@@ -33,6 +33,7 @@ const connectionCache = (config: Config) => {
 export default (config: Config) => {
   const getConnection = connectionCache(config);
   const gitApi = (collectionName: string) => getConnection(collectionName).getGitApi();
+  const withDiskCache = usingDiskCache(config);
 
   // We have to fetch releases without using the SDK since the SDK doesn't support pagination
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

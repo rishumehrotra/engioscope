@@ -5,14 +5,12 @@ import analyseRepos from './analyse-repos';
 import { average } from './analyse-repos/ratings';
 import { ScrapedProject } from '../shared-types';
 import { shortDateFormat } from './utils';
-import config from './config';
+import { Config } from './types';
 
 process.on('uncaughtException', console.log);
 process.on('unhandledRejection', console.log);
 
-const dataFolderPath = process.env.NODE_ENV === 'production'
-  ? join(__dirname, '..', 'build', 'data')
-  : join(__dirname, '..', 'public', 'data');
+const dataFolderPath = join(process.cwd(), 'data');
 
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
@@ -25,7 +23,7 @@ const writeFile = (path: string, contents: string) => {
   );
 };
 
-const doAllTheThings = async () => {
+export default async (config: Config) => {
   await createDataFolder;
 
   const overallResults: ScrapedProject[] = await Promise.all(
@@ -33,7 +31,7 @@ const doAllTheThings = async () => {
       .map(async projectSpec => {
         const start = Date.now();
         console.log('Starting analysis for', projectSpec.join('/'));
-        const repos = await analyseRepos(...projectSpec);
+        const repos = await analyseRepos(config, ...projectSpec);
         const now = shortDateFormat(new Date());
         console.log(`Took ${Date.now() - start}ms to analyse`, projectSpec.join('/'));
         await writeFile(
@@ -51,8 +49,3 @@ const doAllTheThings = async () => {
 
   return writeFile('index.json', JSON.stringify(overallResults));
 };
-
-doAllTheThings().catch(e => {
-  console.log(e);
-  throw e;
-});

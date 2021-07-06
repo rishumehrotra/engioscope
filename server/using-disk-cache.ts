@@ -3,14 +3,14 @@ import { promises as fs } from 'fs';
 import { and } from 'ramda';
 import ms from 'ms';
 import debug from 'debug';
-import config from './config';
+import { Config } from './types';
 
 const logDiskIO = debug('disk-io');
 const logNetworkIO = debug('network-io');
-const cachePath = join(__dirname, 'cache');
+const cachePath = join(process.cwd(), 'cache');
 const createCachePath = fs.mkdir(cachePath, { recursive: true });
 
-const isCacheValid = async () => {
+const isCacheValid = async (config: Config) => {
   try {
     const lastFetchDate = await fs.readFile(join(cachePath, 'last-fetch-date.txt'), 'utf8');
     return new Date(lastFetchDate).getTime() - ms(config.cacheToDiskFor) > 0;
@@ -38,12 +38,12 @@ const parseDate = (_: string, value: unknown) => {
   return new Date(value);
 };
 
-export default async <T>(pathParts: string[], fn: () => Promise<T>) => {
+export default (config: Config) => async <T>(pathParts: string[], fn: () => Promise<T>) => {
   await createCachePath;
   const fileName = join(cachePath, `${pathParts.join('-')}.json`);
 
   const canUseCache = and(...await Promise.all([
-    isCacheValid(), fileExists(fileName)
+    isCacheValid(config), fileExists(fileName)
   ]));
 
   if (canUseCache) {

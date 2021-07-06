@@ -13,3 +13,13 @@ export type CodeQuality = {
   qualifier: string,
   measures: Measure[]
 };
+
+export type Config = Readonly<{
+  repoType: 'azure',
+  host: string,
+  token: string,
+  lookAtPast: string,
+  cacheToDiskFor: string,
+  projects: [collectionName: string, projectName: string][],
+  sonar: Record<string, { url: string, token: string }>
+}>;
