@@ -58,6 +58,7 @@ const indicatorsForEnvironment = (
 
 const topLevelIndicator = (releaseStats?: ReleaseStats): TopLevelIndicator => withOverallRating({
   name: 'Releases',
+  count: (releaseStats?.sit?.count || 0) + (releaseStats?.pp?.count || 0) + (releaseStats?.prod?.count || 0),
   indicators: [
     ...indicatorsForEnvironment('SIT', releaseStats?.sit),
     ...indicatorsForEnvironment('PP', releaseStats?.pp),

@@ -2,7 +2,6 @@
 /* eslint-disable jsx-a11y/interactive-supports-focus */
 import React, { useState } from 'react';
 import { RepoAnalysis, TopLevelIndicator } from '../../shared-types';
-import { getRatingColor } from '../helpers';
 import RepoHealthDetails from './RepoHealthDetails';
 
 const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
@@ -10,7 +9,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
   return (repo ? (
-    <div className={`bg-white border-l-4 ${isDetailsOpen ? `border-${getRatingColor(repo.rating)}` : ''} rounded-lg`}>
+    <div className={`bg-white border-l-4 ${isDetailsOpen ? 'border-gray-500' : ''} rounded-lg`}>
       <div className="flex flex-row mt-2">
         <div
           className="w-full p-6 cursor-pointer"
@@ -38,7 +37,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                 <div className="flex">
                   {
                     repo.indicators.map(({
-                      name, rating, indicators
+                      name, rating, indicators, count
                     }) => (
                       <button
                         style={{ outline: 'none' }}
@@ -47,7 +46,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                         onClick={(e: React.MouseEvent<HTMLElement>) => {
                           e.stopPropagation();
                           setSelectedIndicator({
-                            name, rating, indicators
+                            name, rating, count, indicators
                           });
                           if (!selectedIndicator?.name || selectedIndicator?.name === name) {
                             setIsDetailsOpen(!isDetailsOpen);
@@ -56,8 +55,11 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                         key={name}
                         title={!rating ? `${name} is not available` : ''}
                       >
-                        <div className={`text-2xl font-semibold text-${getRatingColor(rating)} -mb-1`}>
+                        {/* <div className={`text-2xl font-semibold text-${getRatingColor(rating)} -mb-1`}>
                           {rating}
+                        </div> */}
+                        <div className="text-2xl font-semibold text-gray-600 -mb-1">
+                          {count}
                         </div>
                         <div className="uppercase text-xs tracking-widest text-gray-600 ml-2">{name}</div>
                       </button>
@@ -69,16 +71,16 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
           </div>
         </div>
 
-        <div className={`bg-${getRatingColor(repo.rating)} text-center flex flex-col items-center w-20 h-20
+        {/* <div className={`bg-${getRatingColor(repo.rating)} text-center flex flex-col items-center w-20 h-20
           justify-center ml-1 p-8 cursor-pointer hover:bg-blue-200 dark-hover:bg-blue-500 rounded-lg`}
         >
           <div className="text-3xl font-bold transition duration-500 ease-in-out text-white p-4 text-center flex">
             {repo.rating}
             <div className="my-auto -mr-2">
-              {/* {repo.trend === 1 ? <Up /> : <Down /> } */}
+              {/* {repo.trend === 1 ? <Up /> : <Down /> } }
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
       {isDetailsOpen && selectedIndicator && selectedIndicator.indicators ? (
         <div className="overflow-hidden m-8">

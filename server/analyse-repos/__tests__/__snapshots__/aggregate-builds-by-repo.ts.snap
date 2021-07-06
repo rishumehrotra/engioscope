@@ -2,6 +2,7 @@
 
 exports[`aggregate-builds-by-repo 1`] = `
 Object {
+  "count": 1,
   "indicators": Array [
     Object {
       "name": "Total successful",
@@ -32,6 +33,7 @@ Object {
 
 exports[`aggregate-builds-by-repo 2`] = `
 Object {
+  "count": 2,
   "indicators": Array [
     Object {
       "name": "Total successful",
@@ -62,6 +64,7 @@ Object {
 
 exports[`aggregate-builds-by-repo 3`] = `
 Object {
+  "count": 0,
   "indicators": Array [
     Object {
       "name": "Total successful",

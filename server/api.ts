@@ -8,9 +8,7 @@ const router = Router();
 router.get('/api/*', async (req, res) => {
   const { path } = req;
   const fileName = decodeURIComponent(path.replace('/api/', ''));
-  const filePath = process.env.NODE_ENV === 'development'
-    ? join(__dirname, '..')
-    : process.cwd();
+  const filePath = process.cwd();
 
   if (!await doesFileExist(join(filePath, 'data', fileName))) {
     res.status(404);

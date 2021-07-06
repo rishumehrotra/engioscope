@@ -2,6 +2,7 @@
 
 exports[`aggregate-branches with a single old branch behind trunk 1`] = `
 Object {
+  "count": 1,
   "indicators": Array [
     Object {
       "name": "Total",

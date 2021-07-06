@@ -17,6 +17,7 @@ const [timeRange, averageTime] = statsStrings('-', minutes);
 
 const topLevelIndicator = (stats: BuildStats): TopLevelIndicator => withOverallRating({
   name: 'Builds',
+  count: stats.count,
   indicators: [
     {
       name: 'Total successful',

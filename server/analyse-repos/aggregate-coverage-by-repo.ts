@@ -19,7 +19,8 @@ const defaultStat: TestStats = {
 };
 
 const topLevelIndicator = (stat: TestStats): TopLevelIndicator => withOverallRating({
-  name: 'Test coverage',
+  name: 'Tests',
+  count: stat.coverage === 0 ? 0 : Math.round(stat.coverage),
   indicators: [
     {
       name: 'Successful tests',
@@ -38,7 +39,7 @@ const topLevelIndicator = (stat: TestStats): TopLevelIndicator => withOverallRat
     },
     {
       name: 'Branch coverage',
-      value: stat.coverage === 0 ? 0 : `${stat.coverage.toFixed(2)}%`,
+      value: stat.coverage === 0 ? 0 : `${Math.round(stat.coverage)}%`,
       rating: ratingConfig.coverage.branchCoverage(stat.coverage)
     }
   ]

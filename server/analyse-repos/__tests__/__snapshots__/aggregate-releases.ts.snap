@@ -2,6 +2,7 @@
 
 exports[`it should aggregate releases (mutiple releases, repeating environments) 1`] = `
 Object {
+  "count": 4,
   "indicators": Array [
     Object {
       "name": "Last deployment date (SIT)",
@@ -71,6 +72,7 @@ Object {
 
 exports[`it should aggregate releases (single release) 1`] = `
 Object {
+  "count": 1,
   "indicators": Array [
     Object {
       "name": "Last deployment date (SIT)",
@@ -140,6 +142,7 @@ Object {
 
 exports[`it should aggregate releases (single release) 2`] = `
 Object {
+  "count": 0,
   "indicators": Array [
     Object {
       "name": "Last deployment date (SIT)",
@@ -209,6 +212,7 @@ Object {
 
 exports[`it should aggregate releases (two releases, different environments) 1`] = `
 Object {
+  "count": 2,
   "indicators": Array [
     Object {
       "name": "Last deployment date (SIT)",

@@ -18,6 +18,7 @@ export default (prs: GitPullRequest[]): TopLevelIndicator => {
   const completedPrCount = prsByStatus(PullRequestStatus.Completed).length;
   return withOverallRating({
     name: 'PR',
+    count: activePrCount,
     indicators: [
       {
         name: 'Active',

@@ -15,6 +15,7 @@ export default (branches: GitBranchStats[]): TopLevelIndicator => {
 
   return withOverallRating({
     name: 'Branches',
+    count: branches.length,
     indicators: [
       {
         name: 'Total',

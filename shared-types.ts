@@ -9,6 +9,7 @@ export type ChildIndicator = {
 export type TopLevelIndicator = {
   name: string;
   rating: number;
+  count: number;
   indicators: ChildIndicator[];
 };
 
