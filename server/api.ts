@@ -8,7 +8,10 @@ const router = Router();
 router.get('/api/*', async (req, res) => {
   const { path } = req;
   const fileName = path.replace('/api/', '');
-  const filePath = process.cwd();
+  const filePath = process.env.NODE_ENV === 'development'
+    ? join(__dirname, '..')
+    : process.cwd();
+
   if (!await doesFileExist(join(filePath, 'data', fileName))) {
     res.status(404);
     res.send('404 - Not found');

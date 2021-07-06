@@ -9,5 +9,10 @@ export default defineConfig({
     outDir: '../dist/ui'
   },
   root: 'ui',
-  plugins: [reactRefresh()]
+  plugins: [reactRefresh()],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:1337/'
+    }
+  }
 });

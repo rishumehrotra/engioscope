@@ -7,7 +7,7 @@ import { Config } from './types';
 
 const logDiskIO = debug('disk-io');
 const logNetworkIO = debug('network-io');
-const cachePath = join(process.cwd(), 'cache');
+const cachePath = join(process.env.NODE_ENV === 'development' ? '..' : process.cwd(), 'cache');
 const createCachePath = fs.mkdir(cachePath, { recursive: true });
 
 const isCacheValid = async (config: Config) => {

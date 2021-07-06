@@ -10,7 +10,7 @@ import { Config } from './types';
 process.on('uncaughtException', console.log);
 process.on('unhandledRejection', console.log);
 
-const dataFolderPath = join(process.cwd(), 'data');
+const dataFolderPath = join(process.env.NODE_ENV === 'development' ? '..' : process.cwd(), 'data');
 
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 

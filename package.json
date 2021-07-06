@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "watch:tailwind": "chokidar 'ui/**/*.css' 'ui/**/*.scss' --ignore ui/tailwind.output.css -c 'npm run build:tailwind'",
-    "start": "npm-run-all --parallel watch:tailwind start:react",
     "start:react": "vite --open",
+    "start:ui": "npm-run-all --parallel watch:tailwind start:react",
+    "start:server": "NODE_ENV=development nodemon --watch 'server/**' --ext 'ts,json' --exec 'ts-node --project server/tsconfig.json server/start-dev-server.ts'",
+    "start": "npm-run-all --parallel start:ui start:server",
     "build:server": "tsc --build server",
     "postbuild:server": "rimraf dist/ui",
     "prebuild:ui": "tailwind build ui/tailwind.css -o ui/tailwind.output.css",
@@ -14,7 +16,7 @@
     "serve": "vite preview",
     "test:react": "react-scripts test",
     "test": "jest server --testPathIgnorePatterns=./dist --coverage",
-    "scrape": "node --max-old-space-size=8192 -r ts-node/register ./server/get-all-the-things.ts",
+    "scrape": "node --max-old-space-size=8192 -r ts-node/register ./server/dev-scrape.ts",
     "tsc": "tsc --build server ui",
     "lint": "eslint \"./**/*.ts\" --cache",
     "scratch": "node -r ts-node/register ./server/scratch.ts",
@@ -91,6 +93,7 @@
     "babel-preset-latest": "^6.24.1",
     "husky": "^6.0.0",
     "jest": "^26.6.0",
+    "nodemon": "^2.0.9",
     "rimraf": "^3.0.2",
     "vite": "^2.3.8"
   }
