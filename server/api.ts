@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/api/*', async (req, res) => {
   const { path } = req;
-  const fileName = path.replace('/api/', '');
+  const fileName = decodeURIComponent(path.replace('/api/', ''));
   const filePath = process.env.NODE_ENV === 'development'
     ? join(__dirname, '..')
     : process.cwd();
