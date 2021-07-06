@@ -1,4 +1,5 @@
 import ms from 'ms';
+import { promises as fs } from 'fs';
 
 const oneMinute = 1000 * 60;
 const oneHour = oneMinute * 60;
@@ -59,3 +60,12 @@ export const isMaster = (branchName: string) => [
 export const assertDefined = <T>(x: T | undefined) => x!;
 
 export const divideBy = (divisor: number) => (dividend: number) => dividend / divisor;
+
+export const doesFileExist = async (filePath: string) => {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};

@@ -7,7 +7,7 @@ import Select from '../components/Select';
 import { ProjectAnalysis, RepoAnalysis } from '../../shared-types';
 
 const fetchProjectMetrics = (collection: string, project: string) => (
-  fetch(`/data/${collection}_${project}.json`).then(res => res.json())
+  fetch(`/api/${collection}_${project}.json`).then(res => res.json())
 );
 
 const Project: React.FC = () => {

@@ -26,7 +26,7 @@ const Project: React.FC<{
   </Link>
 );
 
-const fetchCollections = () => fetch('/data/index.json').then(res => res.json());
+const fetchCollections = () => fetch('/api/index.json').then(res => res.json());
 
 const Collection: React.FC = () => {
   const [collections, setCollections] = useState<ScrapedProject[] | undefined>();

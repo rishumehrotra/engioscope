@@ -20,6 +20,7 @@ export type Config = Readonly<{
   token: string,
   lookAtPast: string,
   cacheToDiskFor: string,
+  port: number,
   projects: [collectionName: string, projectName: string][],
   sonar: Record<string, { url: string, token: string }>
 }>;

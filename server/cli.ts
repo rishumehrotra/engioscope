@@ -5,15 +5,8 @@ import yargs from 'yargs';
 import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import getAllTheThings from './get-all-the-things';
-
-const doesFileExist = async (filePath: string) => {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
+import startServer from './express';
+import { doesFileExist } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const addConfigOption = (yargs: yargs.Argv<{}>): void => {
@@ -43,6 +36,8 @@ const { argv } = yargs(process.argv.slice(2))
     const config = JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' }));
     await getAllTheThings(config);
   })
-  .command('serve', 'Serve the project-health-tool UI', addConfigOption, argv => {
-    console.log(`Serving ${JSON.stringify(argv)}`);
+  .command('serve', 'Serve the project-health-tool UI', addConfigOption, async argv => {
+    const configPath = await ensureConfigExists(argv);
+    const config = JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' }));
+    startServer(config);
   });
