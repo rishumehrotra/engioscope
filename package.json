@@ -22,9 +22,6 @@
     "scratch": "node -r ts-node/register ./server/scratch.ts",
     "prepare": "husky install"
   },
-  "files": [
-    "dist"
-  ],
   "bin": "./dist/server/cli.js",
   "dependencies": {
     "azure-devops-node-api": "^11.0.0",
