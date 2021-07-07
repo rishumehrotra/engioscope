@@ -2,7 +2,7 @@
   "name": "project-health-tool",
   "version": "0.1.1",
   "scripts": {
-    "watch:tailwind": "chokidar 'ui/**/*.css' 'ui/**/*.scss' --ignore ui/tailwind.output.css -c 'npm run build:tailwind'",
+    "watch:tailwind": "tailwind -i ui/tailwind.css -o ui/tailwind.output.css --watch",
     "start:react": "vite --open",
     "start:ui": "npm-run-all --parallel watch:tailwind start:react",
     "start:server": "nodemon --watch 'server/**' --ext 'ts,json' --exec 'ts-node server/start-dev-server.ts'",
