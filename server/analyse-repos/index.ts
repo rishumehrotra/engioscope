@@ -52,54 +52,56 @@ const withOverallRating = (repoAnalysis: Omit<RepoAnalysis, 'rating'>): RepoAnal
   rating: computeRating(repoAnalysis.indicators)
 });
 
-export default async (config: Config, collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
+export default (config: Config) => {
   const {
     getRepositories, getBuilds, getBranches, getPRs,
     getTestRuns, getTestCoverage, getReleases
   } = azure(config);
   const initialiseSonar = sonar(config);
 
-  const [
-    repos,
-    { buildByRepoId, buildByBuildId },
-    testRuns,
-    releaseByRepoId,
-    codeQualityByRepoName
-  ] = await Promise.all([
-    getRepositories(collectionName, projectName),
-    getBuilds(collectionName, projectName).then(aggregateBuildsByRepo),
-    getTestRuns(collectionName, projectName),
-    getReleases(collectionName, projectName).then(aggregateReleases),
-    initialiseSonar(projectName)
-  ]);
-
-  const getCoverageByRepoId = aggregateCoverageByRepo(
-    testRuns,
-    buildByBuildId,
-    (buildId: number) => getTestCoverage(collectionName, projectName, buildId)
-  );
-
-  return Promise.all(repos.map(async r => {
-    const [branches, prs, coverage, { languages, codeQuality }] = await Promise.all([
-      getBranches(collectionName, r.id!).then(aggregateBranches),
-      getPRs(collectionName, r.id!).then(aggregatePrs),
-      getCoverageByRepoId(r.id),
-      codeQualityByRepoName(r.name!).then(aggregateCodeQuality)
-      // getCommits(collectionName, r.id!)
+  return async (collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
+    const [
+      repos,
+      { buildByRepoId, buildByBuildId },
+      testRuns,
+      releaseByRepoId,
+      codeQualityByRepoName
+    ] = await Promise.all([
+      getRepositories(collectionName, projectName),
+      getBuilds(collectionName, projectName).then(aggregateBuildsByRepo),
+      getTestRuns(collectionName, projectName),
+      getReleases(collectionName, projectName).then(aggregateReleases),
+      initialiseSonar(projectName)
     ]);
 
-    return withOverallRating({
-      name: r.name!,
-      id: r.id!,
-      languages,
-      indicators: [
-        buildByRepoId(r.id),
-        branches,
-        prs,
-        coverage,
-        releaseByRepoId(r.id!),
-        codeQuality
-      ]
-    });
-  }));
+    const getCoverageByRepoId = aggregateCoverageByRepo(
+      testRuns,
+      buildByBuildId,
+      (buildId: number) => getTestCoverage(collectionName, projectName, buildId)
+    );
+
+    return Promise.all(repos.map(async r => {
+      const [branches, prs, coverage, { languages, codeQuality }] = await Promise.all([
+        getBranches(collectionName, r.id!).then(aggregateBranches),
+        getPRs(collectionName, r.id!).then(aggregatePrs),
+        getCoverageByRepoId(r.id),
+        codeQualityByRepoName(r.name!).then(aggregateCodeQuality)
+        // getCommits(collectionName, r.id!)
+      ]);
+
+      return withOverallRating({
+        name: r.name!,
+        id: r.id!,
+        languages,
+        indicators: [
+          buildByRepoId(r.id),
+          branches,
+          prs,
+          coverage,
+          releaseByRepoId(r.id!),
+          codeQuality
+        ]
+      });
+    }));
+  };
 };

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import analyseRepos from './analyse-repos';
+import repoAnalyser from './analyse-repos';
 import { average } from './analyse-repos/ratings';
 import { ScrapedProject } from '../shared-types';
 import { shortDateFormat } from './utils';
@@ -25,13 +25,14 @@ const writeFile = (path: string, contents: string) => {
 
 export default async (config: Config) => {
   await createDataFolder;
+  const analyseRepos = repoAnalyser(config);
 
   const overallResults: ScrapedProject[] = await Promise.all(
     config.projects
       .map(async projectSpec => {
         const start = Date.now();
         console.log('Starting analysis for', projectSpec.join('/'));
-        const repos = await analyseRepos(config, ...projectSpec);
+        const repos = await analyseRepos(...projectSpec);
         const now = shortDateFormat(new Date());
         console.log(`Took ${Date.now() - start}ms to analyse`, projectSpec.join('/'));
         await writeFile(

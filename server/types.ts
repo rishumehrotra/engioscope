@@ -22,5 +22,5 @@ export type Config = Readonly<{
   cacheToDiskFor: string,
   port: number,
   projects: [collectionName: string, projectName: string][],
-  sonar: Record<string, { url: string, token: string }>
+  sonar: { url: string, token: string }[]
 }>;

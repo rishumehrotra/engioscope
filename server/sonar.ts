@@ -11,47 +11,48 @@ export type SonarRepo = {
   name: string,
   qualifier: string,
   visibility: string,
-  lastAnalysisDate: string
+  lastAnalysisDate: string,
+  url: string
+};
+
+const reposAtSonarServer = async (sonarServer: Config['sonar'][number]) => {
+  const { url, token } = sonarServer;
+  const sonarProjectsResponse = await fetch(`${url}/api/projects/search`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${token}`
+    }
+  });
+  console.log('Sonar Repos');
+  const parsed = await sonarProjectsResponse.json();
+  console.log(parsed);
+  return parsed.components.map((component: any) => ({ ...component, url })) as SonarRepo[];
 };
 
 export default (config: Config) => {
   const withDiskCache = usingDiskCache(config);
 
-  return async (project: string) => {
-    const projectConfig = config.sonar[project as keyof Config['sonar']];
+  const sonarRepos = withDiskCache(
+    ['sonar'],
+    () => Promise.all(config.sonar.map(reposAtSonarServer)).then(list => list.flat())
+  );
 
-    if (!projectConfig) return async () => undefined;
+  return async (project: string) => async (repoName: string): Promise<Measure[] | undefined> => {
+    const currentSonarRepo = (await sonarRepos).find(({ name }) => name === repoName);
+    if (!currentSonarRepo) return undefined;
 
-    const sonarRepos = await withDiskCache(
-      ['sonar', project],
+    const codeQuality = await withDiskCache(
+      ['sonar', project, repoName],
       async () => {
-        const sonarProjectsResponse = await fetch(`${projectConfig.url}/api/projects/search`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Basic ${projectConfig.token}`
-          }
-        });
-        return (await sonarProjectsResponse.json()).components as SonarRepo[];
+        const response = await fetch(`${currentSonarRepo.url}/api/measures/component?${qs.stringify({
+          component: currentSonarRepo.key,
+          metricKeys: requiredMetrics.join(',')
+        })}`);
+
+        return (await response.json()).component as CodeQuality;
       }
     );
 
-    return async (repoName: string): Promise<Measure[] | undefined> => {
-      const currentSonarRepo = sonarRepos.find(({ name }) => name === repoName);
-      if (!currentSonarRepo) return undefined;
-
-      const codeQuality = await withDiskCache(
-        ['sonar', project, repoName],
-        async () => {
-          const response = await fetch(`${projectConfig.url}/api/measures/component?${qs.stringify({
-            component: currentSonarRepo.key,
-            metricKeys: requiredMetrics.join(',')
-          })}`);
-
-          return (await response.json()).component as CodeQuality;
-        }
-      );
-
-      return codeQuality.measures;
-    };
+    return codeQuality.measures;
   };
 };
