@@ -89,7 +89,7 @@
       "error",
       {
         "devDependencies": [
-          "ui/setupTests.ts",
+          "ui/**/*",
           "vite.config.js"
         ]
       }
