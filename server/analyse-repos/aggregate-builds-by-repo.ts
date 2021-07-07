@@ -11,7 +11,7 @@ type BuildStats = {
   duration: number[]
 };
 
-const buildId = (build: Build) => build.repository?.id ?? '<unknown>';
+const repoId = (build: Build) => build.repository?.id ?? '<unknown>';
 const defaultBuildStats: BuildStats = { count: 0, success: 0, duration: [] };
 const [timeRange, averageTime] = statsStrings('-', minutes);
 
@@ -55,18 +55,24 @@ const combineStats = (
 // TODO: remove eslint-disable Not sure why eslint is messing up the indentation onSave
 /* eslint-disable @typescript-eslint/indent */
 export default (builds: Build[]) => {
-  const buildStats = builds
-    .reduce<Record<string, BuildStats>>((acc, build) => ({
-      ...acc,
-      [buildId(build)]: combineStats({
-        count: 1,
-        success: build.result === BuildResult.Succeeded ? 1 : 0,
-        duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
-      }, acc[buildId(build)])
-    }), {});
+  const { buildsById, buildStats } = builds
+    .reduce<{ buildsById: Record<string, Build>, buildStats: Record<string, BuildStats> }>((acc, build) => ({
+      buildsById: {
+        ...acc.buildsById,
+        [build.id!]: build
+      },
+      buildStats: {
+        ...acc.buildStats,
+        [repoId(build)]: combineStats({
+          count: 1,
+          success: build.result === BuildResult.Succeeded ? 1 : 0,
+          duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
+        }, acc.buildStats[repoId(build)])
+      }
+    }), { buildsById: {}, buildStats: {} });
 
   return {
-    buildByBuildId: (id?: number) => builds.find(b => b.id === id),
+    buildByBuildId: (id?: number) => (id ? buildsById[id] : undefined),
     buildByRepoId: (id?: string): TopLevelIndicator => {
       if (!id) return topLevelIndicator(defaultBuildStats);
       if (!buildStats[id]) return topLevelIndicator(defaultBuildStats);
