@@ -40,30 +40,34 @@ const parseDate = (_: string, value: unknown) => {
   return new Date(value);
 };
 
-export default (config: Config) => async <T>(pathParts: string[], fn: () => Promise<T>) => {
-  await createCachePath;
-  const fileName = join(cachePath, `${pathParts.join('-')}.json`);
+export default (config: Config) => {
+  const isCacheValidPromise = isCacheValid(config);
 
-  const canUseCache = and(...await Promise.all([
-    isCacheValid(config), fileExists(fileName)
-  ]));
+  return async <T>(pathParts: string[], fn: () => Promise<T>) => {
+    await createCachePath;
+    const fileName = join(cachePath, `${pathParts.join('-')}.json`);
 
-  if (canUseCache) {
-    logDiskIO(fileName);
-    const contents = await fs.readFile(fileName, 'utf8');
-    try {
-      return JSON.parse(contents, parseDate) as T;
-    } catch (e) {
-      logRecoveredError(`Error parsing ${fileName}. Deleting and going to the network instead.`);
-      await fs.unlink(fileName);
+    const canUseCache = and(...await Promise.all([
+      isCacheValidPromise, fileExists(fileName)
+    ]));
+
+    if (canUseCache) {
+      logDiskIO(fileName);
+      const contents = await fs.readFile(fileName, 'utf8');
+      try {
+        return JSON.parse(contents, parseDate) as T;
+      } catch (e) {
+        logRecoveredError(`Error parsing ${fileName}. Deleting and going to the network instead.`);
+        await fs.unlink(fileName);
+      }
     }
-  }
 
-  logNetworkIO(pathParts.join(' '));
-  const result = await fn();
-  await Promise.all([
-    fs.writeFile(fileName, JSON.stringify(result), 'utf8'),
-    fs.writeFile(join(cachePath, 'last-fetch-date.txt'), new Date().toISOString(), 'utf8')
-  ]);
-  return result;
+    logNetworkIO(pathParts.join(' '));
+    const result = await fn();
+    await Promise.all([
+      fs.writeFile(fileName, JSON.stringify(result), 'utf8'),
+      fs.writeFile(join(cachePath, 'last-fetch-date.txt'), new Date().toISOString(), 'utf8')
+    ]);
+    return result;
+  };
 };
