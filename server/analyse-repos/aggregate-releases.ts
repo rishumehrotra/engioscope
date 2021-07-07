@@ -14,7 +14,7 @@ type EnvironmentStats = {
 };
 type EnvironmentStatsWithoutMasterCount = Omit<EnvironmentStats, 'fromMaster'>;
 
-type EnvironmentName = 'sit' | 'pp' | 'prod' | 'other';
+type EnvironmentName = 'eat' | 'sit' | 'replica' | 'prod' | 'other';
 type ReleaseStats = Record<EnvironmentName, EnvironmentStats>;
 
 type RepoId = string;
@@ -58,17 +58,19 @@ const indicatorsForEnvironment = (
 
 const topLevelIndicator = (releaseStats?: ReleaseStats): TopLevelIndicator => withOverallRating({
   name: 'Releases',
-  count: (releaseStats?.sit?.count || 0) + (releaseStats?.pp?.count || 0) + (releaseStats?.prod?.count || 0),
+  count: (releaseStats?.prod?.count || 0),
   indicators: [
+    ...indicatorsForEnvironment('EAT', releaseStats?.eat),
     ...indicatorsForEnvironment('SIT', releaseStats?.sit),
-    ...indicatorsForEnvironment('PP', releaseStats?.pp),
+    ...indicatorsForEnvironment('REPLICA', releaseStats?.replica),
     ...indicatorsForEnvironment('PROD', releaseStats?.prod)
   ]
 });
 
 const environmentName = (environment: ReleaseEnvironment): EnvironmentName => {
   if (environment.name?.toLowerCase() === 'prod') return 'prod';
-  if (['pp', 'replica', 'preprod', 'pre-prod'].includes((environment.name ?? '').toLowerCase())) return 'pp';
+  if (environment.name?.toLowerCase() === 'eat') return 'eat';
+  if (['pp', 'replica', 'preprod', 'pre-prod'].includes((environment.name ?? '').toLowerCase())) return 'replica';
   if (environment.name?.toLowerCase() === 'sit') return 'sit';
   return 'other';
 };
