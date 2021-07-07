@@ -20,7 +20,7 @@ const defaultStat: TestStats = {
 
 const topLevelIndicator = (stat: TestStats): TopLevelIndicator => withOverallRating({
   name: 'Tests',
-  count: stat.coverage === 0 ? 0 : Math.round(stat.coverage),
+  count: stat.success + stat.failure,
   indicators: [
     {
       name: 'Successful tests',

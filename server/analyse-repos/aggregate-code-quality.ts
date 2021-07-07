@@ -82,7 +82,7 @@ export const requiredMetrics = [
 
 const unknownCodeQuality: TopLevelIndicator = {
   name: 'Code quality',
-  count: 0,
+  count: 'Unknown',
   rating: 0,
   indicators: metrics.map(metric => ({
     name: metric.display,
@@ -115,6 +115,11 @@ const formatLoc = (loc?: string): Record<string, string> | undefined => {
     }, {});
 };
 
+const toTitleCase = (str: string) => str.replace(
+  /\w\S*/g,
+  txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+);
+
 export default (measures: Measure[] | undefined): AggregagedCodeQuality => {
   if (!measures) return { codeQuality: unknownCodeQuality };
 
@@ -122,7 +127,7 @@ export default (measures: Measure[] | undefined): AggregagedCodeQuality => {
     languages: formatLoc(measures.find(isMeasureName('ncloc_language_distribution'))?.value),
     codeQuality: withOverallRating({
       name: 'Code quality',
-      count: Number(measures.find(m => m.metric === 'code_smells')?.value || 0),
+      count: toTitleCase(measures.find(m => m.metric === 'alert_status')?.value || 'Unknown'),
       indicators: metrics.map(metric => {
         const metricValue = measures.find(isMeasureName(metric.name))?.value || '-';
         return {
