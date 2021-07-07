@@ -46,7 +46,7 @@ const Project: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between my-4">
+      <div className="flex justify-between my-8">
         <div className="mt-4">
           <h1 className="text-4xl font-semibold text-gray-800">
             {repoAnalysis.name[1]}
