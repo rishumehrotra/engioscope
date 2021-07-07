@@ -1,8 +1,10 @@
 import fetch from 'node-fetch';
 import qs from 'qs';
+import { pipe, sort } from 'ramda';
 import { CodeQuality, Config, Measure } from './types';
 import { requiredMetrics } from './analyse-repos/aggregate-code-quality';
 import usingDiskCache from './using-disk-cache';
+import { getFirst } from './utils';
 
 export type SonarRepo = {
   organization: string,
@@ -15,18 +17,38 @@ export type SonarRepo = {
   url: string
 };
 
-const reposAtSonarServer = async (sonarServer: Config['sonar'][number]) => {
+type SonarPaging = {
+  pageIndex: number,
+  pageSize: number
+};
+
+const sortByLastAnalysedDate = (a: SonarRepo, b: SonarRepo) => (
+  new Date(a.lastAnalysisDate).getTime() - new Date(b.lastAnalysisDate).getTime()
+);
+
+const filterBy = (repoName: string) => (sonarRepos: SonarRepo[]) => (
+  sonarRepos.filter(({ name, lastAnalysisDate }) => name === repoName && Boolean(lastAnalysisDate))
+);
+
+const getCurrentRepo = (repoName: string) => pipe(
+  filterBy(repoName),
+  sort(sortByLastAnalysedDate),
+  getFirst
+);
+
+const reposAtSonarServer = (pageIndex = 1) => async (sonarServer: Config['sonar'][number]): Promise<SonarRepo[]> => {
   const { url, token } = sonarServer;
-  const sonarProjectsResponse = await fetch(`${url}/api/projects/search`, {
+  const sonarProjectsResponse = await fetch(`${url}/api/projects/search?p=${pageIndex}&ps=500`, {
     method: 'GET',
     headers: {
       Authorization: `Basic ${token}`
     }
   });
-  console.log('Sonar Repos');
-  const parsed = await sonarProjectsResponse.json();
-  console.log(parsed);
-  return parsed.components.map((component: any) => ({ ...component, url })) as SonarRepo[];
+  const parsed = await sonarProjectsResponse.json() as { paging: SonarPaging, components: SonarRepo[] };
+  return [
+    ...parsed.components.map((component: any) => ({ ...component, url })),
+    ...(parsed.paging.pageSize === parsed.components.length ? await reposAtSonarServer(parsed.paging.pageIndex + 1)(sonarServer) : [])
+  ];
 };
 
 export default (config: Config) => {
@@ -34,11 +56,11 @@ export default (config: Config) => {
 
   const sonarRepos = withDiskCache(
     ['sonar'],
-    () => Promise.all(config.sonar.map(reposAtSonarServer)).then(list => list.flat())
+    () => Promise.all(config.sonar.map(reposAtSonarServer())).then(list => list.flat())
   );
 
   return async (project: string) => async (repoName: string): Promise<Measure[] | undefined> => {
-    const currentSonarRepo = (await sonarRepos).find(({ name }) => name === repoName);
+    const currentSonarRepo = getCurrentRepo(repoName)(await sonarRepos);
     if (!currentSonarRepo) return undefined;
 
     const codeQuality = await withDiskCache(
