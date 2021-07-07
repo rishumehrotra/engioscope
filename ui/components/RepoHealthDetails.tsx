@@ -7,7 +7,7 @@ type RepoHealthDetailsProps = {
 }
 
 const RepoHealthDetails: React.FC<RepoHealthDetailsProps> = ({ indicators, gridNumber }) => (indicators?.length ? (
-  <div className={`grid grid-cols-${gridNumber} gap-2 pb-8`}>
+  <div className={`grid ${gridNumber === 4 ? 'grid-cols-4' : 'grid-cols-5'} gap-2 pb-8`}>
     {
       indicators.map(({
         value, name, tooltip, additionalValue
