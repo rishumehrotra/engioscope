@@ -61,6 +61,7 @@ export const assertDefined = <T>(x: T | undefined) => x!;
 
 export const divideBy = (divisor: number) => (dividend: number) => dividend / divisor;
 export const getFirst = <T>(list: T[]): T | undefined => list[0];
+export const filter = <T>(fn: (x: T) => boolean) => (xs: T[]) => xs.filter(fn);
 
 export const doesFileExist = async (filePath: string) => {
   try {

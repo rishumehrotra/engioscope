@@ -4,7 +4,7 @@ import { pipe, sort } from 'ramda';
 import { CodeQuality, Config, Measure } from './types';
 import { requiredMetrics } from './analyse-repos/aggregate-code-quality';
 import usingDiskCache from './using-disk-cache';
-import { getFirst } from './utils';
+import { filter, getFirst } from './utils';
 
 export type SonarRepo = {
   organization: string,
@@ -26,12 +26,8 @@ const sortByLastAnalysedDate = (a: SonarRepo, b: SonarRepo) => (
   new Date(a.lastAnalysisDate).getTime() - new Date(b.lastAnalysisDate).getTime()
 );
 
-const filterBy = (repoName: string) => (sonarRepos: SonarRepo[]) => (
-  sonarRepos.filter(({ name, lastAnalysisDate }) => name === repoName && Boolean(lastAnalysisDate))
-);
-
 const getCurrentRepo = (repoName: string) => pipe(
-  filterBy(repoName),
+  filter<SonarRepo>(repo => repo.name === repoName && Boolean(repo.lastAnalysisDate)),
   sort(sortByLastAnalysedDate),
   getFirst
 );
@@ -46,7 +42,7 @@ const reposAtSonarServer = (pageIndex = 1) => async (sonarServer: Config['sonar'
   });
   const parsed = await sonarProjectsResponse.json() as { paging: SonarPaging, components: SonarRepo[] };
   return [
-    ...parsed.components.map((component: any) => ({ ...component, url })),
+    ...parsed.components.map(component => ({ ...component, url })),
     ...(parsed.paging.pageSize === parsed.components.length ? await reposAtSonarServer(parsed.paging.pageIndex + 1)(sonarServer) : [])
   ];
 };
