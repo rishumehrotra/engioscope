@@ -7,6 +7,8 @@ import { Config } from './types';
 
 const logDiskIO = debug('disk-io');
 const logNetworkIO = debug('network-io');
+const logRecoveredError = debug('recovered-error');
+
 const cachePath = join(process.cwd(), 'cache');
 const createCachePath = fs.mkdir(cachePath, { recursive: true });
 
@@ -49,7 +51,12 @@ export default (config: Config) => async <T>(pathParts: string[], fn: () => Prom
   if (canUseCache) {
     logDiskIO(fileName);
     const contents = await fs.readFile(fileName, 'utf8');
-    return JSON.parse(contents, parseDate) as T;
+    try {
+      return JSON.parse(contents, parseDate) as T;
+    } catch (e) {
+      logRecoveredError(`Error parsing ${fileName}. Deleting and going to the network instead.`);
+      await fs.unlink(fileName);
+    }
   }
 
   logNetworkIO(pathParts.join(' '));
