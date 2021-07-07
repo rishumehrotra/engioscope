@@ -11,7 +11,7 @@ const Project: React.FC<{
   projectName, route, lastUpdated
 }) => (
   <Link to={route}>
-    <div className="flex flex-col justify-center p-8 bg-white border border-gray-300 rounded-lg">
+    <div className="flex flex-col justify-center p-8 bg-white border border-gray-300 rounded-lg h-full">
       {/* <p
         className={`text-4xl font-semibold text-center text-${getRatingColor(rating)}`}
       >
@@ -35,7 +35,7 @@ const Collection: React.FC = () => {
 
   return (
     <div className="text-5xl">
-      <div className="mt-32 grid grid-flow-row gap-16 grid-cols-3">
+      <div className="mt-32 grid grid-flow-row gap-16 grid-cols-3 auto-rows-fr">
         {collections.map(collection => (
           <Project
             key={collection.name[1]}

@@ -68,7 +68,7 @@ const Project: React.FC = () => {
               options={[{ label: 'Last 30 days', value: '30' }]}
             />
           </div> */}
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <button
               className="text-base font-medium text-gray-600
                 text-center flex items-end justify-end rounded-lg cursor-pointer mb-4"
@@ -91,7 +91,7 @@ const Project: React.FC = () => {
                 { label: 'Releases', value: 'Releases' }
               ]}
             />
-          </div>
+          </div> */}
         </div>
       </div>
       {filteredRepos.length ? filteredRepos.map(repo => (
