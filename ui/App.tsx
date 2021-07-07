@@ -13,9 +13,8 @@ const App: React.FC = () => (
   <div className="flex-1 my-8 mb-32 overflow-y-auto transition duration-500 ease-in-out">
     <div className="container max-w-screen-xl mx-auto">
       <Router>
-        <Link to="/" className="flex font-bold">
-          <img src={logo} alt="Logo" style={{ height: '20px' }} />
-          &nbsp;Assessment Tool
+        <Link to="/">
+          <img src={logo} alt="Logo" />
         </Link>
         <Switch>
           <Route path="/:collection/:project">
