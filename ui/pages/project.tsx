@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { filter, pipe } from 'ramda';
 import RepoHealth from '../components/RepoHealth';
 import SearchInput from '../components/SearchInput';
 import { UpChevron, DownChevron } from '../components/Icons';
@@ -10,9 +11,11 @@ const fetchProjectMetrics = (collection: string, project: string) => (
   fetch(`/api/${collection}_${project}.json`).then(res => res.json())
 );
 
+const filterBySearchTerm = (searchTerm: string) => filter(({ name }) => name.toLowerCase().includes(searchTerm.toLowerCase()));
+
 const Project: React.FC = () => {
   const [repoAnalysis, setRepoAnalysis] = useState<ProjectAnalysis | undefined>();
-  const [searchString, setSearchString] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
   const { collection, project } = useParams<{ collection: string, project: string }>();
@@ -39,8 +42,9 @@ const Project: React.FC = () => {
   const sortFunction = (a: RepoAnalysis, b: RepoAnalysis) => (a.rating > b.rating ? sort : sort * -1);
   const getSortFunction = (sortBy: string) => (sortBy === 'overall' ? sortFunction : sortByIndicators(sortBy));
 
+  // const filteredRepos = pipe(filterBySearchTerm(searchTerm))(repoAnalysis.repos);
   const filteredRepos = repoAnalysis.repos
-    .filter(repo => repo.name.toLowerCase().includes(searchString.toLowerCase()))
+    .filter(repo => repo.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort(getSortFunction(sortBy));
 
   return (
@@ -60,7 +64,7 @@ const Project: React.FC = () => {
           </p>
         </div>
         <div className="flex justify-between w-full items-center">
-          <SearchInput className="w-1/3" onSearch={searchString => setSearchString(searchString)} searchString={searchString} />
+          <SearchInput className="w-1/3" onSearch={searchTerm => setSearchTerm(searchTerm)} searchTerm={searchTerm} />
           <div className="">
             <button
               className="text-base font-medium text-gray-600
@@ -69,7 +73,7 @@ const Project: React.FC = () => {
               onClick={() => setSort(sort * -1)}
             >
               {sort === 1 ? <UpChevron className="-ml-2" /> : <DownChevron className="-ml-2" />}
-              Sort by Rating
+              Sort by
             </button>
             <Select
               className="mr-6"

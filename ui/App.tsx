@@ -14,7 +14,7 @@ const App: React.FC = () => (
     <div className="container max-w-screen-xl mx-auto">
       <Router>
         <Link to="/">
-          <img src={logo} alt="Logo" />
+          <img src={logo} alt="Logo" className="w-32" />
         </Link>
         <Switch>
           <Route path="/:collection/:project">
