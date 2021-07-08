@@ -14,8 +14,7 @@ const Project: React.FC = () => {
   const [repoAnalysis, setRepoAnalysis] = useState<ProjectAnalysis | undefined>();
   const [searchString, setSearchString] = useState<string>('');
   const [sort, setSort] = useState<number>(-1);
-  // const [timeframe, setTimeframe] = useState<string>('30');
-  const [sortBy, setSortBy] = useState<string>('overall');
+  const [sortBy, setSortBy] = useState<string>('Builds');
   const { collection, project } = useParams<{ collection: string, project: string }>();
 
   useEffect(() => {
@@ -25,8 +24,8 @@ const Project: React.FC = () => {
   if (!repoAnalysis) return <div>Loading...</div>;
 
   const sortByIndicators = (sortBy: string) => (a: RepoAnalysis, b: RepoAnalysis) => {
-    const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.rating;
-    const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.rating;
+    const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
+    const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.count;
     if (branchRatingA && branchRatingB) {
       return (branchRatingA > branchRatingB) ? sort : sort * -1;
     }
@@ -43,6 +42,8 @@ const Project: React.FC = () => {
   const filteredRepos = repoAnalysis.repos
     .filter(repo => repo.name.toLowerCase().includes(searchString.toLowerCase()))
     .sort(getSortFunction(sortBy));
+
+  console.log({ filteredRepos });
 
   return (
     <>
@@ -62,13 +63,7 @@ const Project: React.FC = () => {
           <SearchInput onSearch={searchString => setSearchString(searchString)} searchString={searchString} />
         </div>
         <div className="flex items-end">
-          {/* <div className="mr-4 mt-16">
-            <Select
-              onChange={(val: string) => setTimeframe(val)}
-              options={[{ label: 'Last 30 days', value: '30' }]}
-            />
-          </div> */}
-          {/* <div className="mt-6">
+          <div className="mt-6">
             <button
               className="text-base font-medium text-gray-600
                 text-center flex items-end justify-end rounded-lg cursor-pointer mb-4"
@@ -80,18 +75,18 @@ const Project: React.FC = () => {
             </button>
             <Select
               className="mr-6"
-              onChange={(val: string) => setSortBy(val)}
+              onChange={setSortBy}
               options={[
-                { label: 'Overall', value: 'overall' },
+                { label: 'Builds', value: 'Builds' },
                 { label: 'Branches', value: 'Branches' },
                 { label: 'PR', value: 'PR' },
-                { label: 'Builds', value: 'Builds' },
                 { label: 'Test Coverage', value: 'Test Coverage' },
                 { label: 'Code Quality', value: 'Code Quality' },
                 { label: 'Releases', value: 'Releases' }
               ]}
+              value={sortBy}
             />
-          </div> */}
+          </div>
         </div>
       </div>
       {filteredRepos.length ? filteredRepos.map(repo => (
