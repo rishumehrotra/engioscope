@@ -23,7 +23,7 @@ type SonarPaging = {
 };
 
 const sortByLastAnalysedDate = (a: SonarRepo, b: SonarRepo) => (
-  new Date(a.lastAnalysisDate).getTime() - new Date(b.lastAnalysisDate).getTime()
+  new Date(b.lastAnalysisDate).getTime() - new Date(a.lastAnalysisDate).getTime()
 );
 
 const getCurrentRepo = (repoName: string) => pipe(
@@ -37,14 +37,20 @@ const reposAtSonarServer = (pageIndex = 1) => async (sonarServer: Config['sonar'
   const sonarProjectsResponse = await fetch(`${url}/api/projects/search?p=${pageIndex}&ps=500`, {
     method: 'GET',
     headers: {
-      Authorization: `Basic ${token}`
+      Authorization: `Basic ${Buffer.from(`${token}:`).toString('base64')}`
     }
   });
-  const parsed = await sonarProjectsResponse.json() as { paging: SonarPaging, components: SonarRepo[] };
-  return [
-    ...parsed.components.map(component => ({ ...component, url })),
-    ...(parsed.paging.pageSize === parsed.components.length ? await reposAtSonarServer(parsed.paging.pageIndex + 1)(sonarServer) : [])
-  ];
+  const responseText = await sonarProjectsResponse.text();
+  try {
+    const parsed = JSON.parse(responseText) as { paging: SonarPaging, components: SonarRepo[] };
+    return [
+      ...parsed.components.map(component => ({ ...component, url })),
+      ...(parsed.paging.pageSize === parsed.components.length ? await reposAtSonarServer(parsed.paging.pageIndex + 1)(sonarServer) : [])
+    ];
+  } catch (e) {
+    console.error({ sonarServer, responseText, status: sonarProjectsResponse.status });
+    throw e;
+  }
 };
 
 export default (config: Config) => {
@@ -55,11 +61,11 @@ export default (config: Config) => {
     () => Promise.all(config.sonar.map(reposAtSonarServer())).then(list => list.flat())
   );
 
-  return async (project: string) => async (repoName: string): Promise<Measure[] | undefined> => {
+  return async (project: string) => async (repoName: string): Promise<Measure[]> => {
     const currentSonarRepo = getCurrentRepo(repoName)(await sonarRepos);
-    if (!currentSonarRepo) return undefined;
+    if (!currentSonarRepo) return [];
 
-    const codeQuality = await withDiskCache(
+    return withDiskCache(
       ['sonar', project, repoName],
       async () => {
         const response = await fetch(`${currentSonarRepo.url}/api/measures/component?${qs.stringify({
@@ -67,10 +73,8 @@ export default (config: Config) => {
           metricKeys: requiredMetrics.join(',')
         })}`);
 
-        return (await response.json()).component as CodeQuality;
+        return ((await response.json()).component as CodeQuality)?.measures || [];
       }
     );
-
-    return codeQuality.measures;
   };
 };

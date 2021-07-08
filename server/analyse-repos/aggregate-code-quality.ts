@@ -120,8 +120,8 @@ const toTitleCase = (str: string) => str.replace(
   txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
 );
 
-export default (measures: Measure[] | undefined): AggregagedCodeQuality => {
-  if (!measures) return { codeQuality: unknownCodeQuality };
+export default (measures: Measure[]): AggregagedCodeQuality => {
+  if (!measures.length) return { codeQuality: unknownCodeQuality };
 
   return {
     languages: formatLoc(measures.find(isMeasureName('ncloc_language_distribution'))?.value),
