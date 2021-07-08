@@ -43,8 +43,6 @@ const Project: React.FC = () => {
     .filter(repo => repo.name.toLowerCase().includes(searchString.toLowerCase()))
     .sort(getSortFunction(sortBy));
 
-  console.log({ filteredRepos });
-
   return (
     <>
       <div className="justify-between my-8">
@@ -79,10 +77,10 @@ const Project: React.FC = () => {
               options={[
                 { label: 'Builds', value: 'Builds' },
                 { label: 'Branches', value: 'Branches' },
-                { label: 'PR', value: 'PR' },
-                { label: 'Test Coverage', value: 'Test Coverage' },
-                { label: 'Code Quality', value: 'Code Quality' },
-                { label: 'Releases', value: 'Releases' }
+                { label: 'Pull requests', value: 'Pull requests' },
+                { label: 'Tests', value: 'Tests' },
+                { label: 'Releases', value: 'Releases' },
+                { label: 'Code quality', value: 'Code quality' }
               ]}
               value={sortBy}
             />
