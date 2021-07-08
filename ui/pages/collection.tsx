@@ -35,7 +35,7 @@ const Collection: React.FC = () => {
 
   return (
     <div className="text-5xl">
-      <div className="mt-32 grid grid-flow-row gap-16 grid-cols-3 auto-rows-fr">
+      <div className="mt-32 grid grid-flow-row gap-16 grid-col-1 md:grid-cols-2 lg:grid-cols-3  auto-rows-fr">
         {collections.map(collection => (
           <Project
             key={collection.name[1]}

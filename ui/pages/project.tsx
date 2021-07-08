@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { filter, pipe } from 'ramda';
 import RepoHealth from '../components/RepoHealth';
 import SearchInput from '../components/SearchInput';
 import { UpChevron, DownChevron } from '../components/Icons';
@@ -11,20 +10,34 @@ const fetchProjectMetrics = (collection: string, project: string) => (
   fetch(`/api/${collection}_${project}.json`).then(res => res.json())
 );
 
-const filterBySearchTerm = (searchTerm: string) => filter(({ name }) => name.toLowerCase().includes(searchTerm.toLowerCase()));
+const ProjectDetails : React.FC<Pick<ProjectAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
+  <div className="mt-4">
+    <h1 className="text-4xl font-semibold text-gray-800">
+      {projectAnalysis.name[1]}
+      <span className="text-base ml-2 text-gray-600">
+        {projectAnalysis.repos.length}
+        {'   '}
+        repositories
+      </span>
+    </h1>
+    <p className="italic text-sm text-gray-600 mb-8">
+      {`Last updated on: ${projectAnalysis.lastUpdated}`}
+    </p>
+  </div>
+);
 
 const Project: React.FC = () => {
-  const [repoAnalysis, setRepoAnalysis] = useState<ProjectAnalysis | undefined>();
+  const [projectAnalysis, setProjectAnalysis] = useState<ProjectAnalysis | undefined>();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
   const { collection, project } = useParams<{ collection: string, project: string }>();
 
   useEffect(() => {
-    fetchProjectMetrics(collection, project).then(setRepoAnalysis);
+    fetchProjectMetrics(collection, project).then(setProjectAnalysis);
   }, [collection, project]);
 
-  if (!repoAnalysis) return <div>Loading...</div>;
+  if (!projectAnalysis) return <div>Loading...</div>;
 
   const sortByIndicators = (sortBy: string) => (a: RepoAnalysis, b: RepoAnalysis) => {
     const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
@@ -42,29 +55,16 @@ const Project: React.FC = () => {
   const sortFunction = (a: RepoAnalysis, b: RepoAnalysis) => (a.rating > b.rating ? sort : sort * -1);
   const getSortFunction = (sortBy: string) => (sortBy === 'overall' ? sortFunction : sortByIndicators(sortBy));
 
-  // const filteredRepos = pipe(filterBySearchTerm(searchTerm))(repoAnalysis.repos);
-  const filteredRepos = repoAnalysis.repos
+  const filteredRepos = projectAnalysis.repos
     .filter(repo => repo.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort(getSortFunction(sortBy));
 
   return (
     <>
       <div className="justify-between my-8">
-        <div className="mt-4">
-          <h1 className="text-4xl font-semibold text-gray-800">
-            {repoAnalysis.name[1]}
-            <span className="text-base ml-2 text-gray-600">
-              {repoAnalysis.repos.length}
-              {'   '}
-              repositories
-            </span>
-          </h1>
-          <p className="italic text-sm text-gray-600 mb-8">
-            {`Last updated on: ${repoAnalysis.lastUpdated}`}
-          </p>
-        </div>
+        <ProjectDetails name={projectAnalysis.name} repos={projectAnalysis.repos} lastUpdated={projectAnalysis.lastUpdated} />
         <div className="flex justify-between w-full items-center">
-          <SearchInput className="w-1/3" onSearch={searchTerm => setSearchTerm(searchTerm)} searchTerm={searchTerm} />
+          <SearchInput className="w-1/3" onSearch={setSearchTerm} searchTerm={searchTerm} />
           <div className="">
             <button
               className="text-base font-medium text-gray-600
