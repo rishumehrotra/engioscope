@@ -4,10 +4,11 @@ import { Search } from './Icons';
 type SearchInputProps = {
   searchString: string;
   onSearch: (searchString: string) => void;
+  className: string
 }
 
-const SearchInput: React.FC<SearchInputProps> = ({ searchString, onSearch }) => (
-  <div className="pt-3 relative mx-auto text-gray-600">
+const SearchInput: React.FC<SearchInputProps> = ({ searchString, onSearch, className }) => (
+  <div className={`${className} text-gray-600 h-full flex items-between`}>
     <input
       className="bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none w-full"
       type="search"

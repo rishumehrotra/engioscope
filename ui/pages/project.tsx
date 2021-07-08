@@ -47,7 +47,7 @@ const Project: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between my-8">
+      <div className="justify-between my-8">
         <div className="mt-4">
           <h1 className="text-4xl font-semibold text-gray-800">
             {repoAnalysis.name[1]}
@@ -60,10 +60,10 @@ const Project: React.FC = () => {
           <p className="italic text-sm text-gray-600 mb-8">
             {`Last updated on: ${repoAnalysis.lastUpdated}`}
           </p>
-          <SearchInput onSearch={searchString => setSearchString(searchString)} searchString={searchString} />
         </div>
-        <div className="flex items-end">
-          <div className="mt-6">
+        <div className="flex justify-between w-full items-center">
+          <SearchInput className="w-1/3" onSearch={searchString => setSearchString(searchString)} searchString={searchString} />
+          <div className="">
             <button
               className="text-base font-medium text-gray-600
                 text-center flex items-end justify-end rounded-lg cursor-pointer mb-4"
