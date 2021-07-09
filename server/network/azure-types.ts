@@ -19,14 +19,17 @@ export type DeploymentOperationStatus = 'All' | 'Approved' | 'Canceled' | 'Cance
 | 'Pending' | 'PhaseCanceled' | 'PhaseFailed' | 'PhaseInProgress'
 | 'PhasePartiallySucceeded' | 'PhaseSucceeded' | 'Queued' | 'QueuedForAgent'
 | 'QueuedForPipeline' | 'Rejected' | 'Scheduled' | 'Undefined';
+export type PullRequestStatus = 'abandoned' | 'active' | 'all' | 'completed' | 'notSet';
+export type PullRequestAsyncStatus = 'conflicts' | 'failure' | 'notSet' | 'queued' | 'rejectedByPolicy' | 'succeeded';
+export type GitPullRequestMergeStrategy = 'noFastForward' | 'rebase' | 'rebaseMerge' | 'squash';
 
 export type TeamProjectReference = {
   id: string,
   name: string,
-  description: string,
-  url: string,
+  description?: string,
+  url?: string,
   state: ProjectState,
-  revision: number,
+  revision?: number,
   visibility: ProjectVisibility,
   lastUpdatedTime: Date
 };
@@ -203,3 +206,46 @@ export type Release = {
   url: string,
   projectReference: { id: string, name: string }
 };
+
+export type GitCommitRef = {
+  commitId: string,
+  url: string
+};
+
+export type GitPullRequestCompletionOptions = {
+  mergeCommitMessage: string;
+  mergeStrategy: GitPullRequestMergeStrategy;
+  bypassReason: string;
+  triggeredByAutoComplete: boolean;
+};
+
+export type GitPullRequest = {
+  repository: {
+    id: string,
+    name: string,
+    url: string,
+    project: TeamProjectReference
+  },
+  pullRequestId: number,
+  codeReviewId: number,
+  status: PullRequestStatus,
+  createdBy: IdentityRef,
+  creationDate: Date,
+  closedDate: Date,
+  title: string,
+  description: string,
+  sourceRefName: string,
+  targetRefName: string,
+  mergeStatus: PullRequestAsyncStatus,
+  isDraft: boolean,
+  mergeId: string,
+  lastMergeSourceCommit: GitCommitRef,
+  lastMergeTargetCommit: GitCommitRef,
+  lastMergeCommit: GitCommitRef,
+  reviewers: (IdentityRef & { vote: number })[],
+  url: string,
+  completionOptions: GitPullRequestCompletionOptions,
+  supportsIterations: boolean,
+  completionQueueTime: Date
+};
+

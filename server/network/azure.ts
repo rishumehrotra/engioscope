@@ -1,6 +1,8 @@
 import { Config } from '../types';
 import { pastDate } from '../utils';
-import { Build, GitRepository, Release } from './azure-types';
+import {
+  Build, GitPullRequest, GitRepository, Release
+} from './azure-types';
 import createPaginatedGetter from './create-paginated-getter';
 import { FetchResponse } from './fetch-with-disk-cache';
 
@@ -55,6 +57,14 @@ export default (config: Config) => {
         url: url(collectionName, projectName, '/build/builds'),
         qsParams: { minTime: pastDate(config.lookAtPast).toISOString() },
         cacheFile: `${collectionName}_${projectName}_builds`
+      })
+    ),
+
+    getPRs: (collectionName: string, projectName: string) => (
+      list<GitPullRequest>({
+        url: url(collectionName, projectName, '/git/pullrequests'),
+        qsParams: { 'searchCriteria.status': 'all' },
+        cacheFile: `${collectionName}_${projectName}_prs`
       })
     ),
 
