@@ -288,3 +288,22 @@ export type TestRun = {
   release: ReleaseReference,
   webAccessUrl: string
 };
+
+export type BuildCoverage = {
+  coverageData: {
+    buildFlavor: string,
+    buiildPlatform: string,
+    coverageStats: {
+      covered: number,
+      delta?: number,
+      isDeltaAvailable?: boolean,
+      label: string,
+      position: number,
+      total: number
+    }[]
+  }[],
+  build: {
+    id: string,
+    url: string
+  }
+};

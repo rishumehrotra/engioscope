@@ -1,10 +1,12 @@
+import fetch from 'node-fetch';
+import qs from 'qs';
 import { Config } from '../types';
 import { pastDate } from '../utils';
 import {
-  Build, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
+  Build, BuildCoverage, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
 } from './azure-types';
 import createPaginatedGetter from './create-paginated-getter';
-import { FetchResponse } from './fetch-with-disk-cache';
+import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -28,6 +30,7 @@ export default (config: Config) => {
     Authorization: `Basic ${Buffer.from(`:${config.token}`).toString('base64')}`
   };
   const paginatedGet = createPaginatedGetter(config);
+  const getWithCache = fetchWithDiskCache(config);
   const url = (collectionName: string, projectName: string, path: string) => (
     `${config.host}${collectionName}/${projectName}/_apis${path}`
   );
@@ -81,6 +84,15 @@ export default (config: Config) => {
         qsParams: { includeRunDetails: 'true' },
         cacheFile: `${collectionName}_${projectName}_testruns`
       })
+    ),
+
+    getTestCoverage: async (collectionName: string, projectName: string, buildId: number) => (
+      getWithCache<BuildCoverage>(`${collectionName}_${projectName}_${buildId.toString()}_coverage`, () => (
+        fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
+          'api-version': '5.1-preview',
+          buildId: buildId.toString()
+        })}`), { headers: authHeader })
+      )).then(res => res.data)
     ),
 
     getReleases: async (collectionName: string, projectName: string) => (
