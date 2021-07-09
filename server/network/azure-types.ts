@@ -249,3 +249,10 @@ export type GitPullRequest = {
   completionQueueTime: Date
 };
 
+export type GitBranchStats = {
+  aheadCount: number,
+  behindCount: number,
+  commit: GitCommitRef,
+  isBaseVersion: boolean,
+  name: string
+}
