@@ -14,8 +14,8 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
         <div
           className="w-full cursor-pointer"
           onClick={() => {
-            setSelectedIndicator(!selectedIndicator ? repo.indicators[0] : null);
             setIsDetailsOpen(!isDetailsOpen);
+            setSelectedIndicator(!selectedIndicator ? repo.indicators[0] : selectedIndicator);
           }}
           role="tab"
         >
@@ -50,7 +50,9 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                           setSelectedIndicator({
                             name, rating, count, indicators
                           });
-                          setIsDetailsOpen(!isDetailsOpen);
+                          if (!selectedIndicator?.name || selectedIndicator?.name === name || !isDetailsOpen) {
+                            setIsDetailsOpen(!isDetailsOpen);
+                          }
                         }}
                         key={name}
                         title={!rating ? `${name} is not available` : ''}
