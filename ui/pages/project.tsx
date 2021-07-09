@@ -68,10 +68,8 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
   if (branchRatingA && branchRatingB) {
     return (branchRatingA > branchRatingB) ? sort : sort * -1;
   }
-
   if (branchRatingA) return sort;
   if (branchRatingB) return sort * -1;
-
   return (a.rating > b.rating ? sort : sort * -1);
 };
 
@@ -99,9 +97,11 @@ const Project: React.FC = () => {
   return (
     <>
       <div className="my-8">
-        <ProjectDetails name={projectAnalysis.name} repos={projectAnalysis.repos} lastUpdated={projectAnalysis.lastUpdated} />
-        <div className="flex justify-between w-full items-center">
+        <div className="flex justify-end -mt-20">
           <SearchInput className="w-1/3" onSearch={setSearchTerm} searchTerm={searchTerm} />
+        </div>
+        <div className="flex justify-between w-full items-center mt-8">
+          <ProjectDetails name={projectAnalysis.name} repos={projectAnalysis.repos} lastUpdated={projectAnalysis.lastUpdated} />
           <SortButtons sort={sort} setSort={setSort} setSortBy={setSortBy} sortBy={sortBy} />
         </div>
       </div>
