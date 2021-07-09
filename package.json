@@ -1,6 +1,6 @@
 {
   "name": "project-health-tool",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "scripts": {
     "watch:tailwind": "tailwind -i ui/tailwind.css -o ui/tailwind.output.css --watch",
     "start:react": "vite --open",
