@@ -17,7 +17,7 @@ const Project: React.FC<{
       >
         {rating}
       </p> */}
-      <p className="text-3xl text-center font-semibold text-gray-700">{projectName}</p>
+      <p className="overflow-ellipsis overflow-hidden ... text-3xl text-center font-semibold text-gray-700">{projectName}</p>
       <div className="italic text-sm flex justify-center w-full mt-4 text-gray-600">
         {`Last updated on: ${lastUpdated}`}
       </div>
