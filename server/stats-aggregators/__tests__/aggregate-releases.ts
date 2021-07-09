@@ -1,4 +1,4 @@
-import { EnvironmentStatus } from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
+import { Release } from '../../network/azure-types';
 import aggregateReleases from '../aggregate-releases';
 
 test('it should aggregate releases (single release)', () => {
@@ -12,11 +12,11 @@ test('it should aggregate releases (single release)', () => {
       }],
       environments: [{
         name: 'SIT',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }]
     }
-  ]);
+  ] as Release[]);
 
   expect(byRepoId('repo-id-1')).toMatchSnapshot();
   expect(byRepoId('something-else')).toMatchSnapshot();
@@ -33,7 +33,7 @@ test('it should aggregate releases (two releases, different environments)', () =
       }],
       environments: [{
         name: 'SIT',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }]
     },
@@ -46,11 +46,11 @@ test('it should aggregate releases (two releases, different environments)', () =
       }],
       environments: [{
         name: 'Preprod',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }]
     }
-  ]);
+  ] as Release[]);
 
   expect(byRepoId('repo-id-1')).toMatchSnapshot();
 });
@@ -66,11 +66,11 @@ test('it should aggregate releases (mutiple releases, repeating environments)', 
       }],
       environments: [{
         name: 'SIT',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }, {
         name: 'preprod',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }]
     },
@@ -83,15 +83,15 @@ test('it should aggregate releases (mutiple releases, repeating environments)', 
       }],
       environments: [{
         name: 'SIT',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }, {
         name: 'preprod',
-        status: EnvironmentStatus.Succeeded,
+        status: 'succeeded',
         deploySteps: [{ lastModifiedOn: new Date('2020-10-10T10:10') }]
       }]
     }
-  ]);
+  ] as Release[]);
 
   expect(byRepoId('repo-id-1')).toMatchSnapshot();
 });

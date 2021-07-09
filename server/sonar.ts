@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import qs from 'qs';
 import { pipe, sort } from 'ramda';
 import { CodeQuality, Config, Measure } from './types';
-import { requiredMetrics } from './analyse-repos/aggregate-code-quality';
+import { requiredMetrics } from './stats-aggregators/aggregate-code-quality';
 import usingDiskCache from './using-disk-cache';
 import { filter, getFirst } from './utils';
 

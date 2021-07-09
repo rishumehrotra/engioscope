@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { EnvironmentStatus, Release, ReleaseEnvironment } from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
+import { Release, ReleaseEnvironment } from '../network/azure-types';
 import { ChildIndicator, TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { shortDateFormat, isMaster } from '../utils';
@@ -141,7 +141,7 @@ export default (releases: Release[]) => {
         [environmentName(environment)]: {
           lastDeploymentDate: lastDeploymentDate(environment),
           count: 1,
-          successful: environment.status === EnvironmentStatus.Succeeded ? 1 : 0
+          successful: environment.status === 'succeeded' ? 1 : 0
         }
       }), {} as Record<EnvironmentName, EnvironmentStatsWithoutMasterCount>);
 

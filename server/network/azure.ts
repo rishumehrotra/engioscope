@@ -3,7 +3,7 @@ import qs from 'qs';
 import { Config } from '../types';
 import { pastDate } from '../utils';
 import {
-  Build, BuildCoverage, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
+  Build, CodeCoverageSummary, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
 } from './azure-types';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -87,7 +87,7 @@ export default (config: Config) => {
     ),
 
     getTestCoverage: async (collectionName: string, projectName: string, buildId: number) => (
-      getWithCache<BuildCoverage>(`${collectionName}_${projectName}_${buildId.toString()}_coverage`, () => (
+      getWithCache<CodeCoverageSummary>(`${collectionName}_${projectName}_${buildId.toString()}_coverage`, () => (
         fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
           'api-version': '5.1-preview',
           buildId: buildId.toString()

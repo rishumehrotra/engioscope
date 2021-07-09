@@ -46,7 +46,7 @@ const getFrontMatter = async (filePath: string) => (
 );
 
 const looksLikeDate = (value: string) => (
-  /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/.test(value)
+  /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(.*Z)/.test(value)
 );
 
 const parseDate = (_: string, value: unknown) => {

@@ -289,19 +289,21 @@ export type TestRun = {
   webAccessUrl: string
 };
 
-export type BuildCoverage = {
-  coverageData: {
-    buildFlavor: string,
-    buiildPlatform: string,
-    coverageStats: {
-      covered: number,
-      delta?: number,
-      isDeltaAvailable?: boolean,
-      label: string,
-      position: number,
-      total: number
-    }[]
-  }[],
+export type CodeCoverageData = {
+  buildFlavor: string;
+  buiildPlatform: string;
+  coverageStats: {
+    covered: number;
+    delta?: number;
+    isDeltaAvailable?: boolean;
+    label: string;
+    position: number;
+    total: number;
+  }[];
+};
+
+export type CodeCoverageSummary = {
+  coverageData: CodeCoverageData[],
   build: {
     id: string,
     url: string

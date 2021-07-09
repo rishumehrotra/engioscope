@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import qs from 'qs';
 import { pipe, sort } from 'ramda';
 import { Config, Measure } from '../types';
-import { requiredMetrics } from '../analyse-repos/aggregate-code-quality';
+import { requiredMetrics } from '../stats-aggregators/aggregate-code-quality';
 import { filter, getFirst } from '../utils';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';

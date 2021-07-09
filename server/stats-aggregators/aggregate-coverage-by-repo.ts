@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Build } from 'azure-devops-node-api/interfaces/BuildInterfaces';
-import { CodeCoverageData, CodeCoverageSummary, TestRun } from 'azure-devops-node-api/interfaces/TestInterfaces';
+import {
+  Build, CodeCoverageData, CodeCoverageSummary, TestRun
+} from '../network/azure-types';
 import { TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { isMaster } from '../utils';
