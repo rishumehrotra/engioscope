@@ -34,7 +34,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
               </div>
 
               <div className="mt-4">
-                <div className="flex">
+                <div className="flex flex-wrap">
                   {
                     repo.indicators.map(({
                       name, rating, indicators, count
@@ -88,7 +88,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
       </div>
       {isDetailsOpen && selectedIndicator && selectedIndicator.indicators ? (
         <div className="overflow-hidden">
-          <RepoHealthDetails indicators={selectedIndicator.indicators} gridNumber={selectedIndicator.name === 'Releases' ? 4 : 5} />
+          <RepoHealthDetails indicators={selectedIndicator.indicators} gridCols={selectedIndicator.name === 'Releases' ? 4 : 5} />
         </div>
       ) : null}
 

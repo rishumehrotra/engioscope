@@ -3,11 +3,11 @@ import { ChildIndicator } from '../../shared-types';
 
 type RepoHealthDetailsProps = {
   indicators: ChildIndicator [],
-  gridNumber: number;
+  gridCols: number;
 }
 
-const RepoHealthDetails: React.FC<RepoHealthDetailsProps> = ({ indicators, gridNumber }) => (indicators?.length ? (
-  <div className={`grid ${gridNumber === 4 ? 'grid-cols-4' : 'grid-cols-5'} gap-4 p-6 rounded-lg bg-gray-100 `}>
+const RepoHealthDetails: React.FC<RepoHealthDetailsProps> = ({ indicators, gridCols }) => (indicators?.length ? (
+  <div className={`grid ${gridCols === 4 ? 'grid-cols-4' : 'grid-cols-5'} gap-4 p-6 rounded-lg bg-gray-100 `}>
     {
       indicators.map(({
         value, name, tooltip, additionalValue

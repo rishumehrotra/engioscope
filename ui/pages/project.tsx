@@ -26,6 +26,44 @@ const ProjectDetails : React.FC<Pick<ProjectAnalysis, 'name' | 'repos' | 'lastUp
   </div>
 );
 
+type SortButtonsProps = {
+  sort: number;
+  setSort: React.Dispatch<React.SetStateAction<number>>;
+  sortBy: string;
+  setSortBy: React.Dispatch<React.SetStateAction<string>>
+}
+
+const SortButtons: React.FC<SortButtonsProps> = ({
+  sort, setSort, setSortBy, sortBy
+}) => (
+  <div>
+    <button
+      className="text-base font-medium text-gray-600
+      text-center flex items-end justify-end rounded-lg cursor-pointer mb-4"
+      style={{ outline: 'none' }}
+      onClick={() => setSort(sort * -1)}
+    >
+      {sort === 1 ? <UpChevron className="-ml-2" /> : <DownChevron className="-ml-2" />}
+      Sort by
+    </button>
+    <Select
+      className="mr-6"
+      onChange={setSortBy}
+      options={[
+        { label: 'Builds', value: 'Builds' },
+        { label: 'Branches', value: 'Branches' },
+        { label: 'Pull requests', value: 'Pull requests' },
+        { label: 'Tests', value: 'Tests' },
+        { label: 'Releases', value: 'Releases' },
+        { label: 'Code quality', value: 'Code quality' }
+      ]}
+      value={sortBy}
+    />
+  </div>
+);
+
+const sortFunction = (sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => (a.rating > b.rating ? sort : sort * -1);
+
 const Project: React.FC = () => {
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectAnalysis | undefined>();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -52,8 +90,7 @@ const Project: React.FC = () => {
     return (a.rating > b.rating ? sort : sort * -1);
   };
 
-  const sortFunction = (a: RepoAnalysis, b: RepoAnalysis) => (a.rating > b.rating ? sort : sort * -1);
-  const getSortFunction = (sortBy: string) => (sortBy === 'overall' ? sortFunction : sortByIndicators(sortBy));
+  const getSortFunction = (sortBy: string) => (sortBy === 'overall' ? sortFunction(sort) : sortByIndicators(sortBy));
 
   const filteredRepos = projectAnalysis.repos
     .filter(repo => repo.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -61,34 +98,11 @@ const Project: React.FC = () => {
 
   return (
     <>
-      <div className="justify-between my-8">
+      <div className="my-8">
         <ProjectDetails name={projectAnalysis.name} repos={projectAnalysis.repos} lastUpdated={projectAnalysis.lastUpdated} />
         <div className="flex justify-between w-full items-center">
           <SearchInput className="w-1/3" onSearch={setSearchTerm} searchTerm={searchTerm} />
-          <div className="">
-            <button
-              className="text-base font-medium text-gray-600
-                text-center flex items-end justify-end rounded-lg cursor-pointer mb-4"
-              style={{ outline: 'none' }}
-              onClick={() => setSort(sort * -1)}
-            >
-              {sort === 1 ? <UpChevron className="-ml-2" /> : <DownChevron className="-ml-2" />}
-              Sort by
-            </button>
-            <Select
-              className="mr-6"
-              onChange={setSortBy}
-              options={[
-                { label: 'Builds', value: 'Builds' },
-                { label: 'Branches', value: 'Branches' },
-                { label: 'Pull requests', value: 'Pull requests' },
-                { label: 'Tests', value: 'Tests' },
-                { label: 'Releases', value: 'Releases' },
-                { label: 'Code quality', value: 'Code quality' }
-              ]}
-              value={sortBy}
-            />
-          </div>
+          <SortButtons sort={sort} setSort={setSort} setSortBy={setSortBy} sortBy={sortBy} />
         </div>
       </div>
       {filteredRepos.length ? filteredRepos.map(repo => (
