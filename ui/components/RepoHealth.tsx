@@ -34,7 +34,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
               </div>
 
               <div className="mt-4">
-                <div className="flex flex-wrap">
+                <div className="flex flex-wrap lg:flex-nowrap">
                   {
                     repo.indicators.map(({
                       name, rating, indicators, count
