@@ -1,4 +1,4 @@
-import { Release } from '../../network/azure-types';
+import { Release } from '../../azure-types';
 import aggregateReleases from '../aggregate-releases';
 
 test('it should aggregate releases (single release)', () => {

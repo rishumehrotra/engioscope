@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Build } from '../network/azure-types';
+import { Build } from '../azure-types';
 import { TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { minutes, statsStrings } from '../utils';

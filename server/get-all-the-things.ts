@@ -30,11 +30,8 @@ export default async (config: Config) => {
   const overallResults: ScrapedProject[] = await Promise.all(
     config.projects
       .map(async projectSpec => {
-        const start = Date.now();
-        console.log('Starting analysis for', projectSpec.join('/'));
         const analysis = await analyseProject(...projectSpec);
         const now = shortDateFormat(new Date());
-        console.log(`Took ${Date.now() - start}ms to analyse`, projectSpec.join('/'));
         await writeFile(
           `${projectSpec.join('_')}.json`,
           JSON.stringify({ lastUpdated: now, name: projectSpec, repos: analysis })

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
-} from '../network/azure-types';
+} from '../azure-types';
 import { TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { isMaster } from '../utils';

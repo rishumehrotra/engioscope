@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Release, ReleaseEnvironment } from '../network/azure-types';
+import { Release, ReleaseEnvironment } from '../azure-types';
 import { ChildIndicator, TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { shortDateFormat, isMaster } from '../utils';

@@ -4,7 +4,7 @@ import { Config } from '../types';
 import { pastDate } from '../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
-} from './azure-types';
+} from '../azure-types';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 

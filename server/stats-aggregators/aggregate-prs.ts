@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { GitPullRequest, PullRequestStatus } from '../network/azure-types';
+import { GitPullRequest, PullRequestStatus } from '../azure-types';
 import ratingConfig from '../rating-config';
 import { hours, statsStrings } from '../utils';
 import { average, withOverallRating } from './ratings';

@@ -1,4 +1,4 @@
-import { Build } from '../../network/azure-types';
+import { Build } from '../../azure-types';
 import { pastDate } from '../../utils';
 import aggregateBuildsByRepo from '../aggregate-builds-by-repo';
 

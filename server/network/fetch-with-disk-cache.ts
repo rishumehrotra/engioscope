@@ -24,9 +24,10 @@ export type FrontMatter = {
 
 export type FetchResponse<T> = FrontMatter & { data: T };
 
-const cacheLocation = join(process.cwd(), 'temp-cache');
+const cacheLocation = join(process.cwd(), 'cache');
 
 const cachePath = (fileName: string) => join(cacheLocation, `${fileName}.txt`);
+const fileNameForLogs = (fileName: string) => fileName.replace(`${process.cwd()}/`, '');
 
 const getFirstLine = async (pathToFile: string) => {
   const readable = createReadStream(pathToFile);
@@ -64,7 +65,7 @@ const streamToDisk = async (fileName: string, fetcher: Fetcher) => {
     throw new Error(`HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`);
   }
 
-  logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileName}`);
+  logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(fileName)}`);
 
   await fs.mkdir(cacheLocation, { recursive: true });
 
@@ -77,7 +78,7 @@ const streamToDisk = async (fileName: string, fetcher: Fetcher) => {
   fileStream.write('\n');
   await streamPipeline(response.body, fileStream);
 
-  logDisk(`${fileName} written.`);
+  logDisk(`${fileNameForLogs(fileName)} written.`);
 };
 
 export default (config: Config) => async <T>(fileName: string, fetcher: Fetcher): Promise<FetchResponse<T>> => {
@@ -89,7 +90,7 @@ export default (config: Config) => async <T>(fileName: string, fetcher: Fetcher)
     await streamToDisk(filePath, fetcher);
   }
 
-  logDisk(`Reading from file ${filePath}`);
+  logDisk(`Reading from file ${fileNameForLogs(filePath)}`);
   const fileContents = await fs.readFile(filePath, 'utf-8');
   const [frontMatterString, dataString] = fileContents.split('\n');
   return {
