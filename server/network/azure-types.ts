@@ -49,11 +49,11 @@ export type DefinitionReference = {
 
 export type IdentityRef = {
   displayName: string;
-  url: string;
+  url?: string;
   id: string;
-  uniqueName: string;
-  imageUrl: string;
-  descriptor: string;
+  uniqueName?: string;
+  imageUrl?: string;
+  descriptor?: string;
 };
 
 export type AgentPoolQueue = {
@@ -256,3 +256,35 @@ export type GitBranchStats = {
   isBaseVersion: boolean,
   name: string
 }
+
+export type ReleaseReference = {
+  id: number;
+  name: string;
+  environmentId: number;
+  environmentName: string | null;
+  definitionId: number;
+  environmentDefinitionId: number;
+  environmentDefinitionName: string | null;
+  creationDate: Date;
+};
+
+export type TestRun = {
+  id: number,
+  name: string,
+  url: string,
+  build: { id: string },
+  isAutomated: boolean,
+  owner: IdentityRef,
+  project: { id: string, name: string },
+  startedDate: Date,
+  completedDate: Date,
+  state: 'Unspecified' |'NotStarted' | 'InProgress' | 'Completed' | 'Waiting' | 'Aborted' | 'NeedsInvestigation',
+  totalTests: number,
+  incompleteTests: number,
+  notApplicableTests: number,
+  passedTests: number,
+  unanalyzedTests: number,
+  revision: number,
+  release: ReleaseReference,
+  webAccessUrl: string
+};

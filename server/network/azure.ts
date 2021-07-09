@@ -1,7 +1,7 @@
 import { Config } from '../types';
 import { pastDate } from '../utils';
 import {
-  Build, GitBranchStats, GitPullRequest, GitRepository, Release
+  Build, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
 } from './azure-types';
 import createPaginatedGetter from './create-paginated-getter';
 import { FetchResponse } from './fetch-with-disk-cache';
@@ -72,6 +72,14 @@ export default (config: Config) => {
       list<GitBranchStats>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/stats/branches`),
         cacheFile: `${collectionName}_${projectName}_${repoId}_branches`
+      })
+    ),
+
+    getTestRuns: async (collectionName: string, projectName: string) => (
+      list<TestRun>({
+        url: url(collectionName, projectName, '/test/runs'),
+        qsParams: { includeRunDetails: 'true' },
+        cacheFile: `${collectionName}_${projectName}_testruns`
       })
     ),
 
