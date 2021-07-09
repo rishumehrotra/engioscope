@@ -62,7 +62,22 @@ const SortButtons: React.FC<SortButtonsProps> = ({
   </div>
 );
 
-const sortFunction = (sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => (a.rating > b.rating ? sort : sort * -1);
+const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
+  const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
+  const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.count;
+  if (branchRatingA && branchRatingB) {
+    return (branchRatingA > branchRatingB) ? sort : sort * -1;
+  }
+
+  if (branchRatingA) return sort;
+  if (branchRatingB) return sort * -1;
+
+  return (a.rating > b.rating ? sort : sort * -1);
+};
+
+const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
+  repo.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
 
 const Project: React.FC = () => {
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectAnalysis | undefined>();
@@ -77,24 +92,9 @@ const Project: React.FC = () => {
 
   if (!projectAnalysis) return <div>Loading...</div>;
 
-  const sortByIndicators = (sortBy: string) => (a: RepoAnalysis, b: RepoAnalysis) => {
-    const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
-    const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.count;
-    if (branchRatingA && branchRatingB) {
-      return (branchRatingA > branchRatingB) ? sort : sort * -1;
-    }
-
-    if (branchRatingA) return sort;
-    if (branchRatingB) return sort * -1;
-
-    return (a.rating > b.rating ? sort : sort * -1);
-  };
-
-  const getSortFunction = (sortBy: string) => (sortBy === 'overall' ? sortFunction(sort) : sortByIndicators(sortBy));
-
   const filteredRepos = projectAnalysis.repos
-    .filter(repo => repo.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort(getSortFunction(sortBy));
+    .filter(bySearchTerm(searchTerm))
+    .sort(sortByIndicators(sortBy, sort));
 
   return (
     <>
