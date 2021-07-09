@@ -50,9 +50,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                           setSelectedIndicator({
                             name, rating, count, indicators
                           });
-                          if (!selectedIndicator?.name || selectedIndicator?.name === name) {
-                            setIsDetailsOpen(!isDetailsOpen);
-                          }
+                          setIsDetailsOpen(!isDetailsOpen);
                         }}
                         key={name}
                         title={!rating ? `${name} is not available` : ''}
