@@ -12,7 +12,7 @@ import aggregateCodeQuality from './stats-aggregators/aggregate-code-quality';
 import sonar from './network/sonar';
 import { Config } from './types';
 
-const scrapeLog = debug('scraper');
+const analyserLog = debug('analyser');
 
 const ratingWeightage = {
   Branches: {
@@ -66,7 +66,7 @@ export default (config: Config) => {
     const startTime = Date.now();
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collectionName, projectName);
 
-    scrapeLog(`Starting analysis for ${collectionName}/${projectName}`);
+    analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
     const [
       repos,
       { buildByRepoId, buildByBuildId },
@@ -86,7 +86,11 @@ export default (config: Config) => {
     );
 
     const analysisResults = await Promise.all(repos.map(async r => {
-      const [branches, coverage, { languages, codeQuality }] = await Promise.all([
+      const [
+        branches,
+        coverage,
+        { languages, codeQuality }
+      ] = await Promise.all([
         (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id!))
           .then(aggregateBranches),
         getCoverageByRepoId(r.id),
@@ -109,7 +113,7 @@ export default (config: Config) => {
       });
     }));
 
-    scrapeLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
+    analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
 
     return analysisResults;
   };

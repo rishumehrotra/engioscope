@@ -29,6 +29,6 @@ export type ProjectAnalysis = {
 
 export type ScrapedProject = {
   name: [collection: string, project: string];
-  lastUpdated: string;
-  rating: number;
+  lastUpdated: string | null;
+  rating: number | null;
 };

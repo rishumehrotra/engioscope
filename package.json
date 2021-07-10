@@ -24,6 +24,7 @@
   },
   "bin": "./dist/server/cli.js",
   "dependencies": {
+    "await-lock": "^2.1.0",
     "azure-devops-node-api": "^11.0.0",
     "chalk": "^4.1.1",
     "chokidar-cli": "^2.1.0",
