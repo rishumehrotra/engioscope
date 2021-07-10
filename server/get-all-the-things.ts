@@ -1,21 +1,24 @@
-/* eslint-disable no-console */
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import debug from 'debug';
 import projectAnalyser from './project-analyser';
 import { average } from './stats-aggregators/ratings';
 import { ScrapedProject } from '../shared-types';
 import { shortDateFormat } from './utils';
 import { Config } from './types';
 
-process.on('uncaughtException', console.log);
-process.on('unhandledRejection', console.log);
+const outputFileLog = debug('output-file');
+
+// eslint-disable-next-line no-console
+process.on('uncaughtException', console.error);
+// eslint-disable-next-line no-console
+process.on('unhandledRejection', console.error);
 
 const dataFolderPath = join(process.cwd(), 'data');
-
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
 const writeFile = (path: string, contents: string) => {
-  console.log('Writing file', join(dataFolderPath, path));
+  outputFileLog('Writing file', join(dataFolderPath, path).replace(`${process.cwd()}/`, ''));
   return fs.writeFile(
     join(dataFolderPath, path),
     contents,

@@ -1,6 +1,6 @@
 import { Build } from '../../azure-types';
 import { pastDate } from '../../utils';
-import aggregateBuildsByRepo from '../aggregate-builds-by-repo';
+import aggregateBuildsByRepo from '../aggregate-builds';
 
 test('aggregate-builds-by-repo', () => {
   const { buildByRepoId, buildByBuildId } = aggregateBuildsByRepo([

@@ -81,4 +81,3 @@ export default (builds: Build[]) => {
   };
 };
 /* eslint-enable @typescript-eslint/indent */
-

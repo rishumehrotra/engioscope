@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { GitCommitRef } from 'azure-devops-node-api/interfaces/GitInterfaces';
+import { GitCommitRef } from '../azure-types';
 
 type AggregatedCommits = {
   commitsByDev: Record<string, number>,

@@ -3,7 +3,7 @@ import { prop } from 'ramda';
 import debug from 'debug';
 import { RepoAnalysis, TopLevelIndicator } from '../shared-types';
 import azure from './network/azure';
-import aggregateBuildsByRepo from './stats-aggregators/aggregate-builds-by-repo';
+import aggregateBuilds from './stats-aggregators/aggregate-builds';
 import aggregateBranches from './stats-aggregators/aggregate-branches';
 import aggregatePrs from './stats-aggregators/aggregate-prs';
 import aggregateCoverageByRepo from './stats-aggregators/aggregate-coverage-by-repo';
@@ -64,6 +64,8 @@ export default (config: Config) => {
 
   return async (collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
     const startTime = Date.now();
+    const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collectionName, projectName);
+
     scrapeLog(`Starting analysis for ${collectionName}/${projectName}`);
     const [
       repos,
@@ -72,24 +74,20 @@ export default (config: Config) => {
       releaseByRepoId,
       prByRepoId
     ] = await Promise.all([
-      getRepositories(collectionName, projectName),
-      getBuilds(collectionName, projectName).then(aggregateBuildsByRepo),
-      getTestRuns(collectionName, projectName),
-      getReleases(collectionName, projectName).then(aggregateReleases),
-      getPRs(collectionName, projectName).then(aggregatePrs)
+      forProject(getRepositories),
+      forProject(getBuilds).then(aggregateBuilds),
+      forProject(getTestRuns),
+      forProject(getReleases).then(aggregateReleases),
+      forProject(getPRs).then(aggregatePrs)
     ]);
 
     const getCoverageByRepoId = aggregateCoverageByRepo(
-      testRuns,
-      buildByBuildId,
-      (buildId: number) => getTestCoverage(collectionName, projectName, buildId)
+      testRuns, buildByBuildId, forProject(getTestCoverage)
     );
 
     const analysisResults = await Promise.all(repos.map(async r => {
       const [branches, coverage, { languages, codeQuality }] = await Promise.all([
-        (r.size === 0
-          ? Promise.resolve([])
-          : getBranchesStats(collectionName, projectName, r.id!))
+        (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id!))
           .then(aggregateBranches),
         getCoverageByRepoId(r.id),
         codeQualityByRepoName(r.name!).then(aggregateCodeQuality)

@@ -207,9 +207,18 @@ export type Release = {
   projectReference: { id: string, name: string }
 };
 
+export type GitUserDate = {
+  date: Date,
+  emaiil: string,
+  imageUrl: string,
+  name: string
+};
+
 export type GitCommitRef = {
   commitId: string,
-  url: string
+  url: string,
+  author?: GitUserDate,
+  committer?: GitUserDate
 };
 
 export type GitPullRequestCompletionOptions = {

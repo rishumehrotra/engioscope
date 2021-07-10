@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { GitBranchStats } from 'azure-devops-node-api/interfaces/GitInterfaces';
 import { TopLevelIndicator } from '../../shared-types';
+import { GitBranchStats } from '../azure-types';
 import ratingConfig from '../rating-config';
 import { isWithinFortnight } from '../utils';
 import { withOverallRating } from './ratings';

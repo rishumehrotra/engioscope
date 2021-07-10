@@ -3,7 +3,8 @@ import qs from 'qs';
 import { Config } from '../types';
 import { pastDate } from '../utils';
 import {
-  Build, CodeCoverageSummary, GitBranchStats, GitPullRequest, GitRepository, Release, TestRun
+  Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
+  GitRepository, Release, TeamProjectReference, TestRun
 } from '../azure-types';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -48,6 +49,13 @@ export default (config: Config) => {
   );
 
   return {
+    getProjects: (collectionName: string) => (
+      list<TeamProjectReference>({
+        url: `${config.host}${collectionName}/_apis/projects`,
+        cacheFile: `${collectionName}_projects`
+      })
+    ),
+
     getRepositories: (collectionName: string, projectName: string) => (
       list<GitRepository>({
         url: url(collectionName, projectName, '/git/repositories'),
@@ -71,14 +79,14 @@ export default (config: Config) => {
       })
     ),
 
-    getBranchesStats: (collectionName: string, projectName: string, repoId: string) => (
+    getBranchesStats: (collectionName: string, projectName: string) => (repoId: string) => (
       list<GitBranchStats>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/stats/branches`),
         cacheFile: `${collectionName}_${projectName}_${repoId}_branches`
       })
     ),
 
-    getTestRuns: async (collectionName: string, projectName: string) => (
+    getTestRuns: (collectionName: string, projectName: string) => (
       list<TestRun>({
         url: url(collectionName, projectName, '/test/runs'),
         qsParams: { includeRunDetails: 'true' },
@@ -86,7 +94,7 @@ export default (config: Config) => {
       })
     ),
 
-    getTestCoverage: async (collectionName: string, projectName: string, buildId: number) => (
+    getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
       getWithCache<CodeCoverageSummary>(`${collectionName}_${projectName}_${buildId.toString()}_coverage`, () => (
         fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
           'api-version': '5.1-preview',
@@ -95,7 +103,7 @@ export default (config: Config) => {
       )).then(res => res.data)
     ),
 
-    getReleases: async (collectionName: string, projectName: string) => (
+    getReleases: (collectionName: string, projectName: string) => (
       list<Release>({
         url: url(collectionName, projectName, '/release/releases'),
         qsParams: {
@@ -103,6 +111,14 @@ export default (config: Config) => {
           $expand: 'environments,artifacts'
         },
         cacheFile: `${collectionName}_${projectName}_releases`
+      })
+    ),
+
+    getCommits: (collectionName: string, projectName: string, repoId: string) => (
+      list<GitCommitRef>({
+        url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
+        qsParams: { 'searchCriteria.fromDate': pastDate('15 days').toISOString() },
+        cacheFile: `${collectionName}_${projectName}_${repoId}_releases`
       })
     )
   };

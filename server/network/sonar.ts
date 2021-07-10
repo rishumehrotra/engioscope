@@ -49,7 +49,8 @@ export default (config: Config) => {
   const getWithCache = fetchWithDiskCache(config);
   const paginatedGet = createPaginatedGetter(config);
 
-  const sonarRepos = Promise.all(config.sonar.map(reposAtSonarServer(paginatedGet))).then(list => list.flat());
+  const sonarRepos = Promise.all(config.sonar.map(reposAtSonarServer(paginatedGet)))
+    .then(list => list.flat());
 
   return async (repoName: string): Promise<Measure[]> => {
     const currentSonarRepo = getCurrentRepo(repoName)(await sonarRepos);
