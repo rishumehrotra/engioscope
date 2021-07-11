@@ -2,14 +2,15 @@ import AwaitLock from 'await-lock';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
+import { prop } from 'ramda';
 import { average } from './stats-aggregators/ratings';
-import { RepoAnalysis, ScrapedProject } from '../shared-types';
+import { ProjectAnalysis, RepoAnalysis, ScrapedProject } from '../shared-types';
 import { doesFileExist, map, shortDateFormat } from './utils';
 import { Config } from './types';
 
 type ProjectSpec = Config['projects'][number];
 
-const outputFileLog = debug('output-file');
+const outputFileLog = debug('write-output');
 
 // Ugh OO, tainting my beautiful FP palace
 const lock = new AwaitLock();
@@ -29,14 +30,15 @@ const writeFile = (path: string, contents: string) => {
   );
 };
 
-const writeProjectSummaryFile = async (projectSpec: ProjectSpec, analysis: RepoAnalysis[]) => {
-  await createDataFolder;
-  const now = shortDateFormat(new Date());
-
-  return writeFile(`${projectSpec.join('_')}.json`, JSON.stringify({
-    lastUpdated: now, name: projectSpec, repos: analysis
-  }));
-};
+const writeProjectSummaryFile = async (projectSpec: ProjectSpec, analysis: RepoAnalysis[]) => (
+  createDataFolder.then(() => (
+    writeFile(`${projectSpec.join('_')}.json`, JSON.stringify({
+      lastUpdated: shortDateFormat(new Date()),
+      name: projectSpec,
+      repos: analysis
+    } as ProjectAnalysis))
+  ))
+);
 
 const matchingProject = (projectSpec: ProjectSpec) => (scrapedProject: { name: ProjectSpec }) => (
   scrapedProject.name[0] === projectSpec[0]
@@ -82,7 +84,7 @@ export default (config: Config) => (projectSpec: ProjectSpec) => async (analysis
     writeProjectSummaryFile(projectSpec, analysis),
     updateOverallSummary(config)({
       name: projectSpec,
-      rating: average(analysis.map(r => r.rating))
+      rating: average(analysis.map(prop('rating')))
     })
   ]);
 };

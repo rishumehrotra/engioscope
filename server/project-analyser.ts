@@ -6,7 +6,7 @@ import azure from './network/azure';
 import aggregateBuilds from './stats-aggregators/aggregate-builds';
 import aggregateBranches from './stats-aggregators/aggregate-branches';
 import aggregatePrs from './stats-aggregators/aggregate-prs';
-import aggregateCoverageByRepo from './stats-aggregators/aggregate-coverage-by-repo';
+import aggregateTestsByRepo from './stats-aggregators/aggregate-tests-by-repo';
 import aggregateReleases from './stats-aggregators/aggregate-releases';
 import aggregateCodeQuality from './stats-aggregators/aggregate-code-quality';
 import sonar from './network/sonar';
@@ -81,7 +81,7 @@ export default (config: Config) => {
       forProject(getPRs).then(aggregatePrs)
     ]);
 
-    const getCoverageByRepoId = aggregateCoverageByRepo(
+    const getCoverageByRepoId = aggregateTestsByRepo(
       testRuns, buildByBuildId, forProject(getTestCoverage)
     );
 

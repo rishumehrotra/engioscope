@@ -41,7 +41,7 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
     cacheFile: pageIndex => `sonar-${sonarServer.url.split('://')[1].replace('.', '-')}-projects-${pageIndex}`,
     headers: () => ({ Authroization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
     hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize !== previousResponse.data.components.length,
-    qsParams: previousResponse => ({ ps: '500', p: ((previousResponse?.data.paging.pageIndex || 1) + 1).toString() })
+    qsParams: (_, previousResponse) => ({ ps: '500', p: ((previousResponse?.data.paging.pageIndex || 1) + 1).toString() })
   }).then(res => res.flatMap(item => item.data.components))
 );
 

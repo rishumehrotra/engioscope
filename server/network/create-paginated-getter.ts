@@ -8,7 +8,7 @@ type PaginatedGetRequest<T> = {
   url: string,
   headers: (previousResponse?: FetchResponse<T>) => Record<string, string>,
   hasAnotherPage: (previousResponse: FetchResponse<T>) => boolean,
-  qsParams: (previousResponse?: FetchResponse<T>) => Record<string, string>
+  qsParams: (pageIndex: number, previousResponse?: FetchResponse<T>) => Record<string, string>
 };
 
 export default (config: Config) => {
@@ -19,7 +19,7 @@ export default (config: Config) => {
   }: PaginatedGetRequest<T>) => {
     const responses = [
       await usingDiskCache<T>(cacheFile('0'), () => (
-        fetch(`${url}?${qs.stringify(qsParams())}`, {
+        fetch(`${url}?${qs.stringify(qsParams(0))}`, {
           headers: headers ? headers() : {}
         })
       ))
@@ -31,7 +31,7 @@ export default (config: Config) => {
         // eslint-disable-next-line no-await-in-loop
         await usingDiskCache<T>(
           cacheFile(responses.length.toString()),
-          () => fetch(`${url}?${qs.stringify(qsParams(previousResponse))}`, {
+          () => fetch(`${url}?${qs.stringify(qsParams(responses.length, previousResponse))}`, {
             headers: headers ? headers(previousResponse) : {}
           })
         )

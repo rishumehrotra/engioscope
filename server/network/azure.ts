@@ -41,7 +41,7 @@ export default (config: Config) => {
   ) => (
     paginatedGet<ListOf<T>>({
       url,
-      qsParams: prev => ({ ...apiVersion, ...continuationToken(prev), ...qsParams }),
+      qsParams: (_, prev) => ({ ...apiVersion, ...continuationToken(prev), ...qsParams }),
       hasAnotherPage,
       headers: () => authHeader,
       cacheFile: pageIndex => `${cacheFile}_${pageIndex}`
@@ -72,11 +72,18 @@ export default (config: Config) => {
     ),
 
     getPRs: (collectionName: string, projectName: string) => (
-      list<GitPullRequest>({
+      paginatedGet<ListOf<GitPullRequest>>({
         url: url(collectionName, projectName, '/git/pullrequests'),
-        qsParams: { 'searchCriteria.status': 'all' },
-        cacheFile: `${collectionName}_${projectName}_prs`
-      })
+        qsParams: pageIndex => ({
+          ...apiVersion,
+          'searchCriteria.status': 'all',
+          $top: '1000',
+          ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 1000).toString() })
+        }),
+        hasAnotherPage: previousResponse => previousResponse.data.count === 1000,
+        headers: () => authHeader,
+        cacheFile: pageIndex => `${collectionName}_${projectName}_prs_${pageIndex}`
+      }).then(flattenToValues)
     ),
 
     getBranchesStats: (collectionName: string, projectName: string) => (repoId: string) => (
@@ -91,7 +98,7 @@ export default (config: Config) => {
         url: url(collectionName, projectName, '/test/runs'),
         qsParams: { includeRunDetails: 'true' },
         cacheFile: `${collectionName}_${projectName}_testruns`
-      })
+      }).then(runs => runs.filter(run => run.startedDate > pastDate(config.lookAtPast)))
     ),
 
     getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
