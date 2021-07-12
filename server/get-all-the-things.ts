@@ -1,52 +1,24 @@
-/* eslint-disable no-console */
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import repoAnalyser from './analyse-repos';
-import { average } from './analyse-repos/ratings';
-import { ScrapedProject } from '../shared-types';
-import { shortDateFormat } from './utils';
+import debug from 'debug';
+import projectAnalyser from './project-analyser';
 import { Config } from './types';
+import aggregationWriter from './aggregation-writer';
 
-process.on('uncaughtException', console.log);
-process.on('unhandledRejection', console.log);
-
-const dataFolderPath = join(process.cwd(), 'data');
-
-const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
-
-const writeFile = (path: string, contents: string) => {
-  console.log('Writing file', join(dataFolderPath, path));
-  return fs.writeFile(
-    join(dataFolderPath, path),
-    contents,
-    'utf8'
-  );
-};
+// eslint-disable-next-line no-console
+process.on('uncaughtException', console.error);
+// eslint-disable-next-line no-console
+process.on('unhandledRejection', console.error);
 
 export default async (config: Config) => {
-  await createDataFolder;
-  const analyseRepos = repoAnalyser(config);
+  const analyseProject = projectAnalyser(config);
+  const writeToFile = aggregationWriter(config);
+  const now = Date.now();
 
-  const overallResults: ScrapedProject[] = await Promise.all(
+  await Promise.all(
     config.projects
-      .map(async projectSpec => {
-        const start = Date.now();
-        console.log('Starting analysis for', projectSpec.join('/'));
-        const repos = await analyseRepos(...projectSpec);
-        const now = shortDateFormat(new Date());
-        console.log(`Took ${Date.now() - start}ms to analyse`, projectSpec.join('/'));
-        await writeFile(
-          `${projectSpec.join('_')}.json`,
-          JSON.stringify({ lastUpdated: now, name: projectSpec, repos })
-        );
-
-        return {
-          name: projectSpec,
-          lastUpdated: now,
-          rating: average(repos.map(r => r.rating))
-        };
-      })
+      .map(async projectSpec => (
+        analyseProject(...projectSpec).then(writeToFile(projectSpec))
+      ))
   );
 
-  return writeFile('index.json', JSON.stringify(overallResults));
+  debug('done')(`in ${(Date.now() - now) / 1000}s.`);
 };

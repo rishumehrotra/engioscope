@@ -15,7 +15,7 @@
     "serve": "vite preview",
     "test:react": "react-scripts test",
     "test": "jest server --testPathIgnorePatterns=./dist --coverage",
-    "scrape": "node -r ts-node/register ./server/dev-scrape.ts",
+    "scrape": "DEBUG=* node -r ts-node/register ./server/dev-scrape.ts",
     "scrape:profiler": "node -r ts-node/register --prof ./server/dev-scrape.ts",
     "tsc": "tsc --build server ui",
     "lint": "eslint \"./**/*.ts\" --cache",
@@ -24,6 +24,7 @@
   },
   "bin": "./dist/server/cli.js",
   "dependencies": {
+    "await-lock": "^2.1.0",
     "azure-devops-node-api": "^11.0.0",
     "chalk": "^4.1.1",
     "chokidar-cli": "^2.1.0",

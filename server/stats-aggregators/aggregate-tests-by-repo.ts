@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Build } from 'azure-devops-node-api/interfaces/BuildInterfaces';
-import { CodeCoverageData, CodeCoverageSummary, TestRun } from 'azure-devops-node-api/interfaces/TestInterfaces';
+import {
+  Build, CodeCoverageData, CodeCoverageSummary, TestRun
+} from '../azure-types';
 import { TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { isMaster } from '../utils';
@@ -57,12 +58,12 @@ const coverageFrom = (coverageData?: CodeCoverageData[]) => {
   return (branchStats.covered * 100) / branchStats.total;
 };
 
-const isForMasterOfRepo = (buildByBuildId: (b: number) => Build | undefined, repoId?: string) =>
-  // eslint-disable-next-line implicit-arrow-linebreak
+const isForMasterOfRepo = (buildByBuildId: (b: number) => Build | undefined, repoId?: string) => (
   (testRun: TestRun) => {
     const build = buildByBuildId(Number(testRun.build?.id!));
     return build?.repository?.id === repoId && isMaster(build?.sourceBranch!);
-  };
+  }
+);
 
 export default (
   testRuns: TestRun[],

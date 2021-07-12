@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Build, BuildResult } from 'azure-devops-node-api/interfaces/BuildInterfaces';
+import { Build } from '../azure-types';
 import { TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
 import { minutes, statsStrings } from '../utils';
@@ -65,7 +65,7 @@ export default (builds: Build[]) => {
         ...acc.buildStats,
         [repoId(build)]: combineStats({
           count: 1,
-          success: build.result === BuildResult.Succeeded ? 1 : 0,
+          success: build.result === 'succeeded' ? 1 : 0,
           duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
         }, acc.buildStats[repoId(build)])
       }
@@ -81,4 +81,3 @@ export default (builds: Build[]) => {
   };
 };
 /* eslint-enable @typescript-eslint/indent */
-

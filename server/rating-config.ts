@@ -4,7 +4,7 @@ import {
   deviation, devsPerTeamPerMonthPlusOne, defaultReducingFactor,
   devsPerTeamPerMonth, percent, devsPerTeamPerDay, percentOutOf100,
   average, inversePercentWith0AsUnfit
-} from './analyse-repos/ratings';
+} from './stats-aggregators/ratings';
 import { Measure } from './types';
 import { divideBy } from './utils';
 

@@ -1,15 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { prop } from 'ramda';
-import { RepoAnalysis, TopLevelIndicator } from '../../shared-types';
-import azure from '../azure';
-import aggregateBuildsByRepo from './aggregate-builds-by-repo';
-import aggregateBranches from './aggregate-branches';
-import aggregatePrs from './aggregate-prs';
-import aggregateCoverageByRepo from './aggregate-coverage-by-repo';
-import aggregateReleases from './aggregate-releases';
-import aggregateCodeQuality from './aggregate-code-quality';
-import sonar from '../sonar';
-import { Config } from '../types';
+import debug from 'debug';
+import { RepoAnalysis, TopLevelIndicator } from '../shared-types';
+import azure from './network/azure';
+import aggregateBuilds from './stats-aggregators/aggregate-builds';
+import aggregateBranches from './stats-aggregators/aggregate-branches';
+import aggregatePrs from './stats-aggregators/aggregate-prs';
+import aggregateTestsByRepo from './stats-aggregators/aggregate-tests-by-repo';
+import aggregateReleases from './stats-aggregators/aggregate-releases';
+import aggregateCodeQuality from './stats-aggregators/aggregate-code-quality';
+import sonar from './network/sonar';
+import { Config } from './types';
+
+const analyserLog = debug('analyser');
 
 const ratingWeightage = {
   Branches: {
@@ -54,37 +57,43 @@ const withOverallRating = (repoAnalysis: Omit<RepoAnalysis, 'rating'>): RepoAnal
 
 export default (config: Config) => {
   const {
-    getRepositories, getBuilds, getBranches, getPRs,
+    getRepositories, getBuilds, getBranchesStats, getPRs,
     getTestRuns, getTestCoverage, getReleases
   } = azure(config);
-  const initialiseSonar = sonar(config);
+  const codeQualityByRepoName = sonar(config);
 
   return async (collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
+    const startTime = Date.now();
+    const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collectionName, projectName);
+
+    analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
     const [
       repos,
       { buildByRepoId, buildByBuildId },
       testRuns,
       releaseByRepoId,
-      codeQualityByRepoName
+      prByRepoId
     ] = await Promise.all([
-      getRepositories(collectionName, projectName),
-      getBuilds(collectionName, projectName).then(aggregateBuildsByRepo),
-      getTestRuns(collectionName, projectName),
-      getReleases(collectionName, projectName).then(aggregateReleases),
-      initialiseSonar(projectName)
+      forProject(getRepositories),
+      forProject(getBuilds).then(aggregateBuilds),
+      forProject(getTestRuns),
+      forProject(getReleases).then(aggregateReleases),
+      forProject(getPRs).then(aggregatePrs)
     ]);
 
-    const getCoverageByRepoId = aggregateCoverageByRepo(
-      testRuns,
-      buildByBuildId,
-      (buildId: number) => getTestCoverage(collectionName, projectName, buildId)
+    const getTestsByRepoId = aggregateTestsByRepo(
+      testRuns, buildByBuildId, forProject(getTestCoverage)
     );
 
-    return Promise.all(repos.map(async r => {
-      const [branches, prs, coverage, { languages, codeQuality }] = await Promise.all([
-        getBranches(collectionName, r.id!).then(aggregateBranches),
-        getPRs(collectionName, r.id!).then(aggregatePrs),
-        getCoverageByRepoId(r.id),
+    const analysisResults = await Promise.all(repos.map(async r => {
+      const [
+        branches,
+        coverage,
+        { languages, codeQuality }
+      ] = await Promise.all([
+        (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id!))
+          .then(aggregateBranches),
+        getTestsByRepoId(r.id),
         codeQualityByRepoName(r.name!).then(aggregateCodeQuality)
         // getCommits(collectionName, r.id!)
       ]);
@@ -96,12 +105,16 @@ export default (config: Config) => {
         indicators: [
           buildByRepoId(r.id),
           branches,
-          prs,
+          prByRepoId(r.id),
           coverage,
           releaseByRepoId(r.id!),
           codeQuality
         ]
       });
     }));
+
+    analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
+
+    return analysisResults;
   };
 };

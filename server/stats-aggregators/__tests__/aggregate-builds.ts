@@ -1,29 +1,29 @@
-import { BuildResult } from 'azure-devops-node-api/interfaces/BuildInterfaces';
+import { Build } from '../../azure-types';
 import { pastDate } from '../../utils';
-import aggregateBuildsByRepo from '../aggregate-builds-by-repo';
+import aggregateBuildsByRepo from '../aggregate-builds';
 
 test('aggregate-builds-by-repo', () => {
   const { buildByRepoId, buildByBuildId } = aggregateBuildsByRepo([
     {
-      result: BuildResult.Failed,
+      result: 'failed',
       finishTime: new Date(),
       startTime: new Date(),
       repository: { id: '1' },
       id: 123
     },
     {
-      result: BuildResult.Succeeded,
+      result: 'succeeded',
       finishTime: new Date(),
       startTime: pastDate('5 mins'),
       repository: { id: '2' }
     },
     {
-      result: BuildResult.Failed,
+      result: 'failed',
       finishTime: new Date(),
       startTime: new Date(),
       repository: { id: '2' }
     }
-  ]);
+  ] as Build[]);
 
   expect(buildByRepoId('1')).toMatchSnapshot();
   expect(buildByRepoId('2')).toMatchSnapshot();
