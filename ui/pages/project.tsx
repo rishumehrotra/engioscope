@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import RepoHealth from '../components/RepoHealth';
 import SearchInput from '../components/SearchInput';
-import { Ascending, Descending } from '../components/Icons';
+import { Ascending, Descending, Refresh } from '../components/Icons';
 import Select from '../components/Select';
 import { ProjectAnalysis, RepoAnalysis } from '../../shared-types';
 
@@ -20,8 +20,19 @@ const ProjectDetails : React.FC<Pick<ProjectAnalysis, 'name' | 'repos' | 'lastUp
         repositories
       </span>
     </h1>
-    <p className="italic text-sm text-gray-600 mb-8">
-      {`Last updated on: ${projectAnalysis.lastUpdated}`}
+    <p className="text-sm text-gray-600 mb-8 mt-2 flex items-center">
+      Last updated on
+      <p className="font-bold text-gray-800 ml-1">{projectAnalysis.lastUpdated}</p>
+      {' '}
+      {/* <button
+        type="button"
+        className="ml-5 bg-white py-2 px-3 border hover:border-gray-300
+        rounded-md hover:shadow-sm text-sm leading-4 font-medium text-indigo-500
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex"
+      >
+        <Refresh />
+        <p className="ml-1">Refresh now</p>
+      </button> */}
     </p>
   </div>
 );
