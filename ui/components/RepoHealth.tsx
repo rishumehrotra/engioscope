@@ -20,7 +20,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
           role="tab"
         >
           <div className="flex">
-            <div className="flex flex-col ml-6">
+            <div className="flex flex-col ml-6 w-full">
               <div className="flex">
                 <span className="text-lg font-bold inline-block align-text-bottom">{repo.name}</span>
                 <span
@@ -34,7 +34,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
               </div>
 
               <div className="mt-4">
-                <div className="flex flex-wrap lg:flex-nowrap">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6">
                   {
                     repo.indicators.map(({
                       name, rating, indicators, count
@@ -44,7 +44,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                         className={`pt-2 pb-4 px-6 mt-2 mr-4 text-gray-900
                         ${!isDetailsOpen ? 'rounded-lg' : 'rounded-t-lg'}
                         ${selectedIndicator?.name === name ? 'bg-gray-100' : 'hover:bg-gray-100'}
-                        hover:text-gray-900 focus:text-gray-900 cursor-pointer flex items-end`}
+                        hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
                         onClick={(e: React.MouseEvent<HTMLElement>) => {
                           e.stopPropagation();
                           setSelectedIndicator({
@@ -60,12 +60,14 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                         {/* <div className={`text-2xl font-semibold text-${getRatingColor(rating)} -mb-1`}>
                           {rating}
                         </div> */}
-                        <div className={`text-3xl font-semibold -mb-1 
+                        <div>
+                          <div className={`text-3xl font-semibold -mb-1 
                           ${selectedIndicator?.name === name ? 'text-black' : 'text-gray-600'} `}
-                        >
-                          {count}
+                          >
+                            {count}
+                          </div>
+                          <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{name}</div>
                         </div>
-                        <div className="uppercase text-xs tracking-wider text-gray-600 ml-2">{name}</div>
                       </button>
                     ))
                   }

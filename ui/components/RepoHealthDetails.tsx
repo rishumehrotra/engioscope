@@ -7,18 +7,18 @@ type RepoHealthDetailsProps = {
 }
 
 const RepoHealthDetails: React.FC<RepoHealthDetailsProps> = ({ indicators, gridCols }) => (indicators?.length ? (
-  <div className={`grid ${gridCols === 4 ? 'grid-cols-4' : 'grid-cols-5'} gap-4 p-6 rounded-lg bg-gray-100 `}>
+  <div className={`grid ${gridCols === 4 ? 'grid-cols-4' : 'grid-cols-6'} gap-4 p-6 rounded-lg bg-gray-100`}>
     {
       indicators.map(({
         value, name, tooltip, additionalValue
       }) => (
         <div
           style={{ outline: 'none' }}
-          className="px-4 py-2 text-gray-900 rounded-lg hover:bg-white mr-3"
+          className="px-4 py-2 text-gray-900 rounded-lg hover:bg-white mr-3 grid grid-cols-1 text-center"
           title={tooltip || ''}
           key={name}
         >
-          <div className="text-3xl font-semibold flex">
+          <div className="text-2xl font-semibold">
             {value}
             {/* <span className="text-base flex mt-4 ml-2 text-gray-600">
               <span className={`text-${getRatingColor(rating)}`}>{rating}</span>
