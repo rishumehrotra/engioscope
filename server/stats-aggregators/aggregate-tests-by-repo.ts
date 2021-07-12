@@ -70,7 +70,6 @@ export default (
   buildByBuildId: (b: number) => Build | undefined,
   testCoverageByBuildId: (t: number) => Promise<CodeCoverageSummary>
 ) => async (repoId?: string): Promise<TopLevelIndicator> => {
-  console.log(testRuns.filter(isForMasterOfRepo(buildByBuildId, repoId)));
   const matchingTestRun = testRuns.find(isForMasterOfRepo(buildByBuildId, repoId));
 
   if (!matchingTestRun) return topLevelIndicator(defaultStat);
