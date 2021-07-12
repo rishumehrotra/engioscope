@@ -10,7 +10,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
 
   return (repo ? (
     <div className={`bg-white border-l-4 p-6 mb-4 ${isDetailsOpen ? 'border-gray-500' : ''} rounded-lg shadow`}>
-      <div className="flex flex-row mt-2">
+      <div className="grid grid-flow-row mt-2">
         <div
           className="w-full cursor-pointer"
           onClick={() => {
@@ -19,60 +19,56 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
           }}
           role="tab"
         >
-          <div className="flex">
-            <div className="flex flex-col ml-6 w-full">
-              <div className="flex">
-                <span className="text-lg font-bold inline-block align-text-bottom">{repo.name}</span>
-                <span
-                  className="text-base ml-2 text-gray-600 font-semibold inline-block align-text-bottom"
-                  style={{ lineHeight: '27px' }}
-                >
-                  {repo.languages ? Object.keys(repo.languages)[0] : ''}
-                  {' '}
-                  {repo.languages ? `(${Object.values(repo.languages)[0]})` : ''}
-                </span>
-              </div>
+          <div className="grid mx-6">
+            <div>
+              <span className="text-lg font-bold inline-block align-text-bottom">{repo.name}</span>
+              <span
+                className="text-base ml-2 text-gray-600 font-semibold inline-block align-text-bottom"
+                style={{ lineHeight: '27px' }}
+              >
+                {repo.languages ? Object.keys(repo.languages)[0] : ''}
+                {' '}
+                {repo.languages ? `(${Object.values(repo.languages)[0]})` : ''}
+              </span>
+            </div>
 
-              <div className="mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6">
-                  {
-                    repo.indicators.map(({
-                      name, rating, indicators, count
-                    }) => (
-                      <button
-                        style={{ outline: 'none' }}
-                        className={`pt-2 pb-4 px-6 mt-2 mr-4 text-gray-900
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
+              {
+                repo.indicators.map(({
+                  name, rating, indicators, count
+                }) => (
+                  <button
+                    style={{ outline: 'none' }}
+                    className={`pt-2 pb-4 px-6 mt-2 text-gray-900
                         ${!isDetailsOpen ? 'rounded-lg' : 'rounded-t-lg'}
                         ${selectedIndicator?.name === name ? 'bg-gray-100' : 'hover:bg-gray-100'}
                         hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
-                        onClick={(e: React.MouseEvent<HTMLElement>) => {
-                          e.stopPropagation();
-                          setSelectedIndicator({
-                            name, rating, count, indicators
-                          });
-                          if (!selectedIndicator?.name || selectedIndicator?.name === name || !isDetailsOpen) {
-                            setIsDetailsOpen(!isDetailsOpen);
-                          }
-                        }}
-                        key={name}
-                        title={!rating ? `${name} is not available` : ''}
-                      >
-                        {/* <div className={`text-2xl font-semibold text-${getRatingColor(rating)} -mb-1`}>
+                    onClick={(e: React.MouseEvent<HTMLElement>) => {
+                      e.stopPropagation();
+                      setSelectedIndicator({
+                        name, rating, count, indicators
+                      });
+                      if (!selectedIndicator?.name || selectedIndicator?.name === name || !isDetailsOpen) {
+                        setIsDetailsOpen(!isDetailsOpen);
+                      }
+                    }}
+                    key={name}
+                    title={!rating ? `${name} is not available` : ''}
+                  >
+                    {/* <div className={`text-2xl font-semibold text-${getRatingColor(rating)} -mb-1`}>
                           {rating}
                         </div> */}
-                        <div>
-                          <div className={`text-3xl font-semibold -mb-1 
+                    <div>
+                      <div className={`text-3xl font-semibold -mb-1 
                           ${selectedIndicator?.name === name ? 'text-black' : 'text-gray-600'} `}
-                          >
-                            {count}
-                          </div>
-                          <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{name}</div>
-                        </div>
-                      </button>
-                    ))
-                  }
-                </div>
-              </div>
+                      >
+                        {count}
+                      </div>
+                      <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{name}</div>
+                    </div>
+                  </button>
+                ))
+              }
             </div>
           </div>
         </div>

@@ -21,7 +21,7 @@ const Select: React.FC<SelectProps> = ({
       value={value}
       className="block appearance-none w-full bg-white hover:border-gray-500
         px-4 py-2 pr-8 rounded shadow leading-tight text-gray-600
-        focus:outline-none focus:ring focus:border-gray-200"
+        focus:outline-none focus:ring focus:border-gray-200 text-md"
     >
       {options.map(({ value, label }) => <option value={value} key={value}>{label}</option>)}
     </select>

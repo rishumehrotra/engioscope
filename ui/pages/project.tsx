@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import RepoHealth from '../components/RepoHealth';
 import SearchInput from '../components/SearchInput';
-import { UpChevron, DownChevron } from '../components/Icons';
+import { Ascending, Descending } from '../components/Icons';
 import Select from '../components/Select';
 import { ProjectAnalysis, RepoAnalysis } from '../../shared-types';
 
@@ -36,18 +36,20 @@ type SortButtonsProps = {
 const SortButtons: React.FC<SortButtonsProps> = ({
   sort, setSort, setSortBy, sortBy
 }) => (
-  <div>
+  <div className="grid grid-cols-2">
     <button
       className="text-base font-medium text-gray-600
-      text-center flex items-end justify-end rounded-lg cursor-pointer mb-4"
+      text-center flex items-center justify-end rounded-lg cursor-pointer"
       style={{ outline: 'none' }}
       onClick={() => setSort(sort * -1)}
     >
-      {sort === 1 ? <UpChevron className="-ml-2" /> : <DownChevron className="-ml-2" />}
-      Sort by
+      {sort === 1 ? <Ascending /> : <Descending />}
+      <p className="mb-1 ml-2 text-sm">Sort By</p>
     </button>
     <Select
-      className="mr-6"
+      className="bg-transparent text-gray-900 rounded-lg border-0
+      form-select p-0 pl-2 h-9 w-full sm:text-sm font-medium
+      focus:shadow-none focus-visible:ring-2 focus-visible:ring-teal-500"
       onChange={setSortBy}
       options={[
         { label: 'Builds', value: 'Builds' },
