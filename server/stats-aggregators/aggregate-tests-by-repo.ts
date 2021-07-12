@@ -58,18 +58,19 @@ const coverageFrom = (coverageData?: CodeCoverageData[]) => {
   return (branchStats.covered * 100) / branchStats.total;
 };
 
-const isForMasterOfRepo = (buildByBuildId: (b: number) => Build | undefined, repoId?: string) =>
-  // eslint-disable-next-line implicit-arrow-linebreak
+const isForMasterOfRepo = (buildByBuildId: (b: number) => Build | undefined, repoId?: string) => (
   (testRun: TestRun) => {
     const build = buildByBuildId(Number(testRun.build?.id!));
     return build?.repository?.id === repoId && isMaster(build?.sourceBranch!);
-  };
+  }
+);
 
 export default (
   testRuns: TestRun[],
   buildByBuildId: (b: number) => Build | undefined,
   testCoverageByBuildId: (t: number) => Promise<CodeCoverageSummary>
 ) => async (repoId?: string): Promise<TopLevelIndicator> => {
+  console.log(testRuns.filter(isForMasterOfRepo(buildByBuildId, repoId)));
   const matchingTestRun = testRuns.find(isForMasterOfRepo(buildByBuildId, repoId));
 
   if (!matchingTestRun) return topLevelIndicator(defaultStat);

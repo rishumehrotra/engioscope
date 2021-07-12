@@ -81,7 +81,7 @@ export default (config: Config) => {
       forProject(getPRs).then(aggregatePrs)
     ]);
 
-    const getCoverageByRepoId = aggregateTestsByRepo(
+    const getTestsByRepoId = aggregateTestsByRepo(
       testRuns, buildByBuildId, forProject(getTestCoverage)
     );
 
@@ -93,7 +93,7 @@ export default (config: Config) => {
       ] = await Promise.all([
         (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id!))
           .then(aggregateBranches),
-        getCoverageByRepoId(r.id),
+        getTestsByRepoId(r.id),
         codeQualityByRepoName(r.name!).then(aggregateCodeQuality)
         // getCommits(collectionName, r.id!)
       ]);
