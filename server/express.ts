@@ -1,16 +1,24 @@
 import express from 'express';
 import path from 'path';
-import { promises as fs } from 'fs';
 import { Config } from './types';
 import api from './api';
 
+const uiFolder = path.join(__dirname, '..', 'ui');
 const app = express();
 
-app.use(express.static(path.join(__dirname, '..', 'ui')));
+const sendIndexHtml = (_: express.Request, res: express.Response) => {
+  res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  res.header('Expires', '-1');
+  res.header('Pragma', 'no-cache');
+  res.sendFile(path.join(uiFolder, 'index.html'));
+};
+
+app.get('/', sendIndexHtml);
+app.use(express.static(uiFolder));
 app.use(api);
-app.use(async (req, res, next) => {
+app.use((req, res, next) => {
   if (!req.accepts('html')) return next();
-  res.send(await fs.readFile(path.join(__dirname, '..', 'ui', 'index.html'), { encoding: 'utf-8' }));
+  sendIndexHtml(req, res);
 });
 
 export default (config: Config) => {
