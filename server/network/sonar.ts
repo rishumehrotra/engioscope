@@ -42,7 +42,9 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
     headers: () => ({ Authroization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
     hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize === previousResponse.data.components.length,
     qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() })
-  }).then(res => res.flatMap(item => ({ ...item.data.components, url: sonarServer.url })))
+  })
+    .then(responses => responses.map(response => response.data.components.map(c => ({ ...c, url: sonarServer.url }))))
+    .then(repos => repos.flat())
 );
 
 export default (config: Config) => {
