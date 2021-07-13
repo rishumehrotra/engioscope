@@ -38,11 +38,11 @@ type SonarSearchResponse = { paging: SonarPaging, components: SonarRepo[] };
 const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGetter>) => (sonarServer: Config['sonar'][number]) => (
   paginatedGet<SonarSearchResponse>({
     url: `${sonarServer.url}/api/projects/search`,
-    cacheFile: pageIndex => `sonar-${sonarServer.url.split('://')[1].replace('.', '-')}-projects-${pageIndex}`,
+    cacheFile: pageIndex => `sonar-${sonarServer.url.split('://')[1].replace(/\./g, '-')}-projects-${pageIndex}`,
     headers: () => ({ Authroization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
-    hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize !== previousResponse.data.components.length,
-    qsParams: (_, previousResponse) => ({ ps: '500', p: ((previousResponse?.data.paging.pageIndex || 1) + 1).toString() })
-  }).then(res => res.flatMap(item => item.data.components))
+    hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize === previousResponse.data.components.length,
+    qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() })
+  }).then(res => res.flatMap(item => ({ ...item.data.components, url: sonarServer.url })))
 );
 
 export default (config: Config) => {
