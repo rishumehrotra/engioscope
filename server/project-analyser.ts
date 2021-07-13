@@ -78,7 +78,7 @@ export default (config: Config) => {
       forProject(getBuilds).then(aggregateBuilds),
       forProject(getTestRuns),
       forProject(getReleases).then(aggregateReleases),
-      forProject(getPRs).then(aggregatePrs)
+      forProject(getPRs).then(aggregatePrs(config))
     ]);
 
     const getTestsByRepoId = aggregateTestsByRepo(

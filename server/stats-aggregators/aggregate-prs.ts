@@ -1,12 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { GitPullRequest, PullRequestStatus } from '../azure-types';
 import ratingConfig from '../rating-config';
-import { hours, statsStrings } from '../utils';
+import { Config } from '../types';
+import { hours, pastDate, statsStrings } from '../utils';
 import { average, withOverallRating } from './ratings';
 
 const [timeRange, averageTime] = statsStrings('-', hours);
 
-export default (prs: GitPullRequest[]) => {
+const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) => pr.status === status;
+const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
+  pastDate.getTime() < (pr.closedDate || pr.creationDate).getTime()
+);
+
+export default (config: Config) => (prs: GitPullRequest[]) => {
   const prsByRepo = prs.reduce((acc, pr) => ({
     ...acc,
     [pr.repository.id]: [
@@ -17,14 +23,15 @@ export default (prs: GitPullRequest[]) => {
 
   return (repoId?: string) => {
     const repoPrs = repoId ? prsByRepo[repoId] || [] : [];
-    const prsByStatus = (status: PullRequestStatus) => repoPrs.filter(pr => pr.status === status);
-    const activePrCount = prsByStatus('active').length;
-    const abandonedPrCount = prsByStatus('abandoned').length;
+    const activePrCount = repoPrs.filter(isStatus('active')).length;
+    const prsInTimeWindow = repoPrs.filter(isInTimeWindow(pastDate(config.lookAtPast)));
+    const abandonedPrCount = prsInTimeWindow.filter(isStatus('abandoned')).length;
+    const completedPrs = prsInTimeWindow.filter(isStatus('completed'));
 
-    const timesToApprove = prsByStatus('completed')
+    const timesToApprove = completedPrs
       .map(pr => (pr.closedDate!.getTime() - pr.creationDate!.getTime()));
 
-    const completedPrCount = prsByStatus('completed').length;
+    const completedPrCount = completedPrs.length;
 
     return withOverallRating({
       name: 'Pull requests',
