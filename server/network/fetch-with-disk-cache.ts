@@ -25,6 +25,7 @@ export type FrontMatter = {
 export type FetchResponse<T> = FrontMatter & { data: T };
 
 const cacheLocation = join(process.cwd(), 'cache');
+const createCacheLocation = fs.mkdir(cacheLocation, { recursive: true });
 
 const cachePath = (fileName: string) => join(cacheLocation, `${fileName}.txt`);
 const fileNameForLogs = (fileName: string) => fileName.replace(`${process.cwd()}/`, '');
@@ -67,7 +68,7 @@ const streamToDisk = async (fileName: string, fetcher: Fetcher) => {
 
   logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(fileName)}`);
 
-  await fs.mkdir(cacheLocation, { recursive: true });
+  await createCacheLocation;
 
   const fileStream = createWriteStream(fileName);
   fileStream.write(JSON.stringify({

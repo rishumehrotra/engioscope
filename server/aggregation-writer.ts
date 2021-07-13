@@ -23,11 +23,7 @@ const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
 const writeFile = (path: string, contents: string) => {
   outputFileLog('Writing file', join(dataFolderPath, path).replace(`${process.cwd()}/`, ''));
-  return fs.writeFile(
-    join(dataFolderPath, path),
-    contents,
-    'utf8'
-  );
+  return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
 };
 
 const writeProjectSummaryFile = async (projectSpec: ProjectSpec, analysis: RepoAnalysis[]) => (
