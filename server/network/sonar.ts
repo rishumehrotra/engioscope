@@ -27,8 +27,15 @@ const sortByLastAnalysedDate = (a: SonarRepo, b: SonarRepo) => (
   new Date(b.lastAnalysisDate).getTime() - new Date(a.lastAnalysisDate).getTime()
 );
 
+const normaliseRepoName = (name: string) => (
+  name.replace(/-/g, '_').toLowerCase()
+);
+
 const getCurrentRepo = (repoName: string) => pipe(
-  filter<SonarRepo>(repo => repo.name === repoName && Boolean(repo.lastAnalysisDate)),
+  filter<SonarRepo>(repo => (
+    normaliseRepoName(repo.name) === normaliseRepoName(repoName)
+      && Boolean(repo.lastAnalysisDate)
+  )),
   sort(sortByLastAnalysedDate),
   getFirst
 );
