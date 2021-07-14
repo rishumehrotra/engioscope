@@ -4,7 +4,7 @@ import { Config } from '../types';
 import { pastDate } from '../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
-  GitRepository, Release, TeamProjectReference, TestRun
+  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun
 } from '../azure-types';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -108,6 +108,14 @@ export default (config: Config) => {
           buildId: buildId.toString()
         })}`), { headers: authHeader })
       )).then(res => res.data)
+    ),
+
+    getReleaseDefinitions: (collectionName: string, projectName: string) => (
+      list<ReleaseDefinition>({
+        url: url(collectionName, projectName, '/release/definitions'),
+        qsParams: { $expand: 'environments' },
+        cacheFile: `${collectionName}_${projectName}_release_definitions`
+      })
     ),
 
     getReleases: (collectionName: string, projectName: string) => (

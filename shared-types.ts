@@ -21,7 +21,7 @@ export type RepoAnalysis = {
   indicators: TopLevelIndicator[];
 };
 
-export type ProjectAnalysis = {
+export type ProjectRepoAnalysis = {
   lastUpdated: string,
   name: [collection: string, project: string],
   repos: RepoAnalysis[]

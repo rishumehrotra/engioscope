@@ -9,8 +9,9 @@ import aggregatePrs from './stats-aggregators/aggregate-prs';
 import aggregateTestsByRepo from './stats-aggregators/aggregate-tests-by-repo';
 import aggregateReleases from './stats-aggregators/aggregate-releases';
 import aggregateCodeQuality from './stats-aggregators/aggregate-code-quality';
+import aggregateReleaseDefinitions from './stats-aggregators/aggregate-release-definitions';
 import sonar from './network/sonar';
-import { Config } from './types';
+import { Config, ProjectAnalysis } from './types';
 
 const analyserLog = debug('analyser');
 
@@ -58,11 +59,11 @@ const withOverallRating = (repoAnalysis: Omit<RepoAnalysis, 'rating'>): RepoAnal
 export default (config: Config) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs,
-    getTestRuns, getTestCoverage, getReleases
+    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
-  return async (collectionName: string, projectName: string): Promise<RepoAnalysis[]> => {
+  return async (collectionName: string, projectName: string): Promise<ProjectAnalysis> => {
     const startTime = Date.now();
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collectionName, projectName);
 
@@ -71,12 +72,15 @@ export default (config: Config) => {
       repos,
       { buildByRepoId, buildByBuildId },
       testRuns,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      releaseDefinitionsById,
       releaseByRepoId,
       prByRepoId
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
       forProject(getTestRuns),
+      forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases).then(aggregateReleases),
       forProject(getPRs).then(aggregatePrs(config))
     ]);
@@ -85,7 +89,7 @@ export default (config: Config) => {
       testRuns, buildByBuildId, forProject(getTestCoverage)
     );
 
-    const analysisResults = await Promise.all(repos.map(async r => {
+    const repoData = Promise.all(repos.map(async r => {
       const [
         branches,
         coverage,
@@ -112,6 +116,12 @@ export default (config: Config) => {
         ]
       });
     }));
+
+    const [repoAnalysis] = await Promise.all([
+      repoData
+    ]);
+
+    const analysisResults = { repoAnalysis };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
 

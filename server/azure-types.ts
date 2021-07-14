@@ -318,3 +318,56 @@ export type CodeCoverageSummary = {
     url: string
   }
 };
+
+export type ReleaseDefinitionEnvironment = {
+  id: number,
+  name: string,
+  rank: number,
+  owner: IdentityRef,
+  variableGroups: [],
+  schedules: [],
+  // currentRelease: {
+  //   id: number,
+  //   url: string,
+  //   _links: {}
+  // },
+  retentionPolicy: {
+    daysToKeep: number,
+    releasesToKeep: number,
+    retainBuild: boolean
+  },
+  // properties: {},
+  preDeploymentGates: {
+    id: number,
+    gatesOptions: null,
+    gates: []
+  },
+  postDeploymentGates: {
+    id: number,
+    gatesOptions: null,
+    gates: []
+  },
+  environmentTriggers: [],
+  badgeUrl: string
+}
+
+export type ReleaseDefinition = {
+  source: 'ibiza' | 'portalExtensionApi' | 'restApi' | 'undefined' | 'userInterface',
+  revision: number,
+  description: string,
+  createdBy: IdentityRef,
+  createdOn: Date,
+  modifiedBy: IdentityRef,
+  modifiedOn: Date,
+  isDeleted: boolean,
+  variableGroups: null,
+  environments: ReleaseDefinitionEnvironment[],
+  releaseNameFormat: string,
+  retentionPolicy: { daysToKeep: number },
+  // properties: {},
+  id: number,
+  name: string,
+  path: string,
+  projectReference: null,
+  url: string
+};
