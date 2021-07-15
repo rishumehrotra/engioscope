@@ -41,6 +41,7 @@ const addToReleaseStats = (releaseStats: ReleaseStats, release: Release): Releas
 
     return {
       ...acc,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       [repoName]: [...new Set([...(acc[repoName] || []), branch!].filter(Boolean)).values()]
     };
   }, {} as Record<string, string[]>)
