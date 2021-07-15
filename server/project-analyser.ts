@@ -7,7 +7,7 @@ import aggregateBuilds from './stats-aggregators/aggregate-builds';
 import aggregateBranches from './stats-aggregators/aggregate-branches';
 import aggregatePrs from './stats-aggregators/aggregate-prs';
 import aggregateTestsByRepo from './stats-aggregators/aggregate-tests-by-repo';
-import aggregateReleases from './stats-aggregators/aggregate-releases';
+import aggregateReleases from './stats-aggregators/aggregate-releases-2';
 import aggregateCodeQuality from './stats-aggregators/aggregate-code-quality';
 import aggregateReleaseDefinitions from './stats-aggregators/aggregate-release-definitions';
 import sonar from './network/sonar';
@@ -72,16 +72,15 @@ export default (config: Config) => {
       repos,
       { buildByRepoId, buildByBuildId },
       testRuns,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      releaseDefinitionsById,
-      releaseByRepoId,
+      releaseDefinitionById,
+      releases,
       prByRepoId
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
       forProject(getTestRuns),
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
-      forProject(getReleases).then(aggregateReleases),
+      forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config))
     ]);
 
@@ -99,7 +98,6 @@ export default (config: Config) => {
           .then(aggregateBranches),
         getTestsByRepoId(r.id),
         codeQualityByRepoName(r.name!).then(aggregateCodeQuality)
-        // getCommits(collectionName, r.id!)
       ]);
 
       return withOverallRating({
@@ -111,7 +109,6 @@ export default (config: Config) => {
           branches,
           prByRepoId(r.id),
           coverage,
-          releaseByRepoId(r.id!),
           codeQuality
         ]
       });
@@ -121,7 +118,10 @@ export default (config: Config) => {
       repoData
     ]);
 
-    const analysisResults = { repoAnalysis };
+    const analysisResults = {
+      repoAnalysis,
+      releaseAnalysis: aggregateReleases(releaseDefinitionById, releases)
+    };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
 

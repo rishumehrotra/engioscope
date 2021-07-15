@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import RepoHealth from '../components/RepoHealth';
 import SearchInput from '../components/SearchInput';
-import { Ascending, Descending, Refresh } from '../components/Icons';
+import { Ascending, Descending } from '../components/Icons';
 import Select from '../components/Select';
-import { ProjectAnalysis, RepoAnalysis } from '../../shared-types';
+import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared-types';
 
 const fetchProjectMetrics = (collection: string, project: string) => (
   fetch(`/api/${collection}_${project}.json`).then(res => res.json())
 );
 
-const ProjectDetails : React.FC<Pick<ProjectAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
+const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
   <div className="mt-4">
     <h1 className="text-4xl font-semibold text-gray-800">
       {projectAnalysis.name[1]}
@@ -91,7 +91,7 @@ const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
 );
 
 const Project: React.FC = () => {
-  const [projectAnalysis, setProjectAnalysis] = useState<ProjectAnalysis | undefined>();
+  const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');

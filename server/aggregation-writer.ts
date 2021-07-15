@@ -4,7 +4,9 @@ import { join } from 'path';
 import debug from 'debug';
 import { prop } from 'ramda';
 import { average } from './stats-aggregators/ratings';
-import { ProjectRepoAnalysis, RepoAnalysis, ScrapedProject } from '../shared-types';
+import {
+  ProjectRepoAnalysis, ReleaseStats, RepoAnalysis, ScrapedProject
+} from '../shared-types';
 import { doesFileExist, map, shortDateFormat } from './utils';
 import { Config, ProjectAnalysis } from './types';
 
@@ -33,6 +35,12 @@ const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: Rep
       name: projectSpec,
       repos: repoAnalysis
     } as ProjectRepoAnalysis))
+  ))
+);
+
+const writeReleaseAnalysisFile = async (projectSpec: ProjectSpec, releaseAnalysis: ReleaseStats[]) => (
+  createDataFolder.then(() => (
+    writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(releaseAnalysis))
   ))
 );
 
@@ -78,6 +86,7 @@ const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedPr
 export default (config: Config) => (projectSpec: ProjectSpec) => async (analysis: ProjectAnalysis) => {
   await Promise.all([
     writeRepoAnalysisFile(projectSpec, analysis.repoAnalysis),
+    writeReleaseAnalysisFile(projectSpec, analysis.releaseAnalysis),
     updateOverallSummary(config)({
       name: projectSpec,
       rating: average(analysis.repoAnalysis.map(prop('rating')))

@@ -1,6 +1,6 @@
 // Sonar's types
 
-import { RepoAnalysis } from '../shared-types';
+import { ReleaseStats, RepoAnalysis } from '../shared-types';
 
 export type Measure = {
   metric: string,
@@ -28,5 +28,6 @@ export type Config = Readonly<{
 }>;
 
 export type ProjectAnalysis = {
-  repoAnalysis: RepoAnalysis[]
+  repoAnalysis: RepoAnalysis[],
+  releaseAnalysis: ReleaseStats[]
 }
