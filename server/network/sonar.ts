@@ -15,7 +15,8 @@ export type SonarRepo = {
   qualifier: string,
   visibility: string,
   lastAnalysisDate: string,
-  url: string
+  url: string,
+  token: string
 };
 
 type SonarPaging = {
@@ -46,11 +47,13 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
   paginatedGet<SonarSearchResponse>({
     url: `${sonarServer.url}/api/projects/search`,
     cacheFile: pageIndex => `sonar-${sonarServer.url.split('://')[1].replace(/\./g, '-')}-projects-${pageIndex}`,
-    headers: () => ({ Authroization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
+    headers: () => ({ Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
     hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize === previousResponse.data.components.length,
     qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() })
   })
-    .then(responses => responses.map(response => response.data.components.map(c => ({ ...c, url: sonarServer.url }))))
+    .then(responses => responses.map(response => response.data.components.map(c => ({
+      ...c, url: sonarServer.url, token: sonarServer.token
+    }))))
     .then(repos => repos.flat())
 );
 
@@ -70,7 +73,11 @@ export default (config: Config) => {
       () => fetch(`${currentSonarRepo.url}/api/measures/component?${qs.stringify({
         component: currentSonarRepo.key,
         metricKeys: requiredMetrics.join(',')
-      })}`)
+      })}`, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${currentSonarRepo.token}:`).toString('base64')}`
+        }
+      })
     ).then(res => res.data.component?.measures || []);
   };
 };
