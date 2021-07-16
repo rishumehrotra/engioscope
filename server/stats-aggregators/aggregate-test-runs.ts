@@ -93,23 +93,12 @@ export default (testRuns: TestRun[]) => {
   }, {} as Record<number, TestRun[]>);
 
   return (
-    latestMasterBuildIds: (repoId?: string) => number[],
-    buildByBuildId: (id?: number) => Build | undefined,
+    latestMasterBuildIds: (repoId?: string) => Build[],
     testCoverageByBuildId: (t: number) => Promise<CodeCoverageSummary>
   ) => async (repoId?: string) => {
-    const buildIds = latestMasterBuildIds(repoId);
-    const matchingTestRuns = buildIds.reduce((acc, buildId) => ({
-      ...acc,
-      [buildId]: aggregateRuns(runsByBuildId[buildId] || [])
-    }), {} as Record<number, TestStats>);
+    const matchingBuilds = latestMasterBuildIds(repoId);
 
-    const coverages = await Promise.all(buildIds.map(testCoverageByBuildId));
-
-    if (repoId === '6d224167-b8ea-4121-8fcb-672ab3d4b599') {
-      console.log({ buildIds, matchingTestRuns, coverages });
-    }
-
-    if (buildIds.length === 0) {
+    if (matchingBuilds.length === 0) {
       return topLevelIndicator([{
         buildName: 'No builds',
         total: 0,
@@ -120,10 +109,10 @@ export default (testRuns: TestRun[]) => {
       }]);
     }
 
-    return topLevelIndicator(buildIds.map((buildId, index) => ({
-      buildName: buildByBuildId(buildId)!.definition.name,
-      ...matchingTestRuns[buildId],
-      coverage: coverageFrom(coverages[index].coverageData)
-    })));
+    return topLevelIndicator(await Promise.all(matchingBuilds.map(async build => ({
+      buildName: build.definition.name,
+      ...aggregateRuns(runsByBuildId[build.id] || []),
+      coverage: coverageFrom((await testCoverageByBuildId(build.id)).coverageData)
+    }))));
   };
 };

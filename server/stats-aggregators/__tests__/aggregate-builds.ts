@@ -3,7 +3,7 @@ import { pastDate } from '../../utils';
 import aggregateBuilds from '../aggregate-builds';
 
 test('aggregate-builds-by-repo', () => {
-  const { buildByRepoId, buildByBuildId } = aggregateBuilds([
+  const { buildByRepoId } = aggregateBuilds([
     {
       result: 'failed',
       finishTime: new Date(),
@@ -31,5 +31,4 @@ test('aggregate-builds-by-repo', () => {
   expect(buildByRepoId('1')).toMatchSnapshot();
   expect(buildByRepoId('2')).toMatchSnapshot();
   expect(buildByRepoId('non-existant')).toMatchSnapshot();
-  expect(buildByBuildId(123)?.id).toBe(123);
 });

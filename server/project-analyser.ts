@@ -70,7 +70,7 @@ export default (config: Config) => {
     analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
     const [
       repos,
-      { buildByRepoId, latestMasterBuildIds, buildByBuildId },
+      { buildByRepoId, latestMasterBuilds },
       testRunGetter,
       releaseDefinitionById,
       releases,
@@ -85,7 +85,7 @@ export default (config: Config) => {
     ]);
 
     const getTestsByRepoId = testRunGetter(
-      latestMasterBuildIds, buildByBuildId, forProject(getTestCoverage)
+      latestMasterBuilds, forProject(getTestCoverage)
     );
 
     const repoData = Promise.all(repos.map(async r => {

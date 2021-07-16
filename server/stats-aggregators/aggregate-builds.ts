@@ -58,24 +58,15 @@ const combineStats = (
 /* eslint-disable @typescript-eslint/indent */
 export default (builds: Build[]) => {
   type AggregatedBuilds = {
-    buildsById: Record<string, Build>;
     buildStats: Record<string, BuildStats>;
-    latestMasterBuildIds: Record<string, Record<number, number | undefined>>
+    latestMasterBuilds: Record<string, Record<number, Build | undefined>>
   };
 
-  const { buildsById, buildStats, latestMasterBuildIds } = builds
+  const { buildStats, latestMasterBuilds } = builds
     .reduce<AggregatedBuilds>((acc, build) => {
       const rId = repoId(build);
 
-      if (rId === '6d224167-b8ea-4121-8fcb-672ab3d4b599' && build.id === 53956) {
-        console.log({ build, acc });
-      }
-
       return {
-        buildsById: {
-          ...acc.buildsById,
-          [build.id!]: build
-        },
         buildStats: {
           ...acc.buildStats,
           [rId]: combineStats({
@@ -84,30 +75,33 @@ export default (builds: Build[]) => {
             duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
           }, acc.buildStats[rId])
         },
-        latestMasterBuildIds: {
-          ...acc.latestMasterBuildIds,
+        latestMasterBuilds: {
+          ...acc.latestMasterBuilds,
           [rId]: {
-            ...acc.latestMasterBuildIds[rId],
+            ...acc.latestMasterBuilds[rId],
             [build.definition.id]:
               // eslint-disable-next-line no-nested-ternary
-              acc.latestMasterBuildIds[rId] && acc.latestMasterBuildIds[rId][build.definition.id]
-                ? acc.latestMasterBuildIds[rId][build.definition.id]
-                : isMaster(build.sourceBranch) ? build.id : undefined
+              acc.latestMasterBuilds[rId] && acc.latestMasterBuilds[rId][build.definition.id]
+                ? acc.latestMasterBuilds[rId][build.definition.id]
+                : isMaster(build.sourceBranch) ? build : undefined
           }
         }
       };
-  }, { buildsById: {}, buildStats: {}, latestMasterBuildIds: {} });
+  }, { buildStats: {}, latestMasterBuilds: {} });
 
   return {
-    buildByBuildId: (id?: number) => (id ? buildsById[id] : undefined),
     buildByRepoId: (id?: string): TopLevelIndicator => {
       if (!id) return topLevelIndicator(defaultBuildStats);
       if (!buildStats[id]) return topLevelIndicator(defaultBuildStats);
       return topLevelIndicator(buildStats[id]);
     },
-    latestMasterBuildIds: (repoId?: string) => (repoId
-      ? Object.values(latestMasterBuildIds[repoId] || {})
-      : []).filter(Boolean).map(assertDefined)
+    latestMasterBuilds: (repoId?: string) => (
+      repoId
+        ? Object.values(latestMasterBuilds[repoId] || {})
+        : []
+      )
+        .filter(Boolean)
+        .map(assertDefined)
   };
 };
 /* eslint-enable @typescript-eslint/indent */
