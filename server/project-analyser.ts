@@ -6,12 +6,12 @@ import azure from './network/azure';
 import aggregateBuilds from './stats-aggregators/aggregate-builds';
 import aggregateBranches from './stats-aggregators/aggregate-branches';
 import aggregatePrs from './stats-aggregators/aggregate-prs';
-import aggregateTestsByRepo from './stats-aggregators/aggregate-tests-by-repo';
 import aggregateReleases from './stats-aggregators/aggregate-releases-2';
 import aggregateCodeQuality from './stats-aggregators/aggregate-code-quality';
 import aggregateReleaseDefinitions from './stats-aggregators/aggregate-release-definitions';
 import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
+import aggregateTestRunsByBuildId from './stats-aggregators/aggregate-test-runs';
 
 const analyserLog = debug('analyser');
 
@@ -70,22 +70,22 @@ export default (config: Config) => {
     analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
     const [
       repos,
-      { buildByRepoId, buildByBuildId },
-      testRuns,
+      { buildByRepoId, latestMasterBuildIds, buildByBuildId },
+      testRunGetter,
       releaseDefinitionById,
       releases,
       prByRepoId
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
-      forProject(getTestRuns),
+      forProject(getTestRuns).then(aggregateTestRunsByBuildId),
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config))
     ]);
 
-    const getTestsByRepoId = aggregateTestsByRepo(
-      testRuns, buildByBuildId, forProject(getTestCoverage)
+    const getTestsByRepoId = testRunGetter(
+      latestMasterBuildIds, buildByBuildId, forProject(getTestCoverage)
     );
 
     const repoData = Promise.all(repos.map(async r => {

@@ -66,7 +66,10 @@ export default (config: Config) => {
     getBuilds: (collectionName: string, projectName: string) => (
       list<Build>({
         url: url(collectionName, projectName, '/build/builds'),
-        qsParams: { minTime: pastDate(config.lookAtPast).toISOString() },
+        qsParams: {
+          minTime: pastDate(config.lookAtPast).toISOString(),
+          resultFilter: 'succeeded,failed'
+        },
         cacheFile: `${collectionName}_${projectName}_builds`
       })
     ),

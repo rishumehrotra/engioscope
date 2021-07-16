@@ -1,27 +1,30 @@
 import { Build } from '../../azure-types';
 import { pastDate } from '../../utils';
-import aggregateBuildsByRepo from '../aggregate-builds';
+import aggregateBuilds from '../aggregate-builds';
 
 test('aggregate-builds-by-repo', () => {
-  const { buildByRepoId, buildByBuildId } = aggregateBuildsByRepo([
+  const { buildByRepoId, buildByBuildId } = aggregateBuilds([
     {
       result: 'failed',
       finishTime: new Date(),
       startTime: new Date(),
       repository: { id: '1' },
-      id: 123
+      id: 123,
+      definition: { id: 123 }
     },
     {
       result: 'succeeded',
       finishTime: new Date(),
       startTime: pastDate('5 mins'),
-      repository: { id: '2' }
+      repository: { id: '2' },
+      definition: { id: 123 }
     },
     {
       result: 'failed',
       finishTime: new Date(),
       startTime: new Date(),
-      repository: { id: '2' }
+      repository: { id: '2' },
+      definition: { id: 456 }
     }
   ] as Build[]);
 

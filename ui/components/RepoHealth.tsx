@@ -86,7 +86,10 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
       </div>
       {isDetailsOpen && selectedIndicator && selectedIndicator.indicators ? (
         <div className="overflow-hidden">
-          <RepoHealthDetails indicators={selectedIndicator.indicators} gridCols={selectedIndicator.name === 'Releases' ? 4 : 5} />
+          <RepoHealthDetails
+            indicators={selectedIndicator.indicators}
+            gridCols={5}
+          />
         </div>
       ) : null}
 

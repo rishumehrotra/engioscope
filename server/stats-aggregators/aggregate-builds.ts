@@ -2,7 +2,9 @@
 import { Build } from '../azure-types';
 import { TopLevelIndicator } from '../../shared-types';
 import ratingConfig from '../rating-config';
-import { minutes, statsStrings } from '../utils';
+import {
+  assertDefined, isMaster, minutes, statsStrings
+} from '../utils';
 import { withOverallRating } from './ratings';
 
 type BuildStats = {
@@ -55,21 +57,46 @@ const combineStats = (
 // TODO: remove eslint-disable Not sure why eslint is messing up the indentation onSave
 /* eslint-disable @typescript-eslint/indent */
 export default (builds: Build[]) => {
-  const { buildsById, buildStats } = builds
-    .reduce<{ buildsById: Record<string, Build>, buildStats: Record<string, BuildStats> }>((acc, build) => ({
-      buildsById: {
-        ...acc.buildsById,
-        [build.id!]: build
-      },
-      buildStats: {
-        ...acc.buildStats,
-        [repoId(build)]: combineStats({
-          count: 1,
-          success: build.result === 'succeeded' ? 1 : 0,
-          duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
-        }, acc.buildStats[repoId(build)])
+  type AggregatedBuilds = {
+    buildsById: Record<string, Build>;
+    buildStats: Record<string, BuildStats>;
+    latestMasterBuildIds: Record<string, Record<number, number | undefined>>
+  };
+
+  const { buildsById, buildStats, latestMasterBuildIds } = builds
+    .reduce<AggregatedBuilds>((acc, build) => {
+      const rId = repoId(build);
+
+      if (rId === '6d224167-b8ea-4121-8fcb-672ab3d4b599' && build.id === 53956) {
+        console.log({ build, acc });
       }
-    }), { buildsById: {}, buildStats: {} });
+
+      return {
+        buildsById: {
+          ...acc.buildsById,
+          [build.id!]: build
+        },
+        buildStats: {
+          ...acc.buildStats,
+          [rId]: combineStats({
+            count: 1,
+            success: build.result === 'succeeded' ? 1 : 0,
+            duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
+          }, acc.buildStats[rId])
+        },
+        latestMasterBuildIds: {
+          ...acc.latestMasterBuildIds,
+          [rId]: {
+            ...acc.latestMasterBuildIds[rId],
+            [build.definition.id]:
+              // eslint-disable-next-line no-nested-ternary
+              acc.latestMasterBuildIds[rId] && acc.latestMasterBuildIds[rId][build.definition.id]
+                ? acc.latestMasterBuildIds[rId][build.definition.id]
+                : isMaster(build.sourceBranch) ? build.id : undefined
+          }
+        }
+      };
+  }, { buildsById: {}, buildStats: {}, latestMasterBuildIds: {} });
 
   return {
     buildByBuildId: (id?: number) => (id ? buildsById[id] : undefined),
@@ -77,7 +104,10 @@ export default (builds: Build[]) => {
       if (!id) return topLevelIndicator(defaultBuildStats);
       if (!buildStats[id]) return topLevelIndicator(defaultBuildStats);
       return topLevelIndicator(buildStats[id]);
-    }
+    },
+    latestMasterBuildIds: (repoId?: string) => (repoId
+      ? Object.values(latestMasterBuildIds[repoId] || {})
+      : []).filter(Boolean).map(assertDefined)
   };
 };
 /* eslint-enable @typescript-eslint/indent */
