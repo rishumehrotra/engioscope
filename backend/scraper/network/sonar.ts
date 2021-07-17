@@ -47,7 +47,7 @@ type SonarSearchResponse = { paging: SonarPaging, components: SonarRepo[] };
 const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGetter>) => (sonarServer: Config['sonar'][number]) => (
   paginatedGet<SonarSearchResponse>({
     url: `${sonarServer.url}/api/projects/search`,
-    cacheFile: pageIndex => `sonar-${sonarServer.url.split('://')[1].replace(/\./g, '-')}-projects-${pageIndex}`,
+    cacheFile: pageIndex => ['sonar', 'projects', `${sonarServer.url.split('://')[1].replace(/\./g, '-')}-${pageIndex}`],
     headers: () => ({ Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
     hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize === previousResponse.data.components.length,
     qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() })
@@ -70,7 +70,7 @@ export default (config: Config) => {
     if (!currentSonarRepo) return [];
 
     return getWithCache<{ component?: { measures: Measure[] }}>(
-      `sonar_${repoName}`,
+      ['sonar', repoName],
       () => fetch(`${currentSonarRepo.url}/api/measures/component?${qs.stringify({
         component: currentSonarRepo.key,
         metricKeys: requiredMetrics.join(',')

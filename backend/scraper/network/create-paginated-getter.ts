@@ -4,7 +4,7 @@ import { Config } from '../types';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 
 type PaginatedGetRequest<T> = {
-  cacheFile: (pageIndex: string) => string,
+  cacheFile: (pageIndex: string) => string[],
   url: string,
   headers: (previousResponse?: FetchResponse<T>) => Record<string, string>,
   hasAnotherPage: (previousResponse: FetchResponse<T>) => boolean,

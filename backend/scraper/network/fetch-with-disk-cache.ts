@@ -15,7 +15,9 @@ const logDisk = logFetch.extend('disk-io');
 
 const streamPipeline = promisify(pipeline);
 
+type FileLocation = [dirName: string, fileName: string];
 type Fetcher = () => Promise<Response>;
+
 export type FrontMatter = {
   date: number,
   status: number,
@@ -25,9 +27,12 @@ export type FrontMatter = {
 export type FetchResponse<T> = FrontMatter & { data: T };
 
 const cacheLocation = join(process.cwd(), 'cache');
-const createCacheLocation = fs.mkdir(cacheLocation, { recursive: true });
 
-const cachePath = (fileName: string) => join(cacheLocation, `${fileName}.txt`);
+const cachePath = (pathParts: string[]): FileLocation => (
+  pathParts.length === 0
+    ? [cacheLocation, `${pathParts[0]}.txt`]
+    : [join(cacheLocation, ...pathParts.slice(0, -1)), `${pathParts[pathParts.length - 1]}.txt`]
+);
 const fileNameForLogs = (fileName: string) => fileName.replace(`${process.cwd()}/`, '');
 
 const getFirstLine = async (pathToFile: string) => {
@@ -57,8 +62,9 @@ const parseDate = (_: string, value: unknown) => {
   return new Date(value);
 };
 
-const streamToDisk = async (fileName: string, fetcher: Fetcher) => {
+const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   const response = await fetcher();
+  const filePath = join(...fileLocation);
 
   if (!response.ok) {
     logNetwork(`HTTP error when fetching ${response.url} ${response.status} - ${response.statusText}`);
@@ -66,11 +72,11 @@ const streamToDisk = async (fileName: string, fetcher: Fetcher) => {
     throw new Error(`HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`);
   }
 
-  logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(fileName)}`);
+  logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(filePath)}`);
 
-  await createCacheLocation;
+  await fs.mkdir(fileLocation[0], { recursive: true });
 
-  const fileStream = createWriteStream(fileName);
+  const fileStream = createWriteStream(filePath);
   fileStream.write(JSON.stringify({
     date: Date.now(),
     status: response.status,
@@ -79,16 +85,17 @@ const streamToDisk = async (fileName: string, fetcher: Fetcher) => {
   fileStream.write('\n');
   await streamPipeline(response.body, fileStream);
 
-  logDisk(`${fileNameForLogs(fileName)} written.`);
+  logDisk(`${fileNameForLogs(filePath)} written.`);
 };
 
-export default (config: Config) => async <T>(fileName: string, fetcher: Fetcher): Promise<FetchResponse<T>> => {
-  const filePath = cachePath(fileName);
+export default (config: Config) => async <T>(pathParts: string[], fetcher: Fetcher): Promise<FetchResponse<T>> => {
+  const fileLocation = cachePath(pathParts);
+  const filePath = join(...fileLocation);
 
   if (!await doesFileExist(filePath)) {
-    await streamToDisk(filePath, fetcher);
+    await streamToDisk(fileLocation, fetcher);
   } else if (Date.now() - (await getFrontMatter(filePath)).date > ms(config.cacheToDiskFor)) {
-    await streamToDisk(filePath, fetcher);
+    await streamToDisk(fileLocation, fetcher);
   }
 
   logDisk(`Reading from file ${fileNameForLogs(filePath)}`);

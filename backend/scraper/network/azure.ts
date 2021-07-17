@@ -37,14 +37,14 @@ export default (config: Config) => {
   );
   const list = <T>(
     { url, qsParams, cacheFile }:
-    { url:string, qsParams?: Record<string, string>, cacheFile: string }
+    { url:string, qsParams?: Record<string, string>, cacheFile: string[] }
   ) => (
     paginatedGet<ListOf<T>>({
       url,
       qsParams: (_, prev) => ({ ...apiVersion, ...continuationToken(prev), ...qsParams }),
       hasAnotherPage,
       headers: () => authHeader,
-      cacheFile: pageIndex => `${cacheFile}_${pageIndex}`
+      cacheFile: pageIndex => [...cacheFile.slice(0, -1), `${cacheFile[cacheFile.length - 1]}_${pageIndex}`]
     }).then(flattenToValues)
   );
 
@@ -52,14 +52,14 @@ export default (config: Config) => {
     getProjects: (collectionName: string) => (
       list<TeamProjectReference>({
         url: `${config.host}${collectionName}/_apis/projects`,
-        cacheFile: `${collectionName}_projects`
+        cacheFile: [collectionName, 'projects']
       })
     ),
 
     getRepositories: (collectionName: string, projectName: string) => (
       list<GitRepository>({
         url: url(collectionName, projectName, '/git/repositories'),
-        cacheFile: `${collectionName}_${projectName}_repositories`
+        cacheFile: [collectionName, projectName, 'repositories']
       })
     ),
 
@@ -70,7 +70,7 @@ export default (config: Config) => {
           minTime: pastDate(config.lookAtPast).toISOString(),
           resultFilter: 'succeeded,failed'
         },
-        cacheFile: `${collectionName}_${projectName}_builds`
+        cacheFile: [collectionName, projectName, 'builds']
       })
     ),
 
@@ -85,14 +85,14 @@ export default (config: Config) => {
         }),
         hasAnotherPage: previousResponse => previousResponse.data.count === 1000,
         headers: () => authHeader,
-        cacheFile: pageIndex => `${collectionName}_${projectName}_prs_${pageIndex}`
+        cacheFile: pageIndex => [collectionName, projectName, `prs_${pageIndex}`]
       }).then(flattenToValues)
     ),
 
     getBranchesStats: (collectionName: string, projectName: string) => (repoId: string) => (
       list<GitBranchStats>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/stats/branches`),
-        cacheFile: `${collectionName}_${projectName}_${repoId}_branches`
+        cacheFile: [collectionName, projectName, 'repos', repoId, 'branches']
       })
     ),
 
@@ -100,24 +100,27 @@ export default (config: Config) => {
       list<TestRun>({
         url: url(collectionName, projectName, '/test/runs'),
         qsParams: { includeRunDetails: 'true' },
-        cacheFile: `${collectionName}_${projectName}_testruns`
+        cacheFile: [collectionName, projectName, 'testruns']
       }).then(runs => runs.filter(run => run.startedDate > pastDate(config.lookAtPast)))
     ),
 
     getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
-      getWithCache<CodeCoverageSummary>(`${collectionName}_${projectName}_${buildId.toString()}_coverage`, () => (
-        fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
-          'api-version': '5.1-preview',
-          buildId: buildId.toString()
-        })}`), { headers: authHeader })
-      )).then(res => res.data)
+      getWithCache<CodeCoverageSummary>(
+        [collectionName, projectName, 'coverage', buildId.toString()],
+        () => (
+          fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
+            'api-version': '5.1-preview',
+            buildId: buildId.toString()
+          })}`), { headers: authHeader })
+        )
+      ).then(res => res.data)
     ),
 
     getReleaseDefinitions: (collectionName: string, projectName: string) => (
       list<ReleaseDefinition>({
         url: url(collectionName, projectName, '/release/definitions'),
         qsParams: { $expand: 'environments' },
-        cacheFile: `${collectionName}_${projectName}_release_definitions`
+        cacheFile: [collectionName, projectName, 'release_definitions']
       })
     ),
 
@@ -128,7 +131,7 @@ export default (config: Config) => {
           minCreatedTime: pastDate(config.lookAtPast).toISOString(),
           $expand: 'environments,artifacts'
         },
-        cacheFile: `${collectionName}_${projectName}_releases`
+        cacheFile: [collectionName, projectName, 'releases']
       })
     ),
 
@@ -136,7 +139,7 @@ export default (config: Config) => {
       list<GitCommitRef>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
         qsParams: { 'searchCriteria.fromDate': pastDate('15 days').toISOString() },
-        cacheFile: `${collectionName}_${projectName}_${repoId}_releases`
+        cacheFile: [collectionName, projectName, 'releases', repoId]
       })
     )
   };
