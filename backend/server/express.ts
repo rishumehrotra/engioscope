@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'path';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import { Config } from '../scraper/types';
 import api from './api';
 
@@ -12,6 +14,9 @@ const sendIndexHtml = (_: express.Request, res: express.Response) => {
   res.header('Pragma', 'no-cache');
   res.sendFile(path.join(uiFolder, 'index.html'));
 };
+
+app.use(compression());
+app.use(rateLimit({ windowMs: 60 * 1000, max: 100 })); // 100 reqs/min
 
 app.get('/', sendIndexHtml);
 app.use(express.static(uiFolder));
