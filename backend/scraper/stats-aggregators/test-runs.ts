@@ -109,10 +109,10 @@ export default (testRuns: TestRun[]) => {
       }]);
     }
 
-    return topLevelIndicator(await Promise.all(matchingBuilds.map(async build => ({
+    return topLevelIndicator((await Promise.all(matchingBuilds.map(async build => ({
       buildName: build.definition.name,
       ...aggregateRuns(runsByBuildId[build.id] || []),
       coverage: coverageFrom((await testCoverageByBuildId(build.id)).coverageData)
-    }))));
+    })))).filter(testStat => testStat.total !== 0));
   };
 };
