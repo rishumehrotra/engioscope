@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ReleaseStats } from '../../shared-types';
-
-const fetchProjectReleaseMetrics = (collection: string, project: string) => (
-  fetch(`/api/${collection}_${project}_releases.json`).then(res => res.json())
-);
+import { getProjectReleaseMetrics } from '../api';
 
 const Release: React.FC<{ release: ReleaseStats }> = ({ release }) => (
   <div className="py-10">
@@ -56,7 +53,7 @@ const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string, project: string }>();
 
   useEffect(() => {
-    fetchProjectReleaseMetrics(collection, project).then(setReleaseAnalysis);
+    getProjectReleaseMetrics(collection, project).then(setReleaseAnalysis);
   }, [collection, project]);
 
   if (!releaseAnalysis) return <div>Loading...</div>;
