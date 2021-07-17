@@ -22,7 +22,7 @@ npm-debug.log*
 ui/tailwind.output.css
 cache
 config.json
-server/scratch.ts
+backend/scratch.ts
 data
 
 dist
