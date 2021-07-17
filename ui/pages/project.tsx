@@ -5,7 +5,10 @@ import SearchInput from '../components/SearchInput';
 import { Ascending, Descending } from '../components/Icons';
 import Select from '../components/Select';
 import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared-types';
-import { getProjectMetrics } from '../api';
+
+const fetchProjectMetrics = (collection: string, project: string) => (
+  fetch(`/api/${collection}_${project}.json`).then(res => res.json())
+);
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
   <div className="mt-4">
@@ -95,7 +98,7 @@ const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string, project: string }>();
 
   useEffect(() => {
-    getProjectMetrics(collection, project).then(setProjectAnalysis);
+    fetchProjectMetrics(collection, project).then(setProjectAnalysis);
   }, [collection, project]);
 
   if (!projectAnalysis) return <div>Loading...</div>;
