@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { prop } from 'ramda';
 import debug from 'debug';
 import { RepoAnalysis, TopLevelIndicator } from '../../shared-types';
@@ -17,7 +16,7 @@ import { ratingWeightage } from './rating-config';
 const analyserLog = debug('analyser');
 
 const computeRating = (indicators: TopLevelIndicator[]) => {
-  const isWithoutSonar = indicators.find(indicator => indicator.name === 'Code quality')!.rating === 0;
+  const isWithoutSonar = indicators.find(indicator => indicator.name === 'Code quality')?.rating === 0;
   const weightage = prop(isWithoutSonar ? 'withoutSonar' : 'default');
 
   return Math.round(indicators.reduce((acc, indicator) => (
@@ -68,15 +67,15 @@ export default (config: Config) => {
         coverage,
         { languages, codeQuality }
       ] = await Promise.all([
-        (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id!))
+        (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id))
           .then(aggregateBranches),
         getTestsByRepoId(r.id),
-        codeQualityByRepoName(r.name!).then(aggregateCodeQuality)
+        codeQualityByRepoName(r.name).then(aggregateCodeQuality)
       ]);
 
       return withOverallRating({
-        name: r.name!,
-        id: r.id!,
+        name: r.name,
+        id: r.id,
         languages,
         indicators: [
           buildByRepoId(r.id),

@@ -2,6 +2,7 @@
   "parser": "@typescript-eslint/parser",
   "extends": [
     "plugin:@typescript-eslint/recommended",
+    "plugin:eslint-comments/recommended",
     "airbnb"
   ],
   "env": {

@@ -12,7 +12,7 @@ export default (commits: GitCommitRef[]): AggregatedCommits => ({
   ...commits.reduce<Omit<AggregatedCommits, 'count'>>((acc, commit) => ({
     commitsByDev: {
       ...acc.commitsByDev,
-      [commit.author!.name!]: (acc.commitsByDev[commit.author!.name!] || 0) + 1
+      [commit.author!.name]: (acc.commitsByDev[commit.author!.name] || 0) + 1
     },
     latestCommitDate: acc.latestCommitDate !== undefined && acc.latestCommitDate.getTime() < commit.author!.date!.getTime()
       ? commit.author!.date
@@ -22,3 +22,4 @@ export default (commits: GitCommitRef[]): AggregatedCommits => ({
     latestCommitDate: undefined
   })
 });
+/* eslint-enable */

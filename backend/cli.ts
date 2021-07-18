@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
 import { join } from 'path';
 import yargs from 'yargs';
 import chalk from 'chalk';
@@ -21,8 +20,10 @@ const addConfigOption = (yargs: yargs.Argv<{}>): void => {
 const ensureConfigExists = async (argv: { [argName: string]: unknown }) => {
   const path = join(process.cwd(), argv.config as string);
   if (!await doesFileExist(path)) {
+    /* eslint-disable no-console */
     console.log(chalk.red('Couldn\'t find config file!'));
     console.log(chalk.red(`Tried ${path}`));
+    /* eslint-enable */
     process.exit(-1);
   }
   return path;

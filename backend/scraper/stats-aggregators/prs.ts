@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { GitPullRequest, PullRequestStatus } from '../types-azure';
 import { ratingConfig } from '../rating-config';
 import { Config } from '../types';
@@ -29,7 +28,7 @@ export default (config: Config) => (prs: GitPullRequest[]) => {
     const completedPrs = prsInTimeWindow.filter(isStatus('completed'));
 
     const timesToApprove = completedPrs
-      .map(pr => (pr.closedDate!.getTime() - pr.creationDate!.getTime()));
+      .map(pr => (pr.closedDate.getTime() - pr.creationDate.getTime()));
 
     const completedPrCount = completedPrs.length;
 

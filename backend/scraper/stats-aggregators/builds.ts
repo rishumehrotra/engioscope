@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Build } from '../types-azure';
 import { TopLevelIndicator } from '../../../shared-types';
 import { ratingConfig } from '../rating-config';
@@ -72,7 +71,7 @@ export default (builds: Build[]) => {
           [rId]: combineStats({
             count: 1,
             success: build.result === 'succeeded' ? 1 : 0,
-            duration: [(new Date(build.finishTime!)).getTime() - (new Date(build.startTime!).getTime())]
+            duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())]
           }, acc.buildStats[rId])
         },
         latestMasterBuilds: {
