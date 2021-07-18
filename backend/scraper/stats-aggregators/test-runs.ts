@@ -1,3 +1,4 @@
+import prettyMs from 'pretty-ms';
 import { TopLevelIndicator } from '../../../shared-types';
 import {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
@@ -38,7 +39,7 @@ const topLevelIndicator = (stats: TestStatsWithBuild[]): TopLevelIndicator => wi
     },
     {
       name: 'Tests execution time',
-      value: Math.round(stat.executionTime / 1000),
+      value: prettyMs(stat.executionTime),
       rating: 0 // ratingConfig.coverage.testExecutionTime(stat.executionTime)
     },
     {
@@ -86,6 +87,13 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
 export default (testRuns: TestRun[]) => {
   const runsByBuildId = testRuns.reduce((acc, run) => {
     if (!run.build) return acc;
+
+    // Weirdly, it seems that Azure is reusing build numbers!
+    // For the moment, the hypothesis is that this reuse is across
+    // builds and releases. So, we're filtering out builds that have
+    // associated releases.
+    if (run.release) return acc;
+
     return {
       ...acc,
       [Number(run.build.id)]: [...(acc[Number(run.build.id)] || []), run]
