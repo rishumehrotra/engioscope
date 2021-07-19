@@ -5,10 +5,7 @@ import SearchInput from '../components/SearchInput';
 import { Ascending, Descending } from '../components/Icons';
 import Select from '../components/Select';
 import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
-
-const fetchProjectMetrics = (collection: string, project: string) => (
-  fetch(`/api/${collection}_${project}.json`).then(res => res.json())
-);
+import { fetchProjectMetrics } from '../network';
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
   <div className="mt-4">
@@ -41,11 +38,12 @@ type SortButtonsProps = {
   sort: number;
   setSort: React.Dispatch<React.SetStateAction<number>>;
   sortBy: string;
-  setSortBy: React.Dispatch<React.SetStateAction<string>>
+  setSortBy: React.Dispatch<React.SetStateAction<string>>;
+  labels: string[]
 }
 
 const SortButtons: React.FC<SortButtonsProps> = ({
-  sort, setSort, setSortBy, sortBy
+  sort, setSort, setSortBy, sortBy, labels
 }) => (
   <div className="grid grid-cols-2">
     <button
@@ -62,14 +60,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
       form-select p-0 pl-2 h-9 w-full sm:text-sm font-medium
       focus:shadow-none focus-visible:ring-2 focus-visible:ring-teal-500"
       onChange={setSortBy}
-      options={[
-        { label: 'Builds', value: 'Builds' },
-        { label: 'Branches', value: 'Branches' },
-        { label: 'Pull requests', value: 'Pull requests' },
-        { label: 'Tests', value: 'Tests' },
-        { label: 'Releases', value: 'Releases' },
-        { label: 'Code quality', value: 'Code quality' }
-      ]}
+      options={labels.map(l => ({ label: l, value: l }))}
       value={sortBy}
     />
   </div>
@@ -114,8 +105,18 @@ const Project: React.FC = () => {
           <SearchInput className="w-1/3" onSearch={setSearchTerm} searchTerm={searchTerm} />
         </div>
         <div className="flex justify-between w-full items-center mt-8">
-          <ProjectDetails name={projectAnalysis.name} repos={projectAnalysis.repos} lastUpdated={projectAnalysis.lastUpdated} />
-          <SortButtons sort={sort} setSort={setSort} setSortBy={setSortBy} sortBy={sortBy} />
+          <ProjectDetails
+            name={projectAnalysis.name}
+            repos={projectAnalysis.repos}
+            lastUpdated={projectAnalysis.lastUpdated}
+          />
+          <SortButtons
+            sort={sort}
+            setSort={setSort}
+            setSortBy={setSortBy}
+            sortBy={sortBy}
+            labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
+          />
         </div>
       </div>
       {filteredRepos.length ? filteredRepos.map(repo => (

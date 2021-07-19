@@ -2,6 +2,7 @@
 /* eslint-disable jsx-a11y/interactive-supports-focus */
 import React, { useState } from 'react';
 import { RepoAnalysis, TopLevelIndicator } from '../../shared/types';
+import { num } from '../helpers';
 import RepoHealthDetails from './RepoHealthDetails';
 
 const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
@@ -62,7 +63,7 @@ const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {
                       <div className={`text-3xl font-semibold -mb-1 
                           ${selectedIndicator?.name === name ? 'text-black' : 'text-gray-600'} `}
                       >
-                        {count}
+                        {typeof count === 'number' ? num(count) : count}
                       </div>
                       <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{name}</div>
                     </div>

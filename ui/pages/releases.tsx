@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ReleaseStats } from '../../shared/types';
-
-const fetchProjectReleaseMetrics = (collection: string, project: string) => (
-  fetch(`/api/${collection}_${project}_releases.json`).then(res => res.json())
-);
+import { fetchProjectReleaseMetrics } from '../network';
 
 const Release: React.FC<{ release: ReleaseStats }> = ({ release }) => (
   <div className="py-10">

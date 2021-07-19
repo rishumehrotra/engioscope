@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ScrapedProject } from '../../shared/types';
+import { fetchCollections } from '../network';
 
 const Project: React.FC<{
   projectName: string,
@@ -24,8 +25,6 @@ const Project: React.FC<{
     </div>
   </Link>
 );
-
-const fetchCollections = () => fetch('/api/index.json').then(res => res.json());
 
 const Collection: React.FC = () => {
   const [collections, setCollections] = useState<ScrapedProject[] | undefined>();

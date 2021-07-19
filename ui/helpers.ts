@@ -7,3 +7,5 @@ export const getRatingColor = (rating?: number | string | null): string => {
   }
   return 'green-500';
 };
+
+export const num = (num: number) => Intl.NumberFormat('en-in').format(num);
