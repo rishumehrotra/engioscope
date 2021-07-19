@@ -20,7 +20,7 @@ const defaultStat: TestStats = {
 
 const topLevelIndicator = (stats: TestStatsWithBuild[]): TopLevelIndicator => withOverallRating({
   name: 'Tests',
-  count: stats.reduce((acc, s) => acc + s.total, 0),
+  count: [...new Set(stats.map(s => s.total))].reduce((acc, t) => acc + t, 0),
   indicators: stats.flatMap(stat => [
     {
       name: 'Build pipeline',
