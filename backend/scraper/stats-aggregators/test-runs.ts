@@ -1,5 +1,5 @@
 import prettyMs from 'pretty-ms';
-import { TopLevelIndicator } from '../../../shared-types';
+import { TopLevelIndicator } from '../../../shared/types';
 import {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';

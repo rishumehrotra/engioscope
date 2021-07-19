@@ -1,6 +1,6 @@
 import { prop } from 'ramda';
 import debug from 'debug';
-import { RepoAnalysis, TopLevelIndicator } from '../../shared-types';
+import { RepoAnalysis, TopLevelIndicator } from '../../shared/types';
 import azure from './network/azure';
 import aggregateBuilds from './stats-aggregators/builds';
 import aggregateBranches from './stats-aggregators/branches';

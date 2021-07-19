@@ -1,4 +1,4 @@
-import { TopLevelIndicator } from '../../../shared-types';
+import { TopLevelIndicator } from '../../../shared/types';
 
 const clamp = (min: number, max: number) => (num: number) => (
   Math.min(Math.max(num, min), max)

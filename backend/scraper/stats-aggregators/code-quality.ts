@@ -5,7 +5,7 @@ import { withOverallRating } from './ratings';
 import { assertDefined } from '../../utils';
 import { Measure } from '../types-sonar';
 import { ratingConfig } from '../rating-config';
-import { TopLevelIndicator } from '../../../shared-types';
+import { TopLevelIndicator } from '../../../shared/types';
 
 type MetricDefinition = {
   name: string,

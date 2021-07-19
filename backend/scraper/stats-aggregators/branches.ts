@@ -1,4 +1,4 @@
-import { TopLevelIndicator } from '../../../shared-types';
+import { TopLevelIndicator } from '../../../shared/types';
 import { GitBranchStats } from '../types-azure';
 import { ratingConfig } from '../rating-config';
 import { isWithinFortnight } from '../../utils';

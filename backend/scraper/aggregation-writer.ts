@@ -6,7 +6,7 @@ import { prop } from 'ramda';
 import { average } from './stats-aggregators/ratings';
 import {
   ProjectRepoAnalysis, ReleaseStats, RepoAnalysis, ScrapedProject
-} from '../../shared-types';
+} from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import { Config, ProjectAnalysis } from './types';
 

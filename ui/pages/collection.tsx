@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ScrapedProject } from '../../shared-types';
+import { ScrapedProject } from '../../shared/types';
 
 const Project: React.FC<{
   projectName: string,
   route: string,
-  rating: number,
+  rating: number | null,
   lastUpdated: string
 }> = ({
   projectName, route, lastUpdated
@@ -42,7 +42,8 @@ const Collection: React.FC = () => {
             projectName={collection.name[1]}
             route={`/${collection.name.join('/')}`}
             rating={collection.rating}
-            lastUpdated={collection.lastUpdated}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            lastUpdated={collection.lastUpdated!}
           />
         ))}
       </div>

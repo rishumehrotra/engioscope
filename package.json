@@ -17,7 +17,7 @@
     "scrape": "DEBUG=* node -r ts-node/register ./backend/dev/scrape.ts",
     "scrape:profiler": "node -r ts-node/register --prof ./backend/dev/scrape.ts",
     "tsc": "tsc --build backend ui",
-    "lint": "eslint \"./**/*.ts\" --cache",
+    "lint": "eslint \"./**/*.ts\" \"./**/*.tsx\" --cache",
     "scratch": "node -r ts-node/register ./backend/scratch.ts",
     "prepare": "husky install"
   },

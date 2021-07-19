@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/interactive-supports-focus */
 import React, { useState } from 'react';
-import { RepoAnalysis, TopLevelIndicator } from '../../shared-types';
+import { RepoAnalysis, TopLevelIndicator } from '../../shared/types';
 import RepoHealthDetails from './RepoHealthDetails';
 
 const RepoHealth: React.FC<{repo?:RepoAnalysis}> = ({ repo }) => {

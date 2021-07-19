@@ -4,7 +4,7 @@ import RepoHealth from '../components/RepoHealth';
 import SearchInput from '../components/SearchInput';
 import { Ascending, Descending } from '../components/Icons';
 import Select from '../components/Select';
-import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared-types';
+import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
 
 const fetchProjectMetrics = (collection: string, project: string) => (
   fetch(`/api/${collection}_${project}.json`).then(res => res.json())

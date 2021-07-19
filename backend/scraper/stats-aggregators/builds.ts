@@ -1,5 +1,5 @@
 import { Build } from '../types-azure';
-import { TopLevelIndicator } from '../../../shared-types';
+import { TopLevelIndicator } from '../../../shared/types';
 import { ratingConfig } from '../rating-config';
 import {
   assertDefined, isMaster, minutes, statsStrings

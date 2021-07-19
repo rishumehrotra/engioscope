@@ -11,9 +11,5 @@
       "jest"
     ],
     "module": "esnext",
-  },
-  "include": [
-    "ui",
-    "../shared-types.ts"
-  ]
+  }
 }

@@ -6,11 +6,10 @@ import { doesFileExist } from '../utils';
 const router = Router();
 
 router.get('/api/*', async (req, res) => {
-  const { path } = req;
-  const fileName = decodeURIComponent(path.replace('/api/', ''));
-  const filePath = process.cwd();
+  const fileName = decodeURIComponent(req.path.replace('/api/', ''));
+  const filePath = join(process.cwd(), 'data', fileName);
 
-  if (!await doesFileExist(join(filePath, 'data', fileName))) {
+  if (!await doesFileExist(filePath)) {
     res.status(404);
     res.send('404 - Not found');
     return;
@@ -18,7 +17,7 @@ router.get('/api/*', async (req, res) => {
 
   res.status(200);
   res.setHeader('Content-type', 'application/json');
-  res.send(await fs.readFile(join(filePath, 'data', fileName), { encoding: 'utf-8' }));
+  res.send(await fs.readFile(filePath, { encoding: 'utf-8' }));
 });
 
 export default router;

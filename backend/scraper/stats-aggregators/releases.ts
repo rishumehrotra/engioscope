@@ -1,4 +1,4 @@
-import { ReleaseStats } from '../../../shared-types';
+import { ReleaseStats } from '../../../shared/types';
 import { Release, ReleaseDefinition } from '../types-azure';
 
 const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): ReleaseStats => ({

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ChildIndicator } from '../../shared-types';
+import { ChildIndicator } from '../../shared/types';
 
 type RepoHealthDetailsProps = {
-  indicators: ChildIndicator [],
+  indicators: ChildIndicator[],
   gridCols: number;
 }
 
