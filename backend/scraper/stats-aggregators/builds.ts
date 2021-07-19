@@ -2,18 +2,24 @@ import { Build } from '../types-azure';
 import { TopLevelIndicator } from '../../../shared/types';
 import { ratingConfig } from '../rating-config';
 import {
-  assertDefined, isMaster, minutes, statsStrings
+  assertDefined, isMaster, minutes, shortDateFormat, statsStrings
 } from '../../utils';
 import { withOverallRating } from './ratings';
 
 type BuildStats = {
   count: number,
   success: number,
-  duration: number[]
+  duration: number[],
+  status:
+  | { type: 'unknown' }
+  | { type: 'succeeded' }
+  | { type: 'failed', since: Date }
 };
 
 const repoId = (build: Build) => build.repository?.id ?? '<unknown>';
-const defaultBuildStats: BuildStats = { count: 0, success: 0, duration: [] };
+const defaultBuildStats: BuildStats = {
+  count: 0, success: 0, duration: [], status: { type: 'unknown' }
+};
 const [timeRange, averageTime] = statsStrings('-', minutes);
 
 const topLevelIndicator = (stats: BuildStats): TopLevelIndicator => withOverallRating({
@@ -40,17 +46,31 @@ const topLevelIndicator = (stats: BuildStats): TopLevelIndicator => withOverallR
       value: averageTime(stats.duration),
       rating: ratingConfig.builds.averageDuration(stats.duration),
       additionalValue: timeRange(stats.duration)
+    },
+    {
+      name: 'Current status',
+      value: stats.status.type,
+      rating: 0,
+      additionalValue: stats.status.type === 'failed' ? `Since ${shortDateFormat(stats.status.since)}` : undefined
     }
   ]
 });
 
+const status = (incoming: BuildStats, existing: BuildStats): BuildStats['status'] => {
+  if (existing.status.type === 'unknown') return incoming.status;
+  if (existing.status.type === 'succeeded') return existing.status;
+  if (incoming.status.type === 'succeeded') return existing.status;
+  return incoming.status;
+};
+
 const combineStats = (
   incoming: BuildStats,
   existing = defaultBuildStats
-) => ({
+): BuildStats => ({
   count: existing.count + incoming.count,
   success: existing.success + incoming.success,
-  duration: [...existing.duration, ...incoming.duration]
+  duration: [...existing.duration, ...incoming.duration],
+  status: status(incoming, existing)
 });
 
 // TODO: remove eslint-disable Not sure why eslint is messing up the indentation onSave
@@ -71,7 +91,10 @@ export default (builds: Build[]) => {
           [rId]: combineStats({
             count: 1,
             success: build.result === 'succeeded' ? 1 : 0,
-            duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())]
+            duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())],
+            status: build.result === 'succeeded'
+              ? { type: 'succeeded' }
+              : { type: 'failed', since: build.finishTime }
           }, acc.buildStats[rId])
         },
         latestMasterBuilds: {

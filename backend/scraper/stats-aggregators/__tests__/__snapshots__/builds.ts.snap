@@ -25,6 +25,12 @@ Object {
       "rating": 0,
       "value": "1 m",
     },
+    Object {
+      "additionalValue": "Since Jul 19",
+      "name": "Current status",
+      "rating": 0,
+      "value": "failed",
+    },
   ],
   "name": "Builds",
   "rating": 1,
@@ -56,9 +62,15 @@ Object {
       "rating": 1,
       "value": "3 m",
     },
+    Object {
+      "additionalValue": undefined,
+      "name": "Current status",
+      "rating": 0,
+      "value": "succeeded",
+    },
   ],
   "name": "Builds",
-  "rating": 15,
+  "rating": 12,
 }
 `;
 
@@ -86,6 +98,12 @@ Object {
       "name": "Average duration",
       "rating": 0,
       "value": "-",
+    },
+    Object {
+      "additionalValue": undefined,
+      "name": "Current status",
+      "rating": 0,
+      "value": "unknown",
     },
   ],
   "name": "Builds",
