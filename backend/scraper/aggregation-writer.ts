@@ -2,7 +2,7 @@ import AwaitLock from 'await-lock';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
-import { prop } from 'ramda';
+import { prop } from 'rambda';
 import { average } from './stats-aggregators/ratings';
 import {
   ProjectRepoAnalysis, ReleaseStats, RepoAnalysis, ScrapedProject

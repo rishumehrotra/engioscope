@@ -1,4 +1,4 @@
-import { multiply, pipe } from 'ramda';
+import { multiply, pipe } from 'rambda';
 import {
   inversePercent, ratingFromScore, remainingFrom, qualityGateRating,
   deviation, devsPerTeamPerMonthPlusOne, defaultReducingFactor,
@@ -8,7 +8,7 @@ import {
 import { Measure } from './types-sonar';
 import { divideBy } from '../utils';
 
-type MeasureByName = (name: string) => (x: readonly Measure[]) => string
+type MeasureByName = (name: string) => (x: Measure[]) => string
 
 export const ratingWeightage = {
   Branches: {

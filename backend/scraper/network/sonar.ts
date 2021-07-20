@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import qs from 'qs';
-import { pipe, sort } from 'ramda';
+import { pipe, sort } from 'rambda';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import { filter, getFirst } from '../../utils';
 import fetchWithDiskCache from './fetch-with-disk-cache';

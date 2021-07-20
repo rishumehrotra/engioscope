@@ -1,6 +1,6 @@
 import {
   pipe, find, propEq, prop
-} from 'ramda';
+} from 'rambda';
 import { withOverallRating } from './ratings';
 import { assertDefined } from '../../utils';
 import { Measure } from '../types-sonar';

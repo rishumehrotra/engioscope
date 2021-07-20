@@ -1,4 +1,4 @@
-import { prop } from 'ramda';
+import { prop } from 'rambda';
 import debug from 'debug';
 import { RepoAnalysis, TopLevelIndicator } from '../../shared/types';
 import azure from './network/azure';
