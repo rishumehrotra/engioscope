@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChildIndicator } from '../../shared/types';
-import { num } from '../helpers';
+import Metric from './Metric';
 
 type RepoHealthDetailsProps = {
   indicators: ChildIndicator[],
@@ -13,22 +13,14 @@ const RepoHealthDetails: React.FC<RepoHealthDetailsProps> = ({ indicators, gridC
       indicators.map(({
         value, name, tooltip, additionalValue
       }, index) => (
-        <div
-          style={{ outline: 'none' }}
-          className="py-2 text-gray-900 rounded-lg hover:bg-white grid grid-cols-1 text-center"
-          title={tooltip || ''}
+        <Metric
           // eslint-disable-next-line react/no-array-index-key
           key={`${name}-${index}`}
-        >
-          <div className="text-2xl font-semibold">
-            {typeof value === 'number' ? num(value) : value}
-            {/* <span className="text-base flex mt-4 ml-2 text-gray-600">
-              <span className={`text-${getRatingColor(rating)}`}>{rating}</span>
-            </span> */}
-          </div>
-          <span className="text-base text-gray-600">{additionalValue || null}</span>
-          <div className="tracking-wider text-gray-600 text-sm">{name}</div>
-        </div>
+          name={name}
+          value={value}
+          additionalValue={additionalValue}
+          tooltip={tooltip}
+        />
       ))
     }
   </div>
