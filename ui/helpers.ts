@@ -9,3 +9,14 @@ export const getRatingColor = (rating?: number | string | null): string => {
 };
 
 export const num = (num: number) => Intl.NumberFormat('en-in').format(num);
+
+export const parseQueryString = (qs: string): Record<string, string | undefined> => Object.fromEntries(new URLSearchParams(qs));
+
+type QueryStringProps = {
+  search: string
+}
+export const updateQueryString = ({ search }: QueryStringProps) => {
+  const qs = new URLSearchParams();
+  qs.set('search', search);
+  return qs.toString();
+};

@@ -3,12 +3,13 @@ import {
   useParams, useHistory, Switch, Route
 } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
-import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
-import { fetchProjectMetrics } from '../network';
+import { ProjectRepoAnalysis, ReleaseStats, RepoAnalysis } from '../../shared/types';
+import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './repos';
 import Releases from './releases';
+import { parseQueryString, updateQueryString } from '../helpers';
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
   <div className="">
@@ -53,17 +54,19 @@ const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
 );
 
 const Project: React.FC = () => {
+  const { collection, project } = useParams<{ collection: string, project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [releaseAnalysis, setReleaseAnalysis] = useState<ReleaseStats[] | undefined>();
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
-  const { collection, project } = useParams<{ collection: string, project: string }>();
   const history = useHistory();
+
+  const { search } = parseQueryString(history.location.search);
+  const setSearchTerm = (searchTerm: string) => history.replace({ search: updateQueryString({ search: searchTerm }) });
 
   const onSecondaryMenuSelect = useCallback(
     (selectedKey: string) => {
       history.push(`${history.location.pathname.split('/').slice(0, -1).join('/')}/${selectedKey}`);
-      // history.push(`${history.location.pathname}/${selectedKey}`);
     },
     [history]
   );
@@ -72,10 +75,15 @@ const Project: React.FC = () => {
     fetchProjectMetrics(collection, project).then(setProjectAnalysis);
   }, [collection, project]);
 
+  useEffect(() => {
+    fetchProjectReleaseMetrics(collection, project).then(setReleaseAnalysis);
+  }, [collection, project]);
+
   if (!projectAnalysis) return <div>Loading...</div>;
+  if (!releaseAnalysis) return <div>Loading...</div>;
 
   const filteredRepos = projectAnalysis.repos
-    .filter(bySearchTerm(searchTerm))
+    .filter(bySearchTerm(search || ''))
     .sort(sortByIndicators(sortBy, sort));
 
   return (
@@ -87,7 +95,7 @@ const Project: React.FC = () => {
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
-          <SearchInput className="w-1/2" onSearch={setSearchTerm} searchTerm={searchTerm} />
+          <SearchInput className="w-1/2" onSearch={setSearchTerm} searchTerm={search} />
         </div>
       </div>
       <div className="pb-6">
@@ -95,7 +103,6 @@ const Project: React.FC = () => {
       </div>
       <div className="grid grid-cols-2 mb-8">
         <NavBar onSelect={onSecondaryMenuSelect} navItems={[{ key: 'repos' }, { key: 'releases' }]} />
-
         <SortButtons
           sort={sort}
           setSort={setSort}
@@ -103,7 +110,6 @@ const Project: React.FC = () => {
           sortBy={sortBy}
           labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
         />
-
       </div>
 
       <Switch>
@@ -111,7 +117,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases />
+          <Releases releaseAnalysis={releaseAnalysis} />
         </Route>
       </Switch>
     </div>
