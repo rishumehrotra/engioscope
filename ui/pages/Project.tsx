@@ -64,11 +64,14 @@ const Project: React.FC = () => {
   const { search } = parseQueryString(history.location.search);
   const setSearchTerm = (searchTerm: string) => history.replace({ search: updateQueryString({ search: searchTerm }) });
 
+  const pathParts = history.location.pathname.split('/');
+  const selectedTab = pathParts[pathParts.length - 1];
+
   const onSecondaryMenuSelect = useCallback(
     (selectedKey: string) => {
-      history.push(`${history.location.pathname.split('/').slice(0, -1).join('/')}/${selectedKey}`);
+      history.push(`${pathParts.slice(0, -1).join('/')}/${selectedKey}`);
     },
-    [history]
+    [history, pathParts]
   );
 
   useEffect(() => {
@@ -103,13 +106,15 @@ const Project: React.FC = () => {
       </div>
       <div className="grid grid-cols-2 mb-8">
         <NavBar onSelect={onSecondaryMenuSelect} navItems={[{ key: 'repos' }, { key: 'releases' }]} />
-        <SortButtons
-          sort={sort}
-          setSort={setSort}
-          setSortBy={setSortBy}
-          sortBy={sortBy}
-          labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
-        />
+        { selectedTab === 'repos' ? (
+          <SortButtons
+            sort={sort}
+            setSort={setSort}
+            setSortBy={setSortBy}
+            sortBy={sortBy}
+            labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
+          />
+        ) : null}
       </div>
 
       <Switch>
