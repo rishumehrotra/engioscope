@@ -25,7 +25,7 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'la
         {' | '}
         {releasesCount}
         {'   '}
-        releases
+        pipelines
       </span>
 
     </h1>
