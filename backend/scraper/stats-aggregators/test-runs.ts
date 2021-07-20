@@ -18,6 +18,15 @@ const defaultStat: TestStats = {
   success: 0, failure: 0, executionTime: 0, total: 0
 };
 
+const noBuilds: TestStatsWithBuild[] = [{
+  buildName: 'No builds',
+  total: 0,
+  coverage: 0,
+  executionTime: 0,
+  failure: 0,
+  success: 0
+}];
+
 const topLevelIndicator = (stats: TestStatsWithBuild[]): TopLevelIndicator => withOverallRating({
   name: 'Tests',
   count: [...new Set(stats.map(s => s.total))].reduce((acc, t) => acc + t, 0),
@@ -107,20 +116,15 @@ export default (testRuns: TestRun[]) => {
     const matchingBuilds = latestMasterBuildIds(repoId);
 
     if (matchingBuilds.length === 0) {
-      return topLevelIndicator([{
-        buildName: 'No builds',
-        total: 0,
-        coverage: 0,
-        executionTime: 0,
-        failure: 0,
-        success: 0
-      }]);
+      return topLevelIndicator(noBuilds);
     }
 
-    return topLevelIndicator((await Promise.all(matchingBuilds.map(async build => ({
+    const testStats = (await Promise.all(matchingBuilds.map(async build => ({
       buildName: build.definition.name,
       ...aggregateRuns(runsByBuildId[build.id] || []),
       coverage: coverageFrom((await testCoverageByBuildId(build.id)).coverageData)
-    })))).filter(testStat => testStat.total !== 0));
+    })))).filter(testStat => testStat.total !== 0);
+
+    return topLevelIndicator(testStats.length === 0 ? noBuilds : testStats);
   };
 };
