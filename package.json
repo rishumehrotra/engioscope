@@ -1,6 +1,6 @@
 {
   "name": "project-health-tool",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "scripts": {
     "watch:tailwind": "tailwind -i ui/tailwind.css -o ui/tailwind.output.css --watch",
     "start:vite": "vite --open",
@@ -21,7 +21,9 @@
     "scratch": "node -r ts-node/register ./backend/scratch.ts",
     "prepare": "husky install"
   },
-  "bin": "./dist/backend/cli.js",
+  "bin": {
+    "project-health-tool": "dist/backend/cli.js"
+  },
   "dependencies": {
     "await-lock": "^2.1.0",
     "azure-devops-node-api": "^11.0.0",
