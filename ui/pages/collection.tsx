@@ -39,7 +39,7 @@ const Collection: React.FC = () => {
           <Project
             key={collection.name[1]}
             projectName={collection.name[1]}
-            route={`/${collection.name.join('/')}`}
+            route={`/${collection.name.join('/')}/repos`}
             rating={collection.rating}
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             lastUpdated={collection.lastUpdated!}

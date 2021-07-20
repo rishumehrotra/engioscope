@@ -15,7 +15,7 @@ type SelectProps = {
 const Select: React.FC<SelectProps> = ({
   className, onChange, options, value
 }) => (
-  <div className={`inline-block relative w-64 ${className || ''}`}>
+  <div className={`inline-block relative ${className || ''}`}>
     <select
       onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
       value={value}

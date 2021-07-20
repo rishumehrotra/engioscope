@@ -48,7 +48,7 @@ const Release: React.FC<{ release: ReleaseStats }> = ({ release }) => (
   </div>
 );
 
-const Project: React.FC = () => {
+const Releases: React.FC = () => {
   const [releaseAnalysis, setReleaseAnalysis] = useState<ReleaseStats[] | undefined>();
   const { collection, project } = useParams<{ collection: string, project: string }>();
 
@@ -67,4 +67,4 @@ const Project: React.FC = () => {
   );
 };
 
-export default Project;
+export default Releases;

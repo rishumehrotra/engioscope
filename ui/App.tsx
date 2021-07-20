@@ -7,7 +7,6 @@ import {
 } from 'react-router-dom';
 import Project from './pages/project';
 import Collection from './pages/collection';
-import Releases from './pages/releases';
 import logo from './logo.png';
 
 const App: React.FC = () => (
@@ -18,9 +17,6 @@ const App: React.FC = () => (
           <img src={logo} alt="Logo" className="w-32" />
         </Link>
         <Switch>
-          <Route path="/:collection/:project/_release">
-            <Releases />
-          </Route>
           <Route path="/:collection/:project">
             <Project />
           </Route>

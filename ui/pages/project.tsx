@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import RepoHealth from '../components/RepoHealth';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  useParams, useHistory, Switch, Route
+} from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
-import { Ascending, Descending } from '../components/Icons';
-import Select from '../components/Select';
 import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
 import { fetchProjectMetrics } from '../network';
+import NavBar from '../components/NavBar';
+import SortButtons from '../components/SortButtons';
+import Repos from './repos';
+import Releases from './releases';
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
-  <div className="mt-4">
+  <div className="">
     <h1 className="text-4xl font-semibold text-gray-800">
       {projectAnalysis.name[1]}
       <span className="text-base ml-2 text-gray-600">
@@ -17,7 +20,7 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'la
         repositories
       </span>
     </h1>
-    <p className="text-sm text-gray-600 mb-8 mt-2 flex items-center">
+    <p className="text-sm text-gray-600 mt-2 flex items-center">
       Last updated on
       <p className="font-bold text-gray-800 ml-1">{projectAnalysis.lastUpdated}</p>
       {' '}
@@ -31,38 +34,6 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'la
         <p className="ml-1">Refresh now</p>
       </button> */}
     </p>
-  </div>
-);
-
-type SortButtonsProps = {
-  sort: number;
-  setSort: React.Dispatch<React.SetStateAction<number>>;
-  sortBy: string;
-  setSortBy: React.Dispatch<React.SetStateAction<string>>;
-  labels: string[]
-}
-
-const SortButtons: React.FC<SortButtonsProps> = ({
-  sort, setSort, setSortBy, sortBy, labels
-}) => (
-  <div className="grid grid-cols-2">
-    <button
-      className="text-base font-medium text-gray-600
-      text-center flex items-center justify-end rounded-lg cursor-pointer"
-      style={{ outline: 'none' }}
-      onClick={() => setSort(sort * -1)}
-    >
-      {sort === 1 ? <Ascending /> : <Descending />}
-      <p className="mb-1 ml-2 text-sm">Sort By</p>
-    </button>
-    <Select
-      className="bg-transparent text-gray-900 rounded-lg border-0
-      form-select p-0 pl-2 h-9 w-full sm:text-sm font-medium
-      focus:shadow-none focus-visible:ring-2 focus-visible:ring-teal-500"
-      onChange={setSortBy}
-      options={labels.map(l => ({ label: l, value: l }))}
-      value={sortBy}
-    />
   </div>
 );
 
@@ -87,6 +58,15 @@ const Project: React.FC = () => {
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
   const { collection, project } = useParams<{ collection: string, project: string }>();
+  const history = useHistory();
+
+  const onSecondaryMenuSelect = useCallback(
+    (selectedKey: string) => {
+      history.push(`${history.location.pathname.split('/').slice(0, -1).join('/')}/${selectedKey}`);
+      // history.push(`${history.location.pathname}/${selectedKey}`);
+    },
+    [history]
+  );
 
   useEffect(() => {
     fetchProjectMetrics(collection, project).then(setProjectAnalysis);
@@ -99,30 +79,42 @@ const Project: React.FC = () => {
     .sort(sortByIndicators(sortBy, sort));
 
   return (
-    <>
-      <div className="my-8">
-        <div className="flex justify-end -mt-20">
-          <SearchInput className="w-1/3" onSearch={setSearchTerm} searchTerm={searchTerm} />
-        </div>
-        <div className="flex justify-between w-full items-center mt-8">
-          <ProjectDetails
-            name={projectAnalysis.name}
-            repos={projectAnalysis.repos}
-            lastUpdated={projectAnalysis.lastUpdated}
-          />
-          <SortButtons
-            sort={sort}
-            setSort={setSort}
-            setSortBy={setSortBy}
-            sortBy={sortBy}
-            labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
-          />
+    <div>
+      <div className="grid grid-cols-2 justify-between w-full items-start mt-12 mb-6">
+        <ProjectDetails
+          name={projectAnalysis.name}
+          repos={projectAnalysis.repos}
+          lastUpdated={projectAnalysis.lastUpdated}
+        />
+        <div className="flex justify-end">
+          <SearchInput className="w-1/2" onSearch={setSearchTerm} searchTerm={searchTerm} />
         </div>
       </div>
-      {filteredRepos.length ? filteredRepos.map(repo => (
-        <RepoHealth repo={repo} key={repo.name} />
-      )) : 'No Results'}
-    </>
+      <div className="pb-6">
+        <div className="border-t border-gray-200" />
+      </div>
+      <div className="grid grid-cols-2 mb-8">
+        <NavBar onSelect={onSecondaryMenuSelect} navItems={[{ key: 'repos' }, { key: 'releases' }]} />
+
+        <SortButtons
+          sort={sort}
+          setSort={setSort}
+          setSortBy={setSortBy}
+          sortBy={sortBy}
+          labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
+        />
+
+      </div>
+
+      <Switch>
+        <Route path="/:collection/:project/repos">
+          <Repos repos={filteredRepos} />
+        </Route>
+        <Route path="/:collection/:project/releases">
+          <Releases />
+        </Route>
+      </Switch>
+    </div>
   );
 };
 

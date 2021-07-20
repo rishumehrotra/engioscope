@@ -17,7 +17,7 @@ const SearchInput: React.FC<SearchInputProps> = ({ searchTerm, onSearch, classNa
       value={searchTerm}
       onChange={(e: ChangeEvent<HTMLInputElement>) => onSearch(e.target.value)}
     />
-    <button type="button" className="absolute right-0 mt-4 mr-4">
+    <button type="button" className="absolute right-0 mt-3 mr-4">
       <Search />
     </button>
   </div>
