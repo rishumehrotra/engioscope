@@ -11,19 +11,27 @@ import Repos from './Repos';
 import Releases from './Releases';
 import { parseQueryString, updateQueryString } from '../helpers';
 
-const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (
-  <div className="">
+const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'> &
+{releasesCount: number}> = ({
+  name, repos, lastUpdated, releasesCount
+}) => (
+  <div className="col-span-2">
     <h1 className="text-4xl font-semibold text-gray-800">
-      {projectAnalysis.name[1]}
+      {name[1]}
       <span className="text-base ml-2 text-gray-600">
-        {projectAnalysis.repos.length}
+        {repos.length}
         {'   '}
         repositories
+        {' | '}
+        {releasesCount}
+        {'   '}
+        releases
       </span>
+
     </h1>
     <p className="text-sm text-gray-600 mt-2 flex items-center">
       Last updated on
-      <p className="font-bold text-gray-800 ml-1">{projectAnalysis.lastUpdated}</p>
+      <p className="font-bold text-gray-800 ml-1">{lastUpdated}</p>
       {' '}
       {/* <button
         type="button"
@@ -91,14 +99,15 @@ const Project: React.FC = () => {
 
   return (
     <div>
-      <div className="grid grid-cols-2 justify-between w-full items-start mt-12 mb-6">
+      <div className="grid grid-cols-3 justify-between w-full items-start mt-12 mb-6">
         <ProjectDetails
           name={projectAnalysis.name}
           repos={projectAnalysis.repos}
+          releasesCount={releaseAnalysis.length}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
-          <SearchInput className="w-1/2" onSearch={setSearchTerm} searchTerm={search} />
+          <SearchInput className="w-full" onSearch={setSearchTerm} searchTerm={search} />
         </div>
       </div>
       <div className="pb-6">
