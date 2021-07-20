@@ -3,8 +3,8 @@ import {
   useParams, useHistory, Switch, Route
 } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
-import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
-import { fetchProjectMetrics } from '../network';
+import { ProjectRepoAnalysis, ReleaseStats, RepoAnalysis } from '../../shared/types';
+import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './repos';
@@ -54,10 +54,11 @@ const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
 );
 
 const Project: React.FC = () => {
+  const { collection, project } = useParams<{ collection: string, project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
+  const [releaseAnalysis, setReleaseAnalysis] = useState<ReleaseStats[] | undefined>();
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
-  const { collection, project } = useParams<{ collection: string, project: string }>();
   const history = useHistory();
 
   const { search } = parseQueryString(history.location.search);
@@ -74,7 +75,12 @@ const Project: React.FC = () => {
     fetchProjectMetrics(collection, project).then(setProjectAnalysis);
   }, [collection, project]);
 
+  useEffect(() => {
+    fetchProjectReleaseMetrics(collection, project).then(setReleaseAnalysis);
+  }, [collection, project]);
+
   if (!projectAnalysis) return <div>Loading...</div>;
+  if (!releaseAnalysis) return <div>Loading...</div>;
 
   const filteredRepos = projectAnalysis.repos
     .filter(bySearchTerm(search || ''))
@@ -111,7 +117,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases />
+          <Releases releaseAnalysis={releaseAnalysis} />
         </Route>
       </Switch>
     </div>

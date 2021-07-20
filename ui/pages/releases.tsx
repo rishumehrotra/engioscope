@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React from 'react';
 import { ReleaseStats } from '../../shared/types';
-import { fetchProjectReleaseMetrics } from '../network';
 
 const Release: React.FC<{ release: ReleaseStats }> = ({ release }) => (
   <div className="py-10">
@@ -48,23 +46,16 @@ const Release: React.FC<{ release: ReleaseStats }> = ({ release }) => (
   </div>
 );
 
-const Releases: React.FC = () => {
-  const [releaseAnalysis, setReleaseAnalysis] = useState<ReleaseStats[] | undefined>();
-  const { collection, project } = useParams<{ collection: string, project: string }>();
+type ReleasesProps = {
+  releaseAnalysis: ReleaseStats[];
+}
 
-  useEffect(() => {
-    fetchProjectReleaseMetrics(collection, project).then(setReleaseAnalysis);
-  }, [collection, project]);
-
-  if (!releaseAnalysis) return <div>Loading...</div>;
-
-  return (
-    <>
-      {releaseAnalysis.length ? releaseAnalysis.map(release => (
-        <Release release={release} key={release.id} />
-      )) : 'No Results'}
-    </>
-  );
-};
+const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis }: ReleasesProps) => (
+  <>
+    {releaseAnalysis.length ? releaseAnalysis.map(release => (
+      <Release release={release} key={release.id} />
+    )) : 'No Releases'}
+  </>
+);
 
 export default Releases;
