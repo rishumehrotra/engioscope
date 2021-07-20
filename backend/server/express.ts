@@ -5,7 +5,8 @@ import rateLimit from 'express-rate-limit';
 import { Config } from '../scraper/types';
 import api from './api';
 
-const uiFolder = path.join(__dirname, '..', 'ui');
+const uiFolder = path.join(__dirname, '..', '..', 'ui');
+console.log(uiFolder);
 const app = express();
 
 const sendIndexHtml = (_: express.Request, res: express.Response) => {
