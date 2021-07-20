@@ -1,10 +1,8 @@
 import { Build } from '../types-azure';
 import { TopLevelIndicator } from '../../../shared/types';
-import { ratingConfig } from '../rating-config';
 import {
   assertDefined, isMaster, minutes, shortDateFormat, statsStrings
 } from '../../utils';
-import { withOverallRating } from './ratings';
 
 type BuildStats = {
   count: number,
@@ -22,35 +20,30 @@ const defaultBuildStats: BuildStats = {
 };
 const [timeRange, averageTime] = statsStrings('-', minutes);
 
-const topLevelIndicator = (stats: BuildStats): TopLevelIndicator => withOverallRating({
+const topLevelIndicator = (stats: BuildStats): TopLevelIndicator => ({
   name: 'Builds',
   count: stats.count,
   indicators: [
     {
       name: 'Total successful',
-      value: stats.success,
-      rating: ratingConfig.builds.successful(stats.success)
+      value: stats.success
     },
     {
       name: 'Number of executions',
-      value: stats.count,
-      rating: ratingConfig.builds.numberOfExecutions(stats.count)
+      value: stats.count
     },
     {
       name: 'Success rate',
-      value: `${stats.count === 0 ? 0 : Math.round((stats.success * 100) / stats.count)}%`,
-      rating: ratingConfig.builds.successRate(stats.count === 0 ? 0 : Math.round((stats.success * 100) / stats.count))
+      value: `${stats.count === 0 ? 0 : Math.round((stats.success * 100) / stats.count)}%`
     },
     {
       name: 'Average duration',
       value: averageTime(stats.duration),
-      rating: ratingConfig.builds.averageDuration(stats.duration),
       additionalValue: timeRange(stats.duration)
     },
     {
       name: 'Current status',
       value: stats.status.type,
-      rating: 0,
       additionalValue: stats.status.type === 'failed' ? `Since ${shortDateFormat(stats.status.since)}` : undefined
     }
   ]

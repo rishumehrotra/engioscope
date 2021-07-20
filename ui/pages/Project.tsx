@@ -53,8 +53,7 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
     return (branchRatingA > branchRatingB) ? sort : sort * -1;
   }
   if (branchRatingA) return sort;
-  if (branchRatingB) return sort * -1;
-  return (a.rating > b.rating ? sort : sort * -1);
+  return sort * -1;
 };
 
 const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (

@@ -2,8 +2,6 @@ import AwaitLock from 'await-lock';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
-import { prop } from 'rambda';
-import { average } from './stats-aggregators/ratings';
 import {
   ProjectRepoAnalysis, ReleaseStats, RepoAnalysis, ScrapedProject
 } from '../../shared/types';
@@ -87,9 +85,6 @@ export default (config: Config) => (projectSpec: ProjectSpec) => (
   (analysis: ProjectAnalysis) => Promise.all([
     writeRepoAnalysisFile(projectSpec, analysis.repoAnalysis),
     writeReleaseAnalysisFile(projectSpec, analysis.releaseAnalysis),
-    updateOverallSummary(config)({
-      name: projectSpec,
-      rating: average(analysis.repoAnalysis.map(prop('rating')))
-    })
+    updateOverallSummary(config)({ name: projectSpec })
   ])
 );

@@ -1,14 +1,12 @@
 export type ChildIndicator = {
   name: string;
   value: number | string;
-  rating: number;
   tooltip?: string;
   additionalValue?: string;
 };
 
 export type TopLevelIndicator = {
   name: string;
-  rating: number;
   count: number | string;
   indicators: ChildIndicator[];
 };
@@ -16,7 +14,6 @@ export type TopLevelIndicator = {
 export type RepoAnalysis = {
   name: string;
   id: string;
-  rating: number;
   languages?: Record<string, string>;
   indicators: TopLevelIndicator[];
 };
@@ -30,7 +27,6 @@ export type ProjectRepoAnalysis = {
 export type ScrapedProject = {
   name: [collection: string, project: string];
   lastUpdated: string | null;
-  rating: number | null;
 };
 
 type EnvironmentStats = {

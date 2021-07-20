@@ -1,8 +1,6 @@
 import { TopLevelIndicator } from '../../../shared/types';
 import { GitBranchStats } from '../types-azure';
-import { ratingConfig } from '../rating-config';
 import { isWithinFortnight } from '../../utils';
-import { withOverallRating } from './ratings';
 
 export default (branches: GitBranchStats[]): TopLevelIndicator => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -13,41 +11,36 @@ export default (branches: GitBranchStats[]): TopLevelIndicator => {
   const abandonedBranches = inActiveBranches.filter(b => b.aheadCount > 0 && b.behindCount > 0);
   const deleteCandidates = inActiveBranches.filter(b => b.aheadCount === 0 && b.behindCount === 0);
 
-  return withOverallRating({
+  return {
     name: 'Branches',
     count: branches.length,
     indicators: [
       {
         name: 'Total',
         value: branches.length,
-        tooltip: 'Total numbers of branches in the repository',
-        rating: ratingConfig.branches.total(branches.length)
+        tooltip: 'Total numbers of branches in the repository'
       },
       {
         name: 'Active',
         value: activeBranches.length,
-        tooltip: 'Active development branches which are in-sync with master',
-        rating: ratingConfig.branches.active(activeBranches.length)
+        tooltip: 'Active development branches which are in-sync with master'
       },
       {
         name: 'Stale',
         value: staleBranches.length,
-        tooltip: 'Inactive development branches which are out-of-sync with master',
-        rating: ratingConfig.branches.stale(staleBranches.length)
+        tooltip: 'Inactive development branches which are out-of-sync with master'
       },
       {
         name: 'Abandoned',
         value: abandonedBranches.length,
-        tooltip: 'Inactive development branches which are out-of-sync with master, but contain commits which are not present on master',
-        rating: ratingConfig.branches.abandoned(abandonedBranches.length)
+        tooltip: 'Inactive development branches which are out-of-sync with master, but contain commits which are not present on master'
       },
       {
         name: 'Delete candidates',
         value: deleteCandidates.length,
-        tooltip: 'Inactive development branches which are in-sync with master',
-        rating: ratingConfig.branches.deleteCandidates(deleteCandidates.length)
+        tooltip: 'Inactive development branches which are in-sync with master'
       }
     ]
-  });
+  };
 };
 

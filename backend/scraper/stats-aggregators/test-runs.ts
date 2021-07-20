@@ -3,7 +3,6 @@ import { TopLevelIndicator } from '../../../shared/types';
 import {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
-import { withOverallRating } from './ratings';
 
 type TestStats = {
   success: number,
@@ -27,7 +26,7 @@ const noBuilds: TestStatsWithBuild[] = [{
   success: 0
 }];
 
-const topLevelIndicator = (stats: TestStatsWithBuild[]): TopLevelIndicator => withOverallRating({
+const topLevelIndicator = (stats: TestStatsWithBuild[]): TopLevelIndicator => ({
   name: 'Tests',
   count: [...new Set(stats.map(s => s.total))].reduce((acc, t) => acc + t, 0),
   indicators: stats.flatMap(stat => [

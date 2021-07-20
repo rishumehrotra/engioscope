@@ -1,16 +1,9 @@
-import {
-  pipe, find, propEq, prop
-} from 'rambda';
-import { withOverallRating } from './ratings';
-import { assertDefined } from '../../utils';
 import { Measure } from '../types-sonar';
-import { ratingConfig } from '../rating-config';
 import { TopLevelIndicator } from '../../../shared/types';
 
 type MetricDefinition = {
   name: string,
   display: string,
-  rating: (s: Measure[]) => number,
   formatter?: (s: string) => string,
 };
 
@@ -24,50 +17,35 @@ const formatDebt = (debt: string) => {
   return `${debtNumber} mins`;
 };
 
-const measureByName = (name: string) => pipe(
-  find<Measure>(propEq('metric', name)), assertDefined, prop('value')
-);
-
 const metrics: MetricDefinition[] = [
   {
     name: 'complexity',
-    display: 'Complexity',
-    rating: measures => {
-      const loc = pipe(measureByName('ncloc'), Number)(measures);
-      const complexity = pipe(measureByName('complexity'), Number)(measures);
-      return ratingConfig.codeQuality.complexity(loc)(complexity);
-    }
+    display: 'Complexity'
   },
   {
     name: 'bugs',
-    display: 'Bugs',
-    rating: ratingConfig.codeQuality.bugs(measureByName)
+    display: 'Bugs'
   },
   {
     name: 'code_smells',
-    display: 'Code smells',
-    rating: ratingConfig.codeQuality.codeSmells(measureByName)
+    display: 'Code smells'
   },
   {
     name: 'vulnerabilities',
-    display: 'Vulnerabilities',
-    rating: ratingConfig.codeQuality.vulnerabilities(measureByName)
+    display: 'Vulnerabilities'
   },
   {
     name: 'duplicated_lines_density',
-    display: 'Duplication',
-    rating: ratingConfig.codeQuality.duplication(measureByName)
+    display: 'Duplication'
   },
   {
     name: 'sqale_index',
     display: 'Tech debt',
-    rating: ratingConfig.codeQuality.techDebt(measureByName),
     formatter: formatDebt
   },
   {
     name: 'alert_status',
-    display: 'Quality gate',
-    rating: ratingConfig.codeQuality.techDebt(measureByName)
+    display: 'Quality gate'
   }
 ];
 
@@ -83,7 +61,6 @@ export const requiredMetrics = [
 const unknownCodeQuality: TopLevelIndicator = {
   name: 'Code quality',
   count: 'Unknown',
-  rating: 0,
   indicators: metrics.map(metric => ({
     name: metric.display,
     rating: 10,
@@ -125,17 +102,16 @@ export default (measures: Measure[]): AggregagedCodeQuality => {
 
   return {
     languages: formatLoc(measures.find(isMeasureName('ncloc_language_distribution'))?.value),
-    codeQuality: withOverallRating({
+    codeQuality: {
       name: 'Code quality',
       count: toTitleCase(measures.find(m => m.metric === 'alert_status')?.value || 'Unknown'),
       indicators: metrics.map(metric => {
         const metricValue = measures.find(isMeasureName(metric.name))?.value || '-';
         return {
           name: metric.display,
-          rating: metric.rating(measures),
           value: metric.formatter ? metric.formatter(metricValue) : metricValue
         };
       })
-    })
+    }
   };
 };

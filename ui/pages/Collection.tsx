@@ -6,7 +6,6 @@ import { fetchCollections } from '../network';
 const Project: React.FC<{
   projectName: string,
   route: string,
-  rating: number | null,
   lastUpdated: string
 }> = ({
   projectName, route, lastUpdated
@@ -40,7 +39,6 @@ const Collection: React.FC = () => {
             key={collection.name[1]}
             projectName={collection.name[1]}
             route={`/${collection.name.join('/')}/repos`}
-            rating={collection.rating}
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             lastUpdated={collection.lastUpdated!}
           />
