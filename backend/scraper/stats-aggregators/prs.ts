@@ -1,8 +1,6 @@
 import { GitPullRequest, PullRequestStatus } from '../types-azure';
-import { ratingConfig } from '../rating-config';
 import { Config } from '../types';
 import { hours, pastDate, statsStrings } from '../../utils';
-import { average, withOverallRating } from './ratings';
 
 const [timeRange, averageTime] = statsStrings('-', hours);
 
@@ -32,32 +30,28 @@ export default (config: Config) => (prs: GitPullRequest[]) => {
 
     const completedPrCount = completedPrs.length;
 
-    return withOverallRating({
+    return {
       name: 'Pull requests',
       count: activePrCount + completedPrCount,
       indicators: [
         {
           name: 'Active',
-          value: activePrCount,
-          rating: ratingConfig.pr.active(activePrCount)
+          value: activePrCount
         },
         {
           name: 'Abandoned',
-          value: abandonedPrCount,
-          rating: ratingConfig.pr.abandoned(abandonedPrCount)
+          value: abandonedPrCount
         },
         {
           name: 'Completed',
-          value: completedPrCount,
-          rating: ratingConfig.pr.completed(completedPrCount)
+          value: completedPrCount
         },
         {
           name: 'Time to approve',
           value: averageTime(timesToApprove),
-          rating: ratingConfig.pr.timeToApprove(average(timesToApprove)),
           additionalValue: timeRange(timesToApprove)
         }
       ]
-    });
+    };
   };
 };

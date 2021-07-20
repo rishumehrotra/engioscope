@@ -1,6 +1,4 @@
-import { prop } from 'rambda';
 import debug from 'debug';
-import { RepoAnalysis, TopLevelIndicator } from '../../shared/types';
 import azure from './network/azure';
 import aggregateBuilds from './stats-aggregators/builds';
 import aggregateBranches from './stats-aggregators/branches';
@@ -11,23 +9,8 @@ import aggregateReleaseDefinitions from './stats-aggregators/release-definitions
 import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
 import aggregateTestRunsByBuildId from './stats-aggregators/test-runs';
-import { ratingWeightage } from './rating-config';
 
 const analyserLog = debug('analyser');
-
-const computeRating = (indicators: TopLevelIndicator[]) => {
-  const isWithoutSonar = indicators.find(indicator => indicator.name === 'Code quality')?.rating === 0;
-  const weightage = prop(isWithoutSonar ? 'withoutSonar' : 'default');
-
-  return Math.round(indicators.reduce((acc, indicator) => (
-    acc + weightage(ratingWeightage[indicator.name as keyof typeof ratingWeightage]) * indicator.rating
-  ), 0));
-};
-
-const withOverallRating = (repoAnalysis: Omit<RepoAnalysis, 'rating'>): RepoAnalysis => ({
-  ...repoAnalysis,
-  rating: computeRating(repoAnalysis.indicators)
-});
 
 export default (config: Config) => {
   const {
@@ -73,7 +56,7 @@ export default (config: Config) => {
         codeQualityByRepoName(r.name).then(aggregateCodeQuality)
       ]);
 
-      return withOverallRating({
+      return {
         name: r.name,
         id: r.id,
         languages,
@@ -84,7 +67,7 @@ export default (config: Config) => {
           coverage,
           codeQuality
         ]
-      });
+      };
     }));
 
     const analysisResults = {
