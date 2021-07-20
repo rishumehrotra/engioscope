@@ -4,8 +4,8 @@ import { num } from '../helpers';
 type MetricProps = {
   name: string;
   value: number | string;
-  additionalValue: string | undefined;
-  tooltip: string | undefined;
+  additionalValue?: string;
+  tooltip?: string;
 }
 
 const Metric: React.FC<MetricProps> = ({

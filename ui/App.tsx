@@ -5,8 +5,8 @@ import {
   Route,
   Link
 } from 'react-router-dom';
-import Project from './pages/project';
-import Collection from './pages/collection';
+import Project from './pages/Project';
+import Collection from './pages/Collection';
 import logo from './logo.png';
 
 const App: React.FC = () => (

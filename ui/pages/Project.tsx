@@ -7,8 +7,8 @@ import { ProjectRepoAnalysis, ReleaseStats, RepoAnalysis } from '../../shared/ty
 import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
-import Repos from './repos';
-import Releases from './releases';
+import Repos from './Repos';
+import Releases from './Releases';
 import { parseQueryString, updateQueryString } from '../helpers';
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'>> = projectAnalysis => (

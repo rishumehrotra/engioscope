@@ -15,7 +15,7 @@ const TopLevelTab: React.FC<TopLevelTabProps> = ({
 }) => (
   <button
     style={{ outline: 'none' }}
-    className={`pt-2 pb-4 px-6 mt-2 text-gray-900
+    className={`pt-2 pb-4 px-6 mt-2 text-gray-900 break-words
         ${isSelected ? 'rounded-t-lg' : 'rounded-lg'}
         ${isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'}
         hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
@@ -52,7 +52,7 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle }) => (
 
 type CardProps = {
   title: string,
-  subtitle: string | undefined,
+  subtitle?: string | undefined,
   tabs: {
     title: string;
     count: number | string,
