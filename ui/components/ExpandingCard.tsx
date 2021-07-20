@@ -80,7 +80,7 @@ const Card: React.FC<CardProps> = ({
               title={title}
               subtitle={subtitle}
             />
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 lg:gap-4">
               {
                 tabs.map(tab => (
                   <TopLevelTab
