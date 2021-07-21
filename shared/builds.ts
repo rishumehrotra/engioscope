@@ -53,16 +53,18 @@ const statusLens = lens<OTWBuild, UIBuild['status']>(
 );
 
 const percent = <T>(numeratorFn: (x: T) => number, denominatorFn: (x: T) => number) => (
-  (value: T) => `${((numeratorFn(value) * 100) / denominatorFn(value)).toFixed(2)}%`
+  (value: T) => (denominatorFn(value) === 0
+    ? '0%'
+    : `${((numeratorFn(value) * 100) / denominatorFn(value)).toFixed(2)}%`)
 );
 
-export const viewBuild = applySpec<UIBuild>({
+export const viewBuild = (build: OTWBuild) => applySpec<UIBuild & { successRate: string }>({
   total: totalLens.get(),
   successful: successfulLens.get(),
   duration: durationLens.get(),
   status: statusLens.get(),
   successRate: percent(successfulLens.get(), totalLens.get())
-});
+})(build);
 
 export const setBuild = (build: UIBuild) => pipe(
   totalLens.set(build.total),
