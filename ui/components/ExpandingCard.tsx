@@ -50,7 +50,7 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle }) => (
   </div>
 );
 
-type CardProps = {
+export type CardProps = {
   title: string,
   subtitle?: string | undefined,
   tabs: {
