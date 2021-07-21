@@ -7,9 +7,9 @@ export default (branches: GitBranchStats[]): TopLevelIndicator => {
   const activeBranches = branches.filter(b => isWithinFortnight(b.commit.committer!.date!));
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const inActiveBranches = branches.filter(b => !isWithinFortnight(b.commit.committer!.date!));
-  const staleBranches = inActiveBranches.filter(b => b.aheadCount === 0 && b.behindCount > 0);
   const abandonedBranches = inActiveBranches.filter(b => b.aheadCount > 0 && b.behindCount > 0);
-  const deleteCandidates = inActiveBranches.filter(b => b.aheadCount === 0 && b.behindCount === 0);
+  const deleteCandidates = branches.filter(b => b.behindCount === 0);
+  const possiblyConflicting = branches.filter(b => b.aheadCount > 3 && b.behindCount > 10);
 
   return {
     name: 'Branches',
@@ -26,11 +26,6 @@ export default (branches: GitBranchStats[]): TopLevelIndicator => {
         tooltip: 'Active development branches which are in-sync with master'
       },
       {
-        name: 'Stale',
-        value: staleBranches.length,
-        tooltip: 'Inactive development branches which are out-of-sync with master'
-      },
-      {
         name: 'Abandoned',
         value: abandonedBranches.length,
         tooltip: 'Inactive development branches which are out-of-sync with master, but contain commits which are not present on master'
@@ -39,6 +34,11 @@ export default (branches: GitBranchStats[]): TopLevelIndicator => {
         name: 'Delete candidates',
         value: deleteCandidates.length,
         tooltip: 'Inactive development branches which are in-sync with master'
+      },
+      {
+        name: 'Possibly conflicting',
+        value: possiblyConflicting.length,
+        tooltip: 'Branches that are significantly out of sync with master'
       }
     ]
   };

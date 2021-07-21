@@ -15,11 +15,6 @@ Object {
       "value": 0,
     },
     Object {
-      "name": "Stale",
-      "tooltip": "Inactive development branches which are out-of-sync with master",
-      "value": 1,
-    },
-    Object {
       "name": "Abandoned",
       "tooltip": "Inactive development branches which are out-of-sync with master, but contain commits which are not present on master",
       "value": 0,
@@ -27,6 +22,11 @@ Object {
     Object {
       "name": "Delete candidates",
       "tooltip": "Inactive development branches which are in-sync with master",
+      "value": 0,
+    },
+    Object {
+      "name": "Possibly conflicting",
+      "tooltip": "Branches that are significantly out of sync with master",
       "value": 0,
     },
   ],
