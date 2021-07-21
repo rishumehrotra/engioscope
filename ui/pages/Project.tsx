@@ -102,7 +102,7 @@ const Project: React.FC = () => {
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
-          <SearchInput className="w-full" onSearch={setSearchTerm} searchTerm={search} />
+          <SearchInput className="w-full" onSearch={setSearchTerm} search={search} />
         </div>
       </div>
       <div className="pb-6">
@@ -130,7 +130,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases releaseAnalysis={releaseAnalysis} />
+          <Releases releaseAnalysis={releaseAnalysis} search={search} />
         </Route>
       </Switch>
     </div>

@@ -5,14 +5,21 @@ import Metric from '../components/Metric';
 
 type ReleasesProps = {
   releaseAnalysis: ReleaseStats[] | undefined;
+  search: string | undefined;
 }
 
-const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis }: ReleasesProps) => {
+const bySearchTerm = (searchTerm: string) => (pipeline: ReleaseStats) => (
+  pipeline.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: ReleasesProps) => {
   if (!releaseAnalysis) return <div>Loading...</div>;
+
+  const pipelines = releaseAnalysis.filter(bySearchTerm(search || ''));
 
   return (
     <>
-      {releaseAnalysis.length ? releaseAnalysis.map((release, index) => (
+      {pipelines.length ? pipelines.map((release, index) => (
         <Card
           // eslint-disable-next-line react/no-array-index-key
           key={`${release.name}-${index}`}
