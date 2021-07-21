@@ -11,21 +11,19 @@ import Repos from './Repos';
 import Releases from './Releases';
 import { parseQueryString, updateQueryString } from '../helpers';
 
-const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'repos' | 'lastUpdated'> &
-{releasesCount: number}> = ({
-  name, repos, lastUpdated, releasesCount
+const renderIfAvailable = (count: number) => (label: string) => (count ? `${count} ${label}` : '');
+
+const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
+{repoCount: number, releasesCount: number}> = ({
+  name, repoCount, lastUpdated, releasesCount
 }) => (
   <div className="col-span-2">
     <h1 className="text-4xl font-semibold text-gray-800">
       {name[1]}
       <span className="text-base ml-2 text-gray-600">
-        {repos.length}
-        {'   '}
-        repositories
-        {' | '}
-        {releasesCount}
-        {'   '}
-        pipelines
+        {renderIfAvailable(repoCount)('repositories')}
+        {repoCount && releasesCount ? ' | ' : ''}
+        {renderIfAvailable(releasesCount)('pipelines')}
       </span>
 
     </h1>
@@ -101,8 +99,8 @@ const Project: React.FC = () => {
       <div className="grid grid-cols-3 justify-between w-full items-start mt-12 mb-6">
         <ProjectDetails
           name={projectAnalysis.name}
-          repos={projectAnalysis.repos}
-          releasesCount={releaseAnalysis.length}
+          repoCount={projectAnalysis.repos.length}
+          releasesCount={releaseAnalysis?.length}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
