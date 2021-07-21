@@ -1,11 +1,8 @@
-import prettyMilliseconds from 'pretty-ms';
-import { add } from 'rambda';
 import { Build } from '../types-azure';
 import { TopLevelIndicator } from '../../../shared/types';
 import {
   assertDefined, isMaster, minutes, shortDateFormat, statsStrings
 } from '../../utils';
-import { setBuild, UIBuild } from '../../../shared/optics/builds';
 
 type BuildStats = {
   count: number;
@@ -69,13 +66,6 @@ const combineStats = (
   status: status(incoming, existing)
 });
 
-const emptyResponse = setBuild({
-  total: 0,
-  successful: 0,
-  duration: null,
-  status: { type: 'unknown' }
-});
-
 export default (builds: Build[]) => {
   type AggregatedBuilds = {
     buildStats: Record<string, BuildStats>;
@@ -113,24 +103,6 @@ export default (builds: Build[]) => {
     }, { buildStats: {}, latestMasterBuilds: {} });
 
   return {
-    uiBuildByRepoId: (id?: string) => {
-      if (!id) return emptyResponse;
-      if (!buildStats[id]) return emptyResponse;
-      return setBuild({
-        total: buildStats[id].count,
-        successful: buildStats[id].success,
-        duration: {
-          min: prettyMilliseconds(Math.min(...buildStats[id].duration)),
-          max: prettyMilliseconds(Math.max(...buildStats[id].duration)),
-          average: prettyMilliseconds(buildStats[id].duration.reduce(add, 0) / buildStats[id].duration.length)
-        },
-        status: ((status): UIBuild['status'] => {
-          if (status.type === 'succeeded') return { type: 'succeeded' };
-          if (status.type === 'failed') return { type: 'failed', since: shortDateFormat(status.since) };
-          return { type: 'unknown' };
-        })(buildStats[id].status)
-      });
-    },
     buildByRepoId: (id?: string): TopLevelIndicator => {
       if (!id) return topLevelIndicator(defaultBuildStats);
       if (!buildStats[id]) return topLevelIndicator(defaultBuildStats);
