@@ -5,7 +5,7 @@ import { TopLevelIndicator } from '../../../shared/types';
 import {
   assertDefined, isMaster, minutes, shortDateFormat, statsStrings
 } from '../../utils';
-import { setBuild, UIBuild } from '../../../shared/builds';
+import { setBuild, UIBuild } from '../../../shared/optics/builds';
 
 type BuildStats = {
   count: number;
