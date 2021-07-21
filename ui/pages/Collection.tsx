@@ -4,9 +4,9 @@ import { ScrapedProject } from '../../shared/types';
 import { fetchCollections } from '../network';
 
 const Project: React.FC<{
-  projectName: string,
-  route: string,
-  lastUpdated: string
+  projectName: string;
+  route: string;
+  lastUpdated: string;
 }> = ({
   projectName, route, lastUpdated
 }) => (

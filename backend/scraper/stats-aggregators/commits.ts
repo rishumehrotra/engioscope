@@ -2,9 +2,9 @@
 import { GitCommitRef } from '../types-azure';
 
 type AggregatedCommits = {
-  commitsByDev: Record<string, number>,
-  latestCommitDate: Date | undefined,
-  count: number
+  commitsByDev: Record<string, number>;
+  latestCommitDate: Date | undefined;
+  count: number;
 }
 
 export default (commits: GitCommitRef[]): AggregatedCommits => ({

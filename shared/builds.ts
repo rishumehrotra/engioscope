@@ -11,11 +11,11 @@ export type OTWBuild = [
 export type UIBuild = {
   total: number;
   successful: number;
-  duration: null | { average: string, min: string, max: string };
+  duration: null | { average: string; min: string; max: string };
   status:
   | { type: 'unknown' }
   | { type: 'succeeded' }
-  | { type: 'failed', since: string };
+  | { type: 'failed'; since: string };
 };
 
 const buildLens = lens<OTWBuild>();

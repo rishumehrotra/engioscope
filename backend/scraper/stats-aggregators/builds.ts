@@ -8,13 +8,13 @@ import {
 import { setBuild, UIBuild } from '../../../shared/builds';
 
 type BuildStats = {
-  count: number,
-  success: number,
-  duration: number[],
+  count: number;
+  success: number;
+  duration: number[];
   status:
   | { type: 'unknown' }
   | { type: 'succeeded' }
-  | { type: 'failed', since: Date }
+  | { type: 'failed'; since: Date };
 };
 
 const repoId = (build: Build) => build.repository?.id ?? '<unknown>';
@@ -79,7 +79,7 @@ const emptyResponse = setBuild({
 export default (builds: Build[]) => {
   type AggregatedBuilds = {
     buildStats: Record<string, BuildStats>;
-    latestMasterBuilds: Record<string, Record<number, Build | undefined>>
+    latestMasterBuilds: Record<string, Record<number, Build | undefined>>;
   };
 
   const { buildStats, latestMasterBuilds } = builds

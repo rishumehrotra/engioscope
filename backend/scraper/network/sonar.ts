@@ -9,20 +9,20 @@ import { Config } from '../types';
 import { Measure } from '../types-sonar';
 
 export type SonarRepo = {
-  organization: string,
-  id: string,
-  key: string,
-  name: string,
-  qualifier: string,
-  visibility: string,
-  lastAnalysisDate: string,
-  url: string,
-  token: string
+  organization: string;
+  id: string;
+  key: string;
+  name: string;
+  qualifier: string;
+  visibility: string;
+  lastAnalysisDate: string;
+  url: string;
+  token: string;
 };
 
 type SonarPaging = {
-  pageIndex: number,
-  pageSize: number
+  pageIndex: number;
+  pageSize: number;
 };
 
 const sortByLastAnalysedDate = (a: SonarRepo, b: SonarRepo) => (
@@ -42,7 +42,7 @@ const getCurrentRepo = (repoName: string) => pipe(
   getFirst
 );
 
-type SonarSearchResponse = { paging: SonarPaging, components: SonarRepo[] };
+type SonarSearchResponse = { paging: SonarPaging; components: SonarRepo[] };
 
 const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGetter>) => (sonarServer: Config['sonar'][number]) => (
   paginatedGet<SonarSearchResponse>({

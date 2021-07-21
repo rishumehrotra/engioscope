@@ -2,9 +2,9 @@ import { Measure } from '../types-sonar';
 import { TopLevelIndicator } from '../../../shared/types';
 
 type MetricDefinition = {
-  name: string,
-  display: string,
-  formatter?: (s: string) => string,
+  name: string;
+  display: string;
+  formatter?: (s: string) => string;
 };
 
 const formatDebt = (debt: string) => {
@@ -69,8 +69,8 @@ const unknownCodeQuality: TopLevelIndicator = {
 };
 
 type AggregagedCodeQuality = {
-  codeQuality: TopLevelIndicator,
-  languages?: Record<string, string>
+  codeQuality: TopLevelIndicator;
+  languages?: Record<string, string>;
 };
 
 const isMeasureName = (name: string) => (measure: Measure) => (

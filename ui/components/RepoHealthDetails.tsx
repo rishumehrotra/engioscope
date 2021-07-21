@@ -3,7 +3,7 @@ import { ChildIndicator } from '../../shared/types';
 import Metric from './Metric';
 
 type RepoHealthDetailsProps = {
-  indicators: ChildIndicator[],
+  indicators: ChildIndicator[];
   gridCols: number;
 }
 

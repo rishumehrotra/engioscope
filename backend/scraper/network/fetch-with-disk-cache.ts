@@ -19,9 +19,9 @@ type FileLocation = [dirName: string, fileName: string];
 type Fetcher = () => Promise<Response>;
 
 export type FrontMatter = {
-  date: number,
-  status: number,
-  headers: { [k: string]: string; }
+  date: number;
+  status: number;
+  headers: { [k: string]: string };
 };
 
 export type FetchResponse<T> = FrontMatter & { data: T };

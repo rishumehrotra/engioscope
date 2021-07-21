@@ -5,13 +5,13 @@ import {
 } from '../types-azure';
 
 type TestStats = {
-  success: number,
-  failure: number,
-  total: number,
-  executionTime: number
+  success: number;
+  failure: number;
+  total: number;
+  executionTime: number;
 };
 
-type TestStatsWithBuild = TestStats & { buildName: string, coverage: number };
+type TestStatsWithBuild = TestStats & { buildName: string; coverage: number };
 
 const defaultStat: TestStats = {
   success: 0, failure: 0, executionTime: 0, total: 0

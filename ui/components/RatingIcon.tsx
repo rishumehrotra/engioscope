@@ -2,7 +2,7 @@ import React from 'react';
 import { Done, Alert, Danger } from './Icons';
 
 type RatingIconProps = {
-  rating: number
+  rating: number;
 }
 
 const RatingIcon: React.FC<RatingIconProps> = ({ rating }) => {

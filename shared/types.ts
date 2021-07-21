@@ -19,9 +19,9 @@ export type RepoAnalysis = {
 };
 
 export type ProjectRepoAnalysis = {
-  lastUpdated: string,
-  name: [collection: string, project: string],
-  repos: RepoAnalysis[]
+  lastUpdated: string;
+  name: [collection: string, project: string];
+  repos: RepoAnalysis[];
 }
 
 export type ScrapedProject = {
@@ -34,13 +34,13 @@ type EnvironmentStats = {
   name: string;
   lastReleaseDate: Date;
   releaseCount: number;
-  successCount: number
+  successCount: number;
 };
 
 export type ReleaseStats = {
-  id: number,
-  name: string,
-  description: string | null,
-  stages: EnvironmentStats[],
-  repos: Record<string, string[]>
+  id: number;
+  name: string;
+  description: string | null;
+  stages: EnvironmentStats[];
+  repos: Record<string, string[]>;
 };
