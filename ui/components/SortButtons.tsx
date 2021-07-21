@@ -7,7 +7,7 @@ type SortButtonsProps = {
   setSort: React.Dispatch<React.SetStateAction<number>>;
   sortBy: string;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
-  labels: string[]
+  labels: string[];
 }
 
 const SortButtons: React.FC<SortButtonsProps> = ({

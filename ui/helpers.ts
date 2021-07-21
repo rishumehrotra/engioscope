@@ -13,7 +13,7 @@ export const num = (num: number) => Intl.NumberFormat('en-in').format(num);
 export const parseQueryString = (qs: string): Record<string, string | undefined> => Object.fromEntries(new URLSearchParams(qs));
 
 type QueryStringProps = {
-  search: string
+  search: string;
 }
 export const updateQueryString = ({ search }: QueryStringProps) => {
   const qs = new URLSearchParams();

@@ -12,7 +12,7 @@ import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 const apiVersion = { 'api-version': '5.1' };
 
 const flattenToValues = <T>(xs: FetchResponse<ListOf<T>>[]) => xs.flatMap(x => x.data.value);
-type ListOf<T> = { value: T[], count: number };
+type ListOf<T> = { value: T[]; count: number };
 
 const hasAnotherPage = <T>({ headers }: FetchResponse<T>) => (
   Boolean(headers['x-ms-continuationtoken'])
@@ -37,7 +37,7 @@ export default (config: Config) => {
   );
   const list = <T>(
     { url, qsParams, cacheFile }:
-    { url:string, qsParams?: Record<string, string>, cacheFile: string[] }
+    { url:string; qsParams?: Record<string, string>; cacheFile: string[] }
   ) => (
     paginatedGet<ListOf<T>>({
       url,

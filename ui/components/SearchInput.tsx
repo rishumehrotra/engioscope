@@ -4,7 +4,7 @@ import { Search } from './Icons';
 type SearchInputProps = {
   search?: string;
   onSearch: (searchTerm: string) => void;
-  className: string
+  className: string;
 }
 
 const SearchInput: React.FC<SearchInputProps> = ({ search, onSearch, className }) => (

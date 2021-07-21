@@ -154,6 +154,7 @@
       "error",
       "type"
     ],
+    "@typescript-eslint/member-delimiter-style": "error",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "error"
   },

@@ -51,13 +51,13 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle }) => (
 );
 
 type CardProps = {
-  title: string,
-  subtitle?: string | undefined,
+  title: string;
+  subtitle?: string | undefined;
   tabs: {
     title: string;
-    count: number | string,
-    content: React.ReactNode
-  }[]
+    count: number | string;
+    content: React.ReactNode;
+  }[];
 }
 
 const Card: React.FC<CardProps> = ({

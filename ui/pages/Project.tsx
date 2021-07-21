@@ -14,7 +14,7 @@ import { parseQueryString, updateQueryString } from '../helpers';
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
-{repoCount: number, releasesCount?: number}> = ({
+{repoCount: number; releasesCount?: number}> = ({
   name, repoCount, lastUpdated, releasesCount
 }) => (
   <div className="col-span-2">
@@ -58,7 +58,7 @@ const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
 );
 
 const Project: React.FC = () => {
-  const { collection, project } = useParams<{ collection: string, project: string }>();
+  const { collection, project } = useParams<{ collection: string; project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
   const [releaseAnalysis, setReleaseAnalysis] = useState<ReleaseStats[] | undefined>();
   const [sort, setSort] = useState<number>(-1);
