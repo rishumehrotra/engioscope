@@ -21,8 +21,13 @@ const expandingCardProps : CardProps = {
 
 describe('Expanding card', () => {
   const activeTabClass = 'bg-gray-100';
+  let card: any = null;
+
+  beforeEach(() => {
+    card = render(<ExpandingCard {...expandingCardProps} />);
+  });
+
   it('renders the card title and top level tabs by default', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     expect(card).not.toBeNull();
     expect(await card.findByText(expandingCardProps.title)).toBeTruthy();
     expect(await card.findByText(expandingCardProps.subtitle!)).toBeTruthy();
@@ -30,12 +35,10 @@ describe('Expanding card', () => {
   });
 
   it('does not select any tab by default', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     expect(await card.findByText(expandingCardProps.tabs[0].title)).not.toHaveClass(activeTabClass);
   });
 
   it('highlights only the first tab, when the top level tab is clicked', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     const secondTab = await (await card.findByText(expandingCardProps.tabs[1].title)).closest('button');
     expect(firstTab).not.toHaveClass(activeTabClass);
@@ -45,14 +48,12 @@ describe('Expanding card', () => {
   });
 
   it('shows the contents of the tab, when the top level tab is clicked', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     fireEvent.click(firstTab!);
     expect(card.getByRole('region')).toHaveTextContent('content1');
   });
 
   it('closes the tab, when an opened tab is clicked again', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     fireEvent.click(firstTab!);
     expect(card.getByRole('region')).toHaveTextContent('content1');
@@ -62,7 +63,6 @@ describe('Expanding card', () => {
   });
 
   it('opens the first tab when global area of the card is clicked', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     const globalArea = await card.findByText(expandingCardProps.tabs[0].title);
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     expect(firstTab).not.toHaveClass(activeTabClass);
@@ -73,7 +73,6 @@ describe('Expanding card', () => {
   });
 
   it('closes the first tab when global area of the card is clicked again', async () => {
-    const card = render(<ExpandingCard {...expandingCardProps} />);
     const globalArea = await card.findByText(expandingCardProps.tabs[0].title);
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     fireEvent.click(globalArea!);
@@ -82,5 +81,9 @@ describe('Expanding card', () => {
     fireEvent.click(globalArea!);
     expect(firstTab).not.toHaveClass(activeTabClass);
     expect(card.getByRole('region')).not.toHaveTextContent('content1');
+  });
+
+  afterEach(() => {
+    card = null;
   });
 });
