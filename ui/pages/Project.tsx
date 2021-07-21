@@ -110,7 +110,11 @@ const Project: React.FC = () => {
         <div className="border-t border-gray-200" />
       </div>
       <div className="grid grid-cols-2 mb-8">
-        <NavBar onSelect={onSecondaryMenuSelect} navItems={[{ key: 'repos' }, { key: 'releases' }]} />
+        <NavBar
+          onSelect={onSecondaryMenuSelect}
+          navItems={[{ key: 'repos' }, { key: 'releases' }]}
+          selectedTab={selectedTab}
+        />
         { selectedTab === 'repos' ? (
           <SortButtons
             sort={sort}
