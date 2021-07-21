@@ -11,10 +11,10 @@ import Repos from './Repos';
 import Releases from './Releases';
 import { parseQueryString, updateQueryString } from '../helpers';
 
-const renderIfAvailable = (count: number) => (label: string) => (count ? `${count} ${label}` : '');
+const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
-{repoCount: number, releasesCount: number}> = ({
+{repoCount: number, releasesCount?: number}> = ({
   name, repoCount, lastUpdated, releasesCount
 }) => (
   <div className="col-span-2">
@@ -88,7 +88,6 @@ const Project: React.FC = () => {
   }, [collection, project]);
 
   if (!projectAnalysis) return <div>Loading...</div>;
-  if (!releaseAnalysis) return <div>Loading...</div>;
 
   const filteredRepos = projectAnalysis.repos
     .filter(bySearchTerm(search || ''))
@@ -100,7 +99,7 @@ const Project: React.FC = () => {
         <ProjectDetails
           name={projectAnalysis.name}
           repoCount={projectAnalysis.repos.length}
-          releasesCount={releaseAnalysis?.length}
+          releasesCount={releaseAnalysis?.length || undefined}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
