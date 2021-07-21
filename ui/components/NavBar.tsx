@@ -28,7 +28,6 @@ const NavBar : React.FC<NavBarProps> = ({ navItems, onSelect, selectedTab }) => 
         </button>
       ))}
     </div>
-
   </div>
 );
 export default NavBar;

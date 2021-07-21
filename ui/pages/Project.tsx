@@ -25,11 +25,10 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'
         {repoCount && releasesCount ? ' | ' : ''}
         {renderIfAvailable(releasesCount)('pipelines')}
       </span>
-
     </h1>
     <p className="text-sm text-gray-600 mt-2 flex items-center">
       Last updated on
-      <p className="font-bold text-gray-800 ml-1">{lastUpdated}</p>
+      <span className="font-bold text-gray-800 ml-1">{lastUpdated}</span>
       {' '}
       {/* <button
         type="button"

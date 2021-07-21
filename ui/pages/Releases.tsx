@@ -12,8 +12,10 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis }: ReleasesProps) =
 
   return (
     <>
-      {releaseAnalysis.length ? releaseAnalysis.map(release => (
+      {releaseAnalysis.length ? releaseAnalysis.map((release, index) => (
         <Card
+          // eslint-disable-next-line react/no-array-index-key
+          key={`${release.name}-${index}`}
           title={release.name}
           tabs={release.stages.map(stage => ({
             title: stage.name,
@@ -28,7 +30,6 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis }: ReleasesProps) =
                   name="Success rate"
                   value={(stage.successCount === 0 ? '0%' : `${((stage.successCount * 100) / stage.releaseCount).toFixed(2)}%`)}
                 />
-
               </div>
             )
           }))}
