@@ -13,6 +13,9 @@
     "noEmit": false,
     "outDir": "../dist"
   },
+  "include": [
+    "../shared"
+  ],
   "exclude": [
     "server/cache"
   ]

@@ -15,9 +15,8 @@ export const pastDate = (past?: string) => {
 const isWithin = (time: string) => (date: Date) => date > pastDate(time);
 export const isWithinFortnight = isWithin('15 days');
 
-/* eslint-disable @typescript-eslint/indent */
 export const statsStrings = (emptyValue: string, transform: (a: number) => string):
-  [range: (a: number[]) => string, average: (a: number[]) => string] => {
+[range: (a: number[]) => string, average: (a: number[]) => string] => {
   const rangeAsString = (arr: number[]) => {
     switch (arr.length) {
       case 0: return emptyValue;
@@ -33,7 +32,6 @@ export const statsStrings = (emptyValue: string, transform: (a: number) => strin
 
   return [rangeAsString, averageAsString];
 };
-/* eslint-enable @typescript-eslint/indent */
 
 export const minutes = (ms: number) => {
   const m = Math.ceil(ms / oneMinute);
