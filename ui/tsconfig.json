@@ -11,5 +11,8 @@
       "jest"
     ],
     "module": "esnext",
-  }
+  },
+  "include": [
+    "../shared"
+  ]
 }
