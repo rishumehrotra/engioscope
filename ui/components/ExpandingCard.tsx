@@ -72,7 +72,7 @@ const Card: React.FC<CardProps> = ({
           className="w-full cursor-pointer"
           role="tab"
           onClick={() => {
-            setSelectedTab(!setSelectedTab ? tabs[0] : null);
+            setSelectedTab(!selectedTab ? tabs[0] : null);
           }}
         >
           <div className="grid mx-6">
@@ -88,7 +88,7 @@ const Card: React.FC<CardProps> = ({
                     count={tab.count}
                     label={tab.title}
                     isSelected={selectedTab === tab}
-                    onToggleSelect={() => setSelectedTab(tab)}
+                    onToggleSelect={() => setSelectedTab(selectedTab === tab ? null : tab)}
                   />
                 ))
               }
