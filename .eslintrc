@@ -13,7 +13,8 @@
   "plugins": [
     "babel",
     "react",
-    "react-hooks"
+    "react-hooks",
+    "jest-dom"
   ],
   "parserOptions": {
     "ecmaVersion": 2018,
@@ -86,7 +87,7 @@
     "react/jsx-curly-newline": "warn",
     "react/state-in-constructor": "warn",
     "react/static-property-placement": "warn",
-    "react/jsx-props-no-spreading": "warn",
+    "react/jsx-props-no-spreading": "off",
     "react/jsx-filename-extension": "off",
     "import/no-unresolved": "off",
     "import/no-extraneous-dependencies": [

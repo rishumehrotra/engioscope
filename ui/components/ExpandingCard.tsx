@@ -70,7 +70,7 @@ const Card: React.FC<CardProps> = ({
       <div className="grid grid-flow-row mt-2">
         <div
           className="w-full cursor-pointer"
-          role="tab"
+          role="button"
           onClick={() => {
             setSelectedTab(!selectedTab ? tabs[0] : null);
           }}
@@ -96,7 +96,7 @@ const Card: React.FC<CardProps> = ({
           </div>
         </div>
       </div>
-      {selectedTab ? selectedTab.content : null}
+      <span role="region">{selectedTab ? selectedTab.content : null}</span>
     </div>
   );
 };
