@@ -60,26 +60,21 @@ export const requiredMetrics = [
 
 type AggregagedCodeQuality = {
   codeQuality: UICodeQuality;
-  languages?: Record<string, string>;
+  languages?: {lang: string; loc: number}[];
 };
 
 const isMeasureName = (name: string) => (measure: Measure) => (
   measure.metric === name
 );
 
-const formatLoc = (loc?: string): Record<string, string> | undefined => {
+const formatLoc = (loc?: string): AggregagedCodeQuality['languages'] => {
   if (!loc) return;
   return loc
     .split(';')
-    .reduce((acc, langGroup) => {
-      const [lang, lines] = langGroup.split('=');
-      const loc = Number(lines);
-
-      return {
-        ...acc,
-        [lang]: (loc > 1000) ? `${loc / 1000}k` : loc.toString()
-      };
-    }, {});
+    .map(langGroup => {
+      const [lang, loc] = langGroup.split('=');
+      return { lang, loc: Number(loc) };
+    });
 };
 
 export default (measures: Measure[]): AggregagedCodeQuality => {

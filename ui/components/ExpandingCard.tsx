@@ -35,7 +35,7 @@ const TopLevelTab: React.FC<TopLevelTabProps> = ({
 
 type CardTitleProps = {
   title: string;
-  subtitle: string | undefined;
+  subtitle: React.ReactNode | undefined;
 }
 
 const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle }) => (
@@ -58,7 +58,7 @@ export type Tab = {
 
 export type CardProps = {
   title: string;
-  subtitle?: string | undefined;
+  subtitle?: React.ReactNode | undefined;
   tabs: Tab[];
   tag?: string;
 }

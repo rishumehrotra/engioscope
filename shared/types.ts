@@ -69,7 +69,7 @@ export type UICodeQuality = null | {
 export type RepoAnalysis = {
   name: string;
   id: string;
-  languages?: Record<string, string>;
+  languages?: { lang: string; loc: number }[];
   commits: number;
   builds: UIBuilds;
   branches: UIBranches;

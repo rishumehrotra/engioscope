@@ -4,12 +4,31 @@ import { num } from '../helpers';
 import Card, { Tab } from './ExpandingCard';
 import Metric from './Metric';
 
-const repoSubtitle = (languages: Record<string, string> | undefined) => (languages
-  ? [
-    Object.keys(languages)[0],
-    `(${Object.values(languages)[0]})`
-  ].join(' ')
-  : undefined);
+const getColor = (string: string) => {
+  // eslint-disable-next-line no-bitwise
+  const hash = string.split('').reduce((hash, char) => char.charCodeAt(0) + ((hash << 5) - hash), 0);
+  return `hsl(${hash % 360},80%,35%)`;
+};
+
+const repoSubtitle = (languages: RepoAnalysis['languages']) => {
+  if (!languages) return;
+
+  const totalLoc = languages.reduce((acc, lang) => acc + lang.loc, 0);
+
+  return [...languages]
+    .sort((a, b) => b.loc - a.loc)
+    .map(l => (
+      <span
+        className="text-sm rounded-full py-1 px-3 mr-2 bg-gray-100 text-white"
+        style={{ backgroundColor: getColor(l.lang) }}
+        title={`${num(l.loc)} lines of code`}
+      >
+        {`${Math.round((l.loc * 100) / totalLoc)}%`}
+        {' '}
+        {l.lang}
+      </span>
+    ));
+};
 
 const TabContents: React.FC<{ gridCols?: number }> = ({ gridCols, children }) => (
   <div className={`grid ${gridCols === 6 ? 'grid-cols-6' : 'grid-cols-5'} gap-4 p-6 py-6 rounded-lg bg-gray-100`}>
