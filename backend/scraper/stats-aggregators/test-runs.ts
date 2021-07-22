@@ -76,7 +76,7 @@ export default (testRuns: TestRun[]) => {
 
     const testStats = (await Promise.all(matchingBuilds.map(async build => ({
       buildName: build.definition.name,
-      url: build.url.replace('_apis/build/Builds/', '_build/results?buildId='),
+      url: `${build.url.replace('_apis/build/Builds/', '_build/results?buildId=')}&view=ms.vss-test-web.build-test-results-tab`,
       ...aggregateRuns(runsByBuildId[build.id] || []),
       coverage: coverageFrom((await testCoverageByBuildId(build.id)).coverageData)
     })))).filter(testStat => testStat.total !== 0);
