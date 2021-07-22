@@ -10,6 +10,14 @@ import aggregateReleaseDefinitions from './stats-aggregators/release-definitions
 import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
 import aggregateTestRunsByBuildId from './stats-aggregators/test-runs';
+import languageColors from './language-colors';
+
+const getLanguageColor = (lang: string) => {
+  if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
+  if (lang === 'js') return languageColors.javascript;
+  if (lang === 'xml') return languageColors.brainfuck;
+  return languageColors.astro;
+};
 
 const analyserLog = debug('analyser');
 
@@ -62,7 +70,10 @@ export default (config: Config) => {
       return {
         name: r.name,
         id: r.id,
-        languages,
+        languages: languages?.map(l => ({
+          ...l,
+          color: getLanguageColor(l.lang)
+        })),
         commits: commits.count,
         builds: buildsByRepoId(r.id),
         branches,

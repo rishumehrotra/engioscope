@@ -4,12 +4,6 @@ import { num } from '../helpers';
 import Card, { Tab } from './ExpandingCard';
 import Metric from './Metric';
 
-const getColor = (string: string) => {
-  // eslint-disable-next-line no-bitwise
-  const hash = string.split('').reduce((hash, char) => char.charCodeAt(0) + ((hash << 5) - hash), 0);
-  return `hsl(${hash % 360},80%,35%)`;
-};
-
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
 
@@ -19,10 +13,11 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     .sort((a, b) => b.loc - a.loc)
     .map(l => (
       <span
-        className="text-sm rounded-full py-1 px-3 mr-2 bg-gray-100 text-white"
-        style={{ backgroundColor: getColor(l.lang) }}
+        className="text-sm rounded-full py-1 px-2 mr-2 bg-gray-100 text-gray-900"
         title={`${num(l.loc)} lines of code`}
       >
+        <span className="rounded-full w-3 h-3 inline-block" style={{ backgroundColor: l.color }}> </span>
+        {' '}
         {`${Math.round((l.loc * 100) / totalLoc)}%`}
         {' '}
         {l.lang}

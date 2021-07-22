@@ -26,7 +26,8 @@
   },
   "ignorePatterns": [
     "server/cache/**/*",
-    "dist/**/*"
+    "dist/**/*",
+    "language-colors.ts"
   ],
   "rules": {
     "consistent-return": "off",

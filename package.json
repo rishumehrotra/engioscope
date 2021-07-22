@@ -10,7 +10,9 @@
     "build:server": "tsc --build backend",
     "prebuild:ui": "NODE_ENV=production tailwind build -i ui/tailwind.css -o ui/tailwind.output.css",
     "build:ui": "vite build",
-    "prebuild": "rimraf dist",
+    "clean": "rimraf dist",
+    "update-language-colors": "ts-node backend/scraper/update-language-colors.ts",
+    "prebuild": "npm-run-all --parallel clean update-language-colors",
     "build": "npm-run-all --parallel build:server build:ui",
     "serve": "vite preview",
     "test": "jest --testEnvironment=jsdom --testPathIgnorePatterns=./dist --coverage --setupTestFrameworkScriptFile='./ui/jest-setup.js'",
@@ -19,7 +21,8 @@
     "tsc": "tsc --build backend ui",
     "lint": "eslint \"./**/*.ts\" \"./**/*.tsx\" --cache",
     "scratch": "node -r ts-node/register ./backend/scratch.ts",
-    "prepare": "husky install"
+    "install:husky": "husky install",
+    "prepare": "npm-run-all --parallel install:husky update-language-colors"
   },
   "bin": {
     "project-health-tool": "dist/backend/cli.js"
@@ -39,6 +42,7 @@
     "pretty-ms": "^7.0.1",
     "qs": "^6.7.0",
     "rambda": "^6.8.2",
+    "yaml": "^1.10.2",
     "yargs": "^17.0.1"
   },
   "browserslist": {
@@ -74,6 +78,7 @@
     "@types/react": "^17.0.12",
     "@types/react-dom": "^17.0.8",
     "@types/react-router-dom": "^5.1.5",
+    "@types/yaml": "^1.9.7",
     "@types/yargs": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^4.28.1",
     "@typescript-eslint/parser": "^4.28.2",
