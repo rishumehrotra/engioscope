@@ -44,6 +44,9 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'
 );
 
 const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
+  if (sortBy === 'Builds') {
+    return sort * ((a.builds?.count || 0) - (b.builds?.count || 0));
+  }
   const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
   const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.count;
   if (branchRatingA && branchRatingB) {
@@ -120,7 +123,10 @@ const Project: React.FC = () => {
             setSort={setSort}
             setSortBy={setSortBy}
             sortBy={sortBy}
-            labels={projectAnalysis.repos[0]?.indicators.map(i => i.name)}
+            labels={[
+              'Builds',
+              ...projectAnalysis.repos[0]?.indicators.map(i => i.name)
+            ]}
           />
         ) : null}
       </div>

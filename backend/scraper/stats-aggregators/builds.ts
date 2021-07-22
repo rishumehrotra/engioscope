@@ -1,8 +1,8 @@
+import prettyMilliseconds from 'pretty-ms';
+import { add } from 'rambda';
 import { Build } from '../types-azure';
-import { TopLevelIndicator } from '../../../shared/types';
-import {
-  assertDefined, isMaster, minutes, shortDateFormat, statsStrings
-} from '../../utils';
+import { UIBuilds } from '../../../shared/types';
+import { assertDefined, isMaster, shortDateFormat } from '../../utils';
 
 type BuildStats = {
   count: number;
@@ -18,36 +18,6 @@ const repoId = (build: Build) => build.repository?.id ?? '<unknown>';
 const defaultBuildStats: BuildStats = {
   count: 0, success: 0, duration: [], status: { type: 'unknown' }
 };
-const [timeRange, averageTime] = statsStrings('-', minutes);
-
-const topLevelIndicator = (stats: BuildStats): TopLevelIndicator => ({
-  name: 'Builds',
-  count: stats.count,
-  indicators: [
-    {
-      name: 'Total successful',
-      value: stats.success
-    },
-    {
-      name: 'Number of executions',
-      value: stats.count
-    },
-    {
-      name: 'Success rate',
-      value: `${stats.count === 0 ? 0 : Math.round((stats.success * 100) / stats.count)}%`
-    },
-    {
-      name: 'Average duration',
-      value: averageTime(stats.duration),
-      additionalValue: timeRange(stats.duration)
-    },
-    {
-      name: 'Current status',
-      value: stats.status.type,
-      additionalValue: stats.status.type === 'failed' ? `Since ${shortDateFormat(stats.status.since)}` : undefined
-    }
-  ]
-});
 
 const status = (incoming: BuildStats, existing: BuildStats): BuildStats['status'] => {
   if (existing.status.type === 'unknown') return incoming.status;
@@ -103,10 +73,23 @@ export default (builds: Build[]) => {
     }, { buildStats: {}, latestMasterBuilds: {} });
 
   return {
-    buildByRepoId: (id?: string): TopLevelIndicator => {
-      if (!id) return topLevelIndicator(defaultBuildStats);
-      if (!buildStats[id]) return topLevelIndicator(defaultBuildStats);
-      return topLevelIndicator(buildStats[id]);
+    buildsByRepoId: (id?: string): UIBuilds => {
+      if (!id) return null;
+      if (!buildStats[id]) return null;
+
+      const b = buildStats[id];
+      return {
+        count: b.count,
+        success: b.success,
+        duration: {
+          average: prettyMilliseconds(b.duration.reduce(add, 0) / b.duration.length),
+          min: prettyMilliseconds(Math.min(...b.duration)),
+          max: prettyMilliseconds(Math.max(...b.duration))
+        },
+        status: b.status.type === 'succeeded' || b.status.type === 'unknown'
+          ? b.status
+          : { type: 'failed', since: shortDateFormat(b.status.since) }
+      };
     },
     latestMasterBuilds: (repoId?: string) => (
       repoId

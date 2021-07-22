@@ -26,7 +26,7 @@ export default (config: Config) => {
     analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
     const [
       repos,
-      { buildByRepoId, latestMasterBuilds },
+      { buildsByRepoId, latestMasterBuilds },
       testRunGetter,
       releaseDefinitionById,
       releases,
@@ -60,8 +60,8 @@ export default (config: Config) => {
         name: r.name,
         id: r.id,
         languages,
+        builds: buildsByRepoId(r.id),
         indicators: [
-          buildByRepoId(r.id),
           branches,
           prByRepoId(r.id),
           coverage,

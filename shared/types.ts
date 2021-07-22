@@ -15,6 +15,7 @@ export type RepoAnalysis = {
   name: string;
   id: string;
   languages?: Record<string, string>;
+  builds: UIBuilds;
   indicators: TopLevelIndicator[];
 };
 
@@ -43,4 +44,14 @@ export type ReleaseStats = {
   description: string | null;
   stages: EnvironmentStats[];
   repos: Record<string, string[]>;
+};
+
+export type UIBuilds = null | {
+  count: number;
+  success: number;
+  duration: { average: string; min: string; max: string };
+  status:
+  | { type: 'unknown' }
+  | { type: 'succeeded' }
+  | { type: 'failed'; since: string };
 };
