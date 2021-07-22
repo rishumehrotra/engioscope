@@ -137,6 +137,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
     subtitle={repoSubtitle(repo.languages)}
+    tag={repo.commits === 0 ? 'Inactive' : undefined}
     tabs={[
       builds(repo.builds),
       branches(repo.branches),

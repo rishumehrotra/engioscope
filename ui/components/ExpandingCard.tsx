@@ -60,15 +60,16 @@ export type CardProps = {
   title: string;
   subtitle?: string | undefined;
   tabs: Tab[];
+  tag?: string;
 }
 
 const Card: React.FC<CardProps> = ({
-  title, subtitle, tabs
+  title, subtitle, tabs, tag
 }) => {
   const [selectedTab, setSelectedTab] = useState<CardProps['tabs'][number] | null>(null);
 
   return (
-    <div className={`bg-white border-l-4 p-6 mb-4 ${selectedTab ? 'border-gray-500' : ''} rounded-lg shadow`}>
+    <div className={`bg-white border-l-4 p-6 mb-4 ${selectedTab ? 'border-gray-500' : ''} rounded-lg shadow relative`}>
       <div className="grid grid-flow-row mt-2">
         <div
           className="w-full cursor-pointer"
@@ -77,6 +78,13 @@ const Card: React.FC<CardProps> = ({
             setSelectedTab(!selectedTab ? tabs[0] : null);
           }}
         >
+          {tag && (
+            <div
+              className="absolute right-0 top-0 bg-gray-400 text-white px-3 py-1 text-sm uppercase my-3 rounded-l-md"
+            >
+              {tag}
+            </div>
+          )}
           <div className="grid mx-6">
             <CardTitle
               title={title}
