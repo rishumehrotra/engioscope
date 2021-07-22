@@ -37,9 +37,9 @@ export default (config: Config) => (prs: GitPullRequest[]) => {
       abandoned: abandonedPrCount,
       completed: completedPrCount,
       timeToApprove: timesToApprove.length === 0 ? null : {
-        average: prettyMilliseconds(timesToApprove.reduce(add, 0) / timesToApprove.length),
-        min: prettyMilliseconds(Math.min(...timesToApprove)),
-        max: prettyMilliseconds(Math.max(...timesToApprove))
+        average: prettyMilliseconds(timesToApprove.reduce(add, 0) / timesToApprove.length, { unitCount: 2 }),
+        min: prettyMilliseconds(Math.min(...timesToApprove), { unitCount: 2 }),
+        max: prettyMilliseconds(Math.max(...timesToApprove), { unitCount: 2 })
       }
     };
   };
