@@ -18,6 +18,7 @@ export type RepoAnalysis = {
   builds: UIBuilds;
   branches: UIBranches;
   prs: UIPullRequests;
+  tests: UITests;
   indicators: TopLevelIndicator[];
 };
 
@@ -72,4 +73,15 @@ export type UIPullRequests = {
   abandoned: number;
   completed: number;
   timeToApprove: null | { average: string; min: string; max: string };
+}
+
+export type UITests = null | {
+  total: number;
+  pipelines: {
+    name: string;
+    successful: number;
+    failed: number;
+    executionTime: string;
+    coverage: string;
+  }[];
 }

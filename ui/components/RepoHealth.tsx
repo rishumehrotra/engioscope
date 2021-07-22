@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers';
 import Card, { Tab } from './ExpandingCard';
@@ -51,11 +51,23 @@ const branches = (branches: RepoAnalysis['branches']): Tab => ({
   count: branches.total,
   content: (
     <TabContents>
-      <Metric name="Total" value={num(branches.total)} />
-      <Metric name="Active" value={num(branches.active)} />
-      <Metric name="Abandoned" value={num(branches.abandoned)} />
-      <Metric name="Delete candidates" value={num(branches.deleteCandidates)} />
-      <Metric name="Possibly conflicting" value={num(branches.possiblyConflicting)} />
+      <Metric name="Total" value={num(branches.total)} tooltip="Total number of branches in the repository" />
+      <Metric name="Active" value={num(branches.active)} tooltip="Active development branches in-sync with master" />
+      <Metric
+        name="Abandoned"
+        value={num(branches.abandoned)}
+        tooltip="Inactive development branches which are out-of-sync with master, but contain commits which are not present on master"
+      />
+      <Metric
+        name="Delete candidates"
+        value={num(branches.deleteCandidates)}
+        tooltip="Inactive development branches which are in-sync with master"
+      />
+      <Metric
+        name="Possibly conflicting"
+        value={num(branches.possiblyConflicting)}
+        tooltip="Branches that are significantly out of sync with master"
+      />
     </TabContents>
   )
 });
@@ -84,6 +96,24 @@ const prs = (prs: RepoAnalysis['prs']): Tab => ({
   )
 });
 
+const tests = (tests: RepoAnalysis['tests']): Tab => ({
+  title: 'Tests',
+  count: tests?.total || 0,
+  content: (
+    <TabContents gridCols={5}>
+      {tests ? tests.pipelines.map(pipeline => (
+        <Fragment key={pipeline.name}>
+          <Metric name="Build pipeline" value={pipeline.name} />
+          <Metric name="Successful tests" value={pipeline.successful} />
+          <Metric name="Failed tests" value={pipeline.failed} />
+          <Metric name="Execution time" value={pipeline.executionTime} />
+          <Metric name="Branch coverage" value={pipeline.coverage} />
+        </Fragment>
+      )) : (<div>This repo doesn't have any tests running in pipelines</div>)}
+    </TabContents>
+  )
+});
+
 const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
@@ -92,6 +122,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
       builds(repo.builds),
       branches(repo.branches),
       prs(repo.prs),
+      tests(repo.tests),
       ...repo.indicators.map(indicator => ({
         title: indicator.name,
         count: indicator.count,

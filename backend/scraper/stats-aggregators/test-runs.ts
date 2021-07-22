@@ -1,5 +1,6 @@
 import prettyMs from 'pretty-ms';
-import { TopLevelIndicator } from '../../../shared/types';
+import { prop, sum } from 'rambda';
+import { UITests } from '../../../shared/types';
 import {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
@@ -11,52 +12,9 @@ type TestStats = {
   executionTime: number;
 };
 
-type TestStatsWithBuild = TestStats & { buildName: string; coverage: number };
-
 const defaultStat: TestStats = {
   success: 0, failure: 0, executionTime: 0, total: 0
 };
-
-const noBuilds: TestStatsWithBuild[] = [{
-  buildName: 'No builds',
-  total: 0,
-  coverage: 0,
-  executionTime: 0,
-  failure: 0,
-  success: 0
-}];
-
-const topLevelIndicator = (stats: TestStatsWithBuild[]): TopLevelIndicator => ({
-  name: 'Tests',
-  count: [...new Set(stats.map(s => s.total))].reduce((acc, t) => acc + t, 0),
-  indicators: stats.flatMap(stat => [
-    {
-      name: 'Build pipeline',
-      value: stat.buildName,
-      rating: 0
-    },
-    {
-      name: 'Successful tests',
-      value: stat.success,
-      rating: 0 // ratingConfig.coverage.successfulTests(stat.success)
-    },
-    {
-      name: 'Failed tests',
-      value: stat.failure,
-      rating: 0 // ratingConfig.coverage.failedTests(stat.failure)
-    },
-    {
-      name: 'Tests execution time',
-      value: prettyMs(stat.executionTime),
-      rating: 0 // ratingConfig.coverage.testExecutionTime(stat.executionTime)
-    },
-    {
-      name: 'Branch coverage',
-      value: stat.coverage === 0 ? 0 : `${Math.round(stat.coverage)}%`,
-      rating: 0 // ratingConfig.coverage.branchCoverage(stat.coverage)
-    }
-  ])
-});
 
 const getBranchStats = (coverageData: CodeCoverageData[]) => coverageData[0]
   .coverageStats.find(s => s.label === 'Branch');
@@ -111,12 +69,10 @@ export default (testRuns: TestRun[]) => {
   return (
     latestMasterBuildIds: (repoId?: string) => Build[],
     testCoverageByBuildId: (t: number) => Promise<CodeCoverageSummary>
-  ) => async (repoId?: string) => {
+  ) => async (repoId?: string): Promise<UITests> => {
     const matchingBuilds = latestMasterBuildIds(repoId);
 
-    if (matchingBuilds.length === 0) {
-      return topLevelIndicator(noBuilds);
-    }
+    if (matchingBuilds.length === 0) return null;
 
     const testStats = (await Promise.all(matchingBuilds.map(async build => ({
       buildName: build.definition.name,
@@ -124,6 +80,17 @@ export default (testRuns: TestRun[]) => {
       coverage: coverageFrom((await testCoverageByBuildId(build.id)).coverageData)
     })))).filter(testStat => testStat.total !== 0);
 
-    return topLevelIndicator(testStats.length === 0 ? noBuilds : testStats);
+    if (testStats.length === 0) return null;
+
+    return {
+      total: sum([...new Set(testStats.map(prop('total')))]),
+      pipelines: testStats.map(stat => ({
+        name: stat.buildName,
+        successful: stat.success,
+        failed: stat.failure,
+        executionTime: prettyMs(stat.executionTime),
+        coverage: `${stat.coverage}%`
+      }))
+    };
   };
 };

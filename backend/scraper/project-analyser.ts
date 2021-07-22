@@ -47,7 +47,7 @@ export default (config: Config) => {
     const repoAnalysis = await Promise.all(repos.map(async r => {
       const [
         branches,
-        coverage,
+        tests,
         { languages, codeQuality }
       ] = await Promise.all([
         (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id))
@@ -63,8 +63,8 @@ export default (config: Config) => {
         builds: buildsByRepoId(r.id),
         branches,
         prs: prByRepoId(r.id),
+        tests,
         indicators: [
-          coverage,
           codeQuality
         ]
       };
