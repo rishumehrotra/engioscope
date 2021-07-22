@@ -43,6 +43,13 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'
   </div>
 );
 
+const qualityGateSortName = (codeQuality: RepoAnalysis['codeQuality']) => {
+  if (!codeQuality) return 'd';
+  if (codeQuality.qualityGate === 'ok') return 'a';
+  if (codeQuality.qualityGate === 'warn') return 'b';
+  return 'c';
+};
+
 const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
   if (sortBy === 'Builds') {
     return sort * ((a.builds?.count || 0) - (b.builds?.count || 0));
@@ -56,13 +63,9 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
   if (sortBy === 'Tests') {
     return sort * ((a.tests?.total || 0) - (b.tests?.total || 0));
   }
-  const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
-  const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.count;
-  if (branchRatingA && branchRatingB) {
-    return (branchRatingA > branchRatingB) ? sort : sort * -1;
-  }
-  if (branchRatingA) return sort;
-  return sort * -1;
+
+  // sortBy === 'Code quality'
+  return sort * -1 * qualityGateSortName(a.codeQuality).localeCompare(qualityGateSortName(b.codeQuality));
 };
 
 const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
@@ -137,7 +140,7 @@ const Project: React.FC = () => {
               'Branches',
               'Pull requests',
               'Tests',
-              ...projectAnalysis.repos[0]?.indicators.map(i => i.name)
+              'Code quality'
             ]}
           />
         ) : null}

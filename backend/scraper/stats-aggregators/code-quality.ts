@@ -1,5 +1,5 @@
 import { Measure } from '../types-sonar';
-import { TopLevelIndicator } from '../../../shared/types';
+import { UICodeQuality } from '../../../shared/types';
 
 type MetricDefinition = {
   name: string;
@@ -58,18 +58,8 @@ export const requiredMetrics = [
   'reliability_rating'
 ];
 
-const unknownCodeQuality: TopLevelIndicator = {
-  name: 'Code quality',
-  count: 'Unknown',
-  indicators: metrics.map(metric => ({
-    name: metric.display,
-    rating: 10,
-    value: '-'
-  }))
-};
-
 type AggregagedCodeQuality = {
-  codeQuality: TopLevelIndicator;
+  codeQuality: UICodeQuality;
   languages?: Record<string, string>;
 };
 
@@ -92,26 +82,21 @@ const formatLoc = (loc?: string): Record<string, string> | undefined => {
     }, {});
 };
 
-const toTitleCase = (str: string) => str.replace(
-  /\w\S*/g,
-  txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-);
-
 export default (measures: Measure[]): AggregagedCodeQuality => {
-  if (!measures.length) return { codeQuality: unknownCodeQuality };
+  if (!measures.length) return { codeQuality: null };
+
+  const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
 
   return {
     languages: formatLoc(measures.find(isMeasureName('ncloc_language_distribution'))?.value),
     codeQuality: {
-      name: 'Code quality',
-      count: toTitleCase(measures.find(m => m.metric === 'alert_status')?.value || 'Unknown'),
-      indicators: metrics.map(metric => {
-        const metricValue = measures.find(isMeasureName(metric.name))?.value || '-';
-        return {
-          name: metric.display,
-          value: metric.formatter ? metric.formatter(metricValue) : metricValue
-        };
-      })
+      complexity: Number(findMeasure('complexity') || 0),
+      bugs: Number(findMeasure('bugs') || 0),
+      codeSmells: Number(findMeasure('code_smells') || 0),
+      vulnerabilities: Number(findMeasure('vulnerabilities') || 0),
+      duplication: Number(findMeasure('duplicated_lines_density') || 0),
+      techDebt: formatDebt(findMeasure('sqale_index') || '0'),
+      qualityGate: findMeasure('alert_status') as 'error' | 'warn' | 'ok'
     }
   };
 };

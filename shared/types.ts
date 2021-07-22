@@ -1,33 +1,3 @@
-export type ChildIndicator = {
-  name: string;
-  value: number | string;
-  tooltip?: string;
-  additionalValue?: string;
-};
-
-export type TopLevelIndicator = {
-  name: string;
-  count: number | string;
-  indicators: ChildIndicator[];
-};
-
-export type RepoAnalysis = {
-  name: string;
-  id: string;
-  languages?: Record<string, string>;
-  builds: UIBuilds;
-  branches: UIBranches;
-  prs: UIPullRequests;
-  tests: UITests;
-  indicators: TopLevelIndicator[];
-};
-
-export type ProjectRepoAnalysis = {
-  lastUpdated: string;
-  name: [collection: string, project: string];
-  repos: RepoAnalysis[];
-}
-
 export type ScrapedProject = {
   name: [collection: string, project: string];
   lastUpdated: string | null;
@@ -84,4 +54,31 @@ export type UITests = null | {
     executionTime: string;
     coverage: string;
   }[];
+}
+
+export type UICodeQuality = null | {
+  complexity: number;
+  bugs: number;
+  codeSmells: number;
+  vulnerabilities: number;
+  duplication: number;
+  techDebt: string;
+  qualityGate: 'error' | 'warn' | 'ok';
+}
+
+export type RepoAnalysis = {
+  name: string;
+  id: string;
+  languages?: Record<string, string>;
+  builds: UIBuilds;
+  branches: UIBranches;
+  prs: UIPullRequests;
+  tests: UITests;
+  codeQuality: UICodeQuality;
+};
+
+export type ProjectRepoAnalysis = {
+  lastUpdated: string;
+  name: [collection: string, project: string];
+  repos: RepoAnalysis[];
 }

@@ -64,9 +64,7 @@ export default (config: Config) => {
         branches,
         prs: prByRepoId(r.id),
         tests,
-        indicators: [
-          codeQuality
-        ]
+        codeQuality
       };
     }));
 

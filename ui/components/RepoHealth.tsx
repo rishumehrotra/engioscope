@@ -3,7 +3,6 @@ import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers';
 import Card, { Tab } from './ExpandingCard';
 import Metric from './Metric';
-import RepoHealthDetails from './RepoHealthDetails';
 
 const repoSubtitle = (languages: Record<string, string> | undefined) => (languages
   ? [
@@ -114,6 +113,26 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
   )
 });
 
+const codeQuality = (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
+  title: 'Code quality',
+  count: codeQuality?.qualityGate || 'unknown',
+  content: (
+    <TabContents>
+      {codeQuality ? (
+        <>
+          <Metric name="Complexity" value={num(codeQuality.complexity)} />
+          <Metric name="Bugs" value={num(codeQuality.bugs)} />
+          <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
+          <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
+          <Metric name="Duplication" value={num(codeQuality.duplication)} />
+          <Metric name="Tech debt" value={codeQuality.techDebt} />
+          <Metric name="Quality gate" value={codeQuality.qualityGate} />
+        </>
+      ) : (<div>Couldn't find this repo on Sonar</div>)}
+    </TabContents>
+  )
+});
+
 const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
@@ -123,14 +142,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
       branches(repo.branches),
       prs(repo.prs),
       tests(repo.tests),
-      ...repo.indicators.map(indicator => ({
-        title: indicator.name,
-        count: indicator.count,
-        content: <RepoHealthDetails
-          indicators={indicator.indicators}
-          gridCols={5}
-        />
-      }))
+      codeQuality(repo.codeQuality)
     ]}
   />
 );
