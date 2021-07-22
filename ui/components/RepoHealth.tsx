@@ -60,6 +60,30 @@ const branches = (branches: RepoAnalysis['branches']): Tab => ({
   )
 });
 
+const prs = (prs: RepoAnalysis['prs']): Tab => ({
+  title: 'Pull requests',
+  count: prs.total,
+  content: (
+    <TabContents>
+      <Metric name="Active" value={num(prs.active)} />
+      <Metric name="Abandoned" value={num(prs.abandoned)} />
+      <Metric name="Completed" value={num(prs.completed)} />
+      {prs.timeToApprove ? (
+        <Metric
+          name="Time to approve"
+          value={prs.timeToApprove.average}
+          additionalValue={`${prs.timeToApprove.min} - ${prs.timeToApprove.max}`}
+        />
+      ) : (
+        <Metric
+          name="Time to approve"
+          value="-"
+        />
+      )}
+    </TabContents>
+  )
+});
+
 const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
@@ -67,6 +91,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
     tabs={[
       builds(repo.builds),
       branches(repo.branches),
+      prs(repo.prs),
       ...repo.indicators.map(indicator => ({
         title: indicator.name,
         count: indicator.count,

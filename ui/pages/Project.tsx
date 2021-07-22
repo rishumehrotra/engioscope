@@ -50,6 +50,9 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
   if (sortBy === 'Branches') {
     return sort * (a.branches.total - b.branches.total);
   }
+  if (sortBy === 'Pull requests') {
+    return sort * (a.prs.total - b.prs.total);
+  }
   const branchRatingA = a.indicators.find(indicator => indicator.name === sortBy)?.count;
   const branchRatingB = b.indicators.find(indicator => indicator.name === sortBy)?.count;
   if (branchRatingA && branchRatingB) {
@@ -129,6 +132,7 @@ const Project: React.FC = () => {
             labels={[
               'Builds',
               'Branches',
+              'Pull requests',
               ...projectAnalysis.repos[0]?.indicators.map(i => i.name)
             ]}
           />

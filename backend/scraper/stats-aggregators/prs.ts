@@ -1,8 +1,9 @@
+import prettyMilliseconds from 'pretty-ms';
+import { add } from 'rambda';
 import { GitPullRequest, PullRequestStatus } from '../types-azure';
 import { Config } from '../types';
-import { hours, pastDate, statsStrings } from '../../utils';
-
-const [timeRange, averageTime] = statsStrings('-', hours);
+import { pastDate } from '../../utils';
+import { UIPullRequests } from '../../../shared/types';
 
 const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) => pr.status === status;
 const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
@@ -18,7 +19,7 @@ export default (config: Config) => (prs: GitPullRequest[]) => {
     ]
   }), {} as Record<string, GitPullRequest[]>);
 
-  return (repoId?: string) => {
+  return (repoId?: string): UIPullRequests => {
     const repoPrs = repoId ? prsByRepo[repoId] || [] : [];
     const activePrCount = repoPrs.filter(isStatus('active')).length;
     const prsInTimeWindow = repoPrs.filter(isInTimeWindow(pastDate(config.lookAtPast)));
@@ -31,27 +32,15 @@ export default (config: Config) => (prs: GitPullRequest[]) => {
     const completedPrCount = completedPrs.length;
 
     return {
-      name: 'Pull requests',
-      count: activePrCount + completedPrCount,
-      indicators: [
-        {
-          name: 'Active',
-          value: activePrCount
-        },
-        {
-          name: 'Abandoned',
-          value: abandonedPrCount
-        },
-        {
-          name: 'Completed',
-          value: completedPrCount
-        },
-        {
-          name: 'Time to approve',
-          value: averageTime(timesToApprove),
-          additionalValue: timeRange(timesToApprove)
-        }
-      ]
+      total: activePrCount + completedPrCount,
+      active: activePrCount,
+      abandoned: abandonedPrCount,
+      completed: completedPrCount,
+      timeToApprove: timesToApprove.length === 0 ? null : {
+        average: prettyMilliseconds(timesToApprove.reduce(add, 0) / timesToApprove.length),
+        min: prettyMilliseconds(Math.min(...timesToApprove)),
+        max: prettyMilliseconds(Math.max(...timesToApprove))
+      }
     };
   };
 };
