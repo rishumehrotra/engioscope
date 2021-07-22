@@ -70,6 +70,7 @@ export type RepoAnalysis = {
   name: string;
   id: string;
   languages?: Record<string, string>;
+  commits: number;
   builds: UIBuilds;
   branches: UIBranches;
   prs: UIPullRequests;

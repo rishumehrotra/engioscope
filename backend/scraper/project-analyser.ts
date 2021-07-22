@@ -5,6 +5,7 @@ import aggregateBranches from './stats-aggregators/branches';
 import aggregatePrs from './stats-aggregators/prs';
 import aggregateReleases from './stats-aggregators/releases';
 import aggregateCodeQuality from './stats-aggregators/code-quality';
+import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
 import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
@@ -14,7 +15,7 @@ const analyserLog = debug('analyser');
 
 export default (config: Config) => {
   const {
-    getRepositories, getBuilds, getBranchesStats, getPRs,
+    getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
@@ -48,18 +49,21 @@ export default (config: Config) => {
       const [
         branches,
         tests,
-        { languages, codeQuality }
+        { languages, codeQuality },
+        commits
       ] = await Promise.all([
         (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id))
           .then(aggregateBranches),
         getTestsByRepoId(r.id),
-        codeQualityByRepoName(r.name).then(aggregateCodeQuality)
+        codeQualityByRepoName(r.name).then(aggregateCodeQuality),
+        forProject(getCommits)(r.id).then(aggregateCommits)
       ]);
 
       return {
         name: r.name,
         id: r.id,
         languages,
+        commits: commits.count,
         builds: buildsByRepoId(r.id),
         branches,
         prs: prByRepoId(r.id),
