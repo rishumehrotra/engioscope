@@ -76,6 +76,7 @@ export default (testRuns: TestRun[]) => {
 
     const testStats = (await Promise.all(matchingBuilds.map(async build => ({
       buildName: build.definition.name,
+      url: build.url.replace('_apis/build/Builds/', '_build/results?buildId='),
       ...aggregateRuns(runsByBuildId[build.id] || []),
       coverage: coverageFrom((await testCoverageByBuildId(build.id)).coverageData)
     })))).filter(testStat => testStat.total !== 0);
@@ -86,6 +87,7 @@ export default (testRuns: TestRun[]) => {
       total: sum([...new Set(testStats.map(prop('total')))]),
       pipelines: testStats.map(stat => ({
         name: stat.buildName,
+        url: stat.url,
         successful: stat.success,
         failed: stat.failure,
         executionTime: prettyMs(stat.executionTime),

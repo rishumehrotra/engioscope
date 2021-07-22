@@ -14,6 +14,7 @@ type EnvironmentStats = {
 export type ReleaseStats = {
   id: number;
   name: string;
+  url: string;
   description: string | null;
   stages: EnvironmentStats[];
   repos: Record<string, string[]>;
@@ -57,6 +58,7 @@ export type UITests = null | {
   total: number;
   pipelines: {
     name: string;
+    url: string;
     successful: number;
     failed: number;
     executionTime: string;

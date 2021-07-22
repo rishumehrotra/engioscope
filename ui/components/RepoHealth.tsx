@@ -121,7 +121,7 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
     <TabContents gridCols={5}>
       {tests ? tests.pipelines.map(pipeline => (
         <Fragment key={pipeline.name}>
-          <Metric name="Build pipeline" value={pipeline.name} />
+          <Metric name="Build pipeline" url={pipeline.url} value={pipeline.name} />
           <Metric name="Successful tests" value={pipeline.successful} />
           <Metric name="Failed tests" value={pipeline.failed} />
           <Metric name="Execution time" value={pipeline.executionTime} />
