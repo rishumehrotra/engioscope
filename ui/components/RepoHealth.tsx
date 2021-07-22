@@ -1,7 +1,7 @@
 import React from 'react';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers';
-import Card from './ExpandingCard';
+import Card, { Tab } from './ExpandingCard';
 import Metric from './Metric';
 import RepoHealthDetails from './RepoHealthDetails';
 
@@ -18,38 +18,55 @@ const TabContents: React.FC<{ gridCols?: number }> = ({ gridCols, children }) =>
   </div>
 );
 
+const builds = (builds: RepoAnalysis['builds']): Tab => ({
+  title: 'Builds',
+  count: builds?.count || 0,
+  content: (
+    <TabContents>
+      {builds
+        ? (
+          <>
+            <Metric name="Total successful" value={num(builds.success)} />
+            <Metric name="Number of executions" value={num(builds.count)} />
+            <Metric name="Success rate" value={`${Math.round((builds.success * 100) / builds.count)}%`} />
+            <Metric
+              name="Average duration"
+              value={builds.duration.average}
+              additionalValue={`${builds.duration.min} - ${builds.duration.max}`}
+            />
+            <Metric
+              name="Current status"
+              value={builds.status.type}
+              additionalValue={builds.status.type === 'failed' ? builds.status.since : undefined}
+            />
+          </>
+        )
+        : (<div>No builds for this repo</div>)}
+    </TabContents>
+  )
+});
+
+const branches = (branches: RepoAnalysis['branches']): Tab => ({
+  title: 'Branches',
+  count: branches.total,
+  content: (
+    <TabContents>
+      <Metric name="Total" value={num(branches.total)} />
+      <Metric name="Active" value={num(branches.active)} />
+      <Metric name="Abandoned" value={num(branches.abandoned)} />
+      <Metric name="Delete candidates" value={num(branches.deleteCandidates)} />
+      <Metric name="Possibly conflicting" value={num(branches.possiblyConflicting)} />
+    </TabContents>
+  )
+});
+
 const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
     subtitle={repoSubtitle(repo.languages)}
     tabs={[
-      {
-        title: 'Builds',
-        count: repo.builds?.count || 0,
-        content: (
-          <TabContents>
-            {repo.builds
-              ? (
-                <>
-                  <Metric name="Total successful" value={num(repo.builds.success)} />
-                  <Metric name="Number of executions" value={num(repo.builds.count)} />
-                  <Metric name="Success rate" value={`${Math.round((repo.builds.success * 100) / repo.builds.count)}%`} />
-                  <Metric
-                    name="Average duration"
-                    value={repo.builds.duration.average}
-                    additionalValue={`${repo.builds.duration.min} - ${repo.builds.duration.max}`}
-                  />
-                  <Metric
-                    name="Current status"
-                    value={repo.builds.status.type}
-                    additionalValue={repo.builds.status.type === 'failed' ? repo.builds.status.since : undefined}
-                  />
-                </>
-              )
-              : (<div>No builds for this repo</div>)}
-          </TabContents>
-        )
-      },
+      builds(repo.builds),
+      branches(repo.branches),
       ...repo.indicators.map(indicator => ({
         title: indicator.name,
         count: indicator.count,

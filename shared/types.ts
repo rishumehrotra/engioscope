@@ -16,6 +16,7 @@ export type RepoAnalysis = {
   id: string;
   languages?: Record<string, string>;
   builds: UIBuilds;
+  branches: UIBranches;
   indicators: TopLevelIndicator[];
 };
 
@@ -55,3 +56,11 @@ export type UIBuilds = null | {
   | { type: 'succeeded' }
   | { type: 'failed'; since: string };
 };
+
+export type UIBranches = {
+  total: number;
+  active: number;
+  abandoned: number;
+  deleteCandidates: number;
+  possiblyConflicting: number;
+}

@@ -61,8 +61,8 @@ export default (config: Config) => {
         id: r.id,
         languages,
         builds: buildsByRepoId(r.id),
+        branches,
         indicators: [
-          branches,
           prByRepoId(r.id),
           coverage,
           codeQuality

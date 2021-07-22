@@ -50,14 +50,16 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle }) => (
   </div>
 );
 
+export type Tab = {
+  title: string;
+  count: number | string;
+  content: React.ReactNode;
+};
+
 export type CardProps = {
   title: string;
   subtitle?: string | undefined;
-  tabs: {
-    title: string;
-    count: number | string;
-    content: React.ReactNode;
-  }[];
+  tabs: Tab[];
 }
 
 const Card: React.FC<CardProps> = ({
