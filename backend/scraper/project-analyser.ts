@@ -15,8 +15,8 @@ import languageColors from './language-colors';
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
   if (lang === 'js') return languageColors.javascript;
-  if (lang === 'xml') return languageColors.brainfuck;
-  return languageColors.astro;
+  if (lang === 'xml') return languageColors.eiffel;
+  return languageColors.eiffel;
 };
 
 const analyserLog = debug('analyser');
@@ -70,6 +70,7 @@ export default (config: Config) => {
       return {
         name: r.name,
         id: r.id,
+        url: r.webUrl,
         languages: languages?.map(l => ({
           ...l,
           color: getLanguageColor(l.lang)

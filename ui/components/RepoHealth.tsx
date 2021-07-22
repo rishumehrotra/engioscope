@@ -13,6 +13,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     .sort((a, b) => b.loc - a.loc)
     .map(l => (
       <span
+        key={l.lang}
         className="text-sm rounded-full py-1 px-2 mr-2 bg-gray-100 text-gray-900"
         title={`${num(l.loc)} lines of code`}
       >
@@ -35,24 +36,28 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
   title: 'Builds',
   count: builds?.count || 0,
   content: (
-    <TabContents>
+    <TabContents gridCols={6}>
       {builds
         ? (
-          <>
-            <Metric name="Total successful" value={num(builds.success)} />
-            <Metric name="Number of executions" value={num(builds.count)} />
-            <Metric name="Success rate" value={`${Math.round((builds.success * 100) / builds.count)}%`} />
-            <Metric
-              name="Average duration"
-              value={builds.duration.average}
-              additionalValue={`${builds.duration.min} - ${builds.duration.max}`}
-            />
-            <Metric
-              name="Current status"
-              value={builds.status.type}
-              additionalValue={builds.status.type === 'failed' ? builds.status.since : undefined}
-            />
-          </>
+          builds.pipelines.map(pipeline => (
+            <Fragment key={pipeline.name}>
+              <Metric name="Name" url={pipeline.url} value={pipeline.name} />
+              <Metric name="Total successful" value={num(pipeline.success)} />
+              <Metric name="Number of executions" value={num(pipeline.count)} />
+              <Metric name="Success rate" value={`${Math.round((pipeline.success * 100) / pipeline.count)}%`} />
+              <Metric
+                name="Average duration"
+                value={pipeline.duration.average}
+                additionalValue={`${pipeline.duration.min} - ${pipeline.duration.max}`}
+              />
+              <Metric
+                name="Current status"
+                value={pipeline.status.type}
+                additionalValue={pipeline.status.type === 'failed' ? pipeline.status.since : undefined}
+              />
+            </Fragment>
+
+          ))
         )
         : (<div>No builds for this repo</div>)}
     </TabContents>
@@ -150,6 +155,7 @@ const codeQuality = (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
 const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
+    titleUrl={repo.url}
     subtitle={repoSubtitle(repo.languages)}
     tag={repo.commits === 0 ? 'Inactive' : undefined}
     tabs={[
