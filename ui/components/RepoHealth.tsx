@@ -185,7 +185,7 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
             </tbody>
           </table>
           <div className="w-full text-right text-sm italic text-gray-700">
-            <span>* the data shown is for last 30 days</span>
+            <span>* the data shown is for the most recent test run, if it occurred in the last 30 days</span>
           </div>
         </>
       ) : (
