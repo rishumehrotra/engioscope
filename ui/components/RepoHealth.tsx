@@ -86,7 +86,7 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
               </tbody>
 
             </table>
-            <div className="w-full text-right text-sm italic">
+            <div className="w-full text-right text-sm italic text-gray-700">
               <span>* the data shown is for last 30 days</span>
             </div>
           </>
