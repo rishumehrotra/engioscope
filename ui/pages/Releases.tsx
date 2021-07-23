@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProjectReleaseAnalysis, ReleaseStats } from '../../shared/types';
 import Card from '../components/ExpandingCard';
+import Flair from '../components/Flair';
 import Metric from '../components/Metric';
 
 type ReleasesProps = {
@@ -48,34 +49,19 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
             titleUrl={release.url}
             subtitle={(
               <>
-                <span className="rounded-full bg-gray-200 px-3 py-1 text-sm mr-2">
-                  <span className={
-                    `rounded-full w-3 h-3 inline-block mr-2
-                      ${Object.entries(release.repos).length > 0 ? 'bg-green-600' : 'bg-gray-400'}`
-                  }
-                  >
-                    {' '}
-                  </span>
-                  {
-                    Object.entries(release.repos).length > 0
-                      ? 'Starts with artifact'
-                      : 'No starting artifact'
-                  }
-                </span>
+                <Flair
+                  colorClassName={Object.entries(release.repos).length > 0 ? 'bg-green-600' : 'bg-gray-400'}
+                  label={Object.entries(release.repos).length > 0
+                    ? 'Starts with artifact'
+                    : 'No starting artifact'}
+                />
                 {highlightExistanceOfStages.map(stage => (
-                  <span key={stage.stageName} className="rounded-full bg-gray-200 px-3 py-1 text-sm">
-                    <span className={
-                      `rounded-full w-3 h-3 inline-block mr-2
-                      ${stage.exists && stage.usesStage ? 'bg-green-600' : stage.exists ? 'bg-yellow-400' : 'bg-gray-400'}`
+                  <Flair
+                    colorClassName={stage.exists && stage.usesStage ? 'bg-green-600' : stage.exists ? 'bg-yellow-400' : 'bg-gray-400'}
+                    label={
+                      `${stage.stageName}: ${stage.exists ? `Exists, ${stage.usesStage ? 'and used' : 'but unused'}` : "Doesn't exist"}`
                     }
-                    >
-                      {' '}
-                    </span>
-                    {stage.stageName}
-                    :
-                    {' '}
-                    {stage.exists ? `Exists, ${stage.usesStage ? 'and used' : 'but unused'}` : "Doesn't exist"}
-                  </span>
+                  />
                 ))}
               </>
             )}

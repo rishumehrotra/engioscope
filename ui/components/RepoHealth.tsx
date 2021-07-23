@@ -1,8 +1,9 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers';
 import AlertMessage from './AlertMessage';
 import Card, { Tab } from './ExpandingCard';
+import Flair from './Flair';
 import Metric from './Metric';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
@@ -13,17 +14,12 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   return [...languages]
     .sort((a, b) => b.loc - a.loc)
     .map(l => (
-      <span
+      <Flair
         key={l.lang}
-        className="text-sm rounded-full py-1 px-2 mr-2 bg-gray-100 text-gray-900"
+        flairColor={l.color}
         title={`${num(l.loc)} lines of code`}
-      >
-        <span className="rounded-full w-3 h-3 inline-block" style={{ backgroundColor: l.color }}> </span>
-        {' '}
-        {`${Math.round((l.loc * 100) / totalLoc)}%`}
-        {' '}
-        {l.lang}
-      </span>
+        label={`${Math.round((l.loc * 100) / totalLoc)}% ${l.lang}`}
+      />
     ));
 };
 
@@ -108,7 +104,7 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
         )
         : (
           <TabContents gridCols={1}>
-            <AlertMessage message="No builds for this repo" />
+            <AlertMessage message="No builds for this repo in the last month" />
           </TabContents>
         )}
     </TabContents>
@@ -206,7 +202,7 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
         </>
       ) : (
         <TabContents gridCols={1}>
-          <AlertMessage message="This repo doesn't have any tests running in pipelines" />
+          <AlertMessage message="This repo didn't have any tests running in pipelines in the last month" />
         </TabContents>
       )}
     </TabContents>
@@ -227,7 +223,7 @@ const codeQuality = (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
         <Metric name="Tech debt" value={codeQuality.techDebt} />
         <Metric name="Quality gate" value={codeQuality.qualityGate} />
       </TabContents>
-    ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on Sonar" /></TabContents>)
+    ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on SonarQube" /></TabContents>)
   )
 });
 

@@ -8,7 +8,7 @@ export const getRatingColor = (rating?: number | string | null): string => {
   return 'green-500';
 };
 
-export const num = (num: number) => Intl.NumberFormat('en-in').format(num);
+export const num = (num: number) => Intl.NumberFormat().format(num);
 
 export const parseQueryString = (qs: string): Record<string, string | undefined> => Object.fromEntries(new URLSearchParams(qs));
 
