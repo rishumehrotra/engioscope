@@ -45,19 +45,23 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
           <table className="table-auto text-center divide-y divide-gray-200">
             <thead>
               <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" />
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Successful</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Runs</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Success rate</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Average duration</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Current status</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" />
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Average duration</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Current status</th>
               </tr>
             </thead>
             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
               {builds.pipelines.map(pipeline => (
                 <tr key={pipeline.name}>
-                  <td className="px-6 py-4 whitespace-nowrap text-blue-600 text-left">
-                    <a href={pipeline.url} target="_blank" rel="noreferrer">{pipeline.name}</a>
+                  <td className="pl-6 py-4 whitespace-nowrap text-blue-600 text-left">
+                    <a href={pipeline.url} target="_blank" rel="noreferrer">
+                      <p className="truncate w-36">
+                        {pipeline.name}
+                      </p>
+                    </a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{pipeline.success}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
