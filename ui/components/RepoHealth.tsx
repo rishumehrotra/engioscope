@@ -39,28 +39,47 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
   title: 'Builds',
   count: builds?.count || 0,
   content: (
-    <TabContents gridCols={6}>
+    <TabContents gridCols={1}>
       {builds
         ? (
-          builds.pipelines.map(pipeline => (
-            <Fragment key={pipeline.name}>
-              <Metric name="Name" url={pipeline.url} value={pipeline.name} />
-              <Metric name="Total successful" value={num(pipeline.success)} />
-              <Metric name="Number of executions" value={num(pipeline.count)} />
-              <Metric name="Success rate" value={`${Math.round((pipeline.success * 100) / pipeline.count)}%`} />
-              <Metric
-                name="Average duration"
-                value={pipeline.duration.average}
-                additionalValue={`${pipeline.duration.min} - ${pipeline.duration.max}`}
-              />
-              <Metric
-                name="Current status"
-                value={pipeline.status.type}
-                additionalValue={pipeline.status.type === 'failed' ? pipeline.status.since : undefined}
-              />
-            </Fragment>
+          <table className="table-auto text-center divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" />
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Successful</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Runs</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Success rate</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Average duration</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Current status</th>
+              </tr>
+            </thead>
+            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+              {builds.pipelines.map(pipeline => (
+                <tr key={pipeline.name}>
+                  <td className="px-6 py-4 whitespace-nowrap text-blue-600 text-left">
+                    <a href={pipeline.url} target="_blank" rel="noreferrer">{pipeline.name}</a>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.success}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-bold">{pipeline.duration.average}</span>
+                    <div>
+                      (
+                      {`${pipeline.duration.min} - ${pipeline.duration.max}`}
+                      )
+                    </div>
 
-          ))
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="capitalize">{pipeline.status.type}</span>
+                    {pipeline.status.type === 'failed' ? ` since ${pipeline.status.since}` : undefined}
+                  </td>
+                </tr>
+
+              ))}
+            </tbody>
+          </table>
         )
         : (<div>No builds for this repo</div>)}
     </TabContents>
