@@ -25,7 +25,7 @@ const coverageFrom = (coverageData?: CodeCoverageData[]) => {
   const branchStats = getBranchStats(coverageData);
   if (!branchStats) return 0;
   if (branchStats.total === 0) return 0;
-  return (branchStats.covered * 100) / branchStats.total;
+  return Math.round((branchStats.covered * 100) / branchStats.total);
 };
 
 const aggregateRuns = (runs: TestRun[]): TestStats => {
