@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers';
+import AlertMessage from './AlertMessage';
 import Card, { Tab } from './ExpandingCard';
 import Metric from './Metric';
 
@@ -15,6 +16,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
       <span
         className="text-sm rounded-full py-1 px-2 mr-2 bg-gray-100 text-gray-900"
         title={`${num(l.loc)} lines of code`}
+        key={num(l.loc)}
       >
         <span className="rounded-full w-3 h-3 inline-block" style={{ backgroundColor: l.color }}> </span>
         {' '}
@@ -25,8 +27,10 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     ));
 };
 
-const TabContents: React.FC<{ gridCols?: number }> = ({ gridCols, children }) => (
-  <div className={`grid ${gridCols === 6 ? 'grid-cols-6' : 'grid-cols-5'} gap-4 p-6 py-6 rounded-lg bg-gray-100`}>
+const TabContents: React.FC<{ gridCols?: number }> = ({ gridCols = 5, children }) => (
+  <div className={`${gridCols === 0 ? '' : `grid grid-cols-${gridCols}`} gap-4 : ''}
+   p-6 py-6 rounded-lg bg-gray-100`}
+  >
     {children}
   </div>
 );
@@ -113,17 +117,25 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
   title: 'Tests',
   count: tests?.total || 0,
   content: (
-    <TabContents gridCols={5}>
-      {tests ? tests.pipelines.map(pipeline => (
-        <Fragment key={pipeline.name}>
-          <Metric name="Build pipeline" value={pipeline.name} />
-          <Metric name="Successful tests" value={pipeline.successful} />
-          <Metric name="Failed tests" value={pipeline.failed} />
-          <Metric name="Execution time" value={pipeline.executionTime} />
-          <Metric name="Branch coverage" value={pipeline.coverage} />
-        </Fragment>
-      )) : (<div>This repo doesn't have any tests running in pipelines</div>)}
-    </TabContents>
+    <div>
+      {tests ? (
+        <TabContents>
+          {tests.pipelines.map(pipeline => (
+            <Fragment key={pipeline.name}>
+              <Metric name="Build pipeline" value={pipeline.name} />
+              <Metric name="Successful tests" value={pipeline.successful} />
+              <Metric name="Failed tests" value={pipeline.failed} />
+              <Metric name="Execution time" value={pipeline.executionTime} />
+              <Metric name="Branch coverage" value={pipeline.coverage} />
+            </Fragment>
+          ))}
+        </TabContents>
+      ) : (
+        <TabContents gridCols={0}>
+          <AlertMessage message="This repo doesn't have any tests running in pipelines" />
+        </TabContents>
+      )}
+    </div>
   )
 });
 
