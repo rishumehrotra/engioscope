@@ -57,6 +57,7 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
                 />
                 {highlightExistanceOfStages.map(stage => (
                   <Flair
+                    // eslint-disable-next-line no-nested-ternary
                     colorClassName={stage.exists && stage.usesStage ? 'bg-green-600' : stage.exists ? 'bg-yellow-400' : 'bg-gray-400'}
                     label={
                       `${stage.stageName}: ${stage.exists ? `Exists, ${stage.usesStage ? 'and used' : 'but unused'}` : "Doesn't exist"}`
