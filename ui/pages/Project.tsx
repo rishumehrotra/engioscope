@@ -153,7 +153,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases releaseAnalysis={releaseAnalysis?.releases} search={search} />
+          <Releases releaseAnalysis={releaseAnalysis} search={search} />
         </Route>
       </Switch>
     </div>

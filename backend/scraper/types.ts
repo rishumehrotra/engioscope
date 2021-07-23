@@ -7,7 +7,7 @@ export type Config = Readonly<{
   lookAtPast: string;
   cacheToDiskFor: string;
   port: number;
-  stagesToHighlight: string[];
+  stagesToHighlight?: string[];
   projects: [collectionName: string, projectName: string][];
   sonar: { url: string; token: string }[];
 }>;

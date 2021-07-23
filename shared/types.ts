@@ -101,5 +101,6 @@ export type ProjectReleaseAnalysis = {
   lastUpdated: string;
   name: [collection: string, project: string];
   releases: ReleaseStats[];
+  stagesToHighlight?: string[];
   reposCount: number;
 }

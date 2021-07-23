@@ -39,13 +39,19 @@ const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: Rep
   })
 );
 
-const writeReleaseAnalysisFile = async (projectSpec: ProjectSpec, releaseAnalysis: ReleaseStats[], reposCount: number) => (
+const writeReleaseAnalysisFile = async (
+  projectSpec: ProjectSpec,
+  releaseAnalysis: ReleaseStats[],
+  reposCount: number,
+  stagesToHighlight?: string[]
+) => (
   createDataFolder.then(() => {
     const analysis: ProjectReleaseAnalysis = {
       lastUpdated: shortDateFormat(new Date()),
       name: projectSpec,
       releases: releaseAnalysis,
-      reposCount
+      reposCount,
+      stagesToHighlight
     };
     return writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(analysis));
   })
@@ -92,8 +98,17 @@ const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedPr
 
 export default (config: Config) => (projectSpec: ProjectSpec) => (
   (analysis: ProjectAnalysis) => Promise.all([
-    writeRepoAnalysisFile(projectSpec, analysis.repoAnalysis, analysis.releaseAnalysis.length),
-    writeReleaseAnalysisFile(projectSpec, analysis.releaseAnalysis, analysis.repoAnalysis.length),
+    writeRepoAnalysisFile(
+      projectSpec,
+      analysis.repoAnalysis,
+      analysis.releaseAnalysis.length
+    ),
+    writeReleaseAnalysisFile(
+      projectSpec,
+      analysis.releaseAnalysis,
+      analysis.repoAnalysis.length,
+      config.stagesToHighlight
+    ),
     updateOverallSummary(config)({ name: projectSpec })
   ])
 );
