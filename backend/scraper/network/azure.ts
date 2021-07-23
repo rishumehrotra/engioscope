@@ -138,7 +138,7 @@ export default (config: Config) => {
     getCommits: (collectionName: string, projectName: string) => (repoId: string) => (
       list<GitCommitRef>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
-        qsParams: { 'searchCriteria.fromDate': pastDate('15 days').toISOString() },
+        qsParams: { 'searchCriteria.fromDate': pastDate(config.lookAtPast).toISOString() },
         cacheFile: [collectionName, projectName, 'repos', repoId, 'commits']
       })
     )
