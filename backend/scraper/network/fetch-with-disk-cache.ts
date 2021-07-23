@@ -101,8 +101,14 @@ export default (config: Config) => async <T>(pathParts: string[], fetcher: Fetch
   logDisk(`Reading from file ${fileNameForLogs(filePath)}`);
   const fileContents = await fs.readFile(filePath, 'utf-8');
   const [frontMatterString, dataString] = fileContents.split('\n');
-  return {
-    ...JSON.parse(frontMatterString) as FrontMatter,
-    data: JSON.parse(dataString, parseDate)
-  };
+
+  try {
+    return {
+      ...JSON.parse(frontMatterString) as FrontMatter,
+      data: JSON.parse(dataString, parseDate)
+    };
+  } catch (e) {
+    await fs.unlink(filePath);
+    throw e;
+  }
 };
