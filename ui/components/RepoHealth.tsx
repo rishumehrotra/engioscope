@@ -84,7 +84,6 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
 
                 ))}
               </tbody>
-
             </table>
             <div className="w-full text-right text-sm italic text-gray-700">
               <span>* the data shown is for last 30 days</span>
@@ -154,25 +153,47 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
   title: 'Tests',
   count: tests?.total || 0,
   content: (
-    <div>
+    <TabContents gridCols={1}>
       {tests ? (
-        <TabContents gridCols={5}>
-          {tests.pipelines.map(pipeline => (
-            <Fragment key={pipeline.name}>
-              <Metric name="Build pipeline" url={pipeline.url} value={pipeline.name} />
-              <Metric name="Successful tests" value={pipeline.successful} />
-              <Metric name="Failed tests" value={pipeline.failed} />
-              <Metric name="Execution time" value={pipeline.executionTime} />
-              <Metric name="Branch coverage" value={pipeline.coverage} />
-            </Fragment>
-          ))}
-        </TabContents>
+        <>
+          <table className="table-auto text-center divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" />
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Failed</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Execution time</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Branch coverage</th>
+              </tr>
+            </thead>
+            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+              {tests.pipelines.map(pipeline => (
+                <tr key={pipeline.name}>
+                  <td className="pl-6 py-4 whitespace-nowrap text-blue-600 text-left">
+                    <a href={pipeline.url} target="_blank" rel="noreferrer">
+                      <p className="truncate w-36">
+                        {pipeline.name}
+                      </p>
+                    </a>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.successful}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.failed)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.executionTime}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.coverage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="w-full text-right text-sm italic text-gray-700">
+            <span>* the data shown is for last 30 days</span>
+          </div>
+        </>
       ) : (
         <TabContents gridCols={1}>
           <AlertMessage message="This repo doesn't have any tests running in pipelines" />
         </TabContents>
       )}
-    </div>
+    </TabContents>
   )
 });
 
