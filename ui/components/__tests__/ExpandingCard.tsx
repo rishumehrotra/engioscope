@@ -30,7 +30,7 @@ describe('Expanding card', () => {
   it('renders the card title and top level tabs by default', async () => {
     expect(card).not.toBeNull();
     expect(await card.findByText(expandingCardProps.title)).toBeTruthy();
-    expect(await card.findByText(expandingCardProps.subtitle!)).toBeTruthy();
+    expect(await card.findByText(expandingCardProps.subtitle)).toBeTruthy();
     expect(await card.findByText(expandingCardProps.tabs[0].title)).toBeTruthy();
   });
 
@@ -42,22 +42,22 @@ describe('Expanding card', () => {
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     const secondTab = await (await card.findByText(expandingCardProps.tabs[1].title)).closest('button');
     expect(firstTab).not.toHaveClass(activeTabClass);
-    fireEvent.click(firstTab!);
+    fireEvent.click(firstTab);
     expect(firstTab).toHaveClass(activeTabClass);
     expect(secondTab).not.toHaveClass(activeTabClass);
   });
 
   it('shows the contents of the tab, when the top level tab is clicked', async () => {
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
-    fireEvent.click(firstTab!);
+    fireEvent.click(firstTab);
     expect(card.getByRole('region')).toHaveTextContent('content1');
   });
 
   it('closes the tab, when an opened tab is clicked again', async () => {
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
-    fireEvent.click(firstTab!);
+    fireEvent.click(firstTab);
     expect(card.getByRole('region')).toHaveTextContent('content1');
-    fireEvent.click(firstTab!);
+    fireEvent.click(firstTab);
     expect(firstTab).not.toHaveClass(activeTabClass);
     expect(card.getByRole('region')).not.toHaveTextContent('content1');
   });
@@ -67,7 +67,7 @@ describe('Expanding card', () => {
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
     expect(firstTab).not.toHaveClass(activeTabClass);
     expect(card.getByRole('region')).not.toHaveTextContent('content1');
-    fireEvent.click(globalArea!);
+    fireEvent.click(globalArea);
     expect(firstTab).toHaveClass(activeTabClass);
     expect(card.getByRole('region')).toHaveTextContent('content1');
   });
@@ -75,10 +75,10 @@ describe('Expanding card', () => {
   it('closes the first tab when global area of the card is clicked again', async () => {
     const globalArea = await card.findByText(expandingCardProps.tabs[0].title);
     const firstTab = await (await card.findByText(expandingCardProps.tabs[0].title)).closest('button');
-    fireEvent.click(globalArea!);
+    fireEvent.click(globalArea);
     expect(firstTab).toHaveClass(activeTabClass);
     expect(card.getByRole('region')).toHaveTextContent('content1');
-    fireEvent.click(globalArea!);
+    fireEvent.click(globalArea);
     expect(firstTab).not.toHaveClass(activeTabClass);
     expect(card.getByRole('region')).not.toHaveTextContent('content1');
   });

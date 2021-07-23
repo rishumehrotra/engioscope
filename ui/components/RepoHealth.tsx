@@ -143,19 +143,17 @@ const codeQuality = (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   title: 'Code quality',
   count: codeQuality?.qualityGate || 'unknown',
   content: (
-    <TabContents>
-      {codeQuality ? (
-        <>
-          <Metric name="Complexity" value={num(codeQuality.complexity)} />
-          <Metric name="Bugs" value={num(codeQuality.bugs)} />
-          <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
-          <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
-          <Metric name="Duplication" value={num(codeQuality.duplication)} />
-          <Metric name="Tech debt" value={codeQuality.techDebt} />
-          <Metric name="Quality gate" value={codeQuality.qualityGate} />
-        </>
-      ) : (<div>Couldn't find this repo on Sonar</div>)}
-    </TabContents>
+    codeQuality ? (
+      <TabContents>
+        <Metric name="Complexity" value={num(codeQuality.complexity)} />
+        <Metric name="Bugs" value={num(codeQuality.bugs)} />
+        <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
+        <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
+        <Metric name="Duplication" value={num(codeQuality.duplication)} />
+        <Metric name="Tech debt" value={codeQuality.techDebt} />
+        <Metric name="Quality gate" value={codeQuality.qualityGate} />
+      </TabContents>
+    ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on Sonar" /></TabContents>)
   )
 });
 
