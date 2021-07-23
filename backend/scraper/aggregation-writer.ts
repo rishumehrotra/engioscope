@@ -3,7 +3,8 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
 import {
-  ProjectRepoAnalysis, ReleaseStats, RepoAnalysis, ScrapedProject
+  ProjectReleaseAnalysis, ProjectRepoAnalysis,
+  ReleaseStats, RepoAnalysis, ScrapedProject
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import { Config, ProjectAnalysis } from './types';
@@ -26,20 +27,28 @@ const writeFile = (path: string, contents: string) => {
   return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
 };
 
-const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: RepoAnalysis[]) => (
-  createDataFolder.then(() => (
-    writeFile(`${projectSpec.join('_')}.json`, JSON.stringify({
+const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: RepoAnalysis[], releasePipelineCount: number) => (
+  createDataFolder.then(() => {
+    const analysis: ProjectRepoAnalysis = {
       lastUpdated: shortDateFormat(new Date()),
       name: projectSpec,
-      repos: repoAnalysis
-    } as ProjectRepoAnalysis))
-  ))
+      repos: repoAnalysis,
+      releasePipelineCount
+    };
+    return writeFile(`${projectSpec.join('_')}.json`, JSON.stringify(analysis));
+  })
 );
 
-const writeReleaseAnalysisFile = async (projectSpec: ProjectSpec, releaseAnalysis: ReleaseStats[]) => (
-  createDataFolder.then(() => (
-    writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(releaseAnalysis))
-  ))
+const writeReleaseAnalysisFile = async (projectSpec: ProjectSpec, releaseAnalysis: ReleaseStats[], reposCount: number) => (
+  createDataFolder.then(() => {
+    const analysis: ProjectReleaseAnalysis = {
+      lastUpdated: shortDateFormat(new Date()),
+      name: projectSpec,
+      releases: releaseAnalysis,
+      reposCount
+    };
+    return writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(analysis));
+  })
 );
 
 const matchingProject = (projectSpec: ProjectSpec) => (scrapedProject: { name: ProjectSpec }) => (
@@ -83,8 +92,8 @@ const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedPr
 
 export default (config: Config) => (projectSpec: ProjectSpec) => (
   (analysis: ProjectAnalysis) => Promise.all([
-    writeRepoAnalysisFile(projectSpec, analysis.repoAnalysis),
-    writeReleaseAnalysisFile(projectSpec, analysis.releaseAnalysis),
+    writeRepoAnalysisFile(projectSpec, analysis.repoAnalysis, analysis.releaseAnalysis.length),
+    writeReleaseAnalysisFile(projectSpec, analysis.releaseAnalysis, analysis.repoAnalysis.length),
     updateOverallSummary(config)({ name: projectSpec })
   ])
 );

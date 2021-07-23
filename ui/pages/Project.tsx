@@ -3,7 +3,9 @@ import {
   useParams, useHistory, Switch, Route
 } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
-import { ProjectRepoAnalysis, ReleaseStats, RepoAnalysis } from '../../shared/types';
+import {
+  ProjectReleaseAnalysis, ProjectRepoAnalysis, RepoAnalysis
+} from '../../shared/types';
 import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
@@ -75,7 +77,7 @@ const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
 const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
-  const [releaseAnalysis, setReleaseAnalysis] = useState<ReleaseStats[] | undefined>();
+  const [releaseAnalysis, setReleaseAnalysis] = useState<ProjectReleaseAnalysis | undefined>();
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
   const history = useHistory();
@@ -113,7 +115,7 @@ const Project: React.FC = () => {
         <ProjectDetails
           name={projectAnalysis.name}
           repoCount={projectAnalysis.repos.length}
-          releasesCount={releaseAnalysis?.length || undefined}
+          releasesCount={releaseAnalysis?.releases?.length || undefined}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
@@ -151,7 +153,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases releaseAnalysis={releaseAnalysis} search={search} />
+          <Releases releaseAnalysis={releaseAnalysis?.releases} search={search} />
         </Route>
       </Switch>
     </div>

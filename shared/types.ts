@@ -94,4 +94,12 @@ export type ProjectRepoAnalysis = {
   lastUpdated: string;
   name: [collection: string, project: string];
   repos: RepoAnalysis[];
+  releasePipelineCount: number;
+}
+
+export type ProjectReleaseAnalysis = {
+  lastUpdated: string;
+  name: [collection: string, project: string];
+  releases: ReleaseStats[];
+  reposCount: number;
 }

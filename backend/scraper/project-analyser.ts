@@ -11,6 +11,7 @@ import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
 import aggregateTestRunsByBuildId from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
+import { RepoAnalysis } from '../../shared/types';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -53,7 +54,7 @@ export default (config: Config) => {
       latestMasterBuilds, forProject(getTestCoverage)
     );
 
-    const repoAnalysis = await Promise.all(repos.map(async r => {
+    const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {
       const [
         branches,
         tests,
@@ -71,10 +72,7 @@ export default (config: Config) => {
         name: r.name,
         id: r.id,
         url: r.webUrl,
-        languages: languages?.map(l => ({
-          ...l,
-          color: getLanguageColor(l.lang)
-        })),
+        languages: languages?.map(l => ({ ...l, color: getLanguageColor(l.lang) })),
         commits: commits.count,
         builds: buildsByRepoId(r.id),
         branches,
