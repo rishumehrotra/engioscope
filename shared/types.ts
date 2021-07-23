@@ -67,6 +67,7 @@ export type UITests = null | {
 }
 
 export type UICodeQuality = null | {
+  url: string;
   complexity: number;
   bugs: number;
   codeSmells: number;

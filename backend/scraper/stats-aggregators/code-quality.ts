@@ -1,4 +1,4 @@
-import { Measure } from '../types-sonar';
+import { Measure, SonarAnalysisByRepo } from '../types-sonar';
 import { UICodeQuality } from '../../../shared/types';
 
 type MetricDefinition = {
@@ -77,14 +77,16 @@ const formatLoc = (loc?: string): AggregagedCodeQuality['languages'] => {
     });
 };
 
-export default (measures: Measure[]): AggregagedCodeQuality => {
-  if (!measures.length) return { codeQuality: null };
+export default (sonarAnalysis: SonarAnalysisByRepo): AggregagedCodeQuality => {
+  if (!sonarAnalysis) return { codeQuality: null };
+  const { measures, url } = sonarAnalysis;
 
   const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
 
   return {
     languages: formatLoc(measures.find(isMeasureName('ncloc_language_distribution'))?.value),
     codeQuality: {
+      url,
       complexity: Number(findMeasure('complexity') || 0),
       bugs: Number(findMeasure('bugs') || 0),
       codeSmells: Number(findMeasure('code_smells') || 0),

@@ -11,3 +11,8 @@ export type CodeQuality = {
   qualifier: string;
   measures: Measure[];
 };
+
+export type SonarAnalysisByRepo = null | {
+  url: string;
+  measures: Measure[];
+}

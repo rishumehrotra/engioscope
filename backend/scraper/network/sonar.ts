@@ -6,7 +6,7 @@ import { filter, getFirst } from '../../utils';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
 import { Config } from '../types';
-import { Measure } from '../types-sonar';
+import { Measure, SonarAnalysisByRepo } from '../types-sonar';
 
 export type SonarRepo = {
   organization: string;
@@ -65,9 +65,9 @@ export default (config: Config) => {
   const sonarRepos = Promise.all(config.sonar.map(reposAtSonarServer(paginatedGet)))
     .then(list => list.flat());
 
-  return async (repoName: string): Promise<Measure[]> => {
+  return async (repoName: string): Promise<SonarAnalysisByRepo> => {
     const currentSonarRepo = getCurrentRepo(repoName)(await sonarRepos);
-    if (!currentSonarRepo) return [];
+    if (!currentSonarRepo) return null;
 
     return getWithCache<{ component?: { measures: Measure[] }}>(
       ['sonar', repoName],
@@ -79,6 +79,9 @@ export default (config: Config) => {
           Authorization: `Basic ${Buffer.from(`${currentSonarRepo.token}:`).toString('base64')}`
         }
       })
-    ).then(res => res.data.component?.measures || []);
+    ).then(res => ({
+      url: `${currentSonarRepo.url}/dashboard?id=${currentSonarRepo.name}`,
+      measures: res.data.component?.measures || []
+    }));
   };
 };
