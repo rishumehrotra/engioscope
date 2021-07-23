@@ -42,50 +42,60 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
     <TabContents gridCols={1}>
       {builds
         ? (
-          <table className="table-auto text-center divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" />
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Average duration</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Current status</th>
-              </tr>
-            </thead>
-            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
-              {builds.pipelines.map(pipeline => (
-                <tr key={pipeline.name}>
-                  <td className="pl-6 py-4 whitespace-nowrap text-blue-600 text-left">
-                    <a href={pipeline.url} target="_blank" rel="noreferrer">
-                      <p className="truncate w-36">
-                        {pipeline.name}
-                      </p>
-                    </a>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.success}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-bold">{pipeline.duration.average}</span>
-                    <div>
-                      (
-                      {`${pipeline.duration.min} - ${pipeline.duration.max}`}
-                      )
-                    </div>
-
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="capitalize">{pipeline.status.type}</span>
-                    {pipeline.status.type === 'failed' ? ` since ${pipeline.status.since}` : undefined}
-                  </td>
+          <>
+            <table className="table-auto text-center divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" />
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Average duration</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Current status</th>
                 </tr>
+              </thead>
+              <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+                {builds.pipelines.map(pipeline => (
+                  <tr key={pipeline.name}>
+                    <td className="pl-6 py-4 whitespace-nowrap text-blue-600 text-left">
+                      <a href={pipeline.url} target="_blank" rel="noreferrer">
+                        <p className="truncate w-36">
+                          {pipeline.name}
+                        </p>
+                      </a>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">{pipeline.success}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-bold">{pipeline.duration.average}</span>
+                      <div>
+                        (
+                        {`${pipeline.duration.min} - ${pipeline.duration.max}`}
+                        )
+                      </div>
 
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="capitalize">{pipeline.status.type}</span>
+                      {pipeline.status.type === 'failed' ? ` since ${pipeline.status.since}` : undefined}
+                    </td>
+                  </tr>
+
+                ))}
+              </tbody>
+
+            </table>
+            <div className="w-full text-right text-sm italic">
+              <span>* the data shown is for last 30 days</span>
+            </div>
+          </>
         )
-        : (<div>No builds for this repo</div>)}
+        : (
+          <TabContents gridCols={1}>
+            <AlertMessage message="No builds for this repo" />
+          </TabContents>
+        )}
     </TabContents>
   )
 });
@@ -158,7 +168,7 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
           ))}
         </TabContents>
       ) : (
-        <TabContents gridCols={0}>
+        <TabContents gridCols={1}>
           <AlertMessage message="This repo doesn't have any tests running in pipelines" />
         </TabContents>
       )}
