@@ -4,6 +4,7 @@ import { Release, ReleaseDefinition } from '../types-azure';
 const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): ReleaseStats => ({
   id: releaseDefinition.id,
   name: releaseDefinition.name,
+  url: releaseDefinition.url.replace('_apis/Release/definitions/', '_release?definitionId='),
   description: releaseDefinition.description,
   stages: releaseDefinition.environments
     .sort((a, b) => a.rank - b.rank)

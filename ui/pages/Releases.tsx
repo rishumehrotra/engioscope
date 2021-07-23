@@ -24,6 +24,7 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
           // eslint-disable-next-line react/no-array-index-key
           key={`${release.name}-${index}`}
           title={release.name}
+          titleUrl={release.url}
           tabs={release.stages.map(stage => ({
             title: stage.name,
             count: stage.successCount,

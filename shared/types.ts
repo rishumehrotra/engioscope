@@ -14,20 +14,29 @@ type EnvironmentStats = {
 export type ReleaseStats = {
   id: number;
   name: string;
+  url: string;
   description: string | null;
   stages: EnvironmentStats[];
   repos: Record<string, string[]>;
 };
 
-export type UIBuilds = null | {
+export type UIBuildPipeline = {
   count: number;
   success: number;
+  name: string;
+  url: string;
   duration: { average: string; min: string; max: string };
+  definitionId: string;
   status:
   | { type: 'unknown' }
   | { type: 'succeeded' }
   | { type: 'failed'; since: string };
 };
+
+export type UIBuilds = null | {
+  count: number;
+  pipelines: UIBuildPipeline[];
+}
 
 export type UIBranches = {
   total: number;
@@ -49,6 +58,7 @@ export type UITests = null | {
   total: number;
   pipelines: {
     name: string;
+    url: string;
     successful: number;
     failed: number;
     executionTime: string;
@@ -69,6 +79,7 @@ export type UICodeQuality = null | {
 export type RepoAnalysis = {
   name: string;
   id: string;
+  url: string;
   languages?: { lang: string; loc: number; color: string }[];
   commits: number;
   builds: UIBuilds;
