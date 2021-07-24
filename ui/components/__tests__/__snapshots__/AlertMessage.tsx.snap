@@ -1,7 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Alert Message should not render when no message is passed 1`] = `<DocumentFragment />`;
-
 exports[`Alert Message should render an alert message with an alert pill and appropriate styles 1`] = `
 <DocumentFragment>
   <div

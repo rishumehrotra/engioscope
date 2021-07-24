@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProjectReleaseAnalysis, ReleaseStats } from '../../shared/types';
+import AlertMessage from '../components/AlertMessage';
 import Card from '../components/ExpandingCard';
 import Flair from '../components/Flair';
 import Metric from '../components/Metric';
@@ -21,6 +22,7 @@ const bySearchTerm = (searchTerm: string) => (pipeline: ReleaseStats) => (
 
 const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: ReleasesProps) => {
   if (!releaseAnalysis) return <div>Loading...</div>;
+  if (!releaseAnalysis.releases) return <AlertMessage message="No release pipelines found" />;
 
   const pipelines = releaseAnalysis.releases.filter(bySearchTerm(search || ''));
 

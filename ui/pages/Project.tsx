@@ -31,16 +31,6 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'
     <p className="text-sm text-gray-600 mt-2 flex items-center">
       Last updated on
       <span className="font-bold text-gray-800 ml-1">{lastUpdated}</span>
-      {' '}
-      {/* <button
-        type="button"
-        className="ml-5 bg-white py-2 px-3 border hover:border-gray-300
-        rounded-md hover:shadow-sm text-sm leading-4 font-medium text-indigo-500
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex"
-      >
-        <Refresh />
-        <p className="ml-1">Refresh now</p>
-      </button> */}
     </p>
   </div>
 );

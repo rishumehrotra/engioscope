@@ -13,9 +13,4 @@ describe('Alert Message', () => {
     const { asFragment } = render(<AlertMessage message="This is an alert message" />);
     expect(asFragment()).toMatchSnapshot();
   });
-
-  it('should not render when no message is passed', () => {
-    const { asFragment } = render(<AlertMessage />);
-    expect(asFragment()).toMatchSnapshot();
-  });
 });
