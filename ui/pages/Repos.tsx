@@ -1,5 +1,6 @@
 import React from 'react';
 import { RepoAnalysis } from '../../shared/types';
+import AlertMessage from '../components/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 
 const Repos:React.FC<{repos: RepoAnalysis[]}> = ({ repos }) => (
@@ -7,7 +8,7 @@ const Repos:React.FC<{repos: RepoAnalysis[]}> = ({ repos }) => (
     {
       repos.length ? repos.map(repo => (
         <RepoHealth repo={repo} key={repo.name} />
-      )) : 'No Results'
+      )) : <AlertMessage message="No repos found" />
     }
   </div>
 );
