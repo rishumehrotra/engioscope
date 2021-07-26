@@ -153,10 +153,7 @@ const branches = (branches: RepoAnalysis['branches']): Tab => ({
 
 const ProfilePic: React.FC<ImgHTMLAttributes<HTMLImageElement>> = ({ src, ...rest }) => {
   const [actualSrc, setActualSrc] = useState(src || defaultProfilePic);
-  const onError = () => {
-    console.log('onError called');
-    setActualSrc(defaultProfilePic);
-  };
+  const onError = () => setActualSrc(defaultProfilePic);
 
   // eslint-disable-next-line jsx-a11y/alt-text
   return <img src={actualSrc} onError={onError} {...rest} />;
