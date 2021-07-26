@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ImgHTMLAttributes, useState } from 'react';
 import { add } from 'rambda';
 import { RepoAnalysis } from '../../shared/types';
 import { num, shortDate } from '../helpers';
@@ -7,6 +7,7 @@ import Card, { Tab } from './ExpandingCard';
 import Flair from './Flair';
 import Metric from './Metric';
 import CommitTimeline from './CommitTimeline';
+import defaultProfilePic from '../default-profile-pic.png';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -41,7 +42,7 @@ const TabContents: React.FC<{ gridCols?: number }> = ({ gridCols = 5, children }
   return (
     <div
       className={
-        `${gridCols === 0 ? '' : `grid ${colsClassName[gridCols as keyof typeof colsClassName]} gap-4`} p-6 py-6 rounded-lg bg-gray-100`
+        `${gridCols === 0 ? '' : `grid ${colsClassName[gridCols as keyof typeof colsClassName]}`} p-6 py-6 rounded-lg bg-gray-100`
       }
     >
       {children}
@@ -63,9 +64,9 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Average duration</th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Current status</th>
+                  <th className="pl-6 pr-0 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
+                  <th className="pr-6 pl-0 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">Average duration</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-left">Current status</th>
                 </tr>
               </thead>
               <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
@@ -80,8 +81,8 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">{pipeline.success}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="pl-6 pr-0 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
+                    <td className="pr-6 pl-0 py-4 whitespace-nowrap text-right">
                       <span className="text-bold">{pipeline.duration.average}</span>
                       <div className="text-gray-400 text-sm">
                         (
@@ -109,8 +110,8 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
                 ))}
               </tbody>
             </table>
-            <div className="w-full text-right text-sm italic text-gray-700">
-              <span>* the data shown is for last 30 days</span>
+            <div className="w-full text-right text-sm italic text-gray-500 mt-4">
+              <span>* Data shown is for the last 30 days</span>
             </div>
           </>
         )
@@ -128,7 +129,7 @@ const branches = (branches: RepoAnalysis['branches']): Tab => ({
   count: branches.total,
   content: (
     <TabContents>
-      <Metric name="Total" value={num(branches.total)} tooltip="Total number of branches in the repository" />
+      <Metric name="Total" value={num(branches.total)} tooltip="Total number of branches in the repository" position="first" />
       <Metric name="Active" value={num(branches.active)} tooltip="Active development branches in-sync with master" />
       <Metric
         name="Abandoned"
@@ -144,10 +145,22 @@ const branches = (branches: RepoAnalysis['branches']): Tab => ({
         name="Possibly conflicting"
         value={num(branches.possiblyConflicting)}
         tooltip="Branches that are significantly out of sync with master"
+        position="last"
       />
     </TabContents>
   )
 });
+
+const ProfilePic: React.FC<ImgHTMLAttributes<HTMLImageElement>> = ({ src, ...rest }) => {
+  const [actualSrc, setActualSrc] = useState(src || defaultProfilePic);
+  const onError = () => {
+    console.log('onError called');
+    setActualSrc(defaultProfilePic);
+  };
+
+  // eslint-disable-next-line jsx-a11y/alt-text
+  return <img src={actualSrc} onError={onError} {...rest} />;
+};
 
 const commits = (commits: RepoAnalysis['commits']): Tab => {
   const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));
@@ -174,8 +187,8 @@ const commits = (commits: RepoAnalysis['commits']): Tab => {
                 <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
                   {commits.byDev.map(commitsByDev => (
                     <tr key={commitsByDev.name}>
-                      <td className="px-6 py-4 text-left">
-                        <img
+                      <td className="px-6 py-4 text-left capitalize">
+                        <ProfilePic
                           alt={`Profile pic for ${commitsByDev.name}`}
                           src={commitsByDev.imageUrl}
                           width="44"
@@ -188,24 +201,24 @@ const commits = (commits: RepoAnalysis['commits']): Tab => {
                         {Object.values(commitsByDev.byDate).reduce(add, 0)}
                       </td>
                       <td
-                        title={`Added ${commitsByDev.changes.add} files`}
-                        className="px-0 py-4 whitespace-nowrap text-green-700"
+                        title={`Added ${num(commitsByDev.changes.add)} files`}
+                        className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-green-700"
                       >
                         {commitsByDev.changes.add
                           ? `+${num(commitsByDev.changes.add)}`
                           : ''}
                       </td>
                       <td
-                        title={`Modified ${commitsByDev.changes.edit} files`}
-                        className="px-0 py-4 whitespace-nowrap text-red-400"
+                        title={`Modified ${num(commitsByDev.changes.edit)} files`}
+                        className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-red-400"
                       >
                         {commitsByDev.changes.edit
                           ? `~${num(commitsByDev.changes.edit)}`
                           : ''}
                       </td>
                       <td
-                        title={`Deleted code in ${commitsByDev.changes.delete} files`}
-                        className="px-0 py-4 whitespace-nowrap text-red-700"
+                        title={`Deleted code in ${num(commitsByDev.changes.delete)} files`}
+                        className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-red-700"
                       >
                         {commitsByDev.changes.delete
                           ? `-${num(commitsByDev.changes.delete)}`
@@ -221,8 +234,8 @@ const commits = (commits: RepoAnalysis['commits']): Tab => {
                   ))}
                 </tbody>
               </table>
-              <div className="w-full text-right text-sm italic text-gray-700">
-                <span>* the data shown is for last 30 days, not including merge commits</span>
+              <div className="w-full text-right text-sm italic text-gray-500 mt-4">
+                <span>* Data shown is for the last 30 days, not including merge commits</span>
               </div>
             </>
           )}
@@ -235,8 +248,8 @@ const prs = (prs: RepoAnalysis['prs']): Tab => ({
   title: 'Pull requests',
   count: prs.total,
   content: (
-    <TabContents>
-      <Metric name="Active" value={num(prs.active)} />
+    <TabContents gridCols={4}>
+      <Metric name="Active" value={num(prs.active)} position="first" />
       <Metric name="Abandoned" value={num(prs.abandoned)} />
       <Metric name="Completed" value={num(prs.completed)} />
       {prs.timeToApprove ? (
@@ -249,6 +262,7 @@ const prs = (prs: RepoAnalysis['prs']): Tab => ({
         <Metric
           name="Time to approve"
           value="-"
+          position="last"
         />
       )}
     </TabContents>
@@ -266,8 +280,14 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
             <thead>
               <tr>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Failed</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                  <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                  Successful
+                </th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                  <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                  Failed
+                </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Execution time</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Branch coverage</th>
               </tr>
@@ -290,8 +310,8 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
               ))}
             </tbody>
           </table>
-          <div className="w-full text-right text-sm italic text-gray-700">
-            <span>* the data shown is for the most recent test run, if it occurred in the last 30 days</span>
+          <div className="w-full text-right text-sm italic text-gray-500 mt-4">
+            <span>* Data shown is for the most recent test run, if it occurred in the last 30 days</span>
           </div>
         </>
       ) : (
@@ -308,14 +328,14 @@ const codeQuality = (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   count: codeQuality?.qualityGate || 'unknown',
   content: (
     codeQuality ? (
-      <TabContents>
-        <Metric name="Complexity" value={num(codeQuality.complexity)} />
+      <TabContents gridCols={7}>
+        <Metric name="Complexity" value={num(codeQuality.complexity)} position="first" />
         <Metric name="Bugs" value={num(codeQuality.bugs)} />
         <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
         <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
         <Metric name="Duplication" value={num(codeQuality.duplication)} />
         <Metric name="Tech debt" value={codeQuality.techDebt} />
-        <Metric name="Quality gate" value={codeQuality.qualityGate} />
+        <Metric name="Quality gate" value={codeQuality.qualityGate} position="last" />
       </TabContents>
     ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on SonarQube" /></TabContents>)
   )

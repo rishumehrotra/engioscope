@@ -15,8 +15,7 @@ const TopLevelTab: React.FC<TopLevelTabProps> = ({
 }) => (
   <button
     style={{ outline: 'none' }}
-    className={`pt-2 pb-4 px-6 mt-2 text-gray-900 break-words
-        ${isSelected ? 'rounded-t-lg' : 'rounded-lg'}
+    className={`pt-2 pb-4 px-6 mt-2 text-gray-900 break-words rounded-t-lg
         ${isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'}
         hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
     onClick={e => {
