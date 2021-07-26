@@ -73,7 +73,7 @@ export default (config: Config) => {
         id: r.id,
         url: r.webUrl,
         languages: languages?.map(l => ({ ...l, color: getLanguageColor(l.lang) })),
-        commits: commits.count,
+        commits,
         builds: buildsByRepoId(r.id),
         branches,
         prs: prByRepoId(r.id),

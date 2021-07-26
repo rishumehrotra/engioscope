@@ -209,7 +209,7 @@ export type Release = {
 
 export type GitUserDate = {
   date: Date;
-  emaiil: string;
+  email: string;
   imageUrl: string;
   name: string;
 };
@@ -217,8 +217,13 @@ export type GitUserDate = {
 export type GitCommitRef = {
   commitId: string;
   url: string;
-  author?: GitUserDate;
-  committer?: GitUserDate;
+  author: GitUserDate;
+  committer: GitUserDate;
+  changeCounts: {
+    Add: number;
+    Edit: number;
+    Delete: number;
+  };
 };
 
 export type GitPullRequestCompletionOptions = {

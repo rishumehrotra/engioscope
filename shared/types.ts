@@ -77,12 +77,28 @@ export type UICodeQuality = null | {
   qualityGate: 'error' | 'warn' | 'ok';
 }
 
+export type AggregatedCommitsByDev = {
+  name: string;
+  imageUrl: string;
+  changes: {
+    add: number;
+    edit: number;
+    delete: number;
+  };
+  byDate: Record<string, number>;
+}
+
+export type UICommits = {
+  count: number;
+  byDev: AggregatedCommitsByDev[];
+}
+
 export type RepoAnalysis = {
   name: string;
   id: string;
   url: string;
   languages?: { lang: string; loc: number; color: string }[];
-  commits: number;
+  commits: UICommits;
   builds: UIBuilds;
   branches: UIBranches;
   prs: UIPullRequests;

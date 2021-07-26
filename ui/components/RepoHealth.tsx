@@ -235,7 +235,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
     title={repo.name}
     titleUrl={repo.url}
     subtitle={repoSubtitle(repo.languages)}
-    tag={repo.commits === 0 ? 'Inactive' : undefined}
+    tag={repo.commits.count === 0 ? 'Inactive' : undefined}
     tabs={[
       builds(repo.builds),
       branches(repo.branches),

@@ -136,11 +136,19 @@ export default (config: Config) => {
     ),
 
     getCommits: (collectionName: string, projectName: string) => (repoId: string) => (
-      list<GitCommitRef>({
+      paginatedGet<ListOf<GitCommitRef>>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
-        qsParams: { 'searchCriteria.fromDate': pastDate(config.lookAtPast).toISOString() },
-        cacheFile: [collectionName, projectName, 'repos', repoId, 'commits']
-      })
+        qsParams: pageIndex => ({
+          ...apiVersion,
+          'searchCriteria.fromDate': pastDate(config.lookAtPast).toISOString(),
+          'searchCriteria.$top': '5000',
+          'searchCriteria.includeUserImageUrl': 'true',
+          ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 1000).toString() })
+        }),
+        hasAnotherPage: previousResponse => previousResponse.data.count === 1000,
+        headers: () => authHeader,
+        cacheFile: pageIndex => [collectionName, projectName, 'repos', repoId, `commits_${pageIndex}`]
+      }).then(flattenToValues)
     )
   };
 };

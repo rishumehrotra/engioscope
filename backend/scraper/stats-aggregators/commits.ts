@@ -1,25 +1,34 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { add } from 'rambda';
+import { AggregatedCommitsByDev, UICommits } from '../../../shared/types';
 import { GitCommitRef } from '../types-azure';
 
-type AggregatedCommits = {
-  commitsByDev: Record<string, number>;
-  latestCommitDate: Date | undefined;
-  count: number;
-}
+const dateString = (date: Date) => date.toISOString().split('T')[0];
 
-export default (commits: GitCommitRef[]): AggregatedCommits => ({
-  count: commits.length,
-  ...commits.reduce<Omit<AggregatedCommits, 'count'>>((acc, commit) => ({
-    commitsByDev: {
-      ...acc.commitsByDev,
-      [commit.author!.name]: (acc.commitsByDev[commit.author!.name] || 0) + 1
-    },
-    latestCommitDate: acc.latestCommitDate !== undefined && acc.latestCommitDate.getTime() < commit.author!.date!.getTime()
-      ? commit.author!.date
-      : acc.latestCommitDate
-  }), {
-    commitsByDev: {},
-    latestCommitDate: undefined
-  })
+const mergeCommit = (commit: GitCommitRef, aggregatedCommits?: AggregatedCommitsByDev): AggregatedCommitsByDev => ({
+  name: commit.committer.name,
+  imageUrl: commit.committer.imageUrl,
+  changes: {
+    add: (aggregatedCommits?.changes.add || 0) + commit.changeCounts.Add,
+    delete: (aggregatedCommits?.changes.delete || 0) + commit.changeCounts.Delete,
+    edit: (aggregatedCommits?.changes.edit || 0) + commit.changeCounts.Edit
+  },
+  byDate: {
+    ...aggregatedCommits?.byDate,
+    [dateString(commit.committer.date)]: (aggregatedCommits?.byDate[dateString(commit.committer.date)] || 0) + 1
+  }
 });
-/* eslint-enable */
+
+export default (commits: GitCommitRef[]): UICommits => {
+  const commitsByDev = commits.reduce((acc, commit) => ({
+    ...acc,
+    [commit.committer.name]: mergeCommit(commit, acc[commit.committer.name])
+  }), {} as Record<string, AggregatedCommitsByDev>);
+
+  return {
+    count: commits.length,
+    byDev: Object.values(commitsByDev)
+      .sort((a, b) => (
+        Object.values(b.byDate).reduce(add, 0) - Object.values(a.byDate).reduce(add, 0)
+      ))
+  };
+};
