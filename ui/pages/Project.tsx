@@ -12,6 +12,8 @@ import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
 import Releases from './Releases';
 import { parseQueryString, updateQueryString } from '../helpers';
+// import Modal from '../components/Modal';
+// import { Filters } from '../components/Icons';
 
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
 
@@ -113,6 +115,7 @@ const Project: React.FC = () => {
         />
         <div className="flex justify-end">
           <SearchInput className="w-full" onSearch={setSearchTerm} search={search} />
+          {/* <Modal trigger={<Filters className="text-gray-500" tooltip="Advanced Filters" />} /> */}
         </div>
       </div>
       <div className="pb-6">

@@ -87,7 +87,7 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
             }))}
           />
         );
-      }) : 'No Releases'}
+      }) : <AlertMessage message="No release pipelines found" />}
     </>
   );
 };
