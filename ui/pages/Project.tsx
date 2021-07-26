@@ -49,6 +49,9 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
   if (sortBy === 'Branches') {
     return sort * (a.branches.total - b.branches.total);
   }
+  if (sortBy === 'Commits') {
+    return sort * (a.commits.count - b.commits.count);
+  }
   if (sortBy === 'Pull requests') {
     return sort * (a.prs.total - b.prs.total);
   }
@@ -130,6 +133,7 @@ const Project: React.FC = () => {
             labels={[
               'Builds',
               'Branches',
+              'Commits',
               'Pull requests',
               'Tests',
               'Code quality'

@@ -219,6 +219,7 @@ export type GitCommitRef = {
   url: string;
   author: GitUserDate;
   committer: GitUserDate;
+  comment: string;
   changeCounts: {
     Add: number;
     Edit: number;

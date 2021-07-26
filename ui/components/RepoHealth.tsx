@@ -1,10 +1,12 @@
 import React from 'react';
+import { add } from 'rambda';
 import { RepoAnalysis } from '../../shared/types';
 import { num, shortDate } from '../helpers';
 import AlertMessage from './AlertMessage';
 import Card, { Tab } from './ExpandingCard';
 import Flair from './Flair';
 import Metric from './Metric';
+import CommitTimeline from './CommitTimeline';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -69,8 +71,8 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
               <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
                 {builds.pipelines.map(pipeline => (
                   <tr key={pipeline.name}>
-                    <td className="pl-6 py-4 whitespace-nowrap text-blue-600 text-left">
-                      <a href={pipeline.url} target="_blank" rel="noreferrer">
+                    <td className="pl-6 py-4 whitespace-nowrap text-left">
+                      <a href={pipeline.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
                         <p className="truncate w-36">
                           {pipeline.name}
                         </p>
@@ -81,20 +83,27 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
                     <td className="px-6 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-bold">{pipeline.duration.average}</span>
-                      <div>
+                      <div className="text-gray-400 text-sm">
                         (
                         {`${pipeline.duration.min} - ${pipeline.duration.max}`}
                         )
                       </div>
 
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-left">
                       {pipeline.status.type !== 'failed' && (
-                        <span className="capitalize">{pipeline.status.type}</span>
+                        <>
+                          <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                          <span className="capitalize">{pipeline.status.type}</span>
+                        </>
                       )}
                       {pipeline.status.type === 'failed'
-                        ? `Failing since ${shortDate(new Date(pipeline.status.since))}`
-                        : undefined}
+                        ? (
+                          <>
+                            <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                            <span>{`Failing since ${shortDate(new Date(pipeline.status.since))}`}</span>
+                          </>
+                        ) : undefined}
                     </td>
                   </tr>
                 ))}
@@ -140,6 +149,88 @@ const branches = (branches: RepoAnalysis['branches']): Tab => ({
   )
 });
 
+const commits = (commits: RepoAnalysis['commits']): Tab => {
+  const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));
+  return {
+    title: 'Commits',
+    count: commits.count,
+    content: (
+      <TabContents gridCols={1}>
+        {commits.count === 0
+          ? (
+            <AlertMessage message="No commits to this repo in the last month" />
+          )
+          : (
+            <>
+              <table className="table-auto text-center divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Commits</th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" colSpan={3}>Changes</th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Timeline</th>
+                  </tr>
+                </thead>
+                <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+                  {commits.byDev.map(commitsByDev => (
+                    <tr key={commitsByDev.name}>
+                      <td className="px-6 py-4 text-left">
+                        <img
+                          alt={`Profile pic for ${commitsByDev.name}`}
+                          src={commitsByDev.imageUrl}
+                          width="44"
+                          height="44"
+                          className="rounded-full inline-block mr-2"
+                        />
+                        {commitsByDev.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {Object.values(commitsByDev.byDate).reduce(add, 0)}
+                      </td>
+                      <td
+                        title={`Added ${commitsByDev.changes.add} files`}
+                        className="px-0 py-4 whitespace-nowrap text-green-700"
+                      >
+                        {commitsByDev.changes.add
+                          ? `+${num(commitsByDev.changes.add)}`
+                          : ''}
+                      </td>
+                      <td
+                        title={`Modified ${commitsByDev.changes.edit} files`}
+                        className="px-0 py-4 whitespace-nowrap text-red-400"
+                      >
+                        {commitsByDev.changes.edit
+                          ? `~${num(commitsByDev.changes.edit)}`
+                          : ''}
+                      </td>
+                      <td
+                        title={`Deleted code in ${commitsByDev.changes.delete} files`}
+                        className="px-0 py-4 whitespace-nowrap text-red-700"
+                      >
+                        {commitsByDev.changes.delete
+                          ? `-${num(commitsByDev.changes.delete)}`
+                          : ''}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <CommitTimeline
+                          timeline={commitsByDev.byDate}
+                          max={max}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="w-full text-right text-sm italic text-gray-700">
+                <span>* the data shown is for last 30 days, not including merge commits</span>
+              </div>
+            </>
+          )}
+      </TabContents>
+    )
+  };
+};
+
 const prs = (prs: RepoAnalysis['prs']): Tab => ({
   title: 'Pull requests',
   count: prs.total,
@@ -184,14 +275,14 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
               {tests.pipelines.map(pipeline => (
                 <tr key={pipeline.name}>
-                  <td className="pl-6 py-4 whitespace-nowrap text-blue-600 text-left">
-                    <a href={pipeline.url} target="_blank" rel="noreferrer">
+                  <td className="pl-6 py-4 whitespace-nowrap text-left">
+                    <a href={pipeline.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
                       <p className="truncate w-36">
                         {pipeline.name}
                       </p>
                     </a>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.successful}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.successful)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.failed)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{pipeline.executionTime}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{pipeline.coverage}</td>
@@ -239,6 +330,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
     tabs={[
       builds(repo.builds),
       branches(repo.branches),
+      commits(repo.commits),
       prs(repo.prs),
       tests(repo.tests),
       codeQuality(repo.codeQuality)
