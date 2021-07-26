@@ -20,3 +20,7 @@ export const updateQueryString = ({ search }: QueryStringProps) => {
   qs.set('search', search);
   return qs.toString();
 };
+
+export const shortDate = (date: Date) => (
+  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
+);

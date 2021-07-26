@@ -30,7 +30,7 @@ export type UIBuildPipeline = {
   status:
   | { type: 'unknown' }
   | { type: 'succeeded' }
-  | { type: 'failed'; since: string };
+  | { type: 'failed'; since: Date };
 };
 
 export type UIBuilds = null | {

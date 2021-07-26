@@ -1,6 +1,6 @@
 import React from 'react';
 import { RepoAnalysis } from '../../shared/types';
-import { num } from '../helpers';
+import { num, shortDate } from '../helpers';
 import AlertMessage from './AlertMessage';
 import Card, { Tab } from './ExpandingCard';
 import Flair from './Flair';
@@ -58,7 +58,7 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
             <table className="table-auto text-center divide-y divide-gray-200">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" />
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
@@ -89,11 +89,14 @@ const builds = (builds: RepoAnalysis['builds']): Tab => ({
 
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="capitalize">{pipeline.status.type}</span>
-                      {pipeline.status.type === 'failed' ? ` since ${pipeline.status.since}` : undefined}
+                      {pipeline.status.type !== 'failed' && (
+                        <span className="capitalize">{pipeline.status.type}</span>
+                      )}
+                      {pipeline.status.type === 'failed'
+                        ? `Failing since ${shortDate(new Date(pipeline.status.since))}`
+                        : undefined}
                     </td>
                   </tr>
-
                 ))}
               </tbody>
             </table>
@@ -171,7 +174,7 @@ const tests = (tests: RepoAnalysis['tests']): Tab => ({
           <table className="table-auto text-center divide-y divide-gray-200">
             <thead>
               <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" />
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Failed</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Execution time</th>

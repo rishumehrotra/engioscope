@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
 import { Build } from '../types-azure';
 import { UIBuildPipeline, UIBuilds } from '../../../shared/types';
-import { assertDefined, isMaster, shortDateFormat } from '../../utils';
+import { assertDefined, isMaster } from '../../utils';
 
 type BuildStats = {
   count: number;
@@ -12,8 +12,8 @@ type BuildStats = {
   duration: number[];
   status:
   | { type: 'unknown' }
-  | { type: 'succeeded' }
-  | { type: 'failed'; since: Date };
+  | { type: 'succeeded'; latest: Date }
+  | { type: 'failed'; since: Date};
 };
 
 const repoId = (build: Build) => build.repository?.id ?? '<unknown>';
@@ -21,11 +21,22 @@ const defaultBuildStats: BuildStats = {
   count: 0, name: 'unknown', url: '', success: 0, duration: [], status: { type: 'unknown' }
 };
 
-const status = (incoming: BuildStats, existing: BuildStats): BuildStats['status'] => {
-  if (existing.status.type === 'unknown') return incoming.status;
-  if (existing.status.type === 'succeeded') return existing.status;
-  if (incoming.status.type === 'succeeded') return existing.status;
-  return incoming.status;
+const status = (a: BuildStats, b: BuildStats): BuildStats['status'] => {
+  if (a.status.type === 'unknown') return b.status;
+  if (b.status.type === 'unknown') return a.status;
+  if (a.status.type === 'succeeded' && b.status.type === 'succeeded') {
+    return a.status.latest < b.status.latest ? b.status : a.status;
+  }
+  if (a.status.type === 'succeeded' && b.status.type === 'failed') {
+    return a.status.latest < b.status.since ? b.status : a.status;
+  }
+  if (a.status.type === 'failed' && b.status.type === 'succeeded') {
+    return a.status.since < b.status.latest ? b.status : a.status;
+  }
+  if (a.status.type === 'failed' && b.status.type === 'failed') {
+    return a.status.since < b.status.since ? a.status : b.status;
+  }
+  return b.status;
 };
 
 const combineStats = (
@@ -46,7 +57,8 @@ export default (builds: Build[]) => {
     latestMasterBuilds: Record<string, Record<number, Build | undefined>>;
   };
 
-  const { buildStats, latestMasterBuilds } = builds
+  const { buildStats, latestMasterBuilds } = [...builds]
+    .sort((a, b) => a.finishTime.getTime() - b.finishTime.getTime())
     .reduce<AggregatedBuilds>((acc, build) => {
       const rId = repoId(build);
 
@@ -64,7 +76,7 @@ export default (builds: Build[]) => {
               success: build.result === 'succeeded' ? 1 : 0,
               duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())],
               status: build.result === 'succeeded'
-                ? { type: 'succeeded' }
+                ? { type: 'succeeded', latest: build.finishTime }
                 : { type: 'failed', since: build.finishTime }
             }, acc.buildStats[rId]?.[build.definition.id] || undefined)
           }
@@ -105,7 +117,7 @@ export default (builds: Build[]) => {
           },
           status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
             ? buildStats.status
-            : { type: 'failed', since: shortDateFormat(buildStats.status.since) } as UIBuildPipeline['status']
+            : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status']
         }
       ], [] as UIBuildPipeline[]);
 
