@@ -1,6 +1,6 @@
 import React from 'react';
 import { RepoAnalysis } from '../../../shared/types';
-import { num } from '../../helpers';
+import { formatDebt, num } from '../../helpers';
 import AlertMessage from '../AlertMessage';
 import { Tab } from '../ExpandingCard';
 import Metric from '../Metric';
@@ -17,7 +17,7 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
         <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
         <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
         <Metric name="Duplication" value={num(codeQuality.duplication)} />
-        <Metric name="Tech debt" value={codeQuality.techDebt} />
+        <Metric name="Tech debt" value={formatDebt(codeQuality.techDebt)} />
         <Metric name="Quality gate" value={codeQuality.qualityGate} position="last" />
       </TabContents>
     ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on SonarQube" /></TabContents>)

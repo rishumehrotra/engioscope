@@ -27,12 +27,15 @@ export const mediumDate = (date: Date) => (
   Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 );
 
-export const formatDebt = (debt: number) => {
-  const debtNumber = Number(debt);
-  if (debtNumber > 60 && debtNumber < (60 * 24)) {
-    return `${Math.ceil((debtNumber / 60))} hrs`;
-  } if (debtNumber > 24 * 60) {
-    return `${Math.ceil((debtNumber / (60 * 8)))} days`;
+export const formatDebt = (debtInMins: number) => {
+  if (debtInMins > 60 && debtInMins < (60 * 24)) {
+    return `${Math.ceil((debtInMins / 60))} hrs`;
+  } if (debtInMins > 24 * 60) {
+    return `${Math.ceil((debtInMins / (60 * 8)))} days`;
   }
-  return `${debtNumber} mins`;
+  return `${debtInMins} mins`;
 };
+
+export const generateId = () => (
+  Math.random().toString(36).replace(/[^a-z]+/g, '').substr(2, 10)
+);

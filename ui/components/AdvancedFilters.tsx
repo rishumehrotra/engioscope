@@ -1,38 +1,40 @@
 import React, { useCallback, useState } from 'react';
 import useUrlParams from '../hooks/useUrlParams';
 import { Filters } from './Icons';
+import { generateId } from '../helpers';
 
 type CheckboxProps = {
   value: boolean;
   label: React.ReactNode;
-  id: string;
   onChange: (value: boolean) => void;
   disabled?: boolean;
 }
 
 const Checkbox : React.FC<CheckboxProps> = ({
-  value, label, id, onChange, disabled
-}) => (
-  <span className="text-xs flex items-start mb-1">
-    <input
-      id={id}
-      type="checkbox"
-      className="mr-1"
-      checked={value}
-      onChange={() => onChange(!value)}
-      disabled={disabled}
-    />
-    <label htmlFor={id} className="font-medium text-gray-700">{label}</label>
-  </span>
-);
+  value, label, onChange, disabled
+}) => {
+  const id = generateId();
+  return (
+    <span className="text-xs flex items-start mb-1">
+      <input
+        id={id}
+        type="checkbox"
+        className="mr-1 cursor-pointer"
+        checked={value}
+        onChange={() => onChange(!value)}
+        disabled={disabled}
+      />
+      <label htmlFor={id} className="font-medium text-gray-700 cursor-pointer">{label}</label>
+    </span>
+  );
+};
 
 type TechDebtGreaterThanProps = {
-  id: string;
   value: number;
   onChange: (value: number) => void;
 };
 
-const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ id, value, onChange }) => {
+const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChange }) => {
   const [techDebtGreaterThan, setTechDebtGreaterThan] = useState<number>(value);
   const onTechDebtGreaterThanChange = useCallback(
     (value: number) => {
@@ -43,7 +45,6 @@ const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ id, value, on
   );
   return (
     <Checkbox
-      id={id}
       value={techDebtGreaterThan !== 0}
       onChange={value => onTechDebtGreaterThanChange(value ? techDebtGreaterThan : 0)}
       disabled={value === 0}
@@ -68,10 +69,10 @@ const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ id, value, on
 const AdvancedFilters : React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams(false, 'commitsGreaterThanZero');
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams(false, 'buildsGreaterThanZero');
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams(false, 'withFailingLastBuilds');
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams(0, 'techDebtGreaterThan');
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero', false);
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero', false);
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds', false);
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan', 0);
 
   return (
     <span className="grid items-center ml-1">
@@ -87,25 +88,21 @@ const AdvancedFilters : React.FC = () => {
           mt-12 -ml-72 absolute z-10 p-2 rounded-md"
           >
             <Checkbox
-              id="commitsGreaterThanZero"
               value={Boolean(commitsGreaterThanZero)}
               onChange={setCommitsGreaterThanZero}
               label={<span>No. of commits &gt; 0</span>}
             />
             <Checkbox
-              id="buildsGreaterThanZero"
               value={Boolean(buildsGreaterThanZero)}
               onChange={setBuildsGreaterThanZero}
               label={<span>No. of builds &gt; 0</span>}
             />
             <Checkbox
-              id="withFailingLastBuilds"
               value={Boolean(withFailingLastBuilds)}
               onChange={setWithFailingLastBuilds}
               label={<span>With failing last builds</span>}
             />
             <TechDebtGreaterThan
-              id="testCoverageMoreThanDays"
               value={Number(techDebtGreaterThan)}
               onChange={setTechDebtGreaterThan}
             />

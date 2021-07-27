@@ -64,8 +64,19 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
   return sort * -1 * qualityGateSortName(a.codeQuality).localeCompare(qualityGateSortName(b.codeQuality));
 };
 
-const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
-  repo.name.toLowerCase().includes(searchTerm.toLowerCase())
+const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => repo.name.toLowerCase().includes(searchTerm.toLowerCase());
+const byCommitsGreaterThanZero = (commitsGreaterThanZero: boolean) => (repo: RepoAnalysis) => (
+  (commitsGreaterThanZero ? repo.commits.count > 0 : true)
+);
+const byBuildsGreaterThanZero = (buildsGreaterThanZero: boolean) => (repo: RepoAnalysis) => (
+  (buildsGreaterThanZero ? (repo.builds?.count || 0) > 0 : true)
+);
+const byFailingLastBuilds = (withFailingLastBuilds: boolean) => (repo: RepoAnalysis) => (
+  withFailingLastBuilds ? repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded') : true
+);
+
+const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) => (
+  techDebtMoreThanDays > 0 ? (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays : true
 );
 
 const Project: React.FC = () => {
@@ -76,7 +87,11 @@ const Project: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('Builds');
   const history = useHistory();
 
-  const [search, setSearchTerm] = useUrlParams('', 'search');
+  const [search, setSearchTerm] = useUrlParams<string>('search');
+  const [commitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero', false);
+  const [buildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero', false);
+  const [withFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds', false);
+  const [techDebtMoreThanDays] = useUrlParams<number>('techDebtGreaterThan', 0);
 
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1];
@@ -100,6 +115,10 @@ const Project: React.FC = () => {
 
   const filteredRepos = projectAnalysis.repos
     .filter(bySearchTerm(search as string || ''))
+    .filter(byCommitsGreaterThanZero(commitsGreaterThanZero))
+    .filter(byBuildsGreaterThanZero(buildsGreaterThanZero))
+    .filter(byFailingLastBuilds(withFailingLastBuilds))
+    .filter(byTechDebtMoreThanDays(techDebtMoreThanDays))
     .sort(sortByIndicators(sortBy, sort));
 
   return (
