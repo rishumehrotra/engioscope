@@ -24,3 +24,7 @@ export const updateQueryString = ({ search }: QueryStringProps) => {
 export const shortDate = (date: Date) => (
   Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
 );
+
+export const mediumDate = (date: Date) => (
+  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+);

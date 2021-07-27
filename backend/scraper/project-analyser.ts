@@ -62,7 +62,7 @@ export default (config: Config) => {
         commits
       ] = await Promise.all([
         (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id))
-          .then(aggregateBranches),
+          .then(aggregateBranches(r.webUrl, r.defaultBranch)),
         getTestsByRepoId(r.id),
         codeQualityByRepoName(r.name).then(aggregateCodeQuality),
         forProject(getCommits)(r.id).then(aggregateCommits)
@@ -72,6 +72,7 @@ export default (config: Config) => {
         name: r.name,
         id: r.id,
         url: r.webUrl,
+        defaultBranch: (r.defaultBranch || '').replace('refs/heads/', ''),
         languages: languages?.map(l => ({ ...l, color: getLanguageColor(l.lang) })),
         commits,
         builds: buildsByRepoId(r.id),

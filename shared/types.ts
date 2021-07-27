@@ -48,6 +48,7 @@ export type UIBranches = {
     limit: number;
     branches: {
       name: string;
+      url: string;
       aheadBy: number;
       lastCommitDate: Date;
     }[];
@@ -105,6 +106,7 @@ export type RepoAnalysis = {
   name: string;
   id: string;
   url: string;
+  defaultBranch: string;
   languages?: { lang: string; loc: number; color: string }[];
   commits: UICommits;
   builds: UIBuilds;

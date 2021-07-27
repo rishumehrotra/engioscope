@@ -27,7 +27,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     ));
 };
 
-const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
+const RepoHealth: React.FC<{repo: RepoAnalysis}> = ({ repo }) => (
   <Card
     title={repo.name}
     titleUrl={repo.url}
@@ -35,7 +35,7 @@ const RepoHealth: React.FC<{repo:RepoAnalysis}> = ({ repo }) => (
     tag={repo.commits.count === 0 ? 'Inactive' : undefined}
     tabs={[
       builds(repo.builds),
-      branches(repo.branches),
+      branches(repo.defaultBranch, repo.branches),
       commits(repo.commits),
       prs(repo.prs),
       tests(repo.tests),
