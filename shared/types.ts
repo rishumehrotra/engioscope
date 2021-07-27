@@ -44,6 +44,15 @@ export type UIBranches = {
   abandoned: number;
   deleteCandidates: number;
   possiblyConflicting: number;
+  significantlyAhead: {
+    limit: number;
+    branches: {
+      name: string;
+      url: string;
+      aheadBy: number;
+      lastCommitDate: Date;
+    }[];
+  };
 }
 
 export type UIPullRequests = {
@@ -97,6 +106,7 @@ export type RepoAnalysis = {
   name: string;
   id: string;
   url: string;
+  defaultBranch: string;
   languages?: { lang: string; loc: number; color: string }[];
   commits: UICommits;
   builds: UIBuilds;

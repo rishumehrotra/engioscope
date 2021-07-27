@@ -22,3 +22,7 @@ export const updateQueryString = (paramName: string, paramValue: string) => {
 export const shortDate = (date: Date) => (
   Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
 );
+
+export const mediumDate = (date: Date) => (
+  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+);

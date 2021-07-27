@@ -58,7 +58,7 @@ export default (builds: Build[]) => {
   };
 
   const { buildStats, latestMasterBuilds } = [...builds]
-    .sort((a, b) => a.finishTime.getTime() - b.finishTime.getTime())
+    .sort((a, b) => b.finishTime.getTime() - a.finishTime.getTime())
     .reduce<AggregatedBuilds>((acc, build) => {
       const rId = repoId(build);
 
