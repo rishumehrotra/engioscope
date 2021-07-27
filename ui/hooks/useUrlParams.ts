@@ -5,18 +5,21 @@ type UseUrlParamsProps = [string | number | boolean, () => void]
 
 const useUrlParams = <T extends string | number | boolean>(initialValue: T, paramName: string) => {
   const history = useHistory();
+  const paramValueFromHistory = parseQueryString(history.location.search)[paramName];
   let paramValue;
   switch (typeof initialValue) {
     case 'number':
-      paramValue = Number(parseQueryString(history.location.search)[paramName]);
+      paramValue = Number(paramValueFromHistory);
       break;
     case 'string':
-      paramValue = String(parseQueryString(history.location.search)[paramName]);
+      paramValue = String(paramValueFromHistory);
       break;
     default:
-      paramValue = parseQueryString(history.location.search)[paramName] === 'true';
+      paramValue = paramValueFromHistory === 'true';
       break;
   }
+  if (paramValueFromHistory === undefined) paramValue = paramValueFromHistory;
+
   const setParamValue = (paramValue: T) => history.replace({ search: updateQueryString(paramName, String(paramValue)) });
   return [paramValue || initialValue, setParamValue] as UseUrlParamsProps;
 };

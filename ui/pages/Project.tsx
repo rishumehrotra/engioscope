@@ -11,8 +11,8 @@ import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
 import Releases from './Releases';
-import { parseQueryString, updateQueryString } from '../helpers';
 import AdvancedSearch from '../components/AdvancedFilters';
+import useUrlParams from '../hooks/useUrlParams';
 
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
 
@@ -76,8 +76,7 @@ const Project: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('Builds');
   const history = useHistory();
 
-  const { search } = parseQueryString(history.location.search);
-  const setSearchTerm = (searchTerm: string) => history.replace({ search: updateQueryString('search', searchTerm) });
+  const [search, setSearchTerm] = useUrlParams('', 'search');
 
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1];
@@ -100,7 +99,7 @@ const Project: React.FC = () => {
   if (!projectAnalysis) return <div>Loading...</div>;
 
   const filteredRepos = projectAnalysis.repos
-    .filter(bySearchTerm(search || ''))
+    .filter(bySearchTerm(search as string || ''))
     .sort(sortByIndicators(sortBy, sort));
 
   return (
@@ -113,7 +112,7 @@ const Project: React.FC = () => {
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
-          <SearchInput className="w-full" onSearch={setSearchTerm} search={search} />
+          <SearchInput className="w-full" onSearch={setSearchTerm} search={search as string} />
           { selectedTab === 'repos' ? <AdvancedSearch /> : null}
         </div>
       </div>
@@ -149,7 +148,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases releaseAnalysis={releaseAnalysis} search={search} />
+          <Releases releaseAnalysis={releaseAnalysis} search={search as string} />
         </Route>
       </Switch>
     </div>
