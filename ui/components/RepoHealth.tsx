@@ -254,6 +254,7 @@ const prs = (prs: RepoAnalysis['prs']): Tab => ({
           name="Time to approve"
           value={prs.timeToApprove.average}
           additionalValue={`${prs.timeToApprove.min} - ${prs.timeToApprove.max}`}
+          position="last"
         />
       ) : (
         <Metric
