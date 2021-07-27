@@ -270,6 +270,7 @@ export type GitBranchStats = {
   commit: GitCommitRef;
   isBaseVersion: boolean;
   name: string;
+  url: string;
 }
 
 export type ReleaseReference = {

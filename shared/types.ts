@@ -44,6 +44,14 @@ export type UIBranches = {
   abandoned: number;
   deleteCandidates: number;
   possiblyConflicting: number;
+  significantlyAhead: {
+    limit: number;
+    branches: {
+      name: string;
+      aheadBy: number;
+      lastCommitDate: Date;
+    }[];
+  };
 }
 
 export type UIPullRequests = {
