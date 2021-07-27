@@ -12,8 +12,10 @@ import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
 import Releases from './Releases';
 import AdvancedSearch from '../components/AdvancedFilters';
-import useUrlParams from '../hooks/useUrlParams';
+import createUrlParamsHook from '../hooks/create-url-params-hook';
+import { repoPageUrlTypes } from '../types';
 
+const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
@@ -64,20 +66,20 @@ const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: 
   return sort * -1 * qualityGateSortName(a.codeQuality).localeCompare(qualityGateSortName(b.codeQuality));
 };
 
-const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => repo.name.toLowerCase().includes(searchTerm.toLowerCase());
-const byCommitsGreaterThanZero = (commitsGreaterThanZero: boolean) => (repo: RepoAnalysis) => (
-  (commitsGreaterThanZero ? repo.commits.count > 0 : true)
+const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
+  repo.name.toLowerCase().includes(searchTerm.toLowerCase())
 );
-const byBuildsGreaterThanZero = (buildsGreaterThanZero: boolean) => (repo: RepoAnalysis) => (
-  (buildsGreaterThanZero ? (repo.builds?.count || 0) > 0 : true)
-);
-const byFailingLastBuilds = (withFailingLastBuilds: boolean) => (repo: RepoAnalysis) => (
-  withFailingLastBuilds ? repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded') : true
+const byCommitsGreaterThanZero = (repo: RepoAnalysis) => repo.commits.count;
+const byBuildsGreaterThanZero = (repo: RepoAnalysis) => (repo.builds?.count || 0) > 0;
+const byFailingLastBuilds = (repo: RepoAnalysis) => (
+  repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded')
 );
 
 const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) => (
-  techDebtMoreThanDays > 0 ? (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays : true
+  (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
 );
+
+const dontFilter = (x: unknown) => Boolean(x);
 
 const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
@@ -88,10 +90,10 @@ const Project: React.FC = () => {
   const history = useHistory();
 
   const [search, setSearchTerm] = useUrlParams<string>('search');
-  const [commitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero', false);
-  const [buildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero', false);
-  const [withFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds', false);
-  const [techDebtMoreThanDays] = useUrlParams<number>('techDebtGreaterThan', 0);
+  const [commitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
+  const [buildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
+  const [withFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
+  const [techDebtMoreThanDays] = useUrlParams<number>('techDebtGreaterThan');
 
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1];
@@ -114,16 +116,16 @@ const Project: React.FC = () => {
   if (!projectAnalysis) return <div>Loading...</div>;
 
   const filteredRepos = projectAnalysis.repos
-    .filter(bySearchTerm(search as string || ''))
-    .filter(byCommitsGreaterThanZero(commitsGreaterThanZero))
-    .filter(byBuildsGreaterThanZero(buildsGreaterThanZero))
-    .filter(byFailingLastBuilds(withFailingLastBuilds))
-    .filter(byTechDebtMoreThanDays(techDebtMoreThanDays))
+    .filter(search === undefined ? dontFilter : bySearchTerm(search))
+    .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
+    .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
+    .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
+    .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
     .sort(sortByIndicators(sortBy, sort));
 
   return (
     <div>
-      <div className="grid grid-cols-3 justify-between w-full items-start mt-12 mb-6">
+      <div className="grid grid-cols-3 justify-between w-full items-start my-12">
         <ProjectDetails
           name={projectAnalysis.name}
           repoCount={projectAnalysis.repos.length}

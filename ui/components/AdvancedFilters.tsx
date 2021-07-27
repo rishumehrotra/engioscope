@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import useUrlParams from '../hooks/useUrlParams';
+import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { Filters } from './Icons';
 import { generateId } from '../helpers';
+import { repoPageUrlTypes } from '../types';
+
+const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 type CheckboxProps = {
   value: boolean;
@@ -15,7 +18,7 @@ const Checkbox : React.FC<CheckboxProps> = ({
 }) => {
   const id = generateId();
   return (
-    <span className="text-xs flex items-start mb-1">
+    <span className="text-sm flex items-center">
       <input
         id={id}
         type="checkbox"
@@ -24,7 +27,7 @@ const Checkbox : React.FC<CheckboxProps> = ({
         onChange={() => onChange(!value)}
         disabled={disabled}
       />
-      <label htmlFor={id} className="font-medium text-gray-700 cursor-pointer">{label}</label>
+      <label htmlFor={id} className="font-small text-gray-600 cursor-pointer">{label}</label>
     </span>
   );
 };
@@ -69,33 +72,36 @@ const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChan
 const AdvancedFilters : React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero', false);
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero', false);
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds', false);
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan', 0);
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
 
   return (
-    <span className="grid items-center ml-1">
+    <span className="grid items-center ml-1 relative">
       <button onClick={() => setIsOpen(!isOpen)}>
         <Filters
-          className={`text-gray-500 rounded-md hover:bg-white ${isOpen ? 'bg-white' : ''} p-2 cursor-pointer`}
+          className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
           tooltip="Advanced Filters"
         />
+        <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" />
       </button>
       {
         isOpen ? (
-          <span className="bg-white text-base text-gray-600 grid grid-cols-2 gap-2 content-center
-          mt-12 -ml-72 absolute z-10 p-2 rounded-md"
+          <span
+            style={{ width: '406px' }}
+            className="bg-white text-base text-gray-600 grid grid-cols-2 gap-2 content-center
+          mt-12 absolute top-0 right-0 z-10 px-4 py-3 rounded-md shadow"
           >
             <Checkbox
               value={Boolean(commitsGreaterThanZero)}
               onChange={setCommitsGreaterThanZero}
-              label={<span>No. of commits &gt; 0</span>}
+              label={<span>Has commits</span>}
             />
             <Checkbox
               value={Boolean(buildsGreaterThanZero)}
               onChange={setBuildsGreaterThanZero}
-              label={<span>No. of builds &gt; 0</span>}
+              label={<span>Has builds</span>}
             />
             <Checkbox
               value={Boolean(withFailingLastBuilds)}
@@ -103,7 +109,7 @@ const AdvancedFilters : React.FC = () => {
               label={<span>With failing last builds</span>}
             />
             <TechDebtGreaterThan
-              value={Number(techDebtGreaterThan)}
+              value={Number(techDebtGreaterThan || 0)}
               onChange={setTechDebtGreaterThan}
             />
           </span>
