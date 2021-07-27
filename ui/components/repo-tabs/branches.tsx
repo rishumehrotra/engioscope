@@ -38,7 +38,7 @@ export default (defaultBranch: string, branches: RepoAnalysis['branches']): Tab 
             {' '}
             {branches.significantlyAhead.branches.length > 1 ? 'branches are' : 'branch is'}
             {' '}
-            signnificantly ahead of
+            significantly ahead of
             {' '}
             <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">{defaultBranch}</code>
             {' '}
@@ -58,9 +58,9 @@ export default (defaultBranch: string, branches: RepoAnalysis['branches']): Tab 
           <table width="100%" className="table-auto text-center divide-y divide-gray-200">
             <thead>
               <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider w-3/5"> </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Ahead by</th>
-                <th className="pl-6 pr-0 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Last commit</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">Last commit</th>
               </tr>
             </thead>
             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
@@ -76,7 +76,7 @@ export default (defaultBranch: string, branches: RepoAnalysis['branches']): Tab 
                     {' '}
                     commits
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{mediumDate(new Date(branch.lastCommitDate))}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">{mediumDate(new Date(branch.lastCommitDate))}</td>
                 </tr>
               ))}
             </tbody>
