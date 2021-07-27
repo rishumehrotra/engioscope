@@ -26,3 +26,13 @@ export const shortDate = (date: Date) => (
 export const mediumDate = (date: Date) => (
   Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 );
+
+export const formatDebt = (debt: number) => {
+  const debtNumber = Number(debt);
+  if (debtNumber > 60 && debtNumber < (60 * 24)) {
+    return `${Math.ceil((debtNumber / 60))} hrs`;
+  } if (debtNumber > 24 * 60) {
+    return `${Math.ceil((debtNumber / (60 * 8)))} days`;
+  }
+  return `${debtNumber} mins`;
+};

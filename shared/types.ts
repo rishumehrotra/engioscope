@@ -82,7 +82,7 @@ export type UICodeQuality = null | {
   codeSmells: number;
   vulnerabilities: number;
   duplication: number;
-  techDebt: string;
+  techDebt: number;
   qualityGate: 'error' | 'warn' | 'ok';
 }
 

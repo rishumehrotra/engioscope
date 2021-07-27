@@ -1,56 +1,14 @@
 import { Measure, SonarAnalysisByRepo } from '../types-sonar';
 import { UICodeQuality } from '../../../shared/types';
 
-type MetricDefinition = {
-  name: string;
-  display: string;
-  formatter?: (s: string) => string;
-};
-
-const formatDebt = (debt: string) => {
-  const debtNumber = Number(debt);
-  if (debtNumber > 60 && debtNumber < (60 * 24)) {
-    return `${Math.ceil((debtNumber / 60))} hrs`;
-  } if (debtNumber > 24 * 60) {
-    return `${Math.ceil((debtNumber / (60 * 8)))} days`;
-  }
-  return `${debtNumber} mins`;
-};
-
-const metrics: MetricDefinition[] = [
-  {
-    name: 'complexity',
-    display: 'Complexity'
-  },
-  {
-    name: 'bugs',
-    display: 'Bugs'
-  },
-  {
-    name: 'code_smells',
-    display: 'Code smells'
-  },
-  {
-    name: 'vulnerabilities',
-    display: 'Vulnerabilities'
-  },
-  {
-    name: 'duplicated_lines_density',
-    display: 'Duplication'
-  },
-  {
-    name: 'sqale_index',
-    display: 'Tech debt',
-    formatter: formatDebt
-  },
-  {
-    name: 'alert_status',
-    display: 'Quality gate'
-  }
-];
-
 export const requiredMetrics = [
-  ...metrics.map(n => n.name),
+  'complexity',
+  'bugs',
+  'code_smells',
+  'vulnerabilities',
+  'duplicated_lines_density',
+  'sqale_index',
+  'alert_status',
   'security_rating',
   'ncloc_language_distribution',
   'ncloc',
@@ -92,7 +50,7 @@ export default (sonarAnalysis: SonarAnalysisByRepo): AggregagedCodeQuality => {
       codeSmells: Number(findMeasure('code_smells') || 0),
       vulnerabilities: Number(findMeasure('vulnerabilities') || 0),
       duplication: Number(findMeasure('duplicated_lines_density') || 0),
-      techDebt: formatDebt(findMeasure('sqale_index') || '0'),
+      techDebt: Number(findMeasure('sqale_index') || '0'),
       qualityGate: findMeasure('alert_status') as 'error' | 'warn' | 'ok'
     }
   };
