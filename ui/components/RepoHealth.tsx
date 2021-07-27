@@ -203,7 +203,7 @@ const commits = (commits: RepoAnalysis['commits']): Tab => {
                       >
                         {commitsByDev.changes.add
                           ? `+${num(commitsByDev.changes.add)}`
-                          : ''}
+                          : ' '}
                       </td>
                       <td
                         title={`Modified ${num(commitsByDev.changes.edit)} files`}
@@ -211,7 +211,7 @@ const commits = (commits: RepoAnalysis['commits']): Tab => {
                       >
                         {commitsByDev.changes.edit
                           ? `~${num(commitsByDev.changes.edit)}`
-                          : ''}
+                          : ' '}
                       </td>
                       <td
                         title={`Deleted code in ${num(commitsByDev.changes.delete)} files`}
@@ -219,7 +219,7 @@ const commits = (commits: RepoAnalysis['commits']): Tab => {
                       >
                         {commitsByDev.changes.delete
                           ? `-${num(commitsByDev.changes.delete)}`
-                          : ''}
+                          : ' '}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <CommitTimeline
