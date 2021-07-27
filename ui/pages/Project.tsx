@@ -77,7 +77,7 @@ const Project: React.FC = () => {
   const history = useHistory();
 
   const { search } = parseQueryString(history.location.search);
-  const setSearchTerm = (searchTerm: string) => history.replace({ search: updateQueryString({ search: searchTerm }) });
+  const setSearchTerm = (searchTerm: string) => history.replace({ search: updateQueryString('search', searchTerm) });
 
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1];
@@ -114,7 +114,7 @@ const Project: React.FC = () => {
         />
         <div className="flex justify-end">
           <SearchInput className="w-full" onSearch={setSearchTerm} search={search} />
-          <AdvancedSearch />
+          { selectedTab === 'repos' ? <AdvancedSearch /> : null}
         </div>
       </div>
       <div className="pb-6">
