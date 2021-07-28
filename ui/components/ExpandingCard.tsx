@@ -14,7 +14,6 @@ const TopLevelTab: React.FC<TopLevelTabProps> = ({
   isSelected, onToggleSelect, count, label
 }) => (
   <button
-    style={{ outline: 'none' }}
     className={`pt-2 pb-4 px-6 mt-2 text-gray-900 break-words rounded-t-lg
         ${isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'}
         hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
@@ -71,12 +70,13 @@ export type CardProps = {
   title: string;
   titleUrl?: string;
   subtitle?: React.ReactNode | undefined;
+  preTabs?: React.ReactNode;
   tabs: Tab[];
   tag?: string;
 }
 
 const Card: React.FC<CardProps> = ({
-  title, titleUrl, subtitle, tabs, tag
+  title, titleUrl, subtitle, tabs, tag, preTabs
 }) => {
   const [selectedTab, setSelectedTab] = useState<CardProps['tabs'][number] | null>(null);
 
@@ -103,6 +103,12 @@ const Card: React.FC<CardProps> = ({
               titleUrl={titleUrl}
               subtitle={subtitle}
             />
+            {preTabs && (
+              <div>
+                {preTabs}
+              </div>
+            )}
+            <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide">Stages</div>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
               {
                 tabs.map(tab => (

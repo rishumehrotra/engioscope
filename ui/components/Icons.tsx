@@ -8,7 +8,7 @@ export const Alert: React.FC = () => (
   </svg>
 );
 
-export const Danger : React.FC = () => (
+export const Danger: React.FC = () => (
   <svg className="h-4 w-4 text-white fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
     <path d="M437.019 74.981C388.667 26.629 324.38 0 256 0S123.333 26.63 74.981 74.981 0 187.62 0 256s26.629 132.667 74.981 181.019C123.332 485.371 187.62 512 256 512s132.667-26.629 181.019-74.981C485.371 388.667 512 324.38 512 256s-26.629-132.668-74.981-181.019zM256 470.636C137.65 470.636 41.364 374.35 41.364 256S137.65 41.364 256 41.364 470.636 137.65 470.636 256 374.35 470.636 256 470.636z" fill="#FFF" />
     <path d="M341.22 170.781c-8.077-8.077-21.172-8.077-29.249 0L170.78 311.971c-8.077 8.077-8.077 21.172 0 29.249 4.038 4.039 9.332 6.058 14.625 6.058s10.587-2.019 14.625-6.058l141.19-141.191c8.076-8.076 8.076-21.171 0-29.248z" fill="#FFF" />
@@ -16,14 +16,14 @@ export const Danger : React.FC = () => (
   </svg>
 );
 
-export const Done : React.FC = () => (
+export const Done: React.FC = () => (
   <svg className="h-4 w-4 text-white fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
     <path d="M468.907 214.604c-11.423 0-20.682 9.26-20.682 20.682v20.831c-.031 54.338-21.221 105.412-59.666 143.812-38.417 38.372-89.467 59.5-143.761 59.5h-.12C132.506 459.365 41.3 368.056 41.364 255.883c.031-54.337 21.221-105.411 59.667-143.813 38.417-38.372 89.468-59.5 143.761-59.5h.12c28.672.016 56.49 5.942 82.68 17.611 10.436 4.65 22.659-.041 27.309-10.474 4.648-10.433-.04-22.659-10.474-27.309-31.516-14.043-64.989-21.173-99.492-21.192h-.144c-65.329 0-126.767 25.428-172.993 71.6C25.536 129.014.038 190.473 0 255.861c-.037 65.386 25.389 126.874 71.599 173.136 46.21 46.262 107.668 71.76 173.055 71.798h.144c65.329 0 126.767-25.427 172.993-71.6 46.262-46.209 71.76-107.668 71.798-173.066v-20.842c0-11.423-9.259-20.683-20.682-20.683z" />
     <path d="M505.942 39.803c-8.077-8.076-21.172-8.076-29.249 0L244.794 271.701l-52.609-52.609c-8.076-8.077-21.172-8.077-29.248 0-8.077 8.077-8.077 21.172 0 29.249l67.234 67.234a20.616 20.616 0 0 0 14.625 6.058 20.618 20.618 0 0 0 14.625-6.058L505.942 69.052c8.077-8.077 8.077-21.172 0-29.249z" />
   </svg>
 );
 
-export const Search : React.FC = () => (
+export const Search: React.FC = () => (
   <svg
     className="text-gray-600 h-4 w-4 fill-current"
     xmlns="http://www.w3.org/2000/svg"
@@ -39,7 +39,7 @@ export const Search : React.FC = () => (
   </svg>
 );
 
-export const Up : React.FC<{className?: string}> = ({ className }) => (
+export const Up: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     fill="none"
     strokeLinecap="round"
@@ -53,7 +53,7 @@ export const Up : React.FC<{className?: string}> = ({ className }) => (
   </svg>
 );
 
-export const Down : React.FC<{className?: string}> = ({ className }) => (
+export const Down: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     fill="none"
     strokeLinecap="round"
@@ -67,7 +67,7 @@ export const Down : React.FC<{className?: string}> = ({ className }) => (
   </svg>
 );
 
-export const DownChevron : React.FC<{className?: string}> = ({ className }) => (
+export const DownChevron: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     fill="none"
     strokeLinecap="round"
@@ -81,7 +81,7 @@ export const DownChevron : React.FC<{className?: string}> = ({ className }) => (
   </svg>
 );
 
-export const UpChevron : React.FC<{className?: string}> = ({ className }) => (
+export const UpChevron: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     fill="none"
     strokeLinecap="round"
@@ -113,16 +113,38 @@ export const Refresh = () => (
   </svg>
 );
 
-export const Filters : React.FC<{className?: string; tooltip?: string}> = ({ className, tooltip }) => (
+export const Filters: React.FC<{ className?: string; tooltip?: string }> = ({ className, tooltip }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className={`h-10 w-10 ${className || ''}`}>
     <title id={tooltip}>{tooltip}</title>
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
   </svg>
 );
 
-export const Close: React.FC<{className?: string; tooltip?: string}> = ({ className, tooltip }) => (
+export const Close: React.FC<{ className?: string; tooltip?: string }> = ({ className, tooltip }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${className || ''}`} viewBox="0 0 20 20" fill="currentColor">
     <title>{tooltip}</title>
     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+  </svg>
+);
+
+export const Branches: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 640 1024" className={`${className || ''}`}>
+    <path d="M512 192c-70.625 0-128 57.344-128 128 0 47.219 25.875 88.062 64 110.281V448c0 0 0 128-128 128-53.062 0-94.656 11.375-128 28.812V302.28099999999995c38.156-22.219 64-63.062 64-110.281 0-70.656-57.344-128-128-128S0 121.34400000000005 0 192c0 47.219 25.844 88.062 64 110.281V721.75C25.844 743.938 0 784.75 0 832c0 70.625 57.344 128 128 128s128-57.375 128-128c0-33.5-13.188-63.75-34.25-86.625C240.375 722.5 270.656 704 320 704c254 0 256-256 256-256v-17.719c38.125-22.219 64-63.062 64-110.281C640 249.34400000000005 582.625 192 512 192zM128 128c35.406 0 64 28.594 64 64s-28.594 64-64 64-64-28.594-64-64S92.594 128 128 128zM128 896c-35.406 0-64-28.625-64-64 0-35.312 28.594-64 64-64s64 28.688 64 64C192 867.375 163.406 896 128 896zM512 384c-35.375 0-64-28.594-64-64s28.625-64 64-64 64 28.594 64 64S547.375 384 512 384z" />
+  </svg>
+);
+
+export const GitRepo: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 512 512" className={`${className || ''}`}>
+    <path d="M132,334.6c48.8,3.3,59.2,2.1,59.2,12c0,20.1-65.8,20.1-65.8,1.5C125.4,343,128.7,338.7,132,334.6z M160.1,217.4
+ c-32.4,0-33.9,44.7-0.8,44.7C192,262.1,191.2,217.4,160.1,217.4L160.1,217.4z M481,79.2v353.6c0,26.6-21.6,48.2-48.2,48.2H79.2
+ C52.6,481,31,459.4,31,432.8V79.2C31,52.6,52.6,31,79.2,31h353.6C459.4,31,481,52.6,481,79.2z M253,148.8c0,14.6,8.4,23,23,23
+ c14.8,0,23.2-8.4,23.2-23c0-14.6-8.4-22.4-23.2-22.4C261.4,126.4,253,134.3,253,148.8z M231.1,194.7h-49.8
+ c-25.1-6.6-81.9-4.9-81.9,47c0,18.9,9.4,32.1,21.9,38.3c-15.8,14.4-23.2,21.2-23.2,30.9c0,6.9,2.8,13.3,11.2,16.8
+ c-8.9,8.4-14.1,14.5-14.1,26c0,20.2,17.6,31.9,63.8,31.9c44.4,0,70.2-16.6,70.2-45.9c0-36.8-28.4-35.5-95.2-39.6l8.4-13.5
+ c17.1,4.8,74.5,6.3,74.5-42.6c0-11.7-4.9-19.9-9.4-25.8l23.5-1.8L231.1,194.7z M315.8,305.1l-13.1-1.8c-3.8-0.5-4.1-1-4.1-5.1
+ V192.2h-52.8l-2.8,20.7c15.8,5.6,17.1,4.9,17.1,10.2v75.1c0,5.6-0.3,4.6-17.1,6.9v20.1h72.7L315.8,305.1z M416.7,315.3l-6.9-22.5
+ c-41.1,15.4-38-12.5-38-16.8v-61h38v-25.5h-36c-2.9,0-2,2.5-2-38.8h-24.3c-2.8,27.8-11.7,39.1-34.2,41.6V215
+ c20.6,0,19.9-0.9,19.9,2.6v66.9c0,28.8,11.5,41.1,41.9,41.1C389.7,325.5,405.7,320.7,416.7,315.3L416.7,315.3z"
+    />
   </svg>
 );
