@@ -107,7 +107,7 @@ const AdvancedFilters : React.FC = () => {
             <Checkbox
               value={Boolean(withFailingLastBuilds)}
               onChange={setWithFailingLastBuilds}
-              label={<span>With failing last builds</span>}
+              label={<span>Has failing builds</span>}
             />
             <TechDebtGreaterThan
               value={techDebtGreaterThan}
