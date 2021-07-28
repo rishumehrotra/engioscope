@@ -9,14 +9,14 @@ import { repoPageUrlTypes } from '../types';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
-const FilterTag: React.FC<{label: string; onClose: () => void}> = ({ label, onClose }) => (
-  <span className="ml-2 py-1 pl-3 pr-2 border border-yellow-500 rounded-full flex">
+const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, onClose }) => (
+  <span className="ml-2 py-1 pl-3 pr-2 border border-gray-300 rounded-full flex bg-white text-sm">
     <span>{label}</span>
     <button onClick={onClose}><Close className="ml-1" /></button>
   </span>
 );
 
-const AppliedFilters:React.FC<{count: number}> = ({ count }) => {
+const AppliedFilters: React.FC<{ count: number }> = ({ count }) => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
@@ -51,7 +51,7 @@ const AppliedFilters:React.FC<{count: number}> = ({ count }) => {
   );
 };
 
-const Repos:React.FC<{repos: RepoAnalysis[]}> = ({ repos }) => (
+const Repos: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => (
   <div>
     <AppliedFilters count={repos.length} />
     {
