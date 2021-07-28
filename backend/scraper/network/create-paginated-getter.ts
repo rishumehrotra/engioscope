@@ -1,5 +1,5 @@
 import qs from 'qs';
-import fetch from 'node-fetch';
+import fetch from './fetch-with-timeout';
 import { Config } from '../types';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 

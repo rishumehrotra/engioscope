@@ -1,5 +1,5 @@
-import fetch from 'node-fetch';
 import qs from 'qs';
+import fetch from './fetch-with-timeout';
 import { Config } from '../types';
 import { pastDate } from '../../utils';
 import {
