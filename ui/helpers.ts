@@ -14,7 +14,7 @@ export const parseQueryString = (qs: string): Record<string, string | undefined>
 
 export const updateQueryString = (paramName: string, paramValue: string) => {
   const qs = new URLSearchParams(window.location.search);
-  if (paramValue === undefined || paramValue === '' || paramValue === 'false' || paramValue === '0') qs.delete(paramName);
+  if (paramValue === undefined || paramValue === 'undefined' || paramValue === '' || paramValue === 'false') qs.delete(paramName);
   else qs.set(paramName, paramValue);
   return qs.toString();
 };

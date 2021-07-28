@@ -32,42 +32,42 @@ const Checkbox : React.FC<CheckboxProps> = ({
   );
 };
 
-// type TechDebtGreaterThanProps = {
-//   value: number;
-//   onChange: (value: number) => void;
-// };
+type TechDebtGreaterThanProps = {
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+};
 
-// const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChange }) => {
-//   const [techDebtGreaterThan, setTechDebtGreaterThan] = useState<number>(value);
-//   const onTechDebtGreaterThanChange = useCallback(
-//     (value: number) => {
-//       setTechDebtGreaterThan(value);
-//       onChange(value);
-//     },
-//     [onChange]
-//   );
-//   return (
-//     <Checkbox
-//       value={techDebtGreaterThan !== 0}
-//       onChange={value => onTechDebtGreaterThanChange(value ? techDebtGreaterThan : 0)}
-//       disabled={value === 0}
-//       label={(
-//         <span>
-//           Tech debt &gt;
-//           <input
-//             type="text"
-//             className="w-6 border-b-2 text-center"
-//             value={techDebtGreaterThan}
-//             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onTechDebtGreaterThanChange(Number(e.target.value))}
-//           />
-//           {' '}
-//           days
-//         </span>
-//       )}
-//     />
+const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChange }) => {
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useState<number | undefined>(value);
 
-//   );
-// };
+  const onCheckboxChange = (v: boolean) => {
+    if (!v) onChange(undefined);
+    else onChange(techDebtGreaterThan || 0);
+  };
+
+  return (
+    <Checkbox
+      value={value !== undefined}
+      onChange={onCheckboxChange}
+      label={(
+        <span>
+          Tech debt &gt;
+          <input
+            type="text"
+            className="w-6 border-b-2 text-center"
+            value={value}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setTechDebtGreaterThan(Number(e.target.value));
+              onChange(Number(e.target.value));
+            }}
+          />
+          {' '}
+          days
+        </span>
+      )}
+    />
+  );
+};
 
 const AdvancedFilters : React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -75,9 +75,8 @@ const AdvancedFilters : React.FC = () => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
-  // const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
-  const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds;
-  // || (techDebtGreaterThan && techDebtGreaterThan > 0);
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
+  const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds || (techDebtGreaterThan !== undefined);
 
   return (
     <span className="grid items-center ml-1 relative">
@@ -110,10 +109,10 @@ const AdvancedFilters : React.FC = () => {
               onChange={setWithFailingLastBuilds}
               label={<span>With failing last builds</span>}
             />
-            {/* <TechDebtGreaterThan
-              value={Number(techDebtGreaterThan || 0)}
+            <TechDebtGreaterThan
+              value={techDebtGreaterThan}
               onChange={setTechDebtGreaterThan}
-            /> */}
+            />
           </span>
         ) : null
       }
