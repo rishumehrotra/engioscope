@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { Filters } from './Icons';
 import { generateId } from '../helpers';
@@ -32,42 +32,42 @@ const Checkbox : React.FC<CheckboxProps> = ({
   );
 };
 
-type TechDebtGreaterThanProps = {
-  value: number;
-  onChange: (value: number) => void;
-};
+// type TechDebtGreaterThanProps = {
+//   value: number;
+//   onChange: (value: number) => void;
+// };
 
-const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChange }) => {
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useState<number>(value);
-  const onTechDebtGreaterThanChange = useCallback(
-    (value: number) => {
-      setTechDebtGreaterThan(value);
-      onChange(value);
-    },
-    [onChange]
-  );
-  return (
-    <Checkbox
-      value={techDebtGreaterThan !== 0}
-      onChange={value => onTechDebtGreaterThanChange(value ? techDebtGreaterThan : 0)}
-      disabled={value === 0}
-      label={(
-        <span>
-          Tech debt &gt;
-          <input
-            type="text"
-            className="w-6 border-b-2 text-center"
-            value={techDebtGreaterThan}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onTechDebtGreaterThanChange(Number(e.target.value))}
-          />
-          {' '}
-          days
-        </span>
-      )}
-    />
+// const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChange }) => {
+//   const [techDebtGreaterThan, setTechDebtGreaterThan] = useState<number>(value);
+//   const onTechDebtGreaterThanChange = useCallback(
+//     (value: number) => {
+//       setTechDebtGreaterThan(value);
+//       onChange(value);
+//     },
+//     [onChange]
+//   );
+//   return (
+//     <Checkbox
+//       value={techDebtGreaterThan !== 0}
+//       onChange={value => onTechDebtGreaterThanChange(value ? techDebtGreaterThan : 0)}
+//       disabled={value === 0}
+//       label={(
+//         <span>
+//           Tech debt &gt;
+//           <input
+//             type="text"
+//             className="w-6 border-b-2 text-center"
+//             value={techDebtGreaterThan}
+//             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onTechDebtGreaterThanChange(Number(e.target.value))}
+//           />
+//           {' '}
+//           days
+//         </span>
+//       )}
+//     />
 
-  );
-};
+//   );
+// };
 
 const AdvancedFilters : React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -75,7 +75,9 @@ const AdvancedFilters : React.FC = () => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
+  // const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
+  const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds;
+  // || (techDebtGreaterThan && techDebtGreaterThan > 0);
 
   return (
     <span className="grid items-center ml-1 relative">
@@ -84,7 +86,7 @@ const AdvancedFilters : React.FC = () => {
           className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
           tooltip="Advanced Filters"
         />
-        <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" />
+        {isFilterApplied ? <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" /> : null}
       </button>
       {
         isOpen ? (
@@ -108,10 +110,10 @@ const AdvancedFilters : React.FC = () => {
               onChange={setWithFailingLastBuilds}
               label={<span>With failing last builds</span>}
             />
-            <TechDebtGreaterThan
+            {/* <TechDebtGreaterThan
               value={Number(techDebtGreaterThan || 0)}
               onChange={setTechDebtGreaterThan}
-            />
+            /> */}
           </span>
         ) : null
       }
