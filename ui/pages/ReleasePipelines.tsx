@@ -3,7 +3,7 @@ import { ProjectReleaseAnalysis, ReleaseStats } from '../../shared/types';
 import AlertMessage from '../components/AlertMessage';
 import Card from '../components/ExpandingCard';
 import Flair from '../components/Flair';
-import { Branches } from '../components/Icons';
+import { ArrowRight, Branches } from '../components/Icons';
 import Metric from '../components/Metric';
 import { num } from '../helpers';
 
@@ -27,10 +27,44 @@ type StageNameProps = {
   label: string;
   count: string | number;
   onToggleSelect: () => void;
-}
+  isLast: boolean;
+  selectedStage: ReleaseStats['stages'][number] | null;
+};
+
+const Artefacts: React.FC<{pipeline:ReleaseStats}> = ({ pipeline }) => (
+  <div className="my-4">
+    <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts</div>
+    {Object.keys(pipeline.repos).length ? (
+      <ol className="grid grid-flow-col justify-start">
+        {Object.entries(pipeline.repos).map(([repoName, branches]) => (
+          <li key={repoName} className="bg-gray-100 pt-3 pb-4 px-4 rounded mb-2 self-start mr-3">
+            <div className="font-semibold flex items-center mb-1">
+              {repoName}
+            </div>
+            <ol className="flex flex-wrap">
+              {branches.map(branch => (
+                <li key={branch} className="mr-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
+                  <Branches className="h-4 mr-1" />
+                  {branch.replace('refs/heads/', '')}
+                </li>
+              ))}
+            </ol>
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
+        <AlertMessage
+          message="No starting artifact found"
+          type="info"
+        />
+      </div>
+    )}
+  </div>
+);
 
 const StageName: React.FC<StageNameProps> = ({
-  isSelected, onToggleSelect, count, label
+  isSelected, onToggleSelect, count, label, selectedStage, isLast
 }) => {
   const onClick = useCallback(e => {
     e.stopPropagation();
@@ -38,19 +72,55 @@ const StageName: React.FC<StageNameProps> = ({
   }, [onToggleSelect]);
 
   return (
-    <button
-      className={`pt-2 pb-4 px-6 mt-2 text-gray-900 break-words rounded-t-lg
+    <div className={`flex items-center mt-2 ${isSelected ? 'w-full' : ''}`}>
+      <div className={`py-1 px-4 mr-2
+        ${isSelected ? 'w-full' : ''}
         ${isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'}
-        hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
-      onClick={onClick}
-    >
-      <div>
-        <div className={`text-3xl font-semibold -mb-1 ${isSelected ? 'text-black' : 'text-gray-600'} `}>
-          {typeof count === 'number' ? num(count) : count}
+        ${isSelected ? 'rounded-lg' : 'border rounded'}
+        `}
+      >
+        <button
+          className={`text-gray-900 break-words rounded-t-lg flex
+            hover:text-gray-900 focus:text-gray-900 cursor-pointer
+            ${isSelected ? 'items-baseline' : 'items-center'}
+            ${isSelected ? 'mt-1' : ''}
+            `}
+          onClick={onClick}
+        >
+          <div className={`mr-2  font-semibold ${isSelected ? 'text-black text-2xl' : 'text-gray-600 text-lg'} `}>
+            {typeof count === 'number' ? num(count) : count}
+          </div>
+          <div className={`uppercase text-xs
+        ${isSelected ? 'font-bold text-base text-black tracking-wide' : 'text-gray-600 tracking-wider'}`}
+          >
+            {label}
+          </div>
+        </button>
+
+        <div role="region">
+          {selectedStage && isSelected ? (
+            <div className="grid grid-cols-5 mt-1 mb-3 rounded-lg bg-gray-100 w-full">
+              <Metric name="Releases" value={selectedStage.releaseCount} position="first" />
+              <Metric name="Successful" value={selectedStage.successCount} />
+              <Metric name="Failed" value={selectedStage.releaseCount - selectedStage.successCount} />
+              <Metric
+                name="Per week"
+                value={selectedStage.successCount === 0 ? '0' : (selectedStage.releaseCount / 4).toFixed(2)}
+              />
+              <Metric
+                name="Success rate"
+                value={(selectedStage.successCount === 0
+                  ? '0%'
+                  : `${((selectedStage.successCount * 100) / selectedStage.releaseCount).toFixed(2)}%`
+                )}
+                position="last"
+              />
+            </div>
+          ) : null}
         </div>
-        <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{label}</div>
       </div>
-    </button>
+      {!isLast ? <ArrowRight className="h-4 mr-2 text-gray-600 " /> : null}
+    </div>
   );
 };
 
@@ -73,7 +143,6 @@ const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}
 
   return (
     <Card
-    // eslint-disable-next-line react/no-array-index-key
       key={pipeline.name}
       title={pipeline.name}
       titleUrl={pipeline.url}
@@ -81,14 +150,6 @@ const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}
       onCardClick={() => setSelectedStage(!selectedStage ? pipeline.stages[0] : null)}
       subtitle={(
         <>
-          {Object.entries(pipeline.repos).length === 0 ? (
-            <Flair
-              colorClassName="bg-gray-400"
-              label={Object.entries(pipeline.repos).length > 0
-                ? 'Starts with artifact'
-                : 'No starting artifact'}
-            />
-          ) : null}
           {highlightExistanceOfStages.map(stage => (
             <Flair
               key={stage.stageName}
@@ -100,62 +161,25 @@ const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}
         </>
       )}
     >
-      <>
-        {Object.keys(pipeline.repos).length ? (
-          <div className="my-4">
-            <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts</div>
-            <ol className="grid grid-flow-col auto-cols-max">
-              {Object.entries(pipeline.repos).map(([repoName, branches]) => (
-                <li key={repoName} className="bg-gray-100 pt-3 pb-4 px-4 rounded mb-2 self-start mr-3">
-                  <div className="font-semibold flex items-center mb-1">
-                    {/* <GitRepo className="h-4 mr-1" /> */}
-                    {repoName}
-                  </div>
-                  <ol className="flex flex-wrap">
-                    {branches.map(branch => (
-                      <li key={branch} className="mr-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
-                        <Branches className="h-4 mr-1" />
-                        {branch.replace('refs/heads/', '')}
-                      </li>
-                    ))}
-                  </ol>
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : undefined}
-        {pipeline.stages.map(stage => (
-          <StageName
-            key={stage.name}
-            count={stage.successCount}
-            label={stage.name}
-            isSelected={false}
-            onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
-          />
-        ))}
-        <span role="region">
-          {selectedStage ? (
-            <div className="grid grid-cols-5 p-6 py-6 rounded-lg bg-gray-100">
-              <Metric name="Releases" value={selectedStage.releaseCount} position="first" />
-              <Metric name="Successful releases" value={selectedStage.successCount} />
-              <Metric name="Successful releases" value={selectedStage.successCount} />
-              <Metric
-                name="Releases per week"
-                value={selectedStage.successCount === 0 ? '0' : (selectedStage.releaseCount / 4).toFixed(2)}
+      <div className="px-6">
+        <Artefacts pipeline={pipeline} />
+        <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">Successful releases per stage</div>
+        <div className="flex flex-wrap">
+          {pipeline.stages.map((stage, index) => (
+            <>
+              <StageName
+                key={stage.name}
+                count={stage.successCount}
+                label={stage.name}
+                isSelected={selectedStage === stage}
+                onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
+                isLast={index === pipeline.stages.length - 1}
+                selectedStage={selectedStage}
               />
-              <Metric
-                name="Success rate"
-                value={(selectedStage.successCount === 0
-                  ? '0%'
-                  : `${((selectedStage.successCount * 100) / selectedStage.releaseCount).toFixed(2)}%`
-                )}
-                position="last"
-              />
-            </div>
-          ) : null}
-
-        </span>
-      </>
+            </>
+          ))}
+        </div>
+      </div>
     </Card>
   );
 };
@@ -180,3 +204,4 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
 };
 
 export default Releases;
+
