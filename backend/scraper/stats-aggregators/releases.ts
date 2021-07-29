@@ -45,7 +45,7 @@ const addToReleaseStats = (releaseStats: ReleaseStats, release: Release): Releas
       [repoName]: [...new Set([
         ...(acc[repoName] || []),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        branch!.replace('/refs/heads/', '')
+        branch!.replace('refs/heads/', '')
       ].filter(Boolean)).values()]
     };
   }, releaseStats.repos)
