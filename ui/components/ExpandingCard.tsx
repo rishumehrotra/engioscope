@@ -106,9 +106,9 @@ const Card: React.FC<CardProps> = ({
             {preTabs && (
               <div>
                 {preTabs}
+                <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide">Stages</div>
               </div>
             )}
-            <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide">Stages</div>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
               {
                 tabs.map(tab => (
