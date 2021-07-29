@@ -36,7 +36,10 @@ export default async (config: Config) => {
     console.log('\n');
     console.log('Fetching data for the following projects failed: \n');
     failed.forEach(failure => {
-      console.log(`  ${chalk.red('×')} ${failure[0].join('/')} - Reason: ${failure[1].status === 'rejected' && failure[1].reason}`);
+      console.log(
+        `  ${chalk.red('×')} ${failure[0].join('/')} - Reason: `,
+        failure[1].status === 'rejected' && failure[1].reason
+      );
     });
     console.log('\nRe-run this script to re-fetch the failed data. Data already fetched won\'t be refetched.');
     process.exit(1);

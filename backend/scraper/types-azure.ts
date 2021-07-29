@@ -69,7 +69,7 @@ export type GitRepository = {
   id: string;
   name: string;
   url: string;
-  defaultBranch: string;
+  defaultBranch?: string;
   size: number;
   remoteUrl: string;
   sshUrl: string;

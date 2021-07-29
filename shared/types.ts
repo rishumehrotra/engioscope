@@ -106,7 +106,7 @@ export type RepoAnalysis = {
   name: string;
   id: string;
   url: string;
-  defaultBranch: string;
+  defaultBranch?: string;
   languages?: { lang: string; loc: number; color: string }[];
   commits: UICommits;
   builds: UIBuilds;

@@ -5,7 +5,7 @@ import { Tab } from './Tabs';
 import Metric from '../Metric';
 import TabContents from './TabContents';
 
-export default (defaultBranch: string, branches: RepoAnalysis['branches']): Tab => ({
+export default (defaultBranch: string | undefined, branches: RepoAnalysis['branches']): Tab => ({
   title: 'Branches',
   count: branches.total,
   content: (
@@ -40,9 +40,15 @@ export default (defaultBranch: string, branches: RepoAnalysis['branches']): Tab 
             {' '}
             significantly ahead of
             {' '}
-            <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">{defaultBranch}</code>
-            {' '}
-            (the default branch).
+            {defaultBranch
+              ? (
+                <>
+                  <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">{defaultBranch}</code>
+                  {', '}
+                </>
+              )
+              : ''}
+            the default branch.
             {' '}
             {branches.significantlyAhead.branches.find(b => ['develop', 'development'].includes(b.name)) && (
               <a

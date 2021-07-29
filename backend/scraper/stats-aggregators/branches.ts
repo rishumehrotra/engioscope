@@ -4,7 +4,7 @@ import { isWithinFortnight } from '../../utils';
 
 const significantlyAheadLimit = 20;
 
-export default (repoUrl: string, defaultBranch: string) => (branches: GitBranchStats[]): UIBranches => {
+export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranchStats[]): UIBranches => {
   const activeBranches = branches.filter(b => isWithinFortnight(b.commit.committer.date));
   const inActiveBranches = branches.filter(b => !isWithinFortnight(b.commit.committer.date));
   const abandonedBranches = inActiveBranches.filter(b => b.aheadCount > 0 && b.behindCount > 0);
@@ -24,8 +24,9 @@ export default (repoUrl: string, defaultBranch: string) => (branches: GitBranchS
       limit: significantlyAheadLimit,
       branches: significantlyAheadBranches.map(b => ({
         name: b.name,
+        // TODO: defaultBranch can be undefined! Handle this better.
         // eslint-disable-next-line max-len
-        url: `${repoUrl}/branches?targetVersion=GB${encodeURIComponent(b.name)}&baseVersion=GB${encodeURIComponent(defaultBranch.replace('refs/heads/', ''))}&_a=commits`,
+        url: defaultBranch ? `${repoUrl}/branches?targetVersion=GB${encodeURIComponent(b.name)}&baseVersion=GB${encodeURIComponent(defaultBranch.replace('refs/heads/', ''))}&_a=commits` : '',
         aheadBy: b.aheadCount,
         lastCommitDate: b.commit.committer.date
       }))
