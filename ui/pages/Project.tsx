@@ -10,7 +10,7 @@ import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
-import Releases from './Releases';
+import ReleasePipelines from './ReleasePipelines';
 import AdvancedSearch from '../components/AdvancedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes } from '../types';
@@ -169,7 +169,7 @@ const Project: React.FC = () => {
           <Repos repos={filteredRepos} />
         </Route>
         <Route path="/:collection/:project/releases">
-          <Releases releaseAnalysis={releaseAnalysis} search={search as string} />
+          <ReleasePipelines releaseAnalysis={releaseAnalysis} search={search as string} />
         </Route>
       </Switch>
     </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { RepoAnalysis } from '../../../shared/types';
 import { num } from '../../helpers';
 import AlertMessage from '../AlertMessage';
-import { Tab } from '../ExpandingCard';
+import { Tab } from './Tabs';
 import TabContents from './TabContents';
 
 export default (tests: RepoAnalysis['tests']): Tab => ({

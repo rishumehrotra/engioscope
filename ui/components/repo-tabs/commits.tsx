@@ -2,7 +2,7 @@ import React, { ImgHTMLAttributes, useState } from 'react';
 import { add } from 'rambda';
 import { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../AlertMessage';
-import { Tab } from '../ExpandingCard';
+import { Tab } from './Tabs';
 import TabContents from './TabContents';
 import defaultProfilePic from '../../default-profile-pic.png';
 import { num } from '../../helpers';

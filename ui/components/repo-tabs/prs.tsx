@@ -1,7 +1,7 @@
 import React from 'react';
 import { RepoAnalysis } from '../../../shared/types';
 import { num } from '../../helpers';
-import { Tab } from '../ExpandingCard';
+import { Tab } from './Tabs';
 import Metric from '../Metric';
 import TabContents from './TabContents';
 
