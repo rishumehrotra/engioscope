@@ -23,7 +23,8 @@
     "lint": "eslint \"./**/*.ts\" \"./**/*.tsx\" --cache",
     "scratch": "node -r ts-node/register ./backend/scratch.ts",
     "install:husky": "husky install",
-    "prepare": "npm-run-all --parallel install:husky update-language-colors"
+    "prepare": "npm-run-all --parallel install:husky update-language-colors",
+    "pre-commit": "npm-run-all --parallel test:ci tsc lint"
   },
   "bin": {
     "project-health-tool": "dist/backend/cli.js"
