@@ -378,3 +378,40 @@ export type ReleaseDefinition = {
   projectReference: null;
   url: string;
 };
+
+export type WorkItemTypeReference = {
+  name: string;
+  url: string;
+};
+
+export type WorkItemTypeCategory = {
+  name: string;
+  referenceName: string;
+  defaultWorkItemType: WorkItemTypeReference;
+  workItemTypes: WorkItemTypeReference[];
+  url: string;
+};
+
+export type WorkItemTypeFieldInstance = {
+  defaultValue: string | null;
+  helpText?: string;
+  alwaysRequired: boolean;
+  referenceName: string;
+  name: string;
+  url: string;
+}
+
+export type WorkItemType = {
+  name: string;
+  referenceName: string;
+  description: string;
+  color: string;
+  icon: { id: string; url: string };
+  isDisabled: boolean;
+  xmlForm: string;
+  fields: WorkItemTypeFieldInstance[];
+  fieldInstances: WorkItemTypeFieldInstance[];
+  transitions: Record<string, { to: string }[]>;
+  states: { name: string; color: string; category: string }[];
+  url: string;
+}

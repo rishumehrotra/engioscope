@@ -4,7 +4,7 @@ import { Config } from '../types';
 import { pastDate } from '../../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
-  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun
+  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -149,6 +149,28 @@ export default (config: Config) => {
         headers: () => authHeader,
         cacheFile: pageIndex => [collectionName, projectName, 'repos', repoId, `commits_${pageIndex}`]
       }).then(flattenToValues)
+    ),
+
+    getWorkItemTypes: (collectionName: string, projectName: string) => (
+      getWithCache<CodeCoverageSummary>(
+        [collectionName, projectName, 'work-items', 'types'],
+        () => (
+          fetch(url(collectionName, projectName, `/wit/workitemtypes?${qs.stringify({
+            'api-version': '5.1'
+          })}`), { headers: authHeader })
+        )
+      ).then(res => res.data)
+    ),
+
+    getWorkItemTypeCategories: (collectionName: string, projectName: string) => (
+      getWithCache<{count: number; value: WorkItemTypeCategory[]}>(
+        [collectionName, projectName, 'work-items', 'type-categories'],
+        () => (
+          fetch(url(collectionName, projectName, `/wit/workitemtypecategories?${qs.stringify({
+            'api-version': '5.1'
+          })}`), { headers: authHeader })
+        )
+      ).then(res => res.data)
     )
   };
 };
