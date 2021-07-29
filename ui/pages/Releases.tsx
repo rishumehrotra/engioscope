@@ -4,7 +4,7 @@ import AlertMessage from '../components/AlertMessage';
 import Card from '../components/ExpandingCard';
 import Flair from '../components/Flair';
 import { Branches } from '../components/Icons';
-import Stage from '../components/Stage';
+import Metric from '../components/Metric';
 
 type ReleasesProps = {
   releaseAnalysis: ProjectReleaseAnalysis | undefined;
@@ -99,11 +99,11 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
               count: stage.successCount,
               content: (
                 <div className="grid grid-cols-5 p-6 py-6 rounded-lg bg-gray-100">
-                  <Stage name="Releases" value={stage.releaseCount} position="first" />
-                  <Stage name="Successful releases" value={stage.successCount} />
-                  <Stage name="Successful releases" value={stage.successCount} />
-                  <Stage name="Releases per week" value={stage.successCount === 0 ? '0' : (stage.releaseCount / 4).toFixed(2)} />
-                  <Stage
+                  <Metric name="Releases" value={stage.releaseCount} position="first" />
+                  <Metric name="Successful releases" value={stage.successCount} />
+                  <Metric name="Successful releases" value={stage.successCount} />
+                  <Metric name="Releases per week" value={stage.successCount === 0 ? '0' : (stage.releaseCount / 4).toFixed(2)} />
+                  <Metric
                     name="Success rate"
                     value={(stage.successCount === 0 ? '0%' : `${((stage.successCount * 100) / stage.releaseCount).toFixed(2)}%`)}
                     position="last"
