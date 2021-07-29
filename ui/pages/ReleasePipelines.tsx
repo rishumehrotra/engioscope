@@ -146,7 +146,7 @@ const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}
       key={pipeline.name}
       title={pipeline.name}
       titleUrl={pipeline.url}
-      isExpanded={false}
+      isExpanded={selectedStage !== null}
       onCardClick={() => setSelectedStage(!selectedStage ? pipeline.stages[0] : null)}
       subtitle={(
         <>
@@ -166,17 +166,15 @@ const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}
         <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">Successful releases per stage</div>
         <div className="flex flex-wrap">
           {pipeline.stages.map((stage, index) => (
-            <>
-              <StageName
-                key={stage.name}
-                count={stage.successCount}
-                label={stage.name}
-                isSelected={selectedStage === stage}
-                onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
-                isLast={index === pipeline.stages.length - 1}
-                selectedStage={selectedStage}
-              />
-            </>
+            <StageName
+              key={stage.name}
+              count={stage.successCount}
+              label={stage.name}
+              isSelected={selectedStage === stage}
+              onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
+              isLast={index === pipeline.stages.length - 1}
+              selectedStage={selectedStage}
+            />
           ))}
         </div>
       </div>
