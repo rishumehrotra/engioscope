@@ -179,14 +179,14 @@ const dontFilter = (x: unknown) => Boolean(x);
 const bySearchTerm = (searchTerm: string) => (pipeline: ReleasePipelineStats) => (
   pipeline.name.toLowerCase().includes(searchTerm.toLowerCase())
 );
-const byNonMasterReleases = (pipeline: ReleasePipelineStats) => Object.entries(pipeline.repos)
-  .some(repo => repo.some(branches => branches.toString().toLowerCase().indexOf('master') === -1));
+const byNonMasterReleases = (pipeline: ReleasePipelineStats) => Object.values(pipeline.repos)
+  .some(branches => branches.some(branch => !branch.toLowerCase().includes('master')));
 const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
 const byStageNameExists = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
-  pipeline.stages.some(stage => stage.name.toLowerCase().indexOf(stageNameExists.toLowerCase()) > -1)
+  pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()))
 );
 const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
-  pipeline.stages.some(stage => stage.name.toLowerCase().indexOf(stageNameExists.toLowerCase()) > -1 && stage.releaseCount === 0)
+  pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()) && stage.releaseCount === 0)
 );
 
 type ReleasesProps = {

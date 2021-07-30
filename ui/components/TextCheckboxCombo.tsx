@@ -38,7 +38,7 @@ const TextCheckboxCombo: React.FC<TextCheckboxComboProps> = ({
           <input
             type={type}
             min={0}
-            className="w-6 border-b-2 text-center"
+            className="w-12 border-b-2 text-center"
             value={textValue || value}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setTextValue(e.target.value);

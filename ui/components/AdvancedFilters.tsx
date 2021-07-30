@@ -56,7 +56,7 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 
   return isOpen ? (
     <span
-      style={{ width: '406px' }}
+      style={{ width: '426px' }}
       className={`bg-white text-base text-gray-600 grid grid-cols-2 gap-2 content-center
         mt-12 absolute top-0 right-0 z-10 px-4 py-3
         `}
