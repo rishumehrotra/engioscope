@@ -1,36 +1,10 @@
 import React, { useState } from 'react';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { Filters } from './Icons';
-import { generateId } from '../helpers';
 import { repoPageUrlTypes } from '../types';
+import Checkbox from './Checkbox';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
-
-type CheckboxProps = {
-  value: boolean;
-  label: React.ReactNode;
-  onChange: (value: boolean) => void;
-  disabled?: boolean;
-}
-
-const Checkbox : React.FC<CheckboxProps> = ({
-  value, label, onChange, disabled
-}) => {
-  const id = generateId();
-  return (
-    <span className="text-sm flex items-center">
-      <input
-        id={id}
-        type="checkbox"
-        className="mr-1 cursor-pointer"
-        checked={value}
-        onChange={() => onChange(!value)}
-        disabled={disabled}
-      />
-      <label htmlFor={id} className="font-small text-gray-600 cursor-pointer">{label}</label>
-    </span>
-  );
-};
 
 type TechDebtGreaterThanProps = {
   value: number | undefined;
@@ -69,7 +43,7 @@ const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChan
   );
 };
 
-const AdvancedFilters : React.FC = () => {
+const RepoFilters : React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
@@ -121,4 +95,4 @@ const AdvancedFilters : React.FC = () => {
   );
 };
 
-export default AdvancedFilters;
+export default RepoFilters;
