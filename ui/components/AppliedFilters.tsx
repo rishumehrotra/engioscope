@@ -18,7 +18,14 @@ const AppliedFilters: React.FC<{ count: number }> = ({ count }) => {
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
   const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
-  const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds || (techDebtGreaterThan !== undefined);
+
+  const [nonMasterReleases, setNonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
+  const [stageNameExists, setStageNameExists] = useUrlParams<string>('stageNameExists');
+  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+
+  const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds || (techDebtGreaterThan !== undefined)
+  || nonMasterReleases || notStartsWithArtifact || stageNameExists || stageNameExistsNotUsed;
   if (!isFilterApplied) return null;
 
   return (
@@ -42,6 +49,27 @@ const AppliedFilters: React.FC<{ count: number }> = ({ count }) => {
       {
         techDebtGreaterThan ? (
           <FilterTag label={`Tech debt > ${techDebtGreaterThan}`} onClose={() => setTechDebtGreaterThan(undefined)} />
+        ) : null
+      }
+
+      {
+        nonMasterReleases ? (
+          <FilterTag label="Has commits" onClose={() => setNonMasterReleases(undefined)} />
+        ) : null
+      }
+      {
+        notStartsWithArtifact ? (
+          <FilterTag label="Has builds" onClose={() => setNotStartsWithArtifact(undefined)} />
+        ) : null
+      }
+      {
+        stageNameExists ? (
+          <FilterTag label="Has failing builds" onClose={() => setStageNameExists(undefined)} />
+        ) : null
+      }
+      {
+        stageNameExistsNotUsed ? (
+          <FilterTag label={`Tech debt > ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined)} />
         ) : null
       }
     </div>

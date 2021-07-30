@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { PipelineStageStats, ProjectReleasePipelineAnalysis, ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/AlertMessage';
+import AppliedFilters from '../components/AppliedFilters';
 import Card from '../components/ExpandingCard';
 import Flair from '../components/Flair';
 import { ArrowRight, Branches } from '../components/Icons';
@@ -211,6 +212,8 @@ const ReleasePipelines: React.FC<ReleasesProps> = ({ releaseAnalysis }: Releases
 
   return (
     <>
+      <AppliedFilters count={pipelines.length} />
+
       {pipelines.length ? pipelines.map(pipeline => (
         <Pipeline
           key={pipeline.id}
