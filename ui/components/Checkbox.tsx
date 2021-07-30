@@ -13,7 +13,7 @@ const Checkbox : React.FC<CheckboxProps> = ({
 }) => {
   const id = generateId();
   return (
-    <span className="text-sm flex items-center">
+    <span className="text-sm flex items-baseline">
       <input
         id={id}
         type="checkbox"
