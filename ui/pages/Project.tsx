@@ -11,9 +11,9 @@ import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
 import ReleasePipelines from './ReleasePipelines';
-import AdvancedSearch from '../components/AdvancedFilters';
+import AdvancedFilters from '../components/AdvancedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes } from '../types';
+import { repoPageUrlTypes, Tab } from '../types';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
@@ -96,7 +96,7 @@ const Project: React.FC = () => {
   const [techDebtMoreThanDays] = useUrlParams<number>('techDebtGreaterThan');
 
   const pathParts = history.location.pathname.split('/');
-  const selectedTab = pathParts[pathParts.length - 1];
+  const selectedTab = pathParts[pathParts.length - 1] as Tab;
 
   const onSecondaryMenuSelect = useCallback(
     (selectedKey: string) => {
@@ -134,7 +134,7 @@ const Project: React.FC = () => {
         />
         <div className="flex justify-end">
           <SearchInput className="w-full" onSearch={setSearchTerm} search={search as string} />
-          { selectedTab === 'repos' ? <AdvancedSearch /> : null}
+          <AdvancedFilters type={selectedTab} />
         </div>
       </div>
       <div className="pb-6">

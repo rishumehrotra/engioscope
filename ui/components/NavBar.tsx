@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tab } from '../types';
 
 type NavItem = {
   key: string;
@@ -7,7 +8,7 @@ type NavItem = {
 type NavBarProps = {
   navItems: NavItem[];
   onSelect: (selectedKey: string) => void;
-  selectedTab: string;
+  selectedTab: Tab;
 }
 
 const NavBar : React.FC<NavBarProps> = ({ navItems, onSelect, selectedTab }) => (
