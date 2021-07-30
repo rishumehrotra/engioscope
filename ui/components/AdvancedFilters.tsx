@@ -50,8 +50,8 @@ const RepoFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 
 const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [nonMasterReleases, setNonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
-  const [startsWithArtifact, setStartsWithArtifact] = useUrlParams<boolean>('startsWithArtifact');
-  const [stageNamesExists, setStageNamesExists] = useUrlParams<string>('stageNamesExists');
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
+  const [stageNameExists, setStageNameExists] = useUrlParams<string>('stageNameExists');
   const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
 
   return isOpen ? (
@@ -67,14 +67,14 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
         label={<span>Non master releases</span>}
       />
       <Checkbox
-        value={Boolean(startsWithArtifact)}
-        onChange={setStartsWithArtifact}
+        value={Boolean(notStartsWithArtifact)}
+        onChange={setNotStartsWithArtifact}
         label={<span>Does'nt start with build artifact</span>}
       />
       <TextCheckboxCombo
         type="string"
-        value={stageNamesExists}
-        onChange={setStageNamesExists}
+        value={stageNameExists}
+        onChange={setStageNameExists}
         textBoxPrefix="Stage names containing"
       />
       <TextCheckboxCombo

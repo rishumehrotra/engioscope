@@ -7,8 +7,8 @@ export const repoPageUrlTypes = {
   withFailingLastBuilds: 'boolean',
   techDebtGreaterThan: 'number',
   nonMasterReleases: 'boolean',
-  startsWithArtifact: 'boolean',
-  stageNamesExists: 'string',
+  notStartsWithArtifact: 'boolean',
+  stageNameExists: 'string',
   stageNameExistsNotUsed: 'string'
 } as const;
 

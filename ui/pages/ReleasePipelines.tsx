@@ -6,21 +6,16 @@ import Flair from '../components/Flair';
 import { ArrowRight, Branches } from '../components/Icons';
 import Metric from '../components/Metric';
 import { num } from '../helpers';
+import createUrlParamsHook from '../hooks/create-url-params-hook';
+import { repoPageUrlTypes } from '../types';
 
-type ReleasesProps = {
-  releaseAnalysis: ProjectReleasePipelineAnalysis | undefined;
-  search: string | undefined;
-}
+const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 type StagesToHighlight = {
   stageName: string;
   exists: boolean;
   usesStage: boolean;
 }
-
-const bySearchTerm = (searchTerm: string) => (pipeline: ReleasePipelineStats) => (
-  pipeline.name.toLowerCase().includes(searchTerm.toLowerCase())
-);
 
 type StageNameProps = {
   isSelected: boolean;
@@ -179,11 +174,40 @@ const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: s
   );
 };
 
-const ReleasePipelines: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: ReleasesProps) => {
+const dontFilter = (x: unknown) => Boolean(x);
+const bySearchTerm = (searchTerm: string) => (pipeline: ReleasePipelineStats) => (
+  pipeline.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
+const byNonMasterReleases = (pipeline: ReleasePipelineStats) => Object.entries(pipeline.repos)
+  .some(repo => repo.some(branches => branches.toString().toLowerCase().indexOf('master') === -1));
+const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
+const byStageNameExists = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
+  pipeline.stages.some(stage => stage.name.toLowerCase().indexOf(stageNameExists.toLowerCase()) > -1)
+);
+const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
+  pipeline.stages.some(stage => stage.name.toLowerCase().indexOf(stageNameExists.toLowerCase()) > -1 && stage.releaseCount === 0)
+);
+
+type ReleasesProps = {
+  releaseAnalysis: ProjectReleasePipelineAnalysis | undefined;
+}
+
+const ReleasePipelines: React.FC<ReleasesProps> = ({ releaseAnalysis }: ReleasesProps) => {
+  const [search] = useUrlParams<string>('search');
+  const [nonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
+  const [notStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
+  const [stageNameExists] = useUrlParams<string>('stageNameExists');
+  const [stageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+
   if (!releaseAnalysis) return <div>Loading...</div>;
   if (!releaseAnalysis.pipelines) return <AlertMessage message="No release pipelines found" />;
 
-  const pipelines = releaseAnalysis.pipelines.filter(bySearchTerm(search || ''));
+  const pipelines = releaseAnalysis.pipelines
+    .filter(search === undefined ? dontFilter : bySearchTerm(search))
+    .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
+    .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
+    .filter(stageNameExists === undefined ? dontFilter : byStageNameExists(stageNameExists))
+    .filter(stageNameExistsNotUsed === undefined ? dontFilter : byStageNameExistsNotUsed(stageNameExistsNotUsed));
 
   return (
     <>
