@@ -37,13 +37,13 @@ const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => 
     {Object.keys(pipeline.repos).length ? (
       <ol className="grid grid-flow-col justify-start">
         {Object.entries(pipeline.repos).map(([repoName, branches]) => (
-          <li key={repoName} className="bg-gray-100 pt-3 pb-4 px-4 rounded mb-2 self-start mr-3">
+          <li key={repoName} className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3">
             <div className="font-semibold flex items-center mb-1">
               {repoName}
             </div>
             <ol className="flex flex-wrap">
               {branches.map(branch => (
-                <li key={branch} className="mr-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
+                <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
                   <Branches className="h-4 mr-1" />
                   {branch.replace('refs/heads/', '')}
                 </li>
@@ -72,12 +72,9 @@ const StageName: React.FC<StageNameProps> = ({
   }, [onToggleSelect]);
 
   return (
-    <div className={`flex items-center mt-2 ${isSelected ? 'w-full' : ''}`}>
-      <div className={`py-1 px-4 mr-2
-        ${isSelected ? 'w-full' : ''}
-        ${isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'}
-        ${isSelected ? 'rounded-lg' : 'border rounded'}
-        `}
+    <div className={`flex items-center mt-4 ${isSelected ? 'w-full' : ''}`}>
+      <div className={`py-1 px-4 mr-2 transition-width duration-300 ease-in-out
+        ${isSelected ? 'bg-gray-100 border-transparent w-full' : 'border rounded hover:bg-gray-100'}`}
       >
         <button
           className={`text-gray-900 break-words rounded-t-lg flex

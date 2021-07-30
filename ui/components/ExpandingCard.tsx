@@ -45,7 +45,9 @@ export type CardProps = {
 const Card: React.FC<CardProps> = ({
   title, titleUrl, subtitle, tag, children, onCardClick, isExpanded
 }) => (
-  <div className={`bg-white border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} rounded-lg shadow relative`}>
+  <div className={`bg-white border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
+  transition-colors duration-500 ease-in-out rounded-lg shadow relative`}
+  >
     <div className="grid grid-flow-row mt-2">
       <div
         className="w-full cursor-pointer"
@@ -69,26 +71,6 @@ const Card: React.FC<CardProps> = ({
       </div>
     </div>
     {children}
-    {/* {preTabs && (
-        <div>
-          {preTabs}
-          <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide">Stages</div>
-        </div>
-      )}
-      <div className="mt-4 px-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
-        {
-          tabs.map(tab => (
-            <TopLevelTab
-              key={tab.title}
-              count={tab.count}
-              label={tab.title}
-              isSelected={selectedTab === tab}
-              onToggleSelect={() => setSelectedTab(selectedTab === tab ? null : tab)}
-            />
-          ))
-        }
-      </div>
-      <span role="region">{selectedTab ? selectedTab.content : null}</span> */}
   </div>
 );
 
