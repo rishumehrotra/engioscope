@@ -4,7 +4,7 @@ import { Config } from '../types';
 import { pastDate } from '../../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
-  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun, WorkItemTypeCategory
+  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun, WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -152,7 +152,7 @@ export default (config: Config) => {
     ),
 
     getWorkItemTypes: (collectionName: string, projectName: string) => (
-      getWithCache<CodeCoverageSummary>(
+      getWithCache<{count: number; value: WorkItemType[]}>(
         [collectionName, projectName, 'work-items', 'types'],
         () => (
           fetch(url(collectionName, projectName, `/wit/workitemtypes?${qs.stringify({

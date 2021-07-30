@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ProjectReleaseAnalysis, ReleaseStats } from '../../shared/types';
+import { PipelineStageStats, ProjectReleasePipelineAnalysis, ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/AlertMessage';
 import Card from '../components/ExpandingCard';
 import Flair from '../components/Flair';
@@ -8,7 +8,7 @@ import Metric from '../components/Metric';
 import { num } from '../helpers';
 
 type ReleasesProps = {
-  releaseAnalysis: ProjectReleaseAnalysis | undefined;
+  releaseAnalysis: ProjectReleasePipelineAnalysis | undefined;
   search: string | undefined;
 }
 
@@ -18,7 +18,7 @@ type StagesToHighlight = {
   usesStage: boolean;
 }
 
-const bySearchTerm = (searchTerm: string) => (pipeline: ReleaseStats) => (
+const bySearchTerm = (searchTerm: string) => (pipeline: ReleasePipelineStats) => (
   pipeline.name.toLowerCase().includes(searchTerm.toLowerCase())
 );
 
@@ -28,10 +28,10 @@ type StageNameProps = {
   count: string | number;
   onToggleSelect: () => void;
   isLast: boolean;
-  selectedStage: ReleaseStats['stages'][number] | null;
+  selectedStage: PipelineStageStats | null;
 };
 
-const Artefacts: React.FC<{pipeline:ReleaseStats}> = ({ pipeline }) => (
+const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => (
   <div className="my-4">
     <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts</div>
     {Object.keys(pipeline.repos).length ? (
@@ -124,8 +124,8 @@ const StageName: React.FC<StageNameProps> = ({
   );
 };
 
-const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}> = ({ pipeline, stagesToHighlight }) => {
-  const [selectedStage, setSelectedStage] = useState<ReleaseStats['stages'][number] | null>(null);
+const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: string[]}> = ({ pipeline, stagesToHighlight }) => {
+  const [selectedStage, setSelectedStage] = useState<PipelineStageStats | null>(null);
 
   const highlightExistanceOfStages: StagesToHighlight[] = stagesToHighlight
     ? stagesToHighlight.map(stageToHighlight => {
@@ -182,11 +182,11 @@ const Pipeline: React.FC<{ pipeline: ReleaseStats; stagesToHighlight?: string[]}
   );
 };
 
-const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: ReleasesProps) => {
+const ReleasePipelines: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: ReleasesProps) => {
   if (!releaseAnalysis) return <div>Loading...</div>;
-  if (!releaseAnalysis.releases) return <AlertMessage message="No release pipelines found" />;
+  if (!releaseAnalysis.pipelines) return <AlertMessage message="No release pipelines found" />;
 
-  const pipelines = releaseAnalysis.releases.filter(bySearchTerm(search || ''));
+  const pipelines = releaseAnalysis.pipelines.filter(bySearchTerm(search || ''));
 
   return (
     <>
@@ -201,5 +201,5 @@ const Releases: React.FC<ReleasesProps> = ({ releaseAnalysis, search }: Releases
   );
 };
 
-export default Releases;
+export default ReleasePipelines;
 

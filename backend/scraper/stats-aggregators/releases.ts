@@ -1,7 +1,7 @@
-import { ReleaseStats } from '../../../shared/types';
+import { ReleasePipelineStats } from '../../../shared/types';
 import { Release, ReleaseDefinition } from '../types-azure';
 
-const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): ReleaseStats => ({
+const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): ReleasePipelineStats => ({
   id: releaseDefinition.id,
   name: releaseDefinition.name,
   url: releaseDefinition.url.replace('_apis/Release/definitions/', '_release?definitionId='),
@@ -18,7 +18,7 @@ const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): Release
   repos: {}
 });
 
-const addToReleaseStats = (releaseStats: ReleaseStats, release: Release): ReleaseStats => ({
+const addToReleaseStats = (releaseStats: ReleasePipelineStats, release: Release): ReleasePipelineStats => ({
   ...releaseStats,
   stages: releaseStats.stages.map(stage => {
     const matchingStageInRelease = release.environments.find(e => e.name === stage.name);
@@ -63,5 +63,5 @@ export default (releaseDefinitionById: (id: number) => ReleaseDefinition | undef
         release
       )
     };
-  }, {} as Record<number, ReleaseStats>))
+  }, {} as Record<number, ReleasePipelineStats>))
 );

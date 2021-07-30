@@ -4,7 +4,7 @@ import {
 } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import {
-  ProjectReleaseAnalysis, ProjectRepoAnalysis, RepoAnalysis
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, RepoAnalysis
 } from '../../shared/types';
 import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar from '../components/NavBar';
@@ -84,7 +84,7 @@ const dontFilter = (x: unknown) => Boolean(x);
 const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
-  const [releaseAnalysis, setReleaseAnalysis] = useState<ProjectReleaseAnalysis | undefined>();
+  const [releaseAnalysis, setReleaseAnalysis] = useState<ProjectReleasePipelineAnalysis | undefined>();
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
   const history = useHistory();
@@ -129,7 +129,7 @@ const Project: React.FC = () => {
         <ProjectDetails
           name={projectAnalysis.name}
           repoCount={projectAnalysis.repos.length}
-          releasesCount={releaseAnalysis?.releases?.length || undefined}
+          releasesCount={releaseAnalysis?.pipelines?.length || undefined}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">

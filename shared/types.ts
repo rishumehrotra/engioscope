@@ -3,7 +3,7 @@ export type ScrapedProject = {
   lastUpdated: string | null;
 };
 
-type EnvironmentStats = {
+export type PipelineStageStats = {
   id: number;
   name: string;
   lastReleaseDate: Date;
@@ -11,12 +11,12 @@ type EnvironmentStats = {
   successCount: number;
 };
 
-export type ReleaseStats = {
+export type ReleasePipelineStats = {
   id: number;
   name: string;
   url: string;
   description: string | null;
-  stages: EnvironmentStats[];
+  stages: PipelineStageStats[];
   repos: Record<string, string[]>;
 };
 
@@ -117,16 +117,16 @@ export type RepoAnalysis = {
 };
 
 export type ProjectRepoAnalysis = {
-  lastUpdated: string;
   name: [collection: string, project: string];
+  lastUpdated: string;
   repos: RepoAnalysis[];
   releasePipelineCount: number;
 }
 
-export type ProjectReleaseAnalysis = {
-  lastUpdated: string;
+export type ProjectReleasePipelineAnalysis = {
   name: [collection: string, project: string];
-  releases: ReleaseStats[];
+  lastUpdated: string;
+  pipelines: ReleasePipelineStats[];
   stagesToHighlight?: string[];
   reposCount: number;
 }

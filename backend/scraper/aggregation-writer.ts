@@ -3,8 +3,8 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
 import {
-  ProjectReleaseAnalysis, ProjectRepoAnalysis,
-  ReleaseStats, RepoAnalysis, ScrapedProject
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
+  ReleasePipelineStats, RepoAnalysis, ScrapedProject
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import { Config, ProjectAnalysis } from './types';
@@ -41,15 +41,15 @@ const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: Rep
 
 const writeReleaseAnalysisFile = async (
   projectSpec: ProjectSpec,
-  releaseAnalysis: ReleaseStats[],
+  releaseAnalysis: ReleasePipelineStats[],
   reposCount: number,
   stagesToHighlight?: string[]
 ) => (
   createDataFolder.then(() => {
-    const analysis: ProjectReleaseAnalysis = {
+    const analysis: ProjectReleasePipelineAnalysis = {
       lastUpdated: shortDateFormat(new Date()),
       name: projectSpec,
-      releases: releaseAnalysis,
+      pipelines: releaseAnalysis,
       reposCount,
       stagesToHighlight
     };

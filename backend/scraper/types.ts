@@ -1,4 +1,4 @@
-import { ReleaseStats, RepoAnalysis } from '../../shared/types';
+import { ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
 
 export type Config = Readonly<{
   repoType: 'azure';
@@ -14,5 +14,5 @@ export type Config = Readonly<{
 
 export type ProjectAnalysis = {
   repoAnalysis: RepoAnalysis[];
-  releaseAnalysis: ReleaseStats[];
+  releaseAnalysis: ReleasePipelineStats[];
 }
