@@ -3,45 +3,9 @@ import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { Filters } from './Icons';
 import { repoPageUrlTypes } from '../types';
 import Checkbox from './Checkbox';
+import TextCheckboxCombo from './TextCheckboxCombo';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
-
-type TechDebtGreaterThanProps = {
-  value: number | undefined;
-  onChange: (value: number | undefined) => void;
-};
-
-const TechDebtGreaterThan: React.FC<TechDebtGreaterThanProps> = ({ value, onChange }) => {
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useState<number | undefined>(value);
-
-  const onCheckboxChange = (v: boolean) => {
-    if (!v) onChange(undefined);
-    else onChange(techDebtGreaterThan || 0);
-  };
-
-  return (
-    <Checkbox
-      value={value !== undefined}
-      onChange={onCheckboxChange}
-      label={(
-        <span>
-          Tech debt &gt;
-          <input
-            type="text"
-            className="w-6 border-b-2 text-center"
-            value={value}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setTechDebtGreaterThan(Number(e.target.value));
-              onChange(Number(e.target.value));
-            }}
-          />
-          {' '}
-          days
-        </span>
-      )}
-    />
-  );
-};
 
 const RepoFilters : React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -84,7 +48,7 @@ const RepoFilters : React.FC = () => {
               onChange={setWithFailingLastBuilds}
               label={<span>Has failing builds</span>}
             />
-            <TechDebtGreaterThan
+            <TextCheckboxCombo
               value={techDebtGreaterThan}
               onChange={setTechDebtGreaterThan}
             />
