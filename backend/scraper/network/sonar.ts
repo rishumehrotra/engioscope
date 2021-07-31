@@ -1,5 +1,6 @@
 import qs from 'qs';
 import { pipe, sort } from 'rambda';
+import ms from 'ms';
 import fetch from './fetch-with-timeout';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import { filter, getFirst } from '../../utils';
@@ -59,8 +60,8 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
 );
 
 export default (config: Config) => {
-  const { usingDiskCache } = fetchWithDiskCache(config);
-  const paginatedGet = createPaginatedGetter(config);
+  const { usingDiskCache } = fetchWithDiskCache(ms(config.cacheToDiskFor));
+  const paginatedGet = createPaginatedGetter(ms(config.cacheToDiskFor));
 
   const sonarRepos = Promise.all(config.sonar.map(reposAtSonarServer(paginatedGet)))
     .then(list => list.flat());

@@ -1,8 +1,6 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
 import { GitPullRequest, PullRequestStatus } from '../types-azure';
-import { Config } from '../types';
-import { pastDate } from '../../utils';
 import { UIPullRequests } from '../../../shared/types';
 
 const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) => pr.status === status;
@@ -10,7 +8,7 @@ const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
   pastDate.getTime() < (pr.closedDate || pr.creationDate).getTime()
 );
 
-export default (config: Config) => (prs: GitPullRequest[]) => {
+export default (fromDate: Date) => (prs: GitPullRequest[]) => {
   const prsByRepo = prs.reduce((acc, pr) => ({
     ...acc,
     [pr.repository.id]: [
@@ -22,7 +20,7 @@ export default (config: Config) => (prs: GitPullRequest[]) => {
   return (repoId?: string): UIPullRequests => {
     const repoPrs = repoId ? prsByRepo[repoId] || [] : [];
     const activePrCount = repoPrs.filter(isStatus('active')).length;
-    const prsInTimeWindow = repoPrs.filter(isInTimeWindow(pastDate(config.lookAtPast)));
+    const prsInTimeWindow = repoPrs.filter(isInTimeWindow(fromDate));
     const abandonedPrCount = prsInTimeWindow.filter(isStatus('abandoned')).length;
     const completedPrs = prsInTimeWindow.filter(isStatus('completed'));
 

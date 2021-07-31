@@ -12,6 +12,7 @@ import { Config, ProjectAnalysis } from './types';
 import aggregateTestRunsByBuildId from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
 import { RepoAnalysis } from '../../shared/types';
+import { pastDate } from '../utils';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -47,7 +48,7 @@ export default (config: Config) => {
       forProject(getTestRuns).then(aggregateTestRunsByBuildId),
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
-      forProject(getPRs).then(aggregatePrs(config))
+      forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast)))
     ]);
 
     const getTestsByRepoId = testRunGetter(

@@ -1,6 +1,5 @@
 import qs from 'qs';
 import fetch from './fetch-with-timeout';
-import { Config } from '../types';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 
 type PaginatedGetRequest<T> = {
@@ -11,8 +10,8 @@ type PaginatedGetRequest<T> = {
   qsParams: (pageIndex: number, previousResponse?: FetchResponse<T>) => Record<string, string>;
 };
 
-export default (config: Config) => {
-  const { usingDiskCache } = fetchWithDiskCache(config);
+export default (diskCacheTimeMs: number) => {
+  const { usingDiskCache } = fetchWithDiskCache(diskCacheTimeMs);
 
   return async <T>({
     url, qsParams, cacheFile, headers, hasAnotherPage

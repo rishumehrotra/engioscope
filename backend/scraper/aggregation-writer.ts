@@ -9,7 +9,7 @@ import {
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import { Config, ProjectAnalysis } from './types';
 
-type ProjectSpec = Config['projects'][number];
+type ProjectSpec = [collectionName: string, projectName: string];
 
 const outputFileLog = debug('write-output');
 
@@ -69,13 +69,17 @@ const readOverallSummaryFile = async (): Promise<ScrapedProject[]> => {
     : [];
 };
 
-const populateWithEmptyValuesIfNeeded = (config: Config) => (scrapedProjects: ScrapedProject[]) => (
-  config.projects.map(configProjectSpec => {
+const populateWithEmptyValuesIfNeeded = (config: Config) => (scrapedProjects: ScrapedProject[]) => {
+  const projects = config.azure.collections.flatMap(collection => (
+    collection.projects.map(project => [collection.name, project] as ProjectSpec)
+  ));
+
+  return projects.map(configProjectSpec => {
     const matchingExistingProject = scrapedProjects.find(matchingProject(configProjectSpec));
     if (matchingExistingProject) return matchingExistingProject;
     return { name: configProjectSpec, lastUpdated: null, rating: null };
-  })
-);
+  });
+};
 
 const writeOverallSummaryFile = (scrapedProjects: ScrapedProject[]) => (
   createDataFolder.then(
@@ -107,7 +111,7 @@ export default (config: Config) => (projectSpec: ProjectSpec) => (
       projectSpec,
       analysis.releaseAnalysis,
       analysis.repoAnalysis.length,
-      config.stagesToHighlight
+      config.azure.stagesToHighlight
     ),
     updateOverallSummary(config)({ name: projectSpec })
   ])

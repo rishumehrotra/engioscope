@@ -9,15 +9,21 @@ import { Config } from './types';
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
 
+type ProjectSpec = [collection: string, project: string];
+
 export default async (config: Config) => {
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
   const now = Date.now();
 
+  const projects = config.azure.collections.flatMap(collection => (
+    collection.projects.map(project => [collection.name, project] as ProjectSpec)
+  ));
+
   const results = zip(
-    config.projects,
+    projects,
     await Promise.allSettled(
-      config.projects.map(async projectSpec => (
+      projects.map(async projectSpec => (
         analyseProject(...projectSpec).then(writeToFile(projectSpec))
       ))
     )

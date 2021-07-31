@@ -5,10 +5,8 @@ import { pipeline } from 'stream';
 import { promisify } from 'util';
 import debug from 'debug';
 import { join } from 'path';
-import ms from 'ms';
 import rimraf from '@zkochan/rimraf';
 import { doesFileExist } from '../../utils';
-import { Config } from '../types';
 
 const logFetch = debug('fetch');
 const logNetwork = logFetch.extend('network-io');
@@ -89,7 +87,7 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   logDisk(`${fileNameForLogs(filePath)} written.`);
 };
 
-export default (config: Config) => ({
+export default (diskCacheTimeMs: number) => ({
   usingDiskCache: async <T>(pathParts: string[], fetcher: Fetcher): Promise<FetchResponse<T>> => {
     const fileLocation = cachePath(pathParts);
     const filePath = join(...fileLocation);
@@ -98,7 +96,7 @@ export default (config: Config) => ({
     if (!await doesFileExist(filePath)) {
       await streamToDisk(fileLocation, fetcher);
       fromCache = true;
-    } else if (Date.now() - (await getFrontMatter(filePath)).date > ms(config.cacheToDiskFor)) {
+    } else if (Date.now() - (await getFrontMatter(filePath)).date > diskCacheTimeMs) {
       fromCache = true;
       await streamToDisk(fileLocation, fetcher);
     }

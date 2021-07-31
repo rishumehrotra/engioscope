@@ -1,4 +1,5 @@
 import qs from 'qs';
+import ms from 'ms';
 import fetch from './fetch-with-timeout';
 import { Config } from '../types';
 import { pastDate } from '../../utils';
@@ -30,12 +31,12 @@ const continuationToken = <T>(res: FetchResponse<T> | undefined): Record<string,
 
 export default (config: Config) => {
   const authHeader = {
-    Authorization: `Basic ${Buffer.from(`:${config.token}`).toString('base64')}`
+    Authorization: `Basic ${Buffer.from(`:${config.azure.token}`).toString('base64')}`
   };
-  const paginatedGet = createPaginatedGetter(config);
-  const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(config);
+  const paginatedGet = createPaginatedGetter(ms(config.cacheToDiskFor));
+  const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(ms(config.cacheToDiskFor));
   const url = (collectionName: string, projectName: string, path: string) => (
-    `${config.host}${collectionName}/${projectName}/_apis${path}`
+    `${config.azure.host}${collectionName}/${projectName}/_apis${path}`
   );
   const list = <T>(
     { url, qsParams, cacheFile }:
@@ -53,7 +54,7 @@ export default (config: Config) => {
   return {
     getProjects: (collectionName: string) => (
       list<TeamProjectReference>({
-        url: `${config.host}${collectionName}/_apis/projects`,
+        url: `${config.azure.host}${collectionName}/_apis/projects`,
         cacheFile: [collectionName, 'projects']
       })
     ),
@@ -69,7 +70,7 @@ export default (config: Config) => {
       list<Build>({
         url: url(collectionName, projectName, '/build/builds'),
         qsParams: {
-          minTime: pastDate(config.lookAtPast).toISOString(),
+          minTime: pastDate(config.azure.lookAtPast).toISOString(),
           resultFilter: 'succeeded,failed'
         },
         cacheFile: [collectionName, projectName, 'builds']
@@ -103,7 +104,7 @@ export default (config: Config) => {
         url: url(collectionName, projectName, '/test/runs'),
         qsParams: { includeRunDetails: 'true' },
         cacheFile: [collectionName, projectName, 'testruns']
-      }).then(runs => runs.filter(run => run.startedDate > pastDate(config.lookAtPast)))
+      }).then(runs => runs.filter(run => run.startedDate > pastDate(config.azure.lookAtPast)))
     ),
 
     getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
@@ -130,7 +131,7 @@ export default (config: Config) => {
       list<Release>({
         url: url(collectionName, projectName, '/release/releases'),
         qsParams: {
-          minCreatedTime: pastDate(config.lookAtPast).toISOString(),
+          minCreatedTime: pastDate(config.azure.lookAtPast).toISOString(),
           $expand: 'environments,artifacts'
         },
         cacheFile: [collectionName, projectName, 'releases']
@@ -142,7 +143,7 @@ export default (config: Config) => {
         url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
         qsParams: pageIndex => ({
           ...apiVersion,
-          'searchCriteria.fromDate': pastDate(config.lookAtPast).toISOString(),
+          'searchCriteria.fromDate': pastDate(config.azure.lookAtPast).toISOString(),
           'searchCriteria.$top': '5000',
           'searchCriteria.includeUserImageUrl': 'true',
           ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 1000).toString() })
@@ -178,7 +179,7 @@ export default (config: Config) => {
     getWorkItemIds: (collectionName: string) => (
       usingDiskCache<{count: number; value: WorkItemTypeCategory[]}>(
         [collectionName, '_work-items', 'ids'],
-        () => fetch(`${config.host}${collectionName}/_apis/wit/wiql?${qs.stringify({
+        () => fetch(`${config.azure.host}${collectionName}/_apis/wit/wiql?${qs.stringify({
           'api-version': '5.1'
         })}`, {
           headers: { ...authHeader, 'Content-Type': 'application/json' },
@@ -187,7 +188,7 @@ export default (config: Config) => {
             query: `
                 SELECT *
                 FROM WorkItems
-                WHERE [System.CreatedDate] >= @today-${Math.round((Date.now() - pastDate(config.lookAtPast).getTime()) / dayInMs)}`
+                WHERE [System.CreatedDate] >= @today-${Math.round((Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs)}`
           })
         })
       )
