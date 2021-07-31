@@ -59,7 +59,7 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
 );
 
 export default (config: Config) => {
-  const getWithCache = fetchWithDiskCache(config);
+  const { usingDiskCache } = fetchWithDiskCache(config);
   const paginatedGet = createPaginatedGetter(config);
 
   const sonarRepos = Promise.all(config.sonar.map(reposAtSonarServer(paginatedGet)))
@@ -69,7 +69,7 @@ export default (config: Config) => {
     const currentSonarRepo = getCurrentRepo(repoName)(await sonarRepos);
     if (!currentSonarRepo) return null;
 
-    return getWithCache<{ component?: { measures: Measure[] }}>(
+    return usingDiskCache<{ component?: { measures: Measure[] }}>(
       ['sonar', repoName],
       () => fetch(`${currentSonarRepo.url}/api/measures/component?${qs.stringify({
         component: currentSonarRepo.key,

@@ -6,6 +6,7 @@ import { promisify } from 'util';
 import debug from 'debug';
 import { join } from 'path';
 import ms from 'ms';
+import rimraf from '@zkochan/rimraf';
 import { doesFileExist } from '../../utils';
 import { Config } from '../types';
 
@@ -24,7 +25,7 @@ export type FrontMatter = {
   headers: { [k: string]: string };
 };
 
-export type FetchResponse<T> = FrontMatter & { data: T };
+export type FetchResponse<T> = FrontMatter & { fromCache: boolean; data: T };
 
 const cacheLocation = join(process.cwd(), 'cache');
 
@@ -88,27 +89,47 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   logDisk(`${fileNameForLogs(filePath)} written.`);
 };
 
-export default (config: Config) => async <T>(pathParts: string[], fetcher: Fetcher): Promise<FetchResponse<T>> => {
-  const fileLocation = cachePath(pathParts);
-  const filePath = join(...fileLocation);
+export default (config: Config) => ({
+  usingDiskCache: async <T>(pathParts: string[], fetcher: Fetcher): Promise<FetchResponse<T>> => {
+    const fileLocation = cachePath(pathParts);
+    const filePath = join(...fileLocation);
+    let fromCache = false;
 
-  if (!await doesFileExist(filePath)) {
-    await streamToDisk(fileLocation, fetcher);
-  } else if (Date.now() - (await getFrontMatter(filePath)).date > ms(config.cacheToDiskFor)) {
-    await streamToDisk(fileLocation, fetcher);
+    if (!await doesFileExist(filePath)) {
+      await streamToDisk(fileLocation, fetcher);
+      fromCache = true;
+    } else if (Date.now() - (await getFrontMatter(filePath)).date > ms(config.cacheToDiskFor)) {
+      fromCache = true;
+      await streamToDisk(fileLocation, fetcher);
+    }
+
+    logDisk(`Reading from file ${fileNameForLogs(filePath)}`);
+    const fileContents = await fs.readFile(filePath, 'utf-8');
+    const [frontMatterString, dataString] = fileContents.split('\n');
+
+    try {
+      return {
+        ...JSON.parse(frontMatterString) as FrontMatter,
+        fromCache,
+        data: JSON.parse(dataString, parseDate)
+      };
+    } catch (e) {
+      await fs.unlink(filePath);
+      throw e;
+    }
+  },
+  clearDiskCache: async (pathParts: string[]) => {
+    const possibleDirectory = join(cacheLocation, ...pathParts);
+
+    if (
+      await doesFileExist(possibleDirectory)
+      && (await fs.stat(possibleDirectory)).isDirectory()
+    ) {
+      logDisk(`Deleting directory ${fileNameForLogs(possibleDirectory)}`);
+      await rimraf(possibleDirectory);
+    } else if (await doesFileExist(join(...cachePath(pathParts)))) {
+      logDisk(`Deleting file ${fileNameForLogs(join(...cachePath(pathParts)))}`);
+      await fs.unlink(join(...cachePath(pathParts)));
+    }
   }
-
-  logDisk(`Reading from file ${fileNameForLogs(filePath)}`);
-  const fileContents = await fs.readFile(filePath, 'utf-8');
-  const [frontMatterString, dataString] = fileContents.split('\n');
-
-  try {
-    return {
-      ...JSON.parse(frontMatterString) as FrontMatter,
-      data: JSON.parse(dataString, parseDate)
-    };
-  } catch (e) {
-    await fs.unlink(filePath);
-    throw e;
-  }
-};
+});

@@ -12,7 +12,7 @@ type PaginatedGetRequest<T> = {
 };
 
 export default (config: Config) => {
-  const usingDiskCache = fetchWithDiskCache(config);
+  const { usingDiskCache } = fetchWithDiskCache(config);
 
   return async <T>({
     url, qsParams, cacheFile, headers, hasAnotherPage

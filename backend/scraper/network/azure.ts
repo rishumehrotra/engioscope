@@ -9,6 +9,8 @@ import {
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
 
+const dayInMs = 24 * 60 * 60 * 1000;
+
 const apiVersion = { 'api-version': '5.1' };
 
 const flattenToValues = <T>(xs: FetchResponse<ListOf<T>>[]) => xs.flatMap(x => x.data.value);
@@ -31,7 +33,7 @@ export default (config: Config) => {
     Authorization: `Basic ${Buffer.from(`:${config.token}`).toString('base64')}`
   };
   const paginatedGet = createPaginatedGetter(config);
-  const getWithCache = fetchWithDiskCache(config);
+  const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(config);
   const url = (collectionName: string, projectName: string, path: string) => (
     `${config.host}${collectionName}/${projectName}/_apis${path}`
   );
@@ -105,7 +107,7 @@ export default (config: Config) => {
     ),
 
     getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
-      getWithCache<CodeCoverageSummary>(
+      usingDiskCache<CodeCoverageSummary>(
         [collectionName, projectName, 'coverage', buildId.toString()],
         () => (
           fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
@@ -152,7 +154,7 @@ export default (config: Config) => {
     ),
 
     getWorkItemTypes: (collectionName: string, projectName: string) => (
-      getWithCache<{count: number; value: WorkItemType[]}>(
+      usingDiskCache<{count: number; value: WorkItemType[]}>(
         [collectionName, projectName, 'work-items', 'types'],
         () => (
           fetch(url(collectionName, projectName, `/wit/workitemtypes?${qs.stringify({
@@ -163,7 +165,7 @@ export default (config: Config) => {
     ),
 
     getWorkItemTypeCategories: (collectionName: string, projectName: string) => (
-      getWithCache<{count: number; value: WorkItemTypeCategory[]}>(
+      usingDiskCache<{count: number; value: WorkItemTypeCategory[]}>(
         [collectionName, projectName, 'work-items', 'type-categories'],
         () => (
           fetch(url(collectionName, projectName, `/wit/workitemtypecategories?${qs.stringify({
@@ -171,6 +173,29 @@ export default (config: Config) => {
           })}`), { headers: authHeader })
         )
       ).then(res => res.data)
-    )
+    ),
+
+    getWorkItemIds: (collectionName: string) => (
+      usingDiskCache<{count: number; value: WorkItemTypeCategory[]}>(
+        [collectionName, '_work-items', 'ids'],
+        () => fetch(`${config.host}${collectionName}/_apis/wit/wiql?${qs.stringify({
+          'api-version': '5.1'
+        })}`, {
+          headers: { ...authHeader, 'Content-Type': 'application/json' },
+          method: 'post',
+          body: JSON.stringify({
+            query: `
+                SELECT *
+                FROM WorkItems
+                WHERE [System.CreatedDate] >= @today-${Math.round((Date.now() - pastDate(config.lookAtPast).getTime()) / dayInMs)}`
+          })
+        })
+      )
+    ).then(async res => {
+      if (res.fromCache) {
+        await clearDiskCache([collectionName, '_work-items', 'by-id']);
+      }
+      return res.data;
+    })
   };
 };
