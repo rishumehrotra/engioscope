@@ -392,6 +392,21 @@ export type WorkItemTypeCategory = {
   url: string;
 };
 
+export type WorkItemQueryResult = {
+  asOf: Date;
+  queryType: 'flat' | 'tree' | 'oneHop';
+  queryResultType: 'workItem' | 'workItemLink';
+  columns: {
+    name: string;
+    referenceName: string;
+    url: string;
+  }[];
+  workItems: {
+    id: number;
+    url: string;
+  }[];
+}
+
 export type WorkItemTypeFieldInstance = {
   defaultValue: string | null;
   helpText?: string;
@@ -415,3 +430,66 @@ export type WorkItemType = {
   states: { name: string; color: string; category: string }[];
   url: string;
 }
+
+export type WorkItem = {
+  id: number;
+  rev: number;
+  fields: {
+    'System.TeamProject': string;
+    'System.WorkItemType': string;
+    'System.State': string;
+    'System.ChangedDate': Date;
+    'System.CreatedDate': Date;
+    'System.Title': string;
+    'System.Description': string;
+    'Microsoft.VSTS.TCM.AutomationStatus'?: 'Not Automated' | 'Automated';
+  };
+  url: string;
+}
+
+export type WorkItemLink = {
+  rel: 'System.LinkTypes.Hierarchy'
+  | 'System.LinkTypes.Related'
+  | 'Microsoft.VSTS.Common.TestedBy'
+  | 'System.LinkTypes.Duplicate'
+  | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy'
+  | 'Microsoft.VSTS.Common.Affects'
+  | 'System.LinkTypes.Dependency'
+  | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy';
+  attributes: {
+    linkType: string;
+    sourceId: number;
+    targetId: number;
+    isActive: boolean;
+    changedDate: Date;
+    changedBy: {
+      id: string;
+      displayName: string;
+      uniqueName: string;
+      descriptor: string;
+    };
+    comment: string | null;
+    changedOperation: 'remove' | 'create';
+    sourceProjectId: string;
+    targetProjectId: string;
+  };
+};
+
+export type WorkItemRevision = {
+  id: number;
+  rev: number;
+  fields: {
+    'System.TeamProject': string;
+    'System.WorkItemType': string;
+    'System.State': string;
+    'System.ChangedDate': Date;
+    'System.ChangedBy': string;
+    'System.CreatedDate': Date;
+    'System.CreatedBy': string;
+    'System.AuthorizedDate': Date;
+    'System.RevisedDate': Date;
+    'System.Rev': number;
+    'System.PersonId': number;
+    'System.Title': string;
+  };
+};

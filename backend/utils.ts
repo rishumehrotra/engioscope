@@ -37,3 +37,10 @@ export const doesFileExist = async (filePath: string) => {
     return false;
   }
 };
+
+export const range = (num: number) => [...Array(num).keys()];
+
+export const chunkArray = <T>(array: T[], chunkSize: number) => (
+  range(Math.ceil(array.length / chunkSize))
+    .map(i => array.slice(i * chunkSize, (i + 1) * chunkSize))
+);

@@ -2,10 +2,13 @@ import qs from 'qs';
 import ms from 'ms';
 import fetch from './fetch-with-timeout';
 import { Config } from '../types';
-import { pastDate } from '../../utils';
+import { chunkArray, pastDate } from '../../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
-  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun, WorkItemType, WorkItemTypeCategory
+  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
+  WorkItem,
+  WorkItemLink,
+  WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -176,27 +179,90 @@ export default (config: Config) => {
       ).then(res => res.data)
     ),
 
-    getWorkItemIds: (collectionName: string) => (
-      usingDiskCache<{count: number; value: WorkItemTypeCategory[]}>(
-        [collectionName, '_work-items', 'ids'],
-        () => fetch(`${config.azure.host}${collectionName}/_apis/wit/wiql?${qs.stringify({
+    getWorkItems: async (collectionName: string, projectName: string) => {
+      const daysToLookup = Math.round((Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs);
+      const workItemIdsQuery = `
+        SELECT [Id]
+        FROM WorkItems
+        WHERE 
+          [System.ChangedDate] >= @today-${daysToLookup}
+          AND
+          [System.TeamProject] = @project
+        ORDER BY [System.CreatedDate] ASC
+      `;
+
+      const response = await usingDiskCache<WorkItemQueryResult>(
+        [collectionName, projectName, 'work-items', 'ids'],
+        () => fetch(url(collectionName, projectName, `/wit/wiql?${qs.stringify({
           'api-version': '5.1'
-        })}`, {
+        })}`), {
           headers: { ...authHeader, 'Content-Type': 'application/json' },
           method: 'post',
           body: JSON.stringify({
-            query: `
-                SELECT *
-                FROM WorkItems
-                WHERE [System.CreatedDate] >= @today-${Math.round((Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs)}`
+            query: workItemIdsQuery
           })
         })
-      )
-    ).then(async res => {
-      if (res.fromCache) {
-        await clearDiskCache([collectionName, '_work-items', 'by-id']);
+      );
+
+      if (response.fromCache) {
+        await clearDiskCache([collectionName, projectName, 'work-items', 'by-id']);
       }
-      return res.data;
-    })
+
+      const workItemsById = (await Promise.all(chunkArray(response.data.workItems.map(wi => wi.id), 200)
+        .map((chunk, index) => (
+          usingDiskCache<{ count: number; value: WorkItem[] }>(
+            [collectionName, projectName, 'work-items', 'by-id', String(index)],
+            () => fetch(url(collectionName, projectName, `/wit/workitems/?${qs.stringify({
+              'api-version': '5.1',
+              ids: chunk.join(',')
+            })}`), {
+              headers: authHeader
+            })
+          ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => ({
+            ...acc,
+            [wi.id]: wi
+          }), {}))
+        )))).reduce<Record<number, WorkItem>>((acc, chunk) => ({ ...acc, ...chunk }), {});
+
+      return response.data.workItems.map(wi => workItemsById[wi.id]);
+    },
+
+    getWorkItemLinks: (collectionName: string, projectName: string) => (fromDate: Date) => (
+      paginatedGet<{
+        values: WorkItemLink[];
+        nextLink: string;
+        continuationToken: string;
+        isLastBatch: boolean;
+      }>({
+        url: url(collectionName, projectName, '/wit/reporting/workitemlinks'),
+        qsParams: (_, prev) => ({
+          'api-version': '5.1',
+          startDateTime: fromDate.toISOString(),
+          ...(prev ? ({ continuationToken: prev?.data.continuationToken }) : {})
+        }),
+        headers: () => authHeader,
+        cacheFile: pageIndex => [collectionName, projectName, 'work-items', 'links', String(pageIndex)],
+        hasAnotherPage: previousResponse => !previousResponse.data.isLastBatch
+      }).then(xs => xs.flatMap(x => x.data.values))
+    ),
+
+    getWorkItemRevisions: (collectionName: string, projectName: string) => (fromDate: Date) => (
+      paginatedGet<{
+        values: WorkItemRevision[];
+        nextLink: string;
+        continuationToken: string;
+        isLastBatch: boolean;
+      }>({
+        url: url(collectionName, projectName, '/wit/reporting/workitemrevisions'),
+        qsParams: (_, prev) => ({
+          'api-version': '5.1',
+          startDateTime: fromDate.toISOString(),
+          ...(prev ? ({ continuationToken: prev?.data.continuationToken }) : {})
+        }),
+        headers: () => authHeader,
+        cacheFile: pageIndex => [collectionName, projectName, 'work-items', 'revisions', String(pageIndex)],
+        hasAnotherPage: previousResponse => !previousResponse.data.isLastBatch
+      }).then(xs => xs.flatMap(x => x.data.values))
+    )
   };
 };
