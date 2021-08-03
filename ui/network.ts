@@ -1,4 +1,7 @@
-import { ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, ScrapedProject } from '../shared/types';
+import {
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
+  ScrapedProject, ProjectWorkItemAnalysis
+} from '../shared/types';
 
 const json = (res: Response) => res.json();
 
@@ -12,4 +15,8 @@ export const fetchProjectMetrics = (collection: string, project: string): Promis
 
 export const fetchProjectReleaseMetrics = (collection: string, project: string): Promise<ProjectReleasePipelineAnalysis> => (
   fetch(`/api/${collection}_${project}_releases.json`).then(json)
+);
+
+export const fetchProjectWorkItemAnalysis = (collection: string, project: string): Promise<ProjectWorkItemAnalysis> => (
+  fetch(`/api/${collection}_${project}_work-items.json`).then(json)
 );

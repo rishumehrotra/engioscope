@@ -4,9 +4,9 @@ import {
 } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import {
-  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, RepoAnalysis
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, ProjectWorkItemAnalysis, RepoAnalysis
 } from '../../shared/types';
-import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
+import { fetchProjectMetrics, fetchProjectReleaseMetrics, fetchProjectWorkItemAnalysis } from '../network';
 import NavBar from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
@@ -14,6 +14,7 @@ import ReleasePipelines from './ReleasePipelines';
 import AdvancedFilters from '../components/AdvancedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes, Tab } from '../types';
+import WorkItems from './WorkItems';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
@@ -85,6 +86,7 @@ const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
   const [releaseAnalysis, setReleaseAnalysis] = useState<ProjectReleasePipelineAnalysis | undefined>();
+  const [workItemAnalysis, setWorkItemAnalysis] = useState<ProjectWorkItemAnalysis | undefined>();
   const [sort, setSort] = useState<number>(-1);
   const [sortBy, setSortBy] = useState<string>('Builds');
   const history = useHistory();
@@ -107,10 +109,8 @@ const Project: React.FC = () => {
 
   useEffect(() => {
     fetchProjectMetrics(collection, project).then(setProjectAnalysis);
-  }, [collection, project]);
-
-  useEffect(() => {
     fetchProjectReleaseMetrics(collection, project).then(setReleaseAnalysis);
+    fetchProjectWorkItemAnalysis(collection, project).then(setWorkItemAnalysis);
   }, [collection, project]);
 
   if (!projectAnalysis) return <div>Loading...</div>;
@@ -170,6 +170,9 @@ const Project: React.FC = () => {
         </Route>
         <Route path="/:collection/:project/releases">
           <ReleasePipelines releaseAnalysis={releaseAnalysis} />
+        </Route>
+        <Route path="/:collection/:project/workitems">
+          <WorkItems workItemAnalysis={workItemAnalysis} />
         </Route>
       </Switch>
     </div>

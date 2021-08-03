@@ -162,7 +162,7 @@ export default (config: Config) => {
             'api-version': '5.1'
           })}`), { headers: authHeader })
         )
-      ).then(res => res.data)
+      ).then(res => res.data.value)
     ),
 
     getWorkItemTypeCategories: (collectionName: string, projectName: string) => (
@@ -173,7 +173,7 @@ export default (config: Config) => {
             'api-version': '5.1'
           })}`), { headers: authHeader })
         )
-      ).then(res => res.data)
+      ).then(res => res.data.value)
     ),
 
     getWorkItemIdsForQuery: (collectionName: string, projectName: string) => (

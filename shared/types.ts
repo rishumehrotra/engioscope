@@ -148,6 +148,9 @@ export type UIWorkItem = {
   title: string;
   // description: string;
   url: string;
+  icon: string;
+  color: string;
+  revisions: UIWorkItemRevision[];
 };
 
 export type UIWorkItemRevision = {
@@ -157,6 +160,12 @@ export type UIWorkItemRevision = {
 
 export type AnalysedWorkItem = {
   source: UIWorkItem;
-  targets: (UIWorkItem & { revisions: UIWorkItemRevision[] })[];
-  revisions: UIWorkItemRevision[];
+  targets: UIWorkItem[];
+};
+
+export type ProjectWorkItemAnalysis = {
+  name: [collection: string, project: string];
+  lastUpdated: string;
+  workItems: AnalysedWorkItem[] | null;
+  taskType: string | undefined;
 };

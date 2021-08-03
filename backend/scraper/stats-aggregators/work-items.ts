@@ -1,21 +1,9 @@
 import { AnalysedWorkItem, UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import { assertDefined } from '../../utils';
 import {
-  WorkItem, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemRevision
+  WorkItem, WorkItemQueryHierarchialResult, WorkItemQueryResult,
+  WorkItemRevision, WorkItemType
 } from '../types-azure';
-
-const createUIWorkItem = (workItem: WorkItem): UIWorkItem => ({
-  id: workItem.id,
-  title: workItem.fields['System.Title'],
-  url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
-  type: workItem.fields['System.WorkItemType'],
-  state: workItem.fields['System.State'],
-  project: workItem.fields['System.TeamProject'],
-  created: {
-    on: workItem.fields['System.CreatedDate'].toISOString()
-    // name: workItem.fields['System.CreatedBy']
-  }
-});
 
 const transformRevision = (revision: WorkItemRevision): UIWorkItemRevision => ({
   state: revision.fields['System.State'],
@@ -38,9 +26,15 @@ const aggregateRevisions = (revisions: WorkItemRevision[]) => (
 
 export default async (
   { workItemRelations }: WorkItemQueryResult<WorkItemQueryHierarchialResult>,
+  workItemTypes: WorkItemType[],
   getWorkItemsForIds: (ids: number[]) => Promise<WorkItem[]>,
   getWorkItemRevisions: (workItemId: number) => Promise<WorkItemRevision[]>
 ) => {
+  const workItemTypesByType = workItemTypes.reduce((acc, workItemType) => ({
+    ...acc,
+    [workItemType.name]: workItemType
+  }), {} as { [type: string]: WorkItemType });
+
   const ids = [...new Set(
     workItemRelations
       .flatMap(wir => [wir.source?.id, wir.target?.id])
@@ -55,6 +49,22 @@ export default async (
       ids.map(id => getWorkItemRevisions(id).then(wir => ({ [id]: wir })))
     ).then(wirMap => wirMap.reduce((acc, wir) => ({ ...acc, ...wir }), {}))
   ]);
+
+  const createUIWorkItem = (workItem: WorkItem): UIWorkItem => ({
+    id: workItem.id,
+    title: workItem.fields['System.Title'],
+    url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
+    type: workItem.fields['System.WorkItemType'],
+    state: workItem.fields['System.State'],
+    project: workItem.fields['System.TeamProject'],
+    color: workItemTypesByType[workItem.fields['System.WorkItemType']].color,
+    icon: workItemTypesByType[workItem.fields['System.WorkItemType']].icon.url,
+    created: {
+      on: workItem.fields['System.CreatedDate'].toISOString()
+      // name: workItem.fields['System.CreatedBy']
+    },
+    revisions: aggregateRevisions(workItemRevisions[workItem.id])
+  });
 
   return Object.values(
     workItemRelations.reduce<Record<number, AnalysedWorkItem>>((acc, workItemRelation) => {
@@ -75,18 +85,12 @@ export default async (
           ...(
             acc[source.id] || {
               source: createUIWorkItem(source),
-              targets: [],
-              revisions: aggregateRevisions(workItemRevisions[source.id])
+              targets: []
             }
           ),
           targets: [
             ...(acc[source.id]?.targets || []),
-            target
-              ? {
-                ...createUIWorkItem(target),
-                revisions: aggregateRevisions(workItemRevisions[target.id])
-              }
-              : null
+            target ? createUIWorkItem(target) : null
           ].filter(Boolean).map(assertDefined)
         }
       };

@@ -38,7 +38,6 @@ const createQuery = (config: Config) => {
     WHERE 
       [Source].[System.TeamProject] = @project
       AND [Source].[System.WorkItemType] = '${config.azure.groupWorkItemsUnder}'
-      AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward'
       AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
     ORDER BY [Source].[System.CreatedDate] ASC
   `;
@@ -48,7 +47,7 @@ export default (config: Config) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions,
-    getWorkItemIdsForQuery, getWorkItems, getWorkItemRevisions
+    getWorkItemIdsForQuery, getWorkItems, getWorkItemRevisions, getWorkItemTypes
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
@@ -64,7 +63,8 @@ export default (config: Config) => {
       releaseDefinitionById,
       releases,
       prByRepoId,
-      workItemIdTree
+      workItemIdTree,
+      workItemTypes
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
@@ -74,7 +74,8 @@ export default (config: Config) => {
       forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
       config.azure.groupWorkItemsUnder
         ? forProject(getWorkItemIdsForQuery)(createQuery(config)) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
-        : null
+        : null,
+      forProject(getWorkItemTypes)
     ]);
 
     const getTestsByRepoId = testRunGetter(
@@ -115,7 +116,12 @@ export default (config: Config) => {
       releaseAnalysis: aggregateReleases(releaseDefinitionById, releases),
       workItemAnalysis: workItemIdTree === null
         ? null
-        : await aggregateWorkItems(workItemIdTree, forProject(getWorkItems), forProject(getWorkItemRevisions))
+        : await aggregateWorkItems(
+          workItemIdTree,
+          workItemTypes,
+          forProject(getWorkItems),
+          forProject(getWorkItemRevisions)
+        )
     };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
