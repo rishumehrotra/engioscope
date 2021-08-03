@@ -1,4 +1,4 @@
-import { ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
+import { AnalysedWorkItem, ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
 
 export type Config = Readonly<{
   port: number;
@@ -8,6 +8,7 @@ export type Config = Readonly<{
     token: string;
     lookAtPast: string;
     stagesToHighlight?: string[];
+    groupWorkItemsUnder?: string;
     collections: {
       name: string;
       projects: string[];
@@ -19,4 +20,5 @@ export type Config = Readonly<{
 export type ProjectAnalysis = {
   repoAnalysis: RepoAnalysis[];
   releaseAnalysis: ReleasePipelineStats[];
+  workItemAnalysis: AnalysedWorkItem[] | null;
 }

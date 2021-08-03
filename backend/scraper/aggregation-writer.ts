@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
 import {
+  AnalysedWorkItem,
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ReleasePipelineStats, RepoAnalysis, ScrapedProject
 } from '../../shared/types';
@@ -54,6 +55,19 @@ const writeReleaseAnalysisFile = async (
       stagesToHighlight
     };
     return writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(analysis));
+  })
+);
+
+const writeWorkItemAnalysisFile = async (
+  projectSpec: ProjectSpec,
+  workItemAnalysis: AnalysedWorkItem[] | null
+) => (
+  createDataFolder.then(() => {
+    const analysis = {
+      lastUpdated: shortDateFormat(new Date()),
+      workItems: workItemAnalysis
+    };
+    return writeFile(`${projectSpec.join('_')}_work-items.json`, JSON.stringify(analysis));
   })
 );
 
@@ -113,6 +127,7 @@ export default (config: Config) => (projectSpec: ProjectSpec) => (
       analysis.repoAnalysis.length,
       config.azure.stagesToHighlight
     ),
+    writeWorkItemAnalysisFile(projectSpec, analysis.workItemAnalysis),
     updateOverallSummary(config)({ name: projectSpec })
   ])
 );

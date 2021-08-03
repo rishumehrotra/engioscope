@@ -6,13 +6,11 @@ import { chunkArray, pastDate } from '../../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
-  WorkItem, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemRevision,
+  WorkItem, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemRevision,
   WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
-
-const dayInMs = 24 * 60 * 60 * 1000;
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -178,39 +176,26 @@ export default (config: Config) => {
       ).then(res => res.data)
     ),
 
-    getWorkItemIdsForType: (collectionName: string, projectName: string) => async (workItemType: string) => {
-      const daysToLookup = Math.round((Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs);
-      const workItemIdsQuery = `
-        SELECT [Id]
-        FROM workitemLinks
-        WHERE 
-          [Source].[System.TeamProject] = @project
-          AND [Source].[System.WorkItemType] = '${workItemType}'
-          AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward'
-          AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
-        ORDER BY [Source].[System.CreatedDate] ASC
-        MODE (Recursive)
-      `;
-
-      const response = await usingDiskCache<WorkItemQueryResult<WorkItemQueryHierarchialResult>>(
-        [collectionName, projectName, 'work-items', 'ids'],
-        () => fetch(url(collectionName, projectName, `/wit/wiql?${qs.stringify({
-          'api-version': '5.1'
-        })}`), {
-          headers: { ...authHeader, 'Content-Type': 'application/json' },
-          method: 'post',
-          body: JSON.stringify({
-            query: workItemIdsQuery
+    getWorkItemIdsForQuery: (collectionName: string, projectName: string) => (
+      <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (
+        usingDiskCache<T>(
+          [collectionName, projectName, 'work-items', 'ids'],
+          () => fetch(url(collectionName, projectName, `/wit/wiql?${qs.stringify({
+            'api-version': '5.1'
+          })}`), {
+            headers: { ...authHeader, 'Content-Type': 'application/json' },
+            method: 'post',
+            body: JSON.stringify({ query })
           })
+        ).then(async res => {
+          if (res.fromCache) {
+            await clearDiskCache([collectionName, projectName, 'work-items', 'by-id']);
+          }
+
+          return res.data as T;
         })
-      );
-
-      if (response.fromCache) {
-        await clearDiskCache([collectionName, projectName, 'work-items', 'by-id']);
-      }
-
-      return response.data;
-    },
+      )
+    ),
 
     getWorkItems: (collectionName: string, projectName: string) => async (workItemIds: number[]) => {
       const workItemsById = (await Promise.all(chunkArray(workItemIds, 200)

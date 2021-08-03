@@ -411,15 +411,9 @@ export type WorkItemQueryHierarchialResult = {
 
 export type WorkItemQueryResult<T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult> = {
   asOf: Date;
-  queryType: 'flat' | 'tree' | 'oneHop';
-  queryResultType: 'workItem' | 'workItemLink';
   columns: {
     name: string;
     referenceName: string;
-    url: string;
-  }[];
-  workItems: {
-    id: number;
     url: string;
   }[];
 } & T;

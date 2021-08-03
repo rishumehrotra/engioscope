@@ -7,12 +7,16 @@ import aggregateReleases from './stats-aggregators/releases';
 import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
+import aggregateWorkItems from './stats-aggregators/work-items';
 import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
 import aggregateTestRunsByBuildId from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
 import { RepoAnalysis } from '../../shared/types';
 import { pastDate } from '../utils';
+import { WorkItemQueryHierarchialResult, WorkItemQueryResult } from './types-azure';
+
+const dayInMs = 24 * 60 * 60 * 1000;
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -23,10 +27,28 @@ const getLanguageColor = (lang: string) => {
 
 const analyserLog = debug('analyser');
 
+const createQuery = (config: Config) => {
+  const daysToLookup = Math.round(
+    (Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs
+  );
+
+  return `
+    SELECT [Id]
+    FROM workitemLinks
+    WHERE 
+      [Source].[System.TeamProject] = @project
+      AND [Source].[System.WorkItemType] = '${config.azure.groupWorkItemsUnder}'
+      AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward'
+      AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
+    ORDER BY [Source].[System.CreatedDate] ASC
+  `;
+};
+
 export default (config: Config) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions
+    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions,
+    getWorkItemIdsForQuery, getWorkItems, getWorkItemRevisions
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
@@ -41,14 +63,18 @@ export default (config: Config) => {
       testRunGetter,
       releaseDefinitionById,
       releases,
-      prByRepoId
+      prByRepoId,
+      workItemIdTree
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
       forProject(getTestRuns).then(aggregateTestRunsByBuildId),
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
-      forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast)))
+      forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
+      config.azure.groupWorkItemsUnder
+        ? forProject(getWorkItemIdsForQuery)(createQuery(config)) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
+        : null
     ]);
 
     const getTestsByRepoId = testRunGetter(
@@ -86,7 +112,10 @@ export default (config: Config) => {
 
     const analysisResults = {
       repoAnalysis,
-      releaseAnalysis: aggregateReleases(releaseDefinitionById, releases)
+      releaseAnalysis: aggregateReleases(releaseDefinitionById, releases),
+      workItemAnalysis: workItemIdTree === null
+        ? null
+        : await aggregateWorkItems(workItemIdTree, forProject(getWorkItems), forProject(getWorkItemRevisions))
     };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);

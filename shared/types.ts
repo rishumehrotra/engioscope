@@ -130,3 +130,33 @@ export type ProjectReleasePipelineAnalysis = {
   stagesToHighlight?: string[];
   reposCount: number;
 }
+
+export type UIWorkItem = {
+  id: number;
+  project: string;
+  type: string;
+  state: string;
+  created: {
+    // name: string;
+    on: string;
+    // pic: string;
+  };
+  // assigned: {
+  // name: string;
+  // pic: string;
+  // };
+  title: string;
+  // description: string;
+  url: string;
+};
+
+export type UIWorkItemRevision = {
+  state: string;
+  date: string;
+};
+
+export type AnalysedWorkItem = {
+  source: UIWorkItem;
+  targets: (UIWorkItem & { revisions: UIWorkItemRevision[] })[];
+  revisions: UIWorkItemRevision[];
+};
