@@ -27,7 +27,7 @@
     "pre-commit": "npm-run-all --parallel test:ci tsc lint"
   },
   "bin": {
-    "project-health-tool": "dist/backend/cli.js"
+    "engioscope": "dist/backend/cli.js"
   },
   "dependencies": {
     "@zkochan/rimraf": "^2.1.1",
@@ -111,7 +111,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/znsio/project-health-tool.git"
+    "url": "https://github.com/znsio/engioscope.git"
   },
-  "homepage": "https://github.com/znsio/project-health-tool/blob/main/README.md"
+  "homepage": "https://github.com/znsio/engioscope/blob/main/README.md"
 }

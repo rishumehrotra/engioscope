@@ -31,13 +31,13 @@ const ensureConfigExists = async (argv: { [argName: string]: unknown }) => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { argv } = yargs(process.argv.slice(2))
-  .scriptName('npx project-health-tool')
+  .scriptName('npx engioscope')
   .command('scrape', 'Scrape Azure DevOps', addConfigOption, async argv => {
     const configPath = await ensureConfigExists(argv);
     const config = JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' }));
     await getAllTheThings(config);
   })
-  .command('serve', 'Serve the project-health-tool UI', addConfigOption, async argv => {
+  .command('serve', 'Serve the engioscope UI', addConfigOption, async argv => {
     const configPath = await ensureConfigExists(argv);
     const config = JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' }));
     startServer(config);

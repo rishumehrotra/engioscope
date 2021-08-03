@@ -1,4 +1,5 @@
-# project-health-tool
+# Engioscope
+A tool to analyze engineering health: git practices, build pipelines, code quality, release pipelines, test automation, the list goes on.
 
 To fetch data from APIs:
 ```
