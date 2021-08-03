@@ -392,7 +392,24 @@ export type WorkItemTypeCategory = {
   url: string;
 };
 
-export type WorkItemQueryResult = {
+export type WorkItemQueryFlatResult = {
+  queryType: 'flat';
+  workitems: {
+    id: number;
+    url: string;
+  }[];
+};
+
+export type WorkItemQueryHierarchialResult = {
+  queryType: 'oneHop' | 'tree';
+  workItemRelations: {
+    rel: string | null;
+    source: null | { id: number; url: string };
+    target: null | { id: number; url: string };
+  }[];
+}
+
+export type WorkItemQueryResult<T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult> = {
   asOf: Date;
   queryType: 'flat' | 'tree' | 'oneHop';
   queryResultType: 'workItem' | 'workItemLink';
@@ -405,7 +422,7 @@ export type WorkItemQueryResult = {
     id: number;
     url: string;
   }[];
-}
+} & T;
 
 export type WorkItemTypeFieldInstance = {
   defaultValue: string | null;

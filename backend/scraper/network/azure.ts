@@ -6,9 +6,8 @@ import { chunkArray, pastDate } from '../../utils';
 import {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
-  WorkItem,
-  WorkItemLink,
-  WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
+  WorkItem, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemRevision,
+  WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
 import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
@@ -17,8 +16,8 @@ const dayInMs = 24 * 60 * 60 * 1000;
 
 const apiVersion = { 'api-version': '5.1' };
 
-const flattenToValues = <T>(xs: FetchResponse<ListOf<T>>[]) => xs.flatMap(x => x.data.value);
 type ListOf<T> = { value: T[]; count: number };
+const flattenToValues = <T>(xs: FetchResponse<ListOf<T>>[]) => xs.flatMap(x => x.data.value);
 
 const hasAnotherPage = <T>({ headers }: FetchResponse<T>) => (
   Boolean(headers['x-ms-continuationtoken'])
@@ -179,19 +178,21 @@ export default (config: Config) => {
       ).then(res => res.data)
     ),
 
-    getWorkItems: async (collectionName: string, projectName: string) => {
+    getWorkItemIdsForType: (collectionName: string, projectName: string) => async (workItemType: string) => {
       const daysToLookup = Math.round((Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs);
       const workItemIdsQuery = `
         SELECT [Id]
-        FROM WorkItems
+        FROM workitemLinks
         WHERE 
-          [System.ChangedDate] >= @today-${daysToLookup}
-          AND
-          [System.TeamProject] = @project
-        ORDER BY [System.CreatedDate] ASC
+          [Source].[System.TeamProject] = @project
+          AND [Source].[System.WorkItemType] = '${workItemType}'
+          AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward'
+          AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
+        ORDER BY [Source].[System.CreatedDate] ASC
+        MODE (Recursive)
       `;
 
-      const response = await usingDiskCache<WorkItemQueryResult>(
+      const response = await usingDiskCache<WorkItemQueryResult<WorkItemQueryHierarchialResult>>(
         [collectionName, projectName, 'work-items', 'ids'],
         () => fetch(url(collectionName, projectName, `/wit/wiql?${qs.stringify({
           'api-version': '5.1'
@@ -208,7 +209,11 @@ export default (config: Config) => {
         await clearDiskCache([collectionName, projectName, 'work-items', 'by-id']);
       }
 
-      const workItemsById = (await Promise.all(chunkArray(response.data.workItems.map(wi => wi.id), 200)
+      return response.data;
+    },
+
+    getWorkItems: (collectionName: string, projectName: string) => async (workItemIds: number[]) => {
+      const workItemsById = (await Promise.all(chunkArray(workItemIds, 200)
         .map((chunk, index) => (
           usingDiskCache<{ count: number; value: WorkItem[] }>(
             [collectionName, projectName, 'work-items', 'by-id', String(index)],
@@ -224,45 +229,18 @@ export default (config: Config) => {
           }), {}))
         )))).reduce<Record<number, WorkItem>>((acc, chunk) => ({ ...acc, ...chunk }), {});
 
-      return response.data.workItems.map(wi => workItemsById[wi.id]);
+      return workItemIds.map(wid => workItemsById[wid]);
     },
 
-    getWorkItemLinks: (collectionName: string, projectName: string) => (fromDate: Date) => (
-      paginatedGet<{
-        values: WorkItemLink[];
-        nextLink: string;
-        continuationToken: string;
-        isLastBatch: boolean;
-      }>({
-        url: url(collectionName, projectName, '/wit/reporting/workitemlinks'),
-        qsParams: (_, prev) => ({
-          'api-version': '5.1',
-          startDateTime: fromDate.toISOString(),
-          ...(prev ? ({ continuationToken: prev?.data.continuationToken }) : {})
-        }),
-        headers: () => authHeader,
-        cacheFile: pageIndex => [collectionName, projectName, 'work-items', 'links', String(pageIndex)],
-        hasAnotherPage: previousResponse => !previousResponse.data.isLastBatch
-      }).then(xs => xs.flatMap(x => x.data.values))
-    ),
-
-    getWorkItemRevisions: (collectionName: string, projectName: string) => (fromDate: Date) => (
-      paginatedGet<{
-        values: WorkItemRevision[];
-        nextLink: string;
-        continuationToken: string;
-        isLastBatch: boolean;
-      }>({
-        url: url(collectionName, projectName, '/wit/reporting/workitemrevisions'),
-        qsParams: (_, prev) => ({
-          'api-version': '5.1',
-          startDateTime: fromDate.toISOString(),
-          ...(prev ? ({ continuationToken: prev?.data.continuationToken }) : {})
-        }),
-        headers: () => authHeader,
-        cacheFile: pageIndex => [collectionName, projectName, 'work-items', 'revisions', String(pageIndex)],
-        hasAnotherPage: previousResponse => !previousResponse.data.isLastBatch
-      }).then(xs => xs.flatMap(x => x.data.values))
+    getWorkItemRevisions: (collectionName: string, projectName: string) => (workItemId: number) => (
+      usingDiskCache<ListOf<WorkItemRevision>>(
+        [collectionName, projectName, 'work-items', 'revisions', String(workItemId)],
+        () => fetch(url(collectionName, projectName, `/wit/workitems/${workItemId}/revisions?${qs.stringify({
+          'api-version': '5.1'
+        })}`), {
+          headers: authHeader
+        })
+      ).then(x => x.data.value)
     )
   };
 };
