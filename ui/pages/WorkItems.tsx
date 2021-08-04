@@ -3,9 +3,12 @@ import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
 import WorkItemsGnattChart from '../components/WorkItemsGnattChart';
 
 const colorPalette = [
-  '#ffb5e8', '#ff9cee', '#b28dff', '#b5b9ff',
-  '#97a2ff', '#85e3ff', '#6eb5ff', '#bffcc6',
-  '#e7ffac', '#ffabab', '#fff5ba', '#afcbff'
+  '#2ab7ca', '#fed766',
+  '#0e9aa7', '#3da4ab', '#f6cd61', '#fe8a71',
+  '#96ceb4', '#ffeead', '#ff6f69', '#ffcc5c', '#88d8b0',
+  '#a8e6cf', '#dcedc1', '#ffd3b6', '#ffaaa5', '#ff8b94',
+  '#00b159', '#00aedb', '#f37735', '#ffc425',
+  '#edc951', '#eb6841', '#00a0b0', '#fe4a49'
 ];
 
 const createColorPalette = (workItems: AnalysedWorkItem[]) => {

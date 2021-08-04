@@ -117,7 +117,7 @@ const WorkItemsGnattChart: React.FC<WorkItemsGnattChartProps> = ({ workItem, col
           >
             <a
               href={target.url}
-              className="text-blue-600 truncate w-full mt-1 inline-block text-sm"
+              className="text-blue-600 truncate w-full flex mt-1 items-center text-sm"
               style={{ width: `${textWidth}px` }}
               target="_blank"
               rel="noreferrer"
@@ -127,7 +127,7 @@ const WorkItemsGnattChart: React.FC<WorkItemsGnattChartProps> = ({ workItem, col
                 src={target.icon}
                 alt={`Icon for ${target.type}`}
                 width="16"
-                className="float-left mt-1 mr-1"
+                className="float-left mr-1"
               />
               {target.title}
             </a>
