@@ -1,4 +1,4 @@
-export type Tab = 'repos' | 'releases';
+export type Tab = 'repos' | 'release-pipelines';
 
 export const repoPageUrlTypes = {
   search: 'string',

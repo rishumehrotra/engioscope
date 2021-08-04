@@ -101,7 +101,7 @@ const AdvancedFilters : React.FC<{ type : Tab}> = ({ type }) => {
         {/* {isFilterApplied ? <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" /> : null} */}
       </button>
       {type === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
-      {type === 'releases' ? <PipelinesFilters isOpen={isOpen} /> : null}
+      {type === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
     </span>
   );
 };

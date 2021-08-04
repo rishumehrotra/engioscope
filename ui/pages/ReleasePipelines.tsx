@@ -46,7 +46,6 @@ const ReleasePipelines: React.FC<ReleasesProps> = ({ releaseAnalysis }: Releases
   return (
     <>
       <AppliedFilters count={pipelines.length} />
-
       {pipelines.length ? pipelines.map(pipeline => (
         <Pipeline
           key={pipeline.id}

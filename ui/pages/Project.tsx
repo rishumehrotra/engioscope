@@ -143,7 +143,7 @@ const Project: React.FC = () => {
       <div className="grid grid-cols-2 mb-8">
         <NavBar
           onSelect={onSecondaryMenuSelect}
-          navItems={[{ key: 'repos' }, { key: 'releases' }]}
+          navItems={[{ key: 'repos', name: 'Repos' }, { key: 'release-pipelines', name: 'Release pipelines' }]}
           selectedTab={selectedTab}
         />
         { selectedTab === 'repos' ? (
@@ -168,7 +168,7 @@ const Project: React.FC = () => {
         <Route path="/:collection/:project/repos">
           <Repos repos={filteredRepos} />
         </Route>
-        <Route path="/:collection/:project/releases">
+        <Route path="/:collection/:project/release-pipelines">
           <ReleasePipelines releaseAnalysis={releaseAnalysis} />
         </Route>
         <Route path="/:collection/:project/workitems">
