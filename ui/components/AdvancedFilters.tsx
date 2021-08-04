@@ -69,7 +69,7 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
       <Checkbox
         value={Boolean(notStartsWithArtifact)}
         onChange={setNotStartsWithArtifact}
-        label={<span>Does'nt start with build artifact</span>}
+        label={<span>Doesn't start with build artifact</span>}
       />
       <TextCheckboxCombo
         type="string"
