@@ -52,7 +52,7 @@ const WorkItems: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis | undefine
             <h3 className="mb-2">
               <a
                 href={workItem.source.url}
-                className="text-blue-600 font-bold text-lg truncate inline-block w-full"
+                className="text-blue-600 font-bold text-lg truncate inline-block w-full hover:underline"
                 target="_blank"
                 rel="noreferrer"
               >

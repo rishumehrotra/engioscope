@@ -117,7 +117,7 @@ const WorkItemsGnattChart: React.FC<WorkItemsGnattChartProps> = ({ workItem, col
           >
             <a
               href={target.url}
-              className="text-blue-600 truncate w-full flex mt-1 items-center text-sm"
+              className="text-blue-600 truncate w-full flex mt-1 items-center text-sm hover:underline"
               style={{ width: `${textWidth}px` }}
               target="_blank"
               rel="noreferrer"

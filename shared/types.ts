@@ -121,6 +121,7 @@ export type ProjectRepoAnalysis = {
   lastUpdated: string;
   repos: RepoAnalysis[];
   releasePipelineCount: number;
+  workItemCount: number;
 }
 
 export type ProjectReleasePipelineAnalysis = {
@@ -129,6 +130,7 @@ export type ProjectReleasePipelineAnalysis = {
   pipelines: ReleasePipelineStats[];
   stagesToHighlight?: string[];
   reposCount: number;
+  workItemCount: number;
 }
 
 export type UIWorkItem = {
@@ -168,4 +170,6 @@ export type ProjectWorkItemAnalysis = {
   lastUpdated: string;
   workItems: AnalysedWorkItem[] | null;
   taskType: string | undefined;
+  releasePipelineCount: number;
+  reposCount: number;
 };

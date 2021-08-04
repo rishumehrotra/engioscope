@@ -3,8 +3,8 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
 import {
-  AnalysedWorkItem, ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
-  ProjectWorkItemAnalysis, ReleasePipelineStats, RepoAnalysis, ScrapedProject
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
+  ProjectWorkItemAnalysis, ScrapedProject
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import { Config, ProjectAnalysis } from './types';
@@ -27,13 +27,17 @@ const writeFile = (path: string, contents: string) => {
   return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
 };
 
-const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: RepoAnalysis[], releasePipelineCount: number) => (
+const writeRepoAnalysisFile = async (
+  projectSpec: ProjectSpec,
+  projectAnalysis: ProjectAnalysis
+) => (
   createDataFolder.then(() => {
     const analysis: ProjectRepoAnalysis = {
       lastUpdated: shortDateFormat(new Date()),
       name: projectSpec,
-      repos: repoAnalysis,
-      releasePipelineCount
+      repos: projectAnalysis.repoAnalysis,
+      releasePipelineCount: projectAnalysis.releaseAnalysis.length,
+      workItemCount: projectAnalysis.workItemAnalysis?.length || 0
     };
     return writeFile(`${projectSpec.join('_')}.json`, JSON.stringify(analysis));
   })
@@ -41,16 +45,16 @@ const writeRepoAnalysisFile = async (projectSpec: ProjectSpec, repoAnalysis: Rep
 
 const writeReleaseAnalysisFile = async (
   projectSpec: ProjectSpec,
-  releaseAnalysis: ReleasePipelineStats[],
-  reposCount: number,
-  stagesToHighlight?: string[]
+  projectAnalysis: ProjectAnalysis,
+  stagesToHighlight: string[] | undefined
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectReleasePipelineAnalysis = {
       lastUpdated: shortDateFormat(new Date()),
       name: projectSpec,
-      pipelines: releaseAnalysis,
-      reposCount,
+      pipelines: projectAnalysis.releaseAnalysis,
+      reposCount: projectAnalysis.repoAnalysis.length,
+      workItemCount: projectAnalysis.workItemAnalysis?.length || 0,
       stagesToHighlight
     };
     return writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(analysis));
@@ -59,15 +63,17 @@ const writeReleaseAnalysisFile = async (
 
 const writeWorkItemAnalysisFile = async (
   projectSpec: ProjectSpec,
-  taskType: string | undefined,
-  workItemAnalysis: AnalysedWorkItem[] | null
+  projectAnalysis: ProjectAnalysis,
+  taskType: string | undefined
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectWorkItemAnalysis = {
       name: projectSpec,
       lastUpdated: shortDateFormat(new Date()),
-      workItems: workItemAnalysis,
-      taskType
+      workItems: projectAnalysis.workItemAnalysis,
+      taskType,
+      releasePipelineCount: projectAnalysis.releaseAnalysis.length,
+      reposCount: projectAnalysis.repoAnalysis.length
     };
     return writeFile(`${projectSpec.join('_')}_work-items.json`, JSON.stringify(analysis));
   })
@@ -118,22 +124,9 @@ const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedPr
 
 export default (config: Config) => (projectSpec: ProjectSpec) => (
   (analysis: ProjectAnalysis) => Promise.all([
-    writeRepoAnalysisFile(
-      projectSpec,
-      analysis.repoAnalysis,
-      analysis.releaseAnalysis.length
-    ),
-    writeReleaseAnalysisFile(
-      projectSpec,
-      analysis.releaseAnalysis,
-      analysis.repoAnalysis.length,
-      config.azure.stagesToHighlight
-    ),
-    writeWorkItemAnalysisFile(
-      projectSpec,
-      config.azure.groupWorkItemsUnder,
-      analysis.workItemAnalysis
-    ),
+    writeRepoAnalysisFile(projectSpec, analysis),
+    writeReleaseAnalysisFile(projectSpec, analysis, config.azure.stagesToHighlight),
+    writeWorkItemAnalysisFile(projectSpec, analysis, config.azure.groupWorkItemsUnder),
     updateOverallSummary(config)({ name: projectSpec })
   ])
 );
