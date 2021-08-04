@@ -129,7 +129,7 @@ const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: s
       return {
         stageName: stageToHighlight,
         exists: !!matchingStage,
-        usesStage: (matchingStage?.releaseCount || 0) > 0
+        usesStage: (matchingStage?.successCount || 0) > 0
       };
     })
     : [];
