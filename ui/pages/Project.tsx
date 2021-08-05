@@ -31,11 +31,11 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'
     <h1 className="text-4xl font-semibold text-gray-800">
       {name[1]}
       <span className="text-base ml-2 text-gray-600">
-        {renderIfAvailable(repoCount)('repositories')}
+        {renderIfAvailable(repoCount)('Repositories')}
         {repoCount && releasesCount ? ' | ' : ''}
-        {renderIfAvailable(releasesCount)('pipelines')}
+        {renderIfAvailable(releasesCount)('Release pipelines')}
         {workItemsCount ? ' | ' : ''}
-        {renderIfAvailable(workItemsCount)('work items')}
+        {renderIfAvailable(workItemsCount)('Work items')}
       </span>
     </h1>
     <p className="text-sm text-gray-600 mt-2 flex items-center">
