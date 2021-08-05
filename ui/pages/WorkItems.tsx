@@ -1,6 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
 import WorkItemsGnattChart from '../components/WorkItemsGnattChart';
+import { fetchProjectWorkItemAnalysis } from '../network';
+import createUrlParamsHook from '../hooks/create-url-params-hook';
+import { repoPageUrlTypes } from '../types';
+import { dontFilter } from '../helpers';
+
+const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 const colorPalette = [
   '#2ab7ca', '#fed766',
@@ -25,12 +31,25 @@ const createColorPalette = (workItems: AnalysedWorkItem[]) => {
     }), {});
 };
 
-const WorkItems: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis | undefined }> = ({ workItemAnalysis }) => {
+const bySearchTerm = (searchTerm: string) => (workItem: AnalysedWorkItem) => (
+  workItem.source.title.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+const WorkItems: React.FC<{ collection: string; project:string }> = ({ collection, project }) => {
+  const [workItemAnalysis, setWorkItemAnalysis] = useState<ProjectWorkItemAnalysis | undefined>();
+  const [search] = useUrlParams<string>('search');
+
+  useEffect(() => {
+    fetchProjectWorkItemAnalysis(collection, project).then(setWorkItemAnalysis);
+  }, [collection, project]);
+
   const colorsForStages = useMemo(() => (
     workItemAnalysis?.workItems ? createColorPalette(workItemAnalysis.workItems) : {}
   ), [workItemAnalysis]);
 
   if (!workItemAnalysis) return <div>Loading...</div>;
+
+  const filteredWorkItems = workItemAnalysis.workItems?.filter(search === undefined ? dontFilter : bySearchTerm(search));
 
   return (
     <div>
@@ -44,7 +63,7 @@ const WorkItems: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis | undefine
         {workItemAnalysis.workItems?.length}
       </div>
       <ul>
-        {workItemAnalysis.workItems?.map(workItem => (
+        {filteredWorkItems?.map(workItem => (
           <li
             key={workItem.source.id}
             className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out rounded-lg shadow relative"

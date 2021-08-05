@@ -39,3 +39,6 @@ export const formatDebt = (debtInMins: number) => {
 export const generateId = () => (
   Math.random().toString(36).replace(/[^a-z]+/g, '').substr(2, 10)
 );
+
+export const dontFilter = (x: unknown) => Boolean(x);
+
