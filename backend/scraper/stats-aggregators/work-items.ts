@@ -17,7 +17,7 @@ const aggregateRevisions = (revisions: WorkItemRevision[]) => (
     }
 
     if (acc[acc.length - 1].state === revision.fields['System.State']) {
-      return [...acc.slice(0, -1), transformRevision(revision)];
+      return acc;
     }
 
     return [...acc, transformRevision(revision)];
