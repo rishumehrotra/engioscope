@@ -13,7 +13,7 @@ import ReleasePipelines from './ReleasePipelines';
 import AdvancedFilters from '../components/AdvancedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import {
-  repoPageUrlTypes, Tab, reposSortByParams, workItemsSortByParams
+  repoPageUrlTypes, Tab, reposSortByParams
 } from '../types';
 import { useReposSortBy, useSortOrder } from '../hooks/query-params-hooks';
 import WorkItems from './WorkItems';
@@ -162,7 +162,7 @@ const Project: React.FC = () => {
           selectedTab={selectedTab}
         />
         {selectedTab === 'repos' ? <SortControls options={reposSortByParams} defaultSortBy="Builds" /> : null }
-        {selectedTab === 'workitems' ? <SortControls options={workItemsSortByParams} defaultSortBy="Bundle size" /> : null }
+        {/* {selectedTab === 'workitems' ? <SortControls options={workItemsSortByParams} defaultSortBy="Bundle size" /> : null } */}
       </div>
 
       <Switch>
