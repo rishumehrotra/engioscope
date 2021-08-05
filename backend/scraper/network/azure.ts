@@ -71,7 +71,8 @@ export default (config: Config) => {
         url: url(collectionName, projectName, '/build/builds'),
         qsParams: {
           minTime: pastDate(config.azure.lookAtPast).toISOString(),
-          resultFilter: 'succeeded,failed'
+          resultFilter: 'succeeded,failed',
+          $top: '5000'
         },
         cacheFile: [collectionName, projectName, 'builds']
       })
