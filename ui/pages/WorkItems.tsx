@@ -53,17 +53,8 @@ const WorkItems: React.FC<{ collection: string; project:string }> = ({ collectio
 
   return (
     <div>
-      <div className="mb-4">
-        Tasks named
-        {' '}
-        "
-        {workItemAnalysis.taskType}
-        " -
-        {' '}
-        {workItemAnalysis.workItems?.length}
-      </div>
       <ul>
-        {filteredWorkItems?.map(workItem => (
+        {filteredWorkItems?.sort((a, b) => b.targets.length - a.targets.length).map(workItem => (
           <li
             key={workItem.source.id}
             className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out rounded-lg shadow relative"

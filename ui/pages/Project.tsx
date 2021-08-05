@@ -83,7 +83,7 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
 );
 
 const addWorkItemsTab = (workItemsCount: number) => (tabs: NavItem[]) => (
-  workItemsCount > 0 ? [...tabs, { key: 'workitems', name: 'Work items' }] : tabs
+  workItemsCount > 0 ? [...tabs, { key: 'workitems', name: 'Releases' }] : tabs
 );
 
 const Project: React.FC = () => {
@@ -146,8 +146,10 @@ const Project: React.FC = () => {
       <div className="grid grid-cols-2 mb-8">
         <NavBar
           onSelect={onSecondaryMenuSelect}
-          navItems={addWorkItemsTab(projectAnalysis.workItemCount)([{ key: 'repos', name: 'Repos' },
-            { key: 'release-pipelines', name: 'Release pipelines' }])}
+          navItems={addWorkItemsTab(projectAnalysis.workItemCount)([
+            { key: 'repos', name: 'Repos' },
+            { key: 'release-pipelines', name: 'Release pipelines' }
+          ])}
           selectedTab={selectedTab}
         />
         { selectedTab === 'repos' ? (

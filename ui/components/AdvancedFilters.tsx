@@ -93,13 +93,15 @@ const AdvancedFilters : React.FC<{ type : Tab}> = ({ type }) => {
 
   return (
     <span className="grid items-center ml-1 relative">
-      <button onClick={() => setIsOpen(!isOpen)}>
-        <Filters
-          className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
-          tooltip="Advanced Filters"
-        />
-        {/* {isFilterApplied ? <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" /> : null} */}
-      </button>
+      {type === 'workitems' ? null : (
+        <button onClick={() => setIsOpen(!isOpen)}>
+          <Filters
+            className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
+            tooltip="Advanced Filters"
+          />
+          {/* {isFilterApplied ? <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" /> : null} */}
+        </button>
+      )}
       {type === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
       {type === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
     </span>
