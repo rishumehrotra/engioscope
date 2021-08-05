@@ -25,7 +25,8 @@
     "rerender",
     "semibold",
     "squale",
-    "timeframe"
+    "timeframe",
+    "workitems"
   ],
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   "eslint.alwaysShowStatus": true,

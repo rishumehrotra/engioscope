@@ -7,7 +7,7 @@ import {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, RepoAnalysis
 } from '../../shared/types';
 import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
-import NavBar from '../components/NavBar';
+import NavBar, { NavItem } from '../components/NavBar';
 import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
 import ReleasePipelines from './ReleasePipelines';
@@ -21,8 +21,8 @@ const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
-{repoCount: number; releasesCount?: number}> = ({
-  name, repoCount, lastUpdated, releasesCount
+{repoCount: number; releasesCount?: number; workItemsCount?: number}> = ({
+  name, repoCount, lastUpdated, releasesCount, workItemsCount
 }) => (
   <div className="col-span-2">
     <h1 className="text-4xl font-semibold text-gray-800">
@@ -31,6 +31,8 @@ const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'
         {renderIfAvailable(repoCount)('repositories')}
         {repoCount && releasesCount ? ' | ' : ''}
         {renderIfAvailable(releasesCount)('pipelines')}
+        {workItemsCount ? ' | ' : ''}
+        {renderIfAvailable(workItemsCount)('work items')}
       </span>
     </h1>
     <p className="text-sm text-gray-600 mt-2 flex items-center">
@@ -76,9 +78,12 @@ const byBuildsGreaterThanZero = (repo: RepoAnalysis) => (repo.builds?.count || 0
 const byFailingLastBuilds = (repo: RepoAnalysis) => (
   repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded')
 );
-
 const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) => (
   (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
+);
+
+const addWorkItemsTab = (workItemsCount: number) => (tabs: NavItem[]) => (
+  workItemsCount > 0 ? [...tabs, { key: 'workitems', name: 'Work items' }] : tabs
 );
 
 const Project: React.FC = () => {
@@ -126,7 +131,8 @@ const Project: React.FC = () => {
         <ProjectDetails
           name={projectAnalysis.name}
           repoCount={projectAnalysis.repos.length}
-          releasesCount={releaseAnalysis?.pipelines?.length || undefined}
+          releasesCount={projectAnalysis.releasePipelineCount}
+          workItemsCount={projectAnalysis.workItemCount}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
@@ -140,7 +146,8 @@ const Project: React.FC = () => {
       <div className="grid grid-cols-2 mb-8">
         <NavBar
           onSelect={onSecondaryMenuSelect}
-          navItems={[{ key: 'repos', name: 'Repos' }, { key: 'release-pipelines', name: 'Release pipelines' }]}
+          navItems={addWorkItemsTab(projectAnalysis.workItemCount)([{ key: 'repos', name: 'Repos' },
+            { key: 'release-pipelines', name: 'Release pipelines' }])}
           selectedTab={selectedTab}
         />
         { selectedTab === 'repos' ? (
