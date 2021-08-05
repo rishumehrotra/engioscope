@@ -45,7 +45,9 @@
     "node-fetch": "^2.6.1",
     "pretty-ms": "^7.0.1",
     "qs": "^6.7.0",
+    "query-string": "^7.0.1",
     "rambda": "^6.8.2",
+    "use-query-params": "^1.2.3",
     "yaml": "^1.10.2",
     "yargs": "^17.0.1"
   },

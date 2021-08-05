@@ -12,3 +12,14 @@ export const repoPageUrlTypes = {
   stageNameExistsNotUsed: 'string'
 } as const;
 
+export const workItemsSortByParams = ['Bundle size', 'Time for release'] as const;
+
+export const reposSortByParams = [
+  'Builds',
+  'Branches',
+  'Commits',
+  'Pull requests',
+  'Tests',
+  'Code quality'
+] as const;
+

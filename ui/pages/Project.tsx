@@ -8,14 +8,17 @@ import {
 } from '../../shared/types';
 import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar, { NavItem } from '../components/NavBar';
-import SortButtons from '../components/SortButtons';
 import Repos from './Repos';
 import ReleasePipelines from './ReleasePipelines';
 import AdvancedFilters from '../components/AdvancedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes, Tab } from '../types';
+import {
+  repoPageUrlTypes, Tab, reposSortByParams, workItemsSortByParams
+} from '../types';
+import { useReposSortBy, useSortOrder } from '../hooks/query-params-hooks';
 import WorkItems from './WorkItems';
 import { dontFilter } from '../helpers';
+import SortControls from '../components/SortButtons';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
@@ -82,7 +85,7 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
   (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
 );
 
-const addWorkItemsTab = (workItemsCount: number) => (tabs: NavItem[]) => (
+const addWorkItemsTab = (workItemsCount: number) => (tabs: NavItem[]): NavItem[] => (
   workItemsCount > 0 ? [...tabs, { key: 'workitems', name: 'Releases' }] : tabs
 );
 
@@ -90,8 +93,8 @@ const Project: React.FC = () => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
   const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
   const [releaseAnalysis, setReleaseAnalysis] = useState<ProjectReleasePipelineAnalysis | undefined>();
-  const [sort, setSort] = useState<number>(-1);
-  const [sortBy, setSortBy] = useState<string>('Builds');
+  const [sort] = useSortOrder();
+  const [sortBy] = useReposSortBy();
   const history = useHistory();
 
   const [search, setSearchTerm] = useUrlParams<string>('search');
@@ -123,7 +126,7 @@ const Project: React.FC = () => {
     .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
     .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
     .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
-    .sort(sortByIndicators(sortBy, sort));
+    .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
 
   return (
     <div>
@@ -152,22 +155,8 @@ const Project: React.FC = () => {
           ])}
           selectedTab={selectedTab}
         />
-        { selectedTab === 'repos' ? (
-          <SortButtons
-            sort={sort}
-            setSort={setSort}
-            setSortBy={setSortBy}
-            sortBy={sortBy}
-            labels={[
-              'Builds',
-              'Branches',
-              'Commits',
-              'Pull requests',
-              'Tests',
-              'Code quality'
-            ]}
-          />
-        ) : null}
+        {selectedTab === 'repos' ? <SortControls options={reposSortByParams} defaultSortBy="Builds" /> : null }
+        {selectedTab === 'workitems' ? <SortControls options={workItemsSortByParams} defaultSortBy="Bundle size" /> : null }
       </div>
 
       <Switch>

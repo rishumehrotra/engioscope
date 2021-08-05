@@ -2,7 +2,7 @@ import React from 'react';
 import { Tab } from '../types';
 
 export type NavItem = {
-  key: string;
+  key: Tab;
   name?: string;
 };
 
