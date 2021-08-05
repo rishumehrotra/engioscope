@@ -21,26 +21,32 @@ import { dontFilter } from '../helpers';
 import SortControls from '../components/SortButtons';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
-const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? `${count} ${label}` : '');
+const renderIfAvailable = (count: number | undefined) => (label: string) => (count ? (
+  <>
+    <span className="font-bold text-lg">{count}</span>
+    {' '}
+    <span>{label}</span>
+  </>
+) : '');
 
 const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
 {repoCount: number; releasesCount?: number; workItemsCount?: number}> = ({
   name, repoCount, lastUpdated, releasesCount, workItemsCount
 }) => (
   <div className="col-span-2">
-    <h1 className="text-4xl font-semibold text-gray-800">
+    <h1 className="text-3xl font-semibold text-gray-800">
       {name[1]}
-      <span className="text-base ml-2 text-gray-600">
+      <div className="text-base mt-2 font-normal text-gray-800">
         {renderIfAvailable(repoCount)('Repositories')}
         {repoCount && releasesCount ? ' | ' : ''}
         {renderIfAvailable(releasesCount)('Release pipelines')}
         {workItemsCount ? ' | ' : ''}
         {renderIfAvailable(workItemsCount)('Work items')}
-      </span>
+      </div>
     </h1>
-    <p className="text-sm text-gray-600 mt-2 flex items-center">
+    <p className="text-sm text-gray-500 mt-2 flex items-center">
       Last updated on
-      <span className="font-bold text-gray-800 ml-1">{lastUpdated}</span>
+      <span className="font-semibold text-gray-600 ml-1">{lastUpdated}</span>
     </p>
   </div>
 );

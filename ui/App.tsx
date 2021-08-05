@@ -8,7 +8,7 @@ import {
 import { QueryParamProvider } from 'use-query-params';
 import Project from './pages/Project';
 import Collection from './pages/Collection';
-import logo from './logo.png';
+import logo from './images/engioscope-serif.png';
 
 const App: React.FC = () => (
   <div className="my-8 mb-32 overflow-y-auto transition duration-500 ease-in-out">
@@ -16,7 +16,7 @@ const App: React.FC = () => (
       <Router>
         <QueryParamProvider ReactRouterRoute={Route}>
           <Link to="/">
-            <img src={logo} alt="Logo" className="w-32" />
+            <img src={logo} alt="Logo" className="w-36" />
           </Link>
           <Switch>
             <Route path="/:collection/:project">
