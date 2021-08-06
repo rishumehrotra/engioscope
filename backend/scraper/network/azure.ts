@@ -1,5 +1,6 @@
 import qs from 'qs';
 import ms from 'ms';
+import md5 from 'md5';
 import fetch from './fetch-with-timeout';
 import { Config } from '../types';
 import { chunkArray, pastDate } from '../../utils';
@@ -180,7 +181,7 @@ export default (config: Config) => {
     getWorkItemIdsForQuery: (collectionName: string, projectName: string) => (
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (
         usingDiskCache<T>(
-          [collectionName, projectName, 'work-items', 'ids'],
+          [collectionName, projectName, 'work-items', `ids_${md5(query)}`],
           () => fetch(
             url(collectionName, projectName, `/wit/wiql?${qs.stringify(apiVersion)}`),
             {
