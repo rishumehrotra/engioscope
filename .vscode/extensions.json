@@ -9,7 +9,8 @@
     "christian-kohler.npm-intellisense",
     "jpoissonnier.vscode-styled-components",
     "formulahendry.auto-close-tag",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+    "github.vscode-pull-request-github"
   ],
   // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
   "unwantedRecommendations": []

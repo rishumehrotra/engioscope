@@ -38,4 +38,27 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
+  "githubIssues.useBranchForIssues": "off",
+  "githubIssues.queries": [
+    {
+      "label": "UI issues",
+      "query": "state:open repo:${owner}/${repository} sort:created-desc label:\"ui\""
+    },
+    {
+      "label": "Design issues",
+      "query": "state:open repo:${owner}/${repository} sort:created-desc label:\"design\""
+    },
+    {
+      "label": "Scraper issues",
+      "query": "state:open repo:${owner}/${repository} sort:created-desc label:\"scraper\""
+    },
+    {
+      "label": "Assigned to me",
+      "query": "state:open repo:${owner}/${repository} sort:created-desc asignee:@me"
+    },
+    {
+      "label": "All open issues",
+      "query": "state:open repo:${owner}/${repository} sort:created-desc"
+    }
+  ]
 }
