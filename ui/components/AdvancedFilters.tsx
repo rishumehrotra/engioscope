@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { Filters } from './Icons';
 import { repoPageUrlTypes, Tab } from '../types';
 import Checkbox from './Checkbox';
 import TextCheckboxCombo from './TextCheckboxCombo';
+import useOnClickOutside from '../hooks/on-click-outside';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -89,7 +90,9 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 };
 
 const AdvancedFilters : React.FC<{ type : Tab}> = ({ type }) => {
+  const ref = useRef(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  useOnClickOutside(ref, () => setIsOpen(false));
 
   return (
     <span className="grid items-center ml-1 relative">
@@ -102,8 +105,10 @@ const AdvancedFilters : React.FC<{ type : Tab}> = ({ type }) => {
           {/* {isFilterApplied ? <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" /> : null} */}
         </button>
       )}
-      {type === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
-      {type === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
+      <span ref={ref}>
+        {type === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
+        {type === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
+      </span>
     </span>
   );
 };
