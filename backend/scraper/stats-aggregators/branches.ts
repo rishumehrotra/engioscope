@@ -18,7 +18,7 @@ export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranch
     total: branches.length,
     active: activeBranches.length,
     abandoned: abandonedBranches.length,
-    deleteCandidates: deleteCandidates.length,
+    deleteCandidates: deleteCandidates.length > 0 ? deleteCandidates.length - 1 : 0, // accounting for master which is not behind itself
     possiblyConflicting: possiblyConflicting.length,
     significantlyAhead: {
       limit: significantlyAheadLimit,
