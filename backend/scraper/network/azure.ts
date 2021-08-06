@@ -17,7 +17,7 @@ const apiVersion = { 'api-version': '5.1' };
 type ListOf<T> = { value: T[]; count: number };
 const flattenToValues = <T>(xs: FetchResponse<ListOf<T>>[]) => xs.flatMap(x => x.data.value);
 
-const hasAnotherPage = <T>({ headers }: FetchResponse<T>) => (
+const responseHasContinuationToken = <T>({ headers }: FetchResponse<T>) => (
   Boolean(headers['x-ms-continuationtoken'])
 );
 
@@ -45,7 +45,7 @@ export default (config: Config) => {
     paginatedGet<ListOf<T>>({
       url,
       qsParams: (_, prev) => ({ ...apiVersion, ...continuationToken(prev), ...qsParams }),
-      hasAnotherPage,
+      hasAnotherPage: responseHasContinuationToken,
       headers: () => authHeader,
       cacheFile: pageIndex => [...cacheFile.slice(0, -1), `${cacheFile[cacheFile.length - 1]}_${pageIndex}`]
     }).then(flattenToValues)
@@ -101,25 +101,23 @@ export default (config: Config) => {
     ),
 
     getTestRuns: (collectionName: string, projectName: string) => ({ uri: buildUri }: Pick<Build, 'uri'>) => (
-      usingDiskCache<{count: number; value: TestRun[]}>(
+      list<TestRun>({
+        url: url(collectionName, projectName, '/test/runs'),
+        qsParams: { includeRunDetails: 'true', buildUri },
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        [collectionName, projectName, 'testruns', buildUri.split('/').pop()!],
-        () => (
-          fetch(url(collectionName, projectName, `/test/runs?${qs.stringify({
-            ...apiVersion, includeRunDetails: 'true', buildUri
-          })}`), { headers: authHeader })
-        )
-      ).then(res => res.data.value)
+        cacheFile: [collectionName, projectName, 'testruns', buildUri.split('/').pop()!]
+      })
     ),
 
     getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
       usingDiskCache<CodeCoverageSummary>(
         [collectionName, projectName, 'coverage', buildId.toString()],
-        () => (
-          fetch(url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
+        () => fetch(
+          url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
             'api-version': '5.1-preview',
             buildId: buildId.toString()
-          })}`), { headers: authHeader })
+          })}`),
+          { headers: authHeader }
         )
       ).then(res => res.data)
     ),
@@ -162,10 +160,9 @@ export default (config: Config) => {
     getWorkItemTypes: (collectionName: string, projectName: string) => (
       usingDiskCache<{count: number; value: WorkItemType[]}>(
         [collectionName, projectName, 'work-items', 'types'],
-        () => (
-          fetch(url(collectionName, projectName, `/wit/workitemtypes?${qs.stringify({
-            'api-version': '5.1'
-          })}`), { headers: authHeader })
+        () => fetch(
+          url(collectionName, projectName, `/wit/workitemtypes?${qs.stringify(apiVersion)}`),
+          { headers: authHeader }
         )
       ).then(res => res.data.value)
     ),
@@ -173,10 +170,9 @@ export default (config: Config) => {
     getWorkItemTypeCategories: (collectionName: string, projectName: string) => (
       usingDiskCache<{count: number; value: WorkItemTypeCategory[]}>(
         [collectionName, projectName, 'work-items', 'type-categories'],
-        () => (
-          fetch(url(collectionName, projectName, `/wit/workitemtypecategories?${qs.stringify({
-            'api-version': '5.1'
-          })}`), { headers: authHeader })
+        () => fetch(
+          url(collectionName, projectName, `/wit/workitemtypecategories?${qs.stringify(apiVersion)}`),
+          { headers: authHeader }
         )
       ).then(res => res.data.value)
     ),
@@ -185,18 +181,18 @@ export default (config: Config) => {
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (
         usingDiskCache<T>(
           [collectionName, projectName, 'work-items', 'ids'],
-          () => fetch(url(collectionName, projectName, `/wit/wiql?${qs.stringify({
-            'api-version': '5.1'
-          })}`), {
-            headers: { ...authHeader, 'Content-Type': 'application/json' },
-            method: 'post',
-            body: JSON.stringify({ query })
-          })
+          () => fetch(
+            url(collectionName, projectName, `/wit/wiql?${qs.stringify(apiVersion)}`),
+            {
+              headers: { ...authHeader, 'Content-Type': 'application/json' },
+              method: 'post',
+              body: JSON.stringify({ query })
+            }
+          )
         ).then(async res => {
           if (res.fromCache) {
             await clearDiskCache([collectionName, projectName, 'work-items', 'by-id']);
           }
-
           return res.data as T;
         })
       )
@@ -207,12 +203,13 @@ export default (config: Config) => {
         .map((chunk, index) => (
           usingDiskCache<{ count: number; value: WorkItem[] }>(
             [collectionName, projectName, 'work-items', 'by-id', String(index)],
-            () => fetch(url(collectionName, projectName, `/wit/workitems/?${qs.stringify({
-              'api-version': '5.1',
-              ids: chunk.join(',')
-            })}`), {
-              headers: authHeader
-            })
+            () => fetch(
+              url(collectionName, projectName, `/wit/workitems/?${qs.stringify({
+                ...apiVersion,
+                ids: chunk.join(',')
+              })}`),
+              { headers: authHeader }
+            )
           ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => ({
             ...acc,
             [wi.id]: wi
@@ -225,11 +222,10 @@ export default (config: Config) => {
     getWorkItemRevisions: (collectionName: string, projectName: string) => (workItemId: number) => (
       usingDiskCache<ListOf<WorkItemRevision>>(
         [collectionName, projectName, 'work-items', 'revisions', String(workItemId)],
-        () => fetch(url(collectionName, projectName, `/wit/workitems/${workItemId}/revisions?${qs.stringify({
-          'api-version': '5.1'
-        })}`), {
-          headers: authHeader
-        })
+        () => fetch(
+          url(collectionName, projectName, `/wit/workitems/${workItemId}/revisions?${qs.stringify(apiVersion)}`),
+          { headers: authHeader }
+        )
       ).then(x => x.data.value)
     )
   };
