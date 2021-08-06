@@ -10,7 +10,7 @@ import aggregateReleaseDefinitions from './stats-aggregators/release-definitions
 import aggregateWorkItems from './stats-aggregators/work-items';
 import sonar from './network/sonar';
 import { Config, ProjectAnalysis } from './types';
-import aggregateTestRunsByBuildId from './stats-aggregators/test-runs';
+import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
 import { RepoAnalysis } from '../../shared/types';
 import { pastDate } from '../utils';
@@ -59,7 +59,6 @@ export default (config: Config) => {
     const [
       repos,
       { buildsByRepoId, latestMasterBuilds },
-      testRunGetter,
       releaseDefinitionById,
       releases,
       prByRepoId,
@@ -68,7 +67,6 @@ export default (config: Config) => {
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
-      forProject(getTestRuns).then(aggregateTestRunsByBuildId),
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
@@ -78,8 +76,8 @@ export default (config: Config) => {
       forProject(getWorkItemTypes)
     ]);
 
-    const getTestsByRepoId = testRunGetter(
-      latestMasterBuilds, forProject(getTestCoverage)
+    const getTestsByRepoId = aggregateTestRuns(
+      forProject(getTestRuns), forProject(getTestCoverage), latestMasterBuilds
     );
 
     const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {

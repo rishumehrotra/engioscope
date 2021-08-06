@@ -100,12 +100,16 @@ export default (config: Config) => {
       })
     ),
 
-    getTestRuns: (collectionName: string, projectName: string) => (
-      list<TestRun>({
-        url: url(collectionName, projectName, '/test/runs'),
-        qsParams: { includeRunDetails: 'true' },
-        cacheFile: [collectionName, projectName, 'testruns']
-      }).then(runs => runs.filter(run => run.startedDate > pastDate(config.azure.lookAtPast)))
+    getTestRuns: (collectionName: string, projectName: string) => ({ uri: buildUri }: Pick<Build, 'uri'>) => (
+      usingDiskCache<{count: number; value: TestRun[]}>(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        [collectionName, projectName, 'testruns', buildUri.split('/').pop()!],
+        () => (
+          fetch(url(collectionName, projectName, `/test/runs?${qs.stringify({
+            ...apiVersion, includeRunDetails: 'true', buildUri
+          })}`), { headers: authHeader })
+        )
+      ).then(res => res.data.value)
     ),
 
     getTestCoverage: (collectionName: string, projectName: string) => (buildId: number) => (
