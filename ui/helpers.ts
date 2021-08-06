@@ -41,4 +41,3 @@ export const generateId = () => (
 );
 
 export const dontFilter = (x: unknown) => Boolean(x);
-

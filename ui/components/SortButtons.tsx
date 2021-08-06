@@ -42,7 +42,7 @@ type SortControlsProps<T extends string> = {
 }
 
 const SortControls = <T extends string>({ options, defaultSortBy }: SortControlsProps<T>) => {
-  const useSortByQueryParam = createUrlParamsHookFromUnion(options, defaultSortBy);
+  const useSortByQueryParam = createUrlParamsHookFromUnion(options, defaultSortBy, 'sortBy');
   const [sort, setSort] = useSortOrder();
   const [sortBy, setSortBy] = useSortByQueryParam();
 

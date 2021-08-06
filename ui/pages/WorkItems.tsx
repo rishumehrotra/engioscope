@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { last } from 'rambda';
 import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
 import WorkItemsGnattChart from '../components/WorkItemsGnattChart';
 import { fetchProjectWorkItemAnalysis } from '../network';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes } from '../types';
+import { repoPageUrlTypes, workItemsSortByParams } from '../types';
 import { dontFilter } from '../helpers';
+import { useSortOrder, useWorkItemsSortBy } from '../hooks/query-params-hooks';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -34,10 +36,20 @@ const createColorPalette = (workItems: AnalysedWorkItem[]) => {
 const bySearchTerm = (searchTerm: string) => (workItem: AnalysedWorkItem) => (
   workItem.source.title.toLowerCase().includes(searchTerm.toLowerCase())
 );
+const sortByIndicators = (sortBy: typeof workItemsSortByParams[number],
+  sort: -1 | 1) => (a: AnalysedWorkItem, b: AnalysedWorkItem) => {
+  if (sortBy === 'Bundle size') {
+    return sort * (a.targets.length - b.targets.length);
+  }
+  return sort * (new Date(last(last(a.targets).revisions).date || last(a.targets).created.on).getDate()
+    - new Date(b.targets[0].created.on).getDate());
+};
 
 const WorkItems: React.FC<{ collection: string; project:string }> = ({ collection, project }) => {
   const [workItemAnalysis, setWorkItemAnalysis] = useState<ProjectWorkItemAnalysis | undefined>();
   const [search] = useUrlParams<string>('search');
+  const [sort] = useSortOrder();
+  const [sortBy] = useWorkItemsSortBy();
 
   useEffect(() => {
     fetchProjectWorkItemAnalysis(collection, project).then(setWorkItemAnalysis);
@@ -49,25 +61,32 @@ const WorkItems: React.FC<{ collection: string; project:string }> = ({ collectio
 
   if (!workItemAnalysis) return <div>Loading...</div>;
 
-  const filteredWorkItems = workItemAnalysis.workItems?.filter(search === undefined ? dontFilter : bySearchTerm(search));
+  const filteredWorkItems = workItemAnalysis.workItems
+    ?.filter(search === undefined ? dontFilter : bySearchTerm(search))
+    .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
 
   return (
     <div>
       <ul>
-        {filteredWorkItems?.sort((a, b) => b.targets.length - a.targets.length).map(workItem => (
+        {filteredWorkItems?.map(workItem => (
           <li
             key={workItem.source.id}
             className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out rounded-lg shadow relative"
           >
-            <h3 className="mb-2">
+            <h3 className="mb-2 flex justify-between">
               <a
                 href={workItem.source.url}
-                className="text-blue-600 font-bold text-lg truncate inline-block w-full hover:underline"
+                className="text-blue-600 font-bold text-lg truncate inline-block w-4/5 hover:underline"
                 target="_blank"
                 rel="noreferrer"
               >
                 {workItem.source.title}
               </a>
+              <span className="text-gray-500 text-sm">
+                Bundle size
+                {' '}
+                {workItem.targets.length}
+              </span>
             </h3>
             <WorkItemsGnattChart workItem={workItem} colorsForStages={colorsForStages} />
           </li>
