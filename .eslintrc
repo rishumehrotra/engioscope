@@ -33,7 +33,11 @@
     "consistent-return": "off",
     "comma-dangle": [
       "error",
-      "never"
+      "never",
+    ],
+    "quote-props": [
+      "error",
+      "consistent"
     ],
     "quotes": [
       "error",

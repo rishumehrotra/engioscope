@@ -85,7 +85,7 @@ export default (config: Config) => {
         qsParams: pageIndex => ({
           ...apiVersion,
           'searchCriteria.status': 'all',
-          $top: '1000',
+          '$top': '1000',
           ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 1000).toString() })
         }),
         hasAnotherPage: previousResponse => previousResponse.data.count === 1000,
@@ -116,7 +116,7 @@ export default (config: Config) => {
         () => fetch(
           url(collectionName, projectName, `/test/codecoverage?${qs.stringify({
             'api-version': '5.1-preview',
-            buildId: buildId.toString()
+            'buildId': buildId.toString()
           })}`),
           { headers: authHeader }
         )

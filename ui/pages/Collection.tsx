@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ScrapedProject } from '../../shared/types';
+import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 
 const Project: React.FC<{
@@ -22,7 +23,10 @@ const Project: React.FC<{
 
 const Collection: React.FC = () => {
   const [collections, setCollections] = useState<ScrapedProject[] | undefined>();
+  const setProjectDetails = useSetProjectDetails();
+
   useEffect(() => { fetchCollections().then(setCollections); }, []);
+  useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
 
   if (!collections) return <div>loading...</div>;
 

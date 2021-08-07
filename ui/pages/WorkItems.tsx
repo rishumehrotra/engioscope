@@ -4,9 +4,8 @@ import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
 import WorkItemsGnattChart from '../components/WorkItemsGanttChart';
 import { fetchProjectWorkItemAnalysis } from '../network';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes, workItemsSortByParams } from '../types';
+import { repoPageUrlTypes } from '../types';
 import { dontFilter } from '../helpers/utils';
-import { useSortOrder, useWorkItemsSortBy } from '../hooks/query-params-hooks';
 import useListing, { UseListingHookArg } from '../hooks/use-listing';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
@@ -35,19 +34,6 @@ const createColorPalette = (workItems: AnalysedWorkItem[]) => {
 
 const bySearchTerm = (searchTerm: string) => (workItem: AnalysedWorkItem) => (
   workItem.source.title.toLowerCase().includes(searchTerm.toLowerCase())
-);
-
-const sortByIndicators = (sortBy: typeof workItemsSortByParams[number], sort: -1 | 1) => (
-  (a: AnalysedWorkItem, b: AnalysedWorkItem) => {
-    if (sortBy === 'Bundle size') {
-      return sort * (a.targets.length - b.targets.length);
-    }
-
-    return sort * (
-      new Date(b.targets[0].created.on).getDate()
-      - new Date(last(last(a.targets).revisions).date || last(a.targets).created.on).getDate()
-    );
-  }
 );
 
 type WorkItemProps = {
@@ -79,14 +65,22 @@ const WorkItem: React.FC<WorkItemProps> = ({ workItem, colorsForStages }) => (
 
 const workItemsListing: UseListingHookArg<ProjectWorkItemAnalysis, AnalysedWorkItem> = {
   fetcher: fetchProjectWorkItemAnalysis,
-  list: workItemAnalysis => workItemAnalysis.workItems || []
+  list: workItemAnalysis => workItemAnalysis.workItems || [],
+  sort: {
+    by: {
+      'Bundle size': (a, b) => a.targets.length - b.targets.length,
+      'Cycle time': (a, b) => (
+        new Date(last(last(a.targets).revisions).date || last(a.targets).created.on).getDate()
+        - new Date(b.targets[0].created.on).getDate()
+      )
+    },
+    default: 'Bundle size'
+  }
 };
 
 const WorkItems: React.FC = () => {
   const workItemAnalysis = useListing(workItemsListing);
   const [search] = useUrlParams<string>('search');
-  const [sort] = useSortOrder();
-  const [sortBy] = useWorkItemsSortBy();
 
   const colorsForStages = useMemo(() => {
     if (workItemAnalysis === 'loading') return {};
@@ -96,8 +90,8 @@ const WorkItems: React.FC = () => {
   if (workItemAnalysis === 'loading') return <div>Loading...</div>;
 
   const filteredWorkItems = workItemAnalysis.list
-    ?.filter(search === undefined ? dontFilter : bySearchTerm(search))
-    .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
+    ?.filter(search === undefined ? dontFilter : bySearchTerm(search));
+    // .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
 
   return (
     <ul>

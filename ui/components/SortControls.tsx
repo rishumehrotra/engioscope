@@ -1,18 +1,21 @@
-import React from 'react';
-import createUrlParamsHookFromUnion from '../hooks/create-url-params-hook-from-union';
-import { useSortOrder } from '../hooks/query-params-hooks';
+import React, { useCallback } from 'react';
+import { useSortOptions, useSortParams } from '../hooks/sort-hooks';
 import { Ascending, Descending } from './Icons';
 import Select from './Select';
 
-type SortControlsProps<T extends string> = {
-  options: Readonly<T[]>;
-  defaultSortBy: T;
-}
+const SortControls: React.FC = () => {
+  const [sortParams, setSortParams] = useSortParams();
+  const sortOptions = useSortOptions();
 
-const SortControls = <T extends string>({ options, defaultSortBy }: SortControlsProps<T>) => {
-  const useSortByQueryParam = createUrlParamsHookFromUnion(options, defaultSortBy, 'sortBy');
-  const [sort, setSort] = useSortOrder();
-  const [sortBy, setSortBy] = useSortByQueryParam();
+  const setSortDirection = useCallback(() => {
+    setSortParams({ sort: sortParams.sort === 'asc' ? undefined : 'asc' });
+  }, [setSortParams, sortParams.sort]);
+
+  const onSortByChange = useCallback((sortBy: string) => {
+    setSortParams({ sortBy: sortBy === sortOptions?.defaultKey ? undefined : sortBy });
+  }, [setSortParams, sortOptions?.defaultKey]);
+
+  if (!sortOptions) return null;
 
   return (
     <div className="flex items-center justify-end justify-items-end">
@@ -20,18 +23,18 @@ const SortControls = <T extends string>({ options, defaultSortBy }: SortControls
         className="text-base font-medium text-gray-600
           flex justify-end rounded-lg cursor-pointer"
         style={{ outline: 'none' }}
-        onClick={() => setSort(sort === 'asc' ? 'desc' : 'asc')}
+        onClick={setSortDirection}
       >
-        {sort === 'asc' ? <Ascending /> : <Descending />}
+        {sortParams.sort === 'asc' ? <Ascending /> : <Descending />}
         <p className="mb-1 ml-2 text-sm">Sort By</p>
       </button>
       <Select
         className="bg-transparent text-gray-900 rounded-lg border-0
           form-select p-0 pl-2 h-9 sm:text-sm font-medium
           focus:shadow-none focus-visible:ring-2 focus-visible:ring-teal-500"
-        onChange={x => setSortBy(x as T)}
-        options={options.map(l => ({ label: l, value: l }))}
-        value={sortBy}
+        onChange={onSortByChange}
+        options={sortOptions.sortKeys.map(l => ({ label: l, value: l }))}
+        value={sortParams.sortBy || sortOptions.defaultKey}
       />
     </div>
   );

@@ -2,12 +2,10 @@ import React from 'react';
 import AlertMessage from '../components/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
-import { useReposSortBy, useSortOrder } from '../hooks/query-params-hooks';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes, reposSortByParams } from '../types';
+import { repoPageUrlTypes } from '../types';
 import { fetchProjectRepoMetrics } from '../network';
 import { dontFilter } from '../helpers/utils';
-import { assertUnreachable } from '../../shared/helpers';
 import useListing, { UseListingHookArg } from '../hooks/use-listing';
 import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
 
@@ -18,18 +16,6 @@ const qualityGateSortName = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (codeQuality.qualityGate === 'ok') return 'a';
   if (codeQuality.qualityGate === 'warn') return 'b';
   return 'c';
-};
-
-const sortByIndicators = (sortBy: typeof reposSortByParams[number], sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
-  switch (sortBy) {
-    case 'Builds': return sort * ((a.builds?.count || 0) - (b.builds?.count || 0));
-    case 'Branches': return sort * (a.branches.total - b.branches.total);
-    case 'Commits': return sort * (a.commits.count - b.commits.count);
-    case 'Pull requests': return sort * (a.prs.total - b.prs.total);
-    case 'Tests': return sort * ((a.tests?.total || 0) - (b.tests?.total || 0));
-    case 'Code quality': return sort * -1 * qualityGateSortName(a.codeQuality).localeCompare(qualityGateSortName(b.codeQuality));
-    default: return assertUnreachable(sortBy);
-  }
 };
 
 const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
@@ -46,13 +32,23 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
 
 const reposListing: UseListingHookArg<ProjectRepoAnalysis, RepoAnalysis> = {
   fetcher: fetchProjectRepoMetrics,
-  list: analysis => analysis.repos
+  list: analysis => analysis.repos,
+  sort: {
+    by: {
+      'Builds': (a, b) => (a.builds?.count || 0) - (b.builds?.count || 0),
+      'Branches': (a, b) => a.branches.total - b.branches.total,
+      'Commits': (a, b) => a.commits.count - b.commits.count,
+      'Pull requests': (a, b) => a.prs.total - b.prs.total,
+      'Tests': (a, b) => (a.tests?.total || 0) - (b.tests?.total || 0),
+      'Code quality': (a, b) => qualityGateSortName(a.codeQuality)
+        .localeCompare(qualityGateSortName(b.codeQuality))
+    },
+    default: 'Builds'
+  }
 };
 
 const Repos: React.FC = () => {
   const projectAnalysis = useListing(reposListing);
-  const [sort] = useSortOrder();
-  const [sortBy] = useReposSortBy();
   const [search] = useUrlParams<string>('search');
   const [commitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
   const [buildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
@@ -66,8 +62,7 @@ const Repos: React.FC = () => {
     .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
     .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
     .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
-    .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
-    .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
+    .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays));
 
   return (
     <div>
