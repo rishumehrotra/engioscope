@@ -1,6 +1,6 @@
 import React from 'react';
 import { RepoAnalysis } from '../../../shared/types';
-import { num } from '../../helpers';
+import { num } from '../../helpers/utils';
 import { Tab } from './Tabs';
 import Metric from '../Metric';
 import TabContents from './TabContents';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { RepoAnalysis } from '../../../shared/types';
-import { num, shortDate } from '../../helpers';
+import { num, shortDate } from '../../helpers/utils';
 import AlertMessage from '../AlertMessage';
 import { Tab } from './Tabs';
 import TabContents from './TabContents';

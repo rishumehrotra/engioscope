@@ -7,7 +7,7 @@ import ReleasePipelines from './ReleasePipelines';
 import AdvancedFilters from '../components/AdvancedFilters';
 import { Tab, reposSortByParams, workItemsSortByParams } from '../types';
 import WorkItems from './WorkItems';
-import SortControls from '../components/SortButtons';
+import SortControls from '../components/SortControls';
 import { ProjectDetails } from '../components/ProjectDetails';
 
 const Project: React.FC = () => {

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { num } from '../../helpers';
+import { num } from '../../helpers/utils';
 
 export type Tab = {
   title: string;

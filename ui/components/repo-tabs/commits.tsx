@@ -5,7 +5,7 @@ import AlertMessage from '../AlertMessage';
 import { Tab } from './Tabs';
 import TabContents from './TabContents';
 import defaultProfilePic from '../../default-profile-pic.png';
-import { num } from '../../helpers';
+import { num } from '../../helpers/utils';
 import CommitTimeline from '../CommitTimeline';
 
 const ProfilePic: React.FC<ImgHTMLAttributes<HTMLImageElement>> = ({ src, ...rest }) => {

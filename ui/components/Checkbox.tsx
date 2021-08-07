@@ -1,5 +1,5 @@
 import React from 'react';
-import { generateId } from '../helpers';
+import { generateId } from '../helpers/utils';
 
 type CheckboxProps = {
   value: boolean;

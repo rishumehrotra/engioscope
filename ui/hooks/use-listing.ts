@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { UIProjectAnalysis } from '../../shared/types';
 import { useSetProjectDetails } from './project-details-hooks';
 
-type UseListingHookArg<T extends UIProjectAnalysis, U> = {
+export type UseListingHookArg<T extends UIProjectAnalysis, U> = {
   fetcher: (collectionName: string, projectName: string) => Promise<T>;
   list: (x: T) => U[];
 };

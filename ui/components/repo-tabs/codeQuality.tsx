@@ -1,6 +1,6 @@
 import React from 'react';
 import { RepoAnalysis } from '../../../shared/types';
-import { formatDebt, num } from '../../helpers';
+import { formatDebt, num } from '../../helpers/utils';
 import AlertMessage from '../AlertMessage';
 import { Tab } from './Tabs';
 import Metric from '../Metric';

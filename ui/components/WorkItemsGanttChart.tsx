@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnalysedWorkItem, UIWorkItemRevision } from '../../shared/types';
-import { mediumDate } from '../helpers';
+import { mediumDate } from '../helpers/utils';
 
 const svgWidth = 1200;
 const textWidth = 300;

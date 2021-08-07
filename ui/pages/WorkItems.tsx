@@ -5,9 +5,9 @@ import WorkItemsGnattChart from '../components/WorkItemsGanttChart';
 import { fetchProjectWorkItemAnalysis } from '../network';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes, workItemsSortByParams } from '../types';
-import { dontFilter } from '../helpers';
+import { dontFilter } from '../helpers/utils';
 import { useSortOrder, useWorkItemsSortBy } from '../hooks/query-params-hooks';
-import useListing from '../hooks/use-listing';
+import useListing, { UseListingHookArg } from '../hooks/use-listing';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -44,8 +44,8 @@ const sortByIndicators = (sortBy: typeof workItemsSortByParams[number], sort: -1
     }
 
     return sort * (
-      new Date(last(last(a.targets).revisions).date || last(a.targets).created.on).getDate()
-      - new Date(b.targets[0].created.on).getDate()
+      new Date(b.targets[0].created.on).getDate()
+      - new Date(last(last(a.targets).revisions).date || last(a.targets).created.on).getDate()
     );
   }
 );
@@ -77,11 +77,13 @@ const WorkItem: React.FC<WorkItemProps> = ({ workItem, colorsForStages }) => (
   </li>
 );
 
+const workItemsListing: UseListingHookArg<ProjectWorkItemAnalysis, AnalysedWorkItem> = {
+  fetcher: fetchProjectWorkItemAnalysis,
+  list: workItemAnalysis => workItemAnalysis.workItems || []
+};
+
 const WorkItems: React.FC = () => {
-  const workItemAnalysis = useListing<ProjectWorkItemAnalysis, AnalysedWorkItem>({
-    fetcher: fetchProjectWorkItemAnalysis,
-    list: workItemAnalysis => workItemAnalysis.workItems || []
-  });
+  const workItemAnalysis = useListing(workItemsListing);
   const [search] = useUrlParams<string>('search');
   const [sort] = useSortOrder();
   const [sortBy] = useWorkItemsSortBy();

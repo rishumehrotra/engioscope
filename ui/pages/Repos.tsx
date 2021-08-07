@@ -6,9 +6,9 @@ import { useReposSortBy, useSortOrder } from '../hooks/query-params-hooks';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes, reposSortByParams } from '../types';
 import { fetchProjectRepoMetrics } from '../network';
-import { dontFilter } from '../helpers';
+import { dontFilter } from '../helpers/utils';
 import { assertUnreachable } from '../../shared/helpers';
-import useListing from '../hooks/use-listing';
+import useListing, { UseListingHookArg } from '../hooks/use-listing';
 import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
@@ -44,11 +44,13 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
   (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
 );
 
+const reposListing: UseListingHookArg<ProjectRepoAnalysis, RepoAnalysis> = {
+  fetcher: fetchProjectRepoMetrics,
+  list: analysis => analysis.repos
+};
+
 const Repos: React.FC = () => {
-  const projectAnalysis = useListing<ProjectRepoAnalysis, RepoAnalysis>({
-    fetcher: fetchProjectRepoMetrics,
-    list: analysis => analysis.repos
-  });
+  const projectAnalysis = useListing(reposListing);
   const [sort] = useSortOrder();
   const [sortBy] = useReposSortBy();
   const [search] = useUrlParams<string>('search');

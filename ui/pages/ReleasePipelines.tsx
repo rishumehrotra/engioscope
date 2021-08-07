@@ -4,7 +4,7 @@ import AlertMessage from '../components/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import useListing from '../hooks/use-listing';
+import useListing, { UseListingHookArg } from '../hooks/use-listing';
 import { fetchProjectReleaseMetrics } from '../network';
 import { repoPageUrlTypes } from '../types';
 
@@ -24,11 +24,13 @@ const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: Release
   pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()) && stage.releaseCount === 0)
 );
 
+const releasePipelineListing: UseListingHookArg<ProjectReleasePipelineAnalysis, ReleasePipelineStats> = {
+  fetcher: fetchProjectReleaseMetrics,
+  list: releaseAnalysis => releaseAnalysis.pipelines
+};
+
 const ReleasePipelines: React.FC = () => {
-  const releaseAnalysis = useListing<ProjectReleasePipelineAnalysis, ReleasePipelineStats>({
-    fetcher: fetchProjectReleaseMetrics,
-    list: releaseAnalysis => releaseAnalysis.pipelines
-  });
+  const releaseAnalysis = useListing(releasePipelineListing);
   const [search] = useUrlParams<string>('search');
   const [nonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
   const [notStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');

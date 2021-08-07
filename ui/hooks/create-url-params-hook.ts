@@ -1,5 +1,5 @@
 import { useHistory } from 'react-router-dom';
-import { parseQueryString, updateQueryString } from '../helpers';
+import { parseQueryString, updateQueryString } from '../helpers/utils';
 
 type SupportedTypesInUrl = 'string' | 'number' | 'boolean';
 

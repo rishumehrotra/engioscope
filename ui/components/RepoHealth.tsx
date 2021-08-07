@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { RepoAnalysis } from '../../shared/types';
-import { num } from '../helpers';
+import { num } from '../helpers/utils';
 import Card from './ExpandingCard';
 import Flair from './Flair';
 import builds from './repo-tabs/builds';
