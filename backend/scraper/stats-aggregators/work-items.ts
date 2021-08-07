@@ -30,6 +30,8 @@ export default async (
   getWorkItemsForIds: (ids: number[]) => Promise<WorkItem[]>,
   getWorkItemRevisions: (workItemId: number) => Promise<WorkItemRevision[]>
 ) => {
+  if (workItemRelations.length === 0) return null;
+
   const workItemTypesByType = workItemTypes.reduce((acc, workItemType) => ({
     ...acc,
     [workItemType.name]: workItemType

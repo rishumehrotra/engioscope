@@ -18,6 +18,7 @@ import {
 import { useReposSortBy, useSortOrder } from '../hooks/query-params-hooks';
 import WorkItems from './WorkItems';
 import { dontFilter } from '../helpers';
+import { assertUnreachable } from '../../shared/helpers';
 import SortControls from '../components/SortButtons';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
@@ -58,24 +59,15 @@ const qualityGateSortName = (codeQuality: RepoAnalysis['codeQuality']) => {
 };
 
 const sortByIndicators = (sortBy: typeof reposSortByParams[number], sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
-  if (sortBy === 'Builds') {
-    return sort * ((a.builds?.count || 0) - (b.builds?.count || 0));
+  switch (sortBy) {
+    case 'Builds': return sort * ((a.builds?.count || 0) - (b.builds?.count || 0));
+    case 'Branches': return sort * (a.branches.total - b.branches.total);
+    case 'Commits': return sort * (a.commits.count - b.commits.count);
+    case 'Pull requests': return sort * (a.prs.total - b.prs.total);
+    case 'Tests': return sort * ((a.tests?.total || 0) - (b.tests?.total || 0));
+    case 'Code quality': return sort * -1 * qualityGateSortName(a.codeQuality).localeCompare(qualityGateSortName(b.codeQuality));
+    default: return assertUnreachable(sortBy);
   }
-  if (sortBy === 'Branches') {
-    return sort * (a.branches.total - b.branches.total);
-  }
-  if (sortBy === 'Commits') {
-    return sort * (a.commits.count - b.commits.count);
-  }
-  if (sortBy === 'Pull requests') {
-    return sort * (a.prs.total - b.prs.total);
-  }
-  if (sortBy === 'Tests') {
-    return sort * ((a.tests?.total || 0) - (b.tests?.total || 0));
-  }
-
-  // sortBy === 'Code quality'
-  return sort * -1 * qualityGateSortName(a.codeQuality).localeCompare(qualityGateSortName(b.codeQuality));
 };
 
 const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
