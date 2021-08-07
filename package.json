@@ -34,7 +34,6 @@
     "abort-controller": "^3.0.0",
     "await-lock": "^2.1.0",
     "chalk": "^4.1.1",
-    "chokidar-cli": "^2.1.0",
     "compression": "^1.7.4",
     "debug": "^4.3.1",
     "express": "^4.17.1",
