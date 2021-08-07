@@ -4,7 +4,7 @@ import { join } from 'path';
 import debug from 'debug';
 import {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
-  ProjectWorkItemAnalysis, ScrapedProject
+  ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import { Config, ProjectAnalysis } from './types';
@@ -27,17 +27,25 @@ const writeFile = (path: string, contents: string) => {
   return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
 };
 
+const projectSummary = (
+  projectSpec: ProjectSpec,
+  projectAnalysis: ProjectAnalysis
+): UIProjectAnalysis => ({
+  name: projectSpec,
+  lastUpdated: shortDateFormat(new Date()),
+  reposCount: projectAnalysis.repoAnalysis.length,
+  releasePipelineCount: projectAnalysis.releaseAnalysis.length,
+  workItemCount: projectAnalysis.workItemAnalysis?.length || 0
+});
+
 const writeRepoAnalysisFile = async (
   projectSpec: ProjectSpec,
   projectAnalysis: ProjectAnalysis
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectRepoAnalysis = {
-      lastUpdated: shortDateFormat(new Date()),
-      name: projectSpec,
-      repos: projectAnalysis.repoAnalysis,
-      releasePipelineCount: projectAnalysis.releaseAnalysis.length,
-      workItemCount: projectAnalysis.workItemAnalysis?.length || 0
+      ...projectSummary(projectSpec, projectAnalysis),
+      repos: projectAnalysis.repoAnalysis
     };
     return writeFile(`${projectSpec.join('_')}.json`, JSON.stringify(analysis));
   })
@@ -50,11 +58,8 @@ const writeReleaseAnalysisFile = async (
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectReleasePipelineAnalysis = {
-      lastUpdated: shortDateFormat(new Date()),
-      name: projectSpec,
+      ...projectSummary(projectSpec, projectAnalysis),
       pipelines: projectAnalysis.releaseAnalysis,
-      reposCount: projectAnalysis.repoAnalysis.length,
-      workItemCount: projectAnalysis.workItemAnalysis?.length || 0,
       stagesToHighlight
     };
     return writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(analysis));
@@ -68,12 +73,9 @@ const writeWorkItemAnalysisFile = async (
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectWorkItemAnalysis = {
-      name: projectSpec,
-      lastUpdated: shortDateFormat(new Date()),
+      ...projectSummary(projectSpec, projectAnalysis),
       workItems: projectAnalysis.workItemAnalysis,
-      taskType,
-      releasePipelineCount: projectAnalysis.releaseAnalysis.length,
-      reposCount: projectAnalysis.repoAnalysis.length
+      taskType
     };
     return writeFile(`${projectSpec.join('_')}_work-items.json`, JSON.stringify(analysis));
   })

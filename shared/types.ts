@@ -116,23 +116,6 @@ export type RepoAnalysis = {
   codeQuality: UICodeQuality;
 };
 
-export type ProjectRepoAnalysis = {
-  name: [collection: string, project: string];
-  lastUpdated: string;
-  repos: RepoAnalysis[];
-  releasePipelineCount: number;
-  workItemCount: number;
-}
-
-export type ProjectReleasePipelineAnalysis = {
-  name: [collection: string, project: string];
-  lastUpdated: string;
-  pipelines: ReleasePipelineStats[];
-  stagesToHighlight?: string[];
-  reposCount: number;
-  workItemCount: number;
-}
-
 export type UIWorkItem = {
   id: number;
   project: string;
@@ -165,11 +148,20 @@ export type AnalysedWorkItem = {
   targets: UIWorkItem[];
 };
 
-export type ProjectWorkItemAnalysis = {
+export type UIProjectAnalysis = {
   name: [collection: string, project: string];
   lastUpdated: string;
-  workItems: AnalysedWorkItem[] | null;
-  taskType: string | undefined;
-  releasePipelineCount: number;
   reposCount: number;
+  releasePipelineCount: number;
+  workItemCount: number;
+};
+
+export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
+export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & {
+  pipelines: ReleasePipelineStats[];
+  stagesToHighlight?: string[];
+};
+export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
+  workItems: AnalysedWorkItem[] | null;
+  taskType?: string;
 };

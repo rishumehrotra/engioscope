@@ -4,7 +4,7 @@ import {
 } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import {
-  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, RepoAnalysis
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, RepoAnalysis, UIProjectAnalysis
 } from '../../shared/types';
 import { fetchProjectMetrics, fetchProjectReleaseMetrics } from '../network';
 import NavBar, { NavItem } from '../components/NavBar';
@@ -29,19 +29,18 @@ const renderIfAvailable = (count: number | undefined) => (label: string) => (cou
   </>
 ) : '');
 
-const ProjectDetails : React.FC<Pick<ProjectRepoAnalysis, 'name' | 'lastUpdated'> &
-{repoCount: number; releasesCount?: number; workItemsCount?: number}> = ({
-  name, repoCount, lastUpdated, releasesCount, workItemsCount
+const ProjectDetails : React.FC<UIProjectAnalysis> = ({
+  name, reposCount, lastUpdated, releasePipelineCount, workItemCount
 }) => (
   <div className="col-span-2">
     <h1 className="text-3xl font-semibold text-gray-800">
       {name[1]}
       <div className="text-base mt-2 font-normal text-gray-800">
-        {renderIfAvailable(repoCount)('Repositories')}
-        {repoCount && releasesCount ? ' | ' : ''}
-        {renderIfAvailable(releasesCount)('Release pipelines')}
-        {workItemsCount ? ' | ' : ''}
-        {renderIfAvailable(workItemsCount)('Work items')}
+        {renderIfAvailable(reposCount)('Repositories')}
+        {reposCount && releasePipelineCount ? ' | ' : ''}
+        {renderIfAvailable(releasePipelineCount)('Release pipelines')}
+        {workItemCount ? ' | ' : ''}
+        {renderIfAvailable(workItemCount)('Releases')}
       </div>
     </h1>
     <p className="text-sm text-gray-500 mt-2 flex items-center">
@@ -58,7 +57,7 @@ const qualityGateSortName = (codeQuality: RepoAnalysis['codeQuality']) => {
   return 'c';
 };
 
-const sortByIndicators = (sortBy: string, sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
+const sortByIndicators = (sortBy: typeof reposSortByParams[number], sort: number) => (a: RepoAnalysis, b: RepoAnalysis) => {
   if (sortBy === 'Builds') {
     return sort * ((a.builds?.count || 0) - (b.builds?.count || 0));
   }
@@ -139,9 +138,9 @@ const Project: React.FC = () => {
       <div className="grid grid-cols-3 justify-between w-full items-start my-12">
         <ProjectDetails
           name={projectAnalysis.name}
-          repoCount={projectAnalysis.repos.length}
-          releasesCount={projectAnalysis.releasePipelineCount}
-          workItemsCount={projectAnalysis.workItemCount}
+          reposCount={projectAnalysis.repos.length}
+          releasePipelineCount={projectAnalysis.releasePipelineCount}
+          workItemCount={projectAnalysis.workItemCount}
           lastUpdated={projectAnalysis.lastUpdated}
         />
         <div className="flex justify-end">
