@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  useParams, useHistory, Switch, Route
-} from 'react-router-dom';
+import { useLocation, Switch, Route } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import NavBar from '../components/NavBar';
 import Repos from './Repos';
@@ -13,10 +11,9 @@ import SortControls from '../components/SortButtons';
 import { ProjectDetails } from '../components/ProjectDetails';
 
 const Project: React.FC = () => {
-  const { collection, project } = useParams<{ collection: string; project: string }>();
-  const history = useHistory();
+  const location = useLocation();
 
-  const pathParts = history.location.pathname.split('/');
+  const pathParts = location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1] as Tab;
 
   return (
@@ -45,7 +42,7 @@ const Project: React.FC = () => {
           <ReleasePipelines />
         </Route>
         <Route path="/:collection/:project/workitems">
-          <WorkItems collection={collection} project={project} />
+          <WorkItems />
         </Route>
       </Switch>
     </div>

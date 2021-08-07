@@ -1,17 +1,15 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
+import React from 'react';
 import AlertMessage from '../components/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
 import { useReposSortBy, useSortOrder } from '../hooks/query-params-hooks';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes, reposSortByParams } from '../types';
-import { fetchProjectMetrics } from '../network';
+import { fetchProjectRepoMetrics } from '../network';
 import { dontFilter } from '../helpers';
 import { assertUnreachable } from '../../shared/helpers';
-import { useSetProjectDetails } from '../hooks/project-details-hooks';
+import useListing from '../hooks/use-listing';
+import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -47,9 +45,10 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
 );
 
 const Repos: React.FC = () => {
-  const { collection, project } = useParams<{ collection: string; project: string }>();
-  const setProjectDetails = useSetProjectDetails();
-  const [projectAnalysis, setProjectAnalysis] = useState<ProjectRepoAnalysis | undefined>();
+  const projectAnalysis = useListing<ProjectRepoAnalysis, RepoAnalysis>({
+    fetcher: fetchProjectRepoMetrics,
+    list: analysis => analysis.repos
+  });
   const [sort] = useSortOrder();
   const [sortBy] = useReposSortBy();
   const [search] = useUrlParams<string>('search');
@@ -58,16 +57,9 @@ const Repos: React.FC = () => {
   const [withFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
   const [techDebtMoreThanDays] = useUrlParams<number>('techDebtGreaterThan');
 
-  useEffect(() => {
-    fetchProjectMetrics(collection, project).then(repoAnalysis => {
-      setProjectAnalysis(repoAnalysis);
-      setProjectDetails(repoAnalysis);
-    });
-  }, [collection, project, setProjectDetails]);
+  if (projectAnalysis === 'loading') return <div>Loading...</div>;
 
-  if (!projectAnalysis) return <div>Loading...</div>;
-
-  const repos = projectAnalysis.repos
+  const repos = projectAnalysis.list
     .filter(search === undefined ? dontFilter : bySearchTerm(search))
     .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
     .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)

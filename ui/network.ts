@@ -9,7 +9,7 @@ export const fetchCollections = (): Promise<ScrapedProject[]> => (
   fetch('/api/index.json').then(json)
 );
 
-export const fetchProjectMetrics = (collection: string, project: string): Promise<ProjectRepoAnalysis> => (
+export const fetchProjectRepoMetrics = (collection: string, project: string): Promise<ProjectRepoAnalysis> => (
   fetch(`/api/${collection}_${project}.json`).then(json)
 );
 

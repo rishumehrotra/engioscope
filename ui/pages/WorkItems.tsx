@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { last } from 'rambda';
 import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
 import WorkItemsGnattChart from '../components/WorkItemsGanttChart';
@@ -7,7 +7,7 @@ import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes, workItemsSortByParams } from '../types';
 import { dontFilter } from '../helpers';
 import { useSortOrder, useWorkItemsSortBy } from '../hooks/query-params-hooks';
-import { useSetProjectDetails } from '../hooks/project-details-hooks';
+import useListing from '../hooks/use-listing';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -77,27 +77,23 @@ const WorkItem: React.FC<WorkItemProps> = ({ workItem, colorsForStages }) => (
   </li>
 );
 
-const WorkItems: React.FC<{ collection: string; project:string }> = ({ collection, project }) => {
-  const [workItemAnalysis, setWorkItemAnalysis] = useState<ProjectWorkItemAnalysis | undefined>();
-  const setProjectDetails = useSetProjectDetails();
+const WorkItems: React.FC = () => {
+  const workItemAnalysis = useListing<ProjectWorkItemAnalysis, AnalysedWorkItem>({
+    fetcher: fetchProjectWorkItemAnalysis,
+    list: workItemAnalysis => workItemAnalysis.workItems || []
+  });
   const [search] = useUrlParams<string>('search');
   const [sort] = useSortOrder();
   const [sortBy] = useWorkItemsSortBy();
 
-  useEffect(() => {
-    fetchProjectWorkItemAnalysis(collection, project).then(w => {
-      setWorkItemAnalysis(w);
-      setProjectDetails(w);
-    });
-  }, [collection, project, setProjectDetails]);
+  const colorsForStages = useMemo(() => {
+    if (workItemAnalysis === 'loading') return {};
+    return workItemAnalysis.list ? createColorPalette(workItemAnalysis.list) : {};
+  }, [workItemAnalysis]);
 
-  const colorsForStages = useMemo(() => (
-    workItemAnalysis?.workItems ? createColorPalette(workItemAnalysis.workItems) : {}
-  ), [workItemAnalysis]);
+  if (workItemAnalysis === 'loading') return <div>Loading...</div>;
 
-  if (!workItemAnalysis) return <div>Loading...</div>;
-
-  const filteredWorkItems = workItemAnalysis.workItems
+  const filteredWorkItems = workItemAnalysis.list
     ?.filter(search === undefined ? dontFilter : bySearchTerm(search))
     .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
 
