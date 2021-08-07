@@ -15,7 +15,7 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
           <table className="table-auto text-center divide-y divide-gray-200">
             <thead>
               <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
+                <th className="px-6 py-3 w-2/6 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
                   <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
                   Successful
@@ -32,10 +32,16 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
               {tests.pipelines.map(pipeline => (
                 <tr key={pipeline.name}>
                   <td className="pl-6 py-4 whitespace-nowrap text-left">
-                    <a href={pipeline.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                      <p className="truncate w-36">
+                    <a
+                      href={pipeline.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={pipeline.name}
+                      className="text-blue-600 hover:underline"
+                    >
+                      <span className="truncate w-full block">
                         {pipeline.name}
-                      </p>
+                      </span>
                     </a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.successful)}</td>

@@ -79,6 +79,7 @@ const WorkItems: React.FC<{ collection: string; project:string }> = ({ collectio
                 className="text-blue-600 font-bold text-lg truncate inline-block w-4/5 hover:underline"
                 target="_blank"
                 rel="noreferrer"
+                title={workItem.source.title}
               >
                 {workItem.source.title}
               </a>
