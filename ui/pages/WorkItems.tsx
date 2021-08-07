@@ -7,6 +7,7 @@ import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes, workItemsSortByParams } from '../types';
 import { dontFilter } from '../helpers';
 import { useSortOrder, useWorkItemsSortBy } from '../hooks/query-params-hooks';
+import { useSetProjectDetails } from '../hooks/project-details-hooks';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -78,13 +79,17 @@ const WorkItem: React.FC<WorkItemProps> = ({ workItem, colorsForStages }) => (
 
 const WorkItems: React.FC<{ collection: string; project:string }> = ({ collection, project }) => {
   const [workItemAnalysis, setWorkItemAnalysis] = useState<ProjectWorkItemAnalysis | undefined>();
+  const setProjectDetails = useSetProjectDetails();
   const [search] = useUrlParams<string>('search');
   const [sort] = useSortOrder();
   const [sortBy] = useWorkItemsSortBy();
 
   useEffect(() => {
-    fetchProjectWorkItemAnalysis(collection, project).then(setWorkItemAnalysis);
-  }, [collection, project]);
+    fetchProjectWorkItemAnalysis(collection, project).then(w => {
+      setWorkItemAnalysis(w);
+      setProjectDetails(w);
+    });
+  }, [collection, project, setProjectDetails]);
 
   const colorsForStages = useMemo(() => (
     workItemAnalysis?.workItems ? createColorPalette(workItemAnalysis.workItems) : {}

@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { Filters } from './Icons';
 import { repoPageUrlTypes, Tab } from '../types';
@@ -89,14 +90,17 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   ) : null;
 };
 
-const AdvancedFilters : React.FC<{ type : Tab}> = ({ type }) => {
+const AdvancedFilters : React.FC = () => {
+  const history = useHistory();
+  const pathParts = history.location.pathname.split('/');
+  const selectedTab = pathParts[pathParts.length - 1] as Tab;
   const ref = useRef(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   useOnClickOutside(ref, () => setIsOpen(false));
 
   return (
     <span className="grid items-center ml-1 relative">
-      {type === 'workitems' ? null : (
+      {selectedTab === 'workitems' ? null : (
         <button onClick={() => setIsOpen(!isOpen)}>
           <Filters
             className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
@@ -106,8 +110,8 @@ const AdvancedFilters : React.FC<{ type : Tab}> = ({ type }) => {
         </button>
       )}
       <span ref={ref}>
-        {type === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
-        {type === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
+        {selectedTab === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
+        {selectedTab === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
       </span>
     </span>
   );

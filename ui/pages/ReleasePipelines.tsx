@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { ProjectReleasePipelineAnalysis, ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
+import { useSetProjectDetails } from '../hooks/project-details-hooks';
+import { fetchProjectReleaseMetrics } from '../network';
 import { repoPageUrlTypes } from '../types';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
@@ -22,16 +25,22 @@ const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: Release
   pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()) && stage.releaseCount === 0)
 );
 
-type ReleasesProps = {
-  releaseAnalysis: ProjectReleasePipelineAnalysis | undefined;
-}
-
-const ReleasePipelines: React.FC<ReleasesProps> = ({ releaseAnalysis }: ReleasesProps) => {
+const ReleasePipelines: React.FC = () => {
+  const { collection, project } = useParams<{ collection: string; project: string }>();
+  const [releaseAnalysis, setReleaseAnalysis] = useState<ProjectReleasePipelineAnalysis | undefined>();
+  const setProjectDetails = useSetProjectDetails();
   const [search] = useUrlParams<string>('search');
   const [nonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
   const [notStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
   const [stageNameExists] = useUrlParams<string>('stageNameExists');
   const [stageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+
+  useEffect(() => {
+    fetchProjectReleaseMetrics(collection, project).then(releasePipelineAnalysis => {
+      setReleaseAnalysis(releasePipelineAnalysis);
+      setProjectDetails(releasePipelineAnalysis);
+    });
+  }, [collection, project, setProjectDetails]);
 
   if (!releaseAnalysis) return <div>Loading...</div>;
   if (!releaseAnalysis.pipelines) return <AlertMessage message="No release pipelines found" />;
