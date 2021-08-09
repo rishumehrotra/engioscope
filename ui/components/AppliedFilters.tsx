@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
-import { Close } from '../components/Icons';
+import { Close } from './common/Icons';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes } from '../types';
 

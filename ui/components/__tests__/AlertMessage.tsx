@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import AlertMessage from '../AlertMessage';
+import AlertMessage from '../common/AlertMessage';
 
 describe('Alert Message', () => {
   it('should render the message passed', () => {

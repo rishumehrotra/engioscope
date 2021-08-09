@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
 import { num } from '../helpers/utils';
-import AlertMessage from './AlertMessage';
-import Card from './ExpandingCard';
-import Flair from './Flair';
-import { ArrowRight, Branches } from './Icons';
+import AlertMessage from './common/AlertMessage';
+import Card from './common/ExpandingCard';
+import Flair from './common/Flair';
+import { ArrowRight, Branches } from './common/Icons';
 import Metric from './Metric';
 
 type StagesToHighlight = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import AlertMessage from '../components/AlertMessage';
+import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';

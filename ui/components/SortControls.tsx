@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useSortOptions, useSortParams } from '../hooks/sort-hooks';
-import { Ascending, Descending } from './Icons';
-import Select from './Select';
+import { Ascending, Descending } from './common/Icons';
+import Select from './common/Select';
 
 const SortControls: React.FC = () => {
   const [sortParams, setSortParams] = useSortParams();

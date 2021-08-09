@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProjectReleasePipelineAnalysis, ReleasePipelineStats } from '../../shared/types';
-import AlertMessage from '../components/AlertMessage';
+import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
 import createUrlParamsHook from '../hooks/create-url-params-hook';

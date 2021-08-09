@@ -1,6 +1,6 @@
 import React from 'react';
 import { Switch, Route } from 'react-router-dom';
-import SearchInput from '../components/SearchInput';
+import SearchInput from '../components/common/SearchInput';
 import NavBar from '../components/NavBar';
 import Repos from './Repos';
 import ReleasePipelines from './ReleasePipelines';

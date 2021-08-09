@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { Filters } from './Icons';
+import { Filters } from './common/Icons';
 import { repoPageUrlTypes, Tab } from '../types';
-import Checkbox from './Checkbox';
-import TextCheckboxCombo from './TextCheckboxCombo';
+import Checkbox from './common/Checkbox';
+import TextCheckboxCombo from './common/TextCheckboxCombo';
 import useOnClickOutside from '../hooks/on-click-outside';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
