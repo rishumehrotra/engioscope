@@ -17,7 +17,7 @@
     "serve": "vite preview",
     "test:ci": "jest --testEnvironment=jsdom --testPathIgnorePatterns=./dist --coverage --setupTestFrameworkScriptFile='./ui/jest-setup.js'",
     "test": "jest --testEnvironment=jsdom --testPathIgnorePatterns=./dist --coverage --setupTestFrameworkScriptFile='./ui/jest-setup.js' --watch",
-    "scrape": "DEBUG=* node -r ts-node/register ./backend/dev/scrape.ts",
+    "scrape": "DEBUG=* node --max-old-space-size=8192 -r ts-node/register ./backend/dev/scrape.ts",
     "scrape:profiler": "node -r ts-node/register --prof ./backend/dev/scrape.ts",
     "tsc": "tsc --build backend ui",
     "lint": "eslint \"./**/*.ts\" \"./**/*.tsx\" --cache",
@@ -46,6 +46,7 @@
     "pretty-ms": "^7.0.1",
     "qs": "^6.7.0",
     "rambda": "^6.8.2",
+    "throat": "^6.0.1",
     "yaml": "^1.10.2",
     "yargs": "^17.0.1"
   },

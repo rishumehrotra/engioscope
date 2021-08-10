@@ -15,8 +15,7 @@ import languageColors from './language-colors';
 import { RepoAnalysis } from '../../shared/types';
 import { pastDate } from '../utils';
 import { WorkItemQueryHierarchialResult, WorkItemQueryResult } from './types-azure';
-
-const dayInMs = 24 * 60 * 60 * 1000;
+import { queryForAllBugsAndFeatures, queryForTopLevelWorkItems } from './work-item-queries';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -26,22 +25,6 @@ const getLanguageColor = (lang: string) => {
 };
 
 const analyserLog = debug('analyser');
-
-const createQuery = (config: Config) => {
-  const daysToLookup = Math.round(
-    (Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs
-  );
-
-  return `
-    SELECT [Id]
-    FROM workitemLinks
-    WHERE 
-      [Source].[System.TeamProject] = @project
-      AND [Source].[System.WorkItemType] = '${config.azure.groupWorkItemsUnder}'
-      AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
-    ORDER BY [Source].[System.CreatedDate] ASC
-  `;
-};
 
 export default (config: Config) => {
   const {
@@ -62,7 +45,8 @@ export default (config: Config) => {
       releaseDefinitionById,
       releases,
       prByRepoId,
-      workItemIdTree,
+      topLevelWorkItemIdsRelations,
+      allBugAndFeatureRelations,
       workItemTypes
     ] = await Promise.all([
       forProject(getRepositories),
@@ -71,7 +55,14 @@ export default (config: Config) => {
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
       config.azure.groupWorkItemsUnder
-        ? forProject(getWorkItemIdsForQuery)(createQuery(config)) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
+        ? forProject(getWorkItemIdsForQuery)(
+          queryForTopLevelWorkItems(config)
+        ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
+        : null,
+      config.azure.groupWorkItemsUnder
+        ? forProject(getWorkItemIdsForQuery)(
+          queryForAllBugsAndFeatures
+        ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
         : null,
       forProject(getWorkItemTypes)
     ]);
@@ -112,10 +103,11 @@ export default (config: Config) => {
     const analysisResults = {
       repoAnalysis,
       releaseAnalysis: aggregateReleases(releaseDefinitionById, releases),
-      workItemAnalysis: workItemIdTree === null
+      workItemAnalysis: topLevelWorkItemIdsRelations === null
         ? null
         : await aggregateWorkItems(
-          workItemIdTree,
+          topLevelWorkItemIdsRelations.workItemRelations,
+          allBugAndFeatureRelations?.workItemRelations,
           workItemTypes,
           forProject(getWorkItems),
           forProject(getWorkItemRevisions)
