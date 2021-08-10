@@ -21,8 +21,9 @@ export const isMaster = (branchName: string) => [
   'refs/heads/master', 'refs/heads/main'
 ].includes(branchName);
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-export const assertDefined = <T>(x: T | undefined) => x!;
+export const exists = <T>(x: T | undefined | null): x is T => (
+  x !== null && x !== undefined
+);
 
 export const divideBy = (divisor: number) => (dividend: number) => dividend / divisor;
 export const getFirst = <T>(list: T[]): T | undefined => list[0];

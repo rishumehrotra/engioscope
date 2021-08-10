@@ -1,6 +1,6 @@
 import throat from 'throat';
 import { AnalysedWorkItem, UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
-import { assertDefined } from '../../utils';
+import { exists } from '../../utils';
 import {
   WorkItem, WorkItemQueryHierarchialResult,
   WorkItemRevision, WorkItemType
@@ -42,14 +42,12 @@ export default async (
   const ids = [...new Set(
     [...workItemRelations, ...(allBugsAndFeatures || [])]
       .flatMap(wir => [wir.source?.id, wir.target?.id])
-      .filter(Boolean)
-      .map(assertDefined)
+      .filter(exists)
   )];
 
   const idsForWorkItemRevisions = workItemRelations
     .flatMap(wir => [wir.source?.id, wir.target?.id])
-    .filter(Boolean)
-    .map(assertDefined);
+    .filter(exists);
 
   const [workItemsById, workItemRevisions] = await Promise.all([
     getWorkItemsForIds(ids)
@@ -109,7 +107,7 @@ export default async (
           targets: [
             ...(acc[source.id]?.targets || []),
             target ? createUIWorkItem(target) : null
-          ].filter(Boolean).map(assertDefined)
+          ].filter(exists)
         }
       };
     }, {})

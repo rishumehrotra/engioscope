@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
 import { Build } from '../types-azure';
 import { UIBuildPipeline, UIBuilds } from '../../../shared/types';
-import { assertDefined, isMaster } from '../../utils';
+import { exists, isMaster } from '../../utils';
 
 type BuildStats = {
   count: number;
@@ -131,7 +131,6 @@ export default (builds: Build[]) => {
         ? Object.values(latestMasterBuilds[repoId] || {})
         : []
     )
-      .filter(Boolean)
-      .map(assertDefined)
+      .filter(exists)
   };
 };
