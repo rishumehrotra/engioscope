@@ -12,3 +12,7 @@ body {
   -o-transition: max-height .55s;
   transition: max-height .55s;
 }
+
+.max-width-full {
+  max-width: 100%;
+}

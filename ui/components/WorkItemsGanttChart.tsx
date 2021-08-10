@@ -18,7 +18,7 @@ const barYCoord = (targetIndex: number) => (
   (targetIndex * (textHeight + (rowPadding * 2))) + ((textHeight - barHeight) / 2)
 );
 
-type WorkItemsGnattChartProps = {
+type WorkItemsGanttChartProps = {
   workItem: AnalysedWorkItem;
   colorsForStages: Record<string, string>;
 };
@@ -64,7 +64,7 @@ const makeTransparent = (rgb: string) => {
   return `${rgb}11`;
 };
 
-const WorkItemsGnattChart: React.FC<WorkItemsGnattChartProps> = ({ workItem, colorsForStages }) => {
+const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({ workItem, colorsForStages }) => {
   const timeToXCoord = createXCoordConverterFor(workItem);
   const barWidth = barWidthUsing(timeToXCoord);
 
@@ -154,4 +154,4 @@ const WorkItemsGnattChart: React.FC<WorkItemsGnattChartProps> = ({ workItem, col
   );
 };
 
-export default WorkItemsGnattChart;
+export default WorkItemsGanttChart;

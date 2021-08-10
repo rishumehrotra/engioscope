@@ -20,18 +20,18 @@ export const ProjectDetails: React.FC = () => {
     <div className="col-span-2">
       <h1 className="text-3xl font-semibold text-gray-800">
         {projectName || ' '}
-        <div className="text-base mt-2 font-normal text-gray-800">
-          {project ? (
-            <>
-              {renderIfAvailable(project.reposCount, 'Repositories')}
-              {project.releasePipelineCount ? ' | ' : ''}
-              {renderIfAvailable(project.releasePipelineCount, 'Release pipelines')}
-              {project.workItemCount ? ' | ' : ''}
-              {renderIfAvailable(project.workItemCount, 'Releases')}
-            </>
-          ) : <span className="font-bold text-lg">&nbsp;</span>}
-        </div>
       </h1>
+      <div className="text-base mt-2 font-normal text-gray-800">
+        {project ? (
+          <>
+            {renderIfAvailable(project.reposCount, 'Repositories')}
+            {project.releasePipelineCount ? ' | ' : ''}
+            {renderIfAvailable(project.releasePipelineCount, 'Release pipelines')}
+            {project.workItemCount ? ' | ' : ''}
+            {renderIfAvailable(project.workItemCount, 'Releases')}
+          </>
+        ) : <span className="font-bold text-lg">&nbsp;</span>}
+      </div>
       <p className="text-sm text-gray-500 mt-2 flex items-center">
         {project ? (
           <>
