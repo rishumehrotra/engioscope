@@ -68,8 +68,8 @@ const Repos: React.FC = () => {
     <div>
       <AppliedFilters count={repos.length} />
       {
-        repos.length ? repos.map(repo => (
-          <RepoHealth repo={repo} key={repo.name} />
+        repos.length ? repos.map((repo, index) => (
+          <RepoHealth repo={repo} key={repo.name} isFirst={index === 0} />
         )) : <AlertMessage message="No repos found" />
       }
     </div>

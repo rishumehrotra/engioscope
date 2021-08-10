@@ -28,9 +28,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     ));
 };
 
-const RepoHealth: React.FC<{repo: RepoAnalysis}> = ({ repo }) => {
-  const [selectedTab, setSelectedTab] = useState<Tab | null>(null);
-
+const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, isFirst }) => {
   const tabs = useMemo(() => [
     builds(repo.builds),
     branches(repo.defaultBranch, repo.branches),
@@ -39,6 +37,8 @@ const RepoHealth: React.FC<{repo: RepoAnalysis}> = ({ repo }) => {
     tests(repo.tests),
     codeQuality(repo.codeQuality)
   ], [repo]);
+
+  const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
 
   const onCardClick = useCallback(() => {
     setSelectedTab(!selectedTab ? tabs[0] : null);
@@ -51,7 +51,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis}> = ({ repo }) => {
       subtitle={repoSubtitle(repo.languages)}
       tag={repo.commits.count === 0 ? 'Inactive' : undefined}
       onCardClick={onCardClick}
-      isExpanded={selectedTab !== null}
+      isExpanded={selectedTab !== null || isFirst}
     >
       <div className="mt-4 px-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
         {tabs.map(tab => (
