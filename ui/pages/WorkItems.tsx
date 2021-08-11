@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { last } from 'rambda';
 import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
 import { fetchProjectWorkItemAnalysis } from '../network';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
@@ -41,11 +40,7 @@ const workItemsListing: UseListingHookArg<ProjectWorkItemAnalysis, AnalysedWorkI
   list: workItemAnalysis => workItemAnalysis.workItems || [],
   sort: {
     by: {
-      'Bundle size': (a, b) => a.targets.length - b.targets.length,
-      'Cycle time': (a, b) => (
-        new Date(last(last(a.targets).revisions).date || last(a.targets).created.on).getDate()
-        - new Date(b.targets[0].created.on).getDate()
-      )
+      'Bundle size': (a, b) => a.targets.length - b.targets.length
     },
     default: 'Bundle size'
   }
