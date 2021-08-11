@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { AnalysedWorkItem, ProjectWorkItemAnalysis } from '../../shared/types';
-import { fetchProjectWorkItemAnalysis } from '../network';
+import { AnalysedWorkItem } from '../../shared/types';
+import { workItemMetrics } from '../network';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes } from '../types';
 import { dontFilter } from '../helpers/utils';
-import useListing, { UseListingHookArg } from '../hooks/use-listing';
 import WorkItem from '../components/WorkItemHealth';
+import useFetchForProject from '../hooks/use-fetch-for-project';
+import { SortMap, useSort } from '../hooks/sort-hooks';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -35,31 +36,25 @@ const bySearchTerm = (searchTerm: string) => (workItem: AnalysedWorkItem) => (
   workItem.source.title.toLowerCase().includes(searchTerm.toLowerCase())
 );
 
-const workItemsListing: UseListingHookArg<ProjectWorkItemAnalysis, AnalysedWorkItem> = {
-  fetcher: fetchProjectWorkItemAnalysis,
-  list: workItemAnalysis => workItemAnalysis.workItems || [],
-  sort: {
-    by: {
-      'Bundle size': (a, b) => a.targets.length - b.targets.length
-    },
-    default: 'Bundle size'
-  }
+const sorters: SortMap<AnalysedWorkItem> = {
+  'Bundle size': (a, b) => a.targets.length - b.targets.length
 };
 
 const WorkItems: React.FC = () => {
-  const workItemAnalysis = useListing(workItemsListing);
+  const workItemAnalysis = useFetchForProject(workItemMetrics);
+  const sorter = useSort(sorters, 'Bundle size');
   const [search] = useUrlParams<string>('search');
 
   const colorsForStages = useMemo(() => {
     if (workItemAnalysis === 'loading') return {};
-    return workItemAnalysis.list ? createColorPalette(workItemAnalysis.list) : {};
+    return workItemAnalysis.workItems ? createColorPalette(workItemAnalysis.workItems) : {};
   }, [workItemAnalysis]);
 
   if (workItemAnalysis === 'loading') return <div>Loading...</div>;
 
-  const filteredWorkItems = workItemAnalysis.list
-    ?.filter(search === undefined ? dontFilter : bySearchTerm(search));
-    // .sort(sortByIndicators(sortBy, sort === 'asc' ? 1 : -1));
+  const filteredWorkItems = workItemAnalysis.workItems
+    ?.filter(search === undefined ? dontFilter : bySearchTerm(search))
+    .sort(sorter);
 
   return (
     <ul>

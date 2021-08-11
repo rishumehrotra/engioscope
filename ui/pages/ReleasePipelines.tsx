@@ -1,12 +1,13 @@
 import React from 'react';
-import { ProjectReleasePipelineAnalysis, ReleasePipelineStats } from '../../shared/types';
+import { ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
-import useListing, { UseListingHookArg } from '../hooks/use-listing';
-import { fetchProjectReleaseMetrics } from '../network';
+import { pipelineMetrics } from '../network';
 import { repoPageUrlTypes } from '../types';
+import useFetchForProject from '../hooks/use-fetch-for-project';
+import { useRemoveSort } from '../hooks/sort-hooks';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -24,23 +25,19 @@ const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: Release
   pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()) && stage.releaseCount === 0)
 );
 
-const releasePipelineListing: UseListingHookArg<ProjectReleasePipelineAnalysis, ReleasePipelineStats> = {
-  fetcher: fetchProjectReleaseMetrics,
-  list: releaseAnalysis => releaseAnalysis.pipelines
-};
-
 const ReleasePipelines: React.FC = () => {
-  const releaseAnalysis = useListing(releasePipelineListing);
+  const releaseAnalysis = useFetchForProject(pipelineMetrics);
   const [search] = useUrlParams<string>('search');
   const [nonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
   const [notStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
   const [stageNameExists] = useUrlParams<string>('stageNameExists');
   const [stageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+  useRemoveSort();
 
   if (releaseAnalysis === 'loading') return <div>Loading...</div>;
-  if (!releaseAnalysis.list.length) return <AlertMessage message="No release pipelines found" />;
+  if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
-  const pipelines = releaseAnalysis.list
+  const pipelines = releaseAnalysis.pipelines
     .filter(search === undefined ? dontFilter : bySearchTerm(search))
     .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
     .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
@@ -54,7 +51,7 @@ const ReleasePipelines: React.FC = () => {
         <Pipeline
           key={pipeline.id}
           pipeline={pipeline}
-          stagesToHighlight={releaseAnalysis.analysis.stagesToHighlight}
+          stagesToHighlight={releaseAnalysis.stagesToHighlight}
         />
       )) : <AlertMessage message="No release pipelines found" />}
     </>

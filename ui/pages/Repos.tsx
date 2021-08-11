@@ -4,10 +4,11 @@ import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes } from '../types';
-import { fetchProjectRepoMetrics } from '../network';
+import { repoMetrics } from '../network';
 import { dontFilter } from '../helpers/utils';
-import useListing, { UseListingHookArg } from '../hooks/use-listing';
-import { ProjectRepoAnalysis, RepoAnalysis } from '../../shared/types';
+import { RepoAnalysis } from '../../shared/types';
+import useFetchForProject from '../hooks/use-fetch-for-project';
+import { SortMap, useSort } from '../hooks/sort-hooks';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
@@ -30,25 +31,19 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
   (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
 );
 
-const reposListing: UseListingHookArg<ProjectRepoAnalysis, RepoAnalysis> = {
-  fetcher: fetchProjectRepoMetrics,
-  list: analysis => analysis.repos,
-  sort: {
-    by: {
-      'Builds': (a, b) => (a.builds?.count || 0) - (b.builds?.count || 0),
-      'Branches': (a, b) => a.branches.total - b.branches.total,
-      'Commits': (a, b) => a.commits.count - b.commits.count,
-      'Pull requests': (a, b) => a.prs.total - b.prs.total,
-      'Tests': (a, b) => (a.tests?.total || 0) - (b.tests?.total || 0),
-      'Code quality': (a, b) => qualityGateSortName(a.codeQuality)
-        .localeCompare(qualityGateSortName(b.codeQuality))
-    },
-    default: 'Builds'
-  }
+const sorters: SortMap<RepoAnalysis> = {
+  'Builds': (a, b) => (a.builds?.count || 0) - (b.builds?.count || 0),
+  'Branches': (a, b) => a.branches.total - b.branches.total,
+  'Commits': (a, b) => a.commits.count - b.commits.count,
+  'Pull requests': (a, b) => a.prs.total - b.prs.total,
+  'Tests': (a, b) => (a.tests?.total || 0) - (b.tests?.total || 0),
+  'Code quality': (a, b) => qualityGateSortName(a.codeQuality)
+    .localeCompare(qualityGateSortName(b.codeQuality))
 };
 
 const Repos: React.FC = () => {
-  const projectAnalysis = useListing(reposListing);
+  const projectAnalysis = useFetchForProject(repoMetrics);
+  const sorter = useSort(sorters, 'Builds');
   const [search] = useUrlParams<string>('search');
   const [commitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
   const [buildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
@@ -57,12 +52,13 @@ const Repos: React.FC = () => {
 
   if (projectAnalysis === 'loading') return <div>Loading...</div>;
 
-  const repos = projectAnalysis.list
+  const repos = projectAnalysis.repos
     .filter(search === undefined ? dontFilter : bySearchTerm(search))
     .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
     .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
     .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
-    .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays));
+    .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
+    .sort(sorter);
 
   return (
     <div>

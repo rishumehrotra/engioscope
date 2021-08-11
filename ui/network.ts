@@ -9,14 +9,14 @@ export const fetchCollections = (): Promise<ScrapedProject[]> => (
   fetch('/api/index.json').then(json)
 );
 
-export const fetchProjectRepoMetrics = (collection: string, project: string): Promise<ProjectRepoAnalysis> => (
+export const repoMetrics = (collection: string, project: string): Promise<ProjectRepoAnalysis> => (
   fetch(`/api/${collection}_${project}.json`).then(json)
 );
 
-export const fetchProjectReleaseMetrics = (collection: string, project: string): Promise<ProjectReleasePipelineAnalysis> => (
+export const pipelineMetrics = (collection: string, project: string): Promise<ProjectReleasePipelineAnalysis> => (
   fetch(`/api/${collection}_${project}_releases.json`).then(json)
 );
 
-export const fetchProjectWorkItemAnalysis = (collection: string, project: string): Promise<ProjectWorkItemAnalysis> => (
+export const workItemMetrics = (collection: string, project: string): Promise<ProjectWorkItemAnalysis> => (
   fetch(`/api/${collection}_${project}_work-items.json`).then(json)
 );
