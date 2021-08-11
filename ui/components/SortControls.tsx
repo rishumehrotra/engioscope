@@ -8,11 +8,11 @@ const SortControls: React.FC = () => {
   const sortOptions = useSortOptions();
 
   const setSortDirection = useCallback(() => {
-    setSortParams({ sort: sortParams.sort === 'asc' ? undefined : 'asc' });
+    setSortParams({ sort: sortParams.sort === 'asc' ? undefined : 'asc' }, 'replaceIn');
   }, [setSortParams, sortParams.sort]);
 
   const onSortByChange = useCallback((sortBy: string) => {
-    setSortParams({ sortBy: sortBy === sortOptions?.defaultKey ? undefined : sortBy });
+    setSortParams({ sortBy: sortBy === sortOptions?.defaultKey ? undefined : sortBy }, 'replaceIn');
   }, [setSortParams, sortOptions?.defaultKey]);
 
   if (!sortOptions) return null;
