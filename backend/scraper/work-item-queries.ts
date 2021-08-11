@@ -31,7 +31,6 @@ export const queryForAllBugsAndFeatures = `
       OR [System.Links.LinkType] = 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
       OR [System.Links.LinkType] = 'System.LinkTypes.Related-Forward'
     )
-    AND [Target].[System.WorkItemType] = 'Bug'
   ORDER BY [System.CreatedDate] ASC
   MODE (MayContain)
 `;

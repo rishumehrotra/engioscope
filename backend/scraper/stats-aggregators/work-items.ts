@@ -25,6 +25,43 @@ const aggregateRevisions = (revisions: WorkItemRevision[]) => (
   }, [])
 );
 
+const idsFromRelations = (relations: WorkItemQueryHierarchialResult['workItemRelations']) => (
+  new Set(relations.flatMap(wir => [wir.source?.id, wir.target?.id]).filter(exists))
+);
+
+const workItemsArrayToLookup = (wis: WorkItem[]): Record<number, WorkItem> => (
+  wis.reduce<Record<number, WorkItem>>((acc, wi) => {
+    // Optimisation to avoid memory thrashing of immutable data structures
+    acc[wi.id] = wi;
+    return acc;
+  }, {})
+);
+
+const getWorkItemRevisionsAsHash = (
+  workItemRelationsIds: Set<number>,
+  getWorkItemRevisions: (workItemId: number) => Promise<WorkItemRevision[]>
+) => (
+  Promise.all([...workItemRelationsIds].map(
+    throat(50, id => getWorkItemRevisions(id).then(wir => [id, wir] as const))
+  )).then(wirs => wirs.reduce<Record<number, WorkItemRevision[]>>((acc, [id, wir]) => {
+    // Optimisation to avoid memory thrashing of immutable data structures
+    acc[id] = wir;
+    return acc;
+  }, {}))
+);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const relationsToIdTree = (workItemRelations: WorkItemQueryHierarchialResult['workItemRelations']) => (
+  workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
+    const parent = wir.source ? wir.source.id : 0;
+
+    return {
+      ...acc,
+      [parent]: [...new Set([...(acc[parent] || []), wir.target?.id].filter(exists))]
+    };
+  }, {})
+);
+
 export default async (
   workItemRelations: WorkItemQueryHierarchialResult['workItemRelations'],
   allBugsAndFeatures: WorkItemQueryHierarchialResult['workItemRelations'] | undefined,
@@ -39,31 +76,17 @@ export default async (
     [workItemType.name]: workItemType
   }), {} as { [type: string]: WorkItemType });
 
-  const ids = [...new Set(
-    [...workItemRelations, ...(allBugsAndFeatures || [])]
-      .flatMap(wir => [wir.source?.id, wir.target?.id])
-      .filter(exists)
-  )];
+  const workItemRelationsIds = idsFromRelations(workItemRelations);
+  const relevantBugsAndFeatures = (allBugsAndFeatures || [])
+    // ! FIXME: We shouldn't just look for source.id
+    .filter(wir => wir.source && workItemRelationsIds.has(wir.source.id));
 
-  const idsForWorkItemRevisions = workItemRelations
-    .flatMap(wir => [wir.source?.id, wir.target?.id])
-    .filter(exists);
+  const relevantBugAndFeatureIds = [...idsFromRelations(relevantBugsAndFeatures)];
 
   const [workItemsById, workItemRevisions] = await Promise.all([
-    getWorkItemsForIds(ids)
-      .then(wis => wis.reduce<Record<number, WorkItem>>((acc, wi) => {
-        // Optimisation to avoid memory thrashing of immutable data structures
-        acc[wi.id] = wi;
-        return acc;
-      }, {})),
-    Promise.all(
-      idsForWorkItemRevisions.map(throat(50, id => getWorkItemRevisions(id).then(wir => [id, wir] as const)))
-    ).then(wirs => wirs.reduce<Record<number, WorkItemRevision[]>>((acc, wirAndId) => {
-      // Optimisation to avoid memory thrashing of immutable data structures
-      const [id, wir] = wirAndId;
-      acc[id] = wir;
-      return acc;
-    }, {}))
+    getWorkItemsForIds([...workItemRelationsIds, ...relevantBugAndFeatureIds])
+      .then(workItemsArrayToLookup),
+    getWorkItemRevisionsAsHash(workItemRelationsIds, getWorkItemRevisions)
   ]);
 
   const createUIWorkItem = (workItem: WorkItem): UIWorkItem => ({
@@ -81,6 +104,14 @@ export default async (
     },
     revisions: aggregateRevisions(workItemRevisions[workItem.id])
   });
+
+  // return {
+  //   ids: relationsToIdTree([...workItemRelations, ...relevantBugsAndFeatures]),
+  //   byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => ({
+  //     ...acc,
+  //     [id]: createUIWorkItem(workItem)
+  //   }), {})
+  // };
 
   return Object.values(
     workItemRelations.reduce<Record<number, AnalysedWorkItem>>((acc, workItemRelation) => {
