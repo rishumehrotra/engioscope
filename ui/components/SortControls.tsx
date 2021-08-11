@@ -1,19 +1,11 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { useSortOptions, useSortParams } from '../hooks/sort-hooks';
 import { Ascending, Descending } from './common/Icons';
 import Select from './common/Select';
 
 const SortControls: React.FC = () => {
-  const [sortParams, setSortParams] = useSortParams();
+  const [sortParams, toggleSortDirection, onSortByChange] = useSortParams();
   const sortOptions = useSortOptions();
-
-  const setSortDirection = useCallback(() => {
-    setSortParams({ sort: sortParams.sort === 'asc' ? undefined : 'asc' }, 'replaceIn');
-  }, [setSortParams, sortParams.sort]);
-
-  const onSortByChange = useCallback((sortBy: string) => {
-    setSortParams({ sortBy: sortBy === sortOptions?.defaultKey ? undefined : sortBy }, 'replaceIn');
-  }, [setSortParams, sortOptions?.defaultKey]);
 
   if (!sortOptions) return null;
 
@@ -23,7 +15,7 @@ const SortControls: React.FC = () => {
         className="text-base font-medium text-gray-600
           flex justify-end rounded-lg cursor-pointer"
         style={{ outline: 'none' }}
-        onClick={setSortDirection}
+        onClick={toggleSortDirection}
       >
         {sortParams.sort === 'asc' ? <Ascending /> : <Descending />}
         <p className="mb-1 ml-2 text-sm">Sort By</p>

@@ -45,7 +45,11 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
 
   useEffect(() => {
-    setSelectedTab(sortBy ? (isFirst ? tabs.find(t => t.title === sortBy)! : null) : (isFirst ? tabs[0] : null));
+    if (sortBy) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return setSelectedTab(isFirst ? tabs.find(t => t.title === sortBy)! : null);
+    }
+    return setSelectedTab(isFirst ? tabs[0] : null);
   }, [sortBy, tabs, isFirst]);
 
   const onCardClick = useCallback(() => {

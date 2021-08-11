@@ -12,11 +12,11 @@ import { SortMap, useSort } from '../hooks/sort-hooks';
 
 const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
-const qualityGateSortName = (codeQuality: RepoAnalysis['codeQuality']) => {
-  if (!codeQuality) return 'd';
-  if (codeQuality.qualityGate === 'ok') return 'a';
-  if (codeQuality.qualityGate === 'warn') return 'b';
-  return 'c';
+const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
+  if (!codeQuality) return 1000;
+  if (codeQuality.qualityGate.toLowerCase() === 'ok') return 3;
+  if (codeQuality.qualityGate.toLowerCase() === 'warn') return 2;
+  return 1;
 };
 
 const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
@@ -37,8 +37,7 @@ const sorters: SortMap<RepoAnalysis> = {
   'Commits': (a, b) => a.commits.count - b.commits.count,
   'Pull requests': (a, b) => a.prs.total - b.prs.total,
   'Tests': (a, b) => (a.tests?.total || 0) - (b.tests?.total || 0),
-  'Code quality': (a, b) => qualityGateSortName(a.codeQuality)
-    .localeCompare(qualityGateSortName(b.codeQuality))
+  'Code quality': (a, b) => qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality)
 };
 
 const Repos: React.FC = () => {
