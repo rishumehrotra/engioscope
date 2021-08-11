@@ -84,7 +84,7 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   fileStream.write('\n');
   await streamPipeline(response.body, fileStream);
 
-  logDisk(`${fileNameForLogs(filePath)} written.`);
+  logDisk(`Wrote ${fileNameForLogs(filePath)}`);
 };
 
 export default (diskCacheTimeMs: number) => ({
@@ -101,7 +101,7 @@ export default (diskCacheTimeMs: number) => ({
       await streamToDisk(fileLocation, fetcher);
     }
 
-    logDisk(`Reading from file ${fileNameForLogs(filePath)}`);
+    logDisk(`Reading ${fileNameForLogs(filePath)}`);
     const fileContents = await fs.readFile(filePath, 'utf-8');
     const [frontMatterString, dataString] = fileContents.split('\n');
 
@@ -126,7 +126,7 @@ export default (diskCacheTimeMs: number) => ({
       logDisk(`Deleting directory ${fileNameForLogs(possibleDirectory)}`);
       await rimraf(possibleDirectory);
     } else if (await doesFileExist(join(...cachePath(pathParts)))) {
-      logDisk(`Deleting file ${fileNameForLogs(join(...cachePath(pathParts)))}`);
+      logDisk(`Deleting ${fileNameForLogs(join(...cachePath(pathParts)))}`);
       await fs.unlink(join(...cachePath(pathParts)));
     }
   }

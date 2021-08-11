@@ -23,7 +23,7 @@ const overallSummaryFilePath = join(dataFolderPath, 'index.json');
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
 const writeFile = (path: string, contents: string) => {
-  outputFileLog('Writing file', join(dataFolderPath, path).replace(`${process.cwd()}/`, ''));
+  outputFileLog('Writing', join(dataFolderPath, path).replace(`${process.cwd()}/`, ''));
   return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
 };
 
