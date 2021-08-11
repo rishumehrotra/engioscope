@@ -50,15 +50,8 @@ const WorkItem: React.FC<WorkItemProps> = ({ workItem, colorsForStages, isFirst 
           Bundle size
           {' '}
           <span className="font-semibold text-base">{workItem.targets.length}</span>
-          {/* {' | '} */}
         </span>
-        {/* <span className="text-blue-gray text-sm my-2">
-          Cycle time
-          {' '}
-          <span className="font-semibold text-base">25 days</span>
-        </span> */}
       </div>
-
       {isExpanded ? (
         <div className="mt-4"><WorkItemsGanttChart workItem={workItem} colorsForStages={colorsForStages} /></div>
       ) : null}

@@ -1,4 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState
+} from 'react';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import Card from './common/ExpandingCard';
@@ -10,6 +12,7 @@ import prs from './repo-tabs/prs';
 import tests from './repo-tabs/tests';
 import codeQuality from './repo-tabs/codeQuality';
 import { Tab, TopLevelTab } from './repo-tabs/Tabs';
+import { useSortParams } from '../hooks/sort-hooks';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -38,7 +41,12 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
     codeQuality(repo.codeQuality)
   ], [repo]);
 
+  const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
+
+  useEffect(() => {
+    setSelectedTab(sortBy ? (isFirst ? tabs.find(t => t.title === sortBy)! : null) : (isFirst ? tabs[0] : null));
+  }, [sortBy, tabs, isFirst]);
 
   const onCardClick = useCallback(() => {
     setSelectedTab(!selectedTab ? tabs[0] : null);

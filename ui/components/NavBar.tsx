@@ -11,6 +11,7 @@ type NavItem = {
 const NavBar : React.FC = () => {
   const history = useHistory();
   const projectDetails = useProjectDetails();
+  console.log({ projectDetails });
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1] as Tab;
 
