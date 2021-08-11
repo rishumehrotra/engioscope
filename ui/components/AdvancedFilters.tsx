@@ -1,21 +1,17 @@
 import React, { useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import createUrlParamsHook from '../hooks/create-url-params-hook';
+import { useLocation } from 'react-router-dom';
+import { useQueryParam } from 'use-query-params';
 import { Filters } from './common/Icons';
-import { repoPageUrlTypes, Tab } from '../types';
+import { Tab } from '../types';
 import Checkbox from './common/Checkbox';
 import TextCheckboxCombo from './common/TextCheckboxCombo';
 import useOnClickOutside from '../hooks/on-click-outside';
 
-const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
-
 const RepoFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
-  // const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero ||
-  // withFailingLastBuilds || (techDebtGreaterThan !== undefined);
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam<number | undefined>('techDebtGreaterThan');
 
   return isOpen ? (
     <span
@@ -26,23 +22,23 @@ const RepoFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
     >
       <Checkbox
         value={Boolean(commitsGreaterThanZero)}
-        onChange={setCommitsGreaterThanZero}
+        onChange={value => setCommitsGreaterThanZero(value ? true : undefined, 'replaceIn')}
         label={<span>Has commits</span>}
       />
       <Checkbox
         value={Boolean(buildsGreaterThanZero)}
-        onChange={setBuildsGreaterThanZero}
+        onChange={value => setBuildsGreaterThanZero(value ? true : undefined, 'replaceIn')}
         label={<span>Has builds</span>}
       />
       <Checkbox
         value={Boolean(withFailingLastBuilds)}
-        onChange={setWithFailingLastBuilds}
+        onChange={value => setWithFailingLastBuilds(value ? true : undefined, 'replaceIn')}
         label={<span>Has failing builds</span>}
       />
       <TextCheckboxCombo
         type="number"
         value={String(techDebtGreaterThan === undefined ? '' : techDebtGreaterThan)}
-        onChange={value => setTechDebtGreaterThan(value === undefined ? undefined : Number(value))}
+        onChange={value => setTechDebtGreaterThan(value === undefined ? undefined : Number(value), 'replaceIn')}
         textBoxPrefix="Tech debt &gt; "
         textBoxSuffix=" days"
       />
@@ -51,10 +47,10 @@ const RepoFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 };
 
 const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
-  const [nonMasterReleases, setNonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
-  const [notStartsWithArtifact, setNotStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
-  const [stageNameExists, setStageNameExists] = useUrlParams<string>('stageNameExists');
-  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+  const [nonMasterReleases, setNonMasterReleases] = useQueryParam<boolean | undefined>('nonMasterReleases');
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
+  const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
+  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
 
   return isOpen ? (
     <span
@@ -65,24 +61,24 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
     >
       <Checkbox
         value={Boolean(nonMasterReleases)}
-        onChange={setNonMasterReleases}
+        onChange={value => setNonMasterReleases(value ? true : undefined, 'replaceIn')}
         label={<span>Non master releases</span>}
       />
       <Checkbox
         value={Boolean(notStartsWithArtifact)}
-        onChange={setNotStartsWithArtifact}
+        onChange={value => setNotStartsWithArtifact(value ? true : undefined, 'replaceIn')}
         label={<span>Doesn't start with build artifact</span>}
       />
       <TextCheckboxCombo
         type="string"
         value={stageNameExists}
-        onChange={setStageNameExists}
+        onChange={value => setStageNameExists(value || undefined, 'replaceIn')}
         textBoxPrefix="Stage names containing"
       />
       <TextCheckboxCombo
         type="string"
         value={stageNameExistsNotUsed}
-        onChange={setStageNameExistsNotUsed}
+        onChange={value => setStageNameExistsNotUsed(value || undefined, 'replaceIn')}
         textBoxPrefix="Stage names containing"
         textBoxSuffix="exists, but not used"
       />
@@ -91,8 +87,8 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 };
 
 const AdvancedFilters : React.FC = () => {
-  const history = useHistory();
-  const pathParts = history.location.pathname.split('/');
+  const location = useLocation();
+  const pathParts = location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1] as Tab;
   const ref = useRef(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -106,7 +102,6 @@ const AdvancedFilters : React.FC = () => {
             className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
             tooltip="Advanced Filters"
           />
-          {/* {isFilterApplied ? <span className="rounded inline-block absolute right-2 top-2 bg-red-500 h-2 w-2" /> : null} */}
         </button>
       )}
       <span ref={ref}>
