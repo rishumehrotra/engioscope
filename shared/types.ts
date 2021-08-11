@@ -143,9 +143,9 @@ export type UIWorkItemRevision = {
   date: string;
 };
 
-export type AnalysedWorkItem = {
-  source: UIWorkItem;
-  targets: UIWorkItem[];
+export type AnalysedWorkItems = {
+  ids: Record<number, number[]>;
+  byId: Record<number, UIWorkItem>;
 };
 
 export type UIProjectAnalysis = {
@@ -157,11 +157,13 @@ export type UIProjectAnalysis = {
 };
 
 export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
+
 export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & {
   pipelines: ReleasePipelineStats[];
   stagesToHighlight?: string[];
 };
+
 export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
-  workItems: AnalysedWorkItem[] | null;
+  workItems: AnalysedWorkItems | null;
   taskType?: string;
 };

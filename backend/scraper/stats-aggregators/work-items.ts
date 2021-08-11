@@ -1,5 +1,5 @@
 import throat from 'throat';
-import { AnalysedWorkItem, UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
+import { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import { exists } from '../../utils';
 import {
   WorkItem, WorkItemQueryHierarchialResult,
@@ -38,7 +38,7 @@ const workItemsArrayToLookup = (wis: WorkItem[]): Record<number, WorkItem> => (
 );
 
 const getWorkItemRevisionsAsHash = (
-  workItemRelationsIds: Set<number>,
+  workItemRelationsIds: number[],
   getWorkItemRevisions: (workItemId: number) => Promise<WorkItemRevision[]>
 ) => (
   Promise.all([...workItemRelationsIds].map(
@@ -50,7 +50,6 @@ const getWorkItemRevisionsAsHash = (
   }, {}))
 );
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const relationsToIdTree = (workItemRelations: WorkItemQueryHierarchialResult['workItemRelations']) => (
   workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
     const parent = wir.source ? wir.source.id : 0;
@@ -86,61 +85,40 @@ export default async (
   const [workItemsById, workItemRevisions] = await Promise.all([
     getWorkItemsForIds([...workItemRelationsIds, ...relevantBugAndFeatureIds])
       .then(workItemsArrayToLookup),
-    getWorkItemRevisionsAsHash(workItemRelationsIds, getWorkItemRevisions)
+    getWorkItemRevisionsAsHash(
+      [...workItemRelationsIds, ...relevantBugAndFeatureIds],
+      getWorkItemRevisions
+    )
   ]);
 
-  const createUIWorkItem = (workItem: WorkItem): UIWorkItem => ({
-    id: workItem.id,
-    title: workItem.fields['System.Title'],
-    url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
-    type: workItem.fields['System.WorkItemType'],
-    state: workItem.fields['System.State'],
-    project: workItem.fields['System.TeamProject'],
-    color: workItemTypesByType[workItem.fields['System.WorkItemType']].color,
-    icon: workItemTypesByType[workItem.fields['System.WorkItemType']].icon.url,
-    created: {
-      on: workItem.fields['System.CreatedDate'].toISOString()
+  const createUIWorkItem = (workItem: WorkItem): UIWorkItem => {
+    const workItemType = workItemTypesByType[workItem.fields['System.WorkItemType']]
+      ? workItemTypesByType[workItem.fields['System.WorkItemType']]
+      // TODO: Fix this - we're defaulting to a bug. Instead, find the best work item type match
+      : workItemTypesByType.Bug;
+
+    return {
+      id: workItem.id,
+      title: workItem.fields['System.Title'],
+      url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
+      type: workItem.fields['System.WorkItemType'],
+      state: workItem.fields['System.State'],
+      project: workItem.fields['System.TeamProject'],
+      color: workItemType.color,
+      icon: workItemType.icon.url,
+      created: {
+        on: workItem.fields['System.CreatedDate'].toISOString()
       // name: workItem.fields['System.CreatedBy']
-    },
-    revisions: aggregateRevisions(workItemRevisions[workItem.id])
-  });
+      },
+      revisions: aggregateRevisions(workItemRevisions[workItem.id])
+    };
+  };
 
-  // return {
-  //   ids: relationsToIdTree([...workItemRelations, ...relevantBugsAndFeatures]),
-  //   byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => ({
-  //     ...acc,
-  //     [id]: createUIWorkItem(workItem)
-  //   }), {})
-  // };
-
-  return Object.values(
-    workItemRelations.reduce<Record<number, AnalysedWorkItem>>((acc, workItemRelation) => {
-      const source = workItemRelation.source?.id ? workItemsById[workItemRelation.source.id] : null;
-
-      if (!source) {
-        // TODO: This might need better handling
-        // eslint-disable-next-line no-console
-        console.log('Ignorinng workItemRelation since there\'s no source', workItemRelation);
-        return acc;
-      }
-
-      const target = workItemRelation.target?.id ? workItemsById[workItemRelation.target.id] : null;
-
-      return {
-        ...acc,
-        [source.id]: {
-          ...(
-            acc[source.id] || {
-              source: createUIWorkItem(source),
-              targets: []
-            }
-          ),
-          targets: [
-            ...(acc[source.id]?.targets || []),
-            target ? createUIWorkItem(target) : null
-          ].filter(exists)
-        }
-      };
-    }, {})
-  );
+  return {
+    ids: relationsToIdTree([...workItemRelations, ...relevantBugsAndFeatures]),
+    byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => ({
+      ...acc,
+      [id]: createUIWorkItem(workItem)
+    }), {})
+  };
 };

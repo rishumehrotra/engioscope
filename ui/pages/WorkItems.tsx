@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AnalysedWorkItem } from '../../shared/types';
+import { UIWorkItem } from '../../shared/types';
 import { workItemMetrics } from '../network';
 import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { repoPageUrlTypes } from '../types';
@@ -19,49 +19,61 @@ const colorPalette = [
   '#edc951', '#eb6841', '#00a0b0', '#fe4a49'
 ];
 
-const createColorPalette = (workItems: AnalysedWorkItem[]) => {
-  const stageNames = workItems.flatMap(
-    workItem => workItem.targets
-      .flatMap(target => target.revisions.flatMap(rev => rev.state))
-  );
+const createColorPalette = (workItemsMap: Record<number, UIWorkItem>) => {
+  const states = Object.values(workItemsMap).flatMap(wi => wi.revisions.map(r => r.state));
 
-  return [...new Set(stageNames)]
+  return [...new Set(states)]
     .reduce<Record<string, string>>((acc, state, index) => ({
       ...acc,
       [state]: colorPalette[index % colorPalette.length]
     }), {});
 };
 
-const bySearchTerm = (searchTerm: string) => (workItem: AnalysedWorkItem) => (
-  workItem.source.title.toLowerCase().includes(searchTerm.toLowerCase())
+const bySearchTerm = (searchTerm: string) => (workItem: UIWorkItem) => (
+  workItem.title.toLowerCase().includes(searchTerm.toLowerCase())
 );
 
-const sorters: SortMap<AnalysedWorkItem> = {
-  'Bundle size': (a, b) => a.targets.length - b.targets.length
-};
+const sorters = (childrenCount: (id: number) => number): SortMap<UIWorkItem> => ({
+  'Bundle size': (a, b) => childrenCount(a.id) - childrenCount(b.id)
+});
 
 const WorkItems: React.FC = () => {
   const workItemAnalysis = useFetchForProject(workItemMetrics);
-  const sorter = useSort(sorters, 'Bundle size');
   const [search] = useUrlParams<string>('search');
+
+  const sorterMap = useMemo(() => {
+    if (workItemAnalysis === 'loading') return sorters(() => 0);
+    const { workItems } = workItemAnalysis;
+    if (workItems === null) return sorters(() => 0);
+    return sorters((id: number) => workItems.ids[id].length);
+  }, [workItemAnalysis]);
+
+  const sorter = useSort(sorterMap, 'Bundle size');
 
   const colorsForStages = useMemo(() => {
     if (workItemAnalysis === 'loading') return {};
-    return workItemAnalysis.workItems ? createColorPalette(workItemAnalysis.workItems) : {};
+    if (workItemAnalysis.workItems === null) return {};
+    return workItemAnalysis.workItems.ids ? createColorPalette(workItemAnalysis.workItems.byId) : {};
   }, [workItemAnalysis]);
 
   if (workItemAnalysis === 'loading') return <div>Loading...</div>;
+  if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
-  const filteredWorkItems = workItemAnalysis.workItems
-    ?.filter(search === undefined ? dontFilter : bySearchTerm(search))
+  const { workItems } = workItemAnalysis;
+  const topLevelWorkItems = workItems.ids[0].map(id => workItems.byId[id]);
+
+  const filteredWorkItems = topLevelWorkItems
+    .filter(search === undefined ? dontFilter : bySearchTerm(search))
     .sort(sorter);
 
   return (
     <ul>
-      {filteredWorkItems?.map((workItem, index) => (
+      {filteredWorkItems.map((workItem, index) => (
         <WorkItem
-          key={workItem.source.id}
-          workItem={workItem}
+          key={workItem.id}
+          workItemId={workItem.id}
+          workItemsById={workItems.byId}
+          workItemsIdTree={workItems.ids}
           colorsForStages={colorsForStages}
           isFirst={index === 0}
         />

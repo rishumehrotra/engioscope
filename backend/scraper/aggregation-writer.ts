@@ -35,7 +35,7 @@ const projectSummary = (
   lastUpdated: shortDateFormat(new Date()),
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.length,
-  workItemCount: projectAnalysis.workItemAnalysis?.length || 0
+  workItemCount: Object.values(projectAnalysis.workItemAnalysis?.ids[0] || {}).length || 0
 });
 
 const writeRepoAnalysisFile = async (

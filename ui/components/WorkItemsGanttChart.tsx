@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnalysedWorkItem, UIWorkItemRevision } from '../../shared/types';
+import { AnalysedWorkItems, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { mediumDate } from '../helpers/utils';
 
 const svgWidth = 1200;
@@ -10,8 +10,8 @@ const barHeight = 20;
 const rowPadding = 3;
 const axisLabelsHeight = 20;
 
-const svgHeight = (workItem: AnalysedWorkItem) => (
-  ((textHeight + (rowPadding * 2)) * workItem.targets.length) + axisLabelsHeight
+const svgHeight = (workItem: UIWorkItem, childrenCount: number) => (
+  ((textHeight + (rowPadding * 2)) * childrenCount) + axisLabelsHeight
 );
 
 const barYCoord = (targetIndex: number) => (
@@ -19,23 +19,25 @@ const barYCoord = (targetIndex: number) => (
 );
 
 type WorkItemsGanttChartProps = {
-  workItem: AnalysedWorkItem;
+  workItemId: number;
+  workItemsById: AnalysedWorkItems['byId'];
+  workItemsIdTree: AnalysedWorkItems['ids'];
   colorsForStages: Record<string, string>;
 };
 
-const getMinDateTime = (workItem: AnalysedWorkItem) => Math.min(
-  new Date(workItem.source.revisions[0].date).getTime(),
-  ...workItem.targets.map(target => new Date(target.revisions[0].date).getTime())
+const getMinDateTime = (workItem: UIWorkItem, children: UIWorkItem[]) => Math.min(
+  new Date(workItem.revisions[0].date).getTime(),
+  ...children.map(child => new Date(child.revisions[0].date).getTime())
 );
 
-const getMaxDateTime = (workItem: AnalysedWorkItem) => Math.max(
-  new Date(workItem.source.revisions[workItem.source.revisions.length - 1].date).getTime(),
-  ...workItem.targets.map(target => new Date(target.revisions[target.revisions.length - 1].date).getTime())
+const getMaxDateTime = (workItem: UIWorkItem, children: UIWorkItem[]) => Math.max(
+  new Date(workItem.revisions[workItem.revisions.length - 1].date).getTime(),
+  ...children.map(child => new Date(child.revisions[child.revisions.length - 1].date).getTime())
 );
 
-const createXCoordConverterFor = (workItem: AnalysedWorkItem) => {
-  const minDateTime = getMinDateTime(workItem);
-  const maxDateTime = getMaxDateTime(workItem);
+const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkItem[]) => {
+  const minDateTime = getMinDateTime(workItem, children);
+  const maxDateTime = getMaxDateTime(workItem, children);
 
   return (time: string) => {
     const date = new Date(time);
@@ -64,35 +66,39 @@ const makeTransparent = (rgb: string) => {
   return `${rgb}11`;
 };
 
-const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({ workItem, colorsForStages }) => {
-  const timeToXCoord = createXCoordConverterFor(workItem);
+const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
+  workItemId, workItemsById, workItemsIdTree, colorsForStages
+}) => {
+  const workItem = workItemsById[workItemId];
+  const workItemChildren = workItemsIdTree[workItemId].map(id => workItemsById[id]);
+  const timeToXCoord = createXCoordConverterFor(workItem, workItemChildren);
   const barWidth = barWidthUsing(timeToXCoord);
 
   return (
-    <svg viewBox={`0 0 ${svgWidth} ${svgHeight(workItem)}`}>
+    <svg viewBox={`0 0 ${svgWidth} ${svgHeight(workItem, workItemChildren.length)}`}>
       <line
         x1={textWidth + barStartPadding}
         x2={textWidth + barStartPadding}
         y1={0}
-        y2={svgHeight(workItem) - axisLabelsHeight}
+        y2={svgHeight(workItem, workItemChildren.length) - axisLabelsHeight}
         stroke="#ddd"
         strokeWidth="1"
         strokeDasharray="3,5"
       />
       <foreignObject
         x={textWidth + barStartPadding - 40}
-        y={svgHeight(workItem) - axisLabelsHeight}
+        y={svgHeight(workItem, workItemChildren.length) - axisLabelsHeight}
         width={80}
         height={20}
       >
         <div className="text-xs text-gray-500 text-center">
-          {mediumDate(new Date(getMinDateTime(workItem)))}
+          {mediumDate(new Date(getMinDateTime(workItem, workItemChildren)))}
         </div>
       </foreignObject>
-      {workItem.targets.map((target, targetIndex) => (
+      {workItemsIdTree[workItemId].map(id => workItemsById[id]).map((childWorkItem, targetIndex, list) => (
         // eslint-disable-next-line react/no-array-index-key
-        <g key={target.title + targetIndex}>
-          {targetIndex <= workItem.targets.length - 1 ? (
+        <g key={childWorkItem.title + targetIndex}>
+          {targetIndex <= list.length - 1 ? (
             <line
               x1="0"
               y1={(textHeight + (rowPadding * 2)) * targetIndex - rowPadding}
@@ -107,7 +113,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({ workItem, col
             y={(textHeight + (rowPadding * 2)) * targetIndex}
             width={svgWidth}
             height={textHeight}
-            fill={makeTransparent(`#${target.color}`)}
+            fill={makeTransparent(`#${childWorkItem.color}`)}
           />
           <foreignObject
             x="10"
@@ -116,35 +122,35 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({ workItem, col
             height={textHeight}
           >
             <a
-              href={target.url}
+              href={childWorkItem.url}
               className="text-blue-600 truncate w-full flex mt-1 items-center text-sm hover:underline"
               style={{ width: `${textWidth}px` }}
               target="_blank"
               rel="noreferrer"
-              title={`${target.type}: ${target.title}`}
+              title={`${childWorkItem.type}: ${childWorkItem.title}`}
             >
               <img
-                src={target.icon}
-                alt={`Icon for ${target.type}`}
+                src={childWorkItem.icon}
+                alt={`Icon for ${childWorkItem.type}`}
                 width="16"
                 className="float-left mr-1"
               />
-              {target.title}
+              {childWorkItem.title}
             </a>
           </foreignObject>
-          {target.revisions.slice(0, -1).map((revision, index) => (
+          {childWorkItem.revisions.slice(0, -1).map((revision, index) => (
             <rect
               x={timeToXCoord(revision.date)}
               y={barYCoord(targetIndex)}
-              width={barWidth(target.revisions, index)}
+              width={barWidth(childWorkItem.revisions, index)}
               height={barHeight}
               fill={colorsForStages[revision.state]}
               key={revision.date}
             >
               <title>
-                {`${revision.state} → ${target.revisions[index + 1].state}`}
+                {`${revision.state} → ${childWorkItem.revisions[index + 1].state}`}
                 {'\n'}
-                {`${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(target.revisions[index + 1].date))}`}
+                {`${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(childWorkItem.revisions[index + 1].date))}`}
               </title>
             </rect>
           ))}
