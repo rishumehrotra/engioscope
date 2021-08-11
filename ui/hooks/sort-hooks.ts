@@ -60,5 +60,5 @@ export const useSort = <T>(sortMap: SortMap<T>, defaultKey: string) => {
 
 export const useRemoveSort = () => {
   const setSortOptions = useSetSortOptions();
-  setSortOptions(null);
+  useEffect(() => setSortOptions(null));
 };
