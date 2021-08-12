@@ -66,6 +66,110 @@ const makeTransparent = (rgb: string) => {
   return `${rgb}11`;
 };
 
+type LeftGraticuleProps = {
+  height: number;
+  date: Date;
+}
+
+const LeftGraticule: React.FC<LeftGraticuleProps> = ({ height, date }) => (
+  <g>
+    <line
+      x1={textWidth + barStartPadding}
+      x2={textWidth + barStartPadding}
+      y1={0}
+      y2={height - axisLabelsHeight}
+      stroke="#ddd"
+      strokeWidth="1"
+      strokeDasharray="3,5"
+    />
+    <foreignObject
+      x={textWidth + barStartPadding - 40}
+      y={height - axisLabelsHeight}
+      width={80}
+      height={20}
+    >
+      <div className="text-xs text-gray-500 text-center">
+        {mediumDate(date)}
+      </div>
+    </foreignObject>
+  </g>
+);
+
+const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => [
+  `${revision.state} → ${nextRevision.state}`,
+  `${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(nextRevision.date))}`
+].join('\n');
+
+type GanttRowProps = {
+  workItem: UIWorkItem;
+  isLast: boolean;
+  rowIndex: number;
+  timeToXCoord: (time: string) => number;
+  barWidth: (revisions: UIWorkItemRevision[], index: number) => number;
+  colorsForStages: Record<string, string>;
+}
+
+const GanttRow: React.FC<GanttRowProps> = ({
+  workItem, rowIndex, isLast, timeToXCoord, barWidth, colorsForStages
+}) => (
+  <g>
+    {!isLast ? (
+      <line
+        x1="0"
+        y1={(textHeight + (rowPadding * 2)) * rowIndex - rowPadding}
+        x2={svgWidth}
+        y2={(textHeight + (rowPadding * 2)) * rowIndex - rowPadding}
+        strokeWidth="1"
+        stroke="#ddd"
+      />
+    ) : null}
+    <rect
+      x="0"
+      y={(textHeight + (rowPadding * 2)) * rowIndex}
+      width={svgWidth}
+      height={textHeight}
+      fill={makeTransparent(`#${workItem.color}`)}
+    />
+    <foreignObject
+      x="10"
+      y={(textHeight + (rowPadding * 2)) * rowIndex}
+      width={textWidth}
+      height={textHeight}
+    >
+      <a
+        href={workItem.url}
+        className="text-blue-600 truncate w-full flex mt-1 items-center text-sm hover:underline"
+        style={{ width: `${textWidth}px` }}
+        target="_blank"
+        rel="noreferrer"
+        title={`${workItem.type}: ${workItem.title}`}
+      >
+        <img
+          src={workItem.icon}
+          alt={`Icon for ${workItem.type}`}
+          width="16"
+          className="float-left mr-1"
+        />
+        {workItem.title}
+      </a>
+    </foreignObject>
+    {workItem.revisions.slice(0, -1).map((revision, revisionIndex) => (
+      <rect
+        x={timeToXCoord(revision.date)}
+        y={barYCoord(rowIndex)}
+        width={barWidth(workItem.revisions, revisionIndex)}
+        height={barHeight}
+        fill={colorsForStages[revision.state]}
+        key={revision.date}
+      >
+        <title>
+          {revisionTitle(revision, workItem.revisions[revisionIndex + 1])}
+        </title>
+      </rect>
+    ))}
+  </g>
+);
+
 const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorsForStages
 }) => {
@@ -73,88 +177,24 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
   const workItemChildren = workItemsIdTree[workItemId].map(id => workItemsById[id]);
   const timeToXCoord = createXCoordConverterFor(workItem, workItemChildren);
   const barWidth = barWidthUsing(timeToXCoord);
+  const height = svgHeight(workItem, workItemChildren.length);
 
   return (
-    <svg viewBox={`0 0 ${svgWidth} ${svgHeight(workItem, workItemChildren.length)}`}>
-      <line
-        x1={textWidth + barStartPadding}
-        x2={textWidth + barStartPadding}
-        y1={0}
-        y2={svgHeight(workItem, workItemChildren.length) - axisLabelsHeight}
-        stroke="#ddd"
-        strokeWidth="1"
-        strokeDasharray="3,5"
+    <svg viewBox={`0 0 ${svgWidth} ${height}`}>
+      <LeftGraticule
+        height={height}
+        date={new Date(getMinDateTime(workItem, workItemChildren))}
       />
-      <foreignObject
-        x={textWidth + barStartPadding - 40}
-        y={svgHeight(workItem, workItemChildren.length) - axisLabelsHeight}
-        width={80}
-        height={20}
-      >
-        <div className="text-xs text-gray-500 text-center">
-          {mediumDate(new Date(getMinDateTime(workItem, workItemChildren)))}
-        </div>
-      </foreignObject>
-      {workItemsIdTree[workItemId].map(id => workItemsById[id]).map((childWorkItem, targetIndex, list) => (
-        // eslint-disable-next-line react/no-array-index-key
-        <g key={childWorkItem.title + targetIndex}>
-          {targetIndex <= list.length - 1 ? (
-            <line
-              x1="0"
-              y1={(textHeight + (rowPadding * 2)) * targetIndex - rowPadding}
-              x2={svgWidth}
-              y2={(textHeight + (rowPadding * 2)) * targetIndex - rowPadding}
-              strokeWidth="1"
-              stroke="#ddd"
-            />
-          ) : null}
-          <rect
-            x="0"
-            y={(textHeight + (rowPadding * 2)) * targetIndex}
-            width={svgWidth}
-            height={textHeight}
-            fill={makeTransparent(`#${childWorkItem.color}`)}
-          />
-          <foreignObject
-            x="10"
-            y={(textHeight + (rowPadding * 2)) * targetIndex}
-            width={textWidth}
-            height={textHeight}
-          >
-            <a
-              href={childWorkItem.url}
-              className="text-blue-600 truncate w-full flex mt-1 items-center text-sm hover:underline"
-              style={{ width: `${textWidth}px` }}
-              target="_blank"
-              rel="noreferrer"
-              title={`${childWorkItem.type}: ${childWorkItem.title}`}
-            >
-              <img
-                src={childWorkItem.icon}
-                alt={`Icon for ${childWorkItem.type}`}
-                width="16"
-                className="float-left mr-1"
-              />
-              {childWorkItem.title}
-            </a>
-          </foreignObject>
-          {childWorkItem.revisions.slice(0, -1).map((revision, index) => (
-            <rect
-              x={timeToXCoord(revision.date)}
-              y={barYCoord(targetIndex)}
-              width={barWidth(childWorkItem.revisions, index)}
-              height={barHeight}
-              fill={colorsForStages[revision.state]}
-              key={revision.date}
-            >
-              <title>
-                {`${revision.state} → ${childWorkItem.revisions[index + 1].state}`}
-                {'\n'}
-                {`${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(childWorkItem.revisions[index + 1].date))}`}
-              </title>
-            </rect>
-          ))}
-        </g>
+      {workItemsIdTree[workItemId].map(id => workItemsById[id]).map((workItem, workItemIndex, list) => (
+        <GanttRow
+          key={workItem.title + workItemIndex}
+          isLast={workItemIndex === list.length - 1}
+          workItem={workItem}
+          rowIndex={workItemIndex}
+          timeToXCoord={timeToXCoord}
+          barWidth={barWidth}
+          colorsForStages={colorsForStages}
+        />
       ))}
     </svg>
   );

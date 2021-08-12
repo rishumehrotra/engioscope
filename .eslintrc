@@ -30,10 +30,11 @@
     "language-colors.ts"
   ],
   "rules": {
+    "eslint-comments/no-unused-disable": "error",
     "consistent-return": "off",
     "comma-dangle": [
       "error",
-      "never",
+      "never"
     ],
     "quote-props": [
       "error",
