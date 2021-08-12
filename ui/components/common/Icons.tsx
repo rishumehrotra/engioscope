@@ -158,3 +158,15 @@ export const ArrowRight: React.FC<{ className?: string}> = ({ className }) => (
     <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
   </svg>
 );
+
+export const Plus: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className || ''} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+  </svg>
+);
+
+export const Minus: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className || ''} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+  </svg>
+);
