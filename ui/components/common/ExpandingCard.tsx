@@ -16,6 +16,7 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle, titleUrl }) => (
           href={titleUrl}
           target="_blank"
           rel="noreferrer"
+          className="text-blue-600 font-bold text-lg truncate max-width-full hover:underline"
           onClick={e => e.stopPropagation()}
         >
           {title}
@@ -40,13 +41,15 @@ export type CardProps = {
   tag?: string;
   onCardClick?: () => void;
   isExpanded: boolean;
+  className?: string;
 }
 
 const Card: React.FC<CardProps> = ({
-  title, titleUrl, subtitle, tag, children, onCardClick, isExpanded
+  title, titleUrl, subtitle, tag, children, onCardClick, isExpanded, className
 }) => (
-  <div className={`bg-white border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
-  transition-colors duration-500 ease-in-out rounded-lg shadow relative`}
+  <div className={`bg-white ${className} border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
+  transition-colors duration-500 ease-in-out rounded-lg shadow relative
+  `}
   >
     <div className="grid grid-flow-row mt-2">
       <div

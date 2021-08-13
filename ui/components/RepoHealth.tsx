@@ -1,6 +1,7 @@
 import React, {
   useCallback, useEffect, useMemo, useState
 } from 'react';
+import { useHistory } from 'react-router-dom';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import Card from './common/ExpandingCard';
@@ -13,6 +14,7 @@ import tests from './repo-tabs/tests';
 import codeQuality from './repo-tabs/codeQuality';
 import { Tab, TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
+import { ExternalLink } from './common/Icons';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -56,6 +58,11 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
     setSelectedTab(!selectedTab ? tabs[0] : null);
   }, [selectedTab, tabs]);
 
+  const history = useHistory();
+  const goToPipeline = useCallback((pipelineName: string) => {
+    history.push(history.location.pathname.replace('/repos', `/release-pipelines?search="${pipelineName}"`));
+  }, [history]);
+
   return (
     <Card
       title={repo.name}
@@ -65,6 +72,18 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
       onCardClick={onCardClick}
       isExpanded={selectedTab !== null || isFirst}
     >
+      {repo.pipelines ? (
+        <div className="mx-6 flex flex-wrap items-baseline mt-4">
+          <span className="text-xs mr-4 uppercase tracking-wide">Part of release pipelines: </span>
+          {repo.pipelines.map(p => (
+            <span className="flex items-center mr-4 mb-2">
+              <button onClick={() => goToPipeline(p)} className="font-semibold text-base">{p}</button>
+              <ExternalLink className="h-4 text-blue-600" />
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="mt-4 px-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
         {tabs.map(tab => (
           <TopLevelTab

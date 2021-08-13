@@ -31,7 +31,7 @@ const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => 
 
   return (
     <div className="my-4">
-      <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts</div>
+      <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts from repos</div>
       {Object.keys(pipeline.repos).length ? (
         <ol className="grid grid-flow-col justify-start">
           {Object.entries(pipeline.repos).map(([repoName, branches]) => (
