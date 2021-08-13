@@ -1,7 +1,7 @@
 import React, {
   useCallback, useEffect, useMemo, useState
 } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import Card from './common/ExpandingCard';
@@ -14,7 +14,6 @@ import tests from './repo-tabs/tests';
 import codeQuality from './repo-tabs/codeQuality';
 import { Tab, TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
-import { ExternalLink } from './common/Icons';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -59,9 +58,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
   }, [selectedTab, tabs]);
 
   const history = useHistory();
-  const goToPipeline = useCallback((pipelineName: string) => {
-    history.push(history.location.pathname.replace('/repos', `/release-pipelines?search="${pipelineName}"`));
-  }, [history]);
+  const goToPipeline = (pipelineName: string) => history.location.pathname.replace('/repos', `/release-pipelines?search="${pipelineName}"`);
 
   return (
     <Card
@@ -73,12 +70,16 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
       isExpanded={selectedTab !== null || isFirst}
     >
       {repo.pipelines ? (
-        <div className="mx-6 flex flex-wrap items-baseline mt-4">
-          <span className="text-xs mr-4 uppercase tracking-wide">Part of release pipelines: </span>
-          {repo.pipelines.map(p => (
-            <span className="flex items-center mr-4 mb-2">
-              <button onClick={() => goToPipeline(p)} className="font-semibold text-base">{p}</button>
-              <ExternalLink className="h-4 text-blue-600" />
+        <div className="mx-6 flex flex-wrap items-baseline mt-2">
+          <span className="text-sm text-gray-600">
+            {`In release pipeline${repo.pipelines.length > 1 ? 's' : ''}:`}
+            &nbsp;
+          </span>
+          {repo.pipelines.map((p, i) => (
+            <span className="flex items-center text-blue-600 font-semibold">
+              <Link to={goToPipeline(p)} className="text-sm hover:underline">{p}</Link>
+              {i === repo.pipelines!.length - 1 ? null : ','}
+              &nbsp;
             </span>
           ))}
         </div>
