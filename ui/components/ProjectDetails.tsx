@@ -28,7 +28,7 @@ export const ProjectDetails: React.FC = () => {
             {project.releasePipelineCount ? ' | ' : ''}
             {renderIfAvailable(project.releasePipelineCount, 'Release pipelines')}
             {project.workItemCount ? ' | ' : ''}
-            {renderIfAvailable(project.workItemCount, 'Releases')}
+            {renderIfAvailable(project.workItemCount, project.workItemLabel)}
           </>
         ) : <span className="font-bold text-lg">&nbsp;</span>}
       </div>

@@ -26,10 +26,10 @@ const NavBar : React.FC = () => {
     { key: 'release-pipelines', name: 'Release pipelines' },
     ...(
       projectDetails?.workItemCount
-        ? [{ key: 'workitems', name: 'Releases' } as NavItem]
+        ? [{ key: 'workitems', name: projectDetails.workItemLabel } as NavItem]
         : []
     )
-  ], [projectDetails?.workItemCount]);
+  ], [projectDetails?.workItemCount, projectDetails?.workItemLabel]);
 
   return (
     <div className="grid">
