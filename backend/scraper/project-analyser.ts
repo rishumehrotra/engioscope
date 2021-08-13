@@ -54,14 +54,14 @@ export default (config: Config) => {
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
-      config.azure.groupWorkItemsUnder
+      config.azure.workitems?.groupUnder
         ? forProject(getWorkItemIdsForQuery)(
           queryForTopLevelWorkItems(config)
         ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
         : null,
-      config.azure.groupWorkItemsUnder
+      config.azure.workitems?.groupUnder
         ? forProject(getWorkItemIdsForQuery)(
-          queryForAllBugsAndFeatures
+          queryForAllBugsAndFeatures(config)
         ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
         : null,
       forProject(getWorkItemTypes)
@@ -100,7 +100,7 @@ export default (config: Config) => {
       };
     }));
 
-    const analysisResults = {
+    const analysisResults: ProjectAnalysis = {
       repoAnalysis,
       releaseAnalysis: aggregateReleases(releaseDefinitionById, releases),
       workItemAnalysis: topLevelWorkItemIdsRelations === null
@@ -111,7 +111,8 @@ export default (config: Config) => {
           workItemTypes,
           forProject(getWorkItems),
           forProject(getWorkItemRevisions)
-        )
+        ),
+      workItemLabel: config.azure.workitems?.label || 'Features'
     };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);

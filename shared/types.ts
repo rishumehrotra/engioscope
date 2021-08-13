@@ -154,6 +154,7 @@ export type UIProjectAnalysis = {
   reposCount: number;
   releasePipelineCount: number;
   workItemCount: number;
+  workItemLabel: string;
 };
 
 export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };

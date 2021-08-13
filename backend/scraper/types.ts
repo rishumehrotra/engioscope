@@ -8,7 +8,11 @@ export type Config = Readonly<{
     token: string;
     lookAtPast: string;
     stagesToHighlight?: string[];
-    groupWorkItemsUnder?: string;
+    workitems?: {
+      groupUnder: string;
+      label?: string;
+      skipChildren?: string[];
+    };
     collections: {
       name: string;
       projects: string[];
@@ -21,4 +25,5 @@ export type ProjectAnalysis = {
   repoAnalysis: RepoAnalysis[];
   releaseAnalysis: ReleasePipelineStats[];
   workItemAnalysis: AnalysedWorkItems | null;
+  workItemLabel: string;
 }

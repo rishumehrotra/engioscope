@@ -35,7 +35,8 @@ const projectSummary = (
   lastUpdated: shortDateFormat(new Date()),
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.length,
-  workItemCount: Object.values(projectAnalysis.workItemAnalysis?.ids[0] || {}).length || 0
+  workItemCount: Object.values(projectAnalysis.workItemAnalysis?.ids[0] || {}).length || 0,
+  workItemLabel: projectAnalysis.workItemLabel
 });
 
 const writeRepoAnalysisFile = async (
@@ -128,7 +129,7 @@ export default (config: Config) => (projectSpec: ProjectSpec) => (
   (analysis: ProjectAnalysis) => Promise.all([
     writeRepoAnalysisFile(projectSpec, analysis),
     writeReleaseAnalysisFile(projectSpec, analysis, config.azure.stagesToHighlight),
-    writeWorkItemAnalysisFile(projectSpec, analysis, config.azure.groupWorkItemsUnder),
+    writeWorkItemAnalysisFile(projectSpec, analysis, config.azure.workitems?.groupUnder),
     updateOverallSummary(config)({ name: projectSpec })
   ])
 );
