@@ -16,6 +16,7 @@ import { RepoAnalysis } from '../../shared/types';
 import { pastDate } from '../utils';
 import { WorkItemQueryHierarchialResult, WorkItemQueryResult } from './types-azure';
 import { queryForAllBugsAndFeatures, queryForTopLevelWorkItems } from './work-item-queries';
+import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -100,9 +101,11 @@ export default (config: Config) => {
       };
     }));
 
+    const releaseAnalysis = aggregateReleases(releaseDefinitionById, releases);
+
     const analysisResults: ProjectAnalysis = {
-      repoAnalysis,
-      releaseAnalysis: aggregateReleases(releaseDefinitionById, releases),
+      repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),
+      releaseAnalysis,
       workItemAnalysis: topLevelWorkItemIdsRelations === null
         ? null
         : await aggregateWorkItems(
