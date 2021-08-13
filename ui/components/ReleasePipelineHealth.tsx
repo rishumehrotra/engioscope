@@ -35,8 +35,12 @@ const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => 
       {Object.keys(pipeline.repos).length ? (
         <ol className="grid grid-flow-col justify-start">
           {Object.entries(pipeline.repos).map(([repoName, branches]) => (
-            <button onClick={() => goToRepo(repoName)} key={repoName} className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3">
-              <div className="font-semibold flex items-center mb-1">
+            <button
+              onClick={() => goToRepo(repoName)}
+              key={repoName}
+              className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
+            >
+              <div className="font-semibold flex items-center mb-1 text-blue-600 artifact-title">
                 {repoName}
               </div>
               <ol className="flex flex-wrap">

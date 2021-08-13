@@ -16,3 +16,15 @@ body {
 .max-width-full {
   max-width: 100%;
 }
+
+.artifact:hover .artifact-title {
+  text-decoration: underline;
+}
+
+.show-more {
+  visibility: hidden;
+}
+
+.workitem-body:hover .show-more {
+  visibility: visible;
+}

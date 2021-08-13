@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { AnalysedWorkItems } from '../../shared/types';
 import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
@@ -15,16 +15,13 @@ const WorkItem: React.FC<WorkItemProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorsForStages, isFirst
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
-  const [isHover, setIsHover] = useState<boolean>(false);
-  const toggleHover = useCallback(() => setIsHover(!isHover), [isHover]);
 
   const workItem = workItemsById[workItemId];
 
   return (
     <button
-      className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out rounded-lg shadow relative w-full text-left"
-      onMouseEnter={toggleHover}
-      onMouseLeave={toggleHover}
+      className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out
+      rounded-lg shadow relative w-full text-left workitem-body"
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <h3 className="flex justify-between">
@@ -46,7 +43,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           </span>
         ) : (
           <span className="flex text-gray-500">
-            {isHover ? <span>Show more</span> : null}
+            <span className="show-more">Show more</span>
             <DownChevron />
           </span>
         )}
