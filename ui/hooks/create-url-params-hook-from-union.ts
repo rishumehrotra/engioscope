@@ -1,4 +1,5 @@
-import { useQueryParam, QueryParamConfig } from 'use-query-params';
+import type { QueryParamConfig } from 'use-query-params';
+import { useQueryParam } from 'use-query-params';
 
 export default <T extends string>(options: Readonly<T[]>, defaultSortBy: T, paramName: string) => {
   type SortByOptions = (typeof options)[number];

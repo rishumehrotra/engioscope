@@ -2,12 +2,12 @@ import AwaitLock from 'await-lock';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
-import {
+import type {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
-import { Config, ProjectAnalysis } from './types';
+import type { Config, ProjectAnalysis } from './types';
 
 type ProjectSpec = [collectionName: string, projectName: string];
 

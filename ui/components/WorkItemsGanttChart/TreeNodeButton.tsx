@@ -1,6 +1,6 @@
 import React from 'react';
 import { Minus, Plus } from '../common/Icons';
-import { ExpandedState } from './types';
+import type { ExpandedState } from './types';
 
 type TreeNodeButtonProps = {
   expandedState: ExpandedState;

@@ -7,7 +7,7 @@ type MetricProps = {
   additionalValue?: string;
   tooltip?: string;
   position?: 'first' | 'last' | 'default';
-}
+};
 
 const Metric: React.FC<MetricProps> = ({
   name, value, additionalValue, tooltip, position = 'default'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { UIProjectAnalysis } from '../../shared/types';
+import type { UIProjectAnalysis } from '../../shared/types';
 import { useSetProjectDetails } from './project-details-hooks';
 
 export default <T extends UIProjectAnalysis>(fetcher: (collectionName: string, projectName: string) => Promise<T>) => {

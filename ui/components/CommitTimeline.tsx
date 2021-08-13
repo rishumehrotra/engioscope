@@ -1,11 +1,11 @@
 import React from 'react';
-import { UICommits } from '../../shared/types';
+import type { UICommits } from '../../shared/types';
 import { shortDate } from '../helpers/utils';
 
 type CommitTimelineProps = {
   timeline: UICommits['byDev'][number]['byDate'];
   max: number;
-}
+};
 
 const barWidth = 10;
 const barSpacing = 2;

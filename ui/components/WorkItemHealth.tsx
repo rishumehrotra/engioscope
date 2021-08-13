@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnalysedWorkItems } from '../../shared/types';
+import type { AnalysedWorkItems } from '../../shared/types';
 import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
 

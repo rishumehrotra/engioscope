@@ -2,12 +2,12 @@ import React, { useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQueryParam } from 'use-query-params';
 import { Filters } from './common/Icons';
-import { Tab } from '../types';
+import type { Tab } from '../types';
 import Checkbox from './common/Checkbox';
 import TextCheckboxCombo from './common/TextCheckboxCombo';
 import useOnClickOutside from '../hooks/on-click-outside';
 
-const RepoFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
+const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
@@ -46,7 +46,7 @@ const RepoFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   ) : null;
 };
 
-const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
+const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [nonMasterReleases, setNonMasterReleases] = useQueryParam<boolean | undefined>('nonMasterReleases');
   const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
   const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
@@ -86,7 +86,7 @@ const PipelinesFilters : React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   ) : null;
 };
 
-const AdvancedFilters : React.FC = () => {
+const AdvancedFilters: React.FC = () => {
   const location = useLocation();
   const pathParts = location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1] as Tab;

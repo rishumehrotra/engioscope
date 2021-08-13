@@ -1,4 +1,5 @@
-import React, { ChangeEvent } from 'react';
+import type { ChangeEvent } from 'react';
+import React from 'react';
 import { useQueryParam } from 'use-query-params';
 import { Search } from './Icons';
 

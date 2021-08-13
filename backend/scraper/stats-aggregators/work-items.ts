@@ -1,7 +1,7 @@
 import throat from 'throat';
-import { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
+import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import { exists } from '../../utils';
-import {
+import type {
   WorkItem, WorkItemQueryHierarchialResult,
   WorkItemRevision, WorkItemType
 } from '../types-azure';
@@ -70,10 +70,12 @@ export default async (
 ) => {
   if (workItemRelations.length === 0) return null;
 
-  const workItemTypesByType = workItemTypes.reduce((acc, workItemType) => ({
-    ...acc,
-    [workItemType.name]: workItemType
-  }), {} as { [type: string]: WorkItemType });
+  const workItemTypesByType = workItemTypes.reduce<Record<string, WorkItemType>>(
+    (acc, workItemType) => ({
+      ...acc,
+      [workItemType.name]: workItemType
+    }), {}
+  );
 
   const workItemRelationsIds = idsFromRelations(workItemRelations);
   const relevantBugsAndFeatures = (allBugsAndFeatures || [])

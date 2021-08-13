@@ -1,5 +1,5 @@
-import { UIBranches } from '../../../shared/types';
-import { GitBranchStats } from '../types-azure';
+import type { UIBranches } from '../../../shared/types';
+import type { GitBranchStats } from '../types-azure';
 import { isWithinFortnight } from '../../utils';
 
 const significantlyAheadLimit = 20;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQueryParam } from 'use-query-params';
-import { ReleasePipelineStats } from '../../shared/types';
+import type { ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';

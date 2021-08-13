@@ -3,6 +3,6 @@ import startServer from '../server/express';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import config from '../../config.json';
-import { Config } from '../scraper/types';
+import type { Config } from '../scraper/types';
 
 startServer(config as unknown as Config);

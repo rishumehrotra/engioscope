@@ -6,7 +6,7 @@ type CardTitleProps = {
   title: string;
   titleUrl?: string;
   subtitle: React.ReactNode | undefined;
-}
+};
 
 const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle, titleUrl }) => (
   <div>
@@ -42,7 +42,7 @@ export type CardProps = {
   onCardClick?: () => void;
   isExpanded: boolean;
   className?: string;
-}
+};
 
 const Card: React.FC<CardProps> = ({
   title, titleUrl, subtitle, children, onCardClick, isExpanded, className

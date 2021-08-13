@@ -1,7 +1,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
-import { GitPullRequest, PullRequestStatus } from '../types-azure';
-import { UIPullRequests } from '../../../shared/types';
+import type { GitPullRequest, PullRequestStatus } from '../types-azure';
+import type { UIPullRequests } from '../../../shared/types';
 
 const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) => pr.status === status;
 const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
@@ -9,13 +9,13 @@ const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
 );
 
 export default (fromDate: Date) => (prs: GitPullRequest[]) => {
-  const prsByRepo = prs.reduce((acc, pr) => ({
+  const prsByRepo = prs.reduce<Record<string, GitPullRequest[]>>((acc, pr) => ({
     ...acc,
     [pr.repository.id]: [
       ...(acc[pr.repository.id] || []),
       pr
     ]
-  }), {} as Record<string, GitPullRequest[]>);
+  }), {});
 
   return (repoId?: string): UIPullRequests => {
     const repoPrs = repoId ? prsByRepo[repoId] || [] : [];

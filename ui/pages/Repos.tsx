@@ -5,9 +5,10 @@ import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
 import { repoMetrics } from '../network';
 import { dontFilter, filterBySearch } from '../helpers/utils';
-import { RepoAnalysis } from '../../shared/types';
+import type { RepoAnalysis } from '../../shared/types';
 import useFetchForProject from '../hooks/use-fetch-for-project';
-import { SortMap, useSort } from '../hooks/sort-hooks';
+import type { SortMap } from '../hooks/sort-hooks';
+import { useSort } from '../hooks/sort-hooks';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;

@@ -1,8 +1,8 @@
 import React from 'react';
-import { RepoAnalysis } from '../../../shared/types';
+import type { RepoAnalysis } from '../../../shared/types';
 import { formatDebt, num } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
-import { Tab } from './Tabs';
+import type { Tab } from './Tabs';
 import Metric from '../Metric';
 import TabContents from './TabContents';
 

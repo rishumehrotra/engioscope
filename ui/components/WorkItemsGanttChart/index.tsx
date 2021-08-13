@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { AnalysedWorkItems } from '../../../shared/types';
+import type { AnalysedWorkItems } from '../../../shared/types';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
 import {
   svgWidth, createXCoordConverterFor,
   svgHeight, getMinDateTime
 } from './helpers';
-import { ExpandedState } from './types';
+import type { ExpandedState } from './types';
 
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 const indentation = (rowPath: string) => rowPath.split('/').length - 1;

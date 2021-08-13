@@ -1,5 +1,5 @@
-import { ReleasePipelineStats } from '../../../shared/types';
-import { Release, ReleaseDefinition } from '../types-azure';
+import type { ReleasePipelineStats } from '../../../shared/types';
+import type { Release, ReleaseDefinition } from '../types-azure';
 
 const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): ReleasePipelineStats => ({
   id: releaseDefinition.id,
@@ -25,7 +25,9 @@ const addToReleaseStats = (releaseStats: ReleasePipelineStats, release: Release)
     if (!matchingStageInRelease) return stage;
     if (matchingStageInRelease.status === 'notStarted') return stage;
 
-    const releaseDate = matchingStageInRelease.deploySteps[matchingStageInRelease.deploySteps.length - 1].lastModifiedOn;
+    const releaseDate = matchingStageInRelease
+      .deploySteps[matchingStageInRelease.deploySteps.length - 1]
+      .lastModifiedOn;
 
     return {
       ...stage,
@@ -52,7 +54,7 @@ const addToReleaseStats = (releaseStats: ReleasePipelineStats, release: Release)
 });
 
 export default (releaseDefinitionById: (id: number) => ReleaseDefinition | undefined, releases: Release[]) => (
-  Object.values(releases.reduce((acc, release) => {
+  Object.values(releases.reduce<Record<number, ReleasePipelineStats>>((acc, release) => {
     const releaseDefn = releaseDefinitionById(release.releaseDefinition.id);
     if (!releaseDefn) return acc;
 
@@ -63,5 +65,5 @@ export default (releaseDefinitionById: (id: number) => ReleaseDefinition | undef
         release
       )
     };
-  }, {} as Record<number, ReleasePipelineStats>))
+  }, {}))
 );

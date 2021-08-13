@@ -36,7 +36,7 @@ export type UIBuildPipeline = {
 export type UIBuilds = null | {
   count: number;
   pipelines: UIBuildPipeline[];
-}
+};
 
 export type UIBranches = {
   total: number;
@@ -53,7 +53,7 @@ export type UIBranches = {
       lastCommitDate: Date;
     }[];
   };
-}
+};
 
 export type UIPullRequests = {
   total: number;
@@ -61,7 +61,7 @@ export type UIPullRequests = {
   abandoned: number;
   completed: number;
   timeToApprove: null | { average: string; min: string; max: string };
-}
+};
 
 export type UITests = null | {
   total: number;
@@ -73,7 +73,7 @@ export type UITests = null | {
     executionTime: string;
     coverage: string;
   }[];
-}
+};
 
 export type UICodeQuality = null | {
   url: string;
@@ -84,7 +84,7 @@ export type UICodeQuality = null | {
   duplication: number;
   techDebt: number;
   qualityGate: 'error' | 'warn' | 'ok';
-}
+};
 
 export type AggregatedCommitsByDev = {
   name: string;
@@ -95,12 +95,12 @@ export type AggregatedCommitsByDev = {
     delete: number;
   };
   byDate: Record<string, number>;
-}
+};
 
 export type UICommits = {
   count: number;
   byDev: AggregatedCommitsByDev[];
-}
+};
 
 export type RepoAnalysis = {
   name: string;

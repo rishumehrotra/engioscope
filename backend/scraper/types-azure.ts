@@ -147,7 +147,7 @@ export type ReleaseEnvironment = {
 export type ArtifactSourceReference = {
   id: string;
   name: string | null;
-}
+};
 
 export type Artifact = {
   sourceId: string;
@@ -183,7 +183,7 @@ export type ReleaseDefinitionShallowReference = {
   path: string;
   projectReference: ProjectReference | null;
   url: string;
-}
+};
 
 export type Release = {
   id: number;
@@ -271,7 +271,7 @@ export type GitBranchStats = {
   isBaseVersion: boolean;
   name: string;
   url: string;
-}
+};
 
 export type ReleaseReference = {
   id: number;
@@ -356,7 +356,7 @@ export type ReleaseDefinitionEnvironment = {
   };
   environmentTriggers: [];
   badgeUrl: string;
-}
+};
 
 export type ReleaseDefinition = {
   source: 'ibiza' | 'portalExtensionApi' | 'restApi' | 'undefined' | 'userInterface';
@@ -407,7 +407,7 @@ export type WorkItemQueryHierarchialResult = {
     source: null | { id: number; url: string };
     target: null | { id: number; url: string };
   }[];
-}
+};
 
 export type WorkItemQueryResult<T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult> = {
   asOf: Date;
@@ -425,7 +425,7 @@ export type WorkItemTypeFieldInstance = {
   referenceName: string;
   name: string;
   url: string;
-}
+};
 
 export type WorkItemType = {
   name: string;
@@ -440,7 +440,7 @@ export type WorkItemType = {
   transitions: Record<string, { to: string }[]>;
   states: { name: string; color: string; category: string }[];
   url: string;
-}
+};
 
 export type WorkItem = {
   id: number;
@@ -456,7 +456,7 @@ export type WorkItem = {
     'Microsoft.VSTS.TCM.AutomationStatus'?: 'Not Automated' | 'Automated';
   };
   url: string;
-}
+};
 
 export type WorkItemLink = {
   rel: 'System.LinkTypes.Hierarchy'

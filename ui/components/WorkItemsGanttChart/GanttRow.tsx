@@ -1,12 +1,12 @@
 import React from 'react';
-import { UIWorkItem } from '../../../shared/types';
+import type { UIWorkItem } from '../../../shared/types';
 import {
   textWidth, textHeight,
   rowPadding, svgWidth, makeTransparent, barYCoord,
   barHeight, revisionTitle, contrastColour, barWidthUsing
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
-import { ExpandedState } from './types';
+import type { ExpandedState } from './types';
 
 export type GanttRowProps = {
   workItem: UIWorkItem;

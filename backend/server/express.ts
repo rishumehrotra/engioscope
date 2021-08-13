@@ -3,7 +3,7 @@ import express from 'express';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import { Config } from '../scraper/types';
+import type { Config } from '../scraper/types';
 import api from './api';
 
 const uiFolder = path.join(__dirname, '..', '..', 'ui');

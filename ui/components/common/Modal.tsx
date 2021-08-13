@@ -2,7 +2,7 @@ import React from 'react';
 
 type ModalProps = {
   trigger: React.ReactNode;
-}
+};
 
 const Modal: React.FC<ModalProps> = ({ trigger }) => {
   const [showModal, setShowModal] = React.useState(false);

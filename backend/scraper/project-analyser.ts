@@ -9,12 +9,12 @@ import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
 import aggregateWorkItems from './stats-aggregators/work-items';
 import sonar from './network/sonar';
-import { Config, ProjectAnalysis } from './types';
+import type { Config, ProjectAnalysis } from './types';
 import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
-import { RepoAnalysis } from '../../shared/types';
+import type { RepoAnalysis } from '../../shared/types';
 import { pastDate } from '../utils';
-import { WorkItemQueryHierarchialResult, WorkItemQueryResult } from './types-azure';
+import type { WorkItemQueryHierarchialResult, WorkItemQueryResult } from './types-azure';
 import { queryForAllBugsAndFeatures, queryForTopLevelWorkItems } from './work-item-queries';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
 

@@ -17,7 +17,7 @@ const addConfigOption = (yargs: yargs.Argv<{}>): void => {
   });
 };
 
-const ensureConfigExists = async (argv: { [argName: string]: unknown }) => {
+const ensureConfigExists = async (argv: Record<string, unknown>) => {
   const path = join(process.cwd(), argv.config as string);
   if (!await doesFileExist(path)) {
     /* eslint-disable no-console */

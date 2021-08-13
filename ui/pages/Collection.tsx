@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ScrapedProject } from '../../shared/types';
+import type { ScrapedProject } from '../../shared/types';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 

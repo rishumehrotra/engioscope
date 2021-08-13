@@ -1,4 +1,4 @@
-import { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
+import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import { mediumDate } from '../../helpers/utils';
 
 export const svgWidth = 1200;

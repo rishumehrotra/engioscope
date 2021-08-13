@@ -1,4 +1,4 @@
-import {
+import type {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ScrapedProject, ProjectWorkItemAnalysis
 } from '../shared/types';

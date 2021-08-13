@@ -1,4 +1,4 @@
-import { Response } from 'node-fetch';
+import type { Response } from 'node-fetch';
 import { createWriteStream, createReadStream, promises as fs } from 'fs';
 import readline from 'readline';
 import { pipeline } from 'stream';
@@ -20,7 +20,7 @@ type Fetcher = () => Promise<Response>;
 export type FrontMatter = {
   date: number;
   status: number;
-  headers: { [k: string]: string };
+  headers: Record<string, string>;
 };
 
 export type FetchResponse<T> = FrontMatter & { fromCache: boolean; data: T };

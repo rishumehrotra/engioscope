@@ -1,5 +1,5 @@
-import { Measure, SonarAnalysisByRepo } from '../types-sonar';
-import { UICodeQuality } from '../../../shared/types';
+import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
+import type { UICodeQuality } from '../../../shared/types';
 
 export const requiredMetrics = [
   'complexity',

@@ -1,7 +1,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
-import { Build } from '../types-azure';
-import { UIBuildPipeline, UIBuilds } from '../../../shared/types';
+import type { Build } from '../types-azure';
+import type { UIBuildPipeline, UIBuilds } from '../../../shared/types';
 import { exists, isMaster } from '../../utils';
 
 type BuildStats = {
@@ -87,7 +87,7 @@ export default (builds: Build[]) => {
             ...acc.latestMasterBuilds[rId],
             [build.definition.id]:
               // eslint-disable-next-line no-nested-ternary
-              acc.latestMasterBuilds[rId] && acc.latestMasterBuilds[rId][build.definition.id]
+              acc.latestMasterBuilds[rId]?.[build.definition.id]
                 ? acc.latestMasterBuilds[rId][build.definition.id]
                 : isMaster(build.sourceBranch) ? build : undefined
           }
@@ -102,24 +102,28 @@ export default (builds: Build[]) => {
 
       const b = buildStats[id];
 
-      const pipelines = Object.entries(b).reduce((acc, [definitionId, buildStats]) => [
-        ...acc,
-        {
-          count: buildStats.count,
-          name: buildStats.name,
-          url: buildStats.url,
-          success: buildStats.success,
-          definitionId,
-          duration: {
-            average: prettyMilliseconds(buildStats.duration.reduce(add, 0) / buildStats.duration.length),
-            min: prettyMilliseconds(Math.min(...buildStats.duration)),
-            max: prettyMilliseconds(Math.max(...buildStats.duration))
-          },
-          status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
-            ? buildStats.status
-            : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status']
-        }
-      ], [] as UIBuildPipeline[]);
+      const pipelines = Object.entries(b).reduce<UIBuildPipeline[]>(
+        (acc, [definitionId, buildStats]) => [
+          ...acc,
+          {
+            count: buildStats.count,
+            name: buildStats.name,
+            url: buildStats.url,
+            success: buildStats.success,
+            definitionId,
+            duration: {
+              average: prettyMilliseconds(
+                buildStats.duration.reduce(add, 0) / buildStats.duration.length
+              ),
+              min: prettyMilliseconds(Math.min(...buildStats.duration)),
+              max: prettyMilliseconds(Math.max(...buildStats.duration))
+            },
+            status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
+              ? buildStats.status
+              : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status']
+          }
+        ], []
+      );
 
       return {
         count: pipelines.reduce((acc, p) => acc + p.count, 0),

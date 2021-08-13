@@ -1,7 +1,7 @@
 import prettyMs from 'pretty-ms';
 import { prop, sum } from 'rambda';
-import { UITests } from '../../../shared/types';
-import {
+import type { UITests } from '../../../shared/types';
+import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
 

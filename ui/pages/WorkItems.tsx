@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
-import { UIWorkItem } from '../../shared/types';
+import type { UIWorkItem } from '../../shared/types';
 import { workItemMetrics } from '../network';
 import { dontFilter } from '../helpers/utils';
 import WorkItem from '../components/WorkItemHealth';
 import useFetchForProject from '../hooks/use-fetch-for-project';
-import { SortMap, useSort } from '../hooks/sort-hooks';
+import type { SortMap } from '../hooks/sort-hooks';
+import { useSort } from '../hooks/sort-hooks';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',

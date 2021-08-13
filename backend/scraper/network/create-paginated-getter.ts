@@ -1,6 +1,7 @@
 import qs from 'qs';
 import fetch from './fetch-with-timeout';
-import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
+import type { FetchResponse } from './fetch-with-disk-cache';
+import fetchWithDiskCache from './fetch-with-disk-cache';
 
 type PaginatedGetRequest<T> = {
   cacheFile: (pageIndex: string) => string[];

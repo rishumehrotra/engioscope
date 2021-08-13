@@ -1,4 +1,4 @@
-import { Config } from './types';
+import type { Config } from './types';
 import { pastDate } from '../utils';
 
 export const dayInMs = 24 * 60 * 60 * 1000;

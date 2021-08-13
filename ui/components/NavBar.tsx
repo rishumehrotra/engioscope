@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useProjectDetails } from '../hooks/project-details-hooks';
-import { Tab } from '../types';
+import type { Tab } from '../types';
 
 type NavItem = {
   key: Tab;
   name?: string;
 };
 
-const NavBar : React.FC = () => {
+const NavBar: React.FC = () => {
   const history = useHistory();
   const projectDetails = useProjectDetails();
   const pathParts = history.location.pathname.split('/');

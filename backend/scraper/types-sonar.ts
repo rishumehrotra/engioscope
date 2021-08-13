@@ -15,4 +15,4 @@ export type CodeQuality = {
 export type SonarAnalysisByRepo = null | {
   url: string;
   measures: Measure[];
-}
+};

@@ -1,8 +1,9 @@
-import React, { ImgHTMLAttributes, useState } from 'react';
+import type { ImgHTMLAttributes } from 'react';
+import React, { useState } from 'react';
 import { add } from 'rambda';
-import { RepoAnalysis } from '../../../shared/types';
+import type { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../common/AlertMessage';
-import { Tab } from './Tabs';
+import type { Tab } from './Tabs';
 import TabContents from './TabContents';
 import defaultProfilePic from '../../default-profile-pic.png';
 import { num } from '../../helpers/utils';

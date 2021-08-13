@@ -2,16 +2,17 @@ import qs from 'qs';
 import ms from 'ms';
 import md5 from 'md5';
 import fetch from './fetch-with-timeout';
-import { Config } from '../types';
+import type { Config } from '../types';
 import { chunkArray, pastDate } from '../../utils';
-import {
+import type {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
   WorkItem, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemRevision,
   WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
-import fetchWithDiskCache, { FetchResponse } from './fetch-with-disk-cache';
+import type { FetchResponse } from './fetch-with-disk-cache';
+import fetchWithDiskCache from './fetch-with-disk-cache';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -41,7 +42,7 @@ export default (config: Config) => {
   );
   const list = <T>(
     { url, qsParams, cacheFile }:
-    { url:string; qsParams?: Record<string, string>; cacheFile: string[] }
+    { url: string; qsParams?: Record<string, string>; cacheFile: string[] }
   ) => (
     paginatedGet<ListOf<T>>({
       url,

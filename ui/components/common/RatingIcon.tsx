@@ -3,7 +3,7 @@ import { Done, Alert, Danger } from './Icons';
 
 type RatingIconProps = {
   rating: number;
-}
+};
 
 const RatingIcon: React.FC<RatingIconProps> = ({ rating }) => {
   if (rating >= 0 && rating < 50) {

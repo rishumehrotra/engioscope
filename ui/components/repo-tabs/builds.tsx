@@ -1,8 +1,8 @@
 import React from 'react';
-import { RepoAnalysis } from '../../../shared/types';
+import type { RepoAnalysis } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
-import { Tab } from './Tabs';
+import type { Tab } from './Tabs';
 import TabContents from './TabContents';
 
 export default (builds: RepoAnalysis['builds']): Tab => ({

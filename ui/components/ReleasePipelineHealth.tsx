@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
+import type { PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
 import { num } from '../helpers/utils';
 import AlertMessage from './common/AlertMessage';
 import Card from './common/ExpandingCard';
@@ -12,7 +12,7 @@ type StagesToHighlight = {
   stageName: string;
   exists: boolean;
   usesStage: boolean;
-}
+};
 
 type StageNameProps = {
   isSelected: boolean;

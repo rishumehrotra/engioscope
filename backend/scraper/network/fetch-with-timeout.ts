@@ -1,5 +1,6 @@
 import AbortController from 'abort-controller';
-import fetch, { RequestInfo, RequestInit } from 'node-fetch';
+import type { RequestInfo, RequestInit } from 'node-fetch';
+import fetch from 'node-fetch';
 
 export default (url: RequestInfo, init?: RequestInit & { timeout?: number}) => {
   const { timeout = 60000 } = init || {};

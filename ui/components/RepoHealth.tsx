@@ -2,7 +2,7 @@ import React, {
   useCallback, useEffect, useMemo, useState
 } from 'react';
 import { Link, useHistory } from 'react-router-dom';
-import { RepoAnalysis } from '../../shared/types';
+import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import Card from './common/ExpandingCard';
 import Flair from './common/Flair';
@@ -12,7 +12,8 @@ import commits from './repo-tabs/commits';
 import prs from './repo-tabs/prs';
 import tests from './repo-tabs/tests';
 import codeQuality from './repo-tabs/codeQuality';
-import { Tab, TopLevelTab } from './repo-tabs/Tabs';
+import type { Tab } from './repo-tabs/Tabs';
+import { TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {

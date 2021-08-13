@@ -6,9 +6,9 @@ type CheckboxProps = {
   label: React.ReactNode;
   onChange: (value: boolean) => void;
   disabled?: boolean;
-}
+};
 
-const Checkbox : React.FC<CheckboxProps> = ({
+const Checkbox: React.FC<CheckboxProps> = ({
   value, label, onChange, disabled
 }) => {
   const id = generateId();

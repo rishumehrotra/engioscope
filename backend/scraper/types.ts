@@ -1,4 +1,4 @@
-import { AnalysedWorkItems, ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
+import type { AnalysedWorkItems, ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
 
 export type Config = Readonly<{
   port: number;
@@ -26,4 +26,4 @@ export type ProjectAnalysis = {
   releaseAnalysis: ReleasePipelineStats[];
   workItemAnalysis: AnalysedWorkItems | null;
   workItemLabel: string;
-}
+};

@@ -1,9 +1,10 @@
-import React, { ChangeEvent } from 'react';
+import type { ChangeEvent } from 'react';
+import React from 'react';
 
 type Option = {
   label: string;
   value: string;
-}
+};
 
 type SelectProps = {
   className?: string;

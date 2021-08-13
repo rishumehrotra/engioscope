@@ -1,6 +1,6 @@
 import { add } from 'rambda';
-import { AggregatedCommitsByDev, UICommits } from '../../../shared/types';
-import { GitCommitRef } from '../types-azure';
+import type { AggregatedCommitsByDev, UICommits } from '../../../shared/types';
+import type { GitCommitRef } from '../types-azure';
 
 const dateString = (date: Date) => date.toISOString().split('T')[0];
 
@@ -19,14 +19,14 @@ const mergeCommit = (commit: GitCommitRef, aggregatedCommits?: AggregatedCommits
 });
 
 export default (commits: GitCommitRef[]): UICommits => {
-  const commitsByDev = commits.reduce((acc, commit) => {
+  const commitsByDev = commits.reduce<Record<string, AggregatedCommitsByDev>>((acc, commit) => {
     if (commit.comment.startsWith('Merge')) return acc;
     return {
       ...acc,
       [commit.committer.name]: mergeCommit(commit, acc[commit.committer.name])
     };
   },
-  {} as Record<string, AggregatedCommitsByDev>);
+  {});
 
   return {
     count: Object.values(commitsByDev).map(c => Object.values(c.byDate).reduce(add, 0)).reduce(add, 0),

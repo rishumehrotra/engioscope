@@ -3,7 +3,7 @@ import React from 'react';
 type AlertMessageProps = {
   message: string;
   type?: 'alert' | 'info';
-}
+};
 
 const AlertMessage: React.FC<AlertMessageProps> = ({ message, type = 'info' }) => (message ? (
   <div className="flex justify-center text-center items-center text-gray-600">

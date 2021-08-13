@@ -1,4 +1,4 @@
-import { ReleaseDefinition } from '../types-azure';
+import type { ReleaseDefinition } from '../types-azure';
 
 export default (releaseDefinitions: ReleaseDefinition[]) => {
   const releaseDefinitionsById: Record<number, ReleaseDefinition> = releaseDefinitions.reduce((acc, rd) => ({
