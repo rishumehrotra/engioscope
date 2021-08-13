@@ -7,11 +7,10 @@ import Pipeline from '../components/ReleasePipelineHealth';
 import { pipelineMetrics } from '../network';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
+import { filterBySearch } from '../helpers/utils';
 
 const dontFilter = (x: unknown) => Boolean(x);
-const bySearchTerm = (searchTerm: string) => (pipeline: ReleasePipelineStats) => (
-  pipeline.name.toLowerCase().includes(searchTerm.toLowerCase())
-);
+const bySearch = (search: string) => (pipeline: ReleasePipelineStats) => filterBySearch(search, pipeline.name);
 const byNonMasterReleases = (pipeline: ReleasePipelineStats) => Object.values(pipeline.repos)
   .some(branches => branches.some(branch => !branch.toLowerCase().includes('master')));
 const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
@@ -35,7 +34,7 @@ const ReleasePipelines: React.FC = () => {
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
   const pipelines = releaseAnalysis.pipelines
-    .filter(search === undefined ? dontFilter : bySearchTerm(search))
+    .filter(search === undefined ? dontFilter : bySearch(search))
     .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
     .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
     .filter(stageNameExists === undefined ? dontFilter : byStageNameExists(stageNameExists))
