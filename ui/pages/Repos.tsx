@@ -1,16 +1,13 @@
 import React from 'react';
+import { useQueryParam } from 'use-query-params';
 import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
-import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes } from '../types';
 import { repoMetrics } from '../network';
 import { dontFilter } from '../helpers/utils';
 import { RepoAnalysis } from '../../shared/types';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { SortMap, useSort } from '../hooks/sort-hooks';
-
-const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -43,11 +40,11 @@ const sorters: SortMap<RepoAnalysis> = {
 const Repos: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   const sorter = useSort(sorters, 'Builds');
-  const [search] = useUrlParams<string>('search');
-  const [commitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
-  const [buildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
-  const [withFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
-  const [techDebtMoreThanDays] = useUrlParams<number>('techDebtGreaterThan');
+  const [search] = useQueryParam<string>('search');
+  const [commitsGreaterThanZero] = useQueryParam<boolean>('commitsGreaterThanZero');
+  const [buildsGreaterThanZero] = useQueryParam<boolean>('buildsGreaterThanZero');
+  const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
+  const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
 
   if (projectAnalysis === 'loading') return <div>Loading...</div>;
 

@@ -1,14 +1,11 @@
 import React, { useMemo } from 'react';
+import { useQueryParam } from 'use-query-params';
 import { UIWorkItem } from '../../shared/types';
 import { workItemMetrics } from '../network';
-import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes } from '../types';
 import { dontFilter } from '../helpers/utils';
 import WorkItem from '../components/WorkItemHealth';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { SortMap, useSort } from '../hooks/sort-hooks';
-
-const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -39,7 +36,7 @@ const sorters = (childrenCount: (id: number) => number): SortMap<UIWorkItem> => 
 
 const WorkItems: React.FC = () => {
   const workItemAnalysis = useFetchForProject(workItemMetrics);
-  const [search] = useUrlParams<string>('search');
+  const [search] = useQueryParam<string>('search');
 
   const sorterMap = useMemo(() => {
     if (workItemAnalysis === 'loading') return sorters(() => 0);

@@ -1,14 +1,5 @@
 export const num = (num: number) => Intl.NumberFormat().format(num);
 
-export const parseQueryString = (qs: string): Record<string, string | undefined> => Object.fromEntries(new URLSearchParams(qs));
-
-export const updateQueryString = (paramName: string, paramValue: string) => {
-  const qs = new URLSearchParams(window.location.search);
-  if (paramValue === undefined || paramValue === 'undefined' || paramValue === '' || paramValue === 'false') qs.delete(paramName);
-  else qs.set(paramName, paramValue);
-  return qs.toString();
-};
-
 export const shortDate = (date: Date) => (
   Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
 );

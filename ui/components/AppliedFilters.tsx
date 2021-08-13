@@ -1,10 +1,7 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
+import { useQueryParam } from 'use-query-params';
 import { Close } from './common/Icons';
-import createUrlParamsHook from '../hooks/create-url-params-hook';
-import { repoPageUrlTypes } from '../types';
-
-const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, onClose }) => (
   <span className="ml-2 py-1 pl-3 pr-2 border border-gray-300 rounded-full flex bg-white text-sm">
@@ -14,15 +11,15 @@ const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, on
 );
 
 const AppliedFilters: React.FC<{ count: number }> = ({ count }) => {
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useUrlParams<boolean>('commitsGreaterThanZero');
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useUrlParams<boolean>('buildsGreaterThanZero');
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useUrlParams<boolean>('withFailingLastBuilds');
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useUrlParams<number>('techDebtGreaterThan');
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam<number | undefined>('techDebtGreaterThan');
 
-  const [nonMasterReleases, setNonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
-  const [notStartsWithArtifact, setNotStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
-  const [stageNameExists, setStageNameExists] = useUrlParams<string>('stageNameExists');
-  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+  const [nonMasterReleases, setNonMasterReleases] = useQueryParam<boolean | undefined>('nonMasterReleases');
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
+  const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
+  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
 
   const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds || (techDebtGreaterThan !== undefined)
   || nonMasterReleases || notStartsWithArtifact || stageNameExists || stageNameExistsNotUsed;

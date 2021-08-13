@@ -1,15 +1,12 @@
 import React from 'react';
+import { useQueryParam } from 'use-query-params';
 import { ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
-import createUrlParamsHook from '../hooks/create-url-params-hook';
 import { pipelineMetrics } from '../network';
-import { repoPageUrlTypes } from '../types';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
-
-const useUrlParams = createUrlParamsHook(repoPageUrlTypes);
 
 const dontFilter = (x: unknown) => Boolean(x);
 const bySearchTerm = (searchTerm: string) => (pipeline: ReleasePipelineStats) => (
@@ -27,11 +24,11 @@ const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: Release
 
 const ReleasePipelines: React.FC = () => {
   const releaseAnalysis = useFetchForProject(pipelineMetrics);
-  const [search] = useUrlParams<string>('search');
-  const [nonMasterReleases] = useUrlParams<boolean>('nonMasterReleases');
-  const [notStartsWithArtifact] = useUrlParams<boolean>('notStartsWithArtifact');
-  const [stageNameExists] = useUrlParams<string>('stageNameExists');
-  const [stageNameExistsNotUsed] = useUrlParams<string>('stageNameExistsNotUsed');
+  const [search] = useQueryParam<string>('search');
+  const [nonMasterReleases] = useQueryParam<boolean>('nonMasterReleases');
+  const [notStartsWithArtifact] = useQueryParam<boolean>('notStartsWithArtifact');
+  const [stageNameExists] = useQueryParam<string>('stageNameExists');
+  const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   useRemoveSort();
 
   if (releaseAnalysis === 'loading') return <div>Loading...</div>;
