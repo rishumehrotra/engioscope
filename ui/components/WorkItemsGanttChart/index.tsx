@@ -4,7 +4,7 @@ import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
 import {
   svgWidth, createXCoordConverterFor,
-  barWidthUsing, svgHeight, getMinDateTime
+  svgHeight, getMinDateTime
 } from './helpers';
 import { ExpandedState } from './types';
 
@@ -50,7 +50,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
   const workItemChildren = workItemsIdTree[workItemId].map(id => workItemsById[id]);
   const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
   const timeToXCoord = createXCoordConverterFor(workItem, workItemChildren);
-  const barWidth = barWidthUsing(timeToXCoord);
   const height = svgHeight(rowPathsToRender.length);
 
   return (
@@ -67,7 +66,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
           indentation={indentation(rowPath)}
           rowIndex={rowIndex}
           timeToXCoord={timeToXCoord}
-          barWidth={barWidth}
           onToggle={() => setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree))}
           expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
           colorsForStages={colorsForStages}

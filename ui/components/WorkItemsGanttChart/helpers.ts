@@ -33,11 +33,11 @@ export const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkI
 
   return (time: string) => {
     const date = new Date(time);
-
-    return ((
+    const xCoordWithoutText = (
       (date.getTime() - minDateTime)
       / (maxDateTime - minDateTime)
-    ) * (svgWidth - textWidth - barStartPadding)) + textWidth + barStartPadding;
+    ) * (svgWidth - textWidth - barStartPadding);
+    return (xCoordWithoutText < 0 ? 0 : xCoordWithoutText) + textWidth + barStartPadding;
   };
 };
 
