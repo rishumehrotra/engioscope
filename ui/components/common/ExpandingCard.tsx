@@ -45,7 +45,7 @@ export type CardProps = {
 }
 
 const Card: React.FC<CardProps> = ({
-  title, titleUrl, subtitle, tag, children, onCardClick, isExpanded, className
+  title, titleUrl, subtitle, children, onCardClick, isExpanded, className
 }) => (
   <div className={`bg-white ${className} border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
   transition-colors duration-500 ease-in-out rounded-lg shadow relative
@@ -57,13 +57,13 @@ const Card: React.FC<CardProps> = ({
         role="button"
         onClick={onCardClick}
       >
-        {tag && (
+        {/* {tag && (
           <div
             className="absolute right-0 top-0 bg-gray-400 text-white px-3 py-1 text-sm uppercase my-3 rounded-l-md"
           >
             {tag}
           </div>
-        )}
+        )} */}
         <div className="grid mx-6">
           <CardTitle
             title={title}

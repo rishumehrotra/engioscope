@@ -5,7 +5,7 @@ type AlertMessageProps = {
   type?: 'alert' | 'info';
 }
 
-const AlertMessage: React.FC<AlertMessageProps> = ({ message, type = 'alert' }) => (message ? (
+const AlertMessage: React.FC<AlertMessageProps> = ({ message, type = 'info' }) => (message ? (
   <div className="flex justify-center text-center items-center text-gray-600">
     <span className="flex items-center text-xs rounded-full py-1 px-2 mr-2 bg-white">
       <span
