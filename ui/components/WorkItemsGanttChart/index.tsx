@@ -66,7 +66,10 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
           indentation={indentation(rowPath)}
           rowIndex={rowIndex}
           timeToXCoord={timeToXCoord}
-          onToggle={() => setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree))}
+          onToggle={e => {
+            e.stopPropagation();
+            setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree));
+          }}
           expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
           colorsForStages={colorsForStages}
         />

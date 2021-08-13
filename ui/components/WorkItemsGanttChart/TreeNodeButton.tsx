@@ -5,7 +5,7 @@ import { ExpandedState } from './types';
 type TreeNodeButtonProps = {
   expandedState: ExpandedState;
   indentation: number;
-  onToggle: () => void;
+  onToggle: (e: React.MouseEvent) => void;
 };
 
 export const TreeNodeButton: React.FC<TreeNodeButtonProps> = ({ expandedState, indentation, onToggle }) => {

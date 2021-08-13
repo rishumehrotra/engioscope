@@ -21,10 +21,11 @@ const WorkItem: React.FC<WorkItemProps> = ({
   const workItem = workItemsById[workItemId];
 
   return (
-    <div
+    <button
       className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out rounded-lg shadow relative w-full text-left"
       onMouseEnter={toggleHover}
       onMouseLeave={toggleHover}
+      onClick={() => setIsExpanded(!isExpanded)}
     >
       <h3 className="flex justify-between">
         <div className="w-4/5">
@@ -38,19 +39,17 @@ const WorkItem: React.FC<WorkItemProps> = ({
             {workItem.title}
           </a>
         </div>
-        <button onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? (
-            <span className="flex text-gray-500">
-              <span>Show less</span>
-              <UpChevron />
-            </span>
-          ) : (
-            <span className="flex text-gray-500">
-              {isHover ? <span>Show more</span> : null}
-              <DownChevron />
-            </span>
-          )}
-        </button>
+        {isExpanded ? (
+          <span className="flex text-gray-500">
+            <span>Show less</span>
+            <UpChevron />
+          </span>
+        ) : (
+          <span className="flex text-gray-500">
+            {isHover ? <span>Show more</span> : null}
+            <DownChevron />
+          </span>
+        )}
       </h3>
       <div className="text-base font-normal text-gray-800">
         <span className="text-blue-gray text-sm my-2">
@@ -69,7 +68,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           />
         </div>
       ) : null}
-    </div>
+    </button>
   );
 };
 

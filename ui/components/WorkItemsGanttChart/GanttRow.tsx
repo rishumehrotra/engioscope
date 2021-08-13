@@ -15,7 +15,7 @@ export type GanttRowProps = {
   indentation: number;
   expandedState: ExpandedState;
   timeToXCoord: (time: string) => number;
-  onToggle: () => void;
+  onToggle: (e: React.MouseEvent) => void;
   colorsForStages: Record<string, string>;
 };
 
