@@ -11,6 +11,8 @@ const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, on
 );
 
 const AppliedFilters: React.FC<{ count: number }> = ({ count }) => {
+  const [search, setSearch] = useQueryParam<string | undefined>('search');
+
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
@@ -21,13 +23,19 @@ const AppliedFilters: React.FC<{ count: number }> = ({ count }) => {
   const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
   const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
 
-  const isFilterApplied = commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds || (techDebtGreaterThan !== undefined)
-  || nonMasterReleases || notStartsWithArtifact || stageNameExists || stageNameExistsNotUsed;
+  const isFilterApplied = search || commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds
+  || (techDebtGreaterThan !== undefined) || nonMasterReleases || notStartsWithArtifact || stageNameExists
+  || stageNameExistsNotUsed;
   if (!isFilterApplied) return null;
 
   return (
     <div className="mb-4 -mt-4 bg-yellow-100 border-t-2 border-b-2 border-yellow-200 py-2 px-4 flex items-center text-md text-gray-800">
       {`Showing ${count} repos with filters applied: `}
+      {
+        search ? (
+          <FilterTag label={`Search: ${search}`} onClose={() => setSearch(undefined)} />
+        ) : null
+      }
       {
         commitsGreaterThanZero ? (
           <FilterTag label="Has commits" onClose={() => setCommitsGreaterThanZero(undefined)} />

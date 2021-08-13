@@ -4,7 +4,7 @@ import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
 import { repoMetrics } from '../network';
-import { dontFilter } from '../helpers/utils';
+import { dontFilter, filterBySearch } from '../helpers/utils';
 import { RepoAnalysis } from '../../shared/types';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { SortMap, useSort } from '../hooks/sort-hooks';
@@ -16,9 +16,7 @@ const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   return 1;
 };
 
-const bySearchTerm = (searchTerm: string) => (repo: RepoAnalysis) => (
-  repo.name.toLowerCase().includes(searchTerm.toLowerCase())
-);
+const bySearch = (search: string) => (repo: RepoAnalysis) => filterBySearch(search, repo.name);
 const byCommitsGreaterThanZero = (repo: RepoAnalysis) => repo.commits.count;
 const byBuildsGreaterThanZero = (repo: RepoAnalysis) => (repo.builds?.count || 0) > 0;
 const byFailingLastBuilds = (repo: RepoAnalysis) => (
@@ -49,7 +47,7 @@ const Repos: React.FC = () => {
   if (projectAnalysis === 'loading') return <div>Loading...</div>;
 
   const repos = projectAnalysis.repos
-    .filter(search === undefined ? dontFilter : bySearchTerm(search))
+    .filter(search === undefined ? dontFilter : bySearch(search))
     .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
     .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
     .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)

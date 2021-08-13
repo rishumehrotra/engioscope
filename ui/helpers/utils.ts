@@ -22,3 +22,9 @@ export const generateId = () => (
 );
 
 export const dontFilter = (x: unknown) => Boolean(x);
+
+const isWrappedAroundQuotes = (search: string) => search.startsWith('"') && search.endsWith('"');
+const getSearchTerm = (search: string) => search.split('"')[1];
+
+export const filterBySearch = (search: string, item: string) => (isWrappedAroundQuotes(search)
+  ? (item === getSearchTerm(search)) : item.toLowerCase().includes(search.toLowerCase()));
