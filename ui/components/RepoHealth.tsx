@@ -59,7 +59,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
   }, [selectedTab, tabs]);
 
   const history = useHistory();
-  const goToPipeline = (pipelineName: string) => history.location.pathname.replace('/repos', `/release-pipelines?search="${pipelineName}"`);
+  const pipelinesUrl = () => history.location.pathname.replace('/repos', `/release-pipelines?search=repo:"${repo.name}"`);
 
   return (
     <Card
@@ -72,17 +72,13 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
     >
       {repo.pipelines ? (
         <div className="mx-6 flex flex-wrap items-baseline mt-2">
-          <span className="text-sm text-gray-600">
-            {`In release pipeline${repo.pipelines.length > 1 ? 's' : ''}:`}
-            &nbsp;
-          </span>
-          {repo.pipelines.map((p, i) => (
-            <span className="flex items-center text-blue-600 font-semibold">
-              <Link to={goToPipeline(p)} className="text-sm hover:underline">{p}</Link>
-              {i === repo.pipelines!.length - 1 ? null : ','}
-              &nbsp;
-            </span>
-          ))}
+          <span className="text-sm text-gray-600">Part of &nbsp;</span>
+          <Link
+            to={pipelinesUrl}
+            className="text-blue-600 font-semibold text-sm hover:underline -ml-1"
+          >
+            {`${repo.pipelines.length} release pipeline${repo.pipelines.length > 1 ? 's' : ''}`}
+          </Link>
         </div>
       ) : null}
 

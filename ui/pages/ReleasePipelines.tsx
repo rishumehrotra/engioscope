@@ -7,10 +7,14 @@ import Pipeline from '../components/ReleasePipelineHealth';
 import { pipelineMetrics } from '../network';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
-import { filterBySearch } from '../helpers/utils';
+import { filterBySearch, getSearchTerm } from '../helpers/utils';
 
 const dontFilter = (x: unknown) => Boolean(x);
-const bySearch = (search: string) => (pipeline: ReleasePipelineStats) => filterBySearch(search, pipeline.name);
+const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) => (
+  Object.entries(pipeline.repos).some(([repoName]) => repoName === getSearchTerm(search))
+);
+const bySearch = (search: string) => (pipeline: ReleasePipelineStats) => (search.startsWith('repo:')
+  ? filterPipelinesByRepo(search, pipeline) : filterBySearch(search, pipeline.name));
 const byNonMasterReleases = (pipeline: ReleasePipelineStats) => Object.values(pipeline.repos)
   .some(branches => branches.some(branch => !branch.toLowerCase().includes('master')));
 const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
