@@ -11,6 +11,11 @@ To run scratch file:
 npm run scratch
 ```
 
+To pre build tailwind files
+```
+npm run prebuild:ui
+```
+
 To run the UI:
 ```
 npm start
