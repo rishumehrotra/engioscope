@@ -46,7 +46,7 @@ const ReleasePipelines: React.FC = () => {
 
   return (
     <>
-      <AppliedFilters count={pipelines.length} />
+      <AppliedFilters type="release-pipelines" count={pipelines.length} />
       {pipelines.length ? pipelines.map(pipeline => (
         <Pipeline
           key={pipeline.id}

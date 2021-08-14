@@ -57,7 +57,7 @@ const Repos: React.FC = () => {
 
   return (
     <div>
-      <AppliedFilters count={repos.length} />
+      <AppliedFilters type="repos" count={repos.length} />
       {
         repos.length ? repos.map((repo, index) => (
           <RepoHealth repo={repo} key={repo.name} isFirst={index === 0} />

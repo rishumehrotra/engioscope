@@ -71,13 +71,12 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
       isExpanded={selectedTab !== null || isFirst}
     >
       {repo.pipelines ? (
-        <div className="mx-6 flex flex-wrap items-baseline mt-2">
-          <span className="text-sm text-gray-600">Part of &nbsp;</span>
+        <div className="mx-6 flex flex-wrap items-baseline">
           <Link
             to={pipelinesUrl}
-            className="text-blue-600 font-semibold text-sm hover:underline -ml-1"
+            className="text-blue-600 text-sm hover:underline"
           >
-            {`${repo.pipelines.length} release pipeline${repo.pipelines.length > 1 ? 's' : ''}`}
+            {`Used in ${repo.pipelines.length} release pipeline${repo.pipelines.length > 1 ? 's' : ''}`}
           </Link>
         </div>
       ) : null}

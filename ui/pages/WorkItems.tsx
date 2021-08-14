@@ -7,6 +7,7 @@ import WorkItem from '../components/WorkItemHealth';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
+import AppliedFilters from '../components/AppliedFilters';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -65,18 +66,21 @@ const WorkItems: React.FC = () => {
     .sort(sorter);
 
   return (
-    <ul>
-      {filteredWorkItems.map((workItem, index) => (
-        <WorkItem
-          key={workItem.id}
-          workItemId={workItem.id}
-          workItemsById={workItems.byId}
-          workItemsIdTree={workItems.ids}
-          colorsForStages={colorsForStages}
-          isFirst={index === 0}
-        />
-      ))}
-    </ul>
+    <>
+      <AppliedFilters type="workitems" count={filteredWorkItems.length} />
+      <ul>
+        {filteredWorkItems.map((workItem, index) => (
+          <WorkItem
+            key={workItem.id}
+            workItemId={workItem.id}
+            workItemsById={workItems.byId}
+            workItemsIdTree={workItems.ids}
+            colorsForStages={colorsForStages}
+            isFirst={index === 0}
+          />
+        ))}
+      </ul>
+    </>
   );
 };
 
