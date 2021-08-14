@@ -2,6 +2,7 @@ import AwaitLock from 'await-lock';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
+import { singular } from 'pluralize';
 import type {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
@@ -39,7 +40,7 @@ const projectSummary = (
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.ids[0] || {}).length || 0,
-  workItemLabel: projectAnalysis.workItemLabel
+  workItemLabel: [singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel]
 });
 
 const writeRepoAnalysisFile = async (
