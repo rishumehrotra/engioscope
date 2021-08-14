@@ -70,13 +70,13 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
       onCardClick={onCardClick}
       isExpanded={selectedTab !== null || isFirst}
     >
-      {repo.pipelines ? (
+      {repo.pipelineCount ? (
         <div className="mx-6 flex flex-wrap items-baseline">
           <Link
             to={pipelinesUrl}
             className="text-blue-600 text-sm hover:underline"
           >
-            {`Used in ${repo.pipelines.length} release pipeline${repo.pipelines.length > 1 ? 's' : ''}`}
+            {`Used in ${repo.pipelineCount} release pipeline${repo.pipelineCount > 1 ? 's' : ''}`}
           </Link>
         </div>
       ) : null}

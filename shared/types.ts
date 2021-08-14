@@ -114,7 +114,7 @@ export type RepoAnalysis = {
   prs: UIPullRequests;
   tests: UITests;
   codeQuality: UICodeQuality;
-  pipelines?: string[];
+  pipelineCount?: number;
 };
 
 export type UIWorkItem = {

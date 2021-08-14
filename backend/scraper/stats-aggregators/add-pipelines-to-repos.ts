@@ -12,6 +12,6 @@ export default (releaseAnalysis: ReleasePipelineStats[], repoAnalysis: RepoAnaly
 
   return repoAnalysis.map(r => ({
     ...r,
-    pipelines: pipelinesByRepoName[r.name] || undefined
+    pipelineCount: pipelinesByRepoName[r.name]?.length || undefined
   }));
 };
