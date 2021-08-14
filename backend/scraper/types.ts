@@ -1,5 +1,17 @@
 import type { AnalysedWorkItems, ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
 
+export type ProjectConfig = {
+  name: string;
+  releasePipelines?: {
+    stagesToHighlight?: string[];
+  };
+  workitems?: {
+    groupUnder: string;
+    label?: string;
+    skipChildren?: string[];
+  };
+};
+
 export type Config = Readonly<{
   port: number;
   cacheToDiskFor: string;
@@ -7,17 +19,11 @@ export type Config = Readonly<{
     host: string;
     token: string;
     lookAtPast: string;
-    stagesToHighlight?: string[];
-    workitems?: {
-      groupUnder: string;
-      label?: string;
-      skipChildren?: string[];
-    };
     collections: {
       name: string;
-      projects: string[];
+      projects: (string | ProjectConfig)[];
     }[];
-  };
+  } & Omit<ProjectConfig, 'name'>;
   sonar: { url: string; token: string }[];
 }>;
 

@@ -1,9 +1,9 @@
-import type { Config } from './types';
+import type { Config, ProjectConfig } from './types';
 import { pastDate } from '../utils';
 
 export const dayInMs = 24 * 60 * 60 * 1000;
 
-export const queryForTopLevelWorkItems = (config: Config) => {
+export const queryForTopLevelWorkItems = (config: Config, projectConfig: ProjectConfig) => {
   const daysToLookup = Math.round(
     (Date.now() - pastDate(config.azure.lookAtPast).getTime()) / dayInMs
   );
@@ -13,11 +13,11 @@ export const queryForTopLevelWorkItems = (config: Config) => {
     FROM workitemLinks
     WHERE 
       [Source].[System.TeamProject] = @project
-      AND [Source].[System.WorkItemType] = '${config.azure.workitems?.groupUnder}'
+      AND [Source].[System.WorkItemType] = '${projectConfig.workitems?.groupUnder}'
       AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
-      ${config.azure.workitems?.skipChildren ? (`
+      ${projectConfig.workitems?.skipChildren ? (`
         AND (
-          ${config.azure.workitems.skipChildren.map(wit => `
+          ${projectConfig.workitems.skipChildren.map(wit => `
             [Target].[System.WorkItemType] <> '${wit}'
           `).join(' AND ')}
         )
@@ -26,7 +26,7 @@ export const queryForTopLevelWorkItems = (config: Config) => {
   `;
 };
 
-export const queryForAllBugsAndFeatures = (config: Config) => `
+export const queryForAllBugsAndFeatures = (projectConfig: ProjectConfig) => `
   SELECT [System.Id]
   FROM workitemLinks
   WHERE
@@ -37,9 +37,9 @@ export const queryForAllBugsAndFeatures = (config: Config) => `
       OR [System.Links.LinkType] = 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
       OR [System.Links.LinkType] = 'System.LinkTypes.Related-Forward'
     )
-    ${config.azure.workitems?.skipChildren ? (`
+    ${projectConfig.workitems?.skipChildren ? (`
     AND (
-      ${config.azure.workitems.skipChildren.map(wit => `
+      ${projectConfig.workitems.skipChildren.map(wit => `
         [Target].[System.WorkItemType] <> '${wit}'
       `).join(' AND ')}
     )

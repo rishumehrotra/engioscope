@@ -7,9 +7,7 @@ import type {
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
-import type { Config, ProjectAnalysis } from './types';
-
-type ProjectSpec = [collectionName: string, projectName: string];
+import type { Config, ProjectAnalysis, ProjectConfig } from './types';
 
 const outputFileLog = debug('write-output');
 
@@ -22,16 +20,21 @@ const dataFolderPath = join(process.cwd(), 'data');
 const overallSummaryFilePath = join(dataFolderPath, 'index.json');
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
+const projectName = (project: string | ProjectConfig) => (
+  typeof project === 'string' ? project : project.name
+);
+
 const writeFile = (path: string, contents: string) => {
   outputFileLog('Writing', join(dataFolderPath, path).replace(`${process.cwd()}/`, ''));
   return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
 };
 
 const projectSummary = (
-  projectSpec: ProjectSpec,
+  collectionName: string,
+  projectConfig: ProjectConfig,
   projectAnalysis: ProjectAnalysis
 ): UIProjectAnalysis => ({
-  name: projectSpec,
+  name: [collectionName, projectConfig.name],
   lastUpdated: shortDateFormat(new Date()),
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.length,
@@ -40,51 +43,52 @@ const projectSummary = (
 });
 
 const writeRepoAnalysisFile = async (
-  projectSpec: ProjectSpec,
+  collectionName: string,
+  projectConfig: ProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectRepoAnalysis = {
-      ...projectSummary(projectSpec, projectAnalysis),
+      ...projectSummary(collectionName, projectConfig, projectAnalysis),
       repos: projectAnalysis.repoAnalysis
     };
-    return writeFile(`${projectSpec.join('_')}.json`, JSON.stringify(analysis));
+    return writeFile(`${collectionName}_${projectConfig.name}.json`, JSON.stringify(analysis));
   })
 );
 
 const writeReleaseAnalysisFile = async (
-  projectSpec: ProjectSpec,
-  projectAnalysis: ProjectAnalysis,
-  stagesToHighlight: string[] | undefined
+  collectionName: string,
+  projectConfig: ProjectConfig,
+  projectAnalysis: ProjectAnalysis
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectReleasePipelineAnalysis = {
-      ...projectSummary(projectSpec, projectAnalysis),
+      ...projectSummary(collectionName, projectConfig, projectAnalysis),
       pipelines: projectAnalysis.releaseAnalysis,
-      stagesToHighlight
+      stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight
     };
-    return writeFile(`${projectSpec.join('_')}_releases.json`, JSON.stringify(analysis));
+    return writeFile(`${collectionName}_${projectConfig.name}_releases.json`, JSON.stringify(analysis));
   })
 );
 
 const writeWorkItemAnalysisFile = async (
-  projectSpec: ProjectSpec,
-  projectAnalysis: ProjectAnalysis,
-  taskType: string | undefined
+  collectionName: string,
+  projectConfig: ProjectConfig,
+  projectAnalysis: ProjectAnalysis
 ) => (
   createDataFolder.then(() => {
     const analysis: ProjectWorkItemAnalysis = {
-      ...projectSummary(projectSpec, projectAnalysis),
+      ...projectSummary(collectionName, projectConfig, projectAnalysis),
       workItems: projectAnalysis.workItemAnalysis,
-      taskType
+      taskType: projectConfig.workitems?.groupUnder
     };
-    return writeFile(`${projectSpec.join('_')}_work-items.json`, JSON.stringify(analysis));
+    return writeFile(`${collectionName}_${projectConfig.name}_work-items.json`, JSON.stringify(analysis));
   })
 );
 
-const matchingProject = (projectSpec: ProjectSpec) => (scrapedProject: { name: ProjectSpec }) => (
+const matchingProject = (projectSpec: readonly [string, string | ProjectConfig]) => (scrapedProject: { name: [string, string] }) => (
   scrapedProject.name[0] === projectSpec[0]
-    && scrapedProject.name[1] === projectSpec[1]
+    && scrapedProject.name[1] === projectName(projectSpec[1])
 );
 
 const readOverallSummaryFile = async (): Promise<ScrapedProject[]> => {
@@ -96,13 +100,13 @@ const readOverallSummaryFile = async (): Promise<ScrapedProject[]> => {
 
 const populateWithEmptyValuesIfNeeded = (config: Config) => (scrapedProjects: ScrapedProject[]) => {
   const projects = config.azure.collections.flatMap(collection => (
-    collection.projects.map(project => [collection.name, project] as ProjectSpec)
+    collection.projects.map(project => [collection.name, projectName(project)] as ScrapedProject['name'])
   ));
 
   return projects.map(configProjectSpec => {
     const matchingExistingProject = scrapedProjects.find(matchingProject(configProjectSpec));
     if (matchingExistingProject) return matchingExistingProject;
-    return { name: configProjectSpec, lastUpdated: null, rating: null };
+    return { name: configProjectSpec, lastUpdated: null, rating: null } as ScrapedProject;
   });
 };
 
@@ -125,11 +129,11 @@ const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedPr
     .finally(releaseLock)
 );
 
-export default (config: Config) => (projectSpec: ProjectSpec) => (
+export default (config: Config) => (collectionName: string, projectConfig: ProjectConfig) => (
   (analysis: ProjectAnalysis) => Promise.all([
-    writeRepoAnalysisFile(projectSpec, analysis),
-    writeReleaseAnalysisFile(projectSpec, analysis, config.azure.stagesToHighlight),
-    writeWorkItemAnalysisFile(projectSpec, analysis, config.azure.workitems?.groupUnder),
-    updateOverallSummary(config)({ name: projectSpec })
+    writeRepoAnalysisFile(collectionName, projectConfig, analysis),
+    writeReleaseAnalysisFile(collectionName, projectConfig, analysis),
+    writeWorkItemAnalysisFile(collectionName, projectConfig, analysis),
+    updateOverallSummary(config)({ name: [collectionName, projectConfig.name] })
   ])
 );

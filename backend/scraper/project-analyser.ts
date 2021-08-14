@@ -9,7 +9,7 @@ import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
 import aggregateWorkItems from './stats-aggregators/work-items';
 import sonar from './network/sonar';
-import type { Config, ProjectAnalysis } from './types';
+import type { Config, ProjectAnalysis, ProjectConfig } from './types';
 import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
 import type { RepoAnalysis } from '../../shared/types';
@@ -35,8 +35,9 @@ export default (config: Config) => {
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
-  return async (collectionName: string, projectName: string): Promise<ProjectAnalysis> => {
+  return async (collectionName: string, projectConfig: ProjectConfig): Promise<ProjectAnalysis> => {
     const startTime = Date.now();
+    const projectName = projectConfig.name;
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collectionName, projectName);
 
     analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
@@ -55,14 +56,14 @@ export default (config: Config) => {
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
-      config.azure.workitems?.groupUnder
+      projectConfig.workitems?.groupUnder
         ? forProject(getWorkItemIdsForQuery)(
-          queryForTopLevelWorkItems(config)
+          queryForTopLevelWorkItems(config, projectConfig)
         ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
         : null,
-      config.azure.workitems?.groupUnder
+      projectConfig.workitems?.groupUnder
         ? forProject(getWorkItemIdsForQuery)(
-          queryForAllBugsAndFeatures(config)
+          queryForAllBugsAndFeatures(projectConfig)
         ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
         : null,
       forProject(getWorkItemTypes)
@@ -115,7 +116,7 @@ export default (config: Config) => {
           forProject(getWorkItems),
           forProject(getWorkItemRevisions)
         ),
-      workItemLabel: config.azure.workitems?.label || 'Features'
+      workItemLabel: projectConfig.workitems?.label || 'Features'
     };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
