@@ -25,6 +25,7 @@
     },
     "project": [
       "./ui/tsconfig.json",
+      "./tsconfig-base.json",
       "./backend/tsconfig.json"
     ]
   },
