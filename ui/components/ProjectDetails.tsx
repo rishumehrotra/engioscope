@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useProjectDetails } from '../hooks/project-details-hooks';
+import usePageName from '../hooks/use-page-name';
 
 const renderIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>
@@ -12,6 +13,7 @@ const renderIfAvailable = (count: number | undefined, label: string) => (count ?
 
 export const ProjectDetails: React.FC = () => {
   const projectDetails = useProjectDetails();
+  const pageName = usePageName();
   const { project: projectName } = useParams<{ project: string }>();
 
   const project = projectDetails?.name[1] === projectName ? projectDetails : null;
@@ -24,11 +26,11 @@ export const ProjectDetails: React.FC = () => {
       <div className="text-base mt-2 font-normal text-gray-800">
         {project ? (
           <>
-            {renderIfAvailable(project.reposCount, 'Repositories')}
+            {renderIfAvailable(project.reposCount, pageName('repos', project.reposCount))}
             {project.releasePipelineCount ? ' | ' : ''}
-            {renderIfAvailable(project.releasePipelineCount, 'Release pipelines')}
+            {renderIfAvailable(project.releasePipelineCount, pageName('release-pipelines', project.releasePipelineCount))}
             {project.workItemCount ? ' | ' : ''}
-            {renderIfAvailable(project.workItemCount, project.workItemLabel[1])}
+            {renderIfAvailable(project.workItemCount, pageName('workitems', project.workItemCount))}
           </>
         ) : <span className="font-bold text-lg">&nbsp;</span>}
       </div>

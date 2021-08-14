@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
 import { useQueryParam } from 'use-query-params';
-import { pageLabel } from '../helpers/utils';
+import usePageName from '../hooks/use-page-name';
 import type { Tab } from '../types';
 import { Close } from './common/Icons';
 
@@ -13,6 +13,8 @@ const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, on
 );
 
 const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 'repos' }) => {
+  const pageName = usePageName();
+
   const [search, setSearch] = useQueryParam<string | undefined>('search');
 
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
@@ -32,7 +34,7 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
 
   return (
     <div className="mb-4 -mt-4 bg-yellow-100 border-t-2 border-b-2 border-yellow-200 py-2 px-4 flex items-center text-md text-gray-800">
-      {`Showing ${count} ${pageLabel(type, count)} with filters applied: `}
+      {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
       {
         search ? (
           <FilterTag label={`Search: ${search}`} onClose={() => setSearch(undefined)} />

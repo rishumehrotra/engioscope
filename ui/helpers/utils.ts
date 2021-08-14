@@ -1,5 +1,3 @@
-import type { Tab } from '../types';
-
 export const num = (num: number) => Intl.NumberFormat().format(num);
 
 export const shortDate = (date: Date) => (
@@ -30,11 +28,3 @@ export const getSearchTerm = (search: string) => search.split('"')[1];
 
 export const filterBySearch = (search: string, item: string) => (isWrappedAroundQuotes(search)
   ? (item === getSearchTerm(search)) : item.toLowerCase().includes(search.toLowerCase()));
-
-const pages: Record<Tab, { singular: string; plural: string }> = {
-  'repos': { singular: 'repo', plural: 'repos' },
-  'release-pipelines': { singular: 'release pipeline', plural: 'release pipelines' },
-  'workitems': { singular: 'release', plural: 'releases' }
-} as const;
-
-export const pageLabel = (tab: Tab, count: number) => (count === 1 ? pages[tab].singular : pages[tab].plural);

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { useProjectDetails } from '../hooks/project-details-hooks';
+import usePageName from '../hooks/use-page-name';
 import type { Tab } from '../types';
 
 type NavItem = {
@@ -10,6 +11,7 @@ type NavItem = {
 
 const NavBar: React.FC = () => {
   const history = useHistory();
+  const pageName = usePageName();
   const projectDetails = useProjectDetails();
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1] as Tab;
@@ -20,14 +22,14 @@ const NavBar: React.FC = () => {
   );
 
   const navItems = useMemo<NavItem[]>(() => [
-    { key: 'repos', name: 'Repos' },
-    { key: 'release-pipelines', name: 'Release pipelines' },
+    { key: 'repos', name: pageName('repos', projectDetails?.reposCount || 0) },
+    { key: 'release-pipelines', name: pageName('release-pipelines', projectDetails?.releasePipelineCount || 0) },
     ...(
       projectDetails?.workItemCount
-        ? [{ key: 'workitems', name: projectDetails.workItemLabel[1] } as NavItem]
+        ? [{ key: 'workitems', name: pageName('workitems', projectDetails?.workItemCount || 0) } as NavItem]
         : []
     )
-  ], [projectDetails?.workItemCount, projectDetails?.workItemLabel]);
+  ], [pageName, projectDetails?.releasePipelineCount, projectDetails?.reposCount, projectDetails?.workItemCount]);
 
   return (
     <div className="grid">

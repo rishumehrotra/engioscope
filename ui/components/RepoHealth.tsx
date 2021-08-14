@@ -15,6 +15,7 @@ import codeQuality from './repo-tabs/codeQuality';
 import type { Tab } from './repo-tabs/Tabs';
 import { TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
+import usePageName from '../hooks/use-page-name';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -34,6 +35,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
 };
 
 const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, isFirst }) => {
+  const pageName = usePageName();
   const tabs = useMemo(() => [
     builds(repo.builds),
     branches(repo.defaultBranch, repo.branches),
@@ -76,7 +78,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
             to={pipelinesUrl}
             className="text-blue-600 text-sm hover:underline"
           >
-            {`Used in ${repo.pipelineCount} release pipeline${repo.pipelineCount > 1 ? 's' : ''}`}
+            {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount)}`}
           </Link>
         </div>
       ) : null}
