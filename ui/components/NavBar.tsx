@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { useProjectDetails } from '../hooks/project-details-hooks';
 import type { Tab } from '../types';
 
@@ -14,11 +14,9 @@ const NavBar: React.FC = () => {
   const pathParts = history.location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1] as Tab;
 
-  const onSelect = useCallback(
-    (selectedKey: string) => {
-      history.push(`${pathParts.slice(0, -1).join('/')}/${selectedKey}`);
-    },
-    [history, pathParts]
+  const newRoute = useCallback(
+    (selectedKey: string) => `${pathParts.slice(0, -1).join('/')}/${selectedKey}`,
+    [pathParts]
   );
 
   const navItems = useMemo<NavItem[]>(() => [
@@ -35,16 +33,16 @@ const NavBar: React.FC = () => {
     <div className="grid">
       <div className="flex mr-4">
         {navItems.map(({ key, name }) => (
-          <button
+          <Link
             key={key}
-            onClick={() => onSelect(key)}
+            to={() => newRoute(key)}
             className={`px-3 mr-2 lg:px-3 py-1 lg:py-2 rounded text-md lg:text-lg
             font-medium leading-4 text-gray-800 
             ${selectedTab === key ? 'bg-gray-200' : 'hover:bg-gray-300 cursor-pointer'}
             focus:outline-none transition duration-300 ease-in-out`}
           >
             {name || key}
-          </button>
+          </Link>
         ))}
       </div>
     </div>
