@@ -1,13 +1,14 @@
 import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import { mediumDate } from '../../helpers/utils';
 
-export const svgWidth = 1200;
-export const textWidth = 300;
+export const svgWidth = 1100;
+export const textWidth = 270;
 export const textHeight = 30;
 export const barStartPadding = 30;
 export const barHeight = 20;
 export const rowPadding = 3;
 export const axisLabelsHeight = 20;
+export const axisLabelsWidth = 80;
 
 export const svgHeight = (childrenCount: number) => (
   ((textHeight + (rowPadding * 2)) * childrenCount) + axisLabelsHeight
@@ -22,9 +23,19 @@ export const getMinDateTime = (workItem: UIWorkItem, children: UIWorkItem[]) => 
   ...children.map(child => new Date(child.revisions[0].date).getTime())
 );
 
-const getMaxDateTime = (workItem: UIWorkItem, children: UIWorkItem[]) => Math.max(
+export const getMaxDateTime = (workItem: UIWorkItem, children: UIWorkItem[]) => Math.max(
   new Date(workItem.revisions[workItem.revisions.length - 1].date).getTime(),
   ...children.map(child => new Date(child.revisions[child.revisions.length - 1].date).getTime())
+);
+
+export const xCoordToDate = (minDate: number, maxDate: number) => (
+  (xCoord: number) => (
+    ((
+      (xCoord - textWidth - barStartPadding)
+      / (svgWidth - textWidth - barStartPadding)
+    ) * (maxDate - minDate))
+    + minDate
+  )
 );
 
 export const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkItem[]) => {
