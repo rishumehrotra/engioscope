@@ -78,7 +78,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
             to={pipelinesUrl}
             className="text-blue-600 text-sm hover:underline"
           >
-            {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount)}`}
+            {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount).toLowerCase()}`}
           </Link>
         </div>
       ) : null}
