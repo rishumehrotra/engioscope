@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, {
+  useState
+} from 'react';
 import type { AnalysedWorkItems } from '../../../shared/types';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
 import {
   svgWidth, createXCoordConverterFor,
-  svgHeight, getMinDateTime
+  svgHeight, getMinDateTime, axisLabelsHeight
 } from './helpers';
 import type { ExpandedState } from './types';
+import { useMouseEvents } from './use-crosshairs';
 
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 const indentation = (rowPath: string) => rowPath.split('/').length - 1;
@@ -46,14 +49,15 @@ export type WorkItemsGanttChartProps = {
 const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorsForStages
 }) => {
+  const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
+  const [svgRef, crosshairRef] = useMouseEvents();
   const workItem = workItemsById[workItemId];
   const workItemChildren = workItemsIdTree[workItemId].map(id => workItemsById[id]);
-  const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
   const timeToXCoord = createXCoordConverterFor(workItem, workItemChildren);
   const height = svgHeight(rowPathsToRender.length);
 
   return (
-    <svg viewBox={`0 0 ${svgWidth} ${height}`}>
+    <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef}>
       <Graticule
         height={height}
         date={new Date(getMinDateTime(workItem, workItemChildren))}
@@ -74,6 +78,16 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
           colorsForStages={colorsForStages}
         />
       ))}
+      <line
+        ref={crosshairRef}
+        y1={0}
+        y2={height - axisLabelsHeight}
+        x1={0}
+        x2={0}
+        stroke="#999"
+        strokeWidth="1"
+        strokeDasharray="2,2"
+      />
     </svg>
   );
 };
