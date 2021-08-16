@@ -63,22 +63,22 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
 
       {
         nonMasterReleases ? (
-          <FilterTag label="Has commits" onClose={() => setNonMasterReleases(undefined)} />
+          <FilterTag label="Non-master releases" onClose={() => setNonMasterReleases(undefined)} />
         ) : null
       }
       {
         notStartsWithArtifact ? (
-          <FilterTag label="Has builds" onClose={() => setNotStartsWithArtifact(undefined)} />
+          <FilterTag label="No starting artifact" onClose={() => setNotStartsWithArtifact(undefined)} />
         ) : null
       }
       {
         stageNameExists ? (
-          <FilterTag label="Has failing builds" onClose={() => setStageNameExists(undefined)} />
+          <FilterTag label={`Has stage: ${stageNameExists}`} onClose={() => setStageNameExists(undefined)} />
         ) : null
       }
       {
         stageNameExistsNotUsed ? (
-          <FilterTag label={`Tech debt > ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined)} />
+          <FilterTag label={`Unused stage: ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined)} />
         ) : null
       }
     </div>
