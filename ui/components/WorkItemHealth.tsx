@@ -56,7 +56,8 @@ const WorkItem: React.FC<WorkItemProps> = ({
         </span>
       </div>
       {isExpanded ? (
-        <div className="mt-4">
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions,  jsx-a11y/click-events-have-key-events
+        <div className="mt-4" onClick={e => e.stopPropagation()}>
           <WorkItemsGanttChart
             workItemId={workItemId}
             workItemsById={workItemsById}
