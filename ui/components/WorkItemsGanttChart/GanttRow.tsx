@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
 import {
   textWidth, textHeight,
   rowPadding, svgWidth, makeTransparent, barYCoord,
-  barHeight, revisionTitle, contrastColour, barWidthUsing
+  barHeight, revisionTitle, contrastColour, barWidthUsing, makeDarker
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
 import type { ExpandedState } from './types';
@@ -24,15 +24,22 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   colorsForStages, expandedState, onToggle
 }) => {
   const barWidth = barWidthUsing(timeToXCoord);
+  const [isHighlighted, highlight] = useState<boolean>(false);
+
+  const rowColor = useMemo(() => {
+    const baseColor = makeTransparent(`#${workItem.color}`);
+    return isHighlighted ? makeDarker(baseColor) : baseColor;
+  }, [isHighlighted, workItem.color]);
+
   return (
-    <g>
+    <g onMouseOver={() => highlight(true)} onMouseLeave={() => highlight(false)}>
       <rect
       // background
         x="0"
         y={(textHeight + (rowPadding * 2)) * rowIndex}
         width={svgWidth}
         height={textHeight}
-        fill={makeTransparent(`#${workItem.color}`)}
+        fill={rowColor}
       />
       <foreignObject
       // The stuff on the left
