@@ -33,7 +33,7 @@ const useMouseEvents = (
     const crosshair = crosshairRef.current;
     if (!svg || !crosshair) return;
 
-    if (!hoverXCoord.current || hoverXCoord.current < 40) {
+    if (!hoverXCoord.current || hoverXCoord.current < axisLabelsWidth / 2) {
       crosshair.style.display = 'none';
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -43,6 +43,22 @@ const useMouseEvents = (
       crosshair.style.transform = `translateX(${hoverXCoord.current}px)`;
       const pointerDate = new Date(dateForCoord(hoverXCoord.current));
       crosshairLabel.innerHTML = mediumDate(pointerDate);
+
+      const closeToRightEdge = svgWidth - hoverXCoord.current < axisLabelsWidth / 2;
+      if (closeToRightEdge) {
+        crosshairLabel.style.transformOrigin = 'right';
+        crosshairLabel.style.transform = (
+          `translateX(${(svgWidth - hoverXCoord.current - axisLabelsWidth / 2)}px)`
+        );
+        crosshairLabel.style.textAlign = 'right';
+        // crosshairLabel.style.width = (
+        //   `${axisLabelsWidth + (svgWidth - hoverXCoord.current)}px`
+        // );
+      } else {
+        crosshairLabel.style.transform = 'translateX(0)';
+        crosshairLabel.style.textAlign = 'center';
+        crosshairLabel.style.width = `${axisLabelsWidth}px`;
+      }
     }
 
     prevHoverXCoord.current = hoverXCoord.current;
@@ -96,8 +112,9 @@ const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
         y={svgHeight - axisLabelsHeight}
         width={axisLabelsWidth}
         height={axisLabelsHeight}
+        overflow="visible"
       >
-        <div className="text-xs text-gray-500 text-center bg-white bg-opacity-75">
+        <div className="text-xs text-gray-500 text-center bg-white">
           date
         </div>
       </foreignObject>
