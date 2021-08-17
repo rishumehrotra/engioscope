@@ -30,12 +30,11 @@ export const getMaxDateTime = (workItem: UIWorkItem, children: UIWorkItem[]) => 
 
 export const xCoordToDate = (minDate: number, maxDate: number) => (
   (xCoord: number) => (
-    ((
+    (
       (xCoord - textWidth - barStartPadding)
       / (svgWidth - textWidth - barStartPadding)
-    ) * (maxDate - minDate))
-    + minDate
-  )
+    ) * (maxDate - minDate)
+  ) + minDate
 );
 
 export const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkItem[]) => {

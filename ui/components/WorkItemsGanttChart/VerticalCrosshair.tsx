@@ -5,16 +5,30 @@ import {
   axisLabelsHeight, axisLabelsWidth, barStartPadding,
   svgWidth, textWidth, xCoordToDate
 } from './helpers';
+import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 
 const useMouseEvents = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
   dateForCoord: ReturnType<typeof xCoordToDate>
 ) => {
   const hoverXCoord = useRef<number | null>(null);
-  const rafRef = useRef<number | null>(null);
+  const prevHoverXCoord = useRef<number | null>(null);
   const crosshairRef = useRef<SVGLineElement | null>(null);
 
+  const useSvgEvent = <K extends keyof SVGSVGElementEventMap>(
+    eventName: K,
+    eventHandler: (this: SVGSVGElement, ev: SVGSVGElementEventMap[K]) => void
+  ) => useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    svg.addEventListener(eventName, eventHandler);
+    return () => svg.removeEventListener(eventName, eventHandler);
+  }, [eventHandler, eventName]);
+
   const repositionCrosshair = useCallback(() => {
+    if (hoverXCoord.current === prevHoverXCoord.current) return;
+
     const svg = svgRef.current;
     const crosshair = crosshairRef.current;
     if (!svg || !crosshair) return;
@@ -22,19 +36,19 @@ const useMouseEvents = (
     if (!hoverXCoord.current || hoverXCoord.current < 40) {
       crosshair.style.display = 'none';
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const crosshairLabel = crosshair.querySelector('div')!;
+
       crosshair.style.display = '';
       crosshair.style.transform = `translateX(${hoverXCoord.current}px)`;
       const pointerDate = new Date(dateForCoord(hoverXCoord.current));
-      crosshair.querySelector('div')!.innerHTML = mediumDate(pointerDate);
+      crosshairLabel.innerHTML = mediumDate(pointerDate);
     }
-    rafRef.current = requestAnimationFrame(repositionCrosshair);
+
+    prevHoverXCoord.current = hoverXCoord.current;
   }, [dateForCoord, svgRef]);
 
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(repositionCrosshair);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return () => cancelAnimationFrame(rafRef.current!);
-  }, [repositionCrosshair]);
+  useRequestAnimationFrame(repositionCrosshair);
 
   const mouseMove = useCallback((e: MouseEvent) => {
     if (!svgRef.current) {
@@ -45,24 +59,10 @@ const useMouseEvents = (
     const mappedPosition = (svgWidth / rect.width) * e.offsetX;
     hoverXCoord.current = mappedPosition < (textWidth + barStartPadding) ? null : mappedPosition;
   }, [svgRef]);
-
-  useEffect(() => {
-    const svg = svgRef.current;
-
-    if (!svg) return;
-    svg.addEventListener('mousemove', mouseMove);
-    return () => svg.removeEventListener('mousemove', mouseMove);
-  }, [mouseMove, svgRef]);
+  useSvgEvent('mousemove', mouseMove);
 
   const mouseLeave = useCallback(() => { hoverXCoord.current = null; }, []);
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    svg.addEventListener('mouseleave', mouseLeave);
-    return () => svg.removeEventListener('mouseleave', mouseLeave);
-  }, [mouseLeave, svgRef]);
+  useSvgEvent('mouseleave', mouseLeave);
 
   return crosshairRef;
 };
@@ -80,7 +80,7 @@ const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
   const crosshairRef = useMouseEvents(svgRef, xCoordToDate(minDate, maxDate));
 
   return (
-    <g ref={crosshairRef}>
+    <g ref={crosshairRef} style={{ display: 'none' }}>
       <line
         y1={0}
         y2={svgHeight - axisLabelsHeight}
