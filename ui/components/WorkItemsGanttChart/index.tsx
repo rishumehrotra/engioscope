@@ -64,7 +64,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
     <div className="relative">
       {zoom ? (
         <button
-          className="absolute right-2 -top-6 bg-gray-600 text-white pl-2 pr-2 text-sm rounded-t-md"
+          className="absolute right-0 -top-7 bg-blue-600 text-white font-medium px-3 py-1 text-sm rounded-t-md"
           onClick={() => setZoom(null)}
         >
           Reset zoom

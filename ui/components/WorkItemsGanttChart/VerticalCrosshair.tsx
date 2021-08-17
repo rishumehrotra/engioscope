@@ -119,6 +119,7 @@ const useDraggableZoom = (
 
   const mouseDown = useCallback((e: MouseEvent) => {
     if (!svgRef.current) return;
+    if (e.offsetX < textWidth + barStartPadding) return;
     const date = dateFromMouseEvent(e);
     selection.current = [date, date];
     isDragging.current = true;
@@ -143,10 +144,12 @@ const useDraggableZoom = (
     selectionRef.current.style.display = 'none';
   }, [onSelect, selectionRef, svgRef]);
 
-  if (!svgRef.current) return null;
-  svgRef.current.addEventListener('mousedown', mouseDown);
-  svgRef.current.addEventListener('mousemove', mouseMove);
-  svgRef.current.addEventListener('mouseup', mouseUp);
+  useEffect(() => {
+    if (!svgRef.current) return;
+    svgRef.current.addEventListener('mousedown', mouseDown);
+    svgRef.current.addEventListener('mousemove', mouseMove);
+    svgRef.current.addEventListener('mouseup', mouseUp);
+  }, [mouseDown, mouseMove, mouseUp, svgRef]);
 };
 
 type VerticalCrossharRef = {
