@@ -139,7 +139,8 @@ const useDraggableZoom = (
     if (!svgRef.current || !selection.current || !selectionRef.current) return;
 
     svgRef.current.style.cursor = 'auto';
-    onSelect(minMaxSelection(selection.current));
+    const selectionMaxMin = minMaxSelection(selection.current);
+    if (selectionMaxMin[1] - selectionMaxMin[0] !== 0) onSelect(selectionMaxMin);
     selection.current = null;
     selectionRef.current.style.display = 'none';
   }, [onSelect, selectionRef, svgRef]);
