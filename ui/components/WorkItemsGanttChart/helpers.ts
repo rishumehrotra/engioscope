@@ -70,7 +70,7 @@ export const makeTransparent = (rgb: string) => {
 
 export const makeDarker = (rgb: string) => {
   if (rgb.length > 7) { // already has a rgbA component
-    return `${rgb.slice(0, -2)}40`;
+    return `${rgb.slice(0, -2)}30`;
   }
 
   return `${rgb}11`;
