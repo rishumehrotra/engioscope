@@ -97,7 +97,7 @@ const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
         width={axisLabelsWidth}
         height={axisLabelsHeight}
       >
-        <div className="text-xs text-gray-500 text-center">
+        <div className="text-xs text-gray-500 text-center bg-white bg-opacity-75">
           date
         </div>
       </foreignObject>
