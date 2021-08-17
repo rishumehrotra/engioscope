@@ -41,7 +41,7 @@ export const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkI
   const minDateTime = getMinDateTime(workItem, children);
   const maxDateTime = getMaxDateTime(workItem, children);
 
-  return (time: string) => {
+  return (time: string | Date) => {
     const date = new Date(time);
     const xCoordWithoutText = (
       (date.getTime() - minDateTime)

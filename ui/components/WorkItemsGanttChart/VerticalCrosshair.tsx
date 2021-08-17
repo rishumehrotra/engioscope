@@ -7,13 +7,15 @@ import {
 } from './helpers';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 
-const useMouseEvents = (
+const ENABLE_DRAG_SELECTION = false;
+
+const useCrosshair = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
+  crosshairRef: MutableRefObject<SVGLineElement | null>,
   dateForCoord: ReturnType<typeof xCoordToDate>
 ) => {
   const hoverXCoord = useRef<number | null>(null);
   const prevHoverXCoord = useRef<number | null>(null);
-  const crosshairRef = useRef<SVGLineElement | null>(null);
 
   const useSvgEvent = <K extends keyof SVGSVGElementEventMap>(
     eventName: K,
@@ -51,9 +53,6 @@ const useMouseEvents = (
           `translateX(${(svgWidth - hoverXCoord.current - axisLabelsWidth / 2)}px)`
         );
         crosshairLabel.style.textAlign = 'right';
-        // crosshairLabel.style.width = (
-        //   `${axisLabelsWidth + (svgWidth - hoverXCoord.current)}px`
-        // );
       } else {
         crosshairLabel.style.transform = 'translateX(0)';
         crosshairLabel.style.textAlign = 'center';
@@ -62,7 +61,7 @@ const useMouseEvents = (
     }
 
     prevHoverXCoord.current = hoverXCoord.current;
-  }, [dateForCoord, svgRef]);
+  }, [crosshairRef, dateForCoord, svgRef]);
 
   useRequestAnimationFrame(repositionCrosshair);
 
@@ -83,42 +82,118 @@ const useMouseEvents = (
   return crosshairRef;
 };
 
+const showSelection = (
+  selection: [number, number],
+  selectionRef: SVGRectElement,
+  timeToXCoord: (d: Date) => number
+) => {
+  const minSelection = Math.min(...selection);
+  const maxSelection = Math.max(...selection);
+  selectionRef.setAttribute(
+    'x', timeToXCoord(new Date(minSelection)).toString()
+  );
+  selectionRef.setAttribute(
+    'width', (
+      timeToXCoord(new Date(maxSelection)) - timeToXCoord(new Date(minSelection))
+    ).toString()
+  );
+};
+
+const useDraggableZoom = (
+  svgRef: MutableRefObject<SVGSVGElement | null>,
+  selectionRef: MutableRefObject<SVGRectElement | null>,
+  dateForCoord: ReturnType<typeof xCoordToDate>,
+  timeToXCoord: (d: Date) => number
+) => {
+  const selection = useRef<[number, number] | null>(null);
+  const isDragging = useRef<boolean>(false);
+
+  const dateFromMouseEvent = useCallback((e: MouseEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rect = svgRef.current!.getBoundingClientRect();
+    return dateForCoord((svgWidth / rect.width) * e.offsetX);
+  }, [dateForCoord, svgRef]);
+
+  const mouseDown = useCallback((e: MouseEvent) => {
+    if (!svgRef.current) return;
+    const date = dateFromMouseEvent(e);
+    selection.current = [date, date];
+    isDragging.current = true;
+  }, [dateFromMouseEvent, svgRef]);
+
+  const mouseMove = useCallback((e: MouseEvent) => {
+    if (!svgRef.current || !isDragging.current || !selection.current || !selectionRef.current) return;
+
+    svgRef.current.style.cursor = 'ew-resize';
+    const date = dateFromMouseEvent(e);
+    selection.current = [selection.current[0], date];
+    showSelection(selection.current, selectionRef.current, timeToXCoord);
+  }, [dateFromMouseEvent, selectionRef, svgRef, timeToXCoord]);
+
+  const mouseUp = useCallback(() => {
+    isDragging.current = false;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    svgRef.current!.style.cursor = 'auto';
+  }, [svgRef]);
+
+  if (!svgRef.current) return null;
+  svgRef.current.addEventListener('mousedown', mouseDown);
+  svgRef.current.addEventListener('mousemove', mouseMove);
+  svgRef.current.addEventListener('mouseup', mouseUp);
+};
+
 type VerticalCrossharRef = {
   svgRef: MutableRefObject<SVGSVGElement | null>;
   svgHeight: number;
   minDate: number;
   maxDate: number;
+  timeToXCoord: (date: Date) => number;
 };
 
 const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
-  svgRef, svgHeight, minDate, maxDate
+  svgRef, svgHeight, minDate, maxDate, timeToXCoord
 }) => {
-  const crosshairRef = useMouseEvents(svgRef, xCoordToDate(minDate, maxDate));
+  const crosshairRef = useRef<SVGLineElement | null>(null);
+  const selectionRef = useRef<SVGRectElement | null>(null);
+  useCrosshair(svgRef, crosshairRef, xCoordToDate(minDate, maxDate));
+  if (ENABLE_DRAG_SELECTION) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useDraggableZoom(svgRef, selectionRef, xCoordToDate(minDate, maxDate), timeToXCoord);
+  }
 
   return (
-    <g ref={crosshairRef} style={{ display: 'none' }}>
-      <line
-        y1={0}
-        y2={svgHeight - axisLabelsHeight}
-        x1={0}
-        x2={0}
-        className="pointer-events-none"
-        stroke="#999"
-        strokeWidth="1"
-        strokeDasharray="2,2"
+    <>
+      <rect
+        ref={selectionRef}
+        y="0"
+        height={svgHeight - axisLabelsHeight}
+        fill="#4495f8"
+        fillOpacity="0.4"
       />
-      <foreignObject
-        x={-1 * (axisLabelsWidth / 2)}
-        y={svgHeight - axisLabelsHeight}
-        width={axisLabelsWidth}
-        height={axisLabelsHeight}
-        overflow="visible"
-      >
-        <div className="text-xs text-gray-500 text-center bg-white">
-          date
-        </div>
-      </foreignObject>
-    </g>
+      <g ref={crosshairRef} style={{ display: 'none' }}>
+        <line
+          y1={0}
+          y2={svgHeight - axisLabelsHeight}
+          x1={0}
+          x2={0}
+          className="pointer-events-none"
+          stroke="#999"
+          strokeWidth="1"
+          strokeDasharray="2,2"
+        />
+        <foreignObject
+          x={-1 * (axisLabelsWidth / 2)}
+          y={svgHeight - axisLabelsHeight}
+          width={axisLabelsWidth}
+          height={axisLabelsHeight}
+          overflow="visible"
+        >
+          <div className="text-xs text-gray-500 text-center bg-white">
+            date
+          </div>
+        </foreignObject>
+      </g>
+    </>
   );
 };
 

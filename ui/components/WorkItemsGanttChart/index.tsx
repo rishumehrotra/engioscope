@@ -54,7 +54,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
   const height = svgHeight(rowPathsToRender.length);
 
   return (
-    <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef}>
+    <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef} className="select-none">
       <Graticule
         height={height}
         date={new Date(getMinDateTime(workItem, workItemChildren))}
@@ -78,6 +78,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
       <VerticalCrosshair
         svgRef={svgRef}
         svgHeight={height}
+        timeToXCoord={timeToXCoord}
         minDate={getMinDateTime(workItem, workItemChildren)}
         maxDate={getMaxDateTime(workItem, workItemChildren)}
       />
