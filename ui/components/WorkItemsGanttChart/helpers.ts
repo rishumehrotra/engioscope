@@ -37,18 +37,22 @@ export const xCoordToDate = (minDate: number, maxDate: number) => (
   ) + minDate
 );
 
-export const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkItem[]) => {
-  const minDateTime = getMinDateTime(workItem, children);
-  const maxDateTime = getMaxDateTime(workItem, children);
-
-  return (time: string | Date) => {
+export const xCoordConverterWithin = (minDateTime: number, maxDateTime: number) => (
+  (time: string | Date) => {
     const date = new Date(time);
     const xCoordWithoutText = (
       (date.getTime() - minDateTime)
       / (maxDateTime - minDateTime)
     ) * (svgWidth - textWidth - barStartPadding);
     return (xCoordWithoutText < 0 ? 0 : xCoordWithoutText) + textWidth + barStartPadding;
-  };
+  }
+);
+
+export const createXCoordConverterFor = (workItem: UIWorkItem, children: UIWorkItem[]) => {
+  const minDateTime = getMinDateTime(workItem, children);
+  const maxDateTime = getMaxDateTime(workItem, children);
+
+  return xCoordConverterWithin(minDateTime, maxDateTime);
 };
 
 export const barWidthUsing = (timeToXCoord: (time: string) => number) => (

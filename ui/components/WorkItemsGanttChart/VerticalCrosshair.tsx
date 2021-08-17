@@ -7,8 +7,6 @@ import {
 } from './helpers';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 
-const ENABLE_DRAG_SELECTION = false;
-
 const useCrosshair = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
   crosshairRef: MutableRefObject<SVGLineElement | null>,
@@ -82,13 +80,17 @@ const useCrosshair = (
   return crosshairRef;
 };
 
+const minMaxSelection = (items: [number, number]) => (
+  [Math.min(...items), Math.max(...items)] as [number, number]
+);
+
 const showSelection = (
   selection: [number, number],
   selectionRef: SVGRectElement,
   timeToXCoord: (d: Date) => number
 ) => {
-  const minSelection = Math.min(...selection);
-  const maxSelection = Math.max(...selection);
+  const [minSelection, maxSelection] = minMaxSelection(selection);
+  selectionRef.style.display = '';
   selectionRef.setAttribute(
     'x', timeToXCoord(new Date(minSelection)).toString()
   );
@@ -103,7 +105,8 @@ const useDraggableZoom = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
   selectionRef: MutableRefObject<SVGRectElement | null>,
   dateForCoord: ReturnType<typeof xCoordToDate>,
-  timeToXCoord: (d: Date) => number
+  timeToXCoord: (d: Date) => number,
+  onSelect: (selection: [number, number]) => void
 ) => {
   const selection = useRef<[number, number] | null>(null);
   const isDragging = useRef<boolean>(false);
@@ -132,9 +135,13 @@ const useDraggableZoom = (
 
   const mouseUp = useCallback(() => {
     isDragging.current = false;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    svgRef.current!.style.cursor = 'auto';
-  }, [svgRef]);
+    if (!svgRef.current || !selection.current || !selectionRef.current) return;
+
+    svgRef.current.style.cursor = 'auto';
+    onSelect(minMaxSelection(selection.current));
+    selection.current = null;
+    selectionRef.current.style.display = 'none';
+  }, [onSelect, selectionRef, svgRef]);
 
   if (!svgRef.current) return null;
   svgRef.current.addEventListener('mousedown', mouseDown);
@@ -148,18 +155,18 @@ type VerticalCrossharRef = {
   minDate: number;
   maxDate: number;
   timeToXCoord: (date: Date) => number;
+  onSelect: (selection: [number, number]) => void;
 };
 
 const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
-  svgRef, svgHeight, minDate, maxDate, timeToXCoord
+  svgRef, svgHeight, minDate, maxDate, timeToXCoord, onSelect
 }) => {
   const crosshairRef = useRef<SVGLineElement | null>(null);
   const selectionRef = useRef<SVGRectElement | null>(null);
   useCrosshair(svgRef, crosshairRef, xCoordToDate(minDate, maxDate));
-  if (ENABLE_DRAG_SELECTION) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useDraggableZoom(svgRef, selectionRef, xCoordToDate(minDate, maxDate), timeToXCoord);
-  }
+  useDraggableZoom(
+    svgRef, selectionRef, xCoordToDate(minDate, maxDate), timeToXCoord, onSelect
+  );
 
   return (
     <>
@@ -169,6 +176,7 @@ const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
         height={svgHeight - axisLabelsHeight}
         fill="#4495f8"
         fillOpacity="0.4"
+        style={{ display: 'none' }}
       />
       <g ref={crosshairRef} style={{ display: 'none' }}>
         <line

@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import type { AnalysedWorkItems } from '../../../shared/types';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
 import {
-  svgWidth, createXCoordConverterFor, svgHeight, getMinDateTime, getMaxDateTime
+  svgWidth, createXCoordConverterFor, svgHeight, getMinDateTime, getMaxDateTime, xCoordConverterWithin
 } from './helpers';
 import type { ExpandedState } from './types';
 import VerticalCrosshair from './VerticalCrosshair';
@@ -47,42 +47,60 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorsForStages
 }) => {
   const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
+  const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const workItem = workItemsById[workItemId];
   const workItemChildren = workItemsIdTree[workItemId].map(id => workItemsById[id]);
-  const timeToXCoord = createXCoordConverterFor(workItem, workItemChildren);
   const height = svgHeight(rowPathsToRender.length);
 
+  const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
+    const coordsGetter = zoom
+      ? xCoordConverterWithin(...zoom)
+      : createXCoordConverterFor(workItem, workItemChildren);
+    return coordsGetter(time);
+  }, [workItem, workItemChildren, zoom]);
+
   return (
-    <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef} className="select-none">
-      <Graticule
-        height={height}
-        date={new Date(getMinDateTime(workItem, workItemChildren))}
-      />
-      {rowPathsToRender.map((rowPath, rowIndex, list) => (
-        <GanttRow
-          key={rowPath}
-          isLast={rowIndex === list.length - 1}
-          workItem={workItemsById[workItemIdFromRowPath(rowPath)]}
-          indentation={indentation(rowPath)}
-          rowIndex={rowIndex}
-          timeToXCoord={timeToXCoord}
-          onToggle={e => {
-            e.stopPropagation();
-            setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree));
-          }}
-          expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
-          colorsForStages={colorsForStages}
+    <div className="relative">
+      {zoom ? (
+        <button
+          className="absolute right-2 -top-6 bg-gray-600 text-white pl-2 pr-2 text-sm rounded-t-md"
+          onClick={() => setZoom(null)}
+        >
+          Reset zoom
+        </button>
+      ) : null}
+      <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef} className="select-none">
+        <Graticule
+          height={height}
+          date={new Date(zoom ? zoom[0] : getMinDateTime(workItem, workItemChildren))}
         />
-      ))}
-      <VerticalCrosshair
-        svgRef={svgRef}
-        svgHeight={height}
-        timeToXCoord={timeToXCoord}
-        minDate={getMinDateTime(workItem, workItemChildren)}
-        maxDate={getMaxDateTime(workItem, workItemChildren)}
-      />
-    </svg>
+        {rowPathsToRender.map((rowPath, rowIndex, list) => (
+          <GanttRow
+            key={rowPath}
+            isLast={rowIndex === list.length - 1}
+            workItem={workItemsById[workItemIdFromRowPath(rowPath)]}
+            indentation={indentation(rowPath)}
+            rowIndex={rowIndex}
+            timeToXCoord={timeToXCoord}
+            onToggle={e => {
+              e.stopPropagation();
+              setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree));
+            }}
+            expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
+            colorsForStages={colorsForStages}
+          />
+        ))}
+        <VerticalCrosshair
+          svgRef={svgRef}
+          svgHeight={height}
+          timeToXCoord={timeToXCoord}
+          minDate={zoom ? zoom[0] : getMinDateTime(workItem, workItemChildren)}
+          maxDate={zoom ? zoom[1] : getMaxDateTime(workItem, workItemChildren)}
+          onSelect={setZoom}
+        />
+      </svg>
+    </div>
   );
 };
 
