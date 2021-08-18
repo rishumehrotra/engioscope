@@ -8,6 +8,7 @@ import AdvancedFilters from '../components/AdvancedFilters';
 import WorkItems from './WorkItems';
 import SortControls from '../components/SortControls';
 import { ProjectDetails } from '../components/ProjectDetails';
+import Devs from './Devs';
 
 const Project: React.FC = () => (
   <div>
@@ -32,6 +33,9 @@ const Project: React.FC = () => (
       </Route>
       <Route path="/:collection/:project/release-pipelines">
         <ReleasePipelines />
+      </Route>
+      <Route path="/:collection/:project/devs">
+        <Devs />
       </Route>
       <Route path="/:collection/:project/workitems">
         <WorkItems />
