@@ -5,6 +5,29 @@ import { doesFileExist } from '../utils';
 
 const router = Router();
 
+router.post('/api/log', async (req, res) => {
+  try {
+    const { event, pathname, search } = req.body;
+    await fs.appendFile(
+      join(process.cwd(), 'analytics.csv'),
+      `${[
+        new Date().toISOString(),
+        req.cookies.c,
+        event,
+        pathname,
+        search,
+        req.headers['user-agent']
+      ].join(', ')}\n`,
+      'utf8'
+    );
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Error writing analytics ping', e);
+  }
+
+  res.status(200).send('all your base are belong to us');
+});
+
 router.get('/api/*', async (req, res) => {
   const fileName = decodeURIComponent(req.path.replace('/api/', ''));
   const filePath = join(process.cwd(), 'data', fileName);

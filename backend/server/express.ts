@@ -1,6 +1,7 @@
 import path from 'path';
 import express from 'express';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import type { Config } from '../scraper/types';
@@ -9,7 +10,22 @@ import api from './api';
 const uiFolder = path.join(__dirname, '..', '..', 'ui');
 const app = express();
 
-const sendIndexHtml = (_: express.Request, res: express.Response) => {
+app.use(express.json());
+
+app.use(cookieParser());
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.cookies.c === undefined) {
+    // Set a new cookie
+    let randomNumber = Math.random().toString();
+    randomNumber = randomNumber.substring(2, randomNumber.length);
+    res.cookie('c', randomNumber, { maxAge: 31622400, httpOnly: true });
+  } else {
+    // Cookie was already present
+  }
+  next();
+});
+
+const sendIndexHtml = (req: express.Request, res: express.Response) => {
   res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
   res.header('Expires', '-1');
   res.header('Pragma', 'no-cache');

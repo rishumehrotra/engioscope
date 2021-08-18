@@ -11,6 +11,7 @@ import Collection from './pages/Collection';
 import logo from './images/engioscope-serif.png';
 import { ProjectDetailsProvider } from './hooks/project-details-hooks';
 import { SortContextProvider } from './hooks/sort-hooks';
+import Analytics from './components/Analytics';
 
 const App: React.FC = () => (
   <ProjectDetailsProvider>
@@ -19,6 +20,7 @@ const App: React.FC = () => (
         <div className="container max-w-screen-xl sm:px-4 md:px-8 mx-auto">
           <Router>
             <QueryParamProvider ReactRouterRoute={Route}>
+              <Analytics />
               <Link to="/">
                 <img src={logo} alt="Logo" className="w-36" />
               </Link>
