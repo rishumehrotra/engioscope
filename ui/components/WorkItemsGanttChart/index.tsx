@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { AnalysedWorkItems } from '../../../shared/types';
+import DragZoom from './DragZoom';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
 import {
@@ -60,12 +61,17 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
     return coordsGetter(time);
   }, [workItem, workItemChildren, zoom]);
 
+  const resetZoom = useCallback(() => setZoom(null), [setZoom]);
+
+  const minDate = zoom ? zoom[0] : getMinDateTime(workItem, workItemChildren);
+  const maxDate = zoom ? zoom[1] : getMaxDateTime(workItem, workItemChildren);
+
   return (
     <div className="relative">
       {zoom ? (
         <button
           className="absolute right-0 -top-7 bg-blue-600 text-white font-medium px-3 py-1 text-sm rounded-t-md"
-          onClick={() => setZoom(null)}
+          onClick={resetZoom}
         >
           Reset zoom
         </button>
@@ -73,7 +79,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
       <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef} className="select-none">
         <Graticule
           height={height}
-          date={new Date(zoom ? zoom[0] : getMinDateTime(workItem, workItemChildren))}
+          date={new Date(minDate)}
         />
         {rowPathsToRender.map((rowPath, rowIndex, list) => (
           <GanttRow
@@ -91,13 +97,19 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
             colorsForStages={colorsForStages}
           />
         ))}
-        <VerticalCrosshair
+        <DragZoom
           svgRef={svgRef}
           svgHeight={height}
           timeToXCoord={timeToXCoord}
-          minDate={zoom ? zoom[0] : getMinDateTime(workItem, workItemChildren)}
-          maxDate={zoom ? zoom[1] : getMaxDateTime(workItem, workItemChildren)}
+          minDate={minDate}
+          maxDate={maxDate}
           onSelect={setZoom}
+        />
+        <VerticalCrosshair
+          svgRef={svgRef}
+          svgHeight={height}
+          minDate={minDate}
+          maxDate={maxDate}
         />
       </svg>
     </div>
