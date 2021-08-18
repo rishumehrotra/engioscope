@@ -1,25 +1,31 @@
 import Router from 'express-promise-router';
 import { join } from 'path';
-import { promises as fs } from 'fs';
+import { promises as fs, createWriteStream } from 'fs';
+import uaParser from 'ua-parser-js';
 import { doesFileExist } from '../utils';
 
 const router = Router();
 
+const analyticsStream = createWriteStream(join(process.cwd(), 'analytics.csv'), {
+  flags: 'a',
+  encoding: 'utf8'
+});
+
 router.post('/api/log', async (req, res) => {
   try {
     const { event, pathname, search } = req.body;
-    await fs.appendFile(
-      join(process.cwd(), 'analytics.csv'),
-      `${[
-        new Date().toISOString(),
-        req.cookies.c,
-        event,
-        pathname,
-        search,
-        req.headers['user-agent']
-      ].join(', ')}\n`,
-      'utf8'
-    );
+    const ua = uaParser(req.headers['user-agent']);
+
+    analyticsStream.write(`${[
+      new Date().toISOString(),
+      req.cookies.c,
+      event,
+      pathname + search,
+      ua.browser.name,
+      ua.browser.version,
+      ua.os.name,
+      ua.os.version
+    ].join(', ')}\n`);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('Error writing analytics ping', e);
