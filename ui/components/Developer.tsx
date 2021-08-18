@@ -59,19 +59,21 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
               </tr>
             </thead>
             <tbody>
-              {dev.repos.map(repo => (
-                <tr key={repo.name}>
-                  <td>
-                    <Link to={history.location.pathname.replace('/devs', `/repos?search="${repo.name}"`)}>
-                      {repo.name}
-                    </Link>
-                  </td>
-                  <td>{Object.values(repo.byDate).reduce(add, 0)}</td>
-                  <td>
-                    <CommitTimeline timeline={repo.byDate} max={Math.max(...allCommits)} />
-                  </td>
-                </tr>
-              ))}
+              {dev.repos
+                .sort((a, b) => Object.values(b.byDate).reduce(add, 0) - Object.values(a.byDate).reduce(add, 0))
+                .map(repo => (
+                  <tr key={repo.name}>
+                    <td>
+                      <Link to={history.location.pathname.replace('/devs', `/repos?search="${repo.name}"`)}>
+                        {repo.name}
+                      </Link>
+                    </td>
+                    <td>{Object.values(repo.byDate).reduce(add, 0)}</td>
+                    <td>
+                      <CommitTimeline timeline={repo.byDate} max={Math.max(...allCommits)} />
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
           <p>
