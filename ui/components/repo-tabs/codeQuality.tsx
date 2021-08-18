@@ -9,7 +9,7 @@ import TabContents from './TabContents';
 export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   title: 'Code quality',
   count: codeQuality?.qualityGate || 'unknown',
-  content: (
+  content: () => (
     codeQuality ? (
       <TabContents gridCols={7}>
         <Metric name="Complexity" value={num(codeQuality.complexity)} position="first" />

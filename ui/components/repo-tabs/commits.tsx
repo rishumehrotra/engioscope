@@ -13,7 +13,7 @@ export default (commits: RepoAnalysis['commits']): Tab => {
   return {
     title: 'Commits',
     count: commits.count,
-    content: (
+    content: () => (
       <TabContents gridCols={1}>
         {commits.count === 0
           ? (

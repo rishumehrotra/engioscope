@@ -94,7 +94,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
           />
         ))}
       </div>
-      <span role="region">{selectedTab ? selectedTab.content : null}</span>
+      <span role="region">{selectedTab ? selectedTab.content() : null}</span>
     </Card>
   );
 };

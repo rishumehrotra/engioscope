@@ -8,7 +8,7 @@ import TabContents from './TabContents';
 export default (defaultBranch: string | undefined, branches: RepoAnalysis['branches']): Tab => ({
   title: 'Branches',
   count: branches.total,
-  content: (
+  content: () => (
     <>
       <TabContents>
         <Metric name="Total" value={num(branches.total)} tooltip="Total number of branches in the repository" position="first" />

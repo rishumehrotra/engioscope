@@ -8,7 +8,7 @@ import TabContents from './TabContents';
 export default (tests: RepoAnalysis['tests']): Tab => ({
   title: 'Tests',
   count: tests?.total || 0,
-  content: (
+  content: () => (
     <TabContents gridCols={1}>
       {tests ? (
         <>

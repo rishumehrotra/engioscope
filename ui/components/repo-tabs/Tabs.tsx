@@ -4,7 +4,7 @@ import { num } from '../../helpers/utils';
 export type Tab = {
   title: string;
   count: number | string;
-  content: React.ReactNode;
+  content: () => React.ReactNode;
 };
 
 type TopLevelTabProps = {
