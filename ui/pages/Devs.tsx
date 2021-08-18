@@ -28,8 +28,8 @@ const aggregateDevs = (projectAnalysis: ProjectRepoAnalysis) => (
 );
 
 const sorters: SortMap<Dev> = {
-  'Name': (a, b) => b.name.toLowerCase().replace(/"/gi, '').localeCompare(
-    a.name.toLowerCase().replace(/"/gi, '')
+  'Name': (a, b) => b.name.toLowerCase().replace(/["“”]/gi, '').localeCompare(
+    a.name.toLowerCase().replace(/["“”]/gi, '')
   )
 };
 

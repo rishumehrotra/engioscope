@@ -1,21 +1,12 @@
-import type { ImgHTMLAttributes } from 'react';
-import React, { useState } from 'react';
+import React from 'react';
 import { add } from 'rambda';
 import type { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
-import defaultProfilePic from '../../default-profile-pic.png';
 import { num } from '../../helpers/utils';
 import CommitTimeline from '../CommitTimeline';
-
-const ProfilePic: React.FC<ImgHTMLAttributes<HTMLImageElement>> = ({ src, ...rest }) => {
-  const [actualSrc, setActualSrc] = useState(src || defaultProfilePic);
-  const onError = () => setActualSrc(defaultProfilePic);
-
-  // eslint-disable-next-line jsx-a11y/alt-text
-  return <img src={actualSrc} onError={onError} {...rest} />;
-};
+import { ProfilePic } from '../ProfilePic';
 
 export default (commits: RepoAnalysis['commits']): Tab => {
   const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));

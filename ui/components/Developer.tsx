@@ -4,6 +4,7 @@ import { Link, useHistory } from 'react-router-dom';
 import type { Dev } from '../types';
 import CommitTimeline from './CommitTimeline';
 import { DownChevron, UpChevron } from './common/Icons';
+import { ProfilePic } from './ProfilePic';
 
 const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
@@ -17,13 +18,35 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
         rounded-lg shadow relative workitem-body"
     >
       <button
-        className="w-full text-left"
+        className="w-full text-left flex justify-between"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 className="flex justify-between">
-          <img src={dev.imageUrl} alt={dev.name} />
-          <div>{dev.name}</div>
-        </h3>
+        <div className="flex gap-3">
+          <ProfilePic
+            src={dev.imageUrl}
+            alt={`${dev.name}'s profile pic`}
+            width="48"
+            height="48"
+            className="rounded-full inline-block"
+          />
+          <div>
+            <h3 className="font-bold text-md">
+              {dev.name}
+            </h3>
+            <div className="text-base font-normal text-gray-600">
+              <span className="text-blue-gray text-sm my-2">
+                <span className="font-semibold text-base">
+                  {commitsCount}
+                </span>
+                {` ${commitsCount === 1 ? 'commit' : 'commits'} in `}
+                <span className="font-semibold text-base">
+                  {dev.repos.length}
+                </span>
+                {` ${dev.repos.length === 1 ? 'repo' : 'repos'}`}
+              </span>
+            </div>
+          </div>
+        </div>
         {isExpanded ? (
           <span className="flex text-gray-500">
             <span>Show less</span>
@@ -36,50 +59,41 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
           </span>
         )}
       </button>
-      <div className="text-base font-normal text-gray-800">
-        <span className="text-blue-gray text-sm my-2">
-          <span className="font-semibold text-base">
-            {commitsCount}
-          </span>
-          {` ${commitsCount === 1 ? 'commit' : 'commits'} in `}
-          <span className="font-semibold text-base">
-            {dev.repos.length}
-          </span>
-          {` ${dev.repos.length === 1 ? 'repo' : 'repos'}`}
-        </span>
-      </div>
       {isExpanded && (
-        <>
-          <table>
+        <div className="bg-gray-100 px-8 py-8 mt-4 rounded-lg">
+          <table className="table-auto text-center divide-y divide-gray-200 w-full">
             <thead>
               <tr>
-                <th>Repo</th>
-                <th>Commits</th>
-                <th>Timeline</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Commits</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Timeline</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
               {dev.repos
                 .sort((a, b) => Object.values(b.byDate).reduce(add, 0) - Object.values(a.byDate).reduce(add, 0))
                 .map(repo => (
                   <tr key={repo.name}>
-                    <td>
-                      <Link to={history.location.pathname.replace('/devs', `/repos?search="${repo.name}"`)}>
+                    <td className="px-6 py-4 text-left w-7/12">
+                      <Link
+                        to={history.location.pathname.replace('/devs', `/repos?search="${repo.name}"`)}
+                        className="text-blue-600 hover:underline"
+                      >
                         {repo.name}
                       </Link>
                     </td>
-                    <td>{Object.values(repo.byDate).reduce(add, 0)}</td>
-                    <td>
+                    <td className="px-6 py-4 whitespace-nowrap w-1/12">{Object.values(repo.byDate).reduce(add, 0)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap w-4/12">
                       <CommitTimeline timeline={repo.byDate} max={Math.max(...allCommits)} />
                     </td>
                   </tr>
                 ))}
             </tbody>
           </table>
-          <p>
+          <p className="w-full text-right text-sm italic text-gray-500 mt-4">
             Data shown is for the last 30 days, not including merge commits
           </p>
-        </>
+        </div>
       )}
     </li>
   );
