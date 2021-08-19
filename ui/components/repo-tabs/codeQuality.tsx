@@ -11,14 +11,26 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   count: codeQuality?.qualityGate || 'unknown',
   content: () => (
     codeQuality ? (
-      <TabContents gridCols={7}>
-        <Metric name="Complexity" value={num(codeQuality.complexity)} position="first" />
-        <Metric name="Bugs" value={num(codeQuality.bugs)} />
-        <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
-        <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
-        <Metric name="Duplication" value={num(codeQuality.duplication)} />
-        <Metric name="Tech debt" value={formatDebt(codeQuality.techDebt)} />
-        <Metric name="Quality gate" value={codeQuality.qualityGate} position="last" />
+      <TabContents gridCols={1}>
+        <div className="grid grid-cols-7">
+          <Metric name="Complexity" value={num(codeQuality.complexity)} position="first" />
+          <Metric name="Bugs" value={num(codeQuality.bugs)} />
+          <Metric name="Code smells" value={num(codeQuality.codeSmells)} />
+          <Metric name="Vulnerabilities" value={num(codeQuality.vulnerabilities)} />
+          <Metric name="Duplication" value={num(codeQuality.duplication)} />
+          <Metric name="Tech debt" value={formatDebt(codeQuality.techDebt)} />
+          <Metric name="Quality gate" value={codeQuality.qualityGate} position="last" />
+        </div>
+        <p className="w-full text-right text-sm italic mt-4">
+          <a
+            className="text-blue-600 hover:underline"
+            href={codeQuality.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            See full details on SonarQube
+          </a>
+        </p>
       </TabContents>
     ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on SonarQube" /></TabContents>)
   )

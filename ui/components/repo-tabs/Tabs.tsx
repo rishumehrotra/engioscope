@@ -29,12 +29,10 @@ export const TopLevelTab: React.FC<TopLevelTabProps> = ({
         hover:text-gray-900 focus:text-gray-900 cursor-pointer`}
       onClick={onClick}
     >
-      <div>
-        <div className={`text-3xl font-semibold -mb-1 ${isSelected ? 'text-black' : 'text-gray-600'} `}>
-          {typeof count === 'number' ? num(count) : count}
-        </div>
-        <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{label}</div>
+      <div className={`text-3xl font-semibold -mb-1 ${isSelected ? 'text-black' : 'text-gray-600'} `}>
+        {typeof count === 'number' ? num(count) : count}
       </div>
+      <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{label}</div>
     </button>
   );
 };
