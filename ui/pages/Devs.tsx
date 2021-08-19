@@ -1,6 +1,8 @@
+import { always } from 'rambda';
 import React, { useMemo } from 'react';
+import { useQueryParam } from 'use-query-params';
 import type { ProjectRepoAnalysis } from '../../shared/types';
-import Developer from '../components/Developer';
+import Developer from '../components/Dev';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import useFetchForProject from '../hooks/use-fetch-for-project';
@@ -35,11 +37,15 @@ const sorters: SortMap<Dev> = {
 
 const Devs: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
+  const [search] = useQueryParam<string>('search');
+
   const sorter = useSort(sorters, 'Name');
   const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
-    return aggregateDevs(projectAnalysis).sort(sorter);
-  }, [projectAnalysis, sorter]);
+    return aggregateDevs(projectAnalysis)
+      .filter(search ? d => d.name.toLowerCase().includes(search.toLowerCase()) : always(true))
+      .sort(sorter);
+  }, [projectAnalysis, search, sorter]);
 
   if (devs === 'loading') return <div>Loading...</div>;
 
