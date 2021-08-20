@@ -48,6 +48,7 @@
     "pretty-ms": "^7.0.1",
     "qs": "^6.7.0",
     "rambda": "^6.8.2",
+    "react-tooltip": "^4.2.21",
     "throat": "^6.0.1",
     "ua-parser-js": "^0.7.28",
     "yaml": "^1.10.2",

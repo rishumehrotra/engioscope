@@ -1,5 +1,6 @@
 import React from 'react';
 import { add } from 'rambda';
+import ReactTooltip from 'react-tooltip';
 import type { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
@@ -15,6 +16,7 @@ export default (commits: RepoAnalysis['commits']): Tab => {
     count: commits.count,
     content: () => (
       <TabContents gridCols={1}>
+        <ReactTooltip />
         {commits.count === 0
           ? (
             <AlertMessage message="No commits to this repo in the last month" />
@@ -46,16 +48,15 @@ export default (commits: RepoAnalysis['commits']): Tab => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {Object.values(commitsByDev.byDate).reduce(add, 0)}
                       </td>
-                      <td
-                        title={`Added ${num(commitsByDev.changes.add)} files`}
-                        className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-green-700"
-                      >
-                        {commitsByDev.changes.add
-                          ? `+${num(commitsByDev.changes.add)}`
-                          : ' '}
+                      <td className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-green-700">
+                        <p data-tip={`Added ${num(commitsByDev.changes.add)} files`}>
+                          {commitsByDev.changes.add
+                            ? `+${num(commitsByDev.changes.add)}`
+                            : ' '}
+                        </p>
                       </td>
                       <td
-                        title={`Modified ${num(commitsByDev.changes.edit)} files`}
+                        data-tip={`Modified ${num(commitsByDev.changes.edit)} files`}
                         className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-red-400"
                       >
                         {commitsByDev.changes.edit
@@ -63,7 +64,7 @@ export default (commits: RepoAnalysis['commits']): Tab => {
                           : ' '}
                       </td>
                       <td
-                        title={`Deleted code in ${num(commitsByDev.changes.delete)} files`}
+                        data-tip={`Deleted code in ${num(commitsByDev.changes.delete)} files`}
                         className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-red-700"
                       >
                         {commitsByDev.changes.delete

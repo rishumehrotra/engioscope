@@ -32,7 +32,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                         href={pipeline.url}
                         target="_blank"
                         rel="noreferrer"
-                        title={pipeline.name}
+                        data-tip={pipeline.name}
                         className="text-blue-600 hover:underline"
                       >
                         <span className="truncate w-full block">

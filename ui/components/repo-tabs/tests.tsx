@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactTooltip from 'react-tooltip';
 import type { RepoAnalysis } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
@@ -10,6 +11,7 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
   count: tests?.total || 0,
   content: () => (
     <TabContents gridCols={1}>
+      <ReactTooltip />
       {tests ? (
         <>
           <table className="table-auto text-center divide-y divide-gray-200">
@@ -36,7 +38,7 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
                       href={pipeline.url}
                       target="_blank"
                       rel="noreferrer"
-                      title={pipeline.name}
+                      data-tip={pipeline.name}
                       className="text-blue-600 hover:underline"
                     >
                       <span className="truncate w-full block">
