@@ -31,7 +31,7 @@ export default (config: Config) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions,
-    getWorkItemIdsForQuery, getWorkItems, getWorkItemRevisions, getWorkItemTypes
+    getWorkItemIdsForQuery, getWorkItems, getWorkItemTypes
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
@@ -113,8 +113,7 @@ export default (config: Config) => {
           topLevelWorkItemIdsRelations.workItemRelations,
           allBugAndFeatureRelations?.workItemRelations,
           workItemTypes,
-          forProject(getWorkItems),
-          forProject(getWorkItemRevisions)
+          forProject(getWorkItems)
         ),
       workItemLabel: projectConfig.workitems?.label || 'Features'
     };

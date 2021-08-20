@@ -38,13 +38,13 @@ app.use(rateLimit({ windowMs: 60 * 1000, max: 100 })); // 100 reqs/min
 
 app.get('/', sendIndexHtml);
 app.use(express.static(uiFolder));
-app.use(api);
-app.use((req, res, next) => {
-  if (!req.accepts('html')) return next();
-  sendIndexHtml(req, res);
-});
 
 export default (config: Config) => {
+  app.use(api(config));
+  app.use((req, res, next) => {
+    if (!req.accepts('html')) return next();
+    sendIndexHtml(req, res);
+  });
   app.listen(config.port || 1337, () => {
     // eslint-disable-next-line no-console
     console.log(`The server is running on port ${config.port || 1337}`);

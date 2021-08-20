@@ -136,7 +136,6 @@ export type UIWorkItem = {
   url: string;
   icon: string;
   color: string;
-  revisions: UIWorkItemRevision[];
 };
 
 export type UIWorkItemRevision = {

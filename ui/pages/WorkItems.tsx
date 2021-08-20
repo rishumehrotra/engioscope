@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
+import React, {
+  useCallback, useMemo, useRef, useState
+} from 'react';
 import { useQueryParam } from 'use-query-params';
-import type { UIWorkItem } from '../../shared/types';
-import { workItemMetrics } from '../network';
+import { useParams } from 'react-router-dom';
+import type { UIWorkItem, UIWorkItemRevision } from '../../shared/types';
+import { workItemMetrics, workItemRevisions } from '../network';
 import { dontFilter } from '../helpers/utils';
 import WorkItem from '../components/WorkItemHealth';
 import useFetchForProject from '../hooks/use-fetch-for-project';
@@ -18,16 +21,6 @@ const colorPalette = [
   '#edc951', '#eb6841', '#00a0b0', '#fe4a49'
 ];
 
-const createColorPalette = (workItemsMap: Record<number, UIWorkItem>) => {
-  const states = Object.values(workItemsMap).flatMap(wi => wi.revisions.map(r => r.state));
-
-  return [...new Set(states)]
-    .reduce<Record<string, string>>((acc, state, index) => ({
-      ...acc,
-      [state]: colorPalette[index % colorPalette.length]
-    }), {});
-};
-
 const bySearchTerm = (searchTerm: string) => (workItem: UIWorkItem) => (
   workItem.title.toLowerCase().includes(searchTerm.toLowerCase())
 );
@@ -36,9 +29,30 @@ const sorters = (childrenCount: (id: number) => number): SortMap<UIWorkItem> => 
   'Bundle size': (a, b) => childrenCount(a.id) - childrenCount(b.id)
 });
 
+const useRevisionsForCollection = () => {
+  const { collection } = useParams<{ collection: string }>();
+  const [revisions, setRevisions] = useState<Record<string, 'loading' | UIWorkItemRevision[]>>({});
+
+  const getRevisions = useCallback((workItemIds: number[]) => {
+    const needToFetch = workItemIds.filter(id => !revisions[id]);
+
+    setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: 'loading' }), rs));
+
+    if (needToFetch.length) {
+      workItemRevisions(collection, [...new Set(needToFetch)]).then(revisions => (
+        setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs))
+      ));
+    }
+  }, [collection, revisions]);
+
+  return [revisions, getRevisions] as const;
+};
+
 const WorkItems: React.FC = () => {
   const workItemAnalysis = useFetchForProject(workItemMetrics);
+  const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam<string>('search');
+  const colorsForStages = useRef<Record<string, string>>({});
 
   const sorterMap = useMemo(() => {
     if (workItemAnalysis === 'loading') return sorters(() => 0);
@@ -49,11 +63,12 @@ const WorkItems: React.FC = () => {
 
   const sorter = useSort(sorterMap, 'Bundle size');
 
-  const colorsForStages = useMemo(() => {
-    if (workItemAnalysis === 'loading') return {};
-    if (workItemAnalysis.workItems === null) return {};
-    return workItemAnalysis.workItems.ids ? createColorPalette(workItemAnalysis.workItems.byId) : {};
-  }, [workItemAnalysis]);
+  const colorForStage = useCallback((stageName: string) => {
+    if (colorsForStages.current[stageName]) return colorsForStages.current[stageName];
+    const randomColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+    colorsForStages.current = { ...colorsForStages.current, [stageName]: randomColor };
+    return randomColor;
+  }, [colorsForStages]);
 
   if (workItemAnalysis === 'loading') return <div>Loading...</div>;
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
@@ -75,8 +90,10 @@ const WorkItems: React.FC = () => {
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
-            colorsForStages={colorsForStages}
+            colorForStage={colorForStage}
             isFirst={index === 0}
+            revisions={revisions}
+            getRevisions={getRevisions}
           />
         ))}
       </ul>

@@ -1,29 +1,8 @@
-import throat from 'throat';
-import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
+import type { UIWorkItem } from '../../../shared/types';
 import { exists } from '../../utils';
 import type {
-  WorkItem, WorkItemQueryHierarchialResult,
-  WorkItemRevision, WorkItemType
+  WorkItem, WorkItemQueryHierarchialResult, WorkItemType
 } from '../types-azure';
-
-const transformRevision = (revision: WorkItemRevision): UIWorkItemRevision => ({
-  state: revision.fields['System.State'],
-  date: revision.fields['System.ChangedDate'].toISOString()
-});
-
-const aggregateRevisions = (revisions: WorkItemRevision[]) => (
-  revisions.reduce<UIWorkItemRevision[]>((acc, revision) => {
-    if (acc.length === 0) {
-      return [transformRevision(revision)];
-    }
-
-    if (acc[acc.length - 1].state === revision.fields['System.State']) {
-      return acc;
-    }
-
-    return [...acc, transformRevision(revision)];
-  }, [])
-);
 
 const idsFromRelations = (relations: WorkItemQueryHierarchialResult['workItemRelations']) => (
   new Set(relations.flatMap(wir => [wir.source?.id, wir.target?.id]).filter(exists))
@@ -35,19 +14,6 @@ const workItemsArrayToLookup = (wis: WorkItem[]): Record<number, WorkItem> => (
     acc[wi.id] = wi;
     return acc;
   }, {})
-);
-
-const getWorkItemRevisionsAsHash = (
-  workItemRelationsIds: number[],
-  getWorkItemRevisions: (workItemId: number) => Promise<WorkItemRevision[]>
-) => (
-  Promise.all([...workItemRelationsIds].map(
-    throat(50, id => getWorkItemRevisions(id).then(wir => [id, wir] as const))
-  )).then(wirs => wirs.reduce<Record<number, WorkItemRevision[]>>((acc, [id, wir]) => {
-    // Optimisation to avoid memory thrashing of immutable data structures
-    acc[id] = wir;
-    return acc;
-  }, {}))
 );
 
 const relationsToIdTree = (workItemRelations: WorkItemQueryHierarchialResult['workItemRelations']) => (
@@ -65,8 +31,7 @@ export default async (
   workItemRelations: WorkItemQueryHierarchialResult['workItemRelations'],
   allBugsAndFeatures: WorkItemQueryHierarchialResult['workItemRelations'] | undefined,
   workItemTypes: WorkItemType[],
-  getWorkItemsForIds: (ids: number[]) => Promise<WorkItem[]>,
-  getWorkItemRevisions: (workItemId: number) => Promise<WorkItemRevision[]>
+  getWorkItemsForIds: (ids: number[]) => Promise<WorkItem[]>
 ) => {
   if (workItemRelations.length === 0) return null;
 
@@ -84,14 +49,9 @@ export default async (
 
   const relevantBugAndFeatureIds = [...idsFromRelations(relevantBugsAndFeatures)];
 
-  const [workItemsById, workItemRevisions] = await Promise.all([
-    getWorkItemsForIds([...workItemRelationsIds, ...relevantBugAndFeatureIds])
-      .then(workItemsArrayToLookup),
-    getWorkItemRevisionsAsHash(
-      [...workItemRelationsIds, ...relevantBugAndFeatureIds],
-      getWorkItemRevisions
-    )
-  ]);
+  const workItemsById = workItemsArrayToLookup(
+    await getWorkItemsForIds([...workItemRelationsIds, ...relevantBugAndFeatureIds])
+  );
 
   const createUIWorkItem = (workItem: WorkItem): UIWorkItem => {
     const workItemType = workItemTypesByType[workItem.fields['System.WorkItemType']]
@@ -111,8 +71,7 @@ export default async (
       created: {
         on: workItem.fields['System.CreatedDate'].toISOString()
       // name: workItem.fields['System.CreatedBy']
-      },
-      revisions: aggregateRevisions(workItemRevisions[workItem.id])
+      }
     };
   };
 

@@ -37,8 +37,8 @@ export default (config: Config) => {
   };
   const paginatedGet = createPaginatedGetter(ms(config.cacheToDiskFor));
   const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(ms(config.cacheToDiskFor));
-  const url = (collectionName: string, projectName: string, path: string) => (
-    `${config.azure.host}${collectionName}/${projectName}/_apis${path}`
+  const url = (collectionName: string, projectName: string | null, path: string) => (
+    `${config.azure.host}${collectionName}/${projectName === null ? '' : `${projectName}/`}_apis${path}`
   );
   const list = <T>(
     { url, qsParams, cacheFile }:
@@ -221,11 +221,11 @@ export default (config: Config) => {
       return workItemIds.map(wid => workItemsById[wid]);
     },
 
-    getWorkItemRevisions: (collectionName: string, projectName: string) => (workItemId: number) => (
+    getWorkItemRevisions: (collectionName: string) => (workItemId: number) => (
       usingDiskCache<ListOf<WorkItemRevision>>(
-        [collectionName, projectName, 'work-items', 'revisions', String(workItemId)],
+        [collectionName, 'work-items', 'revisions', String(workItemId)],
         () => fetch(
-          url(collectionName, projectName, `/wit/workitems/${workItemId}/revisions?${qs.stringify(apiVersion)}`),
+          url(collectionName, null, `/wit/workitems/${workItemId}/revisions?${qs.stringify(apiVersion)}`),
           { headers: authHeader }
         )
       ).then(x => x.data.value)

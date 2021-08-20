@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { AnalysedWorkItems } from '../../shared/types';
+import type { AnalysedWorkItems, UIWorkItemRevision } from '../../shared/types';
 import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
 
@@ -7,12 +7,15 @@ type WorkItemProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
-  colorsForStages: Record<string, string>;
+  colorForStage: (stage: string) => string;
   isFirst: boolean;
+  revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
+  getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItem: React.FC<WorkItemProps> = ({
-  workItemId, workItemsById, workItemsIdTree, colorsForStages, isFirst
+  workItemId, workItemsById, workItemsIdTree, colorForStage,
+  isFirst, revisions, getRevisions
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
 
@@ -65,7 +68,9 @@ const WorkItem: React.FC<WorkItemProps> = ({
             workItemId={workItemId}
             workItemsById={workItemsById}
             workItemsIdTree={workItemsIdTree}
-            colorsForStages={colorsForStages}
+            colorForStage={colorForStage}
+            revisions={revisions}
+            getRevisions={getRevisions}
           />
         </div>
       ) : null}

@@ -1,5 +1,7 @@
-import React, { useCallback, useRef, useState } from 'react';
-import type { AnalysedWorkItems } from '../../../shared/types';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState
+} from 'react';
+import type { AnalysedWorkItems, UIWorkItemRevision } from '../../../shared/types';
 import DragZoom from './DragZoom';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
@@ -41,30 +43,47 @@ export type WorkItemsGanttChartProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
-  colorsForStages: Record<string, string>;
+  colorForStage: (stage: string) => string;
+  revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
+  getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
-  workItemId, workItemsById, workItemsIdTree, colorsForStages
+  workItemId, workItemsById, workItemsIdTree, colorForStage,
+  revisions, getRevisions
 }) => {
   const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const workItem = workItemsById[workItemId];
-  const workItemChildren = workItemsIdTree[workItemId].map(id => workItemsById[id]);
+  const topLevelChildrenIds = workItemsIdTree[workItemId];
   const height = svgHeight(rowPathsToRender.length);
 
+  const topLevelRevisions = useMemo(() => {
+    if (topLevelChildrenIds.some(id => !revisions[id] || revisions[id] === 'loading')) return 'loading';
+    return topLevelChildrenIds.flatMap(id => {
+      const rev = revisions[id];
+      return rev === 'loading' ? [] : rev;
+    });
+  }, [revisions, topLevelChildrenIds]);
+
+  useEffect(() => {
+    getRevisions(topLevelChildrenIds);
+  }, [getRevisions, topLevelChildrenIds]);
+
   const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
+    // eslint-disable-next-line no-nested-ternary
     const coordsGetter = zoom
       ? xCoordConverterWithin(...zoom)
-      : createXCoordConverterFor(workItem, workItemChildren);
+      : topLevelRevisions === 'loading'
+        ? () => 0
+        : createXCoordConverterFor(topLevelRevisions);
     return coordsGetter(time);
-  }, [workItem, workItemChildren, zoom]);
+  }, [topLevelRevisions, zoom]);
 
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
-  const minDate = zoom ? zoom[0] : getMinDateTime(workItem, workItemChildren);
-  const maxDate = zoom ? zoom[1] : getMaxDateTime(workItem, workItemChildren);
+  const minDate = zoom ? zoom[0] : topLevelRevisions === 'loading' ? 0 : getMinDateTime(topLevelRevisions);
+  const maxDate = zoom ? zoom[1] : topLevelRevisions === 'loading' ? 0 : getMaxDateTime(topLevelRevisions);
 
   return (
     <div className="relative">
@@ -94,7 +113,8 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
               setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree));
             }}
             expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
-            colorsForStages={colorsForStages}
+            colorForStage={colorForStage}
+            revisions={revisions[workItemIdFromRowPath(rowPath)] || 'loading'}
           />
         ))}
         <DragZoom
