@@ -29,13 +29,21 @@ const expandedState = (
 const toggleExpandState = (rowPath: string, workItemsIdTree: Record<number, number[]>) => (
   (renderedRowPaths: string[]) => {
     const state = expandedState(rowPath, renderedRowPaths, workItemsIdTree);
-    if (state === 'no-children') return renderedRowPaths;
-    if (state === 'expanded') return renderedRowPaths.filter(r => !r.startsWith(`${rowPath}/`));
-    return [
-      ...renderedRowPaths.slice(0, renderedRowPaths.indexOf(rowPath) + 1),
-      ...workItemsIdTree[workItemIdFromRowPath(rowPath)].map(id => `${rowPath}/${id}`),
-      ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
-    ];
+    if (state === 'no-children') return { rowPaths: renderedRowPaths, childIds: [] };
+    if (state === 'expanded') {
+      return {
+        rowPaths: renderedRowPaths.filter(r => !r.startsWith(`${rowPath}/`)),
+        childIds: []
+      };
+    }
+    return {
+      rowPaths: [
+        ...renderedRowPaths.slice(0, renderedRowPaths.indexOf(rowPath) + 1),
+        ...workItemsIdTree[workItemIdFromRowPath(rowPath)].map(id => `${rowPath}/${id}`),
+        ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
+      ],
+      childIds: workItemsIdTree[workItemIdFromRowPath(rowPath)]
+    };
   }
 );
 
@@ -82,7 +90,9 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
 
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
+  // eslint-disable-next-line no-nested-ternary
   const minDate = zoom ? zoom[0] : topLevelRevisions === 'loading' ? 0 : getMinDateTime(topLevelRevisions);
+  // eslint-disable-next-line no-nested-ternary
   const maxDate = zoom ? zoom[1] : topLevelRevisions === 'loading' ? 0 : getMaxDateTime(topLevelRevisions);
 
   return (
@@ -110,7 +120,9 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
             timeToXCoord={timeToXCoord}
             onToggle={e => {
               e.stopPropagation();
-              setRowPathsToRender(toggleExpandState(rowPath, workItemsIdTree));
+              const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree)(rowPathsToRender);
+              setRowPathsToRender(rowPaths);
+              getRevisions(childIds);
             }}
             expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
             colorForStage={colorForStage}
