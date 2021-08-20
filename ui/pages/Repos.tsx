@@ -10,6 +10,7 @@ import type { RepoAnalysis } from '../../shared/types';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
+import Loading from '../components/Loading';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -46,7 +47,7 @@ const Repos: React.FC = () => {
   const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
   const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
 
-  if (projectAnalysis === 'loading') return <div>Loading...</div>;
+  if (projectAnalysis === 'loading') return <Loading />;
 
   const repos = projectAnalysis.repos
     .filter(search === undefined ? dontFilter : bySearch(search))

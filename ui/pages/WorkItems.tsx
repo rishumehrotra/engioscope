@@ -11,6 +11,7 @@ import useFetchForProject from '../hooks/use-fetch-for-project';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import AppliedFilters from '../components/AppliedFilters';
+import Loading from '../components/Loading';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -70,7 +71,7 @@ const WorkItems: React.FC = () => {
     return randomColor;
   }, [colorsForStages]);
 
-  if (workItemAnalysis === 'loading') return <div>Loading...</div>;
+  if (workItemAnalysis === 'loading') return <Loading />;
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
   const { workItems } = workItemAnalysis;

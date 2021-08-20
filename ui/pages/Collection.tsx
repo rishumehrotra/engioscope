@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScrapedProject } from '../../shared/types';
+import Loading from '../components/Loading';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 
@@ -29,7 +30,7 @@ const Collection: React.FC = () => {
   useEffect(() => { fetchCollections().then(setCollections); }, []);
   useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
 
-  if (!collections) return <div>loading...</div>;
+  if (!collections) return <Loading />;
 
   return (
     <div>

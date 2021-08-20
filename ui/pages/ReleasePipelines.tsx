@@ -8,6 +8,7 @@ import { pipelineMetrics } from '../network';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
+import Loading from '../components/Loading';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) => (
@@ -34,7 +35,7 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   useRemoveSort();
 
-  if (releaseAnalysis === 'loading') return <div>Loading...</div>;
+  if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
   const pipelines = releaseAnalysis.pipelines

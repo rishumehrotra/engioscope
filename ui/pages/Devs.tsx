@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
 import type { ProjectRepoAnalysis } from '../../shared/types';
 import Developer from '../components/Dev';
+import Loading from '../components/Loading';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import useFetchForProject from '../hooks/use-fetch-for-project';
@@ -47,7 +48,7 @@ const Devs: React.FC = () => {
       .sort(sorter);
   }, [projectAnalysis, search, sorter]);
 
-  if (devs === 'loading') return <div>Loading...</div>;
+  if (devs === 'loading') return <Loading />;
 
   return (
     <ul>
