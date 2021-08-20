@@ -110,6 +110,7 @@ export default (config: Config) => {
       workItemAnalysis: topLevelWorkItemIdsRelations === null
         ? null
         : await aggregateWorkItems(
+          projectConfig,
           topLevelWorkItemIdsRelations.workItemRelations,
           allBugAndFeatureRelations?.workItemRelations,
           workItemTypes,

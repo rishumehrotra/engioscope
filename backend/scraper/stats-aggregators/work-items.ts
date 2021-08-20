@@ -1,5 +1,6 @@
 import type { UIWorkItem } from '../../../shared/types';
 import { exists } from '../../utils';
+import type { ProjectConfig } from '../types';
 import type {
   WorkItem, WorkItemQueryHierarchialResult, WorkItemType
 } from '../types-azure';
@@ -28,6 +29,7 @@ const relationsToIdTree = (workItemRelations: WorkItemQueryHierarchialResult['wo
 );
 
 export default async (
+  projectConfig: ProjectConfig,
   workItemRelations: WorkItemQueryHierarchialResult['workItemRelations'],
   allBugsAndFeatures: WorkItemQueryHierarchialResult['workItemRelations'] | undefined,
   workItemTypes: WorkItemType[],
@@ -71,7 +73,13 @@ export default async (
       created: {
         on: workItem.fields['System.CreatedDate'].toISOString()
       // name: workItem.fields['System.CreatedBy']
-      }
+      },
+      ...(projectConfig.workitems?.changeLeadTime ? {
+        clt: {
+          start: workItem.fields[projectConfig.workitems.changeLeadTime.startDateField],
+          end: workItem.fields[projectConfig.workitems.changeLeadTime.endDateField]
+        }
+      } : undefined)
     };
   };
 

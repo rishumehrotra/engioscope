@@ -9,6 +9,10 @@ export type ProjectConfig = {
     groupUnder: string;
     label?: string;
     skipChildren?: string[];
+    changeLeadTime?: {
+      startDateField: string;
+      endDateField: string;
+    };
   };
 };
 

@@ -454,7 +454,7 @@ export type WorkItem = {
     'System.Title': string;
     'System.Description': string;
     'Microsoft.VSTS.TCM.AutomationStatus'?: 'Not Automated' | 'Automated';
-  };
+  } & Record<string, string>;
   url: string;
 };
 
