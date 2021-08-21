@@ -179,6 +179,48 @@ export default (config: Config) => {
       ).then(res => res.data.value)
     ),
 
+    getCollectionWorkItemIdsForQuery: (collectionName: string) => (
+      <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (
+        usingDiskCache<T>(
+          [collectionName, 'work-items', 'work-items', `ids_${md5(query)}`],
+          () => fetch(
+            url(collectionName, null, `/wit/wiql?${qs.stringify(apiVersion)}`),
+            {
+              headers: { ...authHeader, 'Content-Type': 'application/json' },
+              method: 'post',
+              body: JSON.stringify({ query })
+            }
+          )
+        ).then(async res => {
+          if (res.fromCache) {
+            await clearDiskCache([collectionName, 'work-items', 'by-id']);
+          }
+          return res.data as T;
+        })
+      )
+    ),
+
+    getCollectionWorkItems: (collectionName: string) => async (workItemIds: number[]) => {
+      const workItemsById = (await Promise.all(chunkArray(workItemIds, 200)
+        .map((chunk, index) => (
+          usingDiskCache<{ count: number; value: WorkItem[] }>(
+            [collectionName, 'work-items', 'by-id', String(index)],
+            () => fetch(
+              url(collectionName, null, `/wit/workitems/?${qs.stringify({
+                ...apiVersion,
+                ids: chunk.join(',')
+              })}`),
+              { headers: authHeader }
+            )
+          ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => ({
+            ...acc,
+            [wi.id]: wi
+          }), {}))
+        )))).reduce<Record<number, WorkItem>>((acc, chunk) => ({ ...acc, ...chunk }), {});
+
+      return workItemIds.map(wid => workItemsById[wid]);
+    },
+
     getWorkItemIdsForQuery: (collectionName: string, projectName: string) => (
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (
         usingDiskCache<T>(
