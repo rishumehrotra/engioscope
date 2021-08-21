@@ -11,17 +11,26 @@ export default (defaultBranch: string | undefined, branches: RepoAnalysis['branc
   content: () => (
     <>
       <TabContents>
-        <Metric name="Total" value={num(branches.total)} tooltip="Total number of branches in the repository" position="first" />
-        <Metric name="Active" value={num(branches.active)} tooltip="Active development branches in-sync with master" />
+        <Metric
+          name="Total"
+          value={num(branches.total)}
+          tooltip="Total number of branches in the repository"
+          position="first"
+        />
+        <Metric
+          name="Active"
+          value={num(branches.active)}
+          tooltip="Branches that have got commits in the last 15 days"
+        />
         <Metric
           name="Abandoned"
           value={num(branches.abandoned)}
-          tooltip="Inactive development branches which are out-of-sync with master, but contain commits which are not present on master"
+          tooltip="Branches that  have commits that are not in master,<br />but haven't got any commits in the last 15 days"
         />
         <Metric
           name="Delete candidates"
           value={num(branches.deleteCandidates)}
-          tooltip="Inactive development branches which are in-sync with master"
+          tooltip="Inactive branches which are in-sync with master"
         />
         <Metric
           name="Possibly conflicting"

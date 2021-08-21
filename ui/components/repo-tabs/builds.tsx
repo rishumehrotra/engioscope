@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactTooltip from 'react-tooltip';
 import type { RepoAnalysis } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
@@ -10,6 +11,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
   count: builds?.count || 0,
   content: () => (
     <TabContents gridCols={1}>
+      <ReactTooltip />
       {builds
         ? (
           <>
