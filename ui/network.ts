@@ -10,15 +10,15 @@ export const fetchCollections = (): Promise<ScrapedProject[]> => (
 );
 
 export const repoMetrics = (collection: string, project: string): Promise<ProjectRepoAnalysis> => (
-  fetch(`/api/${collection}_${project}.json`).then(json)
+  fetch(`/api/${collection}/${project}/repos.json`).then(json)
 );
 
 export const pipelineMetrics = (collection: string, project: string): Promise<ProjectReleasePipelineAnalysis> => (
-  fetch(`/api/${collection}_${project}_releases.json`).then(json)
+  fetch(`/api/${collection}/${project}/releases.json`).then(json)
 );
 
 export const workItemMetrics = (collection: string, project: string): Promise<ProjectWorkItemAnalysis> => (
-  fetch(`/api/${collection}_${project}_work-items.json`).then(json)
+  fetch(`/api/${collection}/${project}/work-items.json`).then(json)
 );
 
 export const workItemRevisions = (collection: string, ids: number[]): Promise<Record<number, UIWorkItemRevision[]>> => (

@@ -25,9 +25,10 @@ const projectName = (project: string | ProjectConfig) => (
   typeof project === 'string' ? project : project.name
 );
 
-const writeFile = (path: string, contents: string) => {
-  outputFileLog('Writing', join(dataFolderPath, path).replace(`${process.cwd()}/`, ''));
-  return fs.writeFile(join(dataFolderPath, path), contents, 'utf8');
+const writeFile = async (path: string[], fileName: string, contents: string) => {
+  outputFileLog('Writing', join(dataFolderPath, ...path, fileName).replace(`${process.cwd()}/`, ''));
+  await fs.mkdir(join(dataFolderPath, ...path), { recursive: true });
+  return fs.writeFile(join(dataFolderPath, ...path, fileName), contents, 'utf8');
 };
 
 const projectSummary = (
@@ -47,45 +48,51 @@ const writeRepoAnalysisFile = async (
   collectionName: string,
   projectConfig: ProjectConfig,
   projectAnalysis: ProjectAnalysis
-) => (
-  createDataFolder.then(() => {
-    const analysis: ProjectRepoAnalysis = {
-      ...projectSummary(collectionName, projectConfig, projectAnalysis),
-      repos: projectAnalysis.repoAnalysis
-    };
-    return writeFile(`${collectionName}_${projectConfig.name}.json`, JSON.stringify(analysis));
-  })
-);
+) => {
+  const analysis: ProjectRepoAnalysis = {
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    repos: projectAnalysis.repoAnalysis
+  };
+  return writeFile(
+    [collectionName, projectConfig.name],
+    'repos.json',
+    JSON.stringify(analysis)
+  );
+};
 
 const writeReleaseAnalysisFile = async (
   collectionName: string,
   projectConfig: ProjectConfig,
   projectAnalysis: ProjectAnalysis
-) => (
-  createDataFolder.then(() => {
-    const analysis: ProjectReleasePipelineAnalysis = {
-      ...projectSummary(collectionName, projectConfig, projectAnalysis),
-      pipelines: projectAnalysis.releaseAnalysis,
-      stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight
-    };
-    return writeFile(`${collectionName}_${projectConfig.name}_releases.json`, JSON.stringify(analysis));
-  })
-);
+) => {
+  const analysis: ProjectReleasePipelineAnalysis = {
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    pipelines: projectAnalysis.releaseAnalysis,
+    stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight
+  };
+  return writeFile(
+    [collectionName, projectConfig.name],
+    'releases.json',
+    JSON.stringify(analysis)
+  );
+};
 
 const writeWorkItemAnalysisFile = async (
   collectionName: string,
   projectConfig: ProjectConfig,
   projectAnalysis: ProjectAnalysis
-) => (
-  createDataFolder.then(() => {
-    const analysis: ProjectWorkItemAnalysis = {
-      ...projectSummary(collectionName, projectConfig, projectAnalysis),
-      workItems: projectAnalysis.workItemAnalysis,
-      taskType: projectConfig.workitems?.groupUnder
-    };
-    return writeFile(`${collectionName}_${projectConfig.name}_work-items.json`, JSON.stringify(analysis));
-  })
-);
+) => {
+  const analysis: ProjectWorkItemAnalysis = {
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    workItems: projectAnalysis.workItemAnalysis,
+    taskType: projectConfig.workitems?.groupUnder
+  };
+  return writeFile(
+    [collectionName, projectConfig.name],
+    'work-items.json',
+    JSON.stringify(analysis)
+  );
+};
 
 const matchingProject = (projectSpec: readonly [string, string | ProjectConfig]) => (scrapedProject: { name: [string, string] }) => (
   scrapedProject.name[0] === projectSpec[0]
@@ -112,9 +119,7 @@ const populateWithEmptyValuesIfNeeded = (config: Config) => (scrapedProjects: Sc
 };
 
 const writeOverallSummaryFile = (scrapedProjects: ScrapedProject[]) => (
-  createDataFolder.then(
-    () => writeFile('index.json', JSON.stringify(scrapedProjects))
-  )
+  writeFile(['./'], 'index.json', JSON.stringify(scrapedProjects))
 );
 
 const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedProject, 'lastUpdated'>) => (
