@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactTooltip from 'react-tooltip';
 import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import {
   textWidth, textHeight,
@@ -32,6 +33,8 @@ export const GanttRow: React.FC<GanttRowProps> = ({
     return isHighlighted ? makeDarker(baseColor) : baseColor;
   }, [isHighlighted, workItem.color]);
 
+  useEffect(() => { ReactTooltip.rebuild(); }, [revisions]);
+
   return (
     <g onMouseOver={() => highlight(true)} onMouseLeave={() => highlight(false)}>
       <rect
@@ -61,7 +64,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
             style={{ width: `${textWidth}px` }}
             target="_blank"
             rel="noreferrer"
-            title={`${workItem.type}: ${workItem.title}`}
+            data-tip={`${workItem.type}: ${workItem.title}`}
           >
             <img
               src={workItem.icon}
@@ -96,11 +99,9 @@ export const GanttRow: React.FC<GanttRowProps> = ({
               height={barHeight}
               fill={colorForStage(revision.state)}
               key={revision.date}
-            >
-              <title>
-                {revisionTitle(revision, revisions[revisionIndex + 1])}
-              </title>
-            </rect>
+              data-tip={revisionTitle(revision, revisions[revisionIndex + 1]).join('<br />')}
+              data-html
+            />
             {barWidth(revisions, revisionIndex) > 25 ? (
               <foreignObject
                 x={timeToXCoord(revision.date)}
@@ -113,7 +114,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
                   style={{ color: contrastColour(colorForStage(revision.state)) }}
                   className="text-xs pl-1 truncate inline-block w-full"
                 >
-                  {revisionTitle(revision, revisions[revisionIndex + 1]).replace('\n', ', ')}
+                  {revisionTitle(revision, revisions[revisionIndex + 1]).join(', ')}
                 </span>
               </foreignObject>
             ) : null}

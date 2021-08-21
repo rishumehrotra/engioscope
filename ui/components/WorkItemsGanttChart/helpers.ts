@@ -81,7 +81,7 @@ export const makeDarker = (rgb: string) => {
 export const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => [
   `${revision.state} → ${nextRevision.state}`,
   `${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(nextRevision.date))}`
-].join('\n');
+];
 
 export const contrastColour = (hex: string) => {
   const r = parseInt(hex.slice(1, 3), 16);

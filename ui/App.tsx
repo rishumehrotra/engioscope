@@ -6,6 +6,7 @@ import {
   Link
 } from 'react-router-dom';
 import { QueryParamProvider } from 'use-query-params';
+import ReactTooltip from 'react-tooltip';
 import Project from './pages/Project';
 import Collection from './pages/Collection';
 import logo from './images/engioscope-serif.png';
@@ -24,6 +25,7 @@ const App: React.FC = () => (
               <Link to="/">
                 <img src={logo} alt="Logo" className="w-36" />
               </Link>
+              <ReactTooltip />
               <Switch>
                 <Route path="/:collection/:project">
                   <Project />

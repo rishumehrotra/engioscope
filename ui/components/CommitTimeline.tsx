@@ -36,9 +36,8 @@ const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max }) => {
             y={svgHeight - barHeight}
             width={barWidth}
             height={barHeight}
-          >
-            <title>{`${commitsForThisDay || 0} commit${commitsForThisDay === 1 ? '' : 's'} on ${shortDate(date)}`}</title>
-          </rect>
+            data-tip={`${commitsForThisDay || 0} commit${commitsForThisDay === 1 ? '' : 's'} on ${shortDate(date)}`}
+          />
         );
       })}
     </svg>

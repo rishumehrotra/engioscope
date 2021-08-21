@@ -37,7 +37,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
               className="text-blue-600 font-bold text-lg truncate max-width-full inline-block hover:underline"
               target="_blank"
               rel="noreferrer"
-              title={workItem.title}
+              data-tip={workItem.title}
             >
               {workItem.title}
             </a>
