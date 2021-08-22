@@ -1,4 +1,4 @@
-import type { Config, ProjectConfig } from './types';
+import type { Config, ProjectConfig } from './parse-config';
 import { pastDate } from '../utils';
 
 export const dayInMs = 24 * 60 * 60 * 1000;

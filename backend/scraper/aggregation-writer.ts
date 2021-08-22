@@ -8,7 +8,8 @@ import type {
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
-import type { Config, ProjectAnalysis, ProjectConfig } from './types';
+import type { ProjectAnalysis } from './types';
+import type { Config, ProjectConfig } from './parse-config';
 
 const outputFileLog = debug('write-output');
 

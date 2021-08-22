@@ -1,6 +1,6 @@
 import type { UIWorkItem } from '../../../shared/types';
 import { exists } from '../../utils';
-import type { ProjectConfig } from '../types';
+import type { ProjectConfig } from '../parse-config';
 import type {
   WorkItem, WorkItemQueryHierarchialResult, WorkItemType
 } from '../types-azure';

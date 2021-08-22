@@ -6,7 +6,7 @@ import { requiredMetrics } from '../stats-aggregators/code-quality';
 import { filter, getFirst } from '../../utils';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
-import type { Config } from '../types';
+import type { Config } from '../parse-config';
 import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
 
 export type SonarRepo = {

@@ -4,7 +4,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import type { Config } from '../scraper/types';
+import type { Config } from '../scraper/parse-config';
 import api from './api';
 
 const uiFolder = path.join(__dirname, '..', '..', 'ui');

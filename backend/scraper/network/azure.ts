@@ -2,7 +2,7 @@ import qs from 'qs';
 import ms from 'ms';
 import md5 from 'md5';
 import fetch from './fetch-with-timeout';
-import type { Config } from '../types';
+import type { Config } from '../parse-config';
 import { chunkArray, pastDate } from '../../utils';
 import type {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,

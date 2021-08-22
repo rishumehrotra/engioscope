@@ -4,7 +4,7 @@ import debug from 'debug';
 import { zip } from 'rambda';
 import aggregationWriter from './aggregation-writer';
 import projectAnalyser from './project-analyser';
-import type { Config } from './types';
+import type { Config } from './parse-config';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);

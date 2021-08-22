@@ -3,7 +3,7 @@ import { join } from 'path';
 import { promises as fs, createWriteStream } from 'fs';
 import uaParser from 'ua-parser-js';
 import { doesFileExist } from '../utils';
-import type { Config } from '../scraper/types';
+import type { Config } from '../scraper/parse-config';
 import azure from '../scraper/network/azure';
 import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision';
 import type { UIWorkItemRevision } from '../../shared/types';
