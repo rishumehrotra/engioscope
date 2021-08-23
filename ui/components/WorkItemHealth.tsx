@@ -39,6 +39,12 @@ const WorkItem: React.FC<WorkItemProps> = ({
               rel="noreferrer"
               data-tip={workItem.title}
             >
+              <img
+                className="inline-block -mt-1 mr-1"
+                src={workItem.icon}
+                alt={`${workItem.type} icon`}
+                width="18"
+              />
               {workItem.title}
             </a>
           </div>

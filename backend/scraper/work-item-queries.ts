@@ -13,6 +13,8 @@ export const queryForCollectionWorkItems = (queryFrom: Date, collectionConfig: P
       [Source].[System.WorkItemType] IN (${join(collectionConfig.workitems.getWorkItems)})
       AND [Source].[System.ChangedDate] >= @today-${daysToLookup}
       AND NOT [Target].[System.WorkItemType] IN (${join(collectionConfig.workitems.skipChildren)})
+      AND [Source].[System.TeamProject] IN (${join(collectionConfig.projects.map(p => p.name))})
+      AND [Target].[System.TeamProject] IN (${join(collectionConfig.projects.map(p => p.name))})
     ORDER BY [System.CreatedDate] ASC
     MODE (MustContain)
   `;

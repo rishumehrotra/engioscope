@@ -1,4 +1,4 @@
-import type { AnalysedWorkItems } from '../../../shared/types';
+import type { AnalysedWorkItems, UIWorkItem } from '../../../shared/types';
 import { exists } from '../../utils';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
@@ -29,7 +29,7 @@ const getWorkItemTypesByCollection = (
   collection: ParsedCollection
 ) => Promise.all(
   collection.projects.map(async project => ({
-    [project.name]: workItemTypesByType(await getWorkItemTypes(collection.name)(project.name))
+    [project.name.toLowerCase()]: workItemTypesByType(await getWorkItemTypes(collection.name)(project.name))
   }))
 ).then(workItemTypes => workItemTypes.reduce<Record<string, Record<string, WorkItemType>>>(
   (acc, cur) => ({ ...acc, ...cur }), {}
@@ -51,7 +51,6 @@ const workItemsById = (
   }, {});
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sourceByWorkItemId = (workItemTreeForCollection: WorkItemIDTree) => (
   workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
     if (wir.target) {
@@ -61,33 +60,111 @@ const sourceByWorkItemId = (workItemTreeForCollection: WorkItemIDTree) => (
   }, {})
 );
 
+const sourcesUntilMatch = (
+  sourcesByWorkItemId: Record<number, number[]>,
+  workItemsById: Record<number, WorkItem>,
+  projectConfig: ParsedProjectConfig
+) => {
+  const recurse = (workItemId: number, seen: number[]): number[] => {
+    if (projectConfig.workitems.groupUnder.includes(workItemsById[workItemId].fields['System.WorkItemType'])) {
+      return [workItemId];
+    }
+
+    const sources = sourcesByWorkItemId[workItemId];
+    if (!sources.length) return [];
+
+    return sources.flatMap(source => {
+      if (seen.includes(source)) return [];
+      seen.push(source);
+
+      if (projectConfig.workitems.groupUnder.includes(workItemsById[source].fields['System.WorkItemType'])) {
+        return [source];
+      }
+      return recurse(source, seen);
+    }).filter(exists);
+  };
+
+  return (workItemId: number) => recurse(workItemId, []);
+};
+
+const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
+  (workItemTypesByCollection: Record<string, Record<string, WorkItemType>>) => (
+    (workItem: WorkItem): UIWorkItem => {
+      const projectName = workItem.fields['System.TeamProject'];
+      const workItemTypeName = workItem.fields['System.WorkItemType'];
+      const workItemType = workItemTypesByCollection[projectName.toLowerCase()][workItemTypeName];
+
+      return {
+        id: workItem.id,
+        title: workItem.fields['System.Title'],
+        url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
+        type: workItemTypeName,
+        state: workItem.fields['System.State'],
+        project: projectName,
+        color: workItemType.color,
+        icon: workItemType.icon.url,
+        created: {
+          on: workItem.fields['System.CreatedDate'].toISOString()
+        // name: workItem.fields['System.CreatedBy']
+        },
+        ...(collectionConfig.workitems.changeLeadTime ? {
+          clt: {
+            start: workItem.fields[collectionConfig.workitems.changeLeadTime.startDateField],
+            end: workItem.fields[collectionConfig.workitems.changeLeadTime.endDateField]
+          }
+        } : undefined)
+      };
+    }
+  )
+);
+
 export default (config: ParsedConfig) => (collection: ParsedCollection) => {
   const {
     getCollectionWorkItemIdsForQuery, getWorkItemTypes, getCollectionWorkItems
   } = azure(config);
 
   const pWorkItemTreeForCollection = getWorkItemTree(getCollectionWorkItemIdsForQuery, collection, config);
-  const pWorkItemTypesByCollection = getWorkItemTypesByCollection(getWorkItemTypes, collection);
+  const pCreateUIWorkItem = getWorkItemTypesByCollection(getWorkItemTypes, collection)
+    .then(uiWorkItemCreator(collection));
 
   const pWorkItemsById = pWorkItemTreeForCollection
     .then(workItemsById(getCollectionWorkItems, collection));
 
   return async (project: ParsedProjectConfig): Promise<AnalysedWorkItems> => {
     const [
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      workItemTreeForCollection, workItemTypesByCollection, workItemsById
+      workItemTreeForCollection, createUIWorkItem, workItemsById
     ] = await Promise.all([
-      pWorkItemTreeForCollection, pWorkItemTypesByCollection, pWorkItemsById
+      pWorkItemTreeForCollection, pCreateUIWorkItem, pWorkItemsById
     ]);
 
     const workItemsForProject = Object.values(workItemsById)
       .filter(wi => wi.fields['System.TeamProject'] === project.name);
 
-    console.log(`${collection.name}/${project.name} ${Object.values(workItemsById).length}, ${workItemsForProject.length}`);
+    const sourcesForWorkItem = sourcesUntilMatch(
+      sourceByWorkItemId(workItemTreeForCollection),
+      workItemsById,
+      project
+    );
+
+    const topLevelItems = [...new Set(workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id)))];
+
+    console.log(`for ${collection.name}/${project.name}, ${topLevelItems.length}`);
+    console.log(JSON.stringify(topLevelItems.reduce<Record<number, UIWorkItem>>(
+      (acc, wi) => ({ ...acc, [wi]: createUIWorkItem(workItemsById[wi]) }), {}
+    ), null, 2));
 
     return {
-      byId: {},
-      ids: {}
+      byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => {
+        acc[Number(id)] = createUIWorkItem(workItem);
+        return acc;
+      }, {}),
+      ids: workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
+        if (!wir.source) return acc;
+        const parent = wir.source ? wir.source.id : 0;
+
+        acc[parent] = [...new Set([...(acc[parent] || []), wir.target?.id].filter(exists))];
+        return acc;
+      }, { 0: topLevelItems })
     };
   };
 };

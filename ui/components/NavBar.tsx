@@ -33,7 +33,7 @@ const NavBar: React.FC = () => {
   ], [pageName, projectDetails?.releasePipelineCount, projectDetails?.reposCount, projectDetails?.workItemCount]);
 
   return (
-    <div className="grid">
+    <div className="grid col-span-2">
       <div className="flex mr-4">
         {navItems.map(({ key, name }) => (
           <Link
