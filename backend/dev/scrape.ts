@@ -3,6 +3,6 @@ import scrape from '../scraper/get-all-the-things';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import config from '../../config.json';
-import type { Config } from '../scraper/parse-config';
+import parseConfig from '../scraper/parse-config';
 
-scrape(config as unknown as Config);
+scrape(parseConfig(config as any));

@@ -9,7 +9,7 @@ import type {
 } from '../../shared/types';
 import { doesFileExist, map, shortDateFormat } from '../utils';
 import type { ProjectAnalysis } from './types';
-import type { Config, ProjectConfig } from './parse-config';
+import type { ParsedConfig, ParsedProjectConfig } from './parse-config';
 
 const outputFileLog = debug('write-output');
 
@@ -22,7 +22,7 @@ const dataFolderPath = join(process.cwd(), 'data');
 const overallSummaryFilePath = join(dataFolderPath, 'index.json');
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
-const projectName = (project: string | ProjectConfig) => (
+const projectName = (project: string | ParsedProjectConfig) => (
   typeof project === 'string' ? project : project.name
 );
 
@@ -34,7 +34,7 @@ const writeFile = async (path: string[], fileName: string, contents: string) => 
 
 const projectSummary = (
   collectionName: string,
-  projectConfig: ProjectConfig,
+  projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ): UIProjectAnalysis => ({
   name: [collectionName, projectConfig.name],
@@ -47,7 +47,7 @@ const projectSummary = (
 
 const writeRepoAnalysisFile = async (
   collectionName: string,
-  projectConfig: ProjectConfig,
+  projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectRepoAnalysis = {
@@ -63,7 +63,7 @@ const writeRepoAnalysisFile = async (
 
 const writeReleaseAnalysisFile = async (
   collectionName: string,
-  projectConfig: ProjectConfig,
+  projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectReleasePipelineAnalysis = {
@@ -80,13 +80,13 @@ const writeReleaseAnalysisFile = async (
 
 const writeWorkItemAnalysisFile = async (
   collectionName: string,
-  projectConfig: ProjectConfig,
+  projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectWorkItemAnalysis = {
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
     workItems: projectAnalysis.workItemAnalysis,
-    taskType: projectConfig.workitems?.groupUnder
+    taskType: projectConfig.workitems.label
   };
   return writeFile(
     [collectionName, projectConfig.name],
@@ -95,7 +95,7 @@ const writeWorkItemAnalysisFile = async (
   );
 };
 
-const matchingProject = (projectSpec: readonly [string, string | ProjectConfig]) => (scrapedProject: { name: [string, string] }) => (
+const matchingProject = (projectSpec: readonly [string, string | ParsedProjectConfig]) => (scrapedProject: { name: [string, string] }) => (
   scrapedProject.name[0] === projectSpec[0]
     && scrapedProject.name[1] === projectName(projectSpec[1])
 );
@@ -107,7 +107,7 @@ const readOverallSummaryFile = async (): Promise<ScrapedProject[]> => {
     : [];
 };
 
-const populateWithEmptyValuesIfNeeded = (config: Config) => (scrapedProjects: ScrapedProject[]) => {
+const populateWithEmptyValuesIfNeeded = (config: ParsedConfig) => (scrapedProjects: ScrapedProject[]) => {
   const projects = config.azure.collections.flatMap(collection => (
     collection.projects.map(project => [collection.name, projectName(project)] as ScrapedProject['name'])
   ));
@@ -123,7 +123,7 @@ const writeOverallSummaryFile = (scrapedProjects: ScrapedProject[]) => (
   writeFile(['./'], 'index.json', JSON.stringify(scrapedProjects))
 );
 
-const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedProject, 'lastUpdated'>) => (
+const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: Omit<ScrapedProject, 'lastUpdated'>) => (
   acquireLock()
     .then(readOverallSummaryFile)
     .then(populateWithEmptyValuesIfNeeded(config))
@@ -136,7 +136,7 @@ const updateOverallSummary = (config: Config) => (scrapedProject: Omit<ScrapedPr
     .finally(releaseLock)
 );
 
-export default (config: Config) => (collectionName: string, projectConfig: ProjectConfig) => (
+export default (config: ParsedConfig) => (collectionName: string, projectConfig: ParsedProjectConfig) => (
   (analysis: ProjectAnalysis) => Promise.all([
     writeRepoAnalysisFile(collectionName, projectConfig, analysis),
     writeReleaseAnalysisFile(collectionName, projectConfig, analysis),
