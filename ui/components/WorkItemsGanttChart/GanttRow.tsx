@@ -60,7 +60,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
           />
           <a
             href={workItem.url}
-            className="text-blue-600 truncate flex mt-1 items-center text-sm hover:underline"
+            className="link-text text truncate flex mt-1 items-center text-sm"
             style={{ width: `${textWidth}px` }}
             target="_blank"
             rel="noreferrer"

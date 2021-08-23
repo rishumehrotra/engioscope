@@ -64,7 +64,7 @@ export default (defaultBranch: string | undefined, branches: RepoAnalysis['branc
                 href="https://docs.microsoft.com/en-us/azure/devops/repos/git/change-default-branch?view=azure-devops"
                 target="_blank"
                 rel="noreferrer"
-                className="text-blue-600 hover:underline"
+                className="link-text"
               >
                 Is the default branch configured correctly?
               </a>
@@ -82,7 +82,7 @@ export default (defaultBranch: string | undefined, branches: RepoAnalysis['branc
               {branches.significantlyAhead.branches.map(branch => (
                 <tr key={branch.name}>
                   <td className="pl-6 py-4 whitespace-nowrap text-left">
-                    <a href={branch.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                    <a href={branch.url} target="_blank" rel="noreferrer" className="link-text">
                       {branch.name}
                     </a>
                   </td>

@@ -76,7 +76,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
         <div className="mx-6 flex flex-wrap items-baseline">
           <Link
             to={pipelinesUrl}
-            className="text-blue-600 text-sm hover:underline"
+            className="link-text"
           >
             {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount).toLowerCase()}`}
           </Link>

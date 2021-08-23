@@ -39,7 +39,7 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
                       target="_blank"
                       rel="noreferrer"
                       data-tip={pipeline.name}
-                      className="text-blue-600 hover:underline"
+                      className="link-text"
                     >
                       <span className="truncate w-full block">
                         {pipeline.name}

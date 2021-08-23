@@ -34,7 +34,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           <div className="w-4/5">
             <a
               href={workItem.url}
-              className="text-blue-600 font-bold text-lg truncate max-width-full inline-block hover:underline"
+              className="font-bold text-lg truncate max-width-full inline-block link-text"
               target="_blank"
               rel="noreferrer"
               data-tip={workItem.title}

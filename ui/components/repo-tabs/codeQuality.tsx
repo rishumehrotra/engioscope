@@ -23,7 +23,7 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
         </div>
         <p className="w-full text-right text-sm italic mt-4">
           <a
-            className="text-blue-600 hover:underline"
+            className="link-text"
             href={codeQuality.url}
             target="_blank"
             rel="noreferrer"

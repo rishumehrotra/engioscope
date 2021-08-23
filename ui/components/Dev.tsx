@@ -79,7 +79,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
                     <td className="px-6 py-4 text-left w-5/12">
                       <Link
                         to={history.location.pathname.replace('/devs', `/repos?search="${repo.name}"`)}
-                        className="text-blue-600 hover:underline"
+                        className="link-text"
                       >
                         {repo.name}
                       </Link>

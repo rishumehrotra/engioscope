@@ -41,7 +41,7 @@ export default (commits: RepoAnalysis['commits']): Tab => {
 
                     return (
                       <tr key={commitsByDev.name}>
-                        <td className="px-6 py-4 text-left capitalize text-blue-600 text-sm hover:underline">
+                        <td className="px-6 py-4 text-left capitalize text-sm link-text">
                           <ProfilePic
                             alt={`Profile pic for ${commitsByDev.name}`}
                             src={commitsByDev.imageUrl}

@@ -28,3 +28,7 @@ body {
 .workitem-body:hover .show-more {
   visibility: visible;
 }
+
+.link-text {
+@apply text-blue-600 hover:underline
+}
