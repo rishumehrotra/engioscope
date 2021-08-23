@@ -5,9 +5,9 @@ import type { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
-import { num } from '../../helpers/utils';
-import CommitTimeline from '../CommitTimeline';
+import CommitTimeline from '../commits/CommitTimeline';
 import { ProfilePic } from '../ProfilePic';
+import Changes from '../commits/Changes';
 
 export default (commits: RepoAnalysis['commits']): Tab => {
   const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));
@@ -28,7 +28,7 @@ export default (commits: RepoAnalysis['commits']): Tab => {
                   <tr>
                     <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Commits</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider" colSpan={3}>Changes</th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Changes</th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Timeline</th>
                   </tr>
                 </thead>
@@ -48,28 +48,8 @@ export default (commits: RepoAnalysis['commits']): Tab => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {Object.values(commitsByDev.byDate).reduce(add, 0)}
                       </td>
-                      <td className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-green-700">
-                        <p data-tip={`Added ${num(commitsByDev.changes.add)} files`}>
-                          {commitsByDev.changes.add
-                            ? `+${num(commitsByDev.changes.add)}`
-                            : ' '}
-                        </p>
-                      </td>
-                      <td
-                        data-tip={`Modified ${num(commitsByDev.changes.edit)} files`}
-                        className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-red-400"
-                      >
-                        {commitsByDev.changes.edit
-                          ? `~${num(commitsByDev.changes.edit)}`
-                          : ' '}
-                      </td>
-                      <td
-                        data-tip={`Deleted code in ${num(commitsByDev.changes.delete)} files`}
-                        className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-red-700"
-                      >
-                        {commitsByDev.changes.delete
-                          ? `-${num(commitsByDev.changes.delete)}`
-                          : ' '}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Changes changes={commitsByDev.changes} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <CommitTimeline

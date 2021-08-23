@@ -1,6 +1,6 @@
 import React from 'react';
-import type { UICommits } from '../../shared/types';
-import { shortDate } from '../helpers/utils';
+import type { UICommits } from '../../../shared/types';
+import { shortDate } from '../../helpers/utils';
 
 type CommitTimelineProps = {
   timeline: UICommits['byDev'][number]['byDate'];

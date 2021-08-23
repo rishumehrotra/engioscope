@@ -2,7 +2,8 @@ import { add } from 'rambda';
 import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import type { Dev } from '../types';
-import CommitTimeline from './CommitTimeline';
+import Changes from './commits/Changes';
+import CommitTimeline from './commits/CommitTimeline';
 import { DownChevron, UpChevron } from './common/Icons';
 import { ProfilePic } from './ProfilePic';
 
@@ -66,6 +67,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
               <tr>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Commits</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Changes</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Timeline</th>
               </tr>
             </thead>
@@ -74,7 +76,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
                 .sort((a, b) => Object.values(b.byDate).reduce(add, 0) - Object.values(a.byDate).reduce(add, 0))
                 .map(repo => (
                   <tr key={repo.name}>
-                    <td className="px-6 py-4 text-left w-7/12">
+                    <td className="px-6 py-4 text-left w-5/12">
                       <Link
                         to={history.location.pathname.replace('/devs', `/repos?search="${repo.name}"`)}
                         className="text-blue-600 hover:underline"
@@ -83,6 +85,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap w-1/12">{Object.values(repo.byDate).reduce(add, 0)}</td>
+                    <td className="whitespace-nowrap"><Changes changes={repo.changes} /></td>
                     <td className="px-6 py-4 whitespace-nowrap w-4/12">
                       <CommitTimeline timeline={repo.byDate} max={Math.max(...allCommits)} />
                     </td>
