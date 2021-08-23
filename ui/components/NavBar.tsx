@@ -28,7 +28,8 @@ const NavBar: React.FC = () => {
       projectDetails?.workItemCount
         ? [{ key: 'workitems', name: pageName('workitems', projectDetails?.workItemCount || 0) } as NavItem]
         : []
-    )
+    ),
+    { key: 'devs', name: pageName('devs', 0) }
   ], [pageName, projectDetails?.releasePipelineCount, projectDetails?.reposCount, projectDetails?.workItemCount]);
 
   return (

@@ -1,4 +1,4 @@
-export type Tab = 'repos' | 'release-pipelines' | 'workitems';
+export type Tab = 'repos' | 'release-pipelines' | 'workitems' | 'devs';
 
 export type Dev = {
   name: string;
