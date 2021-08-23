@@ -1,9 +1,10 @@
-import { always } from 'rambda';
 import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
 import type { ProjectRepoAnalysis } from '../../shared/types';
+import AppliedFilters from '../components/AppliedFilters';
 import Developer from '../components/Dev';
 import Loading from '../components/Loading';
+import { dontFilter, filterBySearch } from '../helpers/utils';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import useFetchForProject from '../hooks/use-fetch-for-project';
@@ -36,6 +37,8 @@ const sorters: SortMap<Dev> = {
   )
 };
 
+const bySearch = (search: string) => (d: Dev) => filterBySearch(search, d.name);
+
 const Devs: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   const [search] = useQueryParam<string>('search');
@@ -44,22 +47,26 @@ const Devs: React.FC = () => {
   const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
     return aggregateDevs(projectAnalysis)
-      .filter(search ? d => d.name.toLowerCase().includes(search.toLowerCase()) : always(true))
+      .filter(search === undefined ? dontFilter : bySearch(search))
       .sort(sorter);
   }, [projectAnalysis, search, sorter]);
 
   if (devs === 'loading') return <Loading />;
 
   return (
-    <ul>
-      {devs.map((dev, index) => (
-        <Developer
-          key={dev.name}
-          dev={dev}
-          isFirst={index === 0}
-        />
-      ))}
-    </ul>
+    <>
+      <AppliedFilters type="devs" count={devs.length} />
+
+      <ul>
+        {devs.map((dev, index) => (
+          <Developer
+            key={dev.name}
+            dev={dev}
+            isFirst={index === 0}
+          />
+        ))}
+      </ul>
+    </>
   );
 };
 
