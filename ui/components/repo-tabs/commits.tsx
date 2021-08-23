@@ -6,7 +6,7 @@ import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
 import CommitTimeline from '../commits/CommitTimeline';
-import { ProfilePic } from '../ProfilePic';
+import { ProfilePic } from '../common/ProfilePic';
 import Changes from '../commits/Changes';
 
 export default (commits: RepoAnalysis['commits']): Tab => {

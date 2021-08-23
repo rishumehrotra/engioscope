@@ -5,7 +5,7 @@ import type { Dev } from '../types';
 import Changes from './commits/Changes';
 import CommitTimeline from './commits/CommitTimeline';
 import { DownChevron, UpChevron } from './common/Icons';
-import { ProfilePic } from './ProfilePic';
+import { ProfilePic } from './common/ProfilePic';
 
 const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
