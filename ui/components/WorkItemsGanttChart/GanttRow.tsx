@@ -63,7 +63,7 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
     <div class="max-w-xs">
       <span class="font-bold">
         <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-        ${workItem.type}:
+        ${workItem.type} #${workItem.id}:
       </span>
       ${workItem.title}
       <div class="mt-2">

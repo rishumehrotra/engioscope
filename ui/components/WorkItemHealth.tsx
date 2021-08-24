@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
-import type { AnalysedWorkItems, UIWorkItemRevision } from '../../shared/types';
+import type { AnalysedWorkItems, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
+
+const titleTooltip = (workItem: UIWorkItem) => `
+  <div class="max-w-xs">
+    <span class="font-bold">
+      <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+      ${workItem.type} #${workItem.id}:
+    </span>
+    ${workItem.title}
+    <div class="mt-2">
+      <span class="font-bold">Project: </span>
+      ${workItem.project}
+    </div>
+  </div>
+`;
 
 type WorkItemProps = {
   workItemId: number;
@@ -37,7 +51,8 @@ const WorkItem: React.FC<WorkItemProps> = ({
               className="font-bold text-lg truncate max-width-full inline-block link-text"
               target="_blank"
               rel="noreferrer"
-              data-tip={workItem.title}
+              data-tip={titleTooltip(workItem)}
+              data-html
             >
               <img
                 className="inline-block -mt-1 mr-1"
@@ -64,7 +79,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           <span className="text-blue-gray text-sm my-2">
             Bundle size
             {' '}
-            <span className="font-semibold text-base">{workItemsIdTree[workItemId].length}</span>
+            <span className="font-semibold text-base">{(workItemsIdTree[workItemId] || []).length}</span>
           </span>
         </div>
       </button>

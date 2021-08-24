@@ -107,7 +107,7 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     label: config.azure.workitems?.label ?? collection.workitems?.label ?? 'Features & Bugs',
     getWorkItems: config.azure.workitems?.getWorkItems ?? collection.workitems?.getWorkItems ?? ['Feature', 'Bug'],
     groupUnder: config.azure.workitems?.groupUnder ?? collection.workitems?.groupUnder ?? ['Feature', 'Bug'],
-    skipChildren: config.azure.workitems?.skipChildren ?? collection.workitems?.skipChildren ?? ['Test Case'],
+    skipChildren: config.azure.workitems?.skipChildren ?? collection.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
     changeLeadTime: config.azure.workitems?.changeLeadTime ?? collection.workitems?.changeLeadTime
   };
 
