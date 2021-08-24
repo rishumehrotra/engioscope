@@ -59,7 +59,7 @@ const WorkItems: React.FC = () => {
     if (workItemAnalysis === 'loading') return sorters(() => 0);
     const { workItems } = workItemAnalysis;
     if (workItems === null) return sorters(() => 0);
-    return sorters((id: number) => workItems.ids[id].length);
+    return sorters((id: number) => (workItems.ids[id] || []).length);
   }, [workItemAnalysis]);
 
   const sorter = useSort(sorterMap, 'Bundle size');

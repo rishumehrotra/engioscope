@@ -34,18 +34,20 @@ const cltStats = (workItem: UIWorkItem): CltStats => {
 const cltStatsTooltip = (cltStats: CltStats) => {
   const { clt, cltStage } = cltStats;
   if (clt === undefined) return '';
+
   const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
   if (cltStage === 'Done') {
-    return `<span>CLT(Dev done to Actual production ): ${prettyClt}</span>`;
+    return `<span class="font-bold">CLT (dev done to production):</span> ${prettyClt}`;
   }
   if (cltStage === 'Dev done') {
-    return `<span>${cltStage} since ${prettyClt}</span>`;
+    return `<span class="font-bold">${cltStage}</span> since ${prettyClt}`;
   }
 };
 
 const cltStatsLabel = (cltStats: CltStats) => {
   const { clt, cltStage } = cltStats;
-  if (clt === undefined) return null;
+  if (clt === undefined) return '';
+
   const prettyClt = prettyMilliseconds(clt, { compact: true });
   if (cltStage === 'Done') {
     return <span className="text-xs font-bold text-green-600">{prettyClt}</span>;
@@ -61,14 +63,22 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
     <div class="max-w-xs">
       <span class="font-bold">
         <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-        ${workItem.type}:
+        ${workItem.type} #${workItem.id}:
       </span>
       ${workItem.title}
+      ${workItem.env ? (`
+        <div class="mt-2">
+          <span class="font-bold">Environment: </span>
+          ${workItem.env}
+        </div>
+      `) : ''}
       <div class="mt-2">
         <span class="font-bold">Project: </span>
         ${workItem.project}
       </div>
-      ${cltStatsTooltip({ cltStage, clt })}
+      <div class="mt-2">
+        ${cltStatsTooltip({ cltStage, clt })}
+        </div>
     </div>
   `;
 };

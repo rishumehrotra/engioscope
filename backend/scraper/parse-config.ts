@@ -5,15 +5,24 @@ type ReleasePipelineConfig = {
   stagesToHighlight: string[];
 };
 
+type CLTDefinition = {
+  whenMatchesField?: {
+    field: string;
+    value: string;
+  }[];
+  startDateField: string[];
+  endDateField: string[];
+};
+
+type WorkItemType = string;
+
 type CollectionWorkItemConfig = {
   label?: string;
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren?: string[];
-  changeLeadTime?: {
-    startDateField: string;
-    endDateField: string;
-  };
+  environmentField?: string;
+  changeLeadTime?: Record<WorkItemType, CLTDefinition>;
 };
 
 type CollectionConfig = {
@@ -50,15 +59,22 @@ type Config = Readonly<{
   sonar?: SonarConfig | SonarConfig[];
 }>;
 
+export type ParsedCLTDefinition = {
+  whenMatchesField?: {
+    field: string;
+    value: string;
+  }[];
+  startDateField: string[];
+  endDateField: string[];
+};
+
 export type ParsedCollectionWorkItemConfig = Readonly<{
   label: string;
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren: string[];
-  changeLeadTime?: {
-    startDateField: string;
-    endDateField: string;
-  };
+  environmentField?: string;
+  changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
 }>;
 
 export type ParsedProjectConfig = Readonly<{
@@ -89,11 +105,12 @@ export type ParsedConfig = Readonly<{
 }>;
 
 const parseCollection = (config: Config) => (collection: CollectionConfig): ParsedCollection => {
-  const workitems = {
+  const workitems: ParsedCollectionWorkItemConfig = {
     label: config.azure.workitems?.label ?? collection.workitems?.label ?? 'Features & Bugs',
     getWorkItems: config.azure.workitems?.getWorkItems ?? collection.workitems?.getWorkItems ?? ['Feature', 'Bug'],
     groupUnder: config.azure.workitems?.groupUnder ?? collection.workitems?.groupUnder ?? ['Feature', 'Bug'],
-    skipChildren: config.azure.workitems?.skipChildren ?? collection.workitems?.skipChildren ?? ['Test Case'],
+    skipChildren: config.azure.workitems?.skipChildren ?? collection.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
+    environmentField: config.azure.workitems?.environmentField ?? collection.workitems?.environmentField,
     changeLeadTime: config.azure.workitems?.changeLeadTime ?? collection.workitems?.changeLeadTime
   };
 

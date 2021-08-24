@@ -90,6 +90,44 @@ const sourcesUntilMatch = (
   return (workItemId: number) => recurse(workItemId, []);
 };
 
+type CLT = {
+  clt: {
+    start?: string;
+    end?: string;
+  };
+};
+
+const computeCLT = (collectionConfig: ParsedCollection, workItem: WorkItem): CLT | undefined => {
+  if (!collectionConfig.workitems.changeLeadTime) return undefined;
+
+  const matchingCLTConfig = collectionConfig.workitems.changeLeadTime[workItem.fields['System.WorkItemType']];
+  if (!matchingCLTConfig) return undefined;
+
+  if (matchingCLTConfig.whenMatchesField) {
+    const matchesWorkItem = matchingCLTConfig.whenMatchesField?.every(({ field, value }) => (
+      workItem.fields[field] === value
+    ));
+    if (!matchesWorkItem) return undefined;
+  }
+
+  const computeDate = (fieldArray: string[]) => {
+    const minDates = fieldArray
+      .map(f => workItem.fields[f])
+      .filter(exists)
+      .map(s => new Date(s).getTime());
+
+    if (minDates.length === 0) return undefined;
+    return new Date(Math.min(...minDates)).toISOString();
+  };
+
+  return {
+    clt: {
+      start: computeDate(matchingCLTConfig.startDateField),
+      end: computeDate(matchingCLTConfig.endDateField)
+    }
+  };
+};
+
 const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
   (workItemTypesByCollection: Record<string, Record<string, WorkItemType>>) => (
     (workItem: WorkItem): UIWorkItem => {
@@ -110,12 +148,10 @@ const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
           on: workItem.fields['System.CreatedDate'].toISOString()
           // name: workItem.fields['System.CreatedBy']
         },
-        ...(collectionConfig.workitems.changeLeadTime ? {
-          clt: {
-            start: workItem.fields[collectionConfig.workitems.changeLeadTime.startDateField],
-            end: workItem.fields[collectionConfig.workitems.changeLeadTime.endDateField]
-          }
-        } : undefined)
+        env: collectionConfig.workitems.environmentField
+          ? workItem.fields[collectionConfig.workitems.environmentField]
+          : undefined,
+        ...computeCLT(collectionConfig, workItem)
       };
     }
   )
@@ -151,10 +187,10 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
 
     const topLevelItems = [...new Set(workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id)))];
 
-    console.log(`for ${collection.name}/${project.name}, ${topLevelItems.length}`);
-    console.log(JSON.stringify(topLevelItems.reduce<Record<number, UIWorkItem>>(
-      (acc, wi) => ({ ...acc, [wi]: createUIWorkItem(workItemsById[wi]) }), {}
-    ), null, 2));
+    // console.log(`for ${collection.name}/${project.name}, ${topLevelItems.length}`);
+    // console.log(JSON.stringify(topLevelItems.reduce<Record<number, UIWorkItem>>(
+    //   (acc, wi) => ({ ...acc, [wi]: createUIWorkItem(workItemsById[wi]) }), {}
+    // ), null, 2));
 
     return {
       byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => {
