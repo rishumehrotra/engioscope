@@ -36,7 +36,7 @@ const cltStatsTooltip = (cltStats: CltStats) => {
   if (clt === undefined) return null;
   const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
   if (cltStage === 'done') {
-    return `<span>CLT(Dev done to Actual production ): ${prettyClt}}</span>`;
+    return `<span>CLT(Dev done to Actual production ): ${prettyClt}</span>`;
   }
   if (cltStage === 'dev done') {
     return `<span class="capitalize">${cltStage}: since ${prettyClt}</span>`;
