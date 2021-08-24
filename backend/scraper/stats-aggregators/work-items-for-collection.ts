@@ -90,6 +90,7 @@ const sourcesUntilMatch = (
   return (workItemId: number) => recurse(workItemId, []);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
   (workItemTypesByCollection: Record<string, Record<string, WorkItemType>>) => (
     (workItem: WorkItem): UIWorkItem => {
@@ -109,13 +110,13 @@ const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
         created: {
           on: workItem.fields['System.CreatedDate'].toISOString()
           // name: workItem.fields['System.CreatedBy']
-        },
-        ...(collectionConfig.workitems.changeLeadTime ? {
-          clt: {
-            start: workItem.fields[collectionConfig.workitems.changeLeadTime.startDateField],
-            end: workItem.fields[collectionConfig.workitems.changeLeadTime.endDateField]
-          }
-        } : undefined)
+        }
+        // ...(collectionConfig.workitems.changeLeadTime ? {
+        //   clt: {
+        //     start: workItem.fields[collectionConfig.workitems.changeLeadTime.startDateField],
+        //     end: workItem.fields[collectionConfig.workitems.changeLeadTime.endDateField]
+        //   }
+        // } : undefined)
       };
     }
   )

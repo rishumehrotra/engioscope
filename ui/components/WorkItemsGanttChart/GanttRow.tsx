@@ -33,7 +33,7 @@ const cltStats = (workItem: UIWorkItem): CltStats => {
 
 const cltStatsTooltip = (cltStats: CltStats) => {
   const { clt, cltStage } = cltStats;
-  if (clt === undefined) return null;
+  if (clt === undefined) return '';
   const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
   if (cltStage === 'done') {
     return `<span>CLT(Dev done to Actual production ): ${prettyClt}}</span>`;
@@ -53,6 +53,24 @@ const cltStatsLabel = (cltStats: CltStats) => {
   if (cltStage === 'dev done') {
     return <span className="text-xs font-bold text-red-800">{prettyClt}</span>;
   }
+};
+
+const rowItemTooltip = (workItem: UIWorkItem) => {
+  const { cltStage, clt } = cltStats(workItem);
+  return `
+    <div class="max-w-xs">
+      <span class="font-bold">
+        <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+        ${workItem.type}:
+      </span>
+      ${workItem.title}
+      <div class="mt-2">
+        <span class="font-bold">Project: </span>
+        ${workItem.project}
+      </div>
+      ${cltStatsTooltip({ cltStage, clt })}
+    </div>
+  `;
 };
 
 export type GanttRowProps = {
@@ -112,8 +130,8 @@ export const GanttRow: React.FC<GanttRowProps> = ({
             style={{ width: `${textWidth}px` }}
             target="_blank"
             rel="noreferrer"
+            data-tip={rowItemTooltip(workItem)}
             data-html
-            data-tip={`<p><div class="text-bold">${workItem.type}: ${workItem.title}</div>${cltStatsTooltip({ cltStage, clt })}</p>`}
           >
             <img
               src={workItem.icon}

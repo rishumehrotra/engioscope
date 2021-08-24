@@ -46,7 +46,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                     <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
                     <td className="pl-6 pr-0 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
                     <td className="pr-6 pl-0 py-4 whitespace-nowrap text-right">
-                      <span className="text-bold">{pipeline.duration.average}</span>
+                      <span>{pipeline.duration.average}</span>
                       <div className="text-gray-400 text-sm">
                         (
                         {`${pipeline.duration.min} - ${pipeline.duration.max}`}
