@@ -5,11 +5,13 @@ import WorkItemsGanttChart from './WorkItemsGanttChart';
 
 const titleTooltip = (workItem: UIWorkItem) => `
   <div class="max-w-xs">
-    <span class="font-bold">
-      <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-      ${workItem.type} #${workItem.id}:
-    </span>
-    ${workItem.title}
+    <div class="pl-3" style="text-indent: -1.15rem">
+      <span class="font-bold">
+        <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+        ${workItem.type} #${workItem.id}:
+      </span>
+      ${workItem.title}
+    </div>
     ${workItem.env ? (`
       <div class="mt-2">
         <span class="font-bold">Environment: </span>

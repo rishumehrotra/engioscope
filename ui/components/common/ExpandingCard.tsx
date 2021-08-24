@@ -47,9 +47,11 @@ export type CardProps = {
 const Card: React.FC<CardProps> = ({
   title, titleUrl, subtitle, children, onCardClick, isExpanded, className
 }) => (
-  <div className={`bg-white ${className} border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
+  <div
+    className={`bg-white ${className} border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
   transition-colors duration-500 ease-in-out rounded-lg shadow relative
   `}
+    style={{ contain: 'content' }}
   >
     <div className="grid grid-flow-row mt-2">
       <div

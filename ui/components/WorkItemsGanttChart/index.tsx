@@ -102,7 +102,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
 
   return (
     <div className="relative">
-
       {zoom ? (
         <button
           className="absolute right-0 -top-7 bg-blue-600 text-white font-medium px-3 py-1 text-sm rounded-t-md"
@@ -111,7 +110,12 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
           Reset zoom
         </button>
       ) : null}
-      <svg viewBox={`0 0 ${svgWidth} ${height}`} ref={svgRef} className="select-none">
+      <svg
+        viewBox={`0 0 ${svgWidth} ${height}`}
+        ref={svgRef}
+        className="select-none"
+        style={{ contain: 'content' }}
+      >
         <Graticule
           height={height}
           date={new Date(minDate)}

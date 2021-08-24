@@ -65,11 +65,13 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
   const { cltStage, clt } = cltStats(workItem);
   return `
     <div class="max-w-xs">
-      <span class="font-bold">
-        <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-        ${workItem.type} #${workItem.id}:
-      </span>
-      ${workItem.title}
+      <div class="pl-3" style="text-indent: -1.15rem">
+        <span class="font-bold">
+          <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+          ${workItem.type} #${workItem.id}:
+        </span>
+        ${workItem.title}
+      </div>
       ${workItem.env ? (`
         <div class="mt-2">
           <span class="font-bold">Environment: </span>
@@ -116,7 +118,11 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   useEffect(() => { ReactTooltip.rebuild(); }, [revisions]);
 
   return (
-    <g onMouseOver={() => highlight(true)} onMouseLeave={() => highlight(false)}>
+    <g
+      onMouseOver={() => highlight(true)}
+      onMouseLeave={() => highlight(false)}
+      style={{ contain: 'content' }}
+    >
       <rect
       // background
         x="0"
