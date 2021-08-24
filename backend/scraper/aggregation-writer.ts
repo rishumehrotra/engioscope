@@ -41,7 +41,10 @@ const projectSummary = (
   lastUpdated: shortDateFormat(new Date()),
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.length,
-  workItemCount: Object.values(projectAnalysis.workItemAnalysis?.ids[0] || {}).length || 0,
+  // !FIXME: Feature toggle
+  workItemCount: projectAnalysis.workItemLabel === 'Features & bugs'
+    ? 0
+    : Object.values(projectAnalysis.workItemAnalysis?.ids[0] || {}).length || 0,
   workItemLabel: [singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel]
 });
 

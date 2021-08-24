@@ -1,3 +1,4 @@
+import { reduce } from 'rambda';
 import type { AnalysedWorkItems, UIWorkItem } from '../../../shared/types';
 import { exists } from '../../utils';
 import azure from '../network/azure';
@@ -8,30 +9,32 @@ import type {
 import { queryForCollectionWorkItems } from '../work-item-queries';
 
 type WorkItemIDTree = WorkItemQueryResult<WorkItemQueryHierarchialResult>;
+type CollectionName = string;
+type WorkItemTypeName = string;
+type WorkItemTypeByTypeName = Record<WorkItemTypeName, WorkItemType>;
 
-const workItemTypesByType = (workItemTypes: WorkItemType[]) => workItemTypes
-  .reduce<Record<string, WorkItemType>>((acc, workItemType) => ({
-    ...acc,
-    [workItemType.name]: workItemType
-  }), {});
+const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
+  (acc, workItemType) => ({ ...acc, [workItemType.name]: workItemType }), {}
+);
 
 const getWorkItemTree = (
   getCollectionWorkItemIdsForQuery: (collectionName: string, query: string) => Promise<WorkItemIDTree>,
   collection: ParsedCollection,
   config: ParsedConfig
 ) => getCollectionWorkItemIdsForQuery(
-  collection.name,
-  queryForCollectionWorkItems(config.azure.queryFrom, collection)
+  collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
 );
+
+type WorkItemTypeByCollection = Record<CollectionName, WorkItemTypeByTypeName>;
 
 const getWorkItemTypesByCollection = (
   getWorkItemTypes: (collectionName: string) => (projectName: string) => Promise<WorkItemType[]>,
   collection: ParsedCollection
-) => Promise.all(
-  collection.projects.map(async project => ({
-    [project.name.toLowerCase()]: workItemTypesByType(await getWorkItemTypes(collection.name)(project.name))
-  }))
-).then(workItemTypes => workItemTypes.reduce<Record<string, Record<string, WorkItemType>>>(
+) => Promise.all(collection.projects.map(async project => ({
+  [project.name.toLowerCase()]: workItemTypesByType(
+    await getWorkItemTypes(collection.name)(project.name)
+  )
+}))).then(reduce<WorkItemTypeByCollection, WorkItemTypeByCollection>(
   (acc, cur) => ({ ...acc, ...cur }), {}
 ));
 
@@ -105,7 +108,7 @@ const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
         icon: workItemType.icon.url,
         created: {
           on: workItem.fields['System.CreatedDate'].toISOString()
-        // name: workItem.fields['System.CreatedBy']
+          // name: workItem.fields['System.CreatedBy']
         },
         ...(collectionConfig.workitems.changeLeadTime ? {
           clt: {

@@ -14,13 +14,18 @@ import VerticalCrosshair from './VerticalCrosshair';
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 const indentation = (rowPath: string) => rowPath.split('/').length - 1;
 
+const removeAncestors = (rowPath: string, children: number[]) => {
+  const ancestors = rowPath.split('/');
+  return children.filter(child => !ancestors.includes(child.toString()));
+};
+
 const expandedState = (
   rowPath: string,
   renderedRowPaths: string[],
   workItemsIdTree: Record<number, number[]>
 ): ExpandedState => {
   const workItemId = workItemIdFromRowPath(rowPath);
-  if (!workItemsIdTree[workItemId]) return 'no-children';
+  if (!workItemsIdTree[workItemId] || !removeAncestors(rowPath, workItemsIdTree[workItemId]).length) return 'no-children';
   return renderedRowPaths.filter(r => r.startsWith(rowPath)).length === 1
     ? 'collapsed'
     : 'expanded';
@@ -39,7 +44,7 @@ const toggleExpandState = (rowPath: string, workItemsIdTree: Record<number, numb
     return {
       rowPaths: [
         ...renderedRowPaths.slice(0, renderedRowPaths.indexOf(rowPath) + 1),
-        ...workItemsIdTree[workItemIdFromRowPath(rowPath)].map(id => `${rowPath}/${id}`),
+        ...removeAncestors(rowPath, workItemsIdTree[workItemIdFromRowPath(rowPath)]).map(id => `${rowPath}/${id}`),
         ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
       ],
       childIds: workItemsIdTree[workItemIdFromRowPath(rowPath)]
