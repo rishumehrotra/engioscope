@@ -1,6 +1,5 @@
 import type { UIWorkItem } from '../../../shared/types';
 import { exists } from '../../utils';
-import type { ProjectConfig } from '../parse-config';
 import type {
   WorkItem, WorkItemQueryHierarchialResult, WorkItemType
 } from '../types-azure';
@@ -29,7 +28,7 @@ const relationsToIdTree = (workItemRelations: WorkItemQueryHierarchialResult['wo
 );
 
 export default async (
-  projectConfig: ProjectConfig,
+  projectConfig: any,
   workItemRelations: WorkItemQueryHierarchialResult['workItemRelations'],
   allBugsAndFeatures: WorkItemQueryHierarchialResult['workItemRelations'] | undefined,
   workItemTypes: WorkItemType[],

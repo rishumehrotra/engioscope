@@ -22,7 +22,7 @@ const Project: React.FC = () => (
     <div className="pb-6">
       <div className="border-t border-gray-200" />
     </div>
-    <div className="grid grid-cols-2 mb-8">
+    <div className="grid grid-cols-3 mb-8">
       <NavBar />
       <SortControls />
     </div>

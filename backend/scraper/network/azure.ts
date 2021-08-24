@@ -1,9 +1,7 @@
 import qs from 'qs';
-import ms from 'ms';
 import md5 from 'md5';
 import fetch from './fetch-with-timeout';
-import type { Config } from '../parse-config';
-import { chunkArray, pastDate } from '../../utils';
+import { chunkArray } from '../../utils';
 import type {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
@@ -13,6 +11,7 @@ import type {
 import createPaginatedGetter from './create-paginated-getter';
 import type { FetchResponse } from './fetch-with-disk-cache';
 import fetchWithDiskCache from './fetch-with-disk-cache';
+import type { ParsedConfig } from '../parse-config';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -31,12 +30,12 @@ const continuationToken = <T>(res: FetchResponse<T> | undefined): Record<string,
   return { continuationToken };
 };
 
-export default (config: Config) => {
+export default (config: ParsedConfig) => {
   const authHeader = {
     Authorization: `Basic ${Buffer.from(`:${config.azure.token}`).toString('base64')}`
   };
-  const paginatedGet = createPaginatedGetter(ms(config.cacheToDiskFor));
-  const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(ms(config.cacheToDiskFor));
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+  const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
   const url = (collectionName: string, projectName: string | null, path: string) => (
     `${config.azure.host}${collectionName}/${projectName === null ? '' : `${projectName}/`}_apis${path}`
   );
@@ -72,7 +71,7 @@ export default (config: Config) => {
       list<Build>({
         url: url(collectionName, projectName, '/build/builds'),
         qsParams: {
-          minTime: pastDate(config.azure.lookAtPast).toISOString(),
+          minTime: config.azure.queryFrom.toISOString(),
           resultFilter: 'succeeded,failed',
           $top: '5000'
         },
@@ -136,7 +135,7 @@ export default (config: Config) => {
       list<Release>({
         url: url(collectionName, projectName, '/release/releases'),
         qsParams: {
-          minCreatedTime: pastDate(config.azure.lookAtPast).toISOString(),
+          minCreatedTime: config.azure.queryFrom.toISOString(),
           $expand: 'environments,artifacts'
         },
         cacheFile: [collectionName, projectName, 'releases']
@@ -148,7 +147,7 @@ export default (config: Config) => {
         url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
         qsParams: pageIndex => ({
           ...apiVersion,
-          'searchCriteria.fromDate': pastDate(config.azure.lookAtPast).toISOString(),
+          'searchCriteria.fromDate': config.azure.queryFrom.toISOString(),
           'searchCriteria.$top': '5000',
           'searchCriteria.includeUserImageUrl': 'true',
           ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 1000).toString() })
@@ -159,7 +158,7 @@ export default (config: Config) => {
       }).then(flattenToValues)
     ),
 
-    getWorkItemTypes: (collectionName: string, projectName: string) => (
+    getWorkItemTypes: (collectionName: string) => (projectName: string) => (
       usingDiskCache<{count: number; value: WorkItemType[]}>(
         [collectionName, projectName, 'work-items', 'types'],
         () => fetch(
@@ -179,8 +178,10 @@ export default (config: Config) => {
       ).then(res => res.data.value)
     ),
 
-    getCollectionWorkItemIdsForQuery: (collectionName: string) => (
-      <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (
+    getCollectionWorkItemIdsForQuery:
+      <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(
+        collectionName: string, query: string
+      ) => (
         usingDiskCache<T>(
           [collectionName, 'work-items', 'work-items', `ids_${md5(query)}`],
           () => fetch(
@@ -197,10 +198,9 @@ export default (config: Config) => {
           }
           return res.data as T;
         })
-      )
-    ),
+      ),
 
-    getCollectionWorkItems: (collectionName: string) => async (workItemIds: number[]) => {
+    getCollectionWorkItems: async (collectionName: string, workItemIds: number[]) => {
       const workItemsById = (await Promise.all(chunkArray(workItemIds, 200)
         .map((chunk, index) => (
           usingDiskCache<{ count: number; value: WorkItem[] }>(

@@ -4,7 +4,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import type { Config } from '../scraper/parse-config';
+import type { ParsedConfig } from '../scraper/parse-config';
 import api from './api';
 
 const uiFolder = path.join(__dirname, '..', '..', 'ui');
@@ -39,7 +39,7 @@ app.use(rateLimit({ windowMs: 60 * 1000, max: 100 })); // 100 reqs/min
 app.get('/', sendIndexHtml);
 app.use(express.static(uiFolder));
 
-export default (config: Config) => {
+export default (config: ParsedConfig) => {
   app.use(api(config));
   app.use((req, res, next) => {
     if (!req.accepts('html')) return next();

@@ -1,13 +1,12 @@
 import qs from 'qs';
 import { pipe, sort } from 'rambda';
-import ms from 'ms';
 import fetch from './fetch-with-timeout';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import { filter, getFirst } from '../../utils';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
-import type { Config } from '../parse-config';
 import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
+import type { ParsedConfig, SonarConfig } from '../parse-config';
 
 export type SonarRepo = {
   organization: string;
@@ -45,7 +44,7 @@ const getCurrentRepo = (repoName: string) => pipe(
 
 type SonarSearchResponse = { paging: SonarPaging; components: SonarRepo[] };
 
-const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGetter>) => (sonarServer: Config['sonar'][number]) => (
+const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGetter>) => (sonarServer: SonarConfig) => (
   paginatedGet<SonarSearchResponse>({
     url: `${sonarServer.url}/api/projects/search`,
     cacheFile: pageIndex => ['sonar', 'projects', `${sonarServer.url.split('://')[1].replace(/\./g, '-')}-${pageIndex}`],
@@ -59,11 +58,11 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
     .then(repos => repos.flat())
 );
 
-export default (config: Config) => {
-  const { usingDiskCache } = fetchWithDiskCache(ms(config.cacheToDiskFor));
-  const paginatedGet = createPaginatedGetter(ms(config.cacheToDiskFor));
+export default (config: ParsedConfig) => {
+  const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
 
-  const sonarRepos = Promise.all(config.sonar.map(reposAtSonarServer(paginatedGet)))
+  const sonarRepos = Promise.all((config.sonar || []).map(reposAtSonarServer(paginatedGet)))
     .then(list => list.flat());
 
   return async (repoName: string): Promise<SonarAnalysisByRepo> => {

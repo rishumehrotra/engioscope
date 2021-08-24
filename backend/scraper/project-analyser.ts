@@ -7,16 +7,12 @@ import aggregateReleases from './stats-aggregators/releases';
 import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
-import aggregateWorkItems from './stats-aggregators/work-items';
 import sonar from './network/sonar';
 import type { ProjectAnalysis } from './types';
-import type { Config, ProjectConfig } from './parse-config';
+import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
-import type { RepoAnalysis } from '../../shared/types';
-import { pastDate } from '../utils';
-import type { WorkItemQueryHierarchialResult, WorkItemQueryResult } from './types-azure';
-import { queryForAllBugsAndFeatures, queryForTopLevelWorkItems } from './work-item-queries';
+import type { AnalysedWorkItems, RepoAnalysis } from '../../shared/types';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
 
 const getLanguageColor = (lang: string) => {
@@ -28,46 +24,36 @@ const getLanguageColor = (lang: string) => {
 
 const analyserLog = debug('analyser');
 
-export default (config: Config) => {
+export default (config: ParsedConfig) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions,
-    getWorkItemIdsForQuery, getWorkItems, getWorkItemTypes
+    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
-  return async (collectionName: string, projectConfig: ProjectConfig): Promise<ProjectAnalysis> => {
+  return async (
+    collection: ParsedCollection,
+    projectConfig: ParsedProjectConfig,
+    workItemsPromise: Promise<AnalysedWorkItems>
+  ): Promise<ProjectAnalysis> => {
     const startTime = Date.now();
-    const projectName = projectConfig.name;
-    const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collectionName, projectName);
+    const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collection.name, projectConfig.name);
 
-    analyserLog(`Starting analysis for ${collectionName}/${projectName}`);
+    analyserLog(`Starting analysis for ${collection.name}/${projectConfig.name}`);
     const [
       repos,
       { buildsByRepoId, latestMasterBuilds },
       releaseDefinitionById,
       releases,
       prByRepoId,
-      topLevelWorkItemIdsRelations,
-      allBugAndFeatureRelations,
-      workItemTypes
+      workItemAnalysis
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
-      forProject(getPRs).then(aggregatePrs(pastDate(config.azure.lookAtPast))),
-      projectConfig.workitems?.groupUnder
-        ? forProject(getWorkItemIdsForQuery)(
-          queryForTopLevelWorkItems(config, projectConfig)
-        ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
-        : null,
-      projectConfig.workitems?.groupUnder
-        ? forProject(getWorkItemIdsForQuery)(
-          queryForAllBugsAndFeatures(projectConfig)
-        ) as Promise<WorkItemQueryResult<WorkItemQueryHierarchialResult>>
-        : null,
-      forProject(getWorkItemTypes)
+      forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
+      workItemsPromise
     ]);
 
     const getTestsByRepoId = aggregateTestRuns(
@@ -108,19 +94,11 @@ export default (config: Config) => {
     const analysisResults: ProjectAnalysis = {
       repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),
       releaseAnalysis,
-      workItemAnalysis: topLevelWorkItemIdsRelations === null
-        ? null
-        : await aggregateWorkItems(
-          projectConfig,
-          topLevelWorkItemIdsRelations.workItemRelations,
-          allBugAndFeatureRelations?.workItemRelations,
-          workItemTypes,
-          forProject(getWorkItems)
-        ),
-      workItemLabel: projectConfig.workitems?.label || 'Features'
+      workItemAnalysis,
+      workItemLabel: projectConfig.workitems.label
     };
 
-    analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collectionName}/${projectName}.`);
+    analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collection.name}/${projectConfig.name}.`);
 
     return analysisResults;
   };

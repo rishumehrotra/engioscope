@@ -3,12 +3,12 @@ import { join } from 'path';
 import { promises as fs, createWriteStream } from 'fs';
 import uaParser from 'ua-parser-js';
 import { doesFileExist } from '../utils';
-import type { Config } from '../scraper/parse-config';
+import type { ParsedConfig } from '../scraper/parse-config';
 import azure from '../scraper/network/azure';
 import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision';
 import type { UIWorkItemRevision } from '../../shared/types';
 
-export default (config: Config) => {
+export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
   const router = Router();
 

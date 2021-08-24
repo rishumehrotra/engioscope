@@ -3,38 +3,33 @@ import chalk from 'chalk';
 import debug from 'debug';
 import { zip } from 'rambda';
 import aggregationWriter from './aggregation-writer';
+import type { ParsedConfig } from './parse-config';
 import projectAnalyser from './project-analyser';
-import type { Config } from './parse-config';
+import workItemsForCollection from './stats-aggregators/work-items-for-collection';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
 
-export default async (config: Config) => {
+export default async (config: ParsedConfig) => {
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
+  const collectionWorkItems = workItemsForCollection(config);
   const now = Date.now();
 
-  const projects = config.azure.collections.flatMap(collection => (
-    collection.projects.map(project => [
-      collection.name,
-      typeof project === 'string' ? {
-        name: project,
-        releasePipelines: config.azure.releasePipelines,
-        workitems: config.azure.workitems
-      } : {
-        releasePipelines: config.azure.releasePipelines,
-        workitems: config.azure.workitems,
-        ...project
-      }
-    ] as const)
-  ));
+  const projects = config.azure.collections.flatMap(collection => {
+    const workItems = collectionWorkItems(collection);
+
+    return collection.projects.map(project => ([
+      collection,
+      project,
+      workItems(project)
+    ] as const));
+  });
 
   const results = zip(
     projects,
     await Promise.allSettled(
-      projects.map(async projectSpec => (
-        analyseProject(...projectSpec).then(writeToFile(...projectSpec))
-      ))
+      projects.map(args => analyseProject(...args).then(writeToFile(args[0].name, args[1])))
     )
   );
 
@@ -44,7 +39,7 @@ export default async (config: Config) => {
   console.log('\n---\n');
   console.log('Fetching data for the followinng projects succeeded: \n');
   successful.forEach(success => {
-    console.log(`  ${chalk.green('✓')} ${success[0][0]}/${success[0][1].name}`);
+    console.log(`  ${chalk.green('✓')} ${success[0][0].name}/${success[0][1].name}`);
   });
 
   if (failed.length) {
@@ -52,7 +47,7 @@ export default async (config: Config) => {
     console.log('Fetching data for the following projects failed: \n');
     failed.forEach(failure => {
       console.log(
-        `  ${chalk.red('×')} ${failure[0][0]}/${failure[0][1].name} - Reason: `,
+        `  ${chalk.red('×')} ${failure[0][0].name}/${failure[0][1].name} - Reason: `,
         failure[1].status === 'rejected' && failure[1].reason
       );
     });

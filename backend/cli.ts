@@ -6,6 +6,7 @@ import { promises as fs } from 'fs';
 import getAllTheThings from './scraper/get-all-the-things';
 import startServer from './server/express';
 import { doesFileExist } from './utils';
+import parseConfig from './scraper/parse-config';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const addConfigOption = (yargs: yargs.Argv<{}>): void => {
@@ -29,16 +30,17 @@ const ensureConfigExists = async (argv: Record<string, unknown>) => {
   return path;
 };
 
+const readConfig = async (argv: Record<string, unknown>) => {
+  const configPath = await ensureConfigExists(argv);
+  return parseConfig(JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' })));
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { argv } = yargs(process.argv.slice(2))
   .scriptName('npx engioscope')
   .command('scrape', 'Scrape Azure DevOps', addConfigOption, async argv => {
-    const configPath = await ensureConfigExists(argv);
-    const config = JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' }));
-    await getAllTheThings(config);
+    readConfig(argv).then(getAllTheThings);
   })
-  .command('serve', 'Serve the engioscope UI', addConfigOption, async argv => {
-    const configPath = await ensureConfigExists(argv);
-    const config = JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' }));
-    startServer(config);
+  .command('serve', 'Serve the engioscope UI', addConfigOption, argv => {
+    readConfig(argv).then(startServer);
   });
