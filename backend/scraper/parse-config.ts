@@ -5,15 +5,23 @@ type ReleasePipelineConfig = {
   stagesToHighlight: string[];
 };
 
+type CLTDefinition = {
+  whenMatchesField?: {
+    field: string;
+    value: string;
+  }[];
+  startDateField: string[];
+  endDateField: string[];
+};
+
+type WorkItemType = string;
+
 type CollectionWorkItemConfig = {
   label?: string;
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren?: string[];
-  changeLeadTime?: {
-    startDateField: string;
-    endDateField: string;
-  };
+  changeLeadTime?: Record<WorkItemType, CLTDefinition>;
 };
 
 type CollectionConfig = {
@@ -50,15 +58,21 @@ type Config = Readonly<{
   sonar?: SonarConfig | SonarConfig[];
 }>;
 
+export type ParsedCLTDefinition = {
+  whenMatchesField?: {
+    field: string;
+    value: string;
+  }[];
+  startDateField: string[];
+  endDateField: string[];
+};
+
 export type ParsedCollectionWorkItemConfig = Readonly<{
   label: string;
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren: string[];
-  changeLeadTime?: {
-    startDateField: string;
-    endDateField: string;
-  };
+  changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
 }>;
 
 export type ParsedProjectConfig = Readonly<{

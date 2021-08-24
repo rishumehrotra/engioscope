@@ -10,23 +10,23 @@ import {
 import { TreeNodeButton } from './TreeNodeButton';
 import type { ExpandedState } from './types';
 
-type CltStats = {clt: number| undefined; cltStage: 'dev not done' | 'dev done' | 'done'};
+type CltStats = {clt: number| undefined; cltStage: 'Dev not done' | 'Dev done' | 'Done'};
 
 const cltStats = (workItem: UIWorkItem): CltStats => {
   if (workItem.clt?.start && workItem.clt.end) {
     return {
-      cltStage: 'done',
+      cltStage: 'Done',
       clt: new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime()
     };
   }
   if (workItem.clt?.start && !workItem.clt?.end) {
     return {
-      cltStage: 'dev done',
+      cltStage: 'Dev done',
       clt: new Date().getTime() - new Date(workItem.clt?.start).getTime()
     };
   }
   return {
-    cltStage: 'dev not done',
+    cltStage: 'Dev not done',
     clt: undefined
   };
 };
@@ -34,23 +34,25 @@ const cltStats = (workItem: UIWorkItem): CltStats => {
 const cltStatsTooltip = (cltStats: CltStats) => {
   const { clt, cltStage } = cltStats;
   if (clt === undefined) return '';
+
   const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
-  if (cltStage === 'done') {
-    return `<span>CLT(Dev done to Actual production ): ${prettyClt}}</span>`;
+  if (cltStage === 'Done') {
+    return `<span class="font-bold">CLT (dev done to production):</span> ${prettyClt}`;
   }
-  if (cltStage === 'dev done') {
-    return `<span class="capitalize">${cltStage}: since ${prettyClt}</span>`;
+  if (cltStage === 'Dev done') {
+    return `<span class="font-bold">${cltStage}</span> since ${prettyClt}`;
   }
 };
 
 const cltStatsLabel = (cltStats: CltStats) => {
   const { clt, cltStage } = cltStats;
-  if (clt === undefined) return null;
+  if (clt === undefined) return '';
+
   const prettyClt = prettyMilliseconds(clt, { compact: true });
-  if (cltStage === 'done') {
+  if (cltStage === 'Done') {
     return <span className="text-xs font-bold text-green-600">{prettyClt}</span>;
   }
-  if (cltStage === 'dev done') {
+  if (cltStage === 'Dev done') {
     return <span className="text-xs font-bold text-red-800">{prettyClt}</span>;
   }
 };
@@ -68,7 +70,9 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
         <span class="font-bold">Project: </span>
         ${workItem.project}
       </div>
-      ${cltStatsTooltip({ cltStage, clt })}
+      <div class="mt-2">
+        ${cltStatsTooltip({ cltStage, clt })}
+        </div>
     </div>
   `;
 };
