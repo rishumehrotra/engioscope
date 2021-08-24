@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReactTooltip from 'react-tooltip';
+import prettyMilliseconds from 'pretty-ms';
 import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import {
   textWidth, textHeight,
@@ -8,6 +9,51 @@ import {
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
 import type { ExpandedState } from './types';
+
+type CltStats = {clt: number| undefined; cltStage: 'dev not done' | 'dev done' | 'done'};
+
+const cltStats = (workItem: UIWorkItem): CltStats => {
+  if (workItem.clt?.start && workItem.clt.end) {
+    return {
+      cltStage: 'done',
+      clt: new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime()
+    };
+  }
+  if (workItem.clt?.start && !workItem.clt?.end) {
+    return {
+      cltStage: 'dev done',
+      clt: new Date().getTime() - new Date(workItem.clt?.start).getTime()
+    };
+  }
+  return {
+    cltStage: 'dev not done',
+    clt: undefined
+  };
+};
+
+const cltStatsTooltip = (cltStats: CltStats) => {
+  const { clt, cltStage } = cltStats;
+  if (clt === undefined) return null;
+  const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
+  if (cltStage === 'done') {
+    return `<span>CLT(Dev done to Actual production ): ${prettyClt}}</span>`;
+  }
+  if (cltStage === 'dev done') {
+    return `<span class="capitalize">${cltStage}: since ${prettyClt}</span>`;
+  }
+};
+
+const cltStatsLabel = (cltStats: CltStats) => {
+  const { clt, cltStage } = cltStats;
+  if (clt === undefined) return null;
+  const prettyClt = prettyMilliseconds(clt, { compact: true });
+  if (cltStage === 'done') {
+    return <span className="text-xs font-bold text-green-600">{prettyClt}</span>;
+  }
+  if (cltStage === 'dev done') {
+    return <span className="text-xs font-bold text-red-800">{prettyClt}</span>;
+  }
+};
 
 export type GanttRowProps = {
   workItem: UIWorkItem;
@@ -27,6 +73,8 @@ export const GanttRow: React.FC<GanttRowProps> = ({
 }) => {
   const barWidth = barWidthUsing(timeToXCoord);
   const [isHighlighted, highlight] = useState<boolean>(false);
+
+  const { cltStage, clt } = cltStats(workItem);
 
   const rowColor = useMemo(() => {
     const baseColor = makeTransparent(`#${workItem.color}`);
@@ -64,7 +112,8 @@ export const GanttRow: React.FC<GanttRowProps> = ({
             style={{ width: `${textWidth}px` }}
             target="_blank"
             rel="noreferrer"
-            data-tip={`${workItem.type}: ${workItem.title}`}
+            data-html
+            data-tip={`<p><div class="text-bold">${workItem.type}: ${workItem.title}</div>${cltStatsTooltip({ cltStage, clt })}</p>`}
           >
             <img
               src={workItem.icon}
@@ -72,6 +121,8 @@ export const GanttRow: React.FC<GanttRowProps> = ({
               width="16"
               className="float-left mr-1"
             />
+            {cltStatsLabel({ clt, cltStage })}
+            &nbsp;
             {workItem.title}
           </a>
         </div>

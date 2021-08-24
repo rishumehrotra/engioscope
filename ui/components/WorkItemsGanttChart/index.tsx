@@ -90,6 +90,8 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
 
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
+  console.log('Hello', workItemId);
+
   // eslint-disable-next-line no-nested-ternary
   const minDate = zoom ? zoom[0] : topLevelRevisions === 'loading' ? 0 : getMinDateTime(topLevelRevisions);
   // eslint-disable-next-line no-nested-ternary
@@ -97,6 +99,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
 
   return (
     <div className="relative">
+
       {zoom ? (
         <button
           className="absolute right-0 -top-7 bg-blue-600 text-white font-medium px-3 py-1 text-sm rounded-t-md"

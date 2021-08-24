@@ -75,6 +75,7 @@ const WorkItems: React.FC = () => {
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
   const { workItems } = workItemAnalysis;
+  console.log({ workItems });
   const topLevelWorkItems = workItems.ids[0].map(id => workItems.byId[id]);
 
   const filteredWorkItems = topLevelWorkItems
