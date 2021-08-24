@@ -90,8 +90,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
 
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
-  console.log('Hello', workItemId);
-
   // eslint-disable-next-line no-nested-ternary
   const minDate = zoom ? zoom[0] : topLevelRevisions === 'loading' ? 0 : getMinDateTime(topLevelRevisions);
   // eslint-disable-next-line no-nested-ternary
