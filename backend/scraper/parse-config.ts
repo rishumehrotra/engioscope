@@ -21,6 +21,7 @@ type CollectionWorkItemConfig = {
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren?: string[];
+  environmentField?: string;
   changeLeadTime?: Record<WorkItemType, CLTDefinition>;
 };
 
@@ -72,6 +73,7 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren: string[];
+  environmentField?: string;
   changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
 }>;
 
@@ -103,11 +105,12 @@ export type ParsedConfig = Readonly<{
 }>;
 
 const parseCollection = (config: Config) => (collection: CollectionConfig): ParsedCollection => {
-  const workitems = {
+  const workitems: ParsedCollectionWorkItemConfig = {
     label: config.azure.workitems?.label ?? collection.workitems?.label ?? 'Features & Bugs',
     getWorkItems: config.azure.workitems?.getWorkItems ?? collection.workitems?.getWorkItems ?? ['Feature', 'Bug'],
     groupUnder: config.azure.workitems?.groupUnder ?? collection.workitems?.groupUnder ?? ['Feature', 'Bug'],
     skipChildren: config.azure.workitems?.skipChildren ?? collection.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
+    environmentField: config.azure.workitems?.environmentField ?? collection.workitems?.environmentField,
     changeLeadTime: config.azure.workitems?.changeLeadTime ?? collection.workitems?.changeLeadTime
   };
 

@@ -148,6 +148,9 @@ const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
           on: workItem.fields['System.CreatedDate'].toISOString()
           // name: workItem.fields['System.CreatedBy']
         },
+        env: collectionConfig.workitems.environmentField
+          ? workItem.fields[collectionConfig.workitems.environmentField]
+          : undefined,
         ...computeCLT(collectionConfig, workItem)
       };
     }

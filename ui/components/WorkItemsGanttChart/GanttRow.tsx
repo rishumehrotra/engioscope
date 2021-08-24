@@ -66,6 +66,12 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
         ${workItem.type} #${workItem.id}:
       </span>
       ${workItem.title}
+      ${workItem.env ? (`
+        <div class="mt-2">
+          <span class="font-bold">Environment: </span>
+          ${workItem.env}
+        </div>
+      `) : ''}
       <div class="mt-2">
         <span class="font-bold">Project: </span>
         ${workItem.project}
