@@ -89,23 +89,18 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
 };
 
 type RevisionBarProps = {
-  barWidth: (revisions: UIWorkItemRevision[], index: number) => number;
-  revisions: UIWorkItemRevision[];
+  width: number;
+  revision: UIWorkItemRevision;
+  nextRevision: UIWorkItemRevision;
   rowIndex: number;
-  timeToXCoord: (time: string) => number;
-  colorForStage: (stage: string) => string;
-  revisionIndex: number;
+  left: number;
+  color: string;
 };
 
 const RevisionBar: React.FC<RevisionBarProps> = memo(({
-  barWidth, revisions, rowIndex, timeToXCoord,
-  colorForStage, revisionIndex
+  width, revision, nextRevision, rowIndex, left, color
 }) => {
-  const width = barWidth(revisions, revisionIndex);
   const top = barYCoord(rowIndex);
-  const revision = revisions[revisionIndex];
-  const left = timeToXCoord(revision.date);
-  const color = colorForStage(revision.state);
 
   return (
     <g>
@@ -116,7 +111,7 @@ const RevisionBar: React.FC<RevisionBarProps> = memo(({
         height={barHeight}
         fill={color}
         key={revision.date}
-        data-tip={revisionTooltip(revision, revisions[revisionIndex + 1])}
+        data-tip={revisionTooltip(revision, nextRevision)}
         data-html
       />
       {width > 25 ? (
@@ -131,7 +126,7 @@ const RevisionBar: React.FC<RevisionBarProps> = memo(({
             style={{ color: contrastColour(color) }}
             className="text-xs pl-1 truncate inline-block w-full"
           >
-            {revisionTitle(revision, revisions[revisionIndex + 1])}
+            {revisionTitle(revision, nextRevision)}
           </span>
         </foreignObject>
       ) : null}
@@ -237,12 +232,12 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
         revisions.slice(0, -1).map((revision, revisionIndex) => (
           <RevisionBar
             key={revision.state + revision.date}
-            barWidth={barWidth}
-            revisions={revisions}
-            revisionIndex={revisionIndex}
+            width={barWidth(revisions, revisionIndex)}
+            left={timeToXCoord(revision.date)}
+            revision={revisions[revisionIndex]}
+            nextRevision={revisions[revisionIndex + 1]}
             rowIndex={rowIndex}
-            timeToXCoord={timeToXCoord}
-            colorForStage={colorForStage}
+            color={colorForStage(revision.state)}
           />
         ))
       )}
