@@ -1,5 +1,5 @@
 import React, {
-  useCallback, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
@@ -39,15 +39,15 @@ const useRevisionsForCollection = () => {
     const needToFetch = workItemIds.filter(id => !revisions[id]);
 
     setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: 'loading' }), rs));
-    ReactTooltip.rebuild();
 
     if (!needToFetch.length) return;
 
     workItemRevisions(collection, [...new Set(needToFetch)]).then(revisions => {
       setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs));
-      ReactTooltip.rebuild();
     });
   }, [collection, revisions]);
+
+  useEffect(() => { ReactTooltip.rebuild(); }, [revisions]);
 
   return [revisions, getRevisions] as const;
 };

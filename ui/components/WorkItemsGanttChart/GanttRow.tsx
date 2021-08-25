@@ -1,4 +1,6 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, {
+  memo, useCallback, useMemo, useState
+} from 'react';
 import prettyMilliseconds from 'pretty-ms';
 import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import {
@@ -141,19 +143,22 @@ export type GanttRowProps = {
   indentation: number;
   expandedState: ExpandedState;
   timeToXCoord: (time: string) => number;
-  onToggle: (e: React.MouseEvent) => void;
+  onToggle: (rowPath: string) => void;
+  rowPath: string;
   colorForStage: (stage: string) => string;
   revisions: 'loading' | UIWorkItemRevision[];
 };
 
 export const GanttRow: React.FC<GanttRowProps> = memo(({
   workItem, rowIndex, indentation, isLast, timeToXCoord,
-  colorForStage, expandedState, onToggle, revisions
+  colorForStage, expandedState, onToggle, revisions, rowPath
 }) => {
   const barWidth = barWidthUsing(timeToXCoord);
   const [isHighlighted, highlight] = useState<boolean>(false);
 
   const { cltStage } = cltStats(workItem);
+
+  const toggle = useCallback(() => { onToggle(rowPath); }, [onToggle, rowPath]);
 
   const rowColor = useMemo(() => {
     const baseColor = makeTransparent(`#${workItem.color}`);
@@ -194,7 +199,7 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
         <div className="flex items-center">
           <TreeNodeButton
             expandedState={expandedState}
-            onToggle={onToggle}
+            onToggle={toggle}
             indentation={indentation}
           />
           <a

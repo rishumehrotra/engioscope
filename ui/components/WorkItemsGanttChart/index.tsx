@@ -75,8 +75,8 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const topLevelChildrenIds = workItemsIdTree[workItemId];
-  const height = svgHeight(rowPathsToRender.length);
+  const topLevelChildrenIds = useMemo(() => workItemsIdTree[workItemId], [workItemId, workItemsIdTree]);
+  const height = useMemo(() => svgHeight(rowPathsToRender.length), [rowPathsToRender.length]);
 
   const topLevelRevisions = useMemo(() => {
     if (topLevelChildrenIds.some(id => !revisions[id] || revisions[id] === 'loading')) return 'loading';
@@ -102,10 +102,23 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
 
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
-  // eslint-disable-next-line no-nested-ternary
-  const minDate = zoom ? zoom[0] : topLevelRevisions === 'loading' ? 0 : getMinDateTime(topLevelRevisions);
-  // eslint-disable-next-line no-nested-ternary
-  const maxDate = zoom ? zoom[1] : topLevelRevisions === 'loading' ? 0 : getMaxDateTime(topLevelRevisions);
+  const minDate = useMemo(() => {
+    if (zoom) return zoom[0];
+    if (topLevelRevisions === 'loading') return 0;
+    return getMinDateTime(topLevelRevisions);
+  }, [zoom, topLevelRevisions]);
+
+  const maxDate = useMemo(() => {
+    if (zoom) return zoom[1];
+    if (topLevelRevisions === 'loading') return 0;
+    return getMaxDateTime(topLevelRevisions);
+  }, [zoom, topLevelRevisions]);
+
+  const onToggle = useCallback((rowPath: string) => {
+    const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree, workItemId, rowPathsToRender);
+    setRowPathsToRender(rowPaths);
+    getRevisions(childIds);
+  }, [getRevisions, rowPathsToRender, workItemId, workItemsIdTree]);
 
   return (
     <div className="relative">
@@ -135,12 +148,8 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
             indentation={indentation(rowPath)}
             rowIndex={rowIndex}
             timeToXCoord={timeToXCoord}
-            onToggle={e => {
-              e.stopPropagation();
-              const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree, workItemId, rowPathsToRender);
-              setRowPathsToRender(rowPaths);
-              getRevisions(childIds);
-            }}
+            onToggle={onToggle}
+            rowPath={rowPath}
             expandedState={expandedState(rowPath, rowPathsToRender, workItemId, workItemsIdTree)}
             colorForStage={colorForStage}
             revisions={revisions[workItemIdFromRowPath(rowPath)] || 'loading'}
