@@ -3,6 +3,7 @@ import React, {
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
+import ReactTooltip from 'react-tooltip';
 import type { UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { workItemMetrics, workItemRevisions } from '../network';
 import { dontFilter } from '../helpers/utils';
@@ -38,12 +39,14 @@ const useRevisionsForCollection = () => {
     const needToFetch = workItemIds.filter(id => !revisions[id]);
 
     setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: 'loading' }), rs));
+    ReactTooltip.rebuild();
 
     if (!needToFetch.length) return;
 
-    workItemRevisions(collection, [...new Set(needToFetch)]).then(revisions => (
-      setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs))
-    ));
+    workItemRevisions(collection, [...new Set(needToFetch)]).then(revisions => {
+      setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs));
+      ReactTooltip.rebuild();
+    });
   }, [collection, revisions]);
 
   return [revisions, getRevisions] as const;

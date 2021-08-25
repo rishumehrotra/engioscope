@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactTooltip from 'react-tooltip';
+import React, { memo, useMemo, useState } from 'react';
 import prettyMilliseconds from 'pretty-ms';
 import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import {
@@ -89,6 +88,57 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
   `;
 };
 
+type RevisionBarProps = {
+  barWidth: (revisions: UIWorkItemRevision[], index: number) => number;
+  revisions: UIWorkItemRevision[];
+  rowIndex: number;
+  timeToXCoord: (time: string) => number;
+  colorForStage: (stage: string) => string;
+  revisionIndex: number;
+};
+
+const RevisionBar: React.FC<RevisionBarProps> = memo(({
+  barWidth, revisions, rowIndex, timeToXCoord,
+  colorForStage, revisionIndex
+}) => {
+  const width = barWidth(revisions, revisionIndex);
+  const top = barYCoord(rowIndex);
+  const revision = revisions[revisionIndex];
+  const left = timeToXCoord(revision.date);
+  const color = colorForStage(revision.state);
+
+  return (
+    <g>
+      <rect
+        x={left}
+        y={top}
+        width={width}
+        height={barHeight}
+        fill={color}
+        key={revision.date}
+        data-tip={revisionTooltip(revision, revisions[revisionIndex + 1])}
+        data-html
+      />
+      {width > 25 ? (
+        <foreignObject
+          x={left}
+          y={top}
+          width={width}
+          height={barHeight}
+          className="pointer-events-none"
+        >
+          <span
+            style={{ color: contrastColour(color) }}
+            className="text-xs pl-1 truncate inline-block w-full"
+          >
+            {revisionTitle(revision, revisions[revisionIndex + 1])}
+          </span>
+        </foreignObject>
+      ) : null}
+    </g>
+  );
+});
+
 export type GanttRowProps = {
   workItem: UIWorkItem;
   isLast: boolean;
@@ -101,7 +151,7 @@ export type GanttRowProps = {
   revisions: 'loading' | UIWorkItemRevision[];
 };
 
-export const GanttRow: React.FC<GanttRowProps> = ({
+export const GanttRow: React.FC<GanttRowProps> = memo(({
   workItem, rowIndex, indentation, isLast, timeToXCoord,
   colorForStage, expandedState, onToggle, revisions
 }) => {
@@ -114,8 +164,6 @@ export const GanttRow: React.FC<GanttRowProps> = ({
     const baseColor = makeTransparent(`#${workItem.color}`);
     return isHighlighted ? makeDarker(baseColor) : baseColor;
   }, [isHighlighted, workItem.color]);
-
-  useEffect(() => { ReactTooltip.rebuild(); }, [revisions]);
 
   return (
     <g
@@ -187,35 +235,15 @@ export const GanttRow: React.FC<GanttRowProps> = ({
         </foreignObject>
       ) : (
         revisions.slice(0, -1).map((revision, revisionIndex) => (
-          // The actual gantt bar
-          <g key={revision.state + revision.date}>
-            <rect
-              x={timeToXCoord(revision.date)}
-              y={barYCoord(rowIndex)}
-              width={barWidth(revisions, revisionIndex)}
-              height={barHeight}
-              fill={colorForStage(revision.state)}
-              key={revision.date}
-              data-tip={revisionTooltip(revision, revisions[revisionIndex + 1])}
-              data-html
-            />
-            {barWidth(revisions, revisionIndex) > 25 ? (
-              <foreignObject
-                x={timeToXCoord(revision.date)}
-                y={barYCoord(rowIndex)}
-                width={barWidth(revisions, revisionIndex)}
-                height={barHeight}
-                className="pointer-events-none"
-              >
-                <span
-                  style={{ color: contrastColour(colorForStage(revision.state)) }}
-                  className="text-xs pl-1 truncate inline-block w-full"
-                >
-                  {revisionTitle(revision, revisions[revisionIndex + 1])}
-                </span>
-              </foreignObject>
-            ) : null}
-          </g>
+          <RevisionBar
+            key={revision.state + revision.date}
+            barWidth={barWidth}
+            revisions={revisions}
+            revisionIndex={revisionIndex}
+            rowIndex={rowIndex}
+            timeToXCoord={timeToXCoord}
+            colorForStage={colorForStage}
+          />
         ))
       )}
       {!isLast ? (
@@ -230,4 +258,4 @@ export const GanttRow: React.FC<GanttRowProps> = ({
       ) : null}
     </g>
   );
-};
+});

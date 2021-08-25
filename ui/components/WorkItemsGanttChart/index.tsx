@@ -1,4 +1,5 @@
 import React, {
+  memo,
   useCallback, useEffect, useMemo, useRef, useState
 } from 'react';
 import type { AnalysedWorkItems, UIWorkItemRevision } from '../../../shared/types';
@@ -14,43 +15,49 @@ import VerticalCrosshair from './VerticalCrosshair';
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 const indentation = (rowPath: string) => rowPath.split('/').length - 1;
 
-const removeAncestors = (rowPath: string, children: number[]) => {
-  const ancestors = rowPath.split('/');
-  return children.filter(child => !ancestors.includes(child.toString()));
+const removeAncestors = (rowPath: string, parentWorkItemId: number, children: number[]) => {
+  const ancestors = [parentWorkItemId, ...rowPath.split('/').map(Number)];
+  return children.filter(child => !ancestors.includes(child));
 };
 
 const expandedState = (
   rowPath: string,
   renderedRowPaths: string[],
+  parentWorkItemId: number,
   workItemsIdTree: Record<number, number[]>
 ): ExpandedState => {
   const workItemId = workItemIdFromRowPath(rowPath);
-  if (!workItemsIdTree[workItemId] || !removeAncestors(rowPath, workItemsIdTree[workItemId]).length) return 'no-children';
+  if (!workItemsIdTree[workItemId] || !removeAncestors(rowPath, parentWorkItemId, workItemsIdTree[workItemId]).length) return 'no-children';
   return renderedRowPaths.filter(r => r.startsWith(rowPath)).length === 1
     ? 'collapsed'
     : 'expanded';
 };
 
-const toggleExpandState = (rowPath: string, workItemsIdTree: Record<number, number[]>) => (
-  (renderedRowPaths: string[]) => {
-    const state = expandedState(rowPath, renderedRowPaths, workItemsIdTree);
-    if (state === 'no-children') return { rowPaths: renderedRowPaths, childIds: [] };
-    if (state === 'expanded') {
-      return {
-        rowPaths: renderedRowPaths.filter(r => !r.startsWith(`${rowPath}/`)),
-        childIds: []
-      };
-    }
+const toggleExpandState = (
+  rowPath: string, workItemsIdTree: Record<number, number[]>,
+  parentWorkItemId: number, renderedRowPaths: string[]
+) => {
+  const state = expandedState(rowPath, renderedRowPaths, parentWorkItemId, workItemsIdTree);
+  if (state === 'no-children') return { rowPaths: renderedRowPaths, childIds: [] };
+  if (state === 'expanded') {
     return {
-      rowPaths: [
-        ...renderedRowPaths.slice(0, renderedRowPaths.indexOf(rowPath) + 1),
-        ...removeAncestors(rowPath, workItemsIdTree[workItemIdFromRowPath(rowPath)]).map(id => `${rowPath}/${id}`),
-        ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
-      ],
-      childIds: workItemsIdTree[workItemIdFromRowPath(rowPath)]
+      rowPaths: renderedRowPaths.filter(r => !r.startsWith(`${rowPath}/`)),
+      childIds: []
     };
   }
-);
+  return {
+    rowPaths: [
+      ...renderedRowPaths.slice(0, renderedRowPaths.indexOf(rowPath) + 1),
+      ...removeAncestors(
+        rowPath,
+        parentWorkItemId,
+        workItemsIdTree[workItemIdFromRowPath(rowPath)]
+      ).map(id => `${rowPath}/${id}`),
+      ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
+    ],
+    childIds: workItemsIdTree[workItemIdFromRowPath(rowPath)]
+  };
+};
 
 export type WorkItemsGanttChartProps = {
   workItemId: number;
@@ -61,7 +68,7 @@ export type WorkItemsGanttChartProps = {
   getRevisions: (workItemIds: number[]) => void;
 };
 
-const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
+const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
   revisions, getRevisions
 }) => {
@@ -130,11 +137,11 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
             timeToXCoord={timeToXCoord}
             onToggle={e => {
               e.stopPropagation();
-              const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree)(rowPathsToRender);
+              const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree, workItemId, rowPathsToRender);
               setRowPathsToRender(rowPaths);
               getRevisions(childIds);
             }}
-            expandedState={expandedState(rowPath, rowPathsToRender, workItemsIdTree)}
+            expandedState={expandedState(rowPath, rowPathsToRender, workItemId, workItemsIdTree)}
             colorForStage={colorForStage}
             revisions={revisions[workItemIdFromRowPath(rowPath)] || 'loading'}
           />
@@ -156,6 +163,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = ({
       </svg>
     </div>
   );
-};
+});
 
 export default WorkItemsGanttChart;
