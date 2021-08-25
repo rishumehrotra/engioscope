@@ -129,7 +129,7 @@ const computeCLT = (collectionConfig: ParsedCollection, workItem: WorkItem): CLT
 };
 
 const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
-  (workItemTypesByCollection: Record<string, Record<string, WorkItemType>>) => (
+  (workItemTypesByCollection: Record<CollectionName, WorkItemTypeByTypeName>) => (
     (workItem: WorkItem): UIWorkItem => {
       const projectName = workItem.fields['System.TeamProject'];
       const workItemTypeName = workItem.fields['System.WorkItemType'];
@@ -186,11 +186,6 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     );
 
     const topLevelItems = [...new Set(workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id)))];
-
-    // console.log(`for ${collection.name}/${project.name}, ${topLevelItems.length}`);
-    // console.log(JSON.stringify(topLevelItems.reduce<Record<number, UIWorkItem>>(
-    //   (acc, wi) => ({ ...acc, [wi]: createUIWorkItem(workItemsById[wi]) }), {}
-    // ), null, 2));
 
     return {
       byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => {

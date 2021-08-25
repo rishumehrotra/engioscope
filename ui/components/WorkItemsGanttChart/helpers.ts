@@ -1,5 +1,4 @@
 import type { UIWorkItemRevision } from '../../../shared/types';
-import { mediumDate } from '../../helpers/utils';
 
 export const svgWidth = 1100;
 export const textWidth = 270;
@@ -77,11 +76,6 @@ export const makeDarker = (rgb: string) => {
 
   return `${rgb}11`;
 };
-
-export const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => [
-  `${revision.state} → ${nextRevision.state}`,
-  `${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(nextRevision.date))}`
-];
 
 export const contrastColour = (hex: string) => {
   const r = parseInt(hex.slice(1, 3), 16);

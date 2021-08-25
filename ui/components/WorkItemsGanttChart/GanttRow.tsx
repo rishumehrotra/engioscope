@@ -5,10 +5,27 @@ import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import {
   textWidth, textHeight,
   rowPadding, svgWidth, makeTransparent, barYCoord,
-  barHeight, revisionTitle, contrastColour, barWidthUsing, makeDarker, barStartPadding
+  barHeight, contrastColour, barWidthUsing, makeDarker, barStartPadding
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
 import type { ExpandedState } from './types';
+import { mediumDate } from '../../helpers/utils';
+
+const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => (
+  <>
+    <span className="font-semibold">{`${revision.state} → ${nextRevision.state}`}</span>
+    {' '}
+    {prettyMilliseconds(new Date(nextRevision.date).getTime() - new Date(revision.date).getTime(), { unitCount: 2 })}
+  </>
+);
+
+const revisionTooltip = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => `
+  <b>${revision.state} → ${nextRevision.state}</b><br />
+  ${prettyMilliseconds(new Date(nextRevision.date).getTime() - new Date(revision.date).getTime(), { unitCount: 2, verbose: true })}<br />
+  <div class="text-gray-400">
+    ${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(nextRevision.date))}
+  </div>
+`;
 
 type CltStats = {clt: number| undefined; cltStage: 'Dev not done' | 'Dev done' | 'Done'};
 
@@ -37,23 +54,10 @@ const cltStatsTooltip = (cltStats: CltStats) => {
 
   const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
   if (cltStage === 'Done') {
-    return `<span class="font-bold">CLT (dev done to production):</span> ${prettyClt}`;
+    return `<span class="font-bold">CLT (dev done to production):</span> <span class="text-green-500">${prettyClt}</span>`;
   }
   if (cltStage === 'Dev done') {
-    return `<span class="font-bold">${cltStage}</span> since ${prettyClt}`;
-  }
-};
-
-const cltStatsLabel = (cltStats: CltStats) => {
-  const { clt, cltStage } = cltStats;
-  if (clt === undefined) return '';
-
-  const prettyClt = prettyMilliseconds(clt, { compact: true });
-  if (cltStage === 'Done') {
-    return <span className="text-xs font-bold text-green-600">{prettyClt}</span>;
-  }
-  if (cltStage === 'Dev done') {
-    return <span className="text-xs font-bold text-red-800">{prettyClt}</span>;
+    return `<span class="font-bold">${cltStage}</span> <span class="text-red-300">${prettyClt}</span> ago`;
   }
 };
 
@@ -61,11 +65,13 @@ const rowItemTooltip = (workItem: UIWorkItem) => {
   const { cltStage, clt } = cltStats(workItem);
   return `
     <div class="max-w-xs">
-      <span class="font-bold">
-        <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-        ${workItem.type} #${workItem.id}:
-      </span>
-      ${workItem.title}
+      <div class="pl-3" style="text-indent: -1.15rem">
+        <span class="font-bold">
+          <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+          ${workItem.type} #${workItem.id}:
+        </span>
+        ${workItem.title}
+      </div>
       ${workItem.env ? (`
         <div class="mt-2">
           <span class="font-bold">Environment: </span>
@@ -102,7 +108,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   const barWidth = barWidthUsing(timeToXCoord);
   const [isHighlighted, highlight] = useState<boolean>(false);
 
-  const { cltStage, clt } = cltStats(workItem);
+  const { cltStage } = cltStats(workItem);
 
   const rowColor = useMemo(() => {
     const baseColor = makeTransparent(`#${workItem.color}`);
@@ -112,7 +118,11 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   useEffect(() => { ReactTooltip.rebuild(); }, [revisions]);
 
   return (
-    <g onMouseOver={() => highlight(true)} onMouseLeave={() => highlight(false)}>
+    <g
+      onMouseOver={() => highlight(true)}
+      onMouseLeave={() => highlight(false)}
+      style={{ contain: 'content' }}
+    >
       <rect
       // background
         x="0"
@@ -121,6 +131,16 @@ export const GanttRow: React.FC<GanttRowProps> = ({
         height={textHeight}
         fill={rowColor}
       />
+      {cltStage !== 'Dev not done' ? (
+        <line
+          x1="1"
+          y1={(textHeight + (rowPadding * 2)) * rowIndex}
+          x2="1"
+          y2={((textHeight + (rowPadding * 2)) * rowIndex) + textHeight}
+          strokeWidth="3"
+          stroke={cltStage === 'Dev done' ? 'salmon' : 'limegreen'}
+        />
+      ) : null}
       <foreignObject
       // The stuff on the left
         x="10"
@@ -149,8 +169,6 @@ export const GanttRow: React.FC<GanttRowProps> = ({
               width="16"
               className="float-left mr-1"
             />
-            {cltStatsLabel({ clt, cltStage })}
-            &nbsp;
             {workItem.title}
           </a>
         </div>
@@ -178,7 +196,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
               height={barHeight}
               fill={colorForStage(revision.state)}
               key={revision.date}
-              data-tip={revisionTitle(revision, revisions[revisionIndex + 1]).join('<br />')}
+              data-tip={revisionTooltip(revision, revisions[revisionIndex + 1])}
               data-html
             />
             {barWidth(revisions, revisionIndex) > 25 ? (
@@ -193,7 +211,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
                   style={{ color: contrastColour(colorForStage(revision.state)) }}
                   className="text-xs pl-1 truncate inline-block w-full"
                 >
-                  {revisionTitle(revision, revisions[revisionIndex + 1]).join(', ')}
+                  {revisionTitle(revision, revisions[revisionIndex + 1])}
                 </span>
               </foreignObject>
             ) : null}
