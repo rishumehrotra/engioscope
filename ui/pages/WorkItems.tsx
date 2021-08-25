@@ -39,11 +39,11 @@ const useRevisionsForCollection = () => {
 
     setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: 'loading' }), rs));
 
-    if (needToFetch.length) {
-      workItemRevisions(collection, [...new Set(needToFetch)]).then(revisions => (
-        setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs))
-      ));
-    }
+    if (!needToFetch.length) return;
+
+    workItemRevisions(collection, [...new Set(needToFetch)]).then(revisions => (
+      setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs))
+    ));
   }, [collection, revisions]);
 
   return [revisions, getRevisions] as const;

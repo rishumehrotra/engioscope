@@ -47,6 +47,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
     <li
       className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out
       rounded-lg shadow relative workitem-body"
+      style={{ contain: 'content' }}
     >
       <button
         className="w-full text-left"

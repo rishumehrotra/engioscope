@@ -121,7 +121,7 @@ export const GanttRow: React.FC<GanttRowProps> = ({
     <g
       onMouseOver={() => highlight(true)}
       onMouseLeave={() => highlight(false)}
-      style={{ contain: 'content' }}
+      style={{ contain: 'strict' }}
     >
       <rect
       // background
