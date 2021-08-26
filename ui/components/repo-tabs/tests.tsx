@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactTooltip from 'react-tooltip';
 import type { RepoAnalysis } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
@@ -11,7 +10,6 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
   count: tests?.total || 0,
   content: () => (
     <TabContents gridCols={1}>
-      <ReactTooltip />
       {tests ? (
         <>
           <table className="table-auto text-center divide-y divide-gray-200">

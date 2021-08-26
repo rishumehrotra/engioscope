@@ -1,6 +1,5 @@
 import React from 'react';
 import { add } from 'rambda';
-import ReactTooltip from 'react-tooltip';
 import { Link, useHistory } from 'react-router-dom';
 import type { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../common/AlertMessage';
@@ -18,7 +17,6 @@ export default (commits: RepoAnalysis['commits']): Tab => {
     count: commits.count,
     content: () => (
       <TabContents gridCols={1}>
-        <ReactTooltip />
         {commits.count === 0
           ? (
             <AlertMessage message="No commits to this repo in the last month" />

@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
-import ReactTooltip from 'react-tooltip';
 import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
@@ -88,7 +87,6 @@ const Repos: React.FC = () => {
 
   return (
     <div>
-      <ReactTooltip />
       <AppliedFilters type="repos" count={topRepos.length} />
       { repos.length ? (
         <>
