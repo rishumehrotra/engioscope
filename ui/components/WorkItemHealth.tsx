@@ -1,5 +1,8 @@
+import prettyMilliseconds from 'pretty-ms';
+import { add } from 'rambda';
 import React, { useState } from 'react';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
+import { exists } from '../helpers/utils';
 import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
 
@@ -35,6 +38,12 @@ type WorkItemProps = {
   getRevisions: (workItemIds: number[]) => void;
 };
 
+type WorkItemStats = {
+  bugs: number;
+  features: number;
+  clts: (number | undefined)[];
+};
+
 const WorkItem: React.FC<WorkItemProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
   isFirst, revisions, getRevisions
@@ -42,6 +51,26 @@ const WorkItem: React.FC<WorkItemProps> = ({
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
 
   const workItem = workItemsById[workItemId];
+
+  const { bugs, features, clts } = (workItemsIdTree[workItemId] || []).reduce<WorkItemStats>((acc, id) => {
+    const workItem = workItemsById[id];
+    return {
+      bugs: workItem.type === 'Bug' ? acc.bugs + 1 : acc.bugs,
+      features: workItem.type === 'Feature' ? acc.features + 1 : acc.features,
+      clts: [
+        ...acc.clts,
+        workItem.clt?.start && workItem.clt.end
+          ? (new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime())
+          : undefined
+      ]
+    };
+  }, {
+    bugs: 0,
+    features: 0,
+    clts: []
+  });
+
+  const filteredClts = clts.filter(exists);
 
   return (
     <li
@@ -87,10 +116,30 @@ const WorkItem: React.FC<WorkItemProps> = ({
         <div className="text-base font-normal text-gray-800">
           <span className="text-blue-gray text-sm my-2">
             Bundle size
-            {' '}
-            <span className="font-semibold text-base">{(workItemsIdTree[workItemId] || []).length}</span>
+            {': '}
+            <span className="font-semibold">
+              {`${(workItemsIdTree[workItemId] || []).length}`}
+            </span>
+            <span>
+              {` (${features} features ${bugs} bugs)`}
+            </span>
           </span>
+          { filteredClts.length
+            ? (
+              <span className="text-blue-gray text-sm my-2 ml-2">
+                <span>|&nbsp;&nbsp;CLT:  </span>
+                <span className="font-semibold">
+                  {`${prettyMilliseconds(Math.min(...filteredClts))} - 
+                  ${prettyMilliseconds(Math.max(...filteredClts))}`}
+                </span>
+                <span>
+                  {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
+                </span>
+              </span>
+            )
+            : null}
         </div>
+
       </button>
       {isExpanded ? (
         <div className="mt-4 cursor-default">
