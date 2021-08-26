@@ -146,7 +146,7 @@ export type UIWorkItemRevision = {
 };
 
 export type AnalysedWorkItems = {
-  ids: Record<number, number[]>;
+  ids: Record<number, number[] | undefined>;
   byId: Record<number, UIWorkItem>;
 };
 

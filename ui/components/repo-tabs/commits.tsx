@@ -58,7 +58,7 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>): Tab =>
                               className="rounded-full inline-block mr-2"
                             />
                             <div>
-                              <span className="dev-name text-blue-600 capitalize">
+                              <span className="dev-name font-bold text-blue-600 capitalize">
                                 {commitsByDev.name}
                               </span>
                               <p className="text-gray-500 hover:no-underline">

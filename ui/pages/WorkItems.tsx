@@ -78,7 +78,8 @@ const WorkItems: React.FC = () => {
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
   const { workItems } = workItemAnalysis;
-  const topLevelWorkItems = workItems.ids[0].map(id => workItems.byId[id]);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const topLevelWorkItems = workItems.ids[0]!.map(id => workItems.byId[id]);
 
   const filteredWorkItems = topLevelWorkItems
     .filter(search === undefined ? dontFilter : bySearchTerm(search))

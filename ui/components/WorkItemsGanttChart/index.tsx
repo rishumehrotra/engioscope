@@ -24,17 +24,18 @@ const expandedState = (
   rowPath: string,
   renderedRowPaths: string[],
   parentWorkItemId: number,
-  workItemsIdTree: Record<number, number[]>
+  workItemsIdTree: AnalysedWorkItems['ids']
 ): ExpandedState => {
   const workItemId = workItemIdFromRowPath(rowPath);
-  if (!workItemsIdTree[workItemId] || !removeAncestors(rowPath, parentWorkItemId, workItemsIdTree[workItemId]).length) return 'no-children';
+  const children = workItemsIdTree[workItemId];
+  if (!children || !removeAncestors(rowPath, parentWorkItemId, children).length) return 'no-children';
   return renderedRowPaths.filter(r => r.startsWith(rowPath)).length === 1
     ? 'collapsed'
     : 'expanded';
 };
 
 const toggleExpandState = (
-  rowPath: string, workItemsIdTree: Record<number, number[]>,
+  rowPath: string, workItemsIdTree: AnalysedWorkItems['ids'],
   parentWorkItemId: number, renderedRowPaths: string[]
 ) => {
   const state = expandedState(rowPath, renderedRowPaths, parentWorkItemId, workItemsIdTree);
@@ -51,7 +52,9 @@ const toggleExpandState = (
       ...removeAncestors(
         rowPath,
         parentWorkItemId,
-        workItemsIdTree[workItemIdFromRowPath(rowPath)]
+        // Ignoring since `expandedState` eliminnates this possibility
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        workItemsIdTree[workItemIdFromRowPath(rowPath)]!
       ).map(id => `${rowPath}/${id}`),
       ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
     ],
@@ -72,10 +75,10 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
   revisions, getRevisions
 }) => {
-  const [rowPathsToRender, setRowPathsToRender] = useState(workItemsIdTree[workItemId].map(String));
+  const [rowPathsToRender, setRowPathsToRender] = useState((workItemsIdTree[workItemId] || []).map(String));
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const topLevelChildrenIds = useMemo(() => workItemsIdTree[workItemId], [workItemId, workItemsIdTree]);
+  const topLevelChildrenIds = useMemo(() => workItemsIdTree[workItemId] || [], [workItemId, workItemsIdTree]);
   const height = useMemo(() => svgHeight(rowPathsToRender.length), [rowPathsToRender.length]);
 
   const topLevelRevisions = useMemo(() => {
@@ -117,7 +120,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   const onToggle = useCallback((rowPath: string) => {
     const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree, workItemId, rowPathsToRender);
     setRowPathsToRender(rowPaths);
-    getRevisions(childIds);
+    if (childIds) getRevisions(childIds);
   }, [getRevisions, rowPathsToRender, workItemId, workItemsIdTree]);
 
   return (

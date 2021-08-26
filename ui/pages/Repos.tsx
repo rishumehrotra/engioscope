@@ -56,7 +56,7 @@ const LoadMore: React.FC<{hiddenReposCount: number; loadMore: () => void}> = ({ 
         onClick={loadMore}
         className="w-32 text-base link-text"
       >
-        Show more...
+        Show more
       </button>
     </div>
     <div className="zigzag mx-4" />

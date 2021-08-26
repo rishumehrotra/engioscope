@@ -52,23 +52,24 @@ const WorkItem: React.FC<WorkItemProps> = ({
 
   const workItem = workItemsById[workItemId];
 
-  const { bugs, features, clts } = (workItemsIdTree[workItemId] || []).reduce<WorkItemStats>((acc, id) => {
-    const workItem = workItemsById[id];
-    return {
-      bugs: workItem.type === 'Bug' ? acc.bugs + 1 : acc.bugs,
-      features: workItem.type === 'Feature' ? acc.features + 1 : acc.features,
-      clts: [
-        ...acc.clts,
-        workItem.clt?.start && workItem.clt.end
-          ? (new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime())
-          : undefined
-      ]
-    };
-  }, {
-    bugs: 0,
-    features: 0,
-    clts: []
-  });
+  const { bugs, features, clts } = (workItemsIdTree[workItemId] || [])
+    .reduce<WorkItemStats>((acc, id) => {
+      const workItem = workItemsById[id];
+      return {
+        bugs: workItem.type === 'Bug' ? acc.bugs + 1 : acc.bugs,
+        features: workItem.type === 'Feature' ? acc.features + 1 : acc.features,
+        clts: [
+          ...acc.clts,
+          workItem.clt?.start && workItem.clt.end
+            ? (new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime())
+            : undefined
+        ]
+      };
+    }, {
+      bugs: 0,
+      features: 0,
+      clts: []
+    });
 
   const filteredClts = clts.filter(exists);
 
@@ -139,7 +140,6 @@ const WorkItem: React.FC<WorkItemProps> = ({
             )
             : null}
         </div>
-
       </button>
       {isExpanded ? (
         <div className="mt-4 cursor-default">
