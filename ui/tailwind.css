@@ -33,6 +33,10 @@ body {
 @apply text-blue-600 hover:underline
 }
 
+.commits-profile:hover .dev-name {
+  @apply link-text underline;
+}
+
 .zigzag { 
   width: 100%; 
   height: 10px; 

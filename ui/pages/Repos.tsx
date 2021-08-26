@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
@@ -10,6 +10,7 @@ import useFetchForProject from '../hooks/use-fetch-for-project';
 import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import Loading from '../components/Loading';
+import { aggregateDevs } from '../helpers/aggregate-devs';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -72,7 +73,12 @@ const Repos: React.FC = () => {
   const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
   const [page, setPage] = useState<number>(1);
   const loadMore = useCallback(() => setPage(Number(page || 1) + 1), [page]);
-  if (projectAnalysis === 'loading') return <Loading />;
+  const aggregatedDevs = useMemo(() => {
+    if (projectAnalysis === 'loading') return 'loading';
+    return aggregateDevs(projectAnalysis);
+  }, [projectAnalysis]);
+
+  if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
   const repos = projectAnalysis.repos
     .filter(search === undefined ? dontFilter : bySearch(search))
@@ -90,18 +96,31 @@ const Repos: React.FC = () => {
       <AppliedFilters type="repos" count={topRepos.length} />
       { repos.length ? (
         <>
-          {
-            topRepos.length ? topRepos.map((repo, index) => <RepoHealth repo={repo} key={repo.name} isFirst={index === 0} />) : null
-          }
+          {topRepos.length
+            ? topRepos.map((repo, index) => (
+              <RepoHealth
+                repo={repo}
+                key={repo.name}
+                aggregatedDevs={aggregatedDevs}
+                isFirst={index === 0}
+              />
+            ))
+            : null}
           {(repos.length >= topRepos.length + bottomRepos.length) ? (
             <LoadMore
               loadMore={loadMore}
               hiddenReposCount={repos.length - topRepos.length - bottomRepos.length}
             />
           ) : null}
-          {
-            bottomRepos.length ? bottomRepos.map(repo => <RepoHealth repo={repo} key={repo.name} />) : null
-          }
+          {bottomRepos.length
+            ? bottomRepos.map(repo => (
+              <RepoHealth
+                repo={repo}
+                key={repo.name}
+                aggregatedDevs={aggregatedDevs}
+              />
+            ))
+            : null}
         </>
       ) : <AlertMessage message="No repos found" />}
     </div>

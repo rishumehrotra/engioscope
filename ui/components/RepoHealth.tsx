@@ -17,6 +17,7 @@ import type { Tab } from './repo-tabs/Tabs';
 import { TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
 import usePageName from '../hooks/use-page-name';
+import type { Dev } from '../types';
 
 const repoSubtitle = (languages: RepoAnalysis['languages']) => {
   if (!languages) return;
@@ -35,16 +36,22 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     ));
 };
 
-const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst?: boolean}> = ({ repo, isFirst }) => {
+type RepoHealthProps = {
+  repo: RepoAnalysis;
+  aggregatedDevs: Record<string, Dev>;
+  isFirst?: boolean;
+};
+
+const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }) => {
   const pageName = usePageName();
   const tabs = useMemo(() => [
     builds(repo.builds),
     branches(repo.defaultBranch, repo.branches),
-    commits(repo.commits),
+    commits(repo, aggregatedDevs),
     prs(repo.prs),
     tests(repo.tests),
     codeQuality(repo.codeQuality)
-  ], [repo]);
+  ], [repo, aggregatedDevs]);
 
   const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);

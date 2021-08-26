@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
-import type { ProjectRepoAnalysis } from '../../shared/types';
 import AppliedFilters from '../components/AppliedFilters';
 import Developer from '../components/Dev';
 import Loading from '../components/Loading';
@@ -10,26 +9,7 @@ import { useSort } from '../hooks/sort-hooks';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { repoMetrics } from '../network';
 import type { Dev } from '../types';
-
-const aggregateDevs = (projectAnalysis: ProjectRepoAnalysis) => (
-  Object.values(projectAnalysis.repos.flatMap(repo => (
-    repo.commits.byDev.map<Dev>(d => ({
-      name: d.name,
-      imageUrl: d.imageUrl,
-      repos: [{
-        name: repo.name,
-        byDate: d.byDate,
-        changes: d.changes
-      }]
-    }))
-  )).reduce<Record<string, Dev>>((acc, dev) => ({
-    ...acc,
-    [dev.name]: {
-      ...dev,
-      repos: [...(acc[dev.name]?.repos || []), ...dev.repos]
-    }
-  }), {}))
-);
+import { aggregateDevs } from '../helpers/aggregate-devs';
 
 const sorters: SortMap<Dev> = {
   'Name': (a, b) => b.name.toLowerCase().replace(/["“”]/gi, '').localeCompare(
@@ -46,7 +26,7 @@ const Devs: React.FC = () => {
   const sorter = useSort(sorters, 'Name');
   const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
-    return aggregateDevs(projectAnalysis)
+    return Object.values(aggregateDevs(projectAnalysis))
       .filter(search === undefined ? dontFilter : bySearch(search))
       .sort(sorter);
   }, [projectAnalysis, search, sorter]);

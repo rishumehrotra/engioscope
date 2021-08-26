@@ -8,9 +8,18 @@ import TabContents from './TabContents';
 import CommitTimeline from '../commits/CommitTimeline';
 import { ProfilePic } from '../common/ProfilePic';
 import Changes from '../commits/Changes';
+import type { Dev } from '../../types';
 
-export default (commits: RepoAnalysis['commits']): Tab => {
+export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>): Tab => {
+  const { commits } = repo;
   const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));
+  const subtitle = (devName: string) => {
+    const excludedRepos = aggregatedDevs[devName].repos.filter(r => r.name !== repo.name);
+    const commitCount = excludedRepos.flatMap(r => Object.values(r.byDate)).reduce(add, 0);
+    return excludedRepos.length > 0
+      ? `${commitCount} commits in ${excludedRepos.length} other ${excludedRepos.length === 1 ? 'repo' : 'repos'}`
+      : 'No commits in other repos';
+  };
 
   return {
     title: 'Commits',
@@ -39,15 +48,24 @@ export default (commits: RepoAnalysis['commits']): Tab => {
 
                     return (
                       <tr key={commitsByDev.name}>
-                        <td className="px-6 py-4 text-left capitalize text-sm link-text">
-                          <ProfilePic
-                            alt={`Profile pic for ${commitsByDev.name}`}
-                            src={commitsByDev.imageUrl}
-                            width="44"
-                            height="44"
-                            className="rounded-full inline-block mr-2"
-                          />
-                          <Link to={developerUrl}>{commitsByDev.name}</Link>
+                        <td className="px-6 py-4 text-left text-sm">
+                          <Link to={developerUrl} className="flex commits-profile">
+                            <ProfilePic
+                              alt={`Profile pic for ${commitsByDev.name}`}
+                              src={commitsByDev.imageUrl}
+                              width="44"
+                              height="44"
+                              className="rounded-full inline-block mr-2"
+                            />
+                            <div>
+                              <span className="dev-name text-blue-600 capitalize">
+                                {commitsByDev.name}
+                              </span>
+                              <p className="text-gray-500 hover:no-underline">
+                                {subtitle(commitsByDev.name)}
+                              </p>
+                            </div>
+                          </Link>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {Object.values(commitsByDev.byDate).reduce(add, 0)}
