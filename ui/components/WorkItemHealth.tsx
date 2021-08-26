@@ -129,8 +129,8 @@ const WorkItem: React.FC<WorkItemProps> = ({
               <span className="text-blue-gray text-sm my-2 ml-2">
                 <span>|&nbsp;&nbsp;CLT:  </span>
                 <span className="font-semibold">
-                  {`${prettyMilliseconds(Math.min(...filteredClts))} - 
-                  ${prettyMilliseconds(Math.max(...filteredClts))}`}
+                  {`${prettyMilliseconds(Math.min(...filteredClts), { compact: true })} - 
+                  ${prettyMilliseconds(Math.max(...filteredClts), { compact: true })}`}
                 </span>
                 <span>
                   {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
