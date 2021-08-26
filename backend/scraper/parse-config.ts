@@ -106,12 +106,12 @@ export type ParsedConfig = Readonly<{
 
 const parseCollection = (config: Config) => (collection: CollectionConfig): ParsedCollection => {
   const workitems: ParsedCollectionWorkItemConfig = {
-    label: config.azure.workitems?.label ?? collection.workitems?.label ?? 'Features & Bugs',
-    getWorkItems: config.azure.workitems?.getWorkItems ?? collection.workitems?.getWorkItems ?? ['Feature', 'Bug'],
-    groupUnder: config.azure.workitems?.groupUnder ?? collection.workitems?.groupUnder ?? ['Feature', 'Bug'],
-    skipChildren: config.azure.workitems?.skipChildren ?? collection.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
-    environmentField: config.azure.workitems?.environmentField ?? collection.workitems?.environmentField,
-    changeLeadTime: config.azure.workitems?.changeLeadTime ?? collection.workitems?.changeLeadTime
+    label: collection.workitems?.label ?? config.azure.workitems?.label ?? 'Features & Bugs',
+    getWorkItems: collection.workitems?.getWorkItems ?? config.azure.workitems?.getWorkItems ?? ['Feature', 'Bug'],
+    groupUnder: collection.workitems?.groupUnder ?? config.azure.workitems?.groupUnder ?? ['Feature', 'Bug'],
+    skipChildren: collection.workitems?.skipChildren ?? config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
+    environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
+    changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime
   };
 
   return {
@@ -121,7 +121,9 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
       if (typeof project === 'string') {
         return {
           name: project,
-          releasePipelines: collection.releasePipelines ?? { stagesToHighlight: [] },
+          releasePipelines: collection.releasePipelines
+            ?? config.azure.releasePipelines
+            ?? { stagesToHighlight: [] },
           workitems: {
             groupUnder: workitems.groupUnder,
             label: workitems.label
@@ -131,7 +133,10 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
 
       return {
         name: project.name,
-        releasePipelines: project.releasePipelines ?? collection.releasePipelines ?? { stagesToHighlight: [] },
+        releasePipelines: project.releasePipelines
+          ?? collection.releasePipelines
+          ?? config.azure.releasePipelines
+          ?? { stagesToHighlight: [] },
         workitems: {
           groupUnder: project.workitems?.groupUnder ?? workitems.groupUnder,
           label: project.workitems?.label ?? workitems.label

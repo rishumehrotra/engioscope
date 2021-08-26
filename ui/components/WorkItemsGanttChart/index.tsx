@@ -143,7 +143,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
         {rowPathsToRender.map((rowPath, rowIndex, list) => (
           <GanttRow
             key={rowPath}
-            isLast={rowIndex === list.length - 1}
+            isLast={rowIndex === list.length}
             workItem={workItemsById[workItemIdFromRowPath(rowPath)]}
             indentation={indentation(rowPath)}
             rowIndex={rowIndex}
