@@ -69,7 +69,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
                 alt={`${workItem.type} icon`}
                 width="18"
               />
-              {workItem.title}
+              {`${workItem.id}: ${workItem.title}`}
             </a>
           </div>
           {isExpanded ? (
