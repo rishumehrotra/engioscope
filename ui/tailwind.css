@@ -32,3 +32,15 @@ body {
 .link-text {
 @apply text-blue-600 hover:underline
 }
+
+.zigzag { 
+  width: 100%; 
+  height: 10px; 
+  background: 
+    linear-gradient(135deg, #fff 25%, transparent 25%) -2.5px 0, 
+    linear-gradient(225deg, #fff 25%, transparent 25%) -2.5px 0, 
+    linear-gradient(315deg, #fff 25%, transparent 25%) 2.5px 0, 
+    linear-gradient(45deg, #fff 25%, transparent 25%) 2.5px 0; 
+  background-size: 10px 10px; 
+  background-color: rgba(156, 163, 175, 1)
+}

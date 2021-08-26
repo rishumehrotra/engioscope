@@ -34,7 +34,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages']) => {
     ));
 };
 
-const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, isFirst }) => {
+const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst?: boolean}> = ({ repo, isFirst }) => {
   const pageName = usePageName();
   const tabs = useMemo(() => [
     builds(repo.builds),
@@ -70,7 +70,7 @@ const RepoHealth: React.FC<{repo: RepoAnalysis; isFirst: boolean}> = ({ repo, is
       subtitle={repoSubtitle(repo.languages)}
       tag={repo.commits.count === 0 ? 'Inactive' : undefined}
       onCardClick={onCardClick}
-      isExpanded={selectedTab !== null || isFirst}
+      isExpanded={selectedTab !== null || isFirst || false}
     >
       {repo.pipelineCount ? (
         <div className="mx-6 flex flex-wrap items-baseline">

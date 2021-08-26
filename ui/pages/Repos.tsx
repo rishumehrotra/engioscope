@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import ReactTooltip from 'react-tooltip';
 import AlertMessage from '../components/common/AlertMessage';
@@ -29,6 +29,15 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
   (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
 );
 
+const TOP = 20;
+const BOTTOM = 10;
+
+const top = (page: number, repos: RepoAnalysis[]) => {
+  const maxNumberOfPages = repos.length - (TOP * page) - BOTTOM;
+  if (page >= maxNumberOfPages) return repos;
+  return [...repos.slice(0, page * TOP)];
+};
+
 const sorters: SortMap<RepoAnalysis> = {
   'Builds': (a, b) => (a.builds?.count || 0) - (b.builds?.count || 0),
   'Branches': (a, b) => a.branches.total - b.branches.total,
@@ -38,6 +47,22 @@ const sorters: SortMap<RepoAnalysis> = {
   'Code quality': (a, b) => qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality)
 };
 
+const LoadMore: React.FC<{hiddenReposCount: number; loadMore: () => void}> = ({ hiddenReposCount, loadMore }) => (
+  <div className="flex justify-between items-center my-16">
+    <div className="zigzag mx-4" />
+    <div className="border rounded-sm p-4">
+      <div className="text-sm">{`${hiddenReposCount} repos hidden`}</div>
+      <button
+        onClick={loadMore}
+        className="w-32 text-base link-text"
+      >
+        Show more...
+      </button>
+    </div>
+    <div className="zigzag mx-4" />
+  </div>
+);
+
 const Repos: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   const sorter = useSort(sorters, 'Builds');
@@ -46,7 +71,8 @@ const Repos: React.FC = () => {
   const [buildsGreaterThanZero] = useQueryParam<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
   const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
-
+  const [page, setPage] = useState<number>(1);
+  const loadMore = useCallback(() => setPage(Number(page || 1) + 1), [page]);
   if (projectAnalysis === 'loading') return <Loading />;
 
   const repos = projectAnalysis.repos
@@ -57,17 +83,32 @@ const Repos: React.FC = () => {
     .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
     .sort(sorter);
 
+  const topRepos = top(page || 1, repos);
+  const bottomRepos = [...repos.slice(repos.length - BOTTOM)];
+
   return (
     <div>
       <ReactTooltip />
-      <AppliedFilters type="repos" count={repos.length} />
-      {
-        repos.length ? repos.map((repo, index) => (
-          <RepoHealth repo={repo} key={repo.name} isFirst={index === 0} />
-        )) : <AlertMessage message="No repos found" />
-      }
+      <AppliedFilters type="repos" count={topRepos.length} />
+      { repos.length ? (
+        <>
+          {
+            topRepos.length ? topRepos.map((repo, index) => <RepoHealth repo={repo} key={repo.name} isFirst={index === 0} />) : null
+          }
+          {(repos.length >= topRepos.length + bottomRepos.length) ? (
+            <LoadMore
+              loadMore={loadMore}
+              hiddenReposCount={repos.length - topRepos.length - bottomRepos.length}
+            />
+          ) : null}
+          {
+            bottomRepos.length ? bottomRepos.map(repo => <RepoHealth repo={repo} key={repo.name} />) : null
+          }
+        </>
+      ) : <AlertMessage message="No repos found" />}
     </div>
   );
 };
 
 export default Repos;
+
