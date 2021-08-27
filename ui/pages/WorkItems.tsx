@@ -77,19 +77,31 @@ const WorkItems: React.FC = () => {
     return randomColor;
   }, [colorsForStages]);
 
+  const filteredWorkItems = useMemo(() => {
+    if (workItemAnalysis === 'loading') return [];
+    const { workItems } = workItemAnalysis;
+    if (!workItems) return [];
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const topLevelWorkItems = workItems.ids[0]!.map(id => workItems.byId[id]);
+    return topLevelWorkItems
+      .filter(search === undefined ? dontFilter : bySearchTerm(search))
+      .sort(sorter);
+  }, [search, sorter, workItemAnalysis]);
+
+  const [topWorkItems, bottomWorkItems] = useMemo(() => (
+    [topItems(page, filteredWorkItems), bottomItems(filteredWorkItems)]
+  ), [filteredWorkItems, page]);
+
+  useEffect(() => {
+    const ids = [...topItems(page, filteredWorkItems).map(({ id }) => id), ...bottomItems(filteredWorkItems).map(({ id }) => id)];
+    getRevisions(ids);
+  }, [filteredWorkItems, getRevisions, page, workItemAnalysis]);
+
   if (workItemAnalysis === 'loading') return <Loading />;
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
   const { workItems } = workItemAnalysis;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const topLevelWorkItems = workItems.ids[0]!.map(id => workItems.byId[id]);
-
-  const filteredWorkItems = topLevelWorkItems
-    .filter(search === undefined ? dontFilter : bySearchTerm(search))
-    .sort(sorter);
-
-  const topWorkItems = topItems(page, filteredWorkItems);
-  const bottomWorkItems = bottomItems(filteredWorkItems);
 
   return (
     <>
