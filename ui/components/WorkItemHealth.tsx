@@ -33,7 +33,7 @@ type WorkItemProps = {
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
   colorForStage: (stage: string) => string;
-  isFirst: boolean;
+  isFirst?: boolean;
   revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
   getRevisions: (workItemIds: number[]) => void;
 };
@@ -48,7 +48,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
   isFirst, revisions, getRevisions
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
+  const [isExpanded, setIsExpanded] = useState<boolean>(isFirst || false);
 
   const workItem = workItemsById[workItemId];
 

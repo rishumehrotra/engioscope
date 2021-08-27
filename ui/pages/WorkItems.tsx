@@ -13,6 +13,8 @@ import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import AppliedFilters from '../components/AppliedFilters';
 import Loading from '../components/Loading';
+import usePagination, { bottomItems, topItems } from '../hooks/pagination';
+import LoadMore from '../components/LoadMore';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -57,6 +59,7 @@ const WorkItems: React.FC = () => {
   const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam<string>('search');
   const colorsForStages = useRef<Record<string, string>>({});
+  const [page, loadMore] = usePagination();
 
   const sorterMap = useMemo(() => {
     if (workItemAnalysis === 'loading') return sorters(() => 0);
@@ -85,11 +88,14 @@ const WorkItems: React.FC = () => {
     .filter(search === undefined ? dontFilter : bySearchTerm(search))
     .sort(sorter);
 
+  const topWorkItems = topItems(page, filteredWorkItems);
+  const bottomWorkItems = bottomItems(filteredWorkItems);
+
   return (
     <>
       <AppliedFilters type="workitems" count={filteredWorkItems.length} />
       <ul>
-        {filteredWorkItems.map((workItem, index) => (
+        {topWorkItems.map((workItem, index) => (
           <WorkItem
             key={workItem.id}
             workItemId={workItem.id}
@@ -97,6 +103,23 @@ const WorkItems: React.FC = () => {
             workItemsIdTree={workItems.ids}
             colorForStage={colorForStage}
             isFirst={index === 0}
+            revisions={revisions}
+            getRevisions={getRevisions}
+          />
+        ))}
+        {(filteredWorkItems.length >= topWorkItems.length + bottomWorkItems.length) ? (
+          <LoadMore
+            loadMore={loadMore}
+            hiddenItemsCount={filteredWorkItems.length - topWorkItems.length - bottomWorkItems.length}
+          />
+        ) : null}
+        {bottomWorkItems.map(workItem => (
+          <WorkItem
+            key={workItem.id}
+            workItemId={workItem.id}
+            workItemsById={workItems.byId}
+            workItemsIdTree={workItems.ids}
+            colorForStage={colorForStage}
             revisions={revisions}
             getRevisions={getRevisions}
           />
