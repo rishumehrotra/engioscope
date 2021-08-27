@@ -136,6 +136,37 @@ const RevisionBar: React.FC<RevisionBarProps> = memo(({
   );
 });
 
+type RenderRevisionsProps = Pick<GanttRowProps, 'revisions'| 'rowIndex' | 'timeToXCoord' | 'colorForStage'>
+& {'barWidth': ReturnType<typeof barWidthUsing>};
+
+const renderRevisions = ({
+  revisions, rowIndex, barWidth, timeToXCoord, colorForStage
+}: RenderRevisionsProps) => (revisions === 'loading' ? (
+  <foreignObject
+    x={textWidth + barStartPadding + 10}
+    y={barYCoord(rowIndex)}
+    width={svgWidth - textWidth - barStartPadding - 10}
+    height={barHeight}
+    className="pointer-events-none"
+  >
+    <div className="text-xs pl-1 w-full text-gray-500">
+      Loading...
+    </div>
+  </foreignObject>
+) : (
+  revisions.slice(0, -1).map((revision, revisionIndex) => (
+    <RevisionBar
+      key={revision.state + revision.date}
+      width={barWidth(revisions, revisionIndex)}
+      left={timeToXCoord(revision.date)}
+      revision={revisions[revisionIndex]}
+      nextRevision={revisions[revisionIndex + 1]}
+      rowIndex={rowIndex}
+      color={colorForStage(revision.state)}
+    />
+  ))
+));
+
 export type GanttRowProps = {
   workItem: UIWorkItem;
   isLast: boolean;
@@ -221,31 +252,9 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
           </a>
         </div>
       </foreignObject>
-      {revisions === 'loading' ? (
-        <foreignObject
-          x={textWidth + barStartPadding + 10}
-          y={barYCoord(rowIndex)}
-          width={svgWidth - textWidth - barStartPadding - 10}
-          height={barHeight}
-          className="pointer-events-none"
-        >
-          <div className="text-xs pl-1 w-full text-gray-500">
-            Loading...
-          </div>
-        </foreignObject>
-      ) : (
-        revisions.slice(0, -1).map((revision, revisionIndex) => (
-          <RevisionBar
-            key={revision.state + revision.date}
-            width={barWidth(revisions, revisionIndex)}
-            left={timeToXCoord(revision.date)}
-            revision={revisions[revisionIndex]}
-            nextRevision={revisions[revisionIndex + 1]}
-            rowIndex={rowIndex}
-            color={colorForStage(revision.state)}
-          />
-        ))
-      )}
+      {renderRevisions({
+        revisions, rowIndex, barWidth, timeToXCoord, colorForStage
+      })}
       {!isLast ? (
         <line
           x1="0"
