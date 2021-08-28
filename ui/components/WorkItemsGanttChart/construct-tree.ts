@@ -1,5 +1,7 @@
 import { last } from 'rambda';
 import type { AnalysedWorkItems, UIWorkItem } from '../../../shared/types';
+import { exists } from '../../helpers/utils';
+import { filterTree, mapTree } from './tree-traversal';
 import type { ExpandedState } from './types';
 
 type NodeCommonProps = {
@@ -29,6 +31,14 @@ type EnvironmentGroupNode = NodeCommonProps & {
   children: WorkItemNode[];
   path: string;
   expandedState: Exclude<ExpandedState, 'no-children'>;
+};
+
+type ProjectNode = NodeCommonProps & {
+  type: 'project';
+  label: string;
+  path: string;
+  expandedState: Exclude<ExpandedState, 'no-children'>;
+  children: TreeNode[];
 };
 
 type TreeNode = (WorkItemNode | WorkItemTypeNode | EnvironmentGroupNode);
@@ -99,20 +109,49 @@ export const constructTree = (
     });
   };
 
-  return (workItemId: number): TreeNode[] => {
+  return (workItemId: number, projectName: string) => {
     const rootWorkItemNodeWoc: WithoutChildren<WorkItemNode> = {
       id: workItemId,
       type: 'workitem',
       path: '',
       expandedState: 'expanded',
-      depth: -1
+      depth: 0
     };
 
-    return buildForAncestor([rootWorkItemNodeWoc]);
+    const fullTree = buildForAncestor([rootWorkItemNodeWoc]);
+
+    const projectNode: ProjectNode = {
+      type: 'project',
+      label: projectName,
+      path: '/own-project',
+      depth: 0,
+      expandedState: 'expanded',
+      children: fullTree.map(filterTree<TreeNode>(node => (
+        node.type === 'workitem'
+        && workItemsById[node.id].project === projectName
+      )))
+        .filter(exists)
+        .map(mapTree(node => ({
+          ...node, path: `/own-project${node.path}`
+        })))
+    };
+
+    const allProjectsNode: ProjectNode = {
+      type: 'project',
+      label: 'All projects',
+      path: '/all-projects',
+      depth: 0,
+      expandedState: 'collapsed',
+      children: fullTree
+        .map(mapTree<TreeNode, TreeNode>(node => ({
+          ...node, path: `/all-projects${node.path}`
+        })))
+    };
+    return [projectNode, allProjectsNode];
   };
 };
 
-export const toggleExpandState = (path: string) => (node: TreeNode): TreeNode => {
+export const toggleExpandState = (path: string) => (node: (TreeNode | ProjectNode)): (TreeNode | ProjectNode) => {
   if (node.path === path) {
     if (node.expandedState === 'no-children') return node;
 
@@ -131,7 +170,7 @@ export const toggleExpandState = (path: string) => (node: TreeNode): TreeNode =>
 
 type Row = (Omit<TreeNode, 'children'> & { childCount: number });
 
-export const rowsToRender = (rootNodes: TreeNode[]) => {
+export const rowsToRender = (rootNodes: (ProjectNode | TreeNode)[]) => {
   const flattenChildren = (node: TreeNode): Row[] => {
     const { children, ...nodeWithoutChildren } = node;
 
@@ -141,5 +180,5 @@ export const rowsToRender = (rootNodes: TreeNode[]) => {
     ];
   };
 
-  return rootNodes.flatMap(flattenChildren);
+  return rootNodes.flatMap(x => flattenChildren(x as TreeNode));
 };
