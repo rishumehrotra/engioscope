@@ -9,8 +9,9 @@ import {
   barHeight, contrastColour, barWidthUsing, makeDarker, barStartPadding
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
-import type { ExpandedState } from './types';
 import { mediumDate } from '../../helpers/utils';
+import type { Row } from './use-gantt-row';
+import { isNotWorkItemRow, isWorkItemRow } from './use-gantt-row';
 
 const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => (
   <>
@@ -136,12 +137,12 @@ const RevisionBar: React.FC<RevisionBarProps> = memo(({
   );
 });
 
-type RenderRevisionsProps = Pick<GanttRowProps, 'revisions'| 'rowIndex' | 'timeToXCoord' | 'colorForStage'>
+type RevisionsProps = Pick<GanttRowProps, 'revisions'| 'rowIndex' | 'timeToXCoord' | 'colorForStage'>
 & {'barWidth': ReturnType<typeof barWidthUsing>};
 
-const renderRevisions = ({
+const Revisions: React.FC<RevisionsProps> = ({
   revisions, rowIndex, barWidth, timeToXCoord, colorForStage
-}: RenderRevisionsProps) => (revisions === 'loading' ? (
+}) => (revisions === 'loading' ? (
   <foreignObject
     x={textWidth + barStartPadding + 10}
     y={barYCoord(rowIndex)}
@@ -154,47 +155,48 @@ const renderRevisions = ({
     </div>
   </foreignObject>
 ) : (
-  revisions.slice(0, -1).map((revision, revisionIndex) => (
-    <RevisionBar
-      key={revision.state + revision.date}
-      width={barWidth(revisions, revisionIndex)}
-      left={timeToXCoord(revision.date)}
-      revision={revisions[revisionIndex]}
-      nextRevision={revisions[revisionIndex + 1]}
-      rowIndex={rowIndex}
-      color={colorForStage(revision.state)}
-    />
-  ))
+  <>
+    {revisions.slice(0, -1).map((revision, revisionIndex) => (
+      <RevisionBar
+        key={revision.state + revision.date}
+        width={barWidth(revisions, revisionIndex)}
+        left={timeToXCoord(revision.date)}
+        revision={revisions[revisionIndex]}
+        nextRevision={revisions[revisionIndex + 1]}
+        rowIndex={rowIndex}
+        color={colorForStage(revision.state)}
+      />
+    ))}
+  </>
 ));
 
 export type GanttRowProps = {
-  workItem: UIWorkItem;
-  isLast: boolean;
+  row: Row;
   rowIndex: number;
-  indentation: number;
-  expandedState: ExpandedState;
+  isLast: boolean;
   timeToXCoord: (time: string) => number;
   onToggle: (rowPath: string) => void;
-  rowPath: string;
   colorForStage: (stage: string) => string;
   revisions: 'loading' | UIWorkItemRevision[];
 };
 
 export const GanttRow: React.FC<GanttRowProps> = memo(({
-  workItem, rowIndex, indentation, isLast, timeToXCoord,
-  colorForStage, expandedState, onToggle, revisions, rowPath
+  row, rowIndex, isLast, timeToXCoord, colorForStage, onToggle, revisions
 }) => {
   const barWidth = barWidthUsing(timeToXCoord);
   const [isHighlighted, highlight] = useState<boolean>(false);
 
-  const { cltStage } = cltStats(workItem);
-
-  const toggle = useCallback(() => { onToggle(rowPath); }, [onToggle, rowPath]);
+  const toggle = useCallback(
+    () => { onToggle(row.path); },
+    [onToggle, row.path]
+  );
 
   const rowColor = useMemo(() => {
-    const baseColor = makeTransparent(`#${workItem.color}`);
+    if (!isWorkItemRow(row)) return '#fff';
+
+    const baseColor = makeTransparent(`#${row.workItem.color}`);
     return isHighlighted ? makeDarker(baseColor) : baseColor;
-  }, [isHighlighted, workItem.color]);
+  }, [isHighlighted, row]);
 
   return (
     <g
@@ -210,14 +212,14 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
         height={textHeight}
         fill={rowColor}
       />
-      {cltStage !== 'Dev not done' ? (
+      {isWorkItemRow(row) && cltStats(row.workItem).cltStage !== 'Dev not done' ? (
         <line
           x1="1"
           y1={(textHeight + (rowPadding * 2)) * rowIndex}
           x2="1"
           y2={((textHeight + (rowPadding * 2)) * rowIndex) + textHeight}
           strokeWidth="3"
-          stroke={cltStage === 'Dev done' ? 'salmon' : 'limegreen'}
+          stroke={cltStats(row.workItem).cltStage === 'Dev done' ? 'salmon' : 'limegreen'}
         />
       ) : null}
       <foreignObject
@@ -229,32 +231,41 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
       >
         <div className="flex items-center">
           <TreeNodeButton
-            expandedState={expandedState}
+            expandedState={row.expandedState}
             onToggle={toggle}
-            indentation={indentation}
+            indentation={row.depth}
           />
-          <a
-            href={workItem.url}
-            className="link-text text truncate flex mt-1 items-center text-sm"
-            style={{ width: `${textWidth}px` }}
-            target="_blank"
-            rel="noreferrer"
-            data-tip={rowItemTooltip(workItem)}
-            data-html
-          >
-            <img
-              src={workItem.icon}
-              alt={`Icon for ${workItem.type}`}
-              width="16"
-              className="float-left mr-1"
-            />
-            {workItem.title}
-          </a>
+          {isWorkItemRow(row) ? (
+            <a
+              href={row.workItem.url}
+              className="link-text text truncate flex mt-1 items-center text-sm"
+              style={{ width: `${textWidth}px` }}
+              target="_blank"
+              rel="noreferrer"
+              data-tip={rowItemTooltip(row.workItem)}
+              data-html
+            >
+              <img
+                src={row.workItem.icon}
+                alt={`Icon for ${row.workItem.type}`}
+                width="16"
+                className="float-left mr-1"
+              />
+              {row.workItem.title}
+            </a>
+          ) : (
+            null
+          )}
+          {isNotWorkItemRow(row) ? `${row.label} (${row.childCount})` : null}
         </div>
       </foreignObject>
-      {renderRevisions({
-        revisions, rowIndex, barWidth, timeToXCoord, colorForStage
-      })}
+      <Revisions
+        revisions={revisions}
+        rowIndex={rowIndex}
+        barWidth={barWidth}
+        timeToXCoord={timeToXCoord}
+        colorForStage={colorForStage}
+      />
       {!isLast ? (
         <line
           x1="0"

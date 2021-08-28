@@ -9,58 +9,10 @@ import { Graticule } from './Graticule';
 import {
   svgWidth, createXCoordConverterFor, svgHeight, getMinDateTime, getMaxDateTime, xCoordConverterWithin
 } from './helpers';
-import type { ExpandedState } from './types';
 import VerticalCrosshair from './VerticalCrosshair';
+import useGanttRows from './use-gantt-row';
 
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
-const indentation = (rowPath: string) => rowPath.split('/').length - 1;
-
-const removeAncestors = (rowPath: string, parentWorkItemId: number, children: number[]) => {
-  const ancestors = [parentWorkItemId, ...rowPath.split('/').map(Number)];
-  return children.filter(child => !ancestors.includes(child));
-};
-
-const expandedState = (
-  rowPath: string,
-  renderedRowPaths: string[],
-  parentWorkItemId: number,
-  workItemsIdTree: AnalysedWorkItems['ids']
-): ExpandedState => {
-  const workItemId = workItemIdFromRowPath(rowPath);
-  const children = workItemsIdTree[workItemId];
-  if (!children || !removeAncestors(rowPath, parentWorkItemId, children).length) return 'no-children';
-  return renderedRowPaths.filter(r => r.startsWith(rowPath)).length === 1
-    ? 'collapsed'
-    : 'expanded';
-};
-
-const toggleExpandState = (
-  rowPath: string, workItemsIdTree: AnalysedWorkItems['ids'],
-  parentWorkItemId: number, renderedRowPaths: string[]
-) => {
-  const state = expandedState(rowPath, renderedRowPaths, parentWorkItemId, workItemsIdTree);
-  if (state === 'no-children') return { rowPaths: renderedRowPaths, childIds: [] };
-  if (state === 'expanded') {
-    return {
-      rowPaths: renderedRowPaths.filter(r => !r.startsWith(`${rowPath}/`)),
-      childIds: []
-    };
-  }
-  return {
-    rowPaths: [
-      ...renderedRowPaths.slice(0, renderedRowPaths.indexOf(rowPath) + 1),
-      ...removeAncestors(
-        rowPath,
-        parentWorkItemId,
-        // Ignoring since `expandedState` eliminnates this possibility
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        workItemsIdTree[workItemIdFromRowPath(rowPath)]!
-      ).map(id => `${rowPath}/${id}`),
-      ...renderedRowPaths.slice(renderedRowPaths.indexOf(rowPath) + 1)
-    ],
-    childIds: workItemsIdTree[workItemIdFromRowPath(rowPath)]
-  };
-};
 
 export type WorkItemsGanttChartProps = {
   workItemId: number;
@@ -75,11 +27,12 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
   revisions, getRevisions
 }) => {
-  const [rowPathsToRender, setRowPathsToRender] = useState((workItemsIdTree[workItemId] || []).map(String));
+  const [rows, toggleRow] = useGanttRows(workItemsIdTree, workItemsById, workItemId);
+
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const topLevelChildrenIds = useMemo(() => workItemsIdTree[workItemId] || [], [workItemId, workItemsIdTree]);
-  const height = useMemo(() => svgHeight(rowPathsToRender.length), [rowPathsToRender.length]);
+  const height = useMemo(() => svgHeight(rows.length), [rows.length]);
 
   const topLevelRevisions = useMemo(() => {
     if (topLevelChildrenIds.some(id => !revisions[id] || revisions[id] === 'loading')) return 'loading';
@@ -117,12 +70,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
     return getMaxDateTime(topLevelRevisions);
   }, [zoom, topLevelRevisions]);
 
-  const onToggle = useCallback((rowPath: string) => {
-    const { rowPaths, childIds } = toggleExpandState(rowPath, workItemsIdTree, workItemId, rowPathsToRender);
-    setRowPathsToRender(rowPaths);
-    if (childIds) getRevisions(childIds);
-  }, [getRevisions, rowPathsToRender, workItemId, workItemsIdTree]);
-
   return (
     <div className="relative">
       {zoom ? (
@@ -143,19 +90,16 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
           height={height}
           date={new Date(minDate)}
         />
-        {rowPathsToRender.map((rowPath, rowIndex, list) => (
+        {rows.map((row, rowIndex, list) => (
           <GanttRow
-            key={rowPath}
+            key={row.path}
             isLast={rowIndex === list.length}
-            workItem={workItemsById[workItemIdFromRowPath(rowPath)]}
-            indentation={indentation(rowPath)}
+            row={row}
             rowIndex={rowIndex}
             timeToXCoord={timeToXCoord}
-            onToggle={onToggle}
-            rowPath={rowPath}
-            expandedState={expandedState(rowPath, rowPathsToRender, workItemId, workItemsIdTree)}
+            onToggle={() => toggleRow(row.path)}
             colorForStage={colorForStage}
-            revisions={revisions[workItemIdFromRowPath(rowPath)] || 'loading'}
+            revisions={revisions[workItemIdFromRowPath(row.path)] || 'loading'}
           />
         ))}
         <DragZoom
