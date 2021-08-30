@@ -1,16 +1,14 @@
 import React, {
   memo,
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useMemo, useRef, useState
 } from 'react';
 import type { AnalysedWorkItems, UIWorkItemRevision } from '../../../shared/types';
 import DragZoom from './DragZoom';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
-import {
-  svgWidth, createXCoordConverterFor, svgHeight, getMinDateTime, getMaxDateTime, xCoordConverterWithin
-} from './helpers';
+import { svgWidth, svgHeight, xCoordConverterWithin } from './helpers';
 import VerticalCrosshair from './VerticalCrosshair';
-import useGanttRows from './use-gantt-rows';
+import useGanttRows, { isProjectRow } from './use-gantt-rows';
 
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 
@@ -31,44 +29,31 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
 
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const topLevelChildrenIds = useMemo(() => workItemsIdTree[workItemId] || [], [workItemId, workItemsIdTree]);
   const height = useMemo(() => svgHeight(rows.length), [rows.length]);
 
-  const topLevelRevisions = useMemo(() => {
-    if (topLevelChildrenIds.some(id => !revisions[id] || revisions[id] === 'loading')) return 'loading';
-    return topLevelChildrenIds.flatMap(id => {
-      const rev = revisions[id];
-      return rev === 'loading' ? [] : rev;
-    });
-  }, [revisions, topLevelChildrenIds]);
-
-  useEffect(() => {
-    getRevisions(topLevelChildrenIds);
-  }, [getRevisions, topLevelChildrenIds]);
-
   const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
-    // eslint-disable-next-line no-nested-ternary
     const coordsGetter = zoom
       ? xCoordConverterWithin(...zoom)
-      : topLevelRevisions === 'loading'
-        ? () => 0
-        : createXCoordConverterFor(topLevelRevisions);
+      : xCoordConverterWithin(
+        rows.filter(isProjectRow)[1].minTimestamp,
+        rows.filter(isProjectRow)[1].maxTimestamp
+      );
     return coordsGetter(time);
-  }, [topLevelRevisions, zoom]);
+  }, [rows, zoom]);
 
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
   const minDate = useMemo(() => {
     if (zoom) return zoom[0];
-    if (topLevelRevisions === 'loading') return 0;
-    return getMinDateTime(topLevelRevisions);
-  }, [zoom, topLevelRevisions]);
+    if (!rows.length) return 0;
+    return rows.filter(isProjectRow)[1].minTimestamp;
+  }, [zoom, rows]);
 
   const maxDate = useMemo(() => {
     if (zoom) return zoom[1];
-    if (topLevelRevisions === 'loading') return 0;
-    return getMaxDateTime(topLevelRevisions);
-  }, [zoom, topLevelRevisions]);
+    if (!rows.length) return 0;
+    return rows.filter(isProjectRow)[1].maxTimestamp;
+  }, [zoom, rows]);
 
   return (
     <div className="relative">
@@ -97,7 +82,11 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
             row={row}
             rowIndex={rowIndex}
             timeToXCoord={timeToXCoord}
-            onToggle={() => toggleRow(row.path)}
+            onToggle={() => {
+              toggleRow(row.path);
+              if (!(row.type === 'workitem-environment' || row.type === 'workitem-type')) return;
+              getRevisions(row.workItemIds);
+            }}
             colorForStage={colorForStage}
             revisions={revisions[workItemIdFromRowPath(row.path)] || 'loading'}
           />

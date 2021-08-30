@@ -10,7 +10,10 @@ import {
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
 import type { Row } from './use-gantt-rows';
-import { isNotWorkItemRow, isWorkItemRow } from './use-gantt-rows';
+import {
+  isProjectRow, isWorkItemEnvironmentRow, isWorkItemTypeRow, isWorkItemRow
+} from './use-gantt-rows';
+import { Minus, Plus } from '../common/Icons';
 
 const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => (
   <>
@@ -121,9 +124,14 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
   );
 
   const rowColor = useMemo(() => {
-    if (!isWorkItemRow(row)) return '#fff';
+    // eslint-disable-next-line no-nested-ternary
+    const color = isWorkItemRow(row)
+      ? row.workItem.color
+      : (isWorkItemEnvironmentRow(row) || isWorkItemTypeRow(row))
+        ? row.color
+        : 'ffffff';
 
-    const baseColor = makeTransparent(`#${row.workItem.color}`);
+    const baseColor = makeTransparent(`#${color}`);
     return isHighlighted ? makeDarker(baseColor) : baseColor;
   }, [isHighlighted, row]);
 
@@ -159,42 +167,84 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
         height={textHeight}
       >
         <div className="flex items-center">
-          <TreeNodeButton
-            expandedState={row.expandedState}
-            onToggle={toggle}
-            indentation={row.depth}
-          />
           {isWorkItemRow(row) ? (
-            <a
-              href={row.workItem.url}
-              className="link-text text truncate flex mt-1 items-center text-sm"
-              style={{ width: `${textWidth}px` }}
-              target="_blank"
-              rel="noreferrer"
-              data-tip={rowItemTooltip(row.workItem)}
-              data-html
-            >
-              <img
-                src={row.workItem.icon}
-                alt={`Icon for ${row.workItem.type}`}
-                width="16"
-                className="float-left mr-1"
+            <>
+              <TreeNodeButton
+                expandedState={row.expandedState}
+                onToggle={toggle}
+                indentation={row.depth}
               />
-              {row.workItem.title}
-            </a>
+              <a
+                href={row.workItem.url}
+                className="link-text text truncate flex mt-1 items-center text-sm"
+                style={{ width: `${textWidth}px` }}
+                target="_blank"
+                rel="noreferrer"
+                data-tip={rowItemTooltip(row.workItem)}
+                data-html
+              >
+                <img
+                  src={row.workItem.icon}
+                  alt={`Icon for ${row.workItem.type}`}
+                  width="16"
+                  className="float-left mr-1"
+                />
+                {row.workItem.title}
+              </a>
+            </>
           ) : (
-            null
+            <>
+              <button
+                style={{ marginLeft: `${row.depth * 20}px` }}
+                className="mt-1 flex items-center"
+                onClick={toggle}
+              >
+                <span className="w-4 h-4 mr-2 inline-block">
+                  {row.expandedState === 'collapsed' ? <Plus /> : <Minus />}
+                </span>
+                <div className="text-sm text-gray-800 inline-block">
+                  {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) ? (
+                    <img
+                      src={row.icon}
+                      alt={`Icon for ${row.label}`}
+                      width="16"
+                      className="float-left mr-1 -mb-1"
+                    />
+                  ) : null}
+                  {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) || isProjectRow(row) ? (
+                    `${row.label} (${row.childCount})`
+                  ) : ''}
+                </div>
+              </button>
+            </>
           )}
-          {isNotWorkItemRow(row) ? `${row.label} (${row.childCount})` : null}
         </div>
       </foreignObject>
-      <Revisions
-        revisions={revisions}
-        rowIndex={rowIndex}
-        barWidth={barWidth}
-        timeToXCoord={timeToXCoord}
-        colorForStage={colorForStage}
-      />
+      {isWorkItemRow(row) ? (
+        <Revisions
+          revisions={revisions}
+          rowIndex={rowIndex}
+          barWidth={barWidth}
+          timeToXCoord={timeToXCoord}
+          colorForStage={colorForStage}
+        />
+      ) : (
+        <rect
+          x={
+            isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row)
+              ? timeToXCoord(new Date(row.minTimestamp).toISOString())
+              : textWidth + barStartPadding
+          }
+          y={barYCoord(rowIndex)}
+          width={
+            isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row)
+              ? timeToXCoord(new Date(row.maxTimestamp).toISOString())
+              : svgWidth - textWidth - barStartPadding - 10
+          }
+          height={barHeight}
+          fill="rgba(0,0,0,0.05)"
+        />
+      )}
       {!isLast ? (
         <line
           x1="0"

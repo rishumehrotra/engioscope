@@ -68,7 +68,7 @@ export type TreeNode = WorkItemNode | WorkItemTypeNode | WorkItemEnvironmentNode
 
 type WithoutChildren<T extends TreeNode> = Omit<T, 'children'>;
 
-const recomupteChildCounts = (node: ProjectNode): ProjectNode => {
+const recomputeDerivedValues = (node: ProjectNode): ProjectNode => {
   const children = (
     node.children.map<WorkItemTypeNode>(workItemTypeNode => {
       const children = (
@@ -87,6 +87,9 @@ const recomupteChildCounts = (node: ProjectNode): ProjectNode => {
       return {
         ...workItemTypeNode,
         children,
+        workItemIds: children.flatMap(c => (
+          (isWorkItemNode(c)) ? [c.workItem.id] : []
+        )),
         childCount: children.reduce((acc, node) => (
           acc + (isWorkItemEnvironmentNode(node) ? node.childCount : 1)
         ), 0)
@@ -214,7 +217,7 @@ export const constructTree = (
         ...node, path: `/own-project${node.path}`
       }))) as WorkItemTypeNode[];
 
-    const projectNode = recomupteChildCounts({
+    const projectNode = recomputeDerivedValues({
       type: 'project',
       label: projectName,
       path: '/own-project',
@@ -222,8 +225,8 @@ export const constructTree = (
       expandedState: 'expanded',
       children: ownProjectChildren,
       childCount: 0,
-      minTimestamp: Math.min(...ownProjectChildren.map(c => c.minTimestamp)),
-      maxTimestamp: Math.max(...ownProjectChildren.map(c => c.maxTimestamp))
+      minTimestamp: Math.min(...fullTree.map(c => c.minTimestamp)),
+      maxTimestamp: Math.max(...fullTree.map(c => c.maxTimestamp))
     });
 
     const allProjectsNode: ProjectNode = {
@@ -262,7 +265,9 @@ const toggleExpandState = (path: string) => (node: (TreeNode | ProjectNode)): (T
 };
 
 export type Row = (
-  Omit<TreeNode, 'children'>
+  Omit<WorkItemNode, 'children'>
+  | Omit<WorkItemTypeNode, 'children'>
+  | Omit<WorkItemEnvironmentNode, 'children'>
   | Omit<ProjectNode, 'children'>
 );
 
@@ -278,8 +283,8 @@ export const isWorkItemEnvironmentRow = (row: Row): row is Omit<WorkItemEnvironm
   row.type === 'workitem-environment'
 );
 
-export const isNotWorkItemRow = (row: Row): row is Omit<NodeCommonProps, 'children'> & { childCount: number } => (
-  row.type !== 'workitem'
+export const isProjectRow = (row: Row): row is Omit<ProjectNode, 'childrne'> & {childCount: number} => (
+  row.type === 'project'
 );
 
 const rowsToRender = (rootNodes: (ProjectNode | TreeNode)[]) => {
