@@ -42,13 +42,15 @@ const Collection: React.FC = () => {
               <img src={logo} alt="Logo" className="w-36" />
             </Link>
           </div>
-          <div className="text-sm text-gray-300 flex justify-end">
-            Last updated on
-            <span className="font-semibold ml-1">
-              {collections[0].lastUpdated}
-            </span>
+          <div className="flex justify-between items-end mt-12">
+            <h1 className="mb-4 text-5xl font-bold text-gray-200 pr-2">Projects</h1>
+            <div className="text-sm text-gray-300">
+              Last updated on
+              <span className="font-semibold ml-1">
+                {collections[0].lastUpdated}
+              </span>
+            </div>
           </div>
-          <h1 className="mt-8 mb-4 text-5xl font-bold text-gray-200 pr-2">Projects</h1>
         </div>
         <div className="mx-32 -mt-24 bg-gray-50 p-8 rounded-lg">
           <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
