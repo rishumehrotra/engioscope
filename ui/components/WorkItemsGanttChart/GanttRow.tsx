@@ -2,14 +2,13 @@ import React, {
   memo, useCallback, useMemo, useState
 } from 'react';
 import prettyMilliseconds from 'pretty-ms';
-import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
+import type { UIWorkItemRevision } from '../../../shared/types';
 import {
   textWidth, textHeight,
   rowPadding, svgWidth, makeTransparent, barYCoord,
-  barHeight, contrastColour, barWidthUsing, makeDarker, barStartPadding
+  barHeight, contrastColour, barWidthUsing, makeDarker, barStartPadding, revisionTooltip, cltStats, rowItemTooltip
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
-import { mediumDate } from '../../helpers/utils';
 import type { Row } from './use-gantt-row';
 import { isNotWorkItemRow, isWorkItemRow } from './use-gantt-row';
 
@@ -20,76 +19,6 @@ const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRev
     {prettyMilliseconds(new Date(nextRevision.date).getTime() - new Date(revision.date).getTime(), { unitCount: 2 })}
   </>
 );
-
-const revisionTooltip = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => `
-  <b>${revision.state} → ${nextRevision.state}</b><br />
-  ${prettyMilliseconds(new Date(nextRevision.date).getTime() - new Date(revision.date).getTime(), { unitCount: 2, verbose: true })}<br />
-  <div class="text-gray-400">
-    ${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(nextRevision.date))}
-  </div>
-`;
-
-type CltStats = {clt: number| undefined; cltStage: 'Dev not done' | 'Dev done' | 'Done'};
-
-const cltStats = (workItem: UIWorkItem): CltStats => {
-  if (workItem.clt?.start && workItem.clt.end) {
-    return {
-      cltStage: 'Done',
-      clt: new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime()
-    };
-  }
-  if (workItem.clt?.start && !workItem.clt?.end) {
-    return {
-      cltStage: 'Dev done',
-      clt: new Date().getTime() - new Date(workItem.clt?.start).getTime()
-    };
-  }
-  return {
-    cltStage: 'Dev not done',
-    clt: undefined
-  };
-};
-
-const cltStatsTooltip = (cltStats: CltStats) => {
-  const { clt, cltStage } = cltStats;
-  if (clt === undefined) return '';
-
-  const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
-  if (cltStage === 'Done') {
-    return `<span class="font-bold">CLT (dev done to production):</span> <span class="text-green-500">${prettyClt}</span>`;
-  }
-  if (cltStage === 'Dev done') {
-    return `<span class="font-bold">${cltStage}</span> <span class="text-red-300">${prettyClt}</span> ago`;
-  }
-};
-
-const rowItemTooltip = (workItem: UIWorkItem) => {
-  const { cltStage, clt } = cltStats(workItem);
-  return `
-    <div class="max-w-xs">
-      <div class="pl-3" style="text-indent: -1.15rem">
-        <span class="font-bold">
-          <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-          ${workItem.type} #${workItem.id}:
-        </span>
-        ${workItem.title}
-      </div>
-      ${workItem.env ? (`
-        <div class="mt-2">
-          <span class="font-bold">Environment: </span>
-          ${workItem.env}
-        </div>
-      `) : ''}
-      <div class="mt-2">
-        <span class="font-bold">Project: </span>
-        ${workItem.project}
-      </div>
-      <div class="mt-2">
-        ${cltStatsTooltip({ cltStage, clt })}
-        </div>
-    </div>
-  `;
-};
 
 type RevisionBarProps = {
   width: number;
