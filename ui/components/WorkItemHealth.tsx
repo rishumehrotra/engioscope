@@ -120,7 +120,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
         {
           workItemRevisions
             ? (
-              <svg viewBox={`0 0 ${svgWidth - 200} ${barHeight + 2 * rowPadding}`}>
+              <svg viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}>
                 <Revisions
                   revisions={workItemRevisions}
                   barWidth={barWidth}
