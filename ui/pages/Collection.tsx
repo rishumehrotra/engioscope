@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScrapedProject } from '../../shared/types';
 import Loading from '../components/Loading';
+import logo from '../images/engioscope-serif.png';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 
@@ -34,6 +35,9 @@ const Collection: React.FC = () => {
 
   return (
     <div>
+      <Link to="/">
+        <img src={logo} alt="Logo" className="w-36" />
+      </Link>
       <div className="text-sm text-gray-500 -mt-7 flex justify-end">
         Last updated on
         <span className="font-semibold text-gray-600 ml-1">

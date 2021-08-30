@@ -20,10 +20,10 @@ export const ProjectDetails: React.FC = () => {
 
   return (
     <div className="col-span-2">
-      <h1 className="text-3xl font-semibold text-gray-800">
+      <h1 className="text-3xl font-semibold text-gray-200">
         {projectName || ' '}
       </h1>
-      <div className="text-base mt-2 font-normal text-gray-800">
+      <div className="text-base mt-2 font-normal text-gray-200">
         {project ? (
           <>
             {renderIfAvailable(project.reposCount, pageName('repos', project.reposCount))}
@@ -34,11 +34,11 @@ export const ProjectDetails: React.FC = () => {
           </>
         ) : <span className="font-bold text-lg">&nbsp;</span>}
       </div>
-      <p className="text-sm text-gray-500 mt-2 flex items-center">
+      <p className="text-sm text-gray-300 mt-2 flex items-center">
         {project ? (
           <>
             Last updated on
-            <span className="font-semibold text-gray-600 ml-1">
+            <span className="font-semibold text-gray-400 ml-1">
               {project ? project.lastUpdated : '...'}
             </span>
           </>

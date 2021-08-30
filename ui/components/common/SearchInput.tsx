@@ -9,7 +9,7 @@ const SearchInput: React.FC = () => {
   return (
     <div className="w-full text-gray-600 h-full flex items-between relative shadow">
       <input
-        className="bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none focus:ring focus:border-gray-200 w-full"
+        className="bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none focus:ring focus:border-gray-100 w-full"
         type="search"
         name="search"
         placeholder="Search"
