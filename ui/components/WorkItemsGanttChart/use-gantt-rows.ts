@@ -68,6 +68,8 @@ export type TreeNode = WorkItemNode | WorkItemTypeNode | WorkItemEnvironmentNode
 
 type WithoutChildren<T extends TreeNode> = Omit<T, 'children'>;
 
+const wid = (x: WorkItemNode | WithoutChildren<WorkItemNode>) => x.workItem.id;
+
 const recomputeDerivedValues = (node: ProjectNode): ProjectNode => {
   const children = (
     node.children.map<WorkItemTypeNode>(workItemTypeNode => {
@@ -88,7 +90,7 @@ const recomputeDerivedValues = (node: ProjectNode): ProjectNode => {
         ...workItemTypeNode,
         children,
         workItemIds: children.flatMap(c => (
-          (isWorkItemNode(c)) ? [c.workItem.id] : []
+          isWorkItemNode(c) ? [wid(c)] : []
         )),
         childCount: children.reduce((acc, node) => (
           acc + (isWorkItemEnvironmentNode(node) ? node.childCount : 1)
@@ -104,20 +106,36 @@ const recomputeDerivedValues = (node: ProjectNode): ProjectNode => {
   };
 };
 
+const isInAncestors = (ancestors: WithoutChildren<WorkItemNode>[]) => (
+  (workItemId: number) => ancestors.every(a => wid(a) !== workItemId)
+);
+
+const groupByWorkItemType = (workItemById: (id: number) => UIWorkItem) => (
+  (ancestors: WithoutChildren<WorkItemNode>[], workItemIds: number[] | undefined) => (
+    (workItemIds || [])
+      .filter(isInAncestors(ancestors))
+      .map(workItemById)
+      .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => ({
+        ...acc,
+        [workItem.type]: [...(acc[workItem.type] || []), workItem]
+      }), {})
+  )
+);
+
 export const constructTree = (
   workItemsIdTree: AnalysedWorkItems['ids'],
   workItemsById: AnalysedWorkItems['byId']
 ) => {
+  const workItemById = (id: number) => workItemsById[id];
+  const childIdsOf = (workItemId: number) => workItemsIdTree[workItemId];
+  const byWorkItemType = groupByWorkItemType(workItemById);
+
   const buildForAncestor = (ancestors: WithoutChildren<WorkItemNode>[]): WorkItemNode['children'] => {
     const parent = last(ancestors);
 
-    const groupedByWorkItemType = (workItemsIdTree[parent.workItem.id] || [])
-      .filter(workItemId => ancestors.every(a => a.workItem.id !== workItemId))
-      .map(id => workItemsById[id])
-      .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => ({
-        ...acc,
-        [workItem.type]: [...(acc[workItem.type] || []), workItem]
-      }), {});
+    const groupedByWorkItemType = byWorkItemType(
+      ancestors, childIdsOf(wid(parent))
+    );
 
     const uiElementsByWorkItemType = Object.entries(groupedByWorkItemType)
       .reduce<Record<string, Pick<WorkItemTypeNode, 'color' | 'icon'>>>((acc, [workItemType, workItems]) => ({
@@ -137,7 +155,7 @@ export const constructTree = (
       const nodesByEnvironment = Object.entries(groupedByEnvironment)
         .map<WorkItemEnvironmentNode>(([environmentName, workItems]) => {
           const children = workItems
-            .filter(wi => ancestors.every(a => a.workItem.id !== wi.id))
+            .filter(wi => ancestors.every(a => wid(a) !== wi.id))
             .map<WorkItemNode>(workItem => {
               const workItemNode: WithoutChildren<WorkItemNode> = {
                 type: 'workitem',
@@ -149,12 +167,12 @@ export const constructTree = (
 
               return {
                 ...workItemNode,
-                expandedState: (workItemsIdTree[workItem.id] || []).length === 0 ? 'no-children' : 'collapsed',
+                expandedState: (childIdsOf(workItem.id) || []).length === 0 ? 'no-children' : 'collapsed',
                 children: buildForAncestor([...ancestors, workItemNode])
               };
             });
 
-          return ({
+          return {
             type: 'workitem-environment',
             label: environmentName,
             path: `${parent.path}/${workItemType}/${environmentName}`,
@@ -167,7 +185,7 @@ export const constructTree = (
             minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
             maxTimestamp: Math.max(...workItems.map(wi => new Date(wi.updated.on).getTime())),
             workItemIds: workItems.map(wi => wi.id)
-          });
+          };
         });
 
       const envs = Object.keys(groupedByEnvironment);
@@ -185,9 +203,7 @@ export const constructTree = (
         expandedState: 'collapsed',
         depth: parent.depth + 1,
         children,
-        workItemIds: children
-          .filter(isWorkItemNode)
-          .map(x => x.workItem.id),
+        workItemIds: children.filter(isWorkItemNode).map(wid),
         childCount: Object.values(nodesByEnvironment)
           .reduce((acc, n) => acc + n.childCount, 0),
         minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
@@ -198,19 +214,16 @@ export const constructTree = (
   };
 
   return (workItemId: number, projectName: string) => {
-    const rootWorkItemNodeWoc: WithoutChildren<WorkItemNode> = {
-      workItem: workItemsById[workItemId],
+    const fullTree = buildForAncestor([{
+      workItem: workItemById(workItemId),
       type: 'workitem',
       path: '',
       expandedState: 'expanded',
       depth: 0
-    };
-
-    const fullTree = buildForAncestor([rootWorkItemNodeWoc]);
+    }]);
 
     const ownProjectChildren = fullTree.map(filterTree<TreeNode>(node => (
-      node.type === 'workitem'
-      && node.workItem.project === projectName
+      isWorkItemNode(node) && node.workItem.project === projectName
     )))
       .filter(exists)
       .map(mapTree(node => ({
@@ -293,7 +306,7 @@ const rowsToRender = (rootNodes: (ProjectNode | TreeNode)[]) => {
     ...(node.expandedState === 'expanded' ? node.children : []).flatMap(flattenChildren)
   ];
 
-  return rootNodes.flatMap(x => flattenChildren(x as TreeNode));
+  return rootNodes.flatMap(flattenChildren);
 };
 
 const useGanttRows = (
