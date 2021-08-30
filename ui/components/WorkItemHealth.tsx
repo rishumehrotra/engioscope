@@ -1,9 +1,8 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { exists } from '../helpers/utils';
-import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
 import { Revisions } from './WorkItemsGanttChart/GanttRow';
 import {
@@ -56,16 +55,14 @@ type WorkItemProps = {
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
   colorForStage: (stage: string) => string;
-  isFirst?: boolean;
   revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
   getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItem: React.FC<WorkItemProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
-  isFirst, revisions, getRevisions
+  revisions, getRevisions
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(isFirst || false);
   const workItemRevisions = revisions[workItemId];
   const workItem = workItemsById[workItemId];
 
@@ -97,90 +94,72 @@ const WorkItem: React.FC<WorkItemProps> = ({
       rounded-lg shadow relative workitem-body"
       style={{ contain: 'content' }}
     >
-      <button
-        className="w-full text-left"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <h3 className="flex justify-between">
-          <div className="w-4/5">
-            <a
-              href={workItem.url}
-              className="font-bold text-lg truncate max-width-full inline-block link-text"
-              target="_blank"
-              rel="noreferrer"
-              data-tip={titleTooltip(workItem)}
-              data-html
-            >
-              <img
-                className="inline-block -mt-1 mr-1"
-                src={workItem.icon}
-                alt={`${workItem.type} icon`}
-                width="18"
-              />
-              {`${workItem.id}: ${workItem.title}`}
-            </a>
+      <h3 className="flex justify-between">
+        <div className="w-4/5">
+          <a
+            href={workItem.url}
+            className="font-bold text-lg truncate max-width-full inline-block link-text"
+            target="_blank"
+            rel="noreferrer"
+            data-tip={titleTooltip(workItem)}
+            data-html
+          >
+            <img
+              className="inline-block -mt-1 mr-1"
+              src={workItem.icon}
+              alt={`${workItem.type} icon`}
+              width="18"
+            />
+            {`${workItem.id}: ${workItem.title}`}
+          </a>
 
-          </div>
-          {isExpanded ? (
-            <span className="flex text-gray-500">
-              <span>Show less</span>
-              <UpChevron />
-            </span>
-          ) : (
-            <span className="flex text-gray-500">
-              <span className="show-more">Show more</span>
-              <DownChevron />
-            </span>
-          )}
-        </h3>
-        <div className="flex items-end mb-2">
-          <span className="font-semibold text-sm mr-2">Timeline:</span>
-          {
-            workItemRevisions
-              ? (
-                <svg viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}>
-                  <Revisions
-                    revisions={workItemRevisions}
-                    barWidth={barWidth}
-                    colorForStage={colorForStage}
-                    rowIndex={0}
-                    timeToXCoord={timeToXCoord}
-                  />
-                </svg>
-              ) : null
-          }
         </div>
-        <div className="text-base font-normal text-gray-800">
-          <div>
-            { filteredClts.length
-              ? (
-                <span className="text-blue-gray text-sm my-2">
-                  <span>CLT:  </span>
-                  <span className="font-semibold">
-                    {`${prettyMilliseconds(Math.min(...filteredClts), { compact: true })} - 
+      </h3>
+      <div className="flex items-end mb-2">
+        <span className="font-semibold text-sm mr-2">Timeline:</span>
+        {
+          workItemRevisions
+            ? (
+              <svg viewBox={`0 0 ${svgWidth - 200} ${barHeight + 2 * rowPadding}`}>
+                <Revisions
+                  revisions={workItemRevisions}
+                  barWidth={barWidth}
+                  colorForStage={colorForStage}
+                  rowIndex={0}
+                  timeToXCoord={timeToXCoord}
+                />
+              </svg>
+            ) : null
+        }
+      </div>
+      <div className="text-base font-normal text-gray-800">
+        <div>
+          { filteredClts.length
+            ? (
+              <span className="text-blue-gray text-sm my-2">
+                <span>CLT:  </span>
+                <span className="font-semibold">
+                  {`${prettyMilliseconds(Math.min(...filteredClts), { compact: true })} - 
                   ${prettyMilliseconds(Math.max(...filteredClts), { compact: true })}`}
-                  </span>
-                  <span>
-                    {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
-                  </span>
                 </span>
-              )
-              : null}
-          </div>
+                <span>
+                  {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
+                </span>
+              </span>
+            )
+            : null}
         </div>
-      </button>
-      {isExpanded ? (
-        <div className="mt-4 cursor-default">
-          <WorkItemsGanttChart
-            workItemId={workItemId}
-            workItemsById={workItemsById}
-            workItemsIdTree={workItemsIdTree}
-            colorForStage={colorForStage}
-            revisions={revisions}
-            getRevisions={getRevisions}
-          />
-        </div>
-      ) : null}
+      </div>
+      <div className="mt-4 cursor-default">
+        <WorkItemsGanttChart
+          workItemId={workItemId}
+          workItemsById={workItemsById}
+          workItemsIdTree={workItemsIdTree}
+          colorForStage={colorForStage}
+          revisions={revisions}
+          getRevisions={getRevisions}
+        />
+      </div>
     </li>
   );
 };

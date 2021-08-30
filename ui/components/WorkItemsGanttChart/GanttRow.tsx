@@ -231,13 +231,13 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
       ) : (
         <rect
           x={
-            isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row)
+            ((isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row)) && row.minTimestamp)
               ? timeToXCoord(new Date(row.minTimestamp).toISOString())
               : textWidth + barStartPadding
           }
           y={barYCoord(rowIndex)}
           width={
-            isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row)
+            ((isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row)) && row.maxTimestamp)
               ? timeToXCoord(new Date(row.maxTimestamp).toISOString())
               : svgWidth - textWidth - barStartPadding - 10
           }

@@ -107,14 +107,13 @@ const WorkItems: React.FC = () => {
     <>
       <AppliedFilters type="workitems" count={filteredWorkItems.length} />
       <ul>
-        {topWorkItems.map((workItem, index) => (
+        {topWorkItems.map(workItem => (
           <WorkItem
             key={workItem.id}
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
             colorForStage={colorForStage}
-            isFirst={index === 0}
             revisions={revisions}
             getRevisions={getRevisions}
           />

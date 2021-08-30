@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
 import { mediumDate } from '../../helpers/utils';
 
-export const svgWidth = 1100;
+export const svgWidth = 1300;
 export const textWidth = 270;
 export const textHeight = 30;
 export const barStartPadding = 30;
