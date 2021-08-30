@@ -33,7 +33,7 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
   if (!isFilterApplied) return null;
 
   return (
-    <div className="mb-4 -mt-4 bg-yellow-100 border-t-2 border-b-2 border-yellow-200 py-2 px-4 flex items-center text-md text-gray-800">
+    <div className="mb-6 -mt-4 py-2 flex items-center text-md text-gray-800">
       {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
       {
         search ? (

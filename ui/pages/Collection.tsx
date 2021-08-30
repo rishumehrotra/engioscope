@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScrapedProject } from '../../shared/types';
 import Loading from '../components/Loading';
-import logo from '../images/engioscope-serif.png';
+import logo from '../images/engioscope.png';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 
@@ -35,27 +35,35 @@ const Collection: React.FC = () => {
 
   return (
     <div>
-      <Link to="/">
-        <img src={logo} alt="Logo" className="w-36" />
-      </Link>
-      <div className="text-sm text-gray-500 -mt-7 flex justify-end">
-        Last updated on
-        <span className="font-semibold text-gray-600 ml-1">
-          {collections[0].lastUpdated}
-        </span>
-      </div>
-      <h1 className="mt-16 mb-8 text-3xl font-semibold text-gray-800">Projects</h1>
-      <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-        {collections.map(collection => (
-          <Project
-            key={collection.name[1]}
-            projectName={collection.name[1]}
-            route={`/${collection.name.join('/')}/repos`}
-            collectionName={collection.name[0]}
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            lastUpdated={collection.lastUpdated!}
-          />
-        ))}
+      <div>
+        <div className="bg-gray-900 px-32 pt-4 pb-24 mb-8">
+          <div>
+            <Link to="/">
+              <img src={logo} alt="Logo" className="w-36" />
+            </Link>
+          </div>
+          <div className="text-sm text-gray-300 flex justify-end">
+            Last updated on
+            <span className="font-semibold ml-1">
+              {collections[0].lastUpdated}
+            </span>
+          </div>
+          <h1 className="mt-8 mb-4 text-5xl font-bold text-gray-200 pr-2">Projects</h1>
+        </div>
+        <div className="mx-32 -mt-24 bg-gray-50 p-8 rounded-lg">
+          <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+            {collections.map(collection => (
+              <Project
+                key={collection.name[1]}
+                projectName={collection.name[1]}
+                route={`/${collection.name.join('/')}/repos`}
+                collectionName={collection.name[0]}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                lastUpdated={collection.lastUpdated!}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

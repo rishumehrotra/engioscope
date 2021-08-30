@@ -7,18 +7,21 @@ const SearchInput: React.FC = () => {
   const [search, setSearchTerm] = useQueryParam<string>('search');
 
   return (
-    <div className="w-full text-gray-600 h-full flex items-between relative shadow">
+    <div className="w-full text-gray-600 h-full flex items-between items-center
+    relative shadow mr-1 rounded border border-gray-400"
+    >
+      <button type="button" className="absolute left-3">
+        <Search className="text-gray-400" />
+      </button>
       <input
-        className="bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none focus:ring focus:border-gray-100 w-full"
+        className="bg-white h-9 pl-9 pr-16 rounded-lg text-sm focus:outline-none
+        focus:ring focus:border-gray-100 w-full placeholder-gray-800 placeholder"
         type="search"
         name="search"
         placeholder="Search"
         value={search || ''}
         onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value, 'replaceIn')}
       />
-      <button type="button" className="absolute right-0 mt-3 mr-4">
-        <Search />
-      </button>
     </div>
   );
 };

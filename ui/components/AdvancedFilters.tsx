@@ -17,7 +17,7 @@ const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
     <span
       style={{ width: '406px' }}
       className={`bg-white text-base text-gray-600 grid grid-cols-2 gap-2 content-center
-        mt-12 absolute top-0 right-0 z-10 px-4 py-3
+        mt-12 absolute top-0 right-0 z-10 px-4 py-3 shadow
         `}
     >
       <Checkbox
@@ -56,7 +56,7 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
     <span
       style={{ width: '426px' }}
       className={`bg-white text-base text-gray-600 grid grid-cols-2 gap-2 content-center
-        mt-12 absolute top-0 right-0 z-10 px-4 py-3
+        mt-12 absolute top-0 right-0 z-10 px-4 py-3 shadow
         `}
     >
       <Checkbox
@@ -95,19 +95,20 @@ const AdvancedFilters: React.FC = () => {
   useOnClickOutside(ref, () => setIsOpen(false));
 
   return (
-    <span className="grid items-center ml-1 relative">
+    <span className="grid items-center relative">
       {selectedTab === 'workitems' ? null : (
         <button onClick={() => setIsOpen(!isOpen)}>
           <Filters
-            className={`text-gray-500 rounded-md hover:bg-white hover:shadow ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
+            className={`text-gray-500 rounded-md border-gray-800 hover:bg-white hover:border-gray-400 hover:shadow
+            ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer mr-6`}
             tooltip="Advanced Filters"
           />
         </button>
       )}
-      <span ref={ref}>
+      <div ref={ref}>
         {selectedTab === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
         {selectedTab === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
-      </span>
+      </div>
     </span>
   );
 };
