@@ -15,35 +15,79 @@ type NodeCommonProps = {
   label: string;
   expandedState: ExpandedState;
 };
+
 type WorkItemNode = Omit<NodeCommonProps, 'label'> & {
   type: 'workitem';
   workItem: UIWorkItem;
   children: WorkItemTypeNode[];
   expandedState: ExpandedState;
 };
+
 type WorkItemTypeNode = NodeCommonProps & {
   type: 'workitem-type';
-  children: (WorkItemNode | EnvironmentGroupNode)[];
+  children: (WorkItemNode | WorkItemEnvironmentNode)[];
   expandedState: Exclude<ExpandedState, 'no-children'>;
   color: string;
   icon: string;
+  childCount: number;
 };
 
-type EnvironmentGroupNode = NodeCommonProps & {
+type WorkItemEnvironmentNode = NodeCommonProps & {
   type: 'workitem-environment';
   children: WorkItemNode[];
   expandedState: Exclude<ExpandedState, 'no-children'>;
+  childCount: number;
+  color: string;
+  icon: string;
 };
 
 type ProjectNode = NodeCommonProps & {
   type: 'project';
   expandedState: Exclude<ExpandedState, 'no-children'>;
   children: TreeNode[];
+  childCount: number;
 };
 
-export type TreeNode = WorkItemNode | WorkItemTypeNode | EnvironmentGroupNode | ProjectNode;
+const isWorkItemEnvironmentNode = (node: TreeNode): node is WorkItemEnvironmentNode => (
+  node.type === 'workitem-environment'
+);
+
+export type TreeNode = WorkItemNode | WorkItemTypeNode | WorkItemEnvironmentNode | ProjectNode;
 
 type WithoutChildren<T extends TreeNode> = Omit<T, 'children'>;
+
+const recomupteChildCounts = (node: ProjectNode): ProjectNode => {
+  const children = (
+    node.children.map<WorkItemTypeNode>(workItemTypeNode => {
+      const children = (
+        workItemTypeNode.children.map<WorkItemTypeNode['children'][number]>(workItemOrEnvNode => {
+          if (isWorkItemEnvironmentNode(workItemOrEnvNode)) {
+            return {
+              ...workItemOrEnvNode,
+              childCount: workItemOrEnvNode.children.length
+            };
+          }
+
+          return workItemOrEnvNode as WorkItemNode;
+        })
+      );
+
+      return {
+        ...workItemTypeNode,
+        children,
+        childCount: children.reduce((acc, node) => (
+          acc + (isWorkItemEnvironmentNode(node) ? node.childCount : 1)
+        ), 0)
+      } as WorkItemTypeNode;
+    })
+  );
+
+  return {
+    ...node,
+    children,
+    childCount: children.reduce((acc, node) => acc + node.childCount, 0)
+  };
+};
 
 export const constructTree = (
   workItemsIdTree: AnalysedWorkItems['ids'],
@@ -76,13 +120,8 @@ export const constructTree = (
       }), {});
 
       const nodesByEnvironment = Object.entries(groupedByEnvironment)
-        .map<EnvironmentGroupNode>(([environmentName, workItems]) => ({
-          type: 'workitem-environment',
-          label: environmentName,
-          path: `${parent.path}/${workItemType}/${environmentName}`,
-          expandedState: 'collapsed',
-          depth: parent.depth + 2,
-          children: workItems
+        .map<WorkItemEnvironmentNode>(([environmentName, workItems]) => {
+          const children = workItems
             .filter(wi => ancestors.every(a => a.workItem.id !== wi.id))
             .map<WorkItemNode>(workItem => {
               const workItemNode: WithoutChildren<WorkItemNode> = {
@@ -98,8 +137,20 @@ export const constructTree = (
                 expandedState: (workItemsIdTree[workItem.id] || []).length === 0 ? 'no-children' : 'collapsed',
                 children: buildForAncestor([...ancestors, workItemNode])
               };
-            })
-        }));
+            });
+
+          return ({
+            type: 'workitem-environment',
+            label: environmentName,
+            path: `${parent.path}/${workItemType}/${environmentName}`,
+            expandedState: 'collapsed',
+            depth: parent.depth + 2,
+            children,
+            childCount: children.length,
+            icon: workItems[0].icon,
+            color: workItems[0].color
+          });
+        });
 
       const envs = Object.keys(groupedByEnvironment);
 
@@ -112,7 +163,9 @@ export const constructTree = (
         children: (envs.length === 1 && envs[0] === 'no-environment')
           ? nodesByEnvironment[0].children.map(c => ({ ...c, depth: c.depth - 1 }))
           : nodesByEnvironment,
-        ...uiElementsByWorkItemType[workItemType]
+        ...uiElementsByWorkItemType[workItemType],
+        childCount: Object.values(nodesByEnvironment)
+          .reduce((acc, n) => acc + n.childCount, 0)
       };
     });
   };
@@ -128,7 +181,7 @@ export const constructTree = (
 
     const fullTree = buildForAncestor([rootWorkItemNodeWoc]);
 
-    const projectNode: ProjectNode = {
+    const projectNode = recomupteChildCounts({
       type: 'project',
       label: projectName,
       path: '/own-project',
@@ -141,8 +194,9 @@ export const constructTree = (
         .filter(exists)
         .map(mapTree(node => ({
           ...node, path: `/own-project${node.path}`
-        })))
-    };
+        }))),
+      childCount: 0
+    });
 
     const allProjectsNode: ProjectNode = {
       type: 'project',
@@ -153,7 +207,8 @@ export const constructTree = (
       children: fullTree
         .map(mapTree<TreeNode, TreeNode>(node => ({
           ...node, path: `/all-projects${node.path}`
-        })))
+        }))),
+      childCount: fullTree.reduce((acc, n) => acc + n.childCount, 0)
     };
     return [projectNode, allProjectsNode];
   };
@@ -179,10 +234,18 @@ const toggleExpandState = (path: string) => (node: (TreeNode | ProjectNode)): (T
 export type Row = (
   Omit<TreeNode, 'children'>
   | Omit<ProjectNode, 'children'>
-) & { childCount: number };
+);
 
 export const isWorkItemRow = (row: Row): row is Omit<WorkItemNode, 'children'> & { childCount: number } => (
   row.type === 'workitem'
+);
+
+export const isWorkItemTypeRow = (row: Row): row is Omit<WorkItemTypeNode, 'children'> & { childCount: number } => (
+  row.type === 'workitem-type'
+);
+
+export const isWorkItemEnvironmentRow = (row: Row): row is Omit<WorkItemEnvironmentNode, 'children'> & { childCount: number } => (
+  row.type === 'workitem-environment'
 );
 
 export const isNotWorkItemRow = (row: Row): row is Omit<NodeCommonProps, 'children'> & { childCount: number } => (
@@ -190,14 +253,10 @@ export const isNotWorkItemRow = (row: Row): row is Omit<NodeCommonProps, 'childr
 );
 
 const rowsToRender = (rootNodes: (ProjectNode | TreeNode)[]) => {
-  const flattenChildren = (node: TreeNode): Row[] => {
-    const { children, ...nodeWithoutChildren } = node;
-
-    return [
-      { ...nodeWithoutChildren, childCount: children.length },
-      ...(node.expandedState === 'expanded' ? node.children : []).flatMap(flattenChildren)
-    ];
-  };
+  const flattenChildren = (node: TreeNode): Row[] => [
+    node,
+    ...(node.expandedState === 'expanded' ? node.children : []).flatMap(flattenChildren)
+  ];
 
   return rootNodes.flatMap(x => flattenChildren(x as TreeNode));
 };

@@ -9,8 +9,8 @@ import {
   barHeight, contrastColour, barWidthUsing, makeDarker, barStartPadding, revisionTooltip, cltStats, rowItemTooltip
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
-import type { Row } from './use-gantt-row';
-import { isNotWorkItemRow, isWorkItemRow } from './use-gantt-row';
+import type { Row } from './use-gantt-rows';
+import { isNotWorkItemRow, isWorkItemRow } from './use-gantt-rows';
 
 const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => (
   <>

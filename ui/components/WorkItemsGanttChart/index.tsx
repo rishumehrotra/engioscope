@@ -10,7 +10,7 @@ import {
   svgWidth, createXCoordConverterFor, svgHeight, getMinDateTime, getMaxDateTime, xCoordConverterWithin
 } from './helpers';
 import VerticalCrosshair from './VerticalCrosshair';
-import useGanttRows from './use-gantt-row';
+import useGanttRows from './use-gantt-rows';
 
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 
