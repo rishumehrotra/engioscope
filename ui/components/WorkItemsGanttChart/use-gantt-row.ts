@@ -25,6 +25,8 @@ type WorkItemTypeNode = NodeCommonProps & {
   type: 'workitem-type';
   children: (WorkItemNode | EnvironmentGroupNode)[];
   expandedState: Exclude<ExpandedState, 'no-children'>;
+  color: string;
+  icon: string;
 };
 
 type EnvironmentGroupNode = NodeCommonProps & {
@@ -56,6 +58,15 @@ export const constructTree = (
       .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => ({
         ...acc,
         [workItem.type]: [...(acc[workItem.type] || []), workItem]
+      }), {});
+
+    const uiElementsByWorkItemType = Object.entries(groupedByWorkItemType)
+      .reduce<Record<string, Pick<WorkItemTypeNode, 'color' | 'icon'>>>((acc, [workItemType, workItems]) => ({
+        ...acc,
+        [workItemType]: {
+          icon: workItems[0].icon,
+          color: workItems[0].color
+        }
       }), {});
 
     return Object.entries(groupedByWorkItemType).map<WorkItemTypeNode>(([workItemType, workItems]) => {
@@ -92,7 +103,7 @@ export const constructTree = (
 
       const envs = Object.keys(groupedByEnvironment);
 
-      return ({
+      return {
         type: 'workitem-type',
         label: workItemType,
         path: `${parent.path}/${workItemType}`,
@@ -100,8 +111,9 @@ export const constructTree = (
         depth: parent.depth + 1,
         children: (envs.length === 1 && envs[0] === 'no-environment')
           ? nodesByEnvironment[0].children.map(c => ({ ...c, depth: c.depth - 1 }))
-          : nodesByEnvironment
-      });
+          : nodesByEnvironment,
+        ...uiElementsByWorkItemType[workItemType]
+      };
     });
   };
 
