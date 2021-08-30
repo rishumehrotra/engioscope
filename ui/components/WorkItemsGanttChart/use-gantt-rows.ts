@@ -30,6 +30,9 @@ type WorkItemTypeNode = NodeCommonProps & {
   color: string;
   icon: string;
   childCount: number;
+  workItemIds: number[];
+  minTimestamp: number;
+  maxTimestamp: number;
 };
 
 type WorkItemEnvironmentNode = NodeCommonProps & {
@@ -39,14 +42,23 @@ type WorkItemEnvironmentNode = NodeCommonProps & {
   childCount: number;
   color: string;
   icon: string;
+  workItemIds: number[];
+  minTimestamp: number;
+  maxTimestamp: number;
 };
 
 type ProjectNode = NodeCommonProps & {
   type: 'project';
   expandedState: Exclude<ExpandedState, 'no-children'>;
-  children: TreeNode[];
+  children: WorkItemTypeNode[];
   childCount: number;
+  minTimestamp: number;
+  maxTimestamp: number;
 };
+
+const isWorkItemNode = (node: TreeNode): node is WorkItemNode => (
+  node.type === 'workitem'
+);
 
 const isWorkItemEnvironmentNode = (node: TreeNode): node is WorkItemEnvironmentNode => (
   node.type === 'workitem-environment'
@@ -148,11 +160,20 @@ export const constructTree = (
             children,
             childCount: children.length,
             icon: workItems[0].icon,
-            color: workItems[0].color
+            color: workItems[0].color,
+            minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
+            maxTimestamp: Math.max(...workItems.map(wi => new Date(wi.updated.on).getTime())),
+            workItemIds: workItems.map(wi => wi.id)
           });
         });
 
       const envs = Object.keys(groupedByEnvironment);
+
+      const children: (WorkItemEnvironmentNode | WorkItemNode)[] = (
+        (envs.length === 1 && envs[0] === 'no-environment')
+          ? nodesByEnvironment[0].children.map<WorkItemNode>(c => ({ ...c, depth: c.depth - 1 }))
+          : nodesByEnvironment
+      );
 
       return {
         type: 'workitem-type',
@@ -160,12 +181,15 @@ export const constructTree = (
         path: `${parent.path}/${workItemType}`,
         expandedState: 'collapsed',
         depth: parent.depth + 1,
-        children: (envs.length === 1 && envs[0] === 'no-environment')
-          ? nodesByEnvironment[0].children.map(c => ({ ...c, depth: c.depth - 1 }))
-          : nodesByEnvironment,
-        ...uiElementsByWorkItemType[workItemType],
+        children,
+        workItemIds: children
+          .filter(isWorkItemNode)
+          .map(x => x.workItem.id),
         childCount: Object.values(nodesByEnvironment)
-          .reduce((acc, n) => acc + n.childCount, 0)
+          .reduce((acc, n) => acc + n.childCount, 0),
+        minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
+        maxTimestamp: Math.max(...workItems.map(wi => new Date(wi.updated.on).getTime())),
+        ...uiElementsByWorkItemType[workItemType]
       };
     });
   };
@@ -181,21 +205,25 @@ export const constructTree = (
 
     const fullTree = buildForAncestor([rootWorkItemNodeWoc]);
 
+    const ownProjectChildren = fullTree.map(filterTree<TreeNode>(node => (
+      node.type === 'workitem'
+      && node.workItem.project === projectName
+    )))
+      .filter(exists)
+      .map(mapTree(node => ({
+        ...node, path: `/own-project${node.path}`
+      }))) as WorkItemTypeNode[];
+
     const projectNode = recomupteChildCounts({
       type: 'project',
       label: projectName,
       path: '/own-project',
       depth: 0,
       expandedState: 'expanded',
-      children: fullTree.map(filterTree<TreeNode>(node => (
-        node.type === 'workitem'
-        && node.workItem.project === projectName
-      )))
-        .filter(exists)
-        .map(mapTree(node => ({
-          ...node, path: `/own-project${node.path}`
-        }))),
-      childCount: 0
+      children: ownProjectChildren,
+      childCount: 0,
+      minTimestamp: Math.min(...ownProjectChildren.map(c => c.minTimestamp)),
+      maxTimestamp: Math.max(...ownProjectChildren.map(c => c.maxTimestamp))
     });
 
     const allProjectsNode: ProjectNode = {
@@ -207,8 +235,10 @@ export const constructTree = (
       children: fullTree
         .map(mapTree<TreeNode, TreeNode>(node => ({
           ...node, path: `/all-projects${node.path}`
-        }))),
-      childCount: fullTree.reduce((acc, n) => acc + n.childCount, 0)
+        }))) as WorkItemTypeNode[],
+      childCount: fullTree.reduce((acc, n) => acc + n.childCount, 0),
+      minTimestamp: Math.min(...fullTree.map(c => c.minTimestamp)),
+      maxTimestamp: Math.max(...fullTree.map(c => c.maxTimestamp))
     };
     return [projectNode, allProjectsNode];
   };
@@ -272,9 +302,8 @@ const useGanttRows = (
   const [tree, setTree] = useState<TreeNode[]>([]);
 
   useEffect(() => {
-    if (projectName) {
-      setTree(constructTree(workItemsIdTree, workItemsById)(workItemId, projectName));
-    }
+    if (!projectName) return;
+    setTree(constructTree(workItemsIdTree, workItemsById)(workItemId, projectName));
   }, [projectName, workItemId, workItemsById, workItemsIdTree]);
 
   const rows = useMemo(() => rowsToRender(tree), [tree]);

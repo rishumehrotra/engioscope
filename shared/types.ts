@@ -127,6 +127,9 @@ export type UIWorkItem = {
     on: string;
     // pic: string;
   };
+  updated: {
+    on: string;
+  };
   // assigned: {
   // name: string;
   // pic: string;
