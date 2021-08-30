@@ -1,10 +1,15 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { exists } from '../helpers/utils';
 import { DownChevron, UpChevron } from './common/Icons';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
+import { Revisions } from './WorkItemsGanttChart/GanttRow';
+import {
+  barHeight,
+  barWidthUsing, getMaxDateTime, getMinDateTime, rowPadding, svgWidth
+} from './WorkItemsGanttChart/helpers';
 
 const titleTooltip = (workItem: UIWorkItem) => `
   <div class="max-w-xs">
@@ -28,6 +33,24 @@ const titleTooltip = (workItem: UIWorkItem) => `
   </div>
 `;
 
+export const xCoordConverterWithin = (minDateTime: number, maxDateTime: number) => (
+  (time: string | Date) => {
+    const date = new Date(time);
+    const xCoordWithoutText = (
+      (date.getTime() - minDateTime)
+      / (maxDateTime - minDateTime)
+    ) * (svgWidth);
+    return (xCoordWithoutText < 0 ? 0 : xCoordWithoutText);
+  }
+);
+
+export const createXCoordConverterFor = (revisions: UIWorkItemRevision[]) => {
+  const minDateTime = getMinDateTime(revisions);
+  const maxDateTime = getMaxDateTime(revisions);
+
+  return xCoordConverterWithin(minDateTime, maxDateTime);
+};
+
 type WorkItemProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
@@ -38,40 +61,35 @@ type WorkItemProps = {
   getRevisions: (workItemIds: number[]) => void;
 };
 
-type WorkItemStats = {
-  bugs: number;
-  features: number;
-  clts: (number | undefined)[];
-};
-
 const WorkItem: React.FC<WorkItemProps> = ({
   workItemId, workItemsById, workItemsIdTree, colorForStage,
   isFirst, revisions, getRevisions
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst || false);
-
+  const workItemRevisions = revisions[workItemId];
   const workItem = workItemsById[workItemId];
 
-  const { bugs, features, clts } = (workItemsIdTree[workItemId] || [])
-    .reduce<WorkItemStats>((acc, id) => {
+  const clts = (workItemsIdTree[workItemId] || [])
+    .reduce<(number | undefined) []>((acc, id) => {
       const workItem = workItemsById[id];
-      return {
-        bugs: workItem.type === 'Bug' ? acc.bugs + 1 : acc.bugs,
-        features: workItem.type === 'Feature' ? acc.features + 1 : acc.features,
-        clts: [
-          ...acc.clts,
-          workItem.clt?.start && workItem.clt.end
-            ? (new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime())
-            : undefined
-        ]
-      };
-    }, {
-      bugs: 0,
-      features: 0,
-      clts: []
-    });
+      return [
+        ...acc,
+        workItem.clt?.start && workItem.clt.end
+          ? (new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime())
+          : undefined
+      ];
+    }, []);
 
   const filteredClts = clts.filter(exists);
+
+  const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
+    const coordsGetter = workItemRevisions === 'loading'
+      ? () => 0
+      : createXCoordConverterFor(workItemRevisions);
+    return coordsGetter(time);
+  }, [workItemRevisions]);
+
+  const barWidth = barWidthUsing(timeToXCoord);
 
   return (
     <li
@@ -101,6 +119,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
               />
               {`${workItem.id}: ${workItem.title}`}
             </a>
+
           </div>
           {isExpanded ? (
             <span className="flex text-gray-500">
@@ -114,31 +133,40 @@ const WorkItem: React.FC<WorkItemProps> = ({
             </span>
           )}
         </h3>
+        <div className="flex items-end mb-2">
+          <span className="font-semibold text-sm mr-2">Timeline:</span>
+          {
+            workItemRevisions
+              ? (
+                <svg viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}>
+                  <Revisions
+                    revisions={workItemRevisions}
+                    barWidth={barWidth}
+                    colorForStage={colorForStage}
+                    rowIndex={0}
+                    timeToXCoord={timeToXCoord}
+                  />
+                </svg>
+              ) : null
+          }
+        </div>
         <div className="text-base font-normal text-gray-800">
-          <span className="text-blue-gray text-sm my-2">
-            Bundle size
-            {': '}
-            <span className="font-semibold">
-              {`${(workItemsIdTree[workItemId] || []).length}`}
-            </span>
-            <span>
-              {` (${features} features ${bugs} bugs)`}
-            </span>
-          </span>
-          { filteredClts.length
-            ? (
-              <span className="text-blue-gray text-sm my-2 ml-2">
-                <span>|&nbsp;&nbsp;CLT:  </span>
-                <span className="font-semibold">
-                  {`${prettyMilliseconds(Math.min(...filteredClts), { compact: true })} - 
+          <div>
+            { filteredClts.length
+              ? (
+                <span className="text-blue-gray text-sm my-2">
+                  <span>CLT:  </span>
+                  <span className="font-semibold">
+                    {`${prettyMilliseconds(Math.min(...filteredClts), { compact: true })} - 
                   ${prettyMilliseconds(Math.max(...filteredClts), { compact: true })}`}
+                  </span>
+                  <span>
+                    {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
+                  </span>
                 </span>
-                <span>
-                  {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
-                </span>
-              </span>
-            )
-            : null}
+              )
+              : null}
+          </div>
         </div>
       </button>
       {isExpanded ? (

@@ -69,7 +69,7 @@ const RevisionBar: React.FC<RevisionBarProps> = memo(({
 type RevisionsProps = Pick<GanttRowProps, 'revisions'| 'rowIndex' | 'timeToXCoord' | 'colorForStage'>
 & {'barWidth': ReturnType<typeof barWidthUsing>};
 
-const Revisions: React.FC<RevisionsProps> = ({
+export const Revisions: React.FC<RevisionsProps> = ({
   revisions, rowIndex, barWidth, timeToXCoord, colorForStage
 }) => (revisions === 'loading' ? (
   <foreignObject
