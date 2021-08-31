@@ -38,7 +38,6 @@ export type CardProps = {
   subtitle?: React.ReactNode | undefined;
   // TODO: Remove this prop
   preTabs?: React.ReactNode;
-  tag?: string;
   onCardClick?: () => void;
   isExpanded: boolean;
   className?: string;
@@ -59,13 +58,6 @@ const Card: React.FC<CardProps> = ({
         role="button"
         onClick={onCardClick}
       >
-        {/* {tag && (
-          <div
-            className="absolute right-0 top-0 bg-gray-400 text-white px-3 py-1 text-sm uppercase my-3 rounded-l-md"
-          >
-            {tag}
-          </div>
-        )} */}
         <div className="grid mx-6">
           <CardTitle
             title={title}

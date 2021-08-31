@@ -78,7 +78,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }
       title={repo.name}
       titleUrl={repo.url}
       subtitle={repoSubtitle(repo.languages)}
-      tag={repo.commits.count === 0 ? 'Inactive' : undefined}
       onCardClick={onCardClick}
       isExpanded={selectedTab !== null || isFirst || false}
     >
