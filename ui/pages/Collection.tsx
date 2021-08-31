@@ -38,7 +38,7 @@ const Collection: React.FC = () => {
           lastUpdated={collections ? collections[0].lastUpdated : ''}
           title="Projects"
         />
-        <div className="mx-32 -mt-24 bg-gray-50 p-8 rounded-lg">
+        <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-2.25rem' }}>
           <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
             {
               collections
