@@ -116,19 +116,21 @@ const WorkItem: React.FC<WorkItemProps> = ({
         </div>
       </h3>
       <div className="flex items-end mb-2">
-        <span className="font-semibold text-sm mr-2">Timeline:</span>
+        <div className="font-semibold text-sm mr-2">Timeline:</div>
         {
           workItemRevisions
             ? (
-              <svg viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}>
-                <Revisions
-                  revisions={workItemRevisions}
-                  barWidth={barWidth}
-                  colorForStage={colorForStage}
-                  rowIndex={0}
-                  timeToXCoord={timeToXCoord}
-                />
-              </svg>
+              <div className="w-full">
+                <svg viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}>
+                  <Revisions
+                    revisions={workItemRevisions}
+                    barWidth={barWidth}
+                    colorForStage={colorForStage}
+                    rowIndex={0}
+                    timeToXCoord={timeToXCoord}
+                  />
+                </svg>
+              </div>
             ) : null
         }
       </div>
