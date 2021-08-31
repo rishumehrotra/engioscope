@@ -159,13 +159,13 @@ export const ArrowRight: React.FC<{ className?: string}> = ({ className }) => (
 );
 
 export const Plus: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className || ''} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg className={`${className || ''} w-4 h-4`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
   </svg>
 );
 
 export const Minus: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className || ''} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg className={`${className || ''} w-4 h-4`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
   </svg>
 );
