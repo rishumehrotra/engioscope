@@ -4,12 +4,13 @@ const TOP = 20;
 const BOTTOM = 10;
 
 export const topItems = <T>(page: number, items: T[]) => {
+  if (items.length < TOP) return items;
   const maxNumberOfPages = items.length - (TOP * page) - BOTTOM;
   if (page >= maxNumberOfPages) return items;
   return [...items.slice(0, page * TOP)];
 };
 
-export const bottomItems = <T>(items: T[]) => [...items.slice(items.length - BOTTOM)];
+export const bottomItems = <T>(items: T[]) => (items.length < TOP ? [] : [...items.slice(items.length - BOTTOM)]);
 
 const usePagination = () => {
   const [page, setPage] = useState<number>(1);
