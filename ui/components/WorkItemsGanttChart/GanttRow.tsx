@@ -166,7 +166,7 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
         width={textWidth}
         height={textHeight}
       >
-        <div className="flex items-center">
+        <div className="flex items-center h-full">
           {isWorkItemRow(row) ? (
             <>
               <TreeNodeButton
@@ -199,7 +199,7 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
                 className="mt-1 flex items-center"
                 onClick={toggle}
               >
-                <span className="w-4 h-4 mr-2 inline-block">
+                <span className="mr-2 inline-block">
                   {row.expandedState === 'collapsed' ? <Plus /> : <Minus />}
                 </span>
                 <div className="text-sm text-gray-800 inline-block">
