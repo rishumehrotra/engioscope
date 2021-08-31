@@ -100,7 +100,7 @@ const AdvancedFilters: React.FC = () => {
         <button onClick={() => setIsOpen(!isOpen)}>
           <Filters
             className={`text-gray-500 rounded-md border-gray-800 hover:bg-white hover:border-gray-400 hover:shadow
-            ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer mr-6`}
+            ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
             tooltip="Advanced Filters"
           />
         </button>

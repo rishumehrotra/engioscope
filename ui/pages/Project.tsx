@@ -51,8 +51,10 @@ const Project: React.FC = () => {
           <NavBar />
           <div>
             <div className="flex">
-              <SearchInput />
-              <AdvancedFilters />
+              <div className="flex mr-4">
+                <SearchInput />
+                <AdvancedFilters />
+              </div>
               <SortControls />
             </div>
           </div>
