@@ -68,6 +68,8 @@ const Repos: React.FC = () => {
   const topRepos = topItems(page, repos);
   const bottomRepos = bottomItems(repos);
 
+  console.log({ topRepos, bottomRepos });
+
   return (
     <div>
       <AppliedFilters type="repos" count={topRepos.length} />
@@ -83,7 +85,7 @@ const Repos: React.FC = () => {
               />
             ))
             : null}
-          {(repos.length >= topRepos.length + bottomRepos.length) ? (
+          {(repos.length > topRepos.length + bottomRepos.length) ? (
             <LoadMore
               loadMore={loadMore}
               hiddenItemsCount={repos.length - topRepos.length - bottomRepos.length}
