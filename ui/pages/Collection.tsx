@@ -9,7 +9,6 @@ import { fetchCollections } from '../network';
 const Project: React.FC<{
   projectName: string;
   route: string;
-  lastUpdated: string;
   collectionName: string;
 }> = ({
   projectName, route, collectionName
@@ -48,8 +47,6 @@ const Collection: React.FC = () => {
                     projectName={collection.name[1]}
                     route={`/${collection.name.join('/')}/repos`}
                     collectionName={collection.name[0]}
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    lastUpdated={collection.lastUpdated!}
                   />
                 ))
                 : <Loading />

@@ -54,6 +54,7 @@
     ],
     "react/jsx-uses-vars": "error",
     "react/prop-types": "off",
+    "react/require-default-props": "off",
     "indent": "off",
     "@typescript-eslint/indent": [
       "error",

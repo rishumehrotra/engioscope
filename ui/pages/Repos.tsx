@@ -68,8 +68,6 @@ const Repos: React.FC = () => {
   const topRepos = topItems(page, repos);
   const bottomRepos = bottomItems(repos);
 
-  console.log({ topRepos, bottomRepos });
-
   return (
     <div>
       <AppliedFilters type="repos" count={topRepos.length} />

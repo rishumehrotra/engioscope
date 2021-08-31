@@ -5,4 +5,5 @@ import scrape from '../scraper/get-all-the-things';
 import config from '../../config.json';
 import parseConfig from '../scraper/parse-config';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 scrape(parseConfig(config as any));
