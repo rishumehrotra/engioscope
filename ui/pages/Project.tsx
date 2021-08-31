@@ -46,8 +46,8 @@ const Project: React.FC = () => {
           </div>
         )}
       />
-      <div className="mx-32 -mt-24 bg-gray-50 p-4 rounded-t-lg" style={{ marginTop: '-6.5rem' }}>
-        <div className="flex justify-between mb-8 rounded-t-lg p-4 -m-4 bg-blue-100 bg-opacity-50">
+      <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
+        <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
           <NavBar />
           <div>
             <div className="flex">

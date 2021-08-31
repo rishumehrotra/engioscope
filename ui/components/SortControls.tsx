@@ -19,8 +19,8 @@ const SortControls: React.FC = () => {
         value={sortParams.sortBy || sortOptions.defaultKey}
       />
       <button
-        className="text-base font-medium text-gray-500
-          flex justify-end items-center rounded-lg cursor-pointer ml-1 hover:bg-white hover:shadow h-full p-2"
+        className="text-base font-medium text-gray-500 flex items-center justify-end
+         cursor-pointer ml-1 hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400"
         style={{ outline: 'none' }}
         onClick={toggleSortDirection}
       >

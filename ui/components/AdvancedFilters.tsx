@@ -95,12 +95,17 @@ const AdvancedFilters: React.FC = () => {
   useOnClickOutside(ref, () => setIsOpen(false));
 
   return (
-    <span className="grid items-center relative">
+    <span className="relative">
       {selectedTab === 'workitems' ? null : (
-        <button onClick={() => setIsOpen(!isOpen)}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`h-full flex items-center
+          hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400
+        ${isOpen ? 'bg-white shadow' : ''}`}
+        >
           <Filters
-            className={`text-gray-500 rounded-md border-gray-800 hover:bg-white hover:border-gray-400 hover:shadow
-            ${isOpen ? 'bg-white shadow' : ''} p-2 cursor-pointer`}
+            className={`text-gray-500 border-gray-800
+             cursor-pointer`}
             tooltip="Advanced Filters"
           />
         </button>
