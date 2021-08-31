@@ -238,8 +238,8 @@ export const constructTree = (
       expandedState: 'expanded',
       children: ownProjectChildren,
       childCount: 0,
-      minTimestamp: Math.min(...fullTree.map(c => c.minTimestamp)),
-      maxTimestamp: Math.max(...fullTree.map(c => c.maxTimestamp))
+      minTimestamp: fullTree.length ? Math.min(...fullTree.map(c => c.minTimestamp)) : 0,
+      maxTimestamp: fullTree.length ? Math.max(...fullTree.map(c => c.maxTimestamp)) : 0
     });
 
     const allProjectsNode: ProjectNode = {
@@ -253,8 +253,8 @@ export const constructTree = (
           ...node, path: `/all-projects${node.path}`
         }))) as WorkItemTypeNode[],
       childCount: fullTree.reduce((acc, n) => acc + n.childCount, 0),
-      minTimestamp: Math.min(...fullTree.map(c => c.minTimestamp)),
-      maxTimestamp: Math.max(...fullTree.map(c => c.maxTimestamp))
+      minTimestamp: fullTree.length ? Math.min(...fullTree.map(c => c.minTimestamp)) : 0,
+      maxTimestamp: fullTree.length ? Math.max(...fullTree.map(c => c.maxTimestamp)) : 0
     };
     return [projectNode, allProjectsNode];
   };
