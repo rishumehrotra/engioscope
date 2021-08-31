@@ -26,7 +26,7 @@ const colorPalette = [
 ];
 
 const bySearchTerm = (searchTerm: string) => (workItem: UIWorkItem) => (
-  workItem.title.toLowerCase().includes(searchTerm.toLowerCase())
+  (`${workItem.id}: ${workItem.title}`).toLowerCase().includes(searchTerm.toLowerCase())
 );
 
 const sorters = (childrenCount: (id: number) => number): SortMap<UIWorkItem> => ({
@@ -49,7 +49,7 @@ const useRevisionsForCollection = () => {
     });
   }, [collection, revisions]);
 
-  useEffect(() => { ReactTooltip.rebuild(); }, [revisions]);
+  useEffect(() => { setTimeout(ReactTooltip.rebuild, 0); }, [revisions]);
 
   return [revisions, getRevisions] as const;
 };
