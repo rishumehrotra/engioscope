@@ -31,24 +31,29 @@ const Collection: React.FC = () => {
   useEffect(() => { fetchCollections().then(setCollections); }, []);
   useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
 
-  if (!collections) return <Loading />;
-
   return (
     <div>
       <div>
-        <Header lastUpdated={collections[0].lastUpdated} title="Projects" />
+        <Header
+          lastUpdated={collections ? collections[0].lastUpdated : ''}
+          title="Projects"
+        />
         <div className="mx-32 -mt-24 bg-gray-50 p-8 rounded-lg">
           <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-            {collections.map(collection => (
-              <Project
-                key={collection.name[1]}
-                projectName={collection.name[1]}
-                route={`/${collection.name.join('/')}/repos`}
-                collectionName={collection.name[0]}
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                lastUpdated={collection.lastUpdated!}
-              />
-            ))}
+            {
+              collections
+                ? collections.map(collection => (
+                  <Project
+                    key={collection.name[1]}
+                    projectName={collection.name[1]}
+                    route={`/${collection.name.join('/')}/repos`}
+                    collectionName={collection.name[0]}
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    lastUpdated={collection.lastUpdated!}
+                  />
+                ))
+                : <Loading />
+            }
           </div>
         </div>
       </div>

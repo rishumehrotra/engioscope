@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import logo from '../images/engioscope.png';
 
 type HeaderProps = {
-  lastUpdated: string | null;
+  lastUpdated?: string | null;
   title: string;
   subtitle?: () => React.ReactNode;
 };
@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => (
         <div className="text-sm text-gray-300 justify-self-end">
           Last updated on
           <span className="font-semibold ml-1">
-            {lastUpdated}
+            {lastUpdated || ''}
           </span>
         </div>
       </div>
