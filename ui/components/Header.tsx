@@ -9,7 +9,7 @@ type HeaderProps = {
 };
 
 const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => (
-  <div className="bg-gray-900 px-32 pt-4 pb-12">
+  <div className="bg-gray-900 px-32 pt-4 pb-16">
     <div>
       <Link to="/">
         <img src={logo} alt="Logo" className="w-36" />

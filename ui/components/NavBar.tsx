@@ -40,8 +40,8 @@ const NavBar: React.FC = () => {
             key={key}
             to={() => newRoute(key)}
             className={`px-3 mr-2 h-10 rounded text-lg
-            font-medium leading-4
-            ${selectedTab === key ? 'bg-gray-800 text-gray-200' : 'hover:bg-gray-300 text-gray-800 cursor-pointer'}
+            font-medium leading-4 ${selectedTab === key ? 'bg-gray-800 text-gray-200'
+            : 'border-2 border-transparent hover:border-gray-800 text-gray-800 cursor-pointer'}
             focus:outline-none transition duration-300 ease-in-out flex items-center`}
           >
             {name || key}
