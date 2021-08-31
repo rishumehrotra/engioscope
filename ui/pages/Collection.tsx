@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScrapedProject } from '../../shared/types';
+import Header from '../components/Header';
 import Loading from '../components/Loading';
-import logo from '../images/engioscope.png';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 
@@ -36,22 +36,7 @@ const Collection: React.FC = () => {
   return (
     <div>
       <div>
-        <div className="bg-gray-900 px-32 pt-4 pb-24 mb-8">
-          <div>
-            <Link to="/">
-              <img src={logo} alt="Logo" className="w-36" />
-            </Link>
-          </div>
-          <div className="flex justify-between items-end mt-12">
-            <h1 className="mb-4 text-5xl font-bold text-gray-200 pr-2">Projects</h1>
-            <div className="text-sm text-gray-300">
-              Last updated on
-              <span className="font-semibold ml-1">
-                {collections[0].lastUpdated}
-              </span>
-            </div>
-          </div>
-        </div>
+        <Header lastUpdated={collections[0].lastUpdated} title="Projects" />
         <div className="mx-32 -mt-24 bg-gray-50 p-8 rounded-lg">
           <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
             {collections.map(collection => (
@@ -72,3 +57,4 @@ const Collection: React.FC = () => {
 };
 
 export default Collection;
+
