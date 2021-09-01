@@ -202,13 +202,13 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
                 <span className="mr-2 inline-block">
                   {row.expandedState === 'collapsed' ? <Plus /> : <Minus />}
                 </span>
-                <div className="text-sm text-gray-800 inline-block">
+                <div className="text-sm text-gray-800 flex items-center">
                   {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) ? (
                     <img
                       src={row.icon}
                       alt={`Icon for ${row.label}`}
                       width="16"
-                      className="float-left mr-1 -mb-1"
+                      className="mr-1"
                     />
                   ) : null}
                   {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) || isProjectRow(row) ? (
