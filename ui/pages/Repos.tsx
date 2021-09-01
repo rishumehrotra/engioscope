@@ -83,12 +83,10 @@ const Repos: React.FC = () => {
               />
             ))
             : null}
-          {(repos.length > topRepos.length + bottomRepos.length) ? (
-            <LoadMore
-              loadMore={loadMore}
-              hiddenItemsCount={repos.length - topRepos.length - bottomRepos.length}
-            />
-          ) : null}
+          <LoadMore
+            loadMore={loadMore}
+            hiddenItemsCount={repos.length - topRepos.length - bottomRepos.length}
+          />
           {bottomRepos.length
             ? bottomRepos.map(repo => (
               <RepoHealth

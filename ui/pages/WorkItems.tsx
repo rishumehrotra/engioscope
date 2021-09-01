@@ -118,12 +118,10 @@ const WorkItems: React.FC = () => {
             getRevisions={getRevisions}
           />
         ))}
-        {(filteredWorkItems.length >= topWorkItems.length + bottomWorkItems.length) ? (
-          <LoadMore
-            loadMore={loadMore}
-            hiddenItemsCount={filteredWorkItems.length - topWorkItems.length - bottomWorkItems.length}
-          />
-        ) : null}
+        <LoadMore
+          loadMore={loadMore}
+          hiddenItemsCount={filteredWorkItems.length - topWorkItems.length - bottomWorkItems.length}
+        />
         {bottomWorkItems.map(workItem => (
           <WorkItem
             key={workItem.id}
