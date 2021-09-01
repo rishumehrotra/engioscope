@@ -120,17 +120,19 @@ const WorkItem: React.FC<WorkItemProps> = ({
         {
           workItemRevisions
             ? (
-              <div className="w-full">
-                <svg viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}>
-                  <Revisions
-                    revisions={workItemRevisions}
-                    barWidth={barWidth}
-                    colorForStage={colorForStage}
-                    rowIndex={0}
-                    timeToXCoord={timeToXCoord}
-                  />
-                </svg>
-              </div>
+              <svg
+                viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}
+                height="100%"
+                width="100%"
+              >
+                <Revisions
+                  revisions={workItemRevisions}
+                  barWidth={barWidth}
+                  colorForStage={colorForStage}
+                  rowIndex={0}
+                  timeToXCoord={timeToXCoord}
+                />
+              </svg>
             ) : null
         }
       </div>
