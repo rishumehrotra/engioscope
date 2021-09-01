@@ -70,7 +70,7 @@ const Repos: React.FC = () => {
 
   return (
     <div>
-      <AppliedFilters type="repos" count={topRepos.length} />
+      <AppliedFilters type="repos" count={repos.length} />
       { repos.length ? (
         <>
           {topRepos.length
