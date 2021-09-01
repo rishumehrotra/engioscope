@@ -13,6 +13,7 @@ import VerticalCrosshair from './VerticalCrosshair';
 import useGanttRows, { isProjectRow } from './use-gantt-rows';
 import BottomScale from './BottomScale';
 
+const showBottomScale = false;
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 
 export type WorkItemsGanttChartProps = {
@@ -69,7 +70,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
         </button>
       ) : null}
       <svg
-        viewBox={`0 0 ${svgWidth} ${height + bottomScaleHeight}`}
+        viewBox={`0 0 ${svgWidth} ${height + (showBottomScale ? bottomScaleHeight : 0)}`}
         ref={svgRef}
         className="select-none"
         style={{ contain: 'content' }}
@@ -108,7 +109,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
           minDate={minDate}
           maxDate={maxDate}
         />
-        {rows.length ? (
+        {rows.length && showBottomScale ? (
           <BottomScale
             count={rows.length}
             minDate={new Date(minDate)}

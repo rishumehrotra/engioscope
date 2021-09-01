@@ -41,9 +41,9 @@ const BottomScale: React.FC<BottomScaleProps> = ({
       width={axisLabelsWidth}
       height={axisLabelsHeight}
     >
-      <button onClick={() => {
-        onSelect([new Date(minDate.getTime() + 2000000000).getTime(), maxDate.getTime()]);
-      }}
+      <button
+        onClick={() => onSelect([new Date(minDate.getTime() + 2000000000).getTime(), maxDate.getTime()])}
+        className="cursor-pointer"
       >
         <DragHandle />
       </button>
@@ -60,9 +60,9 @@ const BottomScale: React.FC<BottomScaleProps> = ({
       width={axisLabelsWidth}
       height={axisLabelsHeight}
     >
-      <button onClick={() => {
-        onSelect([minDate.getTime(), new Date(maxDate.getTime() - 2000000000).getTime()]);
-      }}
+      <button
+        onClick={() => onSelect([minDate.getTime(), new Date(maxDate.getTime() - 2000000000).getTime()])}
+        className="cursor-pointer"
       >
         <DragHandle />
       </button>
