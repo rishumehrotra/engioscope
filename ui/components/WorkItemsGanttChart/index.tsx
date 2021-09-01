@@ -6,9 +6,12 @@ import type { AnalysedWorkItems, UIWorkItemRevision } from '../../../shared/type
 import DragZoom from './DragZoom';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
-import { svgWidth, svgHeight, xCoordConverterWithin } from './helpers';
+import {
+  svgWidth, svgHeight, xCoordConverterWithin, bottomScaleHeight
+} from './helpers';
 import VerticalCrosshair from './VerticalCrosshair';
 import useGanttRows, { isProjectRow } from './use-gantt-rows';
+import BottomScale from './BottomScale';
 
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 
@@ -66,7 +69,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
         </button>
       ) : null}
       <svg
-        viewBox={`0 0 ${svgWidth} ${height}`}
+        viewBox={`0 0 ${svgWidth} ${height + bottomScaleHeight}`}
         ref={svgRef}
         className="select-none"
         style={{ contain: 'content' }}
@@ -105,6 +108,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
           minDate={minDate}
           maxDate={maxDate}
         />
+        <BottomScale count={rows.length} minDate={new Date(minDate)} maxDate={new Date(maxDate)} />
       </svg>
     </div>
   );
