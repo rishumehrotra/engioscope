@@ -1,11 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { useQueryParam } from 'use-query-params';
 import { Filters } from './common/Icons';
-import type { Tab } from '../types';
 import Checkbox from './common/Checkbox';
 import TextCheckboxCombo from './common/TextCheckboxCombo';
 import useOnClickOutside from '../hooks/on-click-outside';
+import { useTabs } from '../hooks/use-tabs';
 
 const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
@@ -87,9 +86,7 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 };
 
 const AdvancedFilters: React.FC = () => {
-  const location = useLocation();
-  const pathParts = location.pathname.split('/');
-  const selectedTab = pathParts[pathParts.length - 1] as Tab;
+  const [selectedTab] = useTabs();
   const ref = useRef(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   useOnClickOutside(ref, () => setIsOpen(false));
