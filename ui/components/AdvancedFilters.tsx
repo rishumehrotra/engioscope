@@ -91,22 +91,22 @@ const AdvancedFilters: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   useOnClickOutside(ref, () => setIsOpen(false));
 
+  if (selectedTab === 'workitems' || selectedTab === 'devs') return null;
+
   return (
     <span className="relative">
-      {selectedTab === 'workitems' ? null : (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`h-full flex items-center
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`h-full flex items-center
           hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400
         ${isOpen ? 'bg-white shadow' : ''}`}
-        >
-          <Filters
-            className={`text-gray-500 border-gray-800
+      >
+        <Filters
+          className={`text-gray-500 border-gray-800
              cursor-pointer`}
-            tooltip="Advanced Filters"
-          />
-        </button>
-      )}
+          tooltip="Advanced Filters"
+        />
+      </button>
       <div ref={ref}>
         {selectedTab === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
         {selectedTab === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
