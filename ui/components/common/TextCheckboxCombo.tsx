@@ -7,10 +7,11 @@ type TextCheckboxComboProps = {
   onChange: (value: string | undefined) => void;
   textBoxPrefix?: string;
   textBoxSuffix?: string;
+  defaultText?: string;
 };
 
 const TextCheckboxCombo: React.FC<TextCheckboxComboProps> = ({
-  value, onChange, textBoxPrefix, textBoxSuffix, type
+  value, onChange, textBoxPrefix, textBoxSuffix, type, defaultText
 }) => {
   const [textValue, setTextValue] = useState<string | undefined>(value);
 
@@ -24,13 +25,14 @@ const TextCheckboxCombo: React.FC<TextCheckboxComboProps> = ({
   );
 
   const onCheckboxChange = (v: boolean) => {
+    if (!value && !textValue) setTextValue(defaultText || ' ');
     if (!v) onChange(undefined);
     else onChange(getNewValue(textValue, type));
   };
 
   return (
     <Checkbox
-      value={value !== undefined && value !== ''}
+      value={value !== undefined}
       onChange={onCheckboxChange}
       label={(
         <span>
