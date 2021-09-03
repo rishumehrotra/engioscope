@@ -13,6 +13,7 @@ import Loading from '../components/Loading';
 import { aggregateDevs } from '../helpers/aggregate-devs';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
+import RepoSummary from '../components/RepoSummary';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -55,24 +56,29 @@ const Repos: React.FC = () => {
     return aggregateDevs(projectAnalysis);
   }, [projectAnalysis]);
 
+  const repos = useMemo(() => {
+    if (projectAnalysis === 'loading') return [];
+
+    return projectAnalysis.repos
+      .filter(search === undefined ? dontFilter : bySearch(search))
+      .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
+      .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
+      .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
+      .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
+      .sort(sorter);
+  }, [buildsGreaterThanZero, commitsGreaterThanZero, projectAnalysis, search, sorter, techDebtMoreThanDays, withFailingLastBuilds]);
+
+  const topRepos = useMemo(() => topItems(page, repos), [page, repos]);
+  const bottomRepos = useMemo(() => bottomItems(repos), [repos]);
+
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
-
-  const repos = projectAnalysis.repos
-    .filter(search === undefined ? dontFilter : bySearch(search))
-    .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
-    .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
-    .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
-    .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
-    .sort(sorter);
-
-  const topRepos = topItems(page, repos);
-  const bottomRepos = bottomItems(repos);
 
   return (
     <div>
       <AppliedFilters type="repos" count={repos.length} />
       { repos.length ? (
         <>
+          <RepoSummary repos={repos} />
           {topRepos.length
             ? topRepos.map((repo, index) => (
               <RepoHealth
