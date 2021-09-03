@@ -1,5 +1,6 @@
 import React from 'react';
 import type { RepoAnalysis } from '../../shared/types';
+import { num } from '../helpers/utils';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos
@@ -37,60 +38,68 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
   const sonar = sonarStats(repos);
 
   return (
-    <ul>
-      <li>
-        <h3>Tests</h3>
-        <div>
-          {repos
-            .reduce(
-              (acc, r) => acc + (r.tests?.total || 0),
-              0
-            )}
-        </div>
-      </li>
-      <li>
-        <h3>Builds</h3>
-        <div>
-          Total:
-          {repos
-            .reduce(
-              (acc, r) => acc + (r.builds?.count || 0),
-              0
-            )}
-        </div>
-        <div>
-          Success rate:
-          {buildSuccessRate(repos)}
-        </div>
-      </li>
-      <li>
-        <h3>Code quality</h3>
-        <div>
-          Sonar configured:
-          {sonar.configured}
-        </div>
-        <div>
-          Quality gates:
-          <ul>
-            <li>
-              Ok:
-              {' '}
+    <div className="justify-end flex items-center">
+      <ul className="flex flex-nowrap justify-items-center">
+        <li className="p-2 border border-gray-200 bg-white shadow-sm mr-1 rounded">
+          <div className="mx-2 flex flex-col justify-end">
+            <h3 className="text-xs font-medium">Tests</h3>
+            <div className="font-bold text-2xl">
+              {num(repos
+                .reduce(
+                  (acc, r) => acc + (r.tests?.total || 0),
+                  0
+                ))}
+            </div>
+          </div>
+        </li>
+        <li className="p-2 border border-gray-200 bg-white shadow-sm mr-1 rounded flex">
+          <div className="mx-2 flex flex-col h-full justify-end">
+            <h3 className="text-xs font-medium mr-4">Builds</h3>
+            <div className="font-bold text-2xl">
+              {num(repos
+                .reduce(
+                  (acc, r) => acc + (r.builds?.count || 0),
+                  0
+                ))}
+            </div>
+          </div>
+
+          <div className="mx-2 flex flex-col h-full justify-end">
+            <h3 className="text-xs">Success</h3>
+            <div className="font-bold leading-7">
+              {buildSuccessRate(repos)}
+            </div>
+          </div>
+        </li>
+        <li className="p-2 border border-gray-200 bg-white shadow-sm rounded flex">
+          <div className="mx-2 flex flex-col justify-end">
+            <h3 className="text-xs font-medium mr-4">Sonar</h3>
+            <div className="font-bold text-2xl">
+              {num(sonar.configured)}
+            </div>
+          </div>
+
+          <div className="mx-2 flex flex-col justify-end">
+            <h3 className="text-xs">Ok</h3>
+            <div className="font-bold leading-7">
               {sonar.ok}
-            </li>
-            <li>
-              Warn:
-              {' '}
+            </div>
+          </div>
+          <div className="mx-2 flex flex-col justify-end">
+            <h3 className="text-xs">Warn</h3>
+            <div className="font-bold leading-7">
               {sonar.warn}
-            </li>
-            <li>
-              Error:
-              {' '}
+            </div>
+          </div>
+          <div className="mx-2 flex flex-col justify-end">
+            <h3 className="text-xs">Error</h3>
+            <div className="font-bold leading-7">
               {sonar.error}
-            </li>
-          </ul>
-        </div>
-      </li>
-    </ul>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
   );
 };
 

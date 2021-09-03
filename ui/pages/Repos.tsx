@@ -73,39 +73,37 @@ const Repos: React.FC = () => {
 
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
-  return (
-    <div>
-      <AppliedFilters type="repos" count={repos.length} />
-      { repos.length ? (
-        <>
-          <RepoSummary repos={repos} />
-          {topRepos.length
-            ? topRepos.map((repo, index) => (
-              <RepoHealth
-                repo={repo}
-                key={repo.name}
-                aggregatedDevs={aggregatedDevs}
-                isFirst={index === 0}
-              />
-            ))
-            : null}
-          <LoadMore
-            loadMore={loadMore}
-            hiddenItemsCount={repos.length - topRepos.length - bottomRepos.length}
+  return repos.length ? (
+    <>
+      <div className="flex justify-end items-center my-3 w-full">
+        <AppliedFilters type="repos" count={repos.length} />
+        <RepoSummary repos={repos} />
+      </div>
+      {topRepos.length
+        ? topRepos.map((repo, index) => (
+          <RepoHealth
+            repo={repo}
+            key={repo.name}
+            aggregatedDevs={aggregatedDevs}
+            isFirst={index === 0}
           />
-          {bottomRepos.length
-            ? bottomRepos.map(repo => (
-              <RepoHealth
-                repo={repo}
-                key={repo.name}
-                aggregatedDevs={aggregatedDevs}
-              />
-            ))
-            : null}
-        </>
-      ) : <AlertMessage message="No repos found" />}
-    </div>
-  );
+        ))
+        : null}
+      <LoadMore
+        loadMore={loadMore}
+        hiddenItemsCount={repos.length - topRepos.length - bottomRepos.length}
+      />
+      {bottomRepos.length
+        ? bottomRepos.map(repo => (
+          <RepoHealth
+            repo={repo}
+            key={repo.name}
+            aggregatedDevs={aggregatedDevs}
+          />
+        ))
+        : null}
+    </>
+  ) : <AlertMessage message="No repos found" />;
 };
 
 export default Repos;
