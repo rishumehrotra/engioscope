@@ -47,16 +47,14 @@ const Project: React.FC = () => {
         )}
       />
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
-        <div className="flex justify-between rounded-lg p-4 bg-white shadow">
+        <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
           <NavBar />
-          <div>
-            <div className="flex">
-              <div className="flex mr-4">
-                <SearchInput />
-                <AdvancedFilters />
-              </div>
-              <SortControls />
+          <div className="flex">
+            <div className="flex mr-4">
+              <SearchInput />
+              <AdvancedFilters />
             </div>
+            <SortControls />
           </div>
         </div>
 

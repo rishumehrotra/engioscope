@@ -75,7 +75,7 @@ const Repos: React.FC = () => {
 
   return repos.length ? (
     <>
-      <div className="flex justify-end items-center my-3 w-full">
+      <div className="flex justify-end items-center my-3 w-full -mt-4">
         <AppliedFilters type="repos" count={repos.length} />
         <RepoSummary repos={repos} />
       </div>
