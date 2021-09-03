@@ -111,7 +111,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
         />
         {rows.length && showBottomScale ? (
           <BottomScale
-            timeToXCoord={timeToXCoord}
             count={rows.length}
             lowerDate={new Date(minDate)}
             upperDate={new Date(maxDate)}

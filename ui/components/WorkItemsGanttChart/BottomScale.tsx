@@ -43,7 +43,6 @@ type BottomScaleProps = {
   initialMinDate: Date;
   initialMaxDate: Date;
   onSelect: React.Dispatch<React.SetStateAction<[number, number] | null>>;
-  timeToXCoord: (date: Date) => number;
 };
 
 const BottomScale: React.FC<BottomScaleProps> = ({
