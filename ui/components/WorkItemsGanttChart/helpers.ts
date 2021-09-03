@@ -10,7 +10,7 @@ export const barHeight = 20;
 export const rowPadding = 3;
 export const axisLabelsHeight = 20;
 export const axisLabelsWidth = 80;
-export const bottomScaleHeight = 50;
+export const bottomScaleHeight = 80;
 
 export const svgHeight = (childrenCount: number) => (
   ((textHeight + (rowPadding * 2)) * childrenCount) + axisLabelsHeight
