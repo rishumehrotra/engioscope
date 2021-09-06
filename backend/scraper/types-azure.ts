@@ -127,7 +127,7 @@ export type DeploymentAttempt = {
   // releaseDeploymentPhases: ReleaseDeployPhase[]
   requestedBy: IdentityRef;
   requestedFor: IdentityRef;
-  queueOn: Date;
+  queuedOn: Date;
   lastModifiedBy: IdentityRef;
   lastModifiedOn: Date;
   hasStarted: boolean;

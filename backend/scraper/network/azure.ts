@@ -1,5 +1,6 @@
 import qs from 'qs';
 import md5 from 'md5';
+import { filter } from 'rambda';
 import fetch from './fetch-with-timeout';
 import { chunkArray } from '../../utils';
 import type {
@@ -131,16 +132,26 @@ export default (config: ParsedConfig) => {
       })
     ),
 
-    getReleases: (collectionName: string, projectName: string) => (
-      list<Release>({
+    getReleases: (collectionName: string, projectName: string) => {
+      // Taking back the querying time by a month due to #55.
+      const queryFrom = new Date(config.azure.queryFrom);
+      queryFrom.setMonth(queryFrom.getMonth() - 1);
+
+      return list<Release>({
         url: url(collectionName, projectName, '/release/releases'),
         qsParams: {
-          minCreatedTime: config.azure.queryFrom.toISOString(),
+          minCreatedTime: queryFrom.toISOString(),
           $expand: 'environments,artifacts'
         },
         cacheFile: [collectionName, projectName, 'releases']
-      })
-    ),
+      }).then(filter(release => (
+        release.environments.some(
+          env => env.deploySteps.some(
+            step => step.queuedOn >= config.azure.queryFrom
+          )
+        )
+      )));
+    },
 
     getCommits: (collectionName: string, projectName: string) => (repoId: string) => (
       paginatedGet<ListOf<GitCommitRef>>({
