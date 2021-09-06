@@ -141,6 +141,7 @@ export type UIWorkItem = {
   color: string;
   env?: string;
   clt?: { start?: string; end?: string };
+  cycleTime: { start: string; end?: string };
 };
 
 export type UIWorkItemRevision = {
