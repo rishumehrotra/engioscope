@@ -15,6 +15,7 @@ import AppliedFilters from '../components/AppliedFilters';
 import Loading from '../components/Loading';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
+import FeaturesAndBugsSummary from '../components/FeaturesAndBugsSummary';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -105,7 +106,10 @@ const WorkItems: React.FC = () => {
 
   return (
     <>
-      <AppliedFilters type="workitems" count={filteredWorkItems.length} />
+      <div className="flex justify-end items-center my-3 w-full -mt-4">
+        <AppliedFilters type="workitems" count={filteredWorkItems.length} />
+        <FeaturesAndBugsSummary workItems={filteredWorkItems} />
+      </div>
       <ul>
         {topWorkItems.map(workItem => (
           <WorkItem
