@@ -30,10 +30,10 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
   const isFilterApplied = search || commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds
   || (techDebtGreaterThan !== undefined) || nonMasterReleases || notStartsWithArtifact || stageNameExists
   || stageNameExistsNotUsed;
-  if (!isFilterApplied) return null;
+  if (!isFilterApplied) return <div />;
 
   return (
-    <div className="w-full flex flex-wrap items-center text-md text-gray-800">
+    <div className="w-auto flex flex-wrap items-center text-md text-gray-800">
       {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
       {
         search ? (

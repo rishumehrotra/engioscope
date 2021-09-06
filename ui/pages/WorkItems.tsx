@@ -106,7 +106,7 @@ const WorkItems: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-end items-center my-3 w-full -mt-4">
+      <div className="flex justify-between items-center my-3 w-full -mt-4">
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
         <FeaturesAndBugsSummary workItems={filteredWorkItems} />
       </div>
