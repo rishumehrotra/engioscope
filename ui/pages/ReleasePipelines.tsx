@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
+import ReactTooltip from 'react-tooltip';
 import type { ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
@@ -35,15 +36,21 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   useRemoveSort();
 
+  const pipelines = useMemo(() => {
+    if (releaseAnalysis === 'loading') return [];
+
+    return releaseAnalysis.pipelines
+      .filter(search === undefined ? dontFilter : bySearch(search))
+      .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
+      .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
+      .filter(stageNameExists === undefined ? dontFilter : byStageNameExists(stageNameExists))
+      .filter(stageNameExistsNotUsed === undefined ? dontFilter : byStageNameExistsNotUsed(stageNameExistsNotUsed));
+  }, [releaseAnalysis, search, nonMasterReleases, notStartsWithArtifact, stageNameExists, stageNameExistsNotUsed]);
+
+  useEffect(() => { ReactTooltip.rebuild(); }, [pipelines]);
+
   if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
-
-  const pipelines = releaseAnalysis.pipelines
-    .filter(search === undefined ? dontFilter : bySearch(search))
-    .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
-    .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
-    .filter(stageNameExists === undefined ? dontFilter : byStageNameExists(stageNameExists))
-    .filter(stageNameExistsNotUsed === undefined ? dontFilter : byStageNameExistsNotUsed(stageNameExistsNotUsed));
 
   return (
     <>

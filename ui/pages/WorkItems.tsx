@@ -99,6 +99,8 @@ const WorkItems: React.FC = () => {
     getRevisions(ids);
   }, [filteredWorkItems, getRevisions, page, workItemAnalysis]);
 
+  useEffect(() => { ReactTooltip.rebuild(); }, [filteredWorkItems, revisions]);
+
   if (workItemAnalysis === 'loading') return <Loading />;
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
