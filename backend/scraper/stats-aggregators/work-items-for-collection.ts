@@ -128,6 +128,15 @@ const computeCLT = (collectionConfig: ParsedCollection, workItem: WorkItem): CLT
   };
 };
 
+const computeCycleTime = (workItem: WorkItem) => ({
+  cycleTime: {
+    start: new Date(workItem.fields['System.CreatedDate']).toISOString(),
+    end: workItem.fields['Microsoft.VSTS.Common.ClosedDate']
+      ? new Date(workItem.fields['Microsoft.VSTS.Common.ClosedDate']).toISOString()
+      : undefined
+  }
+});
+
 const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
   (workItemTypesByCollection: Record<CollectionName, WorkItemTypeByTypeName>) => (
     (workItem: WorkItem): UIWorkItem => {
@@ -154,7 +163,8 @@ const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
         env: collectionConfig.workitems.environmentField
           ? workItem.fields[collectionConfig.workitems.environmentField]
           : undefined,
-        ...computeCLT(collectionConfig, workItem)
+        ...computeCLT(collectionConfig, workItem),
+        ...computeCycleTime(workItem)
       };
     }
   )
