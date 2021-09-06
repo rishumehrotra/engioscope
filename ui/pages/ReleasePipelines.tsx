@@ -10,6 +10,7 @@ import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
 import Loading from '../components/Loading';
+import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) => (
@@ -54,7 +55,10 @@ const ReleasePipelines: React.FC = () => {
 
   return (
     <>
-      <AppliedFilters type="release-pipelines" count={pipelines.length} />
+      <div className="flex justify-between items-center my-3 w-full -mt-4">
+        <AppliedFilters type="release-pipelines" count={pipelines.length} />
+        <ReleasePipelineSummary pipelines={pipelines} stagesToHighlight={releaseAnalysis.stagesToHighlight} />
+      </div>
       {pipelines.length ? pipelines.map(pipeline => (
         <Pipeline
           key={pipeline.id}
