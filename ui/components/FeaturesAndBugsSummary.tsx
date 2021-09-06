@@ -16,9 +16,9 @@ const cycleTime = (workItems: UIWorkItem[]) => {
     .filter(exists);
 
   return {
-    average: cycleTimes.reduce(add, 0) / cycleTimes.length,
-    min: Math.min(...cycleTimes),
-    max: Math.max(...cycleTimes)
+    average: cycleTimes.length ? cycleTimes.reduce(add, 0) / cycleTimes.length : 0,
+    min: cycleTimes.length ? Math.min(...cycleTimes) : undefined,
+    max: cycleTimes.length ? Math.max(...cycleTimes) : undefined
   };
 };
 
@@ -31,8 +31,8 @@ const FeaturesAndBugsSummary: React.FC<{ workItems: UIWorkItem[] }> = ({ workIte
         title="Average cycle time"
         value={prettyMilliseconds(time.average, { compact: true })}
         childStats={[
-          { title: 'Min', value: prettyMilliseconds(time.min, { compact: true }) },
-          { title: 'Max', value: prettyMilliseconds(time.max, { compact: true }) }
+          { title: 'Min', value: time.min ? prettyMilliseconds(time.min, { compact: true }) : '-' },
+          { title: 'Max', value: time.max ? prettyMilliseconds(time.max, { compact: true }) : '-' }
         ]}
       />
     </ProjectStats>
