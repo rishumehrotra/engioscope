@@ -128,8 +128,8 @@ const computeCLT = (collectionConfig: ParsedCollection, workItem: WorkItem): CLT
   };
 };
 
-const computeCycleTime = (workItem: WorkItem) => ({
-  cycleTime: {
+const computeLeadTime = (workItem: WorkItem) => ({
+  leadTime: {
     start: new Date(workItem.fields['System.CreatedDate']).toISOString(),
     end: workItem.fields['Microsoft.VSTS.Common.ClosedDate']
       ? new Date(workItem.fields['Microsoft.VSTS.Common.ClosedDate']).toISOString()
@@ -164,7 +164,7 @@ const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
           ? workItem.fields[collectionConfig.workitems.environmentField]
           : undefined,
         ...computeCLT(collectionConfig, workItem),
-        ...computeCycleTime(workItem)
+        ...computeLeadTime(workItem)
       };
     }
   )

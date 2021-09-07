@@ -12,8 +12,8 @@ const computeStats = (workItems: UIWorkItem[]) => {
       ...acc,
       [workItem.type]: [
         ...(acc[workItem.type] || []),
-        ...(workItem.cycleTime.end
-          ? [new Date(workItem.cycleTime.end).getTime() - new Date(workItem.cycleTime.start).getTime()]
+        ...(workItem.leadTime.end
+          ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
           : []
         )
       ]
@@ -21,12 +21,12 @@ const computeStats = (workItems: UIWorkItem[]) => {
   );
 
   return Object.entries(aggregated).map<ProjectStatProps>(([type, times]) => ({
-    title: `${type} cycle time`,
+    title: `${type} lead time`,
     value: times.length ? prettyMilliseconds(times.reduce(add, 0) / times.length, { compact: true }) : '-',
     tooltip: `
-      Average cycle time for a ${type.toLowerCase()}
+      Average lead time for a ${type.toLowerCase()}
       <br />
-      Cycle time is the the time from when the ${type.toLowerCase()}
+      Lead time is the the time from when the ${type.toLowerCase()}
       <br />
       was created to the time when it was closed.
       ${times.length === 0 ? `<div class="text-red-300">No matching ${type.toLowerCase()} is closed</div>` : ''}
@@ -35,12 +35,12 @@ const computeStats = (workItems: UIWorkItem[]) => {
       {
         title: 'Min',
         value: times.length ? prettyMilliseconds(Math.min(...times), { compact: true }) : '-',
-        tooltip: `Minimum cycle time for a ${type.toLowerCase()}`
+        tooltip: `Minimum lead time for a ${type.toLowerCase()}`
       },
       {
         title: 'Max',
         value: times.length ? prettyMilliseconds(Math.max(...times), { compact: true }) : '-',
-        tooltip: `Maximum cycle time for a ${type.toLowerCase()}`
+        tooltip: `Maximum lead time for a ${type.toLowerCase()}`
       }
     ]
   }));
