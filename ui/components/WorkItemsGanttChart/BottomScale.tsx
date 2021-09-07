@@ -36,6 +36,25 @@ const DragHandle: React.FC<DragHandleProps> = ({
   </foreignObject>
 );
 
+type DateLabelProps = {
+  x: number;
+  date: Date;
+  count: number; // to calculate y
+};
+
+const DateLabel: React.FC<DateLabelProps> = ({ count, date, x }) => (
+  <foreignObject
+    x={x}
+    y={(textHeight + (rowPadding * 2)) * count + bottomScaleHeight}
+    width={axisLabelsWidth}
+    height={axisLabelsHeight}
+  >
+    <div className="text-xs text-gray-500 text-center pt-2">
+      {mediumDate(date)}
+    </div>
+  </foreignObject>
+);
+
 type BottomScaleProps = {
   count: number;
   lowerDate: Date;
@@ -57,11 +76,7 @@ const BottomScale: React.FC<BottomScaleProps> = ({
       stroke="#ccc"
       strokeWidth="1"
     />
-    <div
-      className="text-xs text-gray-500 text-center"
-    >
-      {mediumDate(initialMinDate)}
-    </div>
+    <DateLabel count={count} x={textWidth + barStartPadding - 30} date={initialMinDate} />
     <DragHandle
       x={textWidth + barStartPadding - 8}
       y={(textHeight + (rowPadding * 2)) * count + bottomScaleHeight - 25}
@@ -69,9 +84,7 @@ const BottomScale: React.FC<BottomScaleProps> = ({
       lowerDate={lowerDate}
       upperDate={upperDate}
     />
-    <div className="text-xs text-gray-500 text-center">
-      {mediumDate(initialMaxDate)}
-    </div>
+    <DateLabel count={count} x={svgWidth - 75} date={initialMaxDate} />
     <DragHandle
       x={svgWidth - 18}
       y={(textHeight + (rowPadding * 2)) * count + bottomScaleHeight - 25}
@@ -83,3 +96,4 @@ const BottomScale: React.FC<BottomScaleProps> = ({
 );
 
 export default BottomScale;
+
