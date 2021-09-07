@@ -10,7 +10,7 @@ export type ProjectStatProps = {
 const ProjectStat: React.FC<ProjectStatProps> = ({
   title, value, tooltip, childStats
 }) => (
-  <li className="p-2 border border-gray-200 bg-white shadow-sm mr-1 rounded flex">
+  <li className="p-2 border border-gray-200 bg-white shadow-sm ml-1 rounded flex">
     <div
       data-tip={tooltip}
       data-html
