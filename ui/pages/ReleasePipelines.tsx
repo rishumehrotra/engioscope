@@ -11,6 +11,8 @@ import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
 import Loading from '../components/Loading';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
+import usePagination, { bottomItems, topItems } from '../hooks/pagination';
+import LoadMore from '../components/LoadMore';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) => (
@@ -35,6 +37,7 @@ const ReleasePipelines: React.FC = () => {
   const [notStartsWithArtifact] = useQueryParam<boolean>('notStartsWithArtifact');
   const [stageNameExists] = useQueryParam<string>('stageNameExists');
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
+  const [page, loadMore] = usePagination();
   useRemoveSort();
 
   const pipelines = useMemo(() => {
@@ -50,6 +53,9 @@ const ReleasePipelines: React.FC = () => {
 
   useEffect(() => { ReactTooltip.rebuild(); }, [pipelines]);
 
+  const topPipelines = useMemo(() => topItems(page, pipelines), [page, pipelines]);
+  const bottomPipelines = useMemo(() => bottomItems(pipelines), [pipelines]);
+
   if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
@@ -59,13 +65,26 @@ const ReleasePipelines: React.FC = () => {
         <AppliedFilters type="release-pipelines" count={pipelines.length} />
         <ReleasePipelineSummary pipelines={pipelines} stagesToHighlight={releaseAnalysis.stagesToHighlight} />
       </div>
-      {pipelines.length ? pipelines.map(pipeline => (
+      {topPipelines.length ? topPipelines.map(pipeline => (
         <Pipeline
           key={pipeline.id}
           pipeline={pipeline}
           stagesToHighlight={releaseAnalysis.stagesToHighlight}
         />
-      )) : <AlertMessage message="No release pipelines found" />}
+      )) : null}
+
+      <LoadMore
+        loadMore={loadMore}
+        hiddenItemsCount={pipelines.length - topPipelines.length - bottomPipelines.length}
+      />
+
+      {bottomPipelines.length ? bottomPipelines.map(pipeline => (
+        <Pipeline
+          key={pipeline.id}
+          pipeline={pipeline}
+          stagesToHighlight={releaseAnalysis.stagesToHighlight}
+        />
+      )) : null}
     </>
   );
 };
