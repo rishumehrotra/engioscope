@@ -152,6 +152,7 @@ export type UIWorkItemRevision = {
 export type AnalysedWorkItems = {
   ids: Record<number, number[] | undefined>;
   byId: Record<number, UIWorkItem>;
+  bugLeakage: Record<string, {opened: number[]; closed: number[]}> | null;
 };
 
 export type UIProjectAnalysis = {

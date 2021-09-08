@@ -217,6 +217,31 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       return acc;
     }, { 0: topLevelItems });
 
-    return { byId, ids };
+    const monthAgo = new Date();
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    const bugLeakage = collection.workitems.environmentField
+      ? workItemsForProject.reduce<NonNullable<AnalysedWorkItems['bugLeakage']>>((acc, workItem) => {
+        if (!collection.workitems.environmentField) return acc; // Stupid line for TS
+        if (!workItem.fields['System.WorkItemType'].toLowerCase().includes('bug')) return acc;
+        if (!workItem.fields[collection.workitems.environmentField]) return acc;
+
+        const env = workItem.fields[collection.workitems.environmentField];
+
+        const isCreatedInLastMonth = workItem.fields['System.CreatedDate'] >= monthAgo;
+        const isClosedInLastMonth = workItem.fields['Microsoft.VSTS.Common.ClosedDate'] >= monthAgo;
+
+        if (!isCreatedInLastMonth && !isClosedInLastMonth) return acc;
+
+        acc[env] = {
+          opened: [...(acc[env]?.opened || []), ...(isCreatedInLastMonth ? [workItem.id] : [])],
+          closed: [...(acc[env]?.closed || []), ...(isClosedInLastMonth ? [workItem.id] : [])]
+        };
+
+        return acc;
+      }, {})
+      : null;
+
+    return { byId, ids, bugLeakage };
   };
 };
