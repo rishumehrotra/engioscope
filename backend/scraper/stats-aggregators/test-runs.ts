@@ -1,6 +1,7 @@
 import prettyMs from 'pretty-ms';
 import { prop, sum } from 'rambda';
 import type { UITests } from '../../../shared/types';
+import { unique } from '../../utils';
 import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
@@ -74,7 +75,7 @@ export default (
   if (testStats.length === 0) return null;
 
   return {
-    total: sum([...new Set(testStats.map(prop('total')))]),
+    total: sum(unique(testStats.map(prop('total')))),
     pipelines: testStats.map(stat => ({
       name: stat.buildName,
       url: stat.url,

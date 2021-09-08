@@ -1,6 +1,6 @@
 import { reduce } from 'rambda';
 import type { AnalysedWorkItems, UIWorkItem } from '../../../shared/types';
-import { exists } from '../../utils';
+import { exists, unique } from '../../utils';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
 import type {
@@ -42,9 +42,11 @@ const workItemsById = (
   getCollectionWorkItems: (collectionName: string, workItemIds: number[]) => Promise<WorkItem[]>,
   collection: ParsedCollection
 ) => async (workItemTreeForCollection: WorkItemIDTree) => {
-  const ids = [...new Set(workItemTreeForCollection.workItemRelations.flatMap(wir => (
-    [wir.source?.id, wir.target?.id]
-  )))].filter(exists);
+  const ids = unique(
+    workItemTreeForCollection.workItemRelations.flatMap(wir => (
+      [wir.source?.id, wir.target?.id]
+    ))
+  ).filter(exists);
 
   const workItems = await getCollectionWorkItems(collection.name, ids);
   return workItems.reduce<Record<number, WorkItem>>((acc, wi) => {
@@ -198,20 +200,23 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       project
     );
 
-    const topLevelItems = [...new Set(workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id)))];
+    const topLevelItems = unique(
+      workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
+    );
 
-    return {
-      byId: Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => {
-        acc[Number(id)] = createUIWorkItem(workItem);
-        return acc;
-      }, {}),
-      ids: workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
-        if (!wir.source) return acc;
-        const parent = wir.source ? wir.source.id : 0;
+    const byId = Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => {
+      acc[Number(id)] = createUIWorkItem(workItem);
+      return acc;
+    }, {});
 
-        acc[parent] = [...new Set([...(acc[parent] || []), wir.target?.id].filter(exists))];
-        return acc;
-      }, { 0: topLevelItems })
-    };
+    const ids = workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
+      if (!wir.source) { return acc; }
+      const parent = wir.source ? wir.source.id : 0;
+
+      acc[parent] = unique([...(acc[parent] || []), wir.target?.id].filter(exists));
+      return acc;
+    }, { 0: topLevelItems });
+
+    return { byId, ids };
   };
 };

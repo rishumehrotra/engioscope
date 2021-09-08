@@ -28,7 +28,7 @@ const computeStats = (workItems: UIWorkItem[]) => {
       <br />
       Lead time is the the time from when the ${type.toLowerCase()}
       <br />
-      was created to the time when it was closed.
+      was created to when it was closed.
       ${times.length === 0 ? `<div class="text-red-300">No matching ${type.toLowerCase()} is closed</div>` : ''}
     `,
     childStats: [

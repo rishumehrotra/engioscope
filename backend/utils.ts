@@ -45,3 +45,5 @@ export const chunkArray = <T>(array: T[], chunkSize: number) => (
   range(Math.ceil(array.length / chunkSize))
     .map(i => array.slice(i * chunkSize, (i + 1) * chunkSize))
 );
+
+export const unique = <T>(xs: T[]) => [...new Set(xs)];
