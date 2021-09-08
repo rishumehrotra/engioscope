@@ -1,55 +1,113 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
 import React, { useMemo } from 'react';
-import type { UIWorkItem } from '../../shared/types';
+import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
+import { num } from '../helpers/utils';
 import type { ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 
-const computeStats = (workItems: UIWorkItem[]) => {
-  const aggregated = workItems.reduce<Record<string, number[]>>(
+const computeLeadTimes = (workItems: UIWorkItem[]) => {
+  const aggregated = workItems.reduce<Record<string, Record<string, number[]>>>(
     (acc, workItem) => ({
       ...acc,
-      [workItem.type]: [
-        ...(acc[workItem.type] || []),
-        ...(workItem.leadTime.end
-          ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
-          : []
-        )
-      ]
+      [workItem.type]: {
+        ...acc[workItem.type],
+        [workItem.env || 'default-env']: [
+          ...(acc[workItem.type]?.[workItem.env || 'default-env'] || []),
+          ...(workItem.leadTime.end
+            ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
+            : [])
+        ]
+      }
     }), {}
   );
 
-  return Object.entries(aggregated).map<ProjectStatProps>(([type, times]) => ({
-    title: `${type} lead time`,
-    value: times.length ? prettyMilliseconds(times.reduce(add, 0) / times.length, { compact: true }) : '-',
-    tooltip: `
+  return Object.entries(aggregated).flatMap<ProjectStatProps>(([type, timesByEnv]) => {
+    if (Object.keys(timesByEnv).length === 1 && timesByEnv['default-env']) {
+      return [{
+        title: `${type} lead time`,
+        value: prettyMilliseconds(timesByEnv['default-env'].reduce(add, 0) / timesByEnv['default-env'].length, { compact: true }),
+        tooltip: `
       Average lead time for a ${type.toLowerCase()}
       <br />
       Lead time is the the time from when the ${type.toLowerCase()}
       <br />
       was created to when it was closed.
-      ${times.length === 0 ? `<div class="text-red-300">No matching ${type.toLowerCase()} is closed</div>` : ''}
-    `,
-    childStats: [
-      {
-        title: 'Min',
-        value: times.length ? prettyMilliseconds(Math.min(...times), { compact: true }) : '-',
-        tooltip: `Minimum lead time for a ${type.toLowerCase()}`
-      },
-      {
-        title: 'Max',
-        value: times.length ? prettyMilliseconds(Math.max(...times), { compact: true }) : '-',
-        tooltip: `Maximum lead time for a ${type.toLowerCase()}`
-      }
-    ]
-  }));
+      ${timesByEnv['default-env'].length === 0 ? `<div class="text-red-300">No matching ${type.toLowerCase()} is closed</div>` : ''}
+      `,
+        childStats: [
+          {
+            title: 'Min',
+            value: timesByEnv['default-env'].length ? prettyMilliseconds(Math.min(...timesByEnv['default-env']), { compact: true }) : '-',
+            tooltip: `Minimum lead time for a ${type.toLowerCase()}`
+          },
+          {
+            title: 'Max',
+            value: timesByEnv['default-env'].length ? prettyMilliseconds(Math.max(...timesByEnv['default-env']), { compact: true }) : '-',
+            tooltip: `Maximum lead time for a ${type.toLowerCase()}`
+          }
+        ]
+      }];
+    }
+
+    return Object.entries(timesByEnv).map(([env, times]) => ({
+      title: `${type} lead time ${env}`,
+      value: '0',
+      tooltip: `
+      Average lead time for a ${type.toLowerCase()}
+      <br />
+      Lead time is the the time from when the ${type.toLowerCase()}
+      <br />
+      was created to when it was closed.
+      `,
+      // ${timesByEnv.length === 0 ? `<div class="text-red-300">No matching ${type.toLowerCase()} is closed</div>` : ''}
+      childStats: [
+        {
+          title: 'Min',
+          value: times.length ? prettyMilliseconds(Math.min(...times), { compact: true }) : '-',
+          tooltip: `Minimum lead time for a ${type.toLowerCase()}`
+        },
+        {
+          title: 'Max',
+          value: times.length ? prettyMilliseconds(Math.max(...times), { compact: true }) : '-',
+          tooltip: `Maximum lead time for a ${type.toLowerCase()}`
+        }
+      ]
+    }));
+  });
 };
 
-const FeaturesAndBugsSummary: React.FC<{ workItems: UIWorkItem[] }> = ({ workItems }) => {
+const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']) => {
+  if (!bugLeakage) return [];
+
+  return Object.entries(bugLeakage).flatMap<ProjectStatProps>(([type, { opened, closed }]) => ([
+    {
+      title: `${type} bug leakage`,
+      value: '0',
+      childStats: [
+        {
+          title: 'Opened',
+          value: num(opened.length)
+        },
+        {
+          title: 'Closed',
+          value: num(closed.length)
+        }
+      ]
+    }
+  ]));
+};
+
+type FeaturesAndBugsSummaryProps = {
+  workItems: UIWorkItem[];
+  bugLeakage: AnalysedWorkItems['bugLeakage'];
+};
+
+const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage }) => {
   const computedStats = useMemo(
-    () => computeStats(workItems),
-    [workItems]
+    () => [...computeLeadTimes(workItems), ...computeBugLeakage(bugLeakage)],
+    [bugLeakage, workItems]
   );
 
   return (

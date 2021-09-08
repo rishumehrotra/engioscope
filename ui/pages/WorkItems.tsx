@@ -110,7 +110,10 @@ const WorkItems: React.FC = () => {
     <>
       <div className="flex justify-between items-center my-3 w-full -mt-4">
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
-        <FeaturesAndBugsSummary workItems={filteredWorkItems} />
+        <FeaturesAndBugsSummary
+          workItems={filteredWorkItems}
+          bugLeakage={workItemAnalysis.workItems.bugLeakage}
+        />
       </div>
       <ul>
         {topWorkItems.map(workItem => (
