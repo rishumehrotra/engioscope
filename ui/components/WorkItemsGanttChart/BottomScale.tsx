@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { mediumDate } from '../../helpers/utils';
+import type { xCoordConverterWithin } from './helpers';
 import {
+  xCoordToDate,
   axisLabelsHeight,
   axisLabelsWidth,
   barStartPadding, bottomScaleHeight, rowPadding, svgWidth, textHeight, textWidth
@@ -12,29 +14,78 @@ type DragHandleProps = {
   y: number;
   lowerDate: Date;
   upperDate: Date;
+  timeToXCoord: ReturnType<typeof xCoordConverterWithin>;
+  initialMinDate: Date;
+  initialMaxDate: Date;
 };
 
 const DragHandle: React.FC<DragHandleProps> = ({
-  onSelect, x, y, lowerDate, upperDate
-}) => (
-  <foreignObject
-    x={x}
-    y={y}
-    width={axisLabelsWidth}
-    height={axisLabelsHeight}
-  >
-    <button
-      onClick={() => onSelect([new Date(lowerDate.getTime() + 2000000000).getTime(), new Date(upperDate.getTime() - 2000000000).getTime()])}
-      className="cursor-pointer"
+  onSelect, x, y, lowerDate, upperDate, timeToXCoord, initialMinDate, initialMaxDate
+}) => {
+  const dragHandleRef = useRef<SVGSVGElement | null>(null);
+  const isDragging = useRef<boolean>(false);
+
+  const dateFromMouseEvent = useCallback((e: MouseEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rect = dragHandleRef.current!.getBoundingClientRect();
+
+    return xCoordToDate(initialMinDate.getTime(), initialMaxDate.getTime())((svgWidth / rect.width) * e.offsetX);
+  }, [initialMaxDate, initialMinDate]);
+
+  const onDrag = useCallback(e => {
+    if (!dragHandleRef.current || !isDragging.current) return;
+    dragHandleRef.current.style.cursor = 'grab';
+    const date = dateFromMouseEvent(e);
+    const dragXCoord = timeToXCoord(new Date(date));
+
+    onSelect([dragXCoord, timeToXCoord(upperDate)]);
+  }, [dateFromMouseEvent, onSelect, timeToXCoord, upperDate]);
+
+  const stopDrag = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  const mouseDown = useCallback(() => {
+    isDragging.current = true;
+  }, []);
+
+  const mouseMove = useCallback(e => {
+    if (!isDragging.current) return;
+    requestAnimationFrame(() => onDrag(e));
+  }, [onDrag]);
+
+  const mouseUp = useCallback(() => {
+    stopDrag();
+  }, [stopDrag]);
+
+  useEffect(() => {
+    if (!dragHandleRef.current) return;
+
+    const svg = dragHandleRef.current;
+    svg.addEventListener('mousedown', mouseDown);
+    svg.addEventListener('mousemove', mouseMove);
+    svg.addEventListener('mouseup', mouseUp);
+    return () => {
+      svg.removeEventListener('mousedown', mouseDown);
+      svg.removeEventListener('mousemove', mouseMove);
+      svg.removeEventListener('mouseup', mouseUp);
+    };
+  }, [mouseDown, mouseMove, dragHandleRef, mouseUp]);
+
+  return (
+    <svg
+      ref={dragHandleRef}
+      x={x + timeToXCoord(lowerDate)}
+      y={y}
+      width="48"
+      height={axisLabelsHeight}
+      onMouseOut={stopDrag}
     >
-      <svg height="24" viewBox="0 0 24 24" width="24">
-        <path d="M0 0h24v24H0V0z" fill="none" />
-        {/* eslint-disable-next-line max-len */}
-        <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-      </svg>
-    </button>
-  </foreignObject>
-);
+      {/* eslint-disable-next-line max-len */}
+      <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+    </svg>
+  );
+};
 
 type DateLabelProps = {
   x: number;
@@ -62,10 +113,11 @@ type BottomScaleProps = {
   initialMinDate: Date;
   initialMaxDate: Date;
   onSelect: React.Dispatch<React.SetStateAction<[number, number] | null>>;
+  timeToXCoord: ReturnType<typeof xCoordConverterWithin>;
 };
 
 const BottomScale: React.FC<BottomScaleProps> = ({
-  count, lowerDate, upperDate, onSelect, initialMinDate, initialMaxDate
+  count, lowerDate, upperDate, onSelect, initialMinDate, initialMaxDate, timeToXCoord
 }) => (
   <g>
     <line
@@ -78,19 +130,25 @@ const BottomScale: React.FC<BottomScaleProps> = ({
     />
     <DateLabel count={count} x={textWidth + barStartPadding - 30} date={initialMinDate} />
     <DragHandle
+      timeToXCoord={timeToXCoord}
       x={textWidth + barStartPadding - 8}
       y={(textHeight + (rowPadding * 2)) * count + bottomScaleHeight - 25}
       onSelect={onSelect}
       lowerDate={lowerDate}
       upperDate={upperDate}
+      initialMinDate={initialMinDate}
+      initialMaxDate={initialMaxDate}
     />
     <DateLabel count={count} x={svgWidth - 75} date={initialMaxDate} />
     <DragHandle
+      timeToXCoord={timeToXCoord}
       x={svgWidth - 18}
       y={(textHeight + (rowPadding * 2)) * count + bottomScaleHeight - 25}
       onSelect={onSelect}
       lowerDate={lowerDate}
       upperDate={upperDate}
+      initialMinDate={initialMinDate}
+      initialMaxDate={initialMaxDate}
     />
   </g>
 );
