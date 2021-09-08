@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import { add } from 'rambda';
+import { add, sum } from 'rambda';
 import React, { useMemo } from 'react';
 import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
 import { num } from '../helpers/utils';
@@ -53,7 +53,7 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
 
     return Object.entries(timesByEnv).map(([env, times]) => ({
       title: `${type} lead time ${env}`,
-      value: '0',
+      value: prettyMilliseconds(sum(times) / times.length, { compact: true }),
       tooltip: `
       Average lead time for a ${type.toLowerCase()}
       <br />
@@ -61,7 +61,6 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
       <br />
       was created to when it was closed.
       `,
-      // ${timesByEnv.length === 0 ? `<div class="text-red-300">No matching ${type.toLowerCase()} is closed</div>` : ''}
       childStats: [
         {
           title: 'Min',
