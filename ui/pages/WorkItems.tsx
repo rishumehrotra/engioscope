@@ -115,6 +115,10 @@ const WorkItems: React.FC = () => {
           bugLeakage={workItemAnalysis.workItems.bugLeakage}
         />
       </div>
+      {/* <WorkItemCharts
+        workItems={filteredWorkItems}
+        // bugLeakage={workItemAnalysis.workItems.bugLeakage}
+      /> */}
       <ul>
         {topWorkItems.map(workItem => (
           <WorkItem
