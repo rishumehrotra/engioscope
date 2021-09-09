@@ -31,10 +31,10 @@ const hasLeadTime = (workItem: UIWorkItem) => {
 };
 
 const byEnv = (
+  label: 'clt' | 'lt',
   acc: Record<string, UIWorkItem[]> | undefined,
   item: UIWorkItem,
-  predicate: (x: UIWorkItem) => boolean,
-  label: 'clt' | 'lt'
+  predicate: (x: UIWorkItem) => boolean
 ) => {
   if (!predicate(item)) return { [label]: acc };
   const env = item.env || 'default-env';
@@ -53,8 +53,8 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
       ...acc,
       [workItem.type]: {
         ...acc[workItem.type],
-        ...byEnv((acc[workItem.type] || {}).clt, workItem, hasCLT, 'clt'),
-        ...byEnv((acc[workItem.type] || {}).lt, workItem, hasLeadTime, 'lt')
+        ...byEnv('clt', (acc[workItem.type] || {}).clt, workItem, hasCLT),
+        ...byEnv('lt', (acc[workItem.type] || {}).lt, workItem, hasLeadTime)
       }
     }),
     {}
@@ -67,9 +67,10 @@ const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
   return (
     <div className="flex">
       {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (
-        <div style={{ width: '200px', height: '400px' }} key={type}>
+        <div style={{ 'height': '400px', 'marginRight': '100px' }} key={type}>
           <ScatterLineGraph
             key={type}
+            height={400}
             graphData={[
               {
                 label: 'Change lead time',
@@ -82,8 +83,6 @@ const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
                 yAxisPoint: getLeadTime
               }
             ]}
-            height={400}
-            width={200}
           />
           {type}
         </div>
