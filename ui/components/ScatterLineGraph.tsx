@@ -1,7 +1,20 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { map } from 'rambda';
 import React from 'react';
 
 type GraphData<T> = Record<string, T[]>;
+type Group<T> = { label: string; data: GraphData<T>; yAxisPoint: (value: T) => number };
+
+// const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
+//   Object.values(graphData.map(prop('data')))
+//     .flatMap(x => Object.values(x))
+//     .flat()
+//     .map(yAxisPoint)
+// );
+
+const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
+  graphData.flatMap(({ data, yAxisPoint }) => Object.values(data).flatMap(map(yAxisPoint)))
+);
 
 type BarProps<T extends {}> = {
   items: T[];
@@ -27,29 +40,50 @@ const Bar = <T extends {}>({
   </g>
 );
 
+type BarGroupProps<T extends {}> = {
+  group: Group<T>;
+  height: number;
+  xCoord: number;
+  scalingFactor: (x: number) => number;
+};
+
+const BarGroup = <T extends {}>({
+  group, height, scalingFactor, xCoord
+}: BarGroupProps<T>) => (
+  <g>
+    {Object.entries(group.data).map(([key, items], index) => (
+      <Bar
+        key={key}
+        items={items}
+        yAxisPoint={group.yAxisPoint}
+        height={height}
+        xCoord={xCoord + (20 * index)}
+        scalingFactor={scalingFactor}
+      />
+    ))}
+  </g>
+);
+
 type ScatterLineGraphProps<T> = {
-  graphData: GraphData<T>;
-  yAxisPoint: (value: T) => number;
+  graphData: Group<T>[];
   width: number;
   height: number;
 };
 
 const ScatterLineGraph = <T extends {}>({
-  graphData, width, height, yAxisPoint
+  graphData, width, height
 }: ScatterLineGraphProps<T>): React.ReactElement => {
-  const spreadOfValues = Object.values(graphData).flatMap(x => x.flatMap(yAxisPoint));
-  const maxOfSpread = Math.max(...spreadOfValues);
+  const maxOfSpread = Math.max(...valuesUsing(graphData));
   const scalingFactor = (value: number) => value / maxOfSpread;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`}>
-      {Object.entries(graphData).map(([key, data], index) => (
-        <Bar
-          key={key}
+      {graphData.map((group, index) => (
+        <BarGroup
+          key={group.label}
           height={height}
           scalingFactor={scalingFactor}
-          items={data}
-          yAxisPoint={yAxisPoint}
+          group={group}
           xCoord={index * 30}
         />
       ))}

@@ -12,6 +12,11 @@ const getCLTTime = (workItem: UIWorkItem) => (
   new Date(workItem.clt!.end!).getTime() - new Date(workItem.clt!.start!).getTime()
 );
 
+const getLeadTime = (workItem: UIWorkItem) => (
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  new Date(workItem.leadTime!.end!).getTime() - new Date(workItem.leadTime!.start!).getTime()
+);
+
 const hasCLT = (workItem: UIWorkItem) => {
   if (!workItem.clt) return false;
   if (!workItem.clt.start) return false;
@@ -55,31 +60,28 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
 
 const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
   const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
-  // console.log({ groupedWorkItems });
-
-  // const cltWorkItemsByType = useMemo(() => workItems.reduce<Record<string, UIWorkItem[]>>(
-  //   (acc, workItem) => {
-  //     if (!workItem.clt) return acc;
-  //     if (!workItem.clt.start || !workItem.clt.end) return acc;
-
-  //     return {
-  //       ...acc,
-  //       [workItem.type]: [...(acc[workItem.type] || []), workItem]
-  //     };
-  //   },
-  //   {}
-  // ), [workItems]);
+  console.log({ groupedWorkItems });
 
   return (
     <div className="flex">
       {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (
-        <div style={{ width: '200px', height: '400px' }}>
+        <div style={{ width: '200px', height: '400px' }} key={type}>
           <ScatterLineGraph
             key={type}
-            graphData={statByCltOrLtByEnv.clt}
-            height={100}
-            width={100}
-            yAxisPoint={getCLTTime}
+            graphData={[
+              {
+                label: 'Change lead time',
+                data: statByCltOrLtByEnv.clt,
+                yAxisPoint: getCLTTime
+              },
+              {
+                label: 'Lead time',
+                data: statByCltOrLtByEnv.lt,
+                yAxisPoint: getLeadTime
+              }
+            ]}
+            height={400}
+            width={200}
           />
           {type}
         </div>
