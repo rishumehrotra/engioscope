@@ -68,7 +68,7 @@ const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
   return (
     <div className="flex">
       {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (
-        <div style={{ 'height': '400px', 'marginRight': '100px' }} key={type}>
+        <div style={{ 'height': '400px', 'marginRight': '10px' }} key={type}>
           <ScatterLineGraph
             key={type}
             height={400}
