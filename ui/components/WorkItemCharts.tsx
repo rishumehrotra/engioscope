@@ -1,3 +1,4 @@
+import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import type { UIWorkItem } from '../../shared/types';
 import ScatterLineGraph from './ScatterLineGraph';
@@ -75,12 +76,22 @@ const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
               {
                 label: 'Change lead time',
                 data: statByCltOrLtByEnv.clt,
-                yAxisPoint: getCLTTime
+                yAxisPoint: getCLTTime,
+                tooltip: (workItem: UIWorkItem) => `
+<div class="w-72">
+  #${workItem.id} - ${workItem.title}<br />
+  Change lead time: ${prettyMilliseconds(getCLTTime(workItem), { compact: true })}
+</div>`.trim()
               },
               {
                 label: 'Lead time',
                 data: statByCltOrLtByEnv.lt,
-                yAxisPoint: getLeadTime
+                yAxisPoint: getLeadTime,
+                tooltip: (workItem: UIWorkItem) => `
+<div class="w-72">
+  #${workItem.id} - ${workItem.title}<br />
+  Lead time: ${prettyMilliseconds(getLeadTime(workItem), { compact: true })}
+</div>`.trim()
               }
             ]}
           />
