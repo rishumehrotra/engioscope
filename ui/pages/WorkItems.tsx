@@ -16,6 +16,7 @@ import Loading from '../components/Loading';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
 import FeaturesAndBugsSummary from '../components/FeaturesAndBugsSummary';
+// import WorkItemCharts from '../components/WorkItemCharts';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -115,6 +116,10 @@ const WorkItems: React.FC = () => {
           bugLeakage={workItemAnalysis.workItems.bugLeakage}
         />
       </div>
+      {/* <WorkItemCharts
+        workItems={filteredWorkItems}
+        // bugLeakage={workItemAnalysis.workItems.bugLeakage}
+      /> */}
       <ul>
         {topWorkItems.map(workItem => (
           <WorkItem
