@@ -30,6 +30,20 @@ const hasLeadTime = (workItem: UIWorkItem) => {
   return true;
 };
 
+const byEnv = (
+  acc: Record<string, UIWorkItem[]> | undefined,
+  item: UIWorkItem,
+  predicate: (x: UIWorkItem) => boolean,
+  label: 'clt' | 'lt'
+) => {
+  if (!predicate(item)) return { [label]: acc };
+  const env = item.env || 'default-env';
+  const newAcc: NonNullable<typeof acc> = acc || {};
+  if (!newAcc[env]) newAcc[env] = [];
+  newAcc[env].push(item);
+  return { [label]: newAcc };
+};
+
 type WorkItemType = string;
 type WorkItemEnvironment = string;
 
@@ -39,20 +53,8 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
       ...acc,
       [workItem.type]: {
         ...acc[workItem.type],
-        'clt': {
-          ...(acc[workItem.type] || {}).clt,
-          [workItem.env || 'default-env']: [
-            ...((acc[workItem.type] || {}).clt || {})[workItem.env || 'default-env'] || [],
-            ...(hasCLT(workItem) ? [workItem] : [])
-          ]
-        },
-        'lt': {
-          ...(acc[workItem.type] || {}).lt,
-          [workItem.env || 'default-env']: [
-            ...((acc[workItem.type] || {}).lt || {})[workItem.env || 'default-env'] || [],
-            ...(hasLeadTime(workItem) ? [workItem] : [])
-          ]
-        }
+        ...byEnv((acc[workItem.type] || {}).clt, workItem, hasCLT, 'clt'),
+        ...byEnv((acc[workItem.type] || {}).lt, workItem, hasLeadTime, 'lt')
       }
     }),
     {}
