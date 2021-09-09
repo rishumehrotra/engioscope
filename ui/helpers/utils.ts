@@ -1,3 +1,5 @@
+export const oneYear = 31536000000;
+
 export const num = (num: number) => Intl.NumberFormat().format(num);
 
 export const shortDate = (date: Date) => (

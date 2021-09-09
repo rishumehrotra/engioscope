@@ -1,7 +1,23 @@
 import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import type { UIWorkItem } from '../../shared/types';
+import { oneYear } from '../helpers/utils';
 import ScatterLineGraph from './ScatterLineGraph';
+
+const createTooltip = (label: string, xform: (x: UIWorkItem) => number) => (workItem: UIWorkItem) => `
+  <div class="w-72">
+    <div class="pl-3" style="text-indent: -1.15rem">
+      <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+      <strong>#${workItem.id}:</strong> ${workItem.title}
+      <div class="pt-1">
+        <strong>${label}:</strong> ${prettyMilliseconds(
+  xform(workItem),
+  xform(workItem) < oneYear ? { compact: true } : { unitCount: 2 }
+)}
+      </div>
+    </div>
+  </div>
+`.trim();
 
 type WorkItemChartsProps = {
   workItems: UIWorkItem[];
@@ -63,39 +79,32 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
 
 const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
   const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
-  console.log({ groupedWorkItems });
 
   return (
     <div className="flex">
       {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (
-        <div style={{ 'height': '400px', 'marginRight': '10px' }} key={type}>
+        <div className="mr-10 bg-white p-5 rounded-lg mb-3 shadow-md" key={type}>
+          <div className="text-center pb-5">{type}</div>
+
           <ScatterLineGraph
             key={type}
             height={400}
+            linkForItem={workItem => workItem.url}
             graphData={[
               {
                 label: 'Change lead time',
                 data: statByCltOrLtByEnv.clt,
                 yAxisPoint: getCLTTime,
-                tooltip: (workItem: UIWorkItem) => `
-<div class="w-72">
-  #${workItem.id} - ${workItem.title}<br />
-  Change lead time: ${prettyMilliseconds(getCLTTime(workItem), { compact: true })}
-</div>`.trim()
+                tooltip: createTooltip('Change lead time', getCLTTime)
               },
               {
                 label: 'Lead time',
                 data: statByCltOrLtByEnv.lt,
                 yAxisPoint: getLeadTime,
-                tooltip: (workItem: UIWorkItem) => `
-<div class="w-72">
-  #${workItem.id} - ${workItem.title}<br />
-  Lead time: ${prettyMilliseconds(getLeadTime(workItem), { compact: true })}
-</div>`.trim()
+                tooltip: createTooltip('Lead time', getLeadTime)
               }
             ]}
           />
-          {type}
         </div>
       ))}
     </div>

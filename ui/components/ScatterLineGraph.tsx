@@ -1,19 +1,20 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import prettyMilliseconds from 'pretty-ms';
 import { add, map, range } from 'rambda';
-import React, { useCallback, useMemo } from 'react';
+import React, { Fragment, useCallback, useMemo } from 'react';
+import { oneYear } from '../helpers/utils';
 
-const xAxisLabelAreaHeight = 100;
+const xAxisLabelAreaHeight = 80;
 const xAxisLabelHeight = 50;
 const xAxisLabelWidth = 100;
-const yAxisLabelWidth = 50;
+const yAxisLabelWidth = 60;
 const graphHeight = 400;
 const scatterWidth = 40;
 const groupSpacing = 120;
-const barSpacingInGroup = 80;
+const barSpacingInGroup = 100;
 const labelOverhang = 10;
 const bubbleSize = 5;
-const gradationsCount = 4;
+const gridLinesCount = 5;
 const yAxisLabelHeight = 20;
 const graphTopPadding = bubbleSize;
 
@@ -33,7 +34,7 @@ const graphWidth = <T extends {}>(groups: Group<T>[]) => (
   Object.values(groups)
     .map(x => Object.values(x.data).length * barSpacingInGroup)
     .reduce((acc, curr) => acc + curr + groupSpacing, 0)
-  + yAxisLabelWidth - groupSpacing - (groupSpacing / 2) + (barSpacingInGroup / 2)
+  + yAxisLabelWidth - groupSpacing - (groupSpacing / 2)
 );
 
 const randomMap = new WeakMap();
@@ -52,55 +53,71 @@ type BarProps<T extends {}> = {
   yCoord: (x: number) => number;
   tooltip: (x: T) => string;
   label: string;
+  linkForItem: (x: T) => string;
 };
 
 const Bar = <T extends {}>({
-  items, yAxisPoint, xCoord, tooltip, yCoord, label
-}: BarProps<T>) => (
-  <g>
-    <foreignObject
-      x={xCoord - (xAxisLabelWidth / 2)}
-      y={yCoord(0) + graphTopPadding}
-      width={xAxisLabelWidth}
-      height={xAxisLabelHeight}
-    >
-      <div className="text-sm text-gray-500 text-center">
-        {label}
-      </div>
-    </foreignObject>
-    {items.map((item, index) => (
-      <circle
-        key={index}
-        cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
-        cy={yCoord(yAxisPoint(item))}
-        r={bubbleSize}
-        fill="rgba(0,0,0,0.6)"
-        data-html
-        data-tip={tooltip(item)}
-      />
-    ))}
-    <line
-      x1={xCoord - scatterWidth}
-      y1={yCoord(items.map(yAxisPoint).reduce(add, 0) / items.length)}
-      x2={xCoord + scatterWidth}
-      y2={yCoord(items.map(yAxisPoint).reduce(add, 0) / items.length)}
-      stroke="rgba(255,0,0,0.6)"
-      strokeWidth={5}
-      data-tip={`Average ${label.toLowerCase()}: ${
-        prettyMilliseconds(items.map(yAxisPoint).reduce(add, 0) / items.length, { compact: true })
-      }`}
-    />
-  </g>
-);
+  items, yAxisPoint, xCoord, tooltip, yCoord, label, linkForItem
+}: BarProps<T>) => {
+  const averageValueOfItems = items.length
+    ? items.map(yAxisPoint).reduce(add, 0) / items.length
+    : 0;
+
+  return (
+    <g>
+      <foreignObject
+        x={xCoord - (xAxisLabelWidth / 2)}
+        y={yCoord(0) + graphTopPadding}
+        width={xAxisLabelWidth}
+        height={xAxisLabelHeight}
+      >
+        <div className="text-sm text-gray-500 text-center">
+          {`${label} (${items.length})`}
+        </div>
+      </foreignObject>
+      {items.map((item, index) => (
+        <a href={linkForItem(item)} target="_blank" rel="noreferrer">
+          <circle
+            // eslint-disable-next-line react/no-array-index-key
+            key={index}
+            cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
+            cy={yCoord(yAxisPoint(item))}
+            r={bubbleSize}
+            fill="rgba(0,0,0,0.6)"
+            data-html
+            data-tip={tooltip(item)}
+          />
+        </a>
+      ))}
+      {items.length
+        ? (
+          <line
+            x1={xCoord - scatterWidth}
+            y1={yCoord(averageValueOfItems)}
+            x2={xCoord + scatterWidth}
+            y2={yCoord(averageValueOfItems)}
+            stroke="rgba(255,0,0,0.6)"
+            strokeWidth={5}
+            data-tip={`Average ${label}: ${prettyMilliseconds(
+              averageValueOfItems,
+              averageValueOfItems < oneYear ? { compact: true } : { unitCount: 2 }
+            )}`}
+          />
+        )
+        : null}
+    </g>
+  );
+};
 
 type BarGroupProps<T extends {}> = {
   group: Group<T>;
   xCoord: number;
   yCoord: (x: number) => number;
+  linkForItem: (x: T) => string;
 };
 
 const BarGroup = <T extends {}>({
-  group, xCoord, yCoord
+  group, xCoord, yCoord, linkForItem
 }: BarGroupProps<T>) => (
   <g>
     {Object.entries(group.data).length > 1
@@ -121,11 +138,16 @@ const BarGroup = <T extends {}>({
       <Bar
         key={key}
         items={items}
-        label={Object.entries(group.data).length === 1 ? group.label : key}
+        label={
+          Object.entries(group.data).length === 1
+            ? group.label
+            : `${key} ${group.label}`
+        }
         yAxisPoint={group.yAxisPoint}
         xCoord={xCoord + (barSpacingInGroup * index)}
         yCoord={yCoord}
         tooltip={group.tooltip}
+        linkForItem={linkForItem}
       />
     ))}
   </g>
@@ -157,35 +179,50 @@ const Axes: React.FC<AxesProps> = ({ width, maxValue, yCoord }) => (
       stroke="#ddd"
       strokeWidth={1}
     />
-    {range(0, gradationsCount + 1).map(gradationIndex => (
-      <>
-        <line
-          key={gradationIndex}
-          x1={yAxisLabelWidth - labelOverhang}
-          y1={yCoord((maxValue * (gradationsCount - gradationIndex + 1)) / gradationsCount)}
-          x2={width}
-          y2={yCoord((maxValue * (gradationsCount - gradationIndex + 1)) / gradationsCount)}
-          stroke="#ddd"
-          strokeWidth={1}
-        />
-        <foreignObject
-          x={0}
-          y={yCoord((maxValue * (gradationsCount - gradationIndex + 1)) / gradationsCount) - (yAxisLabelHeight / 2)}
-          width={yAxisLabelWidth}
-          height={yAxisLabelHeight}
-        >
-          <div className="text-right text-sm text-gray-400 pr-3">
-            {prettyMilliseconds((maxValue * (gradationsCount - gradationIndex + 1)) / gradationsCount, { compact: true })}
-          </div>
-        </foreignObject>
-      </>
-    ))}
+    {range(0, gridLinesCount).map(gridLineIndex => {
+      const gridLineValue = (maxValue * (gridLinesCount - gridLineIndex)) / gridLinesCount;
+
+      return (
+        <Fragment key={gridLineIndex}>
+          <line
+            x1={yAxisLabelWidth - labelOverhang}
+            y1={yCoord(gridLineValue)}
+            x2={width}
+            y2={yCoord(gridLineValue)}
+            stroke="#ddd"
+            strokeWidth={1}
+          />
+          <foreignObject
+            x={0}
+            y={yCoord(gridLineValue) - (yAxisLabelHeight / 2)}
+            width={yAxisLabelWidth}
+            height={yAxisLabelHeight}
+          >
+            <div className="text-right text-sm text-gray-400 pr-3">
+              {prettyMilliseconds(
+                gridLineValue,
+                gridLineValue > oneYear
+                  ? { unitCount: 2 }
+                  : { compact: true }
+              )}
+            </div>
+          </foreignObject>
+        </Fragment>
+      );
+    })}
   </>
 );
 
-type ScatterLineGraphProps<T> = { graphData: Group<T>[]; height: number };
+type ScatterLineGraphProps<T> = {
+  graphData: Group<T>[];
+  height: number;
+  linkForItem: (x: T) => string;
+  className?: string;
+};
 
-const ScatterLineGraph = <T extends {}>({ graphData, height }: ScatterLineGraphProps<T>): React.ReactElement => {
+const ScatterLineGraph = <T extends {}>({
+  graphData, height, linkForItem, className
+}: ScatterLineGraphProps<T>): React.ReactElement => {
   const maxOfSpread = useMemo(() => Math.max(...valuesUsing(graphData)), [graphData]);
   const computedWidth = useMemo(() => graphWidth(graphData), [graphData]);
   const yCoord = useCallback((value: number) => {
@@ -194,7 +231,7 @@ const ScatterLineGraph = <T extends {}>({ graphData, height }: ScatterLineGraphP
   }, [maxOfSpread]);
 
   return (
-    <svg viewBox={`0 0 ${computedWidth} ${graphHeight}`} height={height}>
+    <svg viewBox={`0 0 ${computedWidth} ${graphHeight}`} height={height} className={className}>
       <Axes width={computedWidth} maxValue={maxOfSpread} yCoord={yCoord} />
       {graphData.map((group, index) => (
         <BarGroup
@@ -202,6 +239,7 @@ const ScatterLineGraph = <T extends {}>({ graphData, height }: ScatterLineGraphP
           group={group}
           xCoord={(index * groupSpacing) + (groupSpacing / 2) + yAxisLabelWidth}
           yCoord={yCoord}
+          linkForItem={linkForItem}
         />
       ))}
     </svg>
