@@ -9,25 +9,30 @@ import ProjectStats from './ProjectStats';
 
 const computeLeadTimes = (workItems: UIWorkItem[]) => {
   const aggregated = workItems.reduce<Record<string, Record<string, number[]>>>(
-    (acc, workItem) => ({
-      ...acc,
-      [workItem.type]: {
-        ...acc[workItem.type],
-        [workItem.env || 'default-env']: [
-          ...(acc[workItem.type]?.[workItem.env || 'default-env'] || []),
-          ...(workItem.leadTime.end
-            ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
-            : [])
-        ]
-      }
-    }), {}
+    (acc, workItem) => {
+      if (!workItem.leadTime.end) return acc;
+      return ({
+        ...acc,
+        [workItem.type]: {
+          ...acc[workItem.type],
+          'default-env': [
+            ...(acc[workItem.type]?.[workItem.env || 'default-env'] || []),
+            ...(workItem.leadTime.end
+              ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
+              : [])
+          ]
+        }
+      });
+    }, {}
   );
 
   return Object.entries(aggregated).flatMap<ProjectStatProps>(([type, timesByEnv]) => {
     if (Object.keys(timesByEnv).length === 1 && timesByEnv['default-env']) {
       return [{
         title: `${type} lead time`,
-        value: prettyMilliseconds(timesByEnv['default-env'].reduce(add, 0) / timesByEnv['default-env'].length, { compact: true }),
+        value: timesByEnv['default-env'].length
+          ? prettyMilliseconds(timesByEnv['default-env'].reduce(add, 0) / timesByEnv['default-env'].length, { compact: true })
+          : '-',
         tooltip: `
       Average lead time for a ${type.toLowerCase()}
       <br />
@@ -53,7 +58,9 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
 
     return Object.entries(timesByEnv).map(([env, times]) => ({
       title: `${type} lead time ${env}`,
-      value: prettyMilliseconds(sum(times) / times.length, { compact: true }),
+      value: times.length
+        ? prettyMilliseconds(sum(times) / times.length, { compact: true })
+        : '-',
       tooltip: `
       Average lead time for a ${type.toLowerCase()}
       <br />
@@ -77,6 +84,7 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']) => {
   if (!bugLeakage) return [];
 
@@ -103,10 +111,13 @@ type FeaturesAndBugsSummaryProps = {
   bugLeakage: AnalysedWorkItems['bugLeakage'];
 };
 
-const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage }) => {
+const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems }) => {
   const computedStats = useMemo(
-    () => [...computeLeadTimes(workItems), ...computeBugLeakage(bugLeakage)],
-    [bugLeakage, workItems]
+    () => [
+      ...computeLeadTimes(workItems)
+      // ...computeBugLeakage(bugLeakage)
+    ],
+    [workItems]
   );
 
   return (
