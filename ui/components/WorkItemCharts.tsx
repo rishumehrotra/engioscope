@@ -1,7 +1,8 @@
 import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
-import type { UIWorkItem } from '../../shared/types';
+import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
 import { oneYear } from '../helpers/utils';
+import HorizontalBarGraph from './HorizontalBarGraph';
 import ScatterLineGraph from './ScatterLineGraph';
 
 const createTooltip = (label: string, xform: (x: UIWorkItem) => number) => (workItem: UIWorkItem) => `
@@ -21,7 +22,7 @@ const createTooltip = (label: string, xform: (x: UIWorkItem) => number) => (work
 
 type WorkItemChartsProps = {
   workItems: UIWorkItem[];
-  // bugLeakage: AnalysedWorkItems['bugLeakage'];
+  bugLeakage: AnalysedWorkItems['bugLeakage'];
 };
 
 const getCLTTime = (workItem: UIWorkItem) => (
@@ -77,7 +78,7 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
     {}
   );
 
-const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
+const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems, bugLeakage }) => {
   const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
 
   return (
@@ -107,6 +108,18 @@ const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems }) => {
           />
         </div>
       ))}
+      {bugLeakage && (
+        <>
+          <HorizontalBarGraph
+            graphData={Object.entries(bugLeakage)
+              .map(([type, bugs]) => ({ label: type, value: bugs.opened.length }))}
+          />
+          <HorizontalBarGraph
+            graphData={Object.entries(bugLeakage)
+              .map(([type, bugs]) => ({ label: type, value: bugs.closed.length }))}
+          />
+        </>
+      )}
     </div>
   );
 };
