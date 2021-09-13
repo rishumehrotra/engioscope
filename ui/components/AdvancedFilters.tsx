@@ -1,10 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { useQueryParam } from 'use-query-params';
 import { Filters } from './common/Icons';
 import Checkbox from './common/Checkbox';
 import TextCheckboxCombo from './common/TextCheckboxCombo';
-import useOnClickOutside from '../hooks/on-click-outside';
 import { useTabs } from '../hooks/use-tabs';
+import usePopover from '../hooks/use-popover';
 
 const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
@@ -87,9 +87,7 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 
 const AdvancedFilters: React.FC = () => {
   const [selectedTab] = useTabs();
-  const ref = useRef(null);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  useOnClickOutside(ref, () => setIsOpen(false));
+  const [ref, isOpen, setIsOpen] = usePopover();
 
   if (selectedTab === 'workitems' || selectedTab === 'devs') return null;
 

@@ -6,6 +6,7 @@ import { num } from '../helpers/utils';
 import type { ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
+import WorkItemCharts from './WorkItemCharts';
 
 const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']) => {
   if (!bugLeakage) return [];
@@ -82,11 +83,17 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workIte
   );
 
   return (
-    <ProjectStats>
-      {computedStats.map(stat => (
-        <ProjectStat key={stat.topStats[0].title} topStats={stat.topStats} />
-      ))}
-    </ProjectStats>
+    <div>
+      <ProjectStats>
+        {computedStats.map(stat => (
+          <ProjectStat key={stat.topStats[0].title} topStats={stat.topStats} />
+        ))}
+      </ProjectStats>
+      <WorkItemCharts
+        workItems={workItems}
+        bugLeakage={bugLeakage}
+      />
+    </div>
   );
 };
 
