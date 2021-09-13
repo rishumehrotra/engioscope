@@ -40,8 +40,8 @@ const computeLeadTimesForFeatures = (workItems: UIWorkItem[]) => {
           ],
           clt: [
             ...(acc[workItem.type]?.clt || []),
-            ...(workItem.clt?.end
-              ? [new Date(workItem.clt.end).getTime() - new Date(workItem.clt.start!).getTime()]
+            ...(workItem.clt?.end && workItem.clt?.start
+              ? [new Date(workItem.clt.end).getTime() - new Date(workItem.clt.start).getTime()]
               : [])
           ]
         }
