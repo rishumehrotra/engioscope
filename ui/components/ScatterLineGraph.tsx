@@ -12,7 +12,8 @@ const xAxisLabelWidth = 100;
 const yAxisLabelWidth = 60;
 const graphHeight = 400;
 const scatterWidth = 40;
-const groupSpacing = 120;
+const groupSpacing = 70;
+const graphBarXPadding = 30;
 const barSpacingInGroup = 100;
 const labelOverhang = 10;
 const bubbleSize = 5;
@@ -32,12 +33,33 @@ const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
   graphData.flatMap(({ data, yAxisPoint }) => Object.values(data || {}).flatMap(map(yAxisPoint)))
 );
 
+const groupWidth = <T extends {}>(x: Group<T>) => (
+  Object.values(x.data || {}).length * barSpacingInGroup
+);
+
 const graphWidth = <T extends {}>(groups: Group<T>[]) => (
   Object.values(groups)
-    .map(x => Object.values(x.data || {}).length * barSpacingInGroup)
+    .map(groupWidth)
+    .filter(width => width > 0)
     .reduce((acc, curr) => acc + curr + groupSpacing, 0)
-  + yAxisLabelWidth - groupSpacing - (groupSpacing / 2)
+  + yAxisLabelWidth - (groupSpacing / 2)
+  + (graphBarXPadding * 2)
 );
+
+const xCoordForBarGroup = <T extends {}>(graphData: Group<T>[], group: Group<T>): number => {
+  const xCoord = graphData
+    .slice(0, graphData.indexOf(group))
+    .map(groupWidth)
+    .filter(width => width > 0)
+    .reduce((acc, curr) => acc + curr + groupSpacing, 0)
+  + (groupSpacing / 2)
+  + yAxisLabelWidth
+  + graphBarXPadding;
+
+  console.log(group.label, graphData, xCoord);
+
+  return xCoord;
+};
 
 const randomMap = new WeakMap();
 // Prevents shifting of data on re-render
@@ -240,11 +262,11 @@ const ScatterLineGraph = <T extends {}>({
     <svg viewBox={`0 0 ${computedWidth} ${graphHeight}`} height={height} className={className}>
       <Axes width={computedWidth} maxValue={maxOfSpread} yCoord={yCoord} />
       {showPoints && (
-        graphData.map((group, index) => (
+        graphData.map(group => (
           <BarGroup
             key={group.label}
             group={group}
-            xCoord={(index * groupSpacing) + (groupSpacing / 2) + yAxisLabelWidth}
+            xCoord={xCoordForBarGroup(graphData, group)}
             yCoord={yCoord}
             linkForItem={linkForItem}
           />

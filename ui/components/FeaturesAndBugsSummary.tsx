@@ -15,7 +15,7 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
         ...acc,
         [workItem.type]: {
           ...acc[workItem.type],
-          'default-env': [
+          [workItem.env || 'default-env']: [
             ...(acc[workItem.type]?.[workItem.env || 'default-env'] || []),
             ...(workItem.leadTime.end
               ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
