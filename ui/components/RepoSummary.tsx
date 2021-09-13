@@ -42,28 +42,38 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
   return (
     <ProjectStats>
       <ProjectStat
-        title="Tests"
-        value={num(repos.reduce(
-          (acc, r) => acc + (r.tests?.total || 0),
-          0
-        ))}
-        tooltip="Total number of tests across all matching repos"
+        topStats={[{
+          title: 'Tests',
+          value: num(repos.reduce(
+            (acc, r) => acc + (r.tests?.total || 0),
+            0
+          )),
+          tooltip: 'Total number of tests across all matching repos'
+        }]}
+
       />
       <ProjectStat
-        title="Builds"
-        value={num(repos.reduce(
-          (acc, r) => acc + (r.builds?.count || 0),
-          0
-        ))}
-        tooltip="Total number of builds across all matching repos"
+        topStats={[{
+          title: 'Builds',
+          value: num(repos.reduce(
+            (acc, r) => acc + (r.builds?.count || 0),
+            0
+          )),
+          tooltip: 'Total number of builds across all matching repos'
+
+        }]}
         childStats={[{
-          title: 'Success', value: buildSuccessRate(repos), tooltip: 'Success rate across all matching repos'
+          title: 'Success',
+          value: buildSuccessRate(repos),
+          tooltip: 'Success rate across all matching repos'
         }]}
       />
       <ProjectStat
-        title="Sonar"
-        value={num(sonar.configured)}
-        tooltip="Number of matching repos with SonarQube configured"
+        topStats={[{
+          title: 'Sonar',
+          value: num(sonar.configured),
+          tooltip: 'Number of matching repos with SonarQube configured'
+        }]}
         childStats={[
           { title: 'Ok', value: String(sonar.ok), tooltip: 'Number of matching repos with SonarQube \'Ok\' quality gate' },
           { title: 'Warn', value: String(sonar.warn), tooltip: 'Number of matching repos with SonarQube \'Warn\' quality gate' },
