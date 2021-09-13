@@ -30,7 +30,10 @@ type Group<T> = {
 };
 
 const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
-  graphData.flatMap(({ data, yAxisPoint }) => Object.values(data || {}).flatMap(map(yAxisPoint)))
+  graphData.flatMap(
+    ({ data, yAxisPoint }) => Object.values(data || {})
+      .flatMap(map(yAxisPoint))
+  )
 );
 
 const groupWidth = <T extends {}>(x: Group<T>) => (
@@ -42,31 +45,26 @@ const graphWidth = <T extends {}>(groups: Group<T>[]) => (
     .map(groupWidth)
     .filter(width => width > 0)
     .reduce((acc, curr) => acc + curr + groupSpacing, 0)
-  + yAxisLabelWidth - (groupSpacing / 2)
-  + (graphBarXPadding * 2)
+  + yAxisLabelWidth
+  - groupSpacing
+  + graphBarXPadding
 );
 
-const xCoordForBarGroup = <T extends {}>(graphData: Group<T>[], group: Group<T>): number => {
-  const xCoord = graphData
+const xCoordForBarGroup = <T extends {}>(graphData: Group<T>[], group: Group<T>): number => (
+  graphData
     .slice(0, graphData.indexOf(group))
     .map(groupWidth)
     .filter(width => width > 0)
     .reduce((acc, curr) => acc + curr + groupSpacing, 0)
   + (groupSpacing / 2)
   + yAxisLabelWidth
-  + graphBarXPadding;
-
-  console.log(group.label, graphData, xCoord);
-
-  return xCoord;
-};
+  + graphBarXPadding
+);
 
 const randomMap = new WeakMap();
 // Prevents shifting of data on re-render
 const getRandom = <T extends {}>(x: T) => {
-  if (!randomMap.has(x)) {
-    randomMap.set(x, Math.random());
-  }
+  if (!randomMap.has(x)) randomMap.set(x, Math.random());
   return randomMap.get(x);
 };
 
