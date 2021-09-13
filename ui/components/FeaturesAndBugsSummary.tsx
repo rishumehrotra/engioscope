@@ -84,7 +84,6 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']) => {
   if (!bugLeakage) return [];
 
@@ -111,13 +110,13 @@ type FeaturesAndBugsSummaryProps = {
   bugLeakage: AnalysedWorkItems['bugLeakage'];
 };
 
-const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems }) => {
+const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage }) => {
   const computedStats = useMemo(
     () => [
-      ...computeLeadTimes(workItems)
-      // ...computeBugLeakage(bugLeakage)
+      ...computeLeadTimes(workItems),
+      ...computeBugLeakage(bugLeakage)
     ],
-    [workItems]
+    [bugLeakage, workItems]
   );
 
   return (
