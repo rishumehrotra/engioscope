@@ -20,6 +20,24 @@ const createTooltip = (label: string, xform: (x: UIWorkItem) => number) => (work
   </div>
 `.trim();
 
+const colors = [
+  '#f44336',
+  '#673ab7',
+  '#3f51b5',
+  '#2196f3',
+  '#ff9800',
+  '#795548'
+];
+
+const assignedColors = new Map();
+const barColor = (env: string) => {
+  if (!assignedColors.has(env)) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    assignedColors.set(env, color);
+  }
+  return assignedColors.get(env);
+};
+
 type WorkItemChartsProps = {
   workItems: UIWorkItem[];
   bugLeakage: AnalysedWorkItems['bugLeakage'];
@@ -109,16 +127,20 @@ const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems, bugLeakage }
         </div>
       ))}
       {bugLeakage && (
-        <>
+        <div className="min-w-max">
+          <h1>Bugs opened</h1>
           <HorizontalBarGraph
+            width={400}
             graphData={Object.entries(bugLeakage)
-              .map(([type, bugs]) => ({ label: type, value: bugs.opened.length }))}
+              .map(([type, bugs]) => ({ label: type, value: bugs.opened.length, color: barColor(type) }))}
           />
+          <h1>Bugs closed</h1>
           <HorizontalBarGraph
+            width={400}
             graphData={Object.entries(bugLeakage)
-              .map(([type, bugs]) => ({ label: type, value: bugs.closed.length }))}
+              .map(([type, bugs]) => ({ label: type, value: bugs.closed.length, color: barColor(type) }))}
           />
-        </>
+        </div>
       )}
     </div>
   );
