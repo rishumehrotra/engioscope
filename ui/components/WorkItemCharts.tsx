@@ -103,7 +103,11 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
     const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems || []), [workItems]);
 
     return (
-      <div style={{ top: '70px' }} className="flex absolute right-0 z-10 bg-white px-5 py-10 rounded-lg mb-3 shadow-md" ref={ref}>
+      <div
+        style={{ top: '65px' }}
+        className="flex absolute right-0 z-20 bg-white px-5 py-10 rounded-lg mb-3 shadow-md"
+        ref={ref}
+      >
         {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (chartType === type.toLowerCase() ? (
           <div className="mr-10" key={type}>
             <ScatterLineGraph

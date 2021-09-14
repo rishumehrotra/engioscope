@@ -36,7 +36,7 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
   );
 
   return (
-    <li className="p-2 border relative border-gray-200 bg-white shadow-sm ml-1 rounded">
+    <li className={`p-2 border relative border-gray-200 bg-white shadow-sm ml-1 rounded ${isOpen ? 'shadow-inner' : ''}`}>
       <button className="flex" onClick={selectChartType}>
         {topStats ? topStats.map(({ title, value, tooltip }) => (
           <div
