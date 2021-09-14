@@ -66,7 +66,7 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
         tooltip: `
       Average lead time for a ${type.toLowerCase()}
       <br />
-      Lead time is the the time from when the ${type.toLowerCase()}
+      Lead time is the time from when the ${type.toLowerCase()}
       <br />
       was created to when it was closed.
       `

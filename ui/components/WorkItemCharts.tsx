@@ -103,11 +103,9 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
     const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
 
     return (
-      <div className="flex absolute z-10 bg-white p-5 rounded-lg mb-3 shadow-md" ref={ref}>
+      <div className="flex absolute z-10 bg-white px-5 py-10 rounded-lg mb-3 shadow-md" ref={ref}>
         {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (chartType === type.toLowerCase() ? (
           <div className="mr-10" key={type}>
-            <h1 className="text-center pb-5">{type}</h1>
-
             <ScatterLineGraph
               key={type}
               height={400}
@@ -133,7 +131,6 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
           <div className="min-w-max">
             {chartType === 'bugLeakage' ? (
               <>
-                <h1 className="text-center pb-5">Bug leakage</h1>
                 <HorizontalBarGraph
                   width={400}
                   graphData={Object.entries(bugLeakage)
@@ -144,7 +141,6 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
             { chartType === 'bugsClosed'
               ? (
                 <>
-                  <h1 className="text-center pb-5">Bugs closed</h1>
                   <HorizontalBarGraph
                     width={400}
                     graphData={Object.entries(bugLeakage)

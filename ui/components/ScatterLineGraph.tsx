@@ -93,8 +93,8 @@ const Bar = <T extends {}>({
         width={xAxisLabelWidth}
         height={xAxisLabelHeight}
       >
-        <div className="text-sm text-gray-500 text-center">
-          {`${label} (${items.length})`}
+        <div className="text-sm text-gray-700 text-center">
+          {`${label}`}
         </div>
       </foreignObject>
       {items.map((item, index) => (
@@ -150,7 +150,7 @@ const BarGroup = <T extends {}>({
           width={((Object.entries(group.data!).length - 1) * (barSpacingInGroup + scatterWidth)) - (barSpacingInGroup / 2)}
           height={xAxisLabelAreaHeight}
         >
-          <div className="text-sm text-gray-500 text-center">
+          <div className="text-sm text-gray-700 text-center">
             {group.label}
           </div>
         </foreignObject>
@@ -220,7 +220,7 @@ const Axes: React.FC<AxesProps> = ({ width, maxValue, yCoord }) => (
             width={yAxisLabelWidth}
             height={yAxisLabelHeight}
           >
-            <div className="text-right text-sm text-gray-400 pr-3">
+            <div className="text-right text-sm text-gray-700 pr-3">
               {gridLineValue > 0
                 ? prettyMilliseconds(gridLineValue, gridLineValue > oneYear
                   ? { unitCount: 2 }

@@ -61,7 +61,7 @@ const ReleasePipelines: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between items-center my-3 w-full -mt-4">
+      <div className="flex justify-between items-center my-3 w-full -mt-5">
         <AppliedFilters type="release-pipelines" count={pipelines.length} />
         <ReleasePipelineSummary pipelines={pipelines} stagesToHighlight={releaseAnalysis.stagesToHighlight} />
       </div>
