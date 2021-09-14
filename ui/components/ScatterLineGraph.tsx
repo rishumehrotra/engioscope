@@ -122,7 +122,7 @@ const Bar = <T extends {}>({
             data-tip={`Average ${label}: ${prettyMilliseconds(
               averageValueOfItems,
               averageValueOfItems < oneYear ? { compact: true } : { unitCount: 2 }
-            )}`}
+            )} of ${items.length} items`}
           />
         )
         : null}
