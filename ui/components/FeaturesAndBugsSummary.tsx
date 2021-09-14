@@ -1,6 +1,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { sum } from 'rambda';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactTooltip from 'react-tooltip';
 import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
 import { num } from '../helpers/utils';
 import usePopover from '../hooks/use-popover';
@@ -84,6 +85,10 @@ export type ChartType = 'feature' | 'bug' | 'bugLeakage' | 'bugsClosed' | undefi
 const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage }) => {
   const [chartType, setChartType] = useState<ChartType>(undefined);
   const [ref, isOpen, setIsOpen] = usePopover();
+
+  useEffect(() => {
+    setTimeout(() => ReactTooltip.rebuild(), 100);
+  }, [isOpen]);
 
   const selectChartType = (type: ChartType) => {
     setChartType(type);
