@@ -2,6 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
 import { oneYear } from '../helpers/utils';
+import type { ChartType } from './FeaturesAndBugsSummary';
 import HorizontalBarGraph from './HorizontalBarGraph';
 import ScatterLineGraph from './ScatterLineGraph';
 
@@ -38,9 +39,10 @@ const barColor = (env: string) => {
   return assignedColors.get(env);
 };
 
-type WorkItemChartsProps = {
+export type WorkItemChartsProps = {
   workItems: UIWorkItem[];
   bugLeakage: AnalysedWorkItems['bugLeakage'];
+  chartType?: ChartType;
 };
 
 const getCLTTime = (workItem: UIWorkItem) => (
@@ -96,54 +98,66 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
     {}
   );
 
-const WorkItemCharts: React.FC<WorkItemChartsProps> = ({ workItems, bugLeakage }) => {
-  const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
+const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
+  ({ workItems, bugLeakage, chartType }, ref) => {
+    const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
 
-  return (
-    <div className="flex">
-      {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (
-        <div className="mr-10 bg-white p-5 rounded-lg mb-3 shadow-md" key={type}>
-          <div className="text-center pb-5">{type}</div>
+    return (
+      <div className="flex absolute z-10 bg-white p-5 rounded-lg mb-3 shadow-md" ref={ref}>
+        {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (chartType === type.toLowerCase() ? (
+          <div className="mr-10" key={type}>
+            <h1 className="text-center pb-5">{type}</h1>
 
-          <ScatterLineGraph
-            key={type}
-            height={400}
-            linkForItem={workItem => workItem.url}
-            graphData={[
-              {
-                label: 'Change lead time',
-                data: statByCltOrLtByEnv.clt,
-                yAxisPoint: getCLTTime,
-                tooltip: createTooltip('Change lead time', getCLTTime)
-              },
-              {
-                label: 'Lead time',
-                data: statByCltOrLtByEnv.lt,
-                yAxisPoint: getLeadTime,
-                tooltip: createTooltip('Lead time', getLeadTime)
-              }
-            ]}
-          />
-        </div>
-      ))}
-      {bugLeakage && (
-        <div className="min-w-max">
-          <h1>Bugs opened</h1>
-          <HorizontalBarGraph
-            width={400}
-            graphData={Object.entries(bugLeakage)
-              .map(([type, bugs]) => ({ label: type, value: bugs.opened.length, color: barColor(type) }))}
-          />
-          <h1>Bugs closed</h1>
-          <HorizontalBarGraph
-            width={400}
-            graphData={Object.entries(bugLeakage)
-              .map(([type, bugs]) => ({ label: type, value: bugs.closed.length, color: barColor(type) }))}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
+            <ScatterLineGraph
+              key={type}
+              height={400}
+              linkForItem={workItem => workItem.url}
+              graphData={[
+                {
+                  label: 'Change lead time',
+                  data: statByCltOrLtByEnv.clt,
+                  yAxisPoint: getCLTTime,
+                  tooltip: createTooltip('Change lead time', getCLTTime)
+                },
+                {
+                  label: 'Lead time',
+                  data: statByCltOrLtByEnv.lt,
+                  yAxisPoint: getLeadTime,
+                  tooltip: createTooltip('Lead time', getLeadTime)
+                }
+              ]}
+            />
+          </div>
+        ) : null))}
+        {bugLeakage && (
+          <div className="min-w-max">
+            {chartType === 'bugLeakage' ? (
+              <>
+                <h1 className="text-center pb-5">Bug leakage</h1>
+                <HorizontalBarGraph
+                  width={400}
+                  graphData={Object.entries(bugLeakage)
+                    .map(([type, bugs]) => ({ label: type, value: bugs.opened.length, color: barColor(type) }))}
+                />
+              </>
+            ) : null}
+            { chartType === 'bugsClosed'
+              ? (
+                <>
+                  <h1 className="text-center pb-5">Bugs closed</h1>
+                  <HorizontalBarGraph
+                    width={400}
+                    graphData={Object.entries(bugLeakage)
+                      .map(([type, bugs]) => ({ label: type, value: bugs.closed.length, color: barColor(type) }))}
+                  />
+                </>
+              )
+              : null}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
 
 export default WorkItemCharts;
