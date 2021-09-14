@@ -17,10 +17,11 @@ export type ProjectStatProps = {
   childStats?: Stat[];
   chartType?: ChartType;
   isOpen?: boolean;
+  hasPopover?: boolean;
 };
 
 const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryProps>> = ({
-  topStats, childStats, workItems, bugLeakage, chartType
+  topStats, childStats, workItems, bugLeakage, chartType, hasPopover
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();
 
@@ -30,14 +31,19 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
 
   const selectChartType = useCallback(
     () => {
+      if (!hasPopover) return;
       setIsOpen(!isOpen);
     },
-    [isOpen, setIsOpen]
+    [hasPopover, isOpen, setIsOpen]
   );
 
   return (
-    <li className={`p-2 border relative border-gray-200 bg-white shadow-sm ml-1 rounded ${isOpen ? 'shadow-inner' : ''}`}>
-      <button className="flex" onClick={selectChartType}>
+    <li className="relative">
+      <button
+        className={`p-2 border border-gray-200 bg-white shadow-sm ml-1 rounded flex
+          ${isOpen ? 'border-gray-300 transform -translate-y-1' : ''}`}
+        onClick={selectChartType}
+      >
         {topStats ? topStats.map(({ title, value, tooltip }) => (
           <div
             key={`${title}-${value}`}
@@ -66,7 +72,7 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
           </div>
         )) : null}
       </button>
-      { isOpen ? (
+      { isOpen && (workItems || bugLeakage) ? (
         <WorkItemCharts
           ref={ref}
           workItems={workItems}

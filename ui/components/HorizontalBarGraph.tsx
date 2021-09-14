@@ -18,7 +18,7 @@ type HorizontalBarGraphProps = {
 };
 
 const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, width }) => {
-  const height = useMemo(() => graphData.length * (barThickness + barSpacing), [graphData]);
+  const height = useMemo(() => (graphData.length * (barThickness + barSpacing)) - barSpacing, [graphData]);
   const maxValue = useMemo(() => Math.max(...graphData.map(d => d.value)), [graphData]);
   const putLabelInBar = (value: number) => value > maxValue * 0.5;
 

@@ -104,8 +104,8 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
 
     return (
       <div
-        style={{ top: '65px' }}
-        className="flex absolute right-0 z-20 bg-white px-5 py-10 rounded-lg mb-3 shadow-md"
+        style={{ top: '70px' }}
+        className="flex absolute right-0 z-20 bg-white px-5 py-5 rounded-lg mb-3 shadow-md border border-gray-300"
         ref={ref}
       >
         {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (chartType === type.toLowerCase() ? (
@@ -122,10 +122,10 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
                   tooltip: createTooltip('Change lead time', getCLTTime)
                 },
                 {
-                  label: 'Lead time',
+                  label: 'Turnaround time',
                   data: statByCltOrLtByEnv.lt,
                   yAxisPoint: getLeadTime,
-                  tooltip: createTooltip('Lead time', getLeadTime)
+                  tooltip: createTooltip('Turnaround time', getLeadTime)
                 }
               ]}
             />

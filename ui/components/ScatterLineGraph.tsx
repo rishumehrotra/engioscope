@@ -186,7 +186,7 @@ const BarGroup = <T extends {}>({
         label={
           Object.entries(group.data || {}).length === 1
             ? group.label
-            : `${key} ${group.label}`
+            : key
         }
         yAxisPoint={group.yAxisPoint}
         xCoord={xCoord + (barSpacingInGroup * index)}

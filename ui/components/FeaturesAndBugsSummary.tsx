@@ -28,8 +28,16 @@ const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']): Project
   ];
 };
 
+const cltOrLtDefinition = (type: string, cltOrLt: string) => (cltOrLt === 'lt'
+  ? `Average turnaround time for a ${type.toLowerCase()}. <br /> 
+    Turnaround time is the time from when the ${type.toLowerCase()} <br /> 
+    was created to when it was closed.`
+  : `Average CLT for a ${type.toLowerCase()}. <br /> 
+  CLT is the time from when the ${type.toLowerCase()}<br /> 
+  was dev done to when it was closed.`);
+
 const computeLeadTimes = (workItems: UIWorkItem[]) => {
-  const aggregated = workItems.reduce<Record<string, Record<string, number[]>>>(
+  const aggregated = workItems.reduce<Record<string, Record<'clt' | 'lt', number[]>>>(
     (acc, workItem) => {
       if (!workItem.leadTime.end) return acc;
       return ({
@@ -57,17 +65,11 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
     .flatMap<ProjectStatProps>(([type, timesByType]) => ({
       chartType: type.toLowerCase() as ChartType,
       topStats: Object.entries(timesByType).map(([cltOrLt, times]) => ({
-        title: `${type} ${cltOrLt === 'clt' ? 'CLT' : 'lead time'}`,
+        title: `${type} ${cltOrLt === 'clt' ? 'CLT' : 'turnaround time'}`,
         value: times.length
           ? prettyMilliseconds(sum(times) / times.length, { compact: true })
           : '-',
-        tooltip: `
-      Average lead time for a ${type.toLowerCase()}
-      <br />
-      Lead time is the time from when the ${type.toLowerCase()}
-      <br />
-      was created to when it was closed.
-      `
+        tooltip: cltOrLtDefinition(type, cltOrLt)
       }))
     }));
 };
@@ -96,6 +98,7 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workIte
             workItems={workItems}
             bugLeakage={bugLeakage}
             chartType={stat.chartType}
+            hasPopover
           />
         ))}
       </ProjectStats>
