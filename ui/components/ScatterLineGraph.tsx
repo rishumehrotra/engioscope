@@ -36,6 +36,12 @@ const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
   )
 );
 
+const median = (values: number[]) => {
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const middleIndex = Math.floor(sortedValues.length / 2);
+  return sortedValues[middleIndex];
+};
+
 const groupWidth = <T extends {}>(x: Group<T>) => (
   Object.values(x.data || {}).length * barSpacingInGroup
 );
@@ -84,6 +90,7 @@ const Bar = <T extends {}>({
   const averageValueOfItems = items.length
     ? items.map(yAxisPoint).reduce(add, 0) / items.length
     : 0;
+  const medianValue = median(items.map(yAxisPoint));
 
   return (
     <g>
@@ -122,6 +129,22 @@ const Bar = <T extends {}>({
             data-tip={`Average ${label}: ${prettyMilliseconds(
               averageValueOfItems,
               averageValueOfItems < oneYear ? { compact: true } : { unitCount: 2 }
+            )} of ${items.length} items`}
+          />
+        )
+        : null}
+      {items.length
+        ? (
+          <line
+            x1={xCoord - scatterWidth}
+            y1={yCoord(medianValue)}
+            x2={xCoord + scatterWidth}
+            y2={yCoord(medianValue)}
+            stroke="rgba(0,0,255,0.6)"
+            strokeWidth={5}
+            data-tip={`Median ${label}: ${prettyMilliseconds(
+              medianValue,
+              medianValue < oneYear ? { compact: true } : { unitCount: 2 }
             )} of ${items.length} items`}
           />
         )
