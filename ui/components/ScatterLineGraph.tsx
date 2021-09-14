@@ -11,12 +11,12 @@ const xAxisLabelHeight = 50;
 const xAxisLabelWidth = 100;
 const yAxisLabelWidth = 60;
 const graphHeight = 400;
-const scatterWidth = 40;
+const scatterWidth = 60;
 const groupSpacing = 70;
 const graphBarXPadding = 30;
 const barSpacingInGroup = 100;
 const labelOverhang = 10;
-const bubbleSize = 5;
+const bubbleSize = 7;
 const gridLinesCount = 5;
 const yAxisLabelHeight = 20;
 const graphTopPadding = bubbleSize;
@@ -111,7 +111,8 @@ const Bar = <T extends {}>({
             cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
             cy={yCoord(yAxisPoint(item))}
             r={bubbleSize}
-            fill="rgba(0,0,0,0.6)"
+            fill={`hsla(${(Math.round(Math.random() * 30)) + (yAxisPoint(item) < 0 ? 0 : 190)}, 80%, 50%, 0.7)`}
+            stroke="0"
             data-html
             data-tip={tooltip(item)}
           />
