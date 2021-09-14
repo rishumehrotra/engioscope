@@ -50,7 +50,6 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           )),
           tooltip: 'Total number of tests across all matching repos'
         }]}
-
       />
       <ProjectStat
         topStats={[{

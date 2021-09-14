@@ -2,8 +2,8 @@ import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
 import { oneYear } from '../helpers/utils';
-import type { ChartType } from './FeaturesAndBugsSummary';
 import HorizontalBarGraph from './HorizontalBarGraph';
+import type { ChartType } from './ProjectStat';
 import ScatterLineGraph from './ScatterLineGraph';
 
 const createTooltip = (label: string, xform: (x: UIWorkItem) => number) => (workItem: UIWorkItem) => `
@@ -40,8 +40,8 @@ const barColor = (env: string) => {
 };
 
 export type WorkItemChartsProps = {
-  workItems: UIWorkItem[];
-  bugLeakage: AnalysedWorkItems['bugLeakage'];
+  workItems?: UIWorkItem[];
+  bugLeakage?: AnalysedWorkItems['bugLeakage'];
   chartType?: ChartType;
 };
 
@@ -100,10 +100,10 @@ const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
 
 const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
   ({ workItems, bugLeakage, chartType }, ref) => {
-    const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems), [workItems]);
+    const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems || []), [workItems]);
 
     return (
-      <div className="flex absolute z-10 bg-white px-5 py-10 rounded-lg mb-3 shadow-md" ref={ref}>
+      <div style={{ top: '70px' }} className="flex absolute right-0 z-10 bg-white px-5 py-10 rounded-lg mb-3 shadow-md" ref={ref}>
         {Object.entries(groupedWorkItems).map(([type, statByCltOrLtByEnv]) => (chartType === type.toLowerCase() ? (
           <div className="mr-10" key={type}>
             <ScatterLineGraph

@@ -1,14 +1,11 @@
 import prettyMilliseconds from 'pretty-ms';
 import { sum } from 'rambda';
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactTooltip from 'react-tooltip';
+import React, { useMemo } from 'react';
 import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
 import { num } from '../helpers/utils';
-import usePopover from '../hooks/use-popover';
-import type { ProjectStatProps } from './ProjectStat';
+import type { ChartType, ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
-import WorkItemCharts from './WorkItemCharts';
 
 const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']): ProjectStatProps[] => {
   if (!bugLeakage) return [];
@@ -22,11 +19,11 @@ const computeBugLeakage = (bugLeakage: AnalysedWorkItems['bugLeakage']): Project
 
   return [{
     topStats: [{ title: 'Bug leakage #', value: num(aggregated.opened) }],
-    type: 'bugLeakage'
+    chartType: 'bugLeakage'
   },
   {
     topStats: [{ title: 'Bugs closed #', value: num(aggregated.closed) }],
-    type: 'bugsClosed'
+    chartType: 'bugsClosed'
   }
   ];
 };
@@ -58,7 +55,7 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
 
   return Object.entries(aggregated)
     .flatMap<ProjectStatProps>(([type, timesByType]) => ({
-      type: type.toLowerCase() as ChartType,
+      chartType: type.toLowerCase() as ChartType,
       topStats: Object.entries(timesByType).map(([cltOrLt, times]) => ({
         title: `${type} ${cltOrLt === 'clt' ? 'CLT' : 'lead time'}`,
         value: times.length
@@ -75,25 +72,12 @@ const computeLeadTimes = (workItems: UIWorkItem[]) => {
     }));
 };
 
-type FeaturesAndBugsSummaryProps = {
+export type FeaturesAndBugsSummaryProps = {
   workItems: UIWorkItem[];
   bugLeakage: AnalysedWorkItems['bugLeakage'];
 };
 
-export type ChartType = 'feature' | 'bug' | 'bugLeakage' | 'bugsClosed' | undefined;
-
 const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage }) => {
-  const [chartType, setChartType] = useState<ChartType>(undefined);
-  const [ref, isOpen, setIsOpen] = usePopover();
-
-  useEffect(() => {
-    setTimeout(() => ReactTooltip.rebuild(), 100);
-  }, [isOpen]);
-
-  const selectChartType = (type: ChartType) => {
-    setChartType(type);
-  };
-
   const computedStats = useMemo(
     () => [
       ...computeLeadTimes(workItems),
@@ -109,21 +93,13 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workIte
           <ProjectStat
             key={stat.topStats[0].title}
             topStats={stat.topStats}
-            onClick={() => {
-              setIsOpen(!isOpen);
-              selectChartType(stat.type);
-            }}
+            workItems={workItems}
+            bugLeakage={bugLeakage}
+            chartType={stat.chartType}
           />
         ))}
       </ProjectStats>
-      { isOpen ? (
-        <WorkItemCharts
-          ref={ref}
-          workItems={workItems}
-          bugLeakage={bugLeakage}
-          chartType={chartType}
-        />
-      ) : null}
+
     </div>
   );
 };
