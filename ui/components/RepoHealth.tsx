@@ -2,7 +2,6 @@ import React, {
   useCallback, useEffect, useMemo, useState
 } from 'react';
 import { Link, useHistory } from 'react-router-dom';
-import ReactTooltip from 'react-tooltip';
 import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import Card from './common/ExpandingCard';
@@ -55,8 +54,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }
 
   const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
-
-  useEffect(() => { ReactTooltip.rebuild(); }, [selectedTab]);
 
   useEffect(() => {
     if (sortBy) {

@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
-import ReactTooltip from 'react-tooltip';
 import type { ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
@@ -50,8 +49,6 @@ const ReleasePipelines: React.FC = () => {
       .filter(stageNameExists === undefined ? dontFilter : byStageNameExists(stageNameExists))
       .filter(stageNameExistsNotUsed === undefined ? dontFilter : byStageNameExistsNotUsed(stageNameExistsNotUsed));
   }, [releaseAnalysis, search, nonMasterReleases, notStartsWithArtifact, stageNameExists, stageNameExistsNotUsed]);
-
-  useEffect(() => { ReactTooltip.rebuild(); }, [pipelines]);
 
   const topPipelines = useMemo(() => topItems(page, pipelines), [page, pipelines]);
   const bottomPipelines = useMemo(() => bottomItems(pipelines), [pipelines]);

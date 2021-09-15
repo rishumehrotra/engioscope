@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
-import ReactTooltip from 'react-tooltip';
+import React, { useCallback } from 'react';
 import usePopover from '../hooks/use-popover';
 import type { FeaturesAndBugsSummaryProps } from './FeaturesAndBugsSummary';
 import WorkItemCharts from './WorkItemCharts';
@@ -24,10 +23,6 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
   topStats, childStats, workItems, bugLeakage, chartType, hasPopover
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();
-
-  useEffect(() => {
-    setTimeout(() => ReactTooltip.rebuild(), 100);
-  }, [isOpen]);
 
   const selectChartType = useCallback(
     () => {

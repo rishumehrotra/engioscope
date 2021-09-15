@@ -3,7 +3,6 @@ import React, {
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
-import ReactTooltip from 'react-tooltip';
 import type { UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { workItemMetrics, workItemRevisions } from '../network';
 import { dontFilter } from '../helpers/utils';
@@ -49,8 +48,6 @@ const useRevisionsForCollection = () => {
       setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs));
     });
   }, [collection, revisions]);
-
-  useEffect(() => { setTimeout(ReactTooltip.rebuild, 0); }, [revisions]);
 
   return [revisions, getRevisions] as const;
 };
@@ -98,8 +95,6 @@ const WorkItems: React.FC = () => {
     const ids = [...topItems(page, filteredWorkItems).map(({ id }) => id), ...bottomItems(filteredWorkItems).map(({ id }) => id)];
     getRevisions(ids);
   }, [filteredWorkItems, getRevisions, page, workItemAnalysis]);
-
-  useEffect(() => { ReactTooltip.rebuild(); }, [filteredWorkItems, revisions]);
 
   if (workItemAnalysis === 'loading') return <Loading />;
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
