@@ -17,17 +17,9 @@ const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
   (acc, workItemType) => ({ ...acc, [workItemType.name]: workItemType }), {}
 );
 
-const getWorkItemTree = (
-  getCollectionWorkItemIdsForQuery: (collectionName: string, query: string) => Promise<WorkItemIDTree>,
-  collection: ParsedCollection,
-  config: ParsedConfig
-) => getCollectionWorkItemIdsForQuery(
-  collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
-);
-
 type WorkItemTypeByCollection = Record<CollectionName, WorkItemTypeByTypeName>;
 
-const getWorkItemTypesByCollection = (
+const getWorkItemTypesForCollection = (
   getWorkItemTypes: (collectionName: string) => (projectName: string) => Promise<WorkItemType[]>,
   collection: ParsedCollection
 ) => Promise.all(collection.projects.map(async project => ({
@@ -139,37 +131,38 @@ const computeLeadTime = (workItem: WorkItem) => ({
   }
 });
 
-const uiWorkItemCreator = (collectionConfig: ParsedCollection) => (
-  (workItemTypesByCollection: Record<CollectionName, WorkItemTypeByTypeName>) => (
-    (workItem: WorkItem): UIWorkItem => {
-      const projectName = workItem.fields['System.TeamProject'];
-      const workItemTypeName = workItem.fields['System.WorkItemType'];
-      const workItemType = workItemTypesByCollection[projectName.toLowerCase()][workItemTypeName];
+const uiWorkItemCreator = (
+  collectionConfig: ParsedCollection,
+  workItemTypesByCollection: Record<CollectionName, WorkItemTypeByTypeName>
+) => (
+  (workItem: WorkItem): UIWorkItem => {
+    const projectName = workItem.fields['System.TeamProject'];
+    const workItemTypeName = workItem.fields['System.WorkItemType'];
+    const workItemType = workItemTypesByCollection[projectName.toLowerCase()][workItemTypeName];
 
-      return {
-        id: workItem.id,
-        title: workItem.fields['System.Title'],
-        url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
-        type: workItemTypeName,
-        state: workItem.fields['System.State'],
-        project: projectName,
-        color: workItemType.color,
-        icon: workItemType.icon.url,
-        created: {
-          on: workItem.fields['System.CreatedDate'].toISOString()
-          // name: workItem.fields['System.CreatedBy']
-        },
-        updated: {
-          on: workItem.fields['System.ChangedDate'].toISOString()
-        },
-        env: collectionConfig.workitems.environmentField
-          ? workItem.fields[collectionConfig.workitems.environmentField]
-          : undefined,
-        ...computeCLT(collectionConfig, workItem),
-        ...computeLeadTime(workItem)
-      };
-    }
-  )
+    return {
+      id: workItem.id,
+      title: workItem.fields['System.Title'],
+      url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
+      type: workItemTypeName,
+      state: workItem.fields['System.State'],
+      project: projectName,
+      color: workItemType.color,
+      icon: workItemType.icon.url,
+      created: {
+        on: workItem.fields['System.CreatedDate'].toISOString()
+        // name: workItem.fields['System.CreatedBy']
+      },
+      updated: {
+        on: workItem.fields['System.ChangedDate'].toISOString()
+      },
+      env: collectionConfig.workitems.environmentField
+        ? workItem.fields[collectionConfig.workitems.environmentField]
+        : undefined,
+      ...computeCLT(collectionConfig, workItem),
+      ...computeLeadTime(workItem)
+    };
+  }
 );
 
 export default (config: ParsedConfig) => (collection: ParsedCollection) => {
@@ -177,19 +170,25 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     getCollectionWorkItemIdsForQuery, getWorkItemTypes, getCollectionWorkItems
   } = azure(config);
 
-  const pWorkItemTreeForCollection = getWorkItemTree(getCollectionWorkItemIdsForQuery, collection, config);
-  const pCreateUIWorkItem = getWorkItemTypesByCollection(getWorkItemTypes, collection)
-    .then(uiWorkItemCreator(collection));
+  const pWorkItemTreeForCollection: Promise<WorkItemIDTree> = (
+    getCollectionWorkItemIdsForQuery(
+      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
+    )
+  );
+
+  const pWorkItemTypesForCollection = getWorkItemTypesForCollection(getWorkItemTypes, collection);
 
   const pWorkItemsById = pWorkItemTreeForCollection
     .then(workItemsById(getCollectionWorkItems, collection));
 
   return async (project: ParsedProjectConfig): Promise<AnalysedWorkItems> => {
     const [
-      workItemTreeForCollection, createUIWorkItem, workItemsById
+      workItemTreeForCollection, workItemTypesByProject, workItemsById
     ] = await Promise.all([
-      pWorkItemTreeForCollection, pCreateUIWorkItem, pWorkItemsById
+      pWorkItemTreeForCollection, pWorkItemTypesForCollection, pWorkItemsById
     ]);
+
+    const createUIWorkItem = uiWorkItemCreator(collection, workItemTypesByProject);
 
     const workItemsForProject = Object.values(workItemsById)
       .filter(wi => wi.fields['System.TeamProject'] === project.name);
