@@ -13,7 +13,7 @@ import VerticalCrosshair from './VerticalCrosshair';
 import useGanttRows, { isProjectRow } from './use-gantt-rows';
 import BottomScale from './BottomScale';
 
-const showBottomScale = true;
+const showBottomScale = false;
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 
 export type WorkItemsGanttChartProps = {
