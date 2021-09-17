@@ -199,7 +199,7 @@ const constructTree = (
 
       return {
         type: 'workitem-type',
-        label: wit,
+        label: workItemType(workItems[0]).name[1],
         path: `${parent.path}/${wit}`,
         expandedState: 'collapsed',
         depth: parent.depth + 1,
