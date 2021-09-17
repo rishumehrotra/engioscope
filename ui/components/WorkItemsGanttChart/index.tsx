@@ -13,7 +13,7 @@ import VerticalCrosshair from './VerticalCrosshair';
 import useGanttRows, { isProjectRow } from './use-gantt-rows';
 import BottomScale from './BottomScale';
 
-const showBottomScale = false;
+const showBottomScale = true;
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());
 
 export type WorkItemsGanttChartProps = {
@@ -48,7 +48,6 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
   const minDate = useMemo(() => {
-    console.log({ zoom, rows });
     if (zoom) return zoom[0];
     if (!rows.length) return 0;
     return rows.filter(isProjectRow)[1].minTimestamp;

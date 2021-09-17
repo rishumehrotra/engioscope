@@ -32,15 +32,9 @@ const DragHandle: React.FC<DragHandleProps> = ({
   const onDrag = useCallback(e => {
     if (!dragHandleRef.current || !isDragging.current) return;
     dragHandleRef.current.style.cursor = 'grab';
-
     const dragXCoord = e.offsetX;
-    const maxXCoord = timeToXCoord(initialMaxDate);
-    console.log({
-      dragXCoord, lowerDate, maxXCoord
-    });
-
     onSelect([xCoordToDate(lowerDate.getTime(), initialMaxDate.getTime())(dragXCoord), initialMaxDate.getTime()]);
-  }, [initialMaxDate, lowerDate, onSelect, timeToXCoord]);
+  }, [initialMaxDate, lowerDate, onSelect]);
 
   const stopDrag = useCallback(() => {
     isDragging.current = false;
@@ -158,7 +152,7 @@ const BottomScale: React.FC<BottomScaleProps> = ({
         initialMaxDate={initialMaxDate}
       />
       <DateLabel
-        x={svgWidth - 75}
+        x={svgWidth - axisLabelsWidth}
         y={y}
         date={initialMaxDate}
       />
