@@ -6,20 +6,22 @@ import HorizontalBarGraph from './HorizontalBarGraph';
 import type { ChartType } from './ProjectStat';
 import ScatterLineGraph from './ScatterLineGraph';
 
-const createTooltip = (label: string, xform: (x: UIWorkItem) => number) => (workItem: UIWorkItem) => `
+const createTooltip = (label: string, xform: (x: UIWorkItem) => number, workItemTypes: AnalysedWorkItems['types']) => (
+  (workItem: UIWorkItem) => `
   <div class="w-72">
     <div class="pl-3" style="text-indent: -1.15rem">
-      <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
+      <img src="${workItemTypes[workItem.typeId].icon}" width="14" height="14" class="inline-block -mt-1" />
       <strong>#${workItem.id}:</strong> ${workItem.title}
       <div class="pt-1">
         <strong>${label}:</strong> ${prettyMilliseconds(
-  xform(workItem),
-  xform(workItem) < oneYear ? { compact: true } : { unitCount: 2 }
-)}
+    xform(workItem),
+    xform(workItem) < oneYear ? { compact: true } : { unitCount: 2 }
+  )}
       </div>
     </div>
   </div>
-`.trim();
+`.trim()
+);
 
 const colors = [
   '#f44336',
@@ -37,12 +39,6 @@ const barColor = (env: string) => {
     assignedColors.set(env, color);
   }
   return assignedColors.get(env);
-};
-
-export type WorkItemChartsProps = {
-  workItems?: UIWorkItem[];
-  bugLeakage?: AnalysedWorkItems['bugLeakage'];
-  chartType?: ChartType;
 };
 
 const getCLTTime = (workItem: UIWorkItem) => (
@@ -85,22 +81,34 @@ const byEnv = (
 type WorkItemType = string;
 type WorkItemEnvironment = string;
 
-const workItemsByTypeAndEnv = (workItems: UIWorkItem[]) => workItems
+const workItemsByTypeAndEnv = (workItems: UIWorkItem[], workItemTypes: AnalysedWorkItems['types']) => workItems
   .reduce<Record<WorkItemType, Record<'clt' | 'lt', Record<WorkItemEnvironment, UIWorkItem[]>>>>(
     (acc, workItem) => ({
       ...acc,
-      [workItem.type]: {
-        ...acc[workItem.type],
-        ...byEnv('clt', (acc[workItem.type] || {}).clt, workItem, hasCLT),
-        ...byEnv('lt', (acc[workItem.type] || {}).lt, workItem, hasLeadTime)
+      [workItemTypes[workItem.typeId].name[0]]: {
+        ...acc[workItemTypes[workItem.typeId].name[0]],
+        ...byEnv('clt', (acc[workItemTypes[workItem.typeId].name[0]] || {}).clt, workItem, hasCLT),
+        ...byEnv('lt', (acc[workItemTypes[workItem.typeId].name[0]] || {}).lt, workItem, hasLeadTime)
       }
     }),
     {}
   );
 
+export type WorkItemChartsProps = {
+  workItems?: UIWorkItem[];
+  bugLeakage?: AnalysedWorkItems['bugLeakage'];
+  workItemTypes: AnalysedWorkItems['types'];
+  chartType?: ChartType;
+};
+
 const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
-  ({ workItems, bugLeakage, chartType }, ref) => {
-    const groupedWorkItems = useMemo(() => workItemsByTypeAndEnv(workItems || []), [workItems]);
+  ({
+    workItems, bugLeakage, workItemTypes, chartType
+  }, ref) => {
+    const groupedWorkItems = useMemo(
+      () => workItemsByTypeAndEnv(workItems || [], workItemTypes),
+      [workItemTypes, workItems]
+    );
 
     return (
       <div
@@ -119,13 +127,13 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
                   label: 'Change lead time',
                   data: statByCltOrLtByEnv.clt,
                   yAxisPoint: getCLTTime,
-                  tooltip: createTooltip('Change lead time', getCLTTime)
+                  tooltip: createTooltip('Change lead time', getCLTTime, workItemTypes)
                 },
                 {
                   label: 'Turnaround time',
                   data: statByCltOrLtByEnv.lt,
                   yAxisPoint: getLeadTime,
-                  tooltip: createTooltip('Turnaround time', getLeadTime)
+                  tooltip: createTooltip('Turnaround time', getLeadTime, workItemTypes)
                 }
               ]}
             />

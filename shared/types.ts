@@ -120,7 +120,8 @@ export type RepoAnalysis = {
 export type UIWorkItem = {
   id: number;
   project: string;
-  type: string;
+  // type: string;
+  typeId: string;
   state: string;
   created: {
     // name: string;
@@ -137,8 +138,8 @@ export type UIWorkItem = {
   title: string;
   // description: string;
   url: string;
-  icon: string;
-  color: string;
+  // icon: string;
+  // color: string;
   env?: string;
   clt?: { start?: string; end?: string };
   leadTime: { start: string; end?: string };
@@ -149,9 +150,17 @@ export type UIWorkItemRevision = {
   date: string;
 };
 
+export type UIWorkItemType = {
+  name: [string, string];
+  icon: string;
+  color: string;
+  iconColor: string | null;
+};
+
 export type AnalysedWorkItems = {
   ids: Record<number, number[] | undefined>;
   byId: Record<number, UIWorkItem>;
+  types: Record<string, UIWorkItemType>;
   bugLeakage: Record<string, {opened: number[]; closed: number[]}> | null;
 };
 

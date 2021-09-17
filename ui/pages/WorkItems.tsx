@@ -107,6 +107,7 @@ const WorkItems: React.FC = () => {
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
         <FeaturesAndBugsSummary
           workItems={filteredWorkItems}
+          workItemTypes={workItems.types}
           bugLeakage={workItemAnalysis.workItems.bugLeakage}
         />
       </div>
@@ -118,6 +119,7 @@ const WorkItems: React.FC = () => {
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
+            workItemTypes={workItems.types}
             colorForStage={colorForStage}
             revisions={revisions}
             getRevisions={getRevisions}
@@ -133,6 +135,7 @@ const WorkItems: React.FC = () => {
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
+            workItemTypes={workItems.types}
             colorForStage={colorForStage}
             revisions={revisions}
             getRevisions={getRevisions}

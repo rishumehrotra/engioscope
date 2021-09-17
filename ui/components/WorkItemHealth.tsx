@@ -1,7 +1,9 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
 import React, { useCallback } from 'react';
-import type { AnalysedWorkItems, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
+import type {
+  AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
+} from '../../shared/types';
 import { exists } from '../helpers/utils';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
 import { Revisions } from './WorkItemsGanttChart/GanttRow';
@@ -10,12 +12,12 @@ import {
   barWidthUsing, getMaxDateTime, getMinDateTime, rowPadding, svgWidth
 } from './WorkItemsGanttChart/helpers';
 
-const titleTooltip = (workItem: UIWorkItem) => `
+const titleTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => `
   <div class="max-w-xs">
     <div class="pl-3" style="text-indent: -1.15rem">
       <span class="font-bold">
-        <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-        ${workItem.type} #${workItem.id}:
+        <img src="${type.icon}" width="14" height="14" class="inline-block -mt-1" />
+        ${type.name[0]} #${workItem.id}:
       </span>
       ${workItem.title}
     </div>
@@ -54,14 +56,15 @@ type WorkItemProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
+  workItemTypes: AnalysedWorkItems['types'];
   colorForStage: (stage: string) => string;
   revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
   getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItem: React.FC<WorkItemProps> = ({
-  workItemId, workItemsById, workItemsIdTree, colorForStage,
-  revisions, getRevisions
+  workItemId, workItemsById, workItemsIdTree, workItemTypes,
+  colorForStage, revisions, getRevisions
 }) => {
   const workItemRevisions = revisions[workItemId];
   const workItem = workItemsById[workItemId];
@@ -87,6 +90,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
   }, [workItemRevisions]);
 
   const barWidth = barWidthUsing(timeToXCoord);
+  const workItemType = workItemTypes[workItem.typeId];
 
   return (
     <li
@@ -101,13 +105,13 @@ const WorkItem: React.FC<WorkItemProps> = ({
             className="font-bold text-lg truncate max-width-full inline-block link-text"
             target="_blank"
             rel="noreferrer"
-            data-tip={titleTooltip(workItem)}
+            data-tip={titleTooltip(workItem, workItemType)}
             data-html
           >
             <img
               className="inline-block -mt-1 mr-1"
-              src={workItem.icon}
-              alt={`${workItem.type} icon`}
+              src={workItemType.icon}
+              alt={`${workItemType.name[1]} icon`}
               width="18"
             />
             {`${workItem.id}: ${workItem.title}`}
@@ -159,6 +163,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           workItemId={workItemId}
           workItemsById={workItemsById}
           workItemsIdTree={workItemsIdTree}
+          workItemTypes={workItemTypes}
           colorForStage={colorForStage}
           revisions={revisions}
           getRevisions={getRevisions}

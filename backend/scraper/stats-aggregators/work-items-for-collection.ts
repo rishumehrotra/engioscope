@@ -1,5 +1,8 @@
+import md5 from 'md5';
+import pluralize from 'pluralize';
 import { reduce } from 'rambda';
-import type { AnalysedWorkItems, UIWorkItem } from '../../../shared/types';
+import { URL } from 'url';
+import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { exists, unique } from '../../utils';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
@@ -9,7 +12,7 @@ import type {
 import { queryForCollectionWorkItems } from '../work-item-queries';
 
 type WorkItemIDTree = WorkItemQueryResult<WorkItemQueryHierarchialResult>;
-type CollectionName = string;
+type ProjectName = string;
 type WorkItemTypeName = string;
 type WorkItemTypeByTypeName = Record<WorkItemTypeName, WorkItemType>;
 
@@ -17,7 +20,7 @@ const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
   (acc, workItemType) => ({ ...acc, [workItemType.name]: workItemType }), {}
 );
 
-type WorkItemTypeByCollection = Record<CollectionName, WorkItemTypeByTypeName>;
+type WorkItemTypeByCollection = Record<ProjectName, WorkItemTypeByTypeName>;
 
 const getWorkItemTypesForCollection = (
   getWorkItemTypes: (collectionName: string) => (projectName: string) => Promise<WorkItemType[]>,
@@ -131,24 +134,40 @@ const computeLeadTime = (workItem: WorkItem) => ({
   }
 });
 
-const uiWorkItemCreator = (
-  collectionConfig: ParsedCollection,
-  workItemTypesByCollection: Record<CollectionName, WorkItemTypeByTypeName>
-) => (
-  (workItem: WorkItem): UIWorkItem => {
+const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName, WorkItemTypeByTypeName>) => (
+  (workItem: WorkItem) => {
     const projectName = workItem.fields['System.TeamProject'];
     const workItemTypeName = workItem.fields['System.WorkItemType'];
-    const workItemType = workItemTypesByCollection[projectName.toLowerCase()][workItemTypeName];
+    return workItemTypesForCollection[projectName.toLowerCase()][workItemTypeName];
+  }
+);
+
+const workItemTypeIconColor = (workItemType: WorkItemType) => {
+  const { searchParams } = new URL(workItemType.icon.url);
+  return searchParams.get('color');
+};
+
+const workItemTypeId = (workItemType: WorkItemType) => (
+  md5(workItemType.name + workItemType.icon.id + workItemTypeIconColor(workItemType))
+);
+
+const uiWorkItemCreator = (
+  collectionConfig: ParsedCollection,
+  getWorkItemType: (workItem: WorkItem) => WorkItemType
+) => (
+  (workItem: WorkItem): UIWorkItem => {
+    const workItemType = getWorkItemType(workItem);
 
     return {
       id: workItem.id,
       title: workItem.fields['System.Title'],
       url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
-      type: workItemTypeName,
+      // type: workItem.fields['System.WorkItemType'],
+      typeId: workItemTypeId(workItemType),
       state: workItem.fields['System.State'],
-      project: projectName,
-      color: workItemType.color,
-      icon: workItemType.icon.url,
+      project: workItem.fields['System.TeamProject'],
+      // color: workItemType.color,
+      // icon: workItemType.icon.url,
       created: {
         on: workItem.fields['System.CreatedDate'].toISOString()
         // name: workItem.fields['System.CreatedBy']
@@ -176,19 +195,20 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     )
   );
 
-  const pWorkItemTypesForCollection = getWorkItemTypesForCollection(getWorkItemTypes, collection);
+  const pGetWorkItemType = getWorkItemTypesForCollection(getWorkItemTypes, collection)
+    .then(createWorkItemTypeGetter);
 
   const pWorkItemsById = pWorkItemTreeForCollection
     .then(workItemsById(getCollectionWorkItems, collection));
 
   return async (project: ParsedProjectConfig): Promise<AnalysedWorkItems> => {
     const [
-      workItemTreeForCollection, workItemTypesByProject, workItemsById
+      workItemTreeForCollection, getWorkItemType, workItemsById
     ] = await Promise.all([
-      pWorkItemTreeForCollection, pWorkItemTypesForCollection, pWorkItemsById
+      pWorkItemTreeForCollection, pGetWorkItemType, pWorkItemsById
     ]);
 
-    const createUIWorkItem = uiWorkItemCreator(collection, workItemTypesByProject);
+    const createUIWorkItem = uiWorkItemCreator(collection, getWorkItemType);
 
     const workItemsForProject = Object.values(workItemsById)
       .filter(wi => wi.fields['System.TeamProject'] === project.name);
@@ -203,13 +223,26 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
     );
 
-    const byId = Object.entries(workItemsById).reduce<Record<number, UIWorkItem>>((acc, [id, workItem]) => {
-      acc[Number(id)] = createUIWorkItem(workItem);
+    type AggregatedWorkItemsAndTypes = {
+      byId: Record<number, UIWorkItem>;
+      types: Record<string, UIWorkItemType>;
+    };
+
+    const { byId, types } = Object.entries(workItemsById).reduce<AggregatedWorkItemsAndTypes>((acc, [id, workItem]) => {
+      acc.byId[Number(id)] = createUIWorkItem(workItem);
+
+      const workItemType = getWorkItemType(workItem);
+      acc.types[workItemTypeId(workItemType)] = {
+        name: [workItemType.name, pluralize(workItemType.name)],
+        color: workItemType.color,
+        icon: workItemType.icon.url,
+        iconColor: workItemTypeIconColor(workItemType)
+      };
       return acc;
-    }, {});
+    }, { byId: {}, types: {} });
 
     const ids = workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
-      if (!wir.source) { return acc; }
+      if (!wir.source) return acc;
       const parent = wir.source ? wir.source.id : 0;
 
       acc[parent] = unique([...(acc[parent] || []), wir.target?.id].filter(exists));
@@ -241,6 +274,8 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       }, {})
       : null;
 
-    return { byId, ids, bugLeakage };
+    return {
+      byId, ids, bugLeakage, types
+    };
   };
 };

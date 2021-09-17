@@ -20,16 +20,17 @@ export type WorkItemsGanttChartProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
+  workItemTypes: AnalysedWorkItems['types'];
   colorForStage: (stage: string) => string;
   revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
   getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
-  workItemId, workItemsById, workItemsIdTree, colorForStage,
-  revisions, getRevisions
+  workItemId, workItemsById, workItemsIdTree, workItemTypes,
+  colorForStage, revisions, getRevisions
 }) => {
-  const [rows, toggleRow] = useGanttRows(workItemsIdTree, workItemsById, workItemId);
+  const [rows, toggleRow] = useGanttRows(workItemsIdTree, workItemsById, workItemTypes, workItemId);
 
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -86,6 +87,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
             row={row}
             rowIndex={rowIndex}
             timeToXCoord={timeToXCoord}
+            workItemTypes={workItemTypes}
             onToggle={() => {
               toggleRow(row.path);
               if (!(row.type === 'workitem-environment' || row.type === 'workitem-type')) return;

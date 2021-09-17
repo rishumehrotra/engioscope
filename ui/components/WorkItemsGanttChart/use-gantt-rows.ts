@@ -2,7 +2,7 @@ import { last } from 'rambda';
 import {
   useCallback, useEffect, useMemo, useState
 } from 'react';
-import type { AnalysedWorkItems, UIWorkItem } from '../../../shared/types';
+import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { exists } from '../../helpers/utils';
 import { useProjectDetails } from '../../hooks/project-details-hooks';
 import { filterTree, mapTree } from './tree-traversal';
@@ -110,25 +110,26 @@ const isInAncestors = (ancestors: WithoutChildren<WorkItemNode>[]) => (
   (workItemId: number) => ancestors.every(a => wid(a) !== workItemId)
 );
 
-const groupByWorkItemType = (workItemById: (id: number) => UIWorkItem) => (
+const groupByWorkItemType = (workItemById: (id: number) => UIWorkItem, workItemTypes: Record<string, UIWorkItemType>) => (
   (ancestors: WithoutChildren<WorkItemNode>[], workItemIds: number[] | undefined) => (
     (workItemIds || [])
       .filter(isInAncestors(ancestors))
       .map(workItemById)
       .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => ({
         ...acc,
-        [workItem.type]: [...(acc[workItem.type] || []), workItem]
+        [workItemTypes[workItem.typeId].name[0]]: [...(acc[workItemTypes[workItem.typeId].name[0]] || []), workItem]
       }), {})
   )
 );
 
-export const constructTree = (
+const constructTree = (
   workItemsIdTree: AnalysedWorkItems['ids'],
-  workItemsById: AnalysedWorkItems['byId']
+  workItemsById: AnalysedWorkItems['byId'],
+  workItemTypes: AnalysedWorkItems['types']
 ) => {
   const workItemById = (id: number) => workItemsById[id];
   const childIdsOf = (workItemId: number) => workItemsIdTree[workItemId];
-  const byWorkItemType = groupByWorkItemType(workItemById);
+  const byWorkItemType = groupByWorkItemType(workItemById, workItemTypes);
 
   const buildForAncestor = (ancestors: WithoutChildren<WorkItemNode>[]): WorkItemNode['children'] => {
     const parent = last(ancestors);
@@ -141,8 +142,8 @@ export const constructTree = (
       .reduce<Record<string, Pick<WorkItemTypeNode, 'color' | 'icon'>>>((acc, [workItemType, workItems]) => ({
         ...acc,
         [workItemType]: {
-          icon: workItems[0].icon,
-          color: workItems[0].color
+          icon: workItemTypes[workItems[0].typeId].icon,
+          color: workItemTypes[workItems[0].typeId].color
         }
       }), {});
 
@@ -180,8 +181,8 @@ export const constructTree = (
             depth: parent.depth + 2,
             children,
             childCount: children.length,
-            icon: workItems[0].icon,
-            color: workItems[0].color,
+            icon: workItemTypes[workItems[0].typeId].icon,
+            color: workItemTypes[workItems[0].typeId].color,
             minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
             maxTimestamp: Math.max(...workItems.map(wi => new Date(wi.updated.on).getTime())),
             workItemIds: workItems.map(wi => wi.id)
@@ -312,6 +313,7 @@ const rowsToRender = (rootNodes: (ProjectNode | TreeNode)[]) => {
 const useGanttRows = (
   workItemsIdTree: AnalysedWorkItems['ids'],
   workItemsById: AnalysedWorkItems['byId'],
+  workItemTypes: AnalysedWorkItems['types'],
   workItemId: number
 ) => {
   const projectDetails = useProjectDetails();
@@ -321,8 +323,8 @@ const useGanttRows = (
 
   useEffect(() => {
     if (!projectName) return;
-    setTree(constructTree(workItemsIdTree, workItemsById)(workItemId, projectName));
-  }, [projectName, workItemId, workItemsById, workItemsIdTree]);
+    setTree(constructTree(workItemsIdTree, workItemsById, workItemTypes)(workItemId, projectName));
+  }, [projectName, workItemId, workItemTypes, workItemsById, workItemsIdTree]);
 
   const rows = useMemo(() => rowsToRender(tree), [tree]);
   const toggleRow = useCallback((rowPath: string) => {

@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import type { AnalysedWorkItems } from '../../shared/types';
 import usePopover from '../hooks/use-popover';
 import type { FeaturesAndBugsSummaryProps } from './FeaturesAndBugsSummary';
 import WorkItemCharts from './WorkItemCharts';
@@ -17,10 +18,11 @@ export type ProjectStatProps = {
   chartType?: ChartType;
   isOpen?: boolean;
   hasPopover?: boolean;
+  workItemTypes?: AnalysedWorkItems['types'];
 };
 
 const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryProps>> = ({
-  topStats, childStats, workItems, bugLeakage, chartType, hasPopover
+  topStats, childStats, workItems, bugLeakage, chartType, hasPopover, workItemTypes
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();
 
@@ -71,6 +73,7 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
         <WorkItemCharts
           ref={ref}
           workItems={workItems}
+          workItemTypes={workItemTypes!}
           bugLeakage={bugLeakage}
           chartType={chartType}
         />

@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import type { UIWorkItem, UIWorkItemRevision } from '../../../shared/types';
+import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types';
 import { mediumDate } from '../../helpers/utils';
 
 export const svgWidth = 1300;
@@ -132,14 +132,14 @@ export const cltStatsTooltip = (cltStats: CltStats) => {
   }
 };
 
-export const rowItemTooltip = (workItem: UIWorkItem) => {
+export const rowItemTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => {
   const { cltStage, clt } = cltStats(workItem);
   return `
     <div class="max-w-xs">
       <div class="pl-3" style="text-indent: -1.15rem">
         <span class="font-bold">
-          <img src="${workItem.icon}" width="14" height="14" class="inline-block -mt-1" />
-          ${workItem.type} #${workItem.id}:
+          <img src="${type.icon}" width="14" height="14" class="inline-block -mt-1" />
+          ${type.name[0]} #${workItem.id}:
         </span>
         ${workItem.title}
       </div>
