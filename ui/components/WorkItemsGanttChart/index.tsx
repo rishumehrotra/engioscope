@@ -7,7 +7,7 @@ import DragZoom from './DragZoom';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
 import {
-  svgWidth, svgHeight, xCoordConverterWithin, bottomScaleHeight
+  svgWidth, svgHeight, xCoordConverterWithin, bottomScaleHeight, textHeight, rowPadding, textWidth, barStartPadding
 } from './helpers';
 import VerticalCrosshair from './VerticalCrosshair';
 import useGanttRows, { isProjectRow } from './use-gantt-rows';
@@ -48,6 +48,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
   const resetZoom = useCallback(() => setZoom(null), [setZoom]);
 
   const minDate = useMemo(() => {
+    console.log({ zoom, rows });
     if (zoom) return zoom[0];
     if (!rows.length) return 0;
     return rows.filter(isProjectRow)[1].minTimestamp;
@@ -95,14 +96,17 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
             revisions={revisions[workItemIdFromRowPath(row.path)] || 'loading'}
           />
         ))}
-        <DragZoom
-          svgRef={svgRef}
-          svgHeight={height}
-          timeToXCoord={timeToXCoord}
-          minDate={minDate}
-          maxDate={maxDate}
-          onSelect={setZoom}
-        />
+
+        {!showBottomScale ? (
+          <DragZoom
+            svgRef={svgRef}
+            svgHeight={height}
+            timeToXCoord={timeToXCoord}
+            minDate={minDate}
+            maxDate={maxDate}
+            onSelect={setZoom}
+          />
+        ) : null}
         <VerticalCrosshair
           svgRef={svgRef}
           svgHeight={height}
@@ -111,10 +115,10 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
         />
         {rows.length && showBottomScale ? (
           <BottomScale
-            timeToXCoord={timeToXCoord}
-            count={rows.length}
+            x={textWidth + barStartPadding}
+            y={(textHeight + (rowPadding * 2)) * rows.length}
+            zoom={zoom}
             lowerDate={new Date(minDate)}
-            upperDate={new Date(maxDate)}
             initialMinDate={new Date(rows.filter(isProjectRow)[1].minTimestamp)}
             initialMaxDate={new Date(rows.filter(isProjectRow)[1].maxTimestamp)}
             onSelect={setZoom}
