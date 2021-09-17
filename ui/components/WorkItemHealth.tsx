@@ -110,7 +110,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
             <img
               className="inline-block -mt-1 mr-1"
               src={workItemType(workItem).icon}
-              alt={`${workItemType.name[1]} icon`}
+              alt={`${workItemType(workItem).name[1]} icon`}
               width="18"
             />
             {`${workItem.id}: ${workItem.title}`}

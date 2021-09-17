@@ -70,7 +70,7 @@ export default (defaultBranch: string | undefined, branches: RepoAnalysis['branc
               </a>
             )}
           </p>
-          <table width="100%" className="table-auto text-center divide-y divide-gray-200">
+          <table className="table-auto text-center divide-y divide-gray-200 w-full">
             <thead>
               <tr>
                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider w-3/5"> </th>

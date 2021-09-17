@@ -32,7 +32,7 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>): Tab =>
           )
           : (
             <>
-              <table className="table-auto text-center divide-y divide-gray-200">
+              <table className="table-auto text-center divide-y divide-gray-200 w-full">
                 <thead>
                   <tr>
                     <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
