@@ -110,14 +110,14 @@ const isInAncestors = (ancestors: WithoutChildren<WorkItemNode>[]) => (
   (workItemId: number) => ancestors.every(a => wid(a) !== workItemId)
 );
 
-const groupByWorkItemType = (workItemById: (id: number) => UIWorkItem, workItemTypes: Record<string, UIWorkItemType>) => (
+const groupByWorkItemType = (workItemById: (id: number) => UIWorkItem, workItemType: (workItem: UIWorkItem) => UIWorkItemType) => (
   (ancestors: WithoutChildren<WorkItemNode>[], workItemIds: number[] | undefined) => (
     (workItemIds || [])
       .filter(isInAncestors(ancestors))
       .map(workItemById)
       .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => ({
         ...acc,
-        [workItemTypes[workItem.typeId].name[0]]: [...(acc[workItemTypes[workItem.typeId].name[0]] || []), workItem]
+        [workItemType(workItem).name[0]]: [...(acc[workItemType(workItem).name[0]] || []), workItem]
       }), {})
   )
 );
@@ -125,11 +125,11 @@ const groupByWorkItemType = (workItemById: (id: number) => UIWorkItem, workItemT
 const constructTree = (
   workItemsIdTree: AnalysedWorkItems['ids'],
   workItemsById: AnalysedWorkItems['byId'],
-  workItemTypes: AnalysedWorkItems['types']
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType
 ) => {
   const workItemById = (id: number) => workItemsById[id];
   const childIdsOf = (workItemId: number) => workItemsIdTree[workItemId];
-  const byWorkItemType = groupByWorkItemType(workItemById, workItemTypes);
+  const byWorkItemType = groupByWorkItemType(workItemById, workItemType);
 
   const buildForAncestor = (ancestors: WithoutChildren<WorkItemNode>[]): WorkItemNode['children'] => {
     const parent = last(ancestors);
@@ -139,15 +139,15 @@ const constructTree = (
     );
 
     const uiElementsByWorkItemType = Object.entries(groupedByWorkItemType)
-      .reduce<Record<string, Pick<WorkItemTypeNode, 'color' | 'icon'>>>((acc, [workItemType, workItems]) => ({
+      .reduce<Record<string, Pick<WorkItemTypeNode, 'color' | 'icon'>>>((acc, [wit, workItems]) => ({
         ...acc,
-        [workItemType]: {
-          icon: workItemTypes[workItems[0].typeId].icon,
-          color: workItemTypes[workItems[0].typeId].color
+        [wit]: {
+          icon: workItemType(workItems[0]).icon,
+          color: workItemType(workItems[0]).color
         }
       }), {});
 
-    return Object.entries(groupedByWorkItemType).map<WorkItemTypeNode>(([workItemType, workItems]) => {
+    return Object.entries(groupedByWorkItemType).map<WorkItemTypeNode>(([wit, workItems]) => {
       const groupedByEnvironment = workItems.reduce<Record<string, UIWorkItem[]>>((acc, workItem) => ({
         ...acc,
         [workItem.env || 'no-environment']: [...(acc[workItem.env || 'no-environment'] || []), workItem]
@@ -161,7 +161,7 @@ const constructTree = (
               const workItemNode: WithoutChildren<WorkItemNode> = {
                 type: 'workitem',
                 workItem,
-                path: `${parent.path}/${workItemType}/${environmentName}/${workItem.id}`.replace('no-environment/', ''),
+                path: `${parent.path}/${wit}/${environmentName}/${workItem.id}`.replace('no-environment/', ''),
                 expandedState: 'collapsed',
                 depth: parent.depth + 3
               };
@@ -176,13 +176,13 @@ const constructTree = (
           return {
             type: 'workitem-environment',
             label: environmentName,
-            path: `${parent.path}/${workItemType}/${environmentName}`,
+            path: `${parent.path}/${wit}/${environmentName}`,
             expandedState: 'collapsed',
             depth: parent.depth + 2,
             children,
             childCount: children.length,
-            icon: workItemTypes[workItems[0].typeId].icon,
-            color: workItemTypes[workItems[0].typeId].color,
+            icon: workItemType(workItems[0]).icon,
+            color: workItemType(workItems[0]).color,
             minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
             maxTimestamp: Math.max(...workItems.map(wi => new Date(wi.updated.on).getTime())),
             workItemIds: workItems.map(wi => wi.id)
@@ -199,8 +199,8 @@ const constructTree = (
 
       return {
         type: 'workitem-type',
-        label: workItemType,
-        path: `${parent.path}/${workItemType}`,
+        label: wit,
+        path: `${parent.path}/${wit}`,
         expandedState: 'collapsed',
         depth: parent.depth + 1,
         children,
@@ -209,7 +209,7 @@ const constructTree = (
           .reduce((acc, n) => acc + n.childCount, 0),
         minTimestamp: Math.min(...workItems.map(wi => new Date(wi.created.on).getTime())),
         maxTimestamp: Math.max(...workItems.map(wi => new Date(wi.updated.on).getTime())),
-        ...uiElementsByWorkItemType[workItemType]
+        ...uiElementsByWorkItemType[wit]
       };
     });
   };
@@ -313,7 +313,7 @@ const rowsToRender = (rootNodes: (ProjectNode | TreeNode)[]) => {
 const useGanttRows = (
   workItemsIdTree: AnalysedWorkItems['ids'],
   workItemsById: AnalysedWorkItems['byId'],
-  workItemTypes: AnalysedWorkItems['types'],
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType,
   workItemId: number
 ) => {
   const projectDetails = useProjectDetails();
@@ -323,8 +323,8 @@ const useGanttRows = (
 
   useEffect(() => {
     if (!projectName) return;
-    setTree(constructTree(workItemsIdTree, workItemsById, workItemTypes)(workItemId, projectName));
-  }, [projectName, workItemId, workItemTypes, workItemsById, workItemsIdTree]);
+    setTree(constructTree(workItemsIdTree, workItemsById, workItemType)(workItemId, projectName));
+  }, [projectName, workItemId, workItemType, workItemsById, workItemsIdTree]);
 
   const rows = useMemo(() => rowsToRender(tree), [tree]);
   const toggleRow = useCallback((rowPath: string) => {

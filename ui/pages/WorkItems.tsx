@@ -96,6 +96,12 @@ const WorkItems: React.FC = () => {
     getRevisions(ids);
   }, [filteredWorkItems, getRevisions, page, workItemAnalysis]);
 
+  const workItemType = useCallback((workItem: UIWorkItem) => {
+    if (workItemAnalysis === 'loading') throw new Error('Too soon');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return workItemAnalysis.workItems!.types[workItem.typeId];
+  }, [workItemAnalysis]);
+
   if (workItemAnalysis === 'loading') return <Loading />;
   if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
 
@@ -107,7 +113,7 @@ const WorkItems: React.FC = () => {
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
         <FeaturesAndBugsSummary
           workItems={filteredWorkItems}
-          workItemTypes={workItems.types}
+          workItemType={workItemType}
           bugLeakage={workItemAnalysis.workItems.bugLeakage}
         />
       </div>
@@ -119,7 +125,7 @@ const WorkItems: React.FC = () => {
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
-            workItemTypes={workItems.types}
+            workItemType={workItemType}
             colorForStage={colorForStage}
             revisions={revisions}
             getRevisions={getRevisions}
@@ -135,7 +141,7 @@ const WorkItems: React.FC = () => {
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
-            workItemTypes={workItems.types}
+            workItemType={workItemType}
             colorForStage={colorForStage}
             revisions={revisions}
             getRevisions={getRevisions}

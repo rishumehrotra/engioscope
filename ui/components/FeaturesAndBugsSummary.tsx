@@ -1,7 +1,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { sum } from 'rambda';
 import React, { useMemo } from 'react';
-import type { AnalysedWorkItems, UIWorkItem } from '../../shared/types';
+import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../shared/types';
 import { num } from '../helpers/utils';
 import type { ChartType, ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
@@ -9,7 +9,7 @@ import ProjectStats from './ProjectStats';
 
 const computeBugLeakage = (
   bugLeakage: AnalysedWorkItems['bugLeakage'],
-  workItemTypes: AnalysedWorkItems['types']
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType
 ): ProjectStatProps[] => {
   if (!bugLeakage) return [];
   const aggregated = Object.values(bugLeakage).reduce<{ opened: number; closed: number}>((acc, item) => ({
@@ -23,12 +23,12 @@ const computeBugLeakage = (
   return [{
     topStats: [{ title: 'Bug leakage #', value: num(aggregated.opened) }],
     chartType: 'bugLeakage',
-    workItemTypes
+    workItemType
   },
   {
     topStats: [{ title: 'Bugs closed #', value: num(aggregated.closed) }],
     chartType: 'bugsClosed',
-    workItemTypes
+    workItemType
   }
   ];
 };
@@ -41,22 +41,25 @@ const cltOrLtDefinition = (type: string, cltOrLt: string) => (cltOrLt === 'lt'
   CLT is the time from when the ${type.toLowerCase()}<br /> 
   was dev done to when it was closed.`);
 
-const computeLeadTimes = (workItems: UIWorkItem[], workItemTypes: AnalysedWorkItems['types']) => {
+const computeLeadTimes = (
+  workItems: UIWorkItem[],
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType
+) => {
   const aggregated = workItems.reduce<Record<string, Record<'clt' | 'lt', number[]>>>(
     (acc, workItem) => {
       if (!workItem.leadTime.end) return acc;
       return ({
         ...acc,
-        [workItemTypes[workItem.typeId].name[0]]: {
-          ...acc[workItemTypes[workItem.typeId].name[0]],
+        [workItemType(workItem).name[0]]: {
+          ...acc[workItemType(workItem).name[0]],
           lt: [
-            ...(acc[workItemTypes[workItem.typeId].name[0]]?.clt || []),
+            ...(acc[workItemType(workItem).name[0]]?.clt || []),
             ...(workItem.leadTime.end
               ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
               : [])
           ],
           clt: [
-            ...(acc[workItemTypes[workItem.typeId].name[0]]?.clt || []),
+            ...(acc[workItemType(workItem).name[0]]?.clt || []),
             ...(workItem.clt?.end && workItem.clt?.start
               ? [new Date(workItem.clt.end).getTime() - new Date(workItem.clt.start).getTime()]
               : [])
@@ -69,7 +72,7 @@ const computeLeadTimes = (workItems: UIWorkItem[], workItemTypes: AnalysedWorkIt
   return Object.entries(aggregated)
     .flatMap<ProjectStatProps>(([type, timesByType]) => ({
       chartType: type.toLowerCase() as ChartType,
-      workItemTypes,
+      workItemType,
       topStats: Object.entries(timesByType).map(([cltOrLt, times]) => ({
         title: `${type} ${cltOrLt === 'clt' ? 'CLT' : 'turnaround time'}`,
         value: times.length
@@ -83,16 +86,16 @@ const computeLeadTimes = (workItems: UIWorkItem[], workItemTypes: AnalysedWorkIt
 export type FeaturesAndBugsSummaryProps = {
   workItems: UIWorkItem[];
   bugLeakage: AnalysedWorkItems['bugLeakage'];
-  workItemTypes: AnalysedWorkItems['types'];
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType;
 };
 
-const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage, workItemTypes }) => {
+const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workItems, bugLeakage, workItemType }) => {
   const computedStats = useMemo(
     () => [
-      ...computeLeadTimes(workItems, workItemTypes),
-      ...computeBugLeakage(bugLeakage, workItemTypes)
+      ...computeLeadTimes(workItems, workItemType),
+      ...computeBugLeakage(bugLeakage, workItemType)
     ],
-    [workItems, workItemTypes, bugLeakage]
+    [workItems, workItemType, bugLeakage]
   );
 
   return (
@@ -103,7 +106,7 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workIte
             key={stat.topStats[0].title}
             topStats={stat.topStats}
             workItems={workItems}
-            workItemTypes={workItemTypes}
+            workItemType={workItemType}
             bugLeakage={bugLeakage}
             chartType={stat.chartType}
             hasPopover
@@ -116,4 +119,3 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({ workIte
 };
 
 export default FeaturesAndBugsSummary;
-

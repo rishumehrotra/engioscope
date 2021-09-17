@@ -2,7 +2,9 @@ import React, {
   memo,
   useCallback, useMemo, useRef, useState
 } from 'react';
-import type { AnalysedWorkItems, UIWorkItemRevision } from '../../../shared/types';
+import type {
+  AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
+} from '../../../shared/types';
 import DragZoom from './DragZoom';
 import { GanttRow } from './GanttRow';
 import { Graticule } from './Graticule';
@@ -20,17 +22,17 @@ export type WorkItemsGanttChartProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
-  workItemTypes: AnalysedWorkItems['types'];
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType;
   colorForStage: (stage: string) => string;
   revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
   getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
-  workItemId, workItemsById, workItemsIdTree, workItemTypes,
+  workItemId, workItemsById, workItemsIdTree, workItemType,
   colorForStage, revisions, getRevisions
 }) => {
-  const [rows, toggleRow] = useGanttRows(workItemsIdTree, workItemsById, workItemTypes, workItemId);
+  const [rows, toggleRow] = useGanttRows(workItemsIdTree, workItemsById, workItemType, workItemId);
 
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -87,7 +89,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
             row={row}
             rowIndex={rowIndex}
             timeToXCoord={timeToXCoord}
-            workItemTypes={workItemTypes}
+            workItemType={workItemType}
             onToggle={() => {
               toggleRow(row.path);
               if (!(row.type === 'workitem-environment' || row.type === 'workitem-type')) return;

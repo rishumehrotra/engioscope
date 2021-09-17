@@ -2,7 +2,7 @@ import React, {
   memo, useCallback, useMemo, useState
 } from 'react';
 import prettyMilliseconds from 'pretty-ms';
-import type { AnalysedWorkItems, UIWorkItemRevision } from '../../../shared/types';
+import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types';
 import {
   textWidth, textHeight,
   rowPadding, svgWidth, makeTransparent, barYCoord,
@@ -106,7 +106,7 @@ export type GanttRowProps = {
   row: Row;
   rowIndex: number;
   isLast: boolean;
-  workItemTypes: AnalysedWorkItems['types'];
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType;
   timeToXCoord: (time: string) => number;
   onToggle: (rowPath: string) => void;
   colorForStage: (stage: string) => string;
@@ -114,7 +114,7 @@ export type GanttRowProps = {
 };
 
 export const GanttRow: React.FC<GanttRowProps> = memo(({
-  row, rowIndex, isLast, timeToXCoord, colorForStage, onToggle, revisions, workItemTypes
+  row, rowIndex, isLast, timeToXCoord, colorForStage, onToggle, revisions, workItemType
 }) => {
   const barWidth = barWidthUsing(timeToXCoord);
   const [isHighlighted, highlight] = useState<boolean>(false);
@@ -127,14 +127,14 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
   const rowColor = useMemo(() => {
     // eslint-disable-next-line no-nested-ternary
     const color = isWorkItemRow(row)
-      ? workItemTypes[row.workItem.typeId].color
+      ? workItemType(row.workItem).color
       : (isWorkItemEnvironmentRow(row) || isWorkItemTypeRow(row))
         ? row.color
         : 'ffffff';
 
     const baseColor = makeTransparent(`#${color}`);
     return isHighlighted ? makeDarker(baseColor) : baseColor;
-  }, [isHighlighted, row, workItemTypes]);
+  }, [isHighlighted, row, workItemType]);
 
   return (
     <g
@@ -181,12 +181,12 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
                 style={{ width: `${textWidth}px` }}
                 target="_blank"
                 rel="noreferrer"
-                data-tip={rowItemTooltip(row.workItem, workItemTypes[row.workItem.typeId])}
+                data-tip={rowItemTooltip(row.workItem, workItemType(row.workItem))}
                 data-html
               >
                 <img
-                  src={workItemTypes[row.workItem.typeId].icon}
-                  alt={`Icon for ${workItemTypes[row.workItem.typeId].name[1]}`}
+                  src={workItemType(row.workItem).icon}
+                  alt={`Icon for ${workItemType(row.workItem).name[1]}`}
                   width="16"
                   className="float-left mr-1"
                 />

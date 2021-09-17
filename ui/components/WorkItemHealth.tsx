@@ -56,14 +56,14 @@ type WorkItemProps = {
   workItemId: number;
   workItemsById: AnalysedWorkItems['byId'];
   workItemsIdTree: AnalysedWorkItems['ids'];
-  workItemTypes: AnalysedWorkItems['types'];
+  workItemType: (workItem: UIWorkItem) => UIWorkItemType;
   colorForStage: (stage: string) => string;
   revisions: Record<string, 'loading' | UIWorkItemRevision[]>;
   getRevisions: (workItemIds: number[]) => void;
 };
 
 const WorkItem: React.FC<WorkItemProps> = ({
-  workItemId, workItemsById, workItemsIdTree, workItemTypes,
+  workItemId, workItemsById, workItemsIdTree, workItemType,
   colorForStage, revisions, getRevisions
 }) => {
   const workItemRevisions = revisions[workItemId];
@@ -90,7 +90,6 @@ const WorkItem: React.FC<WorkItemProps> = ({
   }, [workItemRevisions]);
 
   const barWidth = barWidthUsing(timeToXCoord);
-  const workItemType = workItemTypes[workItem.typeId];
 
   return (
     <li
@@ -105,12 +104,12 @@ const WorkItem: React.FC<WorkItemProps> = ({
             className="font-bold text-lg truncate max-width-full inline-block link-text"
             target="_blank"
             rel="noreferrer"
-            data-tip={titleTooltip(workItem, workItemType)}
+            data-tip={titleTooltip(workItem, workItemType(workItem))}
             data-html
           >
             <img
               className="inline-block -mt-1 mr-1"
-              src={workItemType.icon}
+              src={workItemType(workItem).icon}
               alt={`${workItemType.name[1]} icon`}
               width="18"
             />
@@ -163,7 +162,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           workItemId={workItemId}
           workItemsById={workItemsById}
           workItemsIdTree={workItemsIdTree}
-          workItemTypes={workItemTypes}
+          workItemType={workItemType}
           colorForStage={colorForStage}
           revisions={revisions}
           getRevisions={getRevisions}

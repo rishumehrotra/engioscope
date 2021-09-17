@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import type { AnalysedWorkItems } from '../../shared/types';
+import type { UIWorkItem, UIWorkItemType } from '../../shared/types';
 import usePopover from '../hooks/use-popover';
 import type { FeaturesAndBugsSummaryProps } from './FeaturesAndBugsSummary';
 import WorkItemCharts from './WorkItemCharts';
@@ -18,11 +18,11 @@ export type ProjectStatProps = {
   chartType?: ChartType;
   isOpen?: boolean;
   hasPopover?: boolean;
-  workItemTypes?: AnalysedWorkItems['types'];
+  workItemType?: (workItem: UIWorkItem) => UIWorkItemType;
 };
 
 const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryProps>> = ({
-  topStats, childStats, workItems, bugLeakage, chartType, hasPopover, workItemTypes
+  topStats, childStats, workItems, bugLeakage, chartType, hasPopover, workItemType
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();
 
@@ -73,7 +73,8 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
         <WorkItemCharts
           ref={ref}
           workItems={workItems}
-          workItemTypes={workItemTypes!}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          workItemType={workItemType!}
           bugLeakage={bugLeakage}
           chartType={chartType}
         />
