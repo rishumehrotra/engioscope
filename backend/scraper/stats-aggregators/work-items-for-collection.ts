@@ -4,6 +4,7 @@ import { reduce } from 'rambda';
 import { URL } from 'url';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { exists, unique } from '../../utils';
+import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
 import type {
@@ -144,7 +145,8 @@ const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName
 
 const workItemTypeIconColor = (workItemType: WorkItemType) => {
   const { searchParams } = new URL(workItemType.icon.url);
-  return searchParams.get('color');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return searchParams.get('color')!;
 };
 
 const workItemTypeId = (workItemType: WorkItemType) => (
@@ -235,7 +237,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       acc.types[workItemTypeId(workItemType)] = {
         name: [workItemType.name, pluralize(workItemType.name)],
         color: workItemType.color,
-        icon: workItemType.icon.url,
+        icon: `data:image/svg+xml;utf8,${encodeURIComponent(workItemIconSvgs[workItemType.icon.id](workItemTypeIconColor(workItemType)))}`,
         iconColor: workItemTypeIconColor(workItemType)
       };
       return acc;

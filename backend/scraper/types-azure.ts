@@ -1,3 +1,5 @@
+import type workItemIconSvgs from '../work-item-icon-svgs';
+
 export type ProjectState = 'all' | 'createPending' | 'deleted' | 'deleting' | 'new' | 'unchanged' | 'wellFormed';
 export type ProjectVisibility = 'private' | 'public';
 export type DefinitionTypeStatus = 'disabled' | 'enabled' | 'paused';
@@ -432,7 +434,7 @@ export type WorkItemType = {
   referenceName: string;
   description: string;
   color: string;
-  icon: { id: string; url: string };
+  icon: { id: keyof typeof workItemIconSvgs; url: string };
   isDisabled: boolean;
   xmlForm: string;
   fields: WorkItemTypeFieldInstance[];
