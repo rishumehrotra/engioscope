@@ -42,14 +42,12 @@ const addToReleaseStats = (releaseStats: ReleasePipelineStats, release: Release)
 
     if (!repoName) return acc;
 
-    return {
-      ...acc,
-      [repoName]: [...new Set([
-        ...(acc[repoName] || []),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        branch!.replace('refs/heads/', '')
-      ].filter(Boolean)).values()]
-    };
+    acc[repoName] = [...new Set([
+      ...(acc[repoName] || []),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      branch!.replace('refs/heads/', '')
+    ].filter(Boolean)).values()];
+    return acc;
   }, releaseStats.repos)
 });
 
@@ -58,12 +56,7 @@ export default (releaseDefinitionById: (id: number) => ReleaseDefinition | undef
     const releaseDefn = releaseDefinitionById(release.releaseDefinition.id);
     if (!releaseDefn) return acc;
 
-    return {
-      ...acc,
-      [releaseDefn.id]: addToReleaseStats(
-        acc[releaseDefn.id] || initialiseReleaseDetails(releaseDefn),
-        release
-      )
-    };
+    acc[releaseDefn.id] = addToReleaseStats(acc[releaseDefn.id] || initialiseReleaseDetails(releaseDefn), release);
+    return acc;
   }, {}))
 );

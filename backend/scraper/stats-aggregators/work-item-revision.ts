@@ -15,6 +15,6 @@ export default (revisions: WorkItemRevision[]) => (
       return acc;
     }
 
-    return [...acc, transformRevision(revision)];
+    return acc.concat(transformRevision(revision));
   }, [])
 );

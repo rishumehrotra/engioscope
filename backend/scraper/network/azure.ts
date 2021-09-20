@@ -223,11 +223,11 @@ export default (config: ParsedConfig) => {
               })}`),
               { headers: authHeader }
             )
-          ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => ({
-            ...acc,
-            [wi.id]: wi
-          }), {}))
-        )))).reduce<Record<number, WorkItem>>((acc, chunk) => ({ ...acc, ...chunk }), {});
+          ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => {
+            acc[wi.id] = wi;
+            return acc;
+          }, {}))
+        )))).reduce<Record<number, WorkItem>>((acc, chunk) => Object.assign(acc, chunk), {});
 
       return workItemIds.map(wid => workItemsById[wid]);
     },
@@ -265,11 +265,11 @@ export default (config: ParsedConfig) => {
               })}`),
               { headers: authHeader }
             )
-          ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => ({
-            ...acc,
-            [wi.id]: wi
-          }), {}))
-        )))).reduce<Record<number, WorkItem>>((acc, chunk) => ({ ...acc, ...chunk }), {});
+          ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => {
+            acc[wi.id] = wi;
+            return acc;
+          }, {}))
+        )))).reduce<Record<number, WorkItem>>((acc, chunk) => Object.assign(acc, chunk), {});
 
       return workItemIds.map(wid => workItemsById[wid]);
     },

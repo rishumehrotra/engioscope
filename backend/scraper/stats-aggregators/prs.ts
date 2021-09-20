@@ -9,13 +9,10 @@ const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
 );
 
 export default (fromDate: Date) => (prs: GitPullRequest[]) => {
-  const prsByRepo = prs.reduce<Record<string, GitPullRequest[]>>((acc, pr) => ({
-    ...acc,
-    [pr.repository.id]: [
-      ...(acc[pr.repository.id] || []),
-      pr
-    ]
-  }), {});
+  const prsByRepo = prs.reduce<Record<string, GitPullRequest[]>>((acc, pr) => {
+    acc[pr.repository.id] = (acc[pr.repository.id] || []).concat(pr);
+    return acc;
+  }, {});
 
   return (repoId?: string): UIPullRequests => {
     const repoPrs = repoId ? prsByRepo[repoId] || [] : [];

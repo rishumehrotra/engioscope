@@ -21,12 +21,10 @@ const mergeCommit = (commit: GitCommitRef, aggregatedCommits?: AggregatedCommits
 export default (commits: GitCommitRef[]): UICommits => {
   const commitsByDev = commits.reduce<Record<string, AggregatedCommitsByDev>>((acc, commit) => {
     if (commit.comment.startsWith('Merge')) return acc;
-    return {
-      ...acc,
-      [commit.committer.name]: mergeCommit(commit, acc[commit.committer.name])
-    };
-  },
-  {});
+
+    acc[commit.committer.name] = mergeCommit(commit, acc[commit.committer.name]);
+    return acc;
+  }, {});
 
   return {
     count: Object.values(commitsByDev).map(c => Object.values(c.byDate).reduce(add, 0)).reduce(add, 0),

@@ -54,7 +54,7 @@ export default (config: ParsedConfig) => {
         .map(async id => ({
           [id]: toUIWorkItem(await getWorkItemRevisions(collectionName)(Number(id)))
         }))
-    )).reduce<Record<number, UIWorkItemRevision[]>>((acc, curr) => ({ ...acc, ...curr }), {});
+    )).reduce<Record<number, UIWorkItemRevision[]>>((acc, curr) => Object.assign(acc, curr), {});
 
     res.status(200).send(revisions);
   });

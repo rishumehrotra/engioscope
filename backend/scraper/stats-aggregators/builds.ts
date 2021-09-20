@@ -100,30 +100,25 @@ export default (builds: Build[]) => {
       if (!id) return null;
       if (!buildStats[id]) return null;
 
-      const b = buildStats[id];
+      const pipelines: UIBuildPipeline[] = Object.entries(buildStats[id])
+        .map(([definitionId, buildStats]) => ({
+          count: buildStats.count,
+          name: buildStats.name,
+          url: buildStats.url,
+          success: buildStats.success,
+          definitionId,
+          duration: {
+            average: prettyMilliseconds(
+              buildStats.duration.reduce(add, 0) / buildStats.duration.length
+            ),
+            min: prettyMilliseconds(Math.min(...buildStats.duration)),
+            max: prettyMilliseconds(Math.max(...buildStats.duration))
+          },
+          status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
+            ? buildStats.status
+            : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status']
 
-      const pipelines = Object.entries(b).reduce<UIBuildPipeline[]>(
-        (acc, [definitionId, buildStats]) => [
-          ...acc,
-          {
-            count: buildStats.count,
-            name: buildStats.name,
-            url: buildStats.url,
-            success: buildStats.success,
-            definitionId,
-            duration: {
-              average: prettyMilliseconds(
-                buildStats.duration.reduce(add, 0) / buildStats.duration.length
-              ),
-              min: prettyMilliseconds(Math.min(...buildStats.duration)),
-              max: prettyMilliseconds(Math.max(...buildStats.duration))
-            },
-            status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
-              ? buildStats.status
-              : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status']
-          }
-        ], []
-      );
+        }));
 
       return {
         count: pipelines.reduce((acc, p) => acc + p.count, 0),

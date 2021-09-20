@@ -18,7 +18,10 @@ type WorkItemTypeName = string;
 type WorkItemTypeByTypeName = Record<WorkItemTypeName, WorkItemType>;
 
 const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
-  (acc, workItemType) => ({ ...acc, [workItemType.name]: workItemType }), {}
+  (acc, workItemType) => {
+    acc[workItemType.name] = workItemType;
+    return acc;
+  }, {}
 );
 
 type WorkItemTypeByCollection = Record<ProjectName, WorkItemTypeByTypeName>;
@@ -31,7 +34,7 @@ const getWorkItemTypesForCollection = (
     await getWorkItemTypes(collection.name)(project.name)
   )
 }))).then(reduce<WorkItemTypeByCollection, WorkItemTypeByCollection>(
-  (acc, cur) => ({ ...acc, ...cur }), {}
+  (acc, cur) => Object.assign(acc, cur), {}
 ));
 
 const workItemsById = (
