@@ -268,7 +268,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       ...flowMetricsPreAggregation,
       time: Object.entries(flowMetricsPreAggregation.time).reduce<AnalysedWorkItems['flowMetrics']['time']>(
         (acc, [workItemType, times]) => {
-          acc[workItemType] = times.reduce(add, 0);
+          acc[workItemType] = times.reduce(add, 0) / times.length;
           return acc;
         }, {}
       ),
