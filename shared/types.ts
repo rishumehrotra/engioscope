@@ -162,6 +162,10 @@ export type AnalysedWorkItems = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
   bugLeakage: Record<string, {opened: number[]; closed: number[]}> | null;
+  flowMetrics: {
+    velocity: Record<string, number>;
+    time: Record<string, number>;
+  };
 };
 
 export type UIProjectAnalysis = {

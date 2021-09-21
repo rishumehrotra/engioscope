@@ -1,6 +1,6 @@
 import md5 from 'md5';
 import pluralize from 'pluralize';
-import { reduce } from 'rambda';
+import { add, reduce } from 'rambda';
 import { URL } from 'url';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { exists, unique } from '../../utils';
@@ -228,6 +228,36 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
     );
 
+    const flowMetricsPreAggregation = workItemsForProject.reduce<
+      Omit<AnalysedWorkItems['flowMetrics'], 'time'> & { time: Record<WorkItemTypeName, number[]> }
+    >(
+      (acc, workItem) => {
+        if (workItem.fields['Microsoft.VSTS.Common.ClosedDate']) {
+          acc.velocity[workItem.fields['System.WorkItemType']] = (
+            acc.velocity[workItem.fields['System.WorkItemType']] || 0
+          ) + 1;
+
+          acc.time[workItem.fields['System.WorkItemType']] = (
+            acc.time[workItem.fields['System.WorkItemType']] || []
+          ).concat(
+            workItem.fields['Microsoft.VSTS.Common.ClosedDate'].getTime()
+            - workItem.fields['System.CreatedDate'].getTime()
+          );
+        }
+        return acc;
+      }, { velocity: {}, time: {} }
+    );
+
+    const flowMetrics: AnalysedWorkItems['flowMetrics'] = {
+      ...flowMetricsPreAggregation,
+      time: Object.entries(flowMetricsPreAggregation.time).reduce<AnalysedWorkItems['flowMetrics']['time']>(
+        (acc, [workItemType, times]) => {
+          acc[workItemType] = times.reduce(add, 0);
+          return acc;
+        }, {}
+      )
+    };
+
     type AggregatedWorkItemsAndTypes = {
       byId: Record<number, UIWorkItem>;
       types: Record<string, UIWorkItemType>;
@@ -280,7 +310,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       : null;
 
     return {
-      byId, ids, bugLeakage, types
+      byId, ids, bugLeakage, types, flowMetrics
     };
   };
 };
