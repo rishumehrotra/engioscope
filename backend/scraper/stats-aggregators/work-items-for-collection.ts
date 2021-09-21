@@ -229,7 +229,10 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     );
 
     const flowMetricsPreAggregation = workItemsForProject.reduce<
-      Omit<AnalysedWorkItems['flowMetrics'], 'time'> & { time: Record<WorkItemTypeName, number[]> }
+      Omit<AnalysedWorkItems['flowMetrics'], 'time' | 'workCenters'> & {
+        time: Record<WorkItemTypeName, number[]>;
+        workCenters: Record<WorkItemTypeName, number[]>;
+      }
     >(
       (acc, workItem) => {
         if (workItem.fields['Microsoft.VSTS.Common.ClosedDate']) {
@@ -244,8 +247,21 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
             - workItem.fields['System.CreatedDate'].getTime()
           );
         }
+
+        if (collection.workitems.workCenters) {
+          collection.workitems.workCenters.reduce((acc, workCenter) => {
+            if (workItem.fields[workCenter.startDate] && workItem.fields[workCenter.endDate]) {
+              acc[workCenter.label] = (acc[workCenter.label] || []).concat(
+                new Date(workItem.fields[workCenter.endDate]).getTime()
+                - new Date(workItem.fields[workCenter.startDate]).getTime()
+              );
+            }
+
+            return acc;
+          }, acc.workCenters);
+        }
         return acc;
-      }, { velocity: {}, time: {} }
+      }, { velocity: {}, time: {}, workCenters: {} }
     );
 
     const flowMetrics: AnalysedWorkItems['flowMetrics'] = {
@@ -255,7 +271,10 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
           acc[workItemType] = times.reduce(add, 0);
           return acc;
         }, {}
-      )
+      ),
+      workCenters: Object.fromEntries(Object.entries(flowMetricsPreAggregation.workCenters).map(([workCenter, times]) => (
+        [workCenter, times.reduce(add, 0)]
+      )))
     };
 
     type AggregatedWorkItemsAndTypes = {

@@ -165,6 +165,7 @@ export type AnalysedWorkItems = {
   flowMetrics: {
     velocity: Record<string, number>;
     time: Record<string, number>;
+    workCenters: Record<string, number>;
   };
 };
 

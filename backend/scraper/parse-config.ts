@@ -23,6 +23,11 @@ type CollectionWorkItemConfig = {
   skipChildren?: string[];
   environmentField?: string;
   changeLeadTime?: Record<WorkItemType, CLTDefinition>;
+  workCenters?: {
+    label: string;
+    startDate: string;
+    endDate: string;
+  }[];
 };
 
 type CollectionConfig = {
@@ -75,6 +80,11 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   skipChildren: string[];
   environmentField?: string;
   changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
+  workCenters?: {
+    label: string;
+    startDate: string;
+    endDate: string;
+  }[];
 }>;
 
 export type ParsedProjectConfig = Readonly<{
@@ -111,7 +121,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     groupUnder: collection.workitems?.groupUnder ?? config.azure.workitems?.groupUnder ?? ['Feature', 'Bug'],
     skipChildren: collection.workitems?.skipChildren ?? config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
     environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
-    changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime
+    changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime,
+    workCenters: collection.workitems?.workCenters ?? config.azure.workitems?.workCenters
   };
 
   return {
