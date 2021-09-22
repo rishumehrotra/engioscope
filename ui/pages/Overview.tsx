@@ -20,9 +20,15 @@ const Overview: React.FC = () => {
         <div>
           Flow velocity:
           {Object.entries(projectAnalysis.workItems?.flowMetrics.velocity || {}).map(
-            ([workItemType, velocity]) => (
+            ([workItemTypeId, velocity]) => (
               <div>
-                {`${workItemType}: ${velocity} / month`}
+                <img
+                  src={projectAnalysis.workItems?.types[workItemTypeId].icon}
+                  alt={`Icon for ${projectAnalysis.workItems?.types[workItemTypeId].name[1]}`}
+                  width="16"
+                  className="inline-block mr-2"
+                />
+                {`${projectAnalysis.workItems?.types[workItemTypeId].name[1]}: ${velocity} / month`}
               </div>
             )
           )}
@@ -36,9 +42,15 @@ const Overview: React.FC = () => {
         <div>
           Flow time:
           {Object.entries(projectAnalysis.workItems?.flowMetrics.time || {}).map(
-            ([workItemType, time]) => (
+            ([workItemTypeId, time]) => (
               <div>
-                {`${workItemType}: ${prettyMilliseconds(time, { compact: true })}`}
+                <img
+                  src={projectAnalysis.workItems?.types[workItemTypeId].icon}
+                  alt={`Icon for ${projectAnalysis.workItems?.types[workItemTypeId].name[1]}`}
+                  width="16"
+                  className="inline-block mr-2"
+                />
+                {`${projectAnalysis.workItems?.types[workItemTypeId].name[1]}: ${prettyMilliseconds(time, { compact: true })}`}
               </div>
             )
           )}
@@ -47,9 +59,15 @@ const Overview: React.FC = () => {
         <div>
           Flow distribution:
           {Object.entries(projectAnalysis.workItems?.flowMetrics.velocity || {}).map(
-            ([workItemType, velocity]) => (
+            ([workItemTypeId, velocity]) => (
               <div>
-                {`${workItemType}: ${((velocity * 100) / totalWorkItems).toFixed(2)}%`}
+                <img
+                  src={projectAnalysis.workItems?.types[workItemTypeId].icon}
+                  alt={`Icon for ${projectAnalysis.workItems?.types[workItemTypeId].name[1]}`}
+                  width="16"
+                  className="inline-block mr-2"
+                />
+                {`${projectAnalysis.workItems?.types[workItemTypeId].name[1]}: ${((velocity * 100) / totalWorkItems).toFixed(2)}%`}
               </div>
             )
           )}

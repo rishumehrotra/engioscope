@@ -230,19 +230,16 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
 
     const flowMetricsPreAggregation = workItemsForProject.reduce<
       Omit<AnalysedWorkItems['flowMetrics'], 'time' | 'workCenters'> & {
-        time: Record<WorkItemTypeName, number[]>;
-        workCenters: Record<WorkItemTypeName, number[]>;
+        time: Record<string, number[]>;
+        workCenters: Record<string, number[]>;
       }
     >(
       (acc, workItem) => {
         if (workItem.fields['Microsoft.VSTS.Common.ClosedDate']) {
-          acc.velocity[workItem.fields['System.WorkItemType']] = (
-            acc.velocity[workItem.fields['System.WorkItemType']] || 0
-          ) + 1;
+          const witId = workItemTypeId(getWorkItemType(workItem));
+          acc.velocity[witId] = (acc.velocity[witId] || 0) + 1;
 
-          acc.time[workItem.fields['System.WorkItemType']] = (
-            acc.time[workItem.fields['System.WorkItemType']] || []
-          ).concat(
+          acc.time[witId] = (acc.time[witId] || []).concat(
             workItem.fields['Microsoft.VSTS.Common.ClosedDate'].getTime()
             - workItem.fields['System.CreatedDate'].getTime()
           );
