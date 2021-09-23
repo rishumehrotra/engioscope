@@ -8,11 +8,11 @@ import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
 import sonar from './network/sonar';
-import type { ProjectAnalysis } from './types';
+import type { ProjectAnalysis, WorkItemAnalysis } from './types';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
-import type { AnalysedWorkItems, RepoAnalysis } from '../../shared/types';
+import type { RepoAnalysis } from '../../shared/types';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
 
 const getLanguageColor = (lang: string) => {
@@ -34,7 +34,7 @@ export default (config: ParsedConfig) => {
   return async (
     collection: ParsedCollection,
     projectConfig: ParsedProjectConfig,
-    workItemsPromise: Promise<AnalysedWorkItems>
+    workItemsPromise: Promise<WorkItemAnalysis>
   ): Promise<ProjectAnalysis> => {
     const startTime = Date.now();
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collection.name, projectConfig.name);

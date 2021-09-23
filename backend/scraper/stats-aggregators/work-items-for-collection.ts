@@ -1,16 +1,19 @@
-import md5 from 'md5';
 import pluralize from 'pluralize';
-import { add, reduce } from 'rambda';
-import { URL } from 'url';
-import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { reduce } from 'rambda';
+import type {
+  AnalysedWorkItems, UIWorkItem, UIWorkItemType
+} from '../../../shared/types';
 import { exists, unique } from '../../utils';
 import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
+import type { WorkItemAnalysis } from '../types';
 import type {
   WorkItem, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
 } from '../types-azure';
 import { queryForCollectionWorkItems } from '../work-item-queries';
+import { getOverviewData } from './work-item-overview';
+import { workItemTypeId, workItemTypeIconColor } from './work-item-utils';
 
 type WorkItemIDTree = WorkItemQueryResult<WorkItemQueryHierarchialResult>;
 type ProjectName = string;
@@ -146,16 +149,6 @@ const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName
   }
 );
 
-const workItemTypeIconColor = (workItemType: WorkItemType) => {
-  const { searchParams } = new URL(workItemType.icon.url);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return searchParams.get('color')!;
-};
-
-const workItemTypeId = (workItemType: WorkItemType) => (
-  md5(workItemType.name + workItemType.icon.id + workItemTypeIconColor(workItemType))
-);
-
 const uiWorkItemCreator = (
   collectionConfig: ParsedCollection,
   getWorkItemType: (workItem: WorkItem) => WorkItemType
@@ -206,7 +199,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
   const pWorkItemsById = pWorkItemTreeForCollection
     .then(workItemsById(getCollectionWorkItems, collection));
 
-  return async (project: ParsedProjectConfig): Promise<AnalysedWorkItems> => {
+  return async (project: ParsedProjectConfig): Promise<WorkItemAnalysis> => {
     const [
       workItemTreeForCollection, getWorkItemType, workItemsById
     ] = await Promise.all([
@@ -227,52 +220,6 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     const topLevelItems = unique(
       workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
     );
-
-    const flowMetricsPreAggregation = workItemsForProject.reduce<
-      Omit<AnalysedWorkItems['flowMetrics'], 'time' | 'workCenters'> & {
-        time: Record<string, number[]>;
-        workCenters: Record<string, number[]>;
-      }
-    >(
-      (acc, workItem) => {
-        if (workItem.fields['Microsoft.VSTS.Common.ClosedDate']) {
-          const witId = workItemTypeId(getWorkItemType(workItem));
-          acc.velocity[witId] = (acc.velocity[witId] || 0) + 1;
-
-          acc.time[witId] = (acc.time[witId] || []).concat(
-            workItem.fields['Microsoft.VSTS.Common.ClosedDate'].getTime()
-            - workItem.fields['System.CreatedDate'].getTime()
-          );
-        }
-
-        if (collection.workitems.workCenters) {
-          collection.workitems.workCenters.reduce((acc, workCenter) => {
-            if (workItem.fields[workCenter.startDate] && workItem.fields[workCenter.endDate]) {
-              acc[workCenter.label] = (acc[workCenter.label] || []).concat(
-                new Date(workItem.fields[workCenter.endDate]).getTime()
-                - new Date(workItem.fields[workCenter.startDate]).getTime()
-              );
-            }
-
-            return acc;
-          }, acc.workCenters);
-        }
-        return acc;
-      }, { velocity: {}, time: {}, workCenters: {} }
-    );
-
-    const flowMetrics: AnalysedWorkItems['flowMetrics'] = {
-      ...flowMetricsPreAggregation,
-      time: Object.entries(flowMetricsPreAggregation.time).reduce<AnalysedWorkItems['flowMetrics']['time']>(
-        (acc, [workItemType, times]) => {
-          acc[workItemType] = times.reduce(add, 0) / times.length;
-          return acc;
-        }, {}
-      ),
-      workCenters: Object.fromEntries(Object.entries(flowMetricsPreAggregation.workCenters).map(([workCenter, times]) => (
-        [workCenter, times.reduce(add, 0)]
-      )))
-    };
 
     type AggregatedWorkItemsAndTypes = {
       byId: Record<number, UIWorkItem>;
@@ -326,7 +273,12 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       : null;
 
     return {
-      byId, ids, bugLeakage, types, flowMetrics
+      analysedWorkItems: {
+        byId, ids, bugLeakage, types
+      },
+      overview: getOverviewData(
+        collection, workItemsForProject, byId, types, getWorkItemType
+      )
     };
   };
 };

@@ -6,7 +6,7 @@
     "start:vite": "vite --open",
     "start:ui": "npm-run-all --parallel watch:tailwind start:vite",
     "start:server": "nodemon --watch 'backend/**' --ext 'ts,json' --exec 'ts-node backend/dev/start-server.ts'",
-    "start": "npm-run-all --parallel start:ui start:server",
+    "start": "npm-run-all --parallel start:server start:ui",
     "build:server": "tsc --build backend",
     "prebuild:ui": "NODE_ENV=production tailwind build -i ui/tailwind.css -o ui/tailwind.output.css",
     "build:ui": "vite build",

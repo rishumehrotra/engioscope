@@ -28,6 +28,8 @@ type CollectionWorkItemConfig = {
     startDate: string;
     endDate: string;
   }[];
+  ignoredWorkItemsForFlowAnalysis?: string[];
+  featureTypeField?: string;
 };
 
 type CollectionConfig = {
@@ -85,6 +87,8 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
     startDate: string;
     endDate: string;
   }[];
+  ignoredWorkItemsForFlowAnalysis?: string[];
+  featureTypeField?: string;
 }>;
 
 export type ParsedProjectConfig = Readonly<{
@@ -122,7 +126,10 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     skipChildren: collection.workitems?.skipChildren ?? config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
     environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
     changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime,
-    workCenters: collection.workitems?.workCenters ?? config.azure.workitems?.workCenters
+    workCenters: collection.workitems?.workCenters ?? config.azure.workitems?.workCenters,
+    ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
+      ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
+    featureTypeField: collection.workitems?.featureTypeField ?? config.azure.workitems?.featureTypeField
   };
 
   return {

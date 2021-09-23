@@ -1,8 +1,15 @@
-import type { AnalysedWorkItems, ReleasePipelineStats, RepoAnalysis } from '../../shared/types';
+import type {
+  AnalysedWorkItems, Overview, ReleasePipelineStats, RepoAnalysis
+} from '../../shared/types';
+
+export type WorkItemAnalysis = {
+  analysedWorkItems: AnalysedWorkItems | null;
+  overview: Overview;
+};
 
 export type ProjectAnalysis = {
   repoAnalysis: RepoAnalysis[];
   releaseAnalysis: ReleasePipelineStats[];
-  workItemAnalysis: AnalysedWorkItems | null;
+  workItemAnalysis: WorkItemAnalysis;
   workItemLabel: string;
 };
