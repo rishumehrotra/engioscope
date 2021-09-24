@@ -48,5 +48,10 @@ export const getOverviewData = (
       }
     );
 
-  return { byId: results.reducedIds, types: results.types, closed: results.closed };
+  return {
+    byId: results.reducedIds,
+    types: results.types,
+    closed: results.closed,
+    featureTypes: results.featureTypes
+  };
 };

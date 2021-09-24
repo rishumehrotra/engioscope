@@ -168,6 +168,7 @@ export type Overview = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
   closed: Record<number, string>;
+  featureTypes: Record<number, string>;
 };
 
 export type UIProjectAnalysis = {
