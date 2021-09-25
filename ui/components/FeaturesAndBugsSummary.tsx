@@ -33,13 +33,15 @@ const computeBugLeakage = (
   ];
 };
 
-const cltOrLtDefinition = (type: string, cltOrLt: string) => (cltOrLt === 'lt'
-  ? `Average turnaround time for a ${type.toLowerCase()}. <br /> 
-    Turnaround time is the time from when the ${type.toLowerCase()} <br /> 
-    was created to when it was closed.`
-  : `Average CLT for a ${type.toLowerCase()}. <br /> 
-  CLT is the time from when the ${type.toLowerCase()}<br /> 
-  was dev done to when it was closed.`);
+const cltOrLtDefinition = (type: string, cltOrLt: string) => (
+  cltOrLt === 'lt'
+    ? `Average turnaround time for a ${type.toLowerCase()}. <br /> 
+      Turnaround time is the time from when the ${type.toLowerCase()} <br /> 
+      was created to when it was closed.`
+    : `Average CLT for a ${type.toLowerCase()}. <br /> 
+      CLT is the time from when the ${type.toLowerCase()}<br /> 
+      was dev done to when it was closed.`
+);
 
 const computeLeadTimes = (
   workItems: UIWorkItem[],
@@ -48,12 +50,12 @@ const computeLeadTimes = (
   const aggregated = workItems.reduce<Record<string, Record<'clt' | 'lt', number[]>>>(
     (acc, workItem) => {
       if (!workItem.leadTime.end) return acc;
+
       return ({
         ...acc,
         [workItemType(workItem).name[0]]: {
-          ...acc[workItemType(workItem).name[0]],
           lt: [
-            ...(acc[workItemType(workItem).name[0]]?.clt || []),
+            ...(acc[workItemType(workItem).name[0]]?.lt || []),
             ...(workItem.leadTime.end
               ? [new Date(workItem.leadTime.end).getTime() - new Date(workItem.leadTime.start).getTime()]
               : [])
