@@ -169,7 +169,7 @@ export default (config: ParsedConfig) => {
       }).then(flattenToValues)
     ),
 
-    getWorkItemTypes: (collectionName: string) => (projectName: string) => (
+    getWorkItemTypes: (collectionName: string, projectName: string) => (
       usingDiskCache<{count: number; value: WorkItemType[]}>(
         [collectionName, projectName, 'work-items', 'types'],
         () => fetch(

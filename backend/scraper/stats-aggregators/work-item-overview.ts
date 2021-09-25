@@ -1,10 +1,10 @@
+import ms from 'ms';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import type { ParsedCollection } from '../parse-config';
 import type { WorkItem, WorkItemType } from '../types-azure';
+import { closedDate } from './work-item-utils';
 
-const closedDate = (workItem: WorkItem) => (
-  workItem.fields['Microsoft.VSTS.Common.ClosedDate']
-);
+const monthAgoInMs = Date.now() - ms('30 days');
 
 export const getOverviewData = (
   collection: ParsedCollection,
@@ -27,8 +27,9 @@ export const getOverviewData = (
             .includes(wit.name)
         ) return acc;
 
-        if (closedDate(workItem)) {
-          acc.closed[workItem.id] = closedDate(workItem).toISOString();
+        const closedOn = closedDate(workItem);
+        if (closedOn && closedOn.getTime() > monthAgoInMs) {
+          acc.closed[workItem.id] = closedOn.toISOString();
           acc.reducedIds[workItem.id] = byId[workItem.id];
           acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
         }

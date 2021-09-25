@@ -30,11 +30,11 @@ const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
 type WorkItemTypeByCollection = Record<ProjectName, WorkItemTypeByTypeName>;
 
 const getWorkItemTypesForCollection = (
-  getWorkItemTypes: (collectionName: string) => (projectName: string) => Promise<WorkItemType[]>,
+  getWorkItemTypes: (collectionName: string, projectName: string) => Promise<WorkItemType[]>,
   collection: ParsedCollection
 ) => Promise.all(collection.projects.map(async project => ({
   [project.name.toLowerCase()]: workItemTypesByType(
-    await getWorkItemTypes(collection.name)(project.name)
+    await getWorkItemTypes(collection.name, project.name)
   )
 }))).then(reduce<WorkItemTypeByCollection, WorkItemTypeByCollection>(
   (acc, cur) => Object.assign(acc, cur), {}
@@ -58,8 +58,8 @@ const workItemsById = (
   }, {});
 };
 
-const sourceByWorkItemId = (workItemTreeForCollection: WorkItemIDTree) => (
-  workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
+const sourceByWorkItemId = (workItemRelations: WorkItemIDTree['workItemRelations']) => (
+  workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
     if (wir.target) {
       acc[wir.target.id] = [...(acc[wir.target.id] || []), wir.source?.id].filter(exists);
     }
@@ -78,6 +78,8 @@ const sourcesUntilMatch = (
     }
 
     const sources = sourcesByWorkItemId[workItemId];
+
+    if (!sources) return [];
     if (!sources.length) return [];
 
     return sources.flatMap(source => {
@@ -115,10 +117,11 @@ const computeCLT = (collectionConfig: ParsedCollection, workItem: WorkItem): CLT
   }
 
   const computeDate = (fieldArray: string[]) => {
-    const minDates = fieldArray
-      .map(f => workItem.fields[f])
-      .filter(exists)
-      .map(s => new Date(s).getTime());
+    const minDates = fieldArray.reduce<number[]>((acc, fieldName) => {
+      const value = workItem.fields[fieldName];
+      if (!value) return acc;
+      return acc.concat(new Date(value).getTime());
+    }, []);
 
     if (minDates.length === 0) return undefined;
     return new Date(Math.min(...minDates)).toISOString();
@@ -182,29 +185,83 @@ const uiWorkItemCreator = (
   }
 );
 
-export default (config: ParsedConfig) => (collection: ParsedCollection) => {
+const isNewerThan = (date1: Date) => (date2: Date) => (
+  date2.getTime() > date1.getTime()
+);
+
+const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedCollection) => {
   const {
     getCollectionWorkItemIdsForQuery, getWorkItemTypes, getCollectionWorkItems
   } = azure(config);
-
-  const pWorkItemTreeForCollection: Promise<WorkItemIDTree> = (
-    getCollectionWorkItemIdsForQuery(
-      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
-    )
-  );
-
   const pGetWorkItemType = getWorkItemTypesForCollection(getWorkItemTypes, collection)
     .then(createWorkItemTypeGetter);
 
-  const pWorkItemsById = pWorkItemTreeForCollection
-    .then(workItemsById(getCollectionWorkItems, collection));
+  const workItemIdTree = workItemsById(getCollectionWorkItems, collection);
+
+  const workItemDetails = async () => {
+    const workItemTreeForCollection: WorkItemIDTree = await getCollectionWorkItemIdsForQuery(
+      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
+    );
+
+    const workItems = await workItemIdTree(workItemTreeForCollection);
+
+    const isInQueryPeriod = isNewerThan(config.azure.queryFrom);
+
+    const reducedWorkItemRelations = workItemTreeForCollection.workItemRelations
+      .filter(wir => {
+        const source = wir.source ? workItems[wir.source.id] : undefined;
+        const target = wir.target ? workItems[wir.target.id] : undefined;
+
+        const sourceLastStateChangeDate = source?.fields['Microsoft.VSTS.Common.StateChangeDate'];
+        const targetLastStateChangeDate = target?.fields['Microsoft.VSTS.Common.StateChangeDate'];
+
+        if (source && !target) {
+          return sourceLastStateChangeDate ? isInQueryPeriod(sourceLastStateChangeDate) : true;
+        }
+
+        if (!source && target) {
+          return targetLastStateChangeDate ? isInQueryPeriod(targetLastStateChangeDate) : true;
+        }
+
+        if (!source && !target) return true; // This should not be a possibility
+
+        // We have both source and target
+        if (!targetLastStateChangeDate) return true; // Target is not closed, so it's in the query period
+        if (!sourceLastStateChangeDate) return true; // Source is not closed, so it's in the query period
+
+        return isInQueryPeriod(targetLastStateChangeDate) || isInQueryPeriod(sourceLastStateChangeDate);
+      });
+
+    const reducedWorkItemIds = unique(
+      reducedWorkItemRelations.flatMap(
+        wir => [wir.source?.id, wir.target?.id]
+      )
+    ).filter(exists);
+
+    const reducedWorkItems = Object.entries(workItems)
+      .reduce<typeof workItems>((acc, [workItemId, workItem]) => {
+        if (reducedWorkItemIds.includes(Number(workItemId))) {
+          acc[Number(workItemId)] = workItem;
+        }
+        return acc;
+      }, {});
+
+    return [reducedWorkItemRelations, reducedWorkItems] as const;
+  };
+
+  return Promise.all([
+    pGetWorkItemType,
+    workItemDetails()
+  ] as const);
+};
+
+export default (config: ParsedConfig) => (collection: ParsedCollection) => {
+  const pCollectionData = fireOffCollectionAPICalls(config, collection);
 
   return async (project: ParsedProjectConfig): Promise<WorkItemAnalysis> => {
     const [
-      workItemTreeForCollection, getWorkItemType, workItemsById
-    ] = await Promise.all([
-      pWorkItemTreeForCollection, pGetWorkItemType, pWorkItemsById
-    ]);
+      getWorkItemType, [workItemRelations, workItemsById]
+    ] = await pCollectionData;
 
     const createUIWorkItem = uiWorkItemCreator(collection, getWorkItemType);
 
@@ -212,7 +269,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       .filter(wi => wi.fields['System.TeamProject'] === project.name);
 
     const sourcesForWorkItem = sourcesUntilMatch(
-      sourceByWorkItemId(workItemTreeForCollection),
+      sourceByWorkItemId(workItemRelations),
       workItemsById,
       project
     );
@@ -230,16 +287,23 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       acc.byId[Number(id)] = createUIWorkItem(workItem);
 
       const workItemType = getWorkItemType(workItem);
-      acc.types[workItemTypeId(workItemType)] = {
-        name: [workItemType.name, pluralize(workItemType.name)],
-        color: workItemType.color,
-        icon: `data:image/svg+xml;utf8,${encodeURIComponent(workItemIconSvgs[workItemType.icon.id](workItemTypeIconColor(workItemType)))}`,
-        iconColor: workItemTypeIconColor(workItemType)
-      };
+      const witId = workItemTypeId(workItemType);
+
+      if (!acc.types[witId]) {
+        const iconColor = workItemTypeIconColor(workItemType);
+
+        acc.types[witId] = {
+          name: [workItemType.name, pluralize(workItemType.name)],
+          color: workItemType.color,
+          icon: `data:image/svg+xml;utf8,${encodeURIComponent(workItemIconSvgs[workItemType.icon.id](iconColor))}`,
+          iconColor
+        };
+      }
+
       return acc;
     }, { byId: {}, types: {} });
 
-    const ids = workItemTreeForCollection.workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
+    const ids = workItemRelations.reduce<Record<number, number[]>>((acc, wir) => {
       if (!wir.source) return acc;
       const parent = wir.source ? wir.source.id : 0;
 
@@ -259,7 +323,10 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
         const env = workItem.fields[collection.workitems.environmentField];
 
         const isCreatedInLastMonth = workItem.fields['System.CreatedDate'] >= monthAgo;
-        const isClosedInLastMonth = workItem.fields['Microsoft.VSTS.Common.ClosedDate'] >= monthAgo;
+        const isClosedInLastMonth = (
+          workItem.fields['Microsoft.VSTS.Common.ClosedDate']
+          && workItem.fields['Microsoft.VSTS.Common.ClosedDate'] >= monthAgo
+        );
 
         if (!isCreatedInLastMonth && !isClosedInLastMonth) return acc;
 
