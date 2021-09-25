@@ -39,8 +39,8 @@ const cltOrLtDefinition = (type: string, cltOrLt: string) => (
       Turnaround time is the time from when the ${type.toLowerCase()} <br /> 
       was created to when it was closed.`
     : `Average CLT for a ${type.toLowerCase()}. <br /> 
-      CLT is the time from when the ${type.toLowerCase()}<br /> 
-      was dev done to when it was closed.`
+      CLT is the time from when the ${type.toLowerCase()} was dev done<br />
+      to when it was deployed to productionn.`
 );
 
 const computeLeadTimes = (

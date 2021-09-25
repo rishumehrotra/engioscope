@@ -2,9 +2,9 @@ import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../shared/types';
 import { oneYear } from '../helpers/utils';
-import HorizontalBarGraph from './HorizontalBarGraph';
+import HorizontalBarGraph from './graphs/HorizontalBarGraph';
 import type { ChartType } from './ProjectStat';
-import ScatterLineGraph from './ScatterLineGraph';
+import ScatterLineGraph from './graphs/ScatterLineGraph';
 
 const createTooltip = (
   label: string,
@@ -128,16 +128,16 @@ const WorkItemCharts = React.forwardRef<HTMLDivElement, WorkItemChartsProps>(
               linkForItem={workItem => workItem.url}
               graphData={[
                 {
-                  label: 'Change lead time',
-                  data: statByCltOrLtByEnv.clt,
-                  yAxisPoint: getCLTTime,
-                  tooltip: createTooltip('Change lead time', getCLTTime, workItemType)
-                },
-                {
                   label: 'Turnaround time',
                   data: statByCltOrLtByEnv.lt,
                   yAxisPoint: getLeadTime,
                   tooltip: createTooltip('Turnaround time', getLeadTime, workItemType)
+                },
+                {
+                  label: 'Change lead time',
+                  data: statByCltOrLtByEnv.clt,
+                  yAxisPoint: getCLTTime,
+                  tooltip: createTooltip('Change lead time', getCLTTime, workItemType)
                 }
               ]}
             />

@@ -2,9 +2,9 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add, map, range } from 'rambda';
 import React, {
-  Fragment, useCallback, useEffect, useMemo, useState
+  Fragment, useCallback, useLayoutEffect, useMemo, useState
 } from 'react';
-import { oneYear } from '../helpers/utils';
+import { oneYear } from '../../helpers/utils';
 
 const xAxisLabelAreaHeight = 80;
 const xAxisLabelHeight = 50;
@@ -276,9 +276,7 @@ const ScatterLineGraph = <T extends {}>({
     return availableHeight - ((value / maxOfSpread) * availableHeight) + graphTopPadding;
   }, [maxOfSpread]);
 
-  useEffect(() => {
-    requestAnimationFrame(() => setShowPoints(true));
-  }, []);
+  useLayoutEffect(() => { setShowPoints(true); }, []);
 
   return (
     <svg viewBox={`0 0 ${computedWidth} ${graphHeight}`} height={height} className={className}>
