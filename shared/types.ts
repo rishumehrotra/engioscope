@@ -170,6 +170,14 @@ export type Overview = {
   types: Record<string, UIWorkItemType>;
   closed: Record<number, string>;
   groups: Record<string, { wit: string; label: string; name: string }>;
+  wiMeta: Record<number, {
+    start: string;
+    end?: string;
+    workCenters: {
+      label: string;
+      time: number;
+    }[];
+  }>;
 };
 
 export type UIProjectAnalysis = {

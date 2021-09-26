@@ -16,23 +16,39 @@ const witIdCreator = (overview: ProjectOverviewAnalysis['overview']) => (
 
 const noGroup = 'no-group';
 
-const getVelocity = (overview: ProjectOverviewAnalysis['overview']) => {
-  const witId = witIdCreator(overview);
-  const group = groupCreator(overview);
+const organizeClosedWorkItems = <T extends unknown>(
+  initialValue: T,
+  combine: (acc: T, workItemId: number, overview: ProjectOverviewAnalysis['overview']) => T
+) => (
+  (overview: ProjectOverviewAnalysis['overview']) => {
+    const witId = witIdCreator(overview);
+    const group = groupCreator(overview);
 
-  return Object.keys(overview.closed)
-    .map(Number)
-    .reduce<Record<string, Record<string, number[]>>>(
-      (acc, workItemId) => {
-        acc[witId(workItemId)] = acc[witId(workItemId)] || {};
-        acc[witId(workItemId)][group(workItemId)?.name || noGroup] = (
-          acc[witId(workItemId)][group(workItemId)?.name || noGroup] || []
-        ).concat(workItemId);
+    return Object.entries(overview.wiMeta)
+      .filter(([, meta]) => meta.end)
+      .map(([id]) => Number(id))
+      .reduce<Record<string, Record<string, T>>>(
+        (acc, workItemId) => {
+          acc[witId(workItemId)] = acc[witId(workItemId)] || {};
 
-        return acc;
-      }, {}
-    );
-};
+          acc[witId(workItemId)][group(workItemId)?.name || noGroup] = combine(
+            acc[witId(workItemId)][group(workItemId)?.name || noGroup] || initialValue,
+            workItemId,
+            overview
+          );
+
+          return acc;
+        }, {}
+      );
+  }
+);
+
+const getVelocity = organizeClosedWorkItems<number[]>([], (acc, wid) => acc.concat(wid));
+const cycleTime = organizeClosedWorkItems<number[]>([], (acc, wid, overview) => {
+  const { start, end } = overview.wiMeta[wid];
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return acc.concat(new Date(end!).getTime() - new Date(start).getTime());
+});
 
 const splitVelocityByDate = (
   projectAnalysis: ProjectOverviewAnalysis,
@@ -81,6 +97,8 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
       value: item.workItemIds.length
     }))
   })), [projectAnalysis.overview.types, velocityByDate]);
+
+  console.log(cycleTime(projectAnalysis.overview));
 
   return (
     <div className="flex">

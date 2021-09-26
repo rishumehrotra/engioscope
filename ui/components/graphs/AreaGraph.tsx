@@ -69,7 +69,7 @@ const AreaGraph = <T, U>({
     (index * yAxisItemSpacing) + yAxisLeftPadding
   );
   const yCoord = (value: number) => (
-    height - (value / maxValue) * (height - xAxisBottomPadding)
+    height - ((value / maxValue) * (height - xAxisBottomPadding)) - xAxisBottomPadding
   );
 
   return (
@@ -81,8 +81,13 @@ const AreaGraph = <T, U>({
           key={lineIndex}
           d={[
             `M ${xCoord(0)} ${yCoord(lines[lineIndex][0])}`,
-            ...line.map((value, valueIndex) => `L ${xCoord(valueIndex)} ${yCoord(value)}`)
+            ...line.map((value, valueIndex) => `L ${xCoord(valueIndex)} ${yCoord(value)}`),
+            `L ${yCoord(line[line.length - 1])} ${yCoord(lines[lineIndex][lines[lineIndex].length - 1])}`,
+            ...[...lines[lineIndex]].reverse().map(
+              (value, valueIndex) => `L ${xCoord(lines[lineIndex].length - valueIndex)} ${yCoord(value)}`
+            )
           ].join(' ')}
+          fill={`hsla(${Math.random() * 360}, 50%, 50%, 70%)`}
         />
       ))}
     </svg>

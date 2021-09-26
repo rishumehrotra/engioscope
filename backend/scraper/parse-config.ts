@@ -29,7 +29,6 @@ type CollectionWorkItemConfig = {
     endDate: string;
   }[];
   ignoredWorkItemsForFlowAnalysis?: string[];
-  featureTypeField?: string;
   types?: {
     type: string;
     groupByField?: string;
@@ -100,7 +99,6 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
     endDate: string;
   }[];
   ignoredWorkItemsForFlowAnalysis?: string[];
-  featureTypeField?: string;
   types?: {
     type: string;
     startDate: string;
@@ -153,7 +151,6 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     workCenters: collection.workitems?.workCenters ?? config.azure.workitems?.workCenters,
     ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
       ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
-    featureTypeField: collection.workitems?.featureTypeField ?? config.azure.workitems?.featureTypeField,
     types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(type => ({
       type: type.type,
       groupByField: type.groupByField,
