@@ -1,9 +1,13 @@
 import { range } from 'rambda';
 import React, { useMemo } from 'react';
-import type { ProjectOverviewAnalysis, Overview } from '../../shared/types';
+import type { ProjectOverviewAnalysis } from '../../shared/types';
+import AreaGraph from './graphs/AreaGraph';
 
-const featureTypeCreator = (overview: ProjectOverviewAnalysis['overview']) => (
-  (workItemId: number): string | undefined => overview.featureTypes[workItemId]
+const groupCreator = (overview: ProjectOverviewAnalysis['overview']) => (
+  (workItemId: number) => {
+    const { groupId } = overview.byId[workItemId];
+    return groupId ? overview.groups[groupId] : undefined;
+  }
 );
 
 const witIdCreator = (overview: ProjectOverviewAnalysis['overview']) => (
@@ -12,25 +16,17 @@ const witIdCreator = (overview: ProjectOverviewAnalysis['overview']) => (
 
 const noGroup = 'no-group';
 
-const groupNameCreator = (overview: Overview) => {
-  const featureType = featureTypeCreator(overview);
-
-  return (workItemId: number) => featureType(workItemId)
-    || overview.byId[workItemId].env
-    || noGroup;
-};
-
 const getVelocity = (overview: ProjectOverviewAnalysis['overview']) => {
   const witId = witIdCreator(overview);
-  const groupName = groupNameCreator(overview);
+  const group = groupCreator(overview);
 
   return Object.keys(overview.closed)
     .map(Number)
     .reduce<Record<string, Record<string, number[]>>>(
       (acc, workItemId) => {
         acc[witId(workItemId)] = acc[witId(workItemId)] || {};
-        acc[witId(workItemId)][groupName(workItemId)] = (
-          acc[witId(workItemId)][groupName(workItemId)] || []
+        acc[witId(workItemId)][group(workItemId)?.name || noGroup] = (
+          acc[witId(workItemId)][group(workItemId)?.name || noGroup] || []
         ).concat(workItemId);
 
         return acc;
@@ -78,35 +74,52 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
     [projectAnalysis]
   );
 
+  const areaGraphData = useMemo(() => velocityByDate.map(({ date, velocity }) => ({
+    yAxisValue: date.toLocaleDateString(),
+    points: velocity.map(item => ({
+      label: `${projectAnalysis.overview.types[item.witId].name[1]}${item.groupName === noGroup ? '' : ` - ${item.groupName}`}`,
+      value: item.workItemIds.length
+    }))
+  })), [projectAnalysis.overview.types, velocityByDate]);
+
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Velocity</th>
-        </tr>
-      </thead>
-      <tbody>
-        {velocityByDate.map(({ date, velocity }) => (
-          <tr key={date.toISOString()} className="border-b-2 border-black">
-            <td>{date.toLocaleDateString()}</td>
-            <td>
-              <ul>
-                {velocity.map(item => (
-                  <li>
-                    {`${
-                      projectAnalysis.overview.types[item.witId].name[1]
-                    }${
-                      item.groupName === noGroup ? '' : ` - ${item.groupName}`
-                    }: ${item.workItemIds.length}`}
-                  </li>
-                ))}
-              </ul>
-            </td>
+    <div className="flex">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Velocity</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {velocityByDate.map(({ date, velocity }) => (
+            <tr key={date.toISOString()} className="border-b-2 border-black">
+              <td>{date.toLocaleDateString()}</td>
+              <td>
+                <ul>
+                  {velocity.map(item => (
+                    <li key={item.groupName}>
+                      {`${
+                        projectAnalysis.overview.types[item.witId].name[1]
+                      }${
+                        item.groupName === noGroup ? '' : ` - ${item.groupName}`
+                      }: ${item.workItemIds.length}`}
+                    </li>
+                  ))}
+                </ul>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div>
+        <AreaGraph
+          className="w-auto"
+          graphData={areaGraphData}
+          pointToValue={x => x.value}
+        />
+      </div>
+    </div>
   );
 };
 

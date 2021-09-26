@@ -143,6 +143,7 @@ export type UIWorkItem = {
   env?: string;
   clt?: { start?: string; end?: string };
   leadTime: { start: string; end?: string };
+  groupId?: string;
 };
 
 export type UIWorkItemRevision = {
@@ -168,7 +169,7 @@ export type Overview = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
   closed: Record<number, string>;
-  featureTypes: Record<number, string>;
+  groups: Record<string, { wit: string; label: string; name: string }>;
 };
 
 export type UIProjectAnalysis = {

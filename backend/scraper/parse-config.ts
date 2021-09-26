@@ -30,6 +30,18 @@ type CollectionWorkItemConfig = {
   }[];
   ignoredWorkItemsForFlowAnalysis?: string[];
   featureTypeField?: string;
+  types?: {
+    type: string;
+    groupByField?: string;
+    groupLabel?: string;
+    startDate: string;
+    endDate?: string;
+    workCenters: ({ label: string } & (
+      { startDate: string }
+      | { endDate: string }
+      | { startDate: string; endDate: string }
+    ))[];
+  }[];
 };
 
 type CollectionConfig = {
@@ -89,6 +101,18 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   }[];
   ignoredWorkItemsForFlowAnalysis?: string[];
   featureTypeField?: string;
+  types?: {
+    type: string;
+    startDate: string;
+    groupByField?: string;
+    groupLabel: string;
+    endDate: string;
+    workCenters: {
+      label: string;
+      startDate: string;
+      endDate: string;
+    }[];
+  }[];
 }>;
 
 export type ParsedProjectConfig = Readonly<{
@@ -129,7 +153,19 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     workCenters: collection.workitems?.workCenters ?? config.azure.workitems?.workCenters,
     ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
       ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
-    featureTypeField: collection.workitems?.featureTypeField ?? config.azure.workitems?.featureTypeField
+    featureTypeField: collection.workitems?.featureTypeField ?? config.azure.workitems?.featureTypeField,
+    types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(type => ({
+      type: type.type,
+      groupByField: type.groupByField,
+      groupLabel: type.groupLabel || 'Unlabelled group',
+      startDate: type.startDate || 'System.CreatedDate',
+      endDate: type.endDate || 'Microsoft.VSTS.Common.ClosedDate',
+      workCenters: type.workCenters.map(workCenter => ({
+        label: workCenter.label,
+        startDate: 'startDate' in workCenter ? workCenter.startDate : 'System.CreatedDate',
+        endDate: 'endDate' in workCenter ? workCenter.endDate : 'Microsoft.VSTS.Common.ClosedDate'
+      }))
+    }))
   };
 
   return {
