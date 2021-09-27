@@ -168,7 +168,6 @@ export type AnalysedWorkItems = {
 export type Overview = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
-  closed: Record<number, string>;
   groups: Record<string, { wit: string; label: string; name: string }>;
   wiMeta: Record<number, {
     start: string;

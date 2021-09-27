@@ -1,10 +1,7 @@
-import ms from 'ms';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { exists } from '../../utils';
 import type { ParsedCollection } from '../parse-config';
 import type { WorkItem, WorkItemType } from '../types-azure';
-
-const monthAgoInMs = Date.now() - ms('30 days');
 
 const getEndDate = (workItem: WorkItem, workItemConfig: NonNullable<ParsedCollection['workitems']['types']>[number]) => (
   workItem.fields[workItemConfig.endDate]
@@ -23,7 +20,6 @@ export const getOverviewData = (
   let groupIndex = 0;
 
   const results = workItemsForProject.reduce<{
-    closed: Record<number, string>;
     reducedIds: Record<number, UIWorkItem>;
     types: Record<string, UIWorkItemType>;
     groups: Overview['groups'];
@@ -55,11 +51,6 @@ export const getOverviewData = (
       }).filter(exists)
     };
 
-    const closedOn = getEndDate(workItem, workItemConfig);
-    if (closedOn && closedOn.getTime() > monthAgoInMs) {
-      acc.closed[workItem.id] = closedOn.toISOString();
-    }
-
     if (workItemConfig.groupByField && workItem.fields[workItemConfig.groupByField]) {
       const groupName = workItem.fields[workItemConfig.groupByField];
       const groupCacheKey = wit + groupName;
@@ -82,13 +73,12 @@ export const getOverviewData = (
 
     return acc;
   }, {
-    closed: {}, reducedIds: {}, types: {}, groups: {}, wiMeta: {}
+    reducedIds: {}, types: {}, groups: {}, wiMeta: {}
   });
 
   return {
     byId: results.reducedIds,
     types: results.types,
-    closed: results.closed,
     groups: results.groups,
     wiMeta: results.wiMeta
   };
