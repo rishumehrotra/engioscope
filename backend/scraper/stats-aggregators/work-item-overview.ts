@@ -33,6 +33,7 @@ export const getOverviewData = (
 
     const workItemConfig = collection.workitems.types?.find(wic => wic.type === wit.name);
     if (!workItemConfig) return acc;
+    if (workItem.fields['System.State'] === 'Withdrawn') return acc;
 
     acc.reducedIds[workItem.id] = byId[workItem.id];
     acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
