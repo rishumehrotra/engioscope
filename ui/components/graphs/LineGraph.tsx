@@ -84,7 +84,7 @@ type GridLinesProps<Point> = {
   points: Point[];
 };
 
-const GridLines = <Point extends any>({
+const GridLines = <Point extends unknown>({
   yAxisMax, yCoord, width, yAxisLabel, xAxisLabel, points
 }: GridLinesProps<Point>) => {
   const gridLinesGap = Math.round(yAxisMax / (numberOfHorizontalGridLines + 1));

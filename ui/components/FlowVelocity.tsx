@@ -1,5 +1,6 @@
 import prettyMilliseconds from 'pretty-ms';
 import { not, pipe, range } from 'rambda';
+import type { ReactNode } from 'react';
 import React, { Fragment, useCallback, useMemo } from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
 import LineGraph from './graphs/LineGraph';
@@ -131,7 +132,7 @@ const displayTable = (
   projectAnalysis: ProjectOverviewAnalysis,
   organizedWorkItemsByDate: ReturnType<typeof splitOrganizedWorkItemsByDate>,
   title: string,
-  value: (item: ReturnType<typeof splitOrganizedWorkItemsByDate>[number]['items'][number]) => any
+  value: (item: ReturnType<typeof splitOrganizedWorkItemsByDate>[number]['items'][number]) => ReactNode
 ) => (
   <table className="flex-1">
     <thead>
@@ -182,6 +183,10 @@ const colorPalette = [
 
 const colorCache = new Map<string, string>();
 
+const widsInGroup = (workItems: ReturnType<typeof getClosedWorkItemsForGraph>[number]['workItems']) => (
+  workItems.flatMap(({ workItemIds }) => workItemIds)
+);
+
 const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const organizedClosedWorkItemsByDate = useMemo(
     () => splitOrganizedWorkItemsByDate(
@@ -228,18 +233,39 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         <p className="text-base text-gray-600 mb-4">
           Work items closed per day over the last month
         </p>
-        <LineGraph<ClosedWILine, ClosedWIPoint>
-          lines={closedWorkItemsForGraph}
-          points={x => x.workItems}
-          pointToValue={x => x.workItemIds.length}
-          lineColor={lineColor}
-          yAxisLabel={x => String(x)}
-          lineLabel={x => (
-            projectAnalysis.overview.types[x.witId].name[1]
-            + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
-          )}
-          xAxisLabel={x => x.date.toISOString().split('T')[0]}
-        />
+        <div className="flex gap-2">
+          <LineGraph<ClosedWILine, ClosedWIPoint>
+            lines={closedWorkItemsForGraph}
+            points={x => x.workItems}
+            pointToValue={x => x.workItemIds.length}
+            lineColor={lineColor}
+            yAxisLabel={x => String(x)}
+            lineLabel={x => (
+              projectAnalysis.overview.types[x.witId].name[1]
+              + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
+            )}
+            xAxisLabel={x => x.date.toISOString().split('T')[0]}
+          />
+          <div>
+            <div>
+              <h3>
+                Overall velocity
+              </h3>
+              {closedWorkItemsForGraph.reduce((acc, { workItems }) => (
+                acc + workItems.reduce((a, wi) => wi.workItemIds.length, 0)
+              ), 0)}
+            </div>
+            {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
+              <div key={witId + groupName} style={{ background: lineColor({ witId, groupName }) }}>
+                <h4>
+                  {projectAnalysis.overview.types[witId].name[1]}
+                  {groupName === noGroup ? '' : ` - ${groupName}`}
+                </h4>
+                {workItems.reduce((a, wi) => a + wi.workItemIds.length, 0)}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
@@ -249,27 +275,72 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         <p className="text-base text-gray-600 mb-4">
           Average time taken to complete a work item
         </p>
-        <LineGraph<ClosedWILine, ClosedWIPoint>
-          lines={closedWorkItemsForGraph}
-          points={x => x.workItems}
-          pointToValue={group => (
-            group.workItemIds.length
-              ? group.workItemIds.reduce((acc, wid) => (
-                acc + (
-                  new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
-              - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
-                )
-              ), 0) / group.workItemIds.length
-              : 0
-          )}
-          lineColor={lineColor}
-          yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
-          lineLabel={x => (
-            projectAnalysis.overview.types[x.witId].name[1]
+        <div className="flex gap-2">
+          <LineGraph<ClosedWILine, ClosedWIPoint>
+            lines={closedWorkItemsForGraph}
+            points={x => x.workItems}
+            pointToValue={group => (
+              group.workItemIds.length
+                ? group.workItemIds.reduce((acc, wid) => (
+                  acc + (
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                    - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                  )
+                ), 0) / group.workItemIds.length
+                : 0
+            )}
+            lineColor={lineColor}
+            yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
+            lineLabel={x => (
+              projectAnalysis.overview.types[x.witId].name[1]
             + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
-          )}
-          xAxisLabel={x => x.date.toISOString().split('T')[0]}
-        />
+            )}
+            xAxisLabel={x => x.date.toISOString().split('T')[0]}
+          />
+          <div>
+            <div>
+              <h3>
+                Overall average cycle time
+              </h3>
+              {prettyMilliseconds(closedWorkItemsForGraph.reduce<number[]>((acc, { workItems }) => (
+                acc.concat(workItems.flatMap(wi => wi.workItemIds))
+              ), []).reduce((acc, wid) => (
+                acc + (
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                  - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                )
+              ), 0) / (
+                closedWorkItemsForGraph.reduce<number[]>((acc, { workItems }) => (
+                  acc.concat(workItems.flatMap(wi => wi.workItemIds))
+                ), []).length
+              ), { compact: true })}
+            </div>
+            {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
+              <div key={witId + groupName} style={{ background: lineColor({ witId, groupName }) }}>
+                <h4>
+                  {projectAnalysis.overview.types[witId].name[1]}
+                  {groupName === noGroup ? '' : ` - ${groupName}`}
+                </h4>
+                {
+                  widsInGroup(workItems).length
+                    ? prettyMilliseconds(
+                      widsInGroup(workItems).reduce((acc, wid) => (
+                        acc + (
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                          new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                            - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                        )
+                      ), 0) / widsInGroup(workItems).length,
+                      { compact: true }
+                    )
+                    : '-'
+                }
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
@@ -279,33 +350,43 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         <p className="text-base text-gray-600 mb-4">
           Time spent working vs waiting
         </p>
-        <LineGraph<ClosedWILine, ClosedWIPoint>
-          lines={closedWorkItemsForGraph}
-          points={x => x.workItems}
-          pointToValue={group => {
-            const workTime = group.workItemIds.reduce((acc, wid) => (
-              acc + projectAnalysis.overview.wiMeta[wid].workCenters.reduce((a, wc) => (
-                a + wc.time
-              ), 0)
-            ), 0);
+        <div className="flex gap-2">
+          <LineGraph<ClosedWILine, ClosedWIPoint>
+            lines={closedWorkItemsForGraph}
+            points={x => x.workItems}
+            pointToValue={group => {
+              const workTime = group.workItemIds.reduce((acc, wid) => (
+                acc + projectAnalysis.overview.wiMeta[wid].workCenters.reduce((a, wc) => (
+                  a + wc.time
+                ), 0)
+              ), 0);
 
-            const totalTime = group.workItemIds.reduce((acc, wid) => (
-              acc + (
-                new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
-              - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
-              )
-            ), 0);
+              const totalTime = group.workItemIds.reduce((acc, wid) => (
+                acc + (
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                )
+              ), 0);
 
-            return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
-          }}
-          lineColor={lineColor}
-          yAxisLabel={x => (x === 0 ? 'na' : `${x.toFixed(2)}%`)}
-          lineLabel={x => (
-            projectAnalysis.overview.types[x.witId].name[1]
-            + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
-          )}
-          xAxisLabel={x => x.date.toISOString().split('T')[0]}
-        />
+              return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
+            }}
+            lineColor={lineColor}
+            yAxisLabel={x => (x === 0 ? 'na' : `${x.toFixed(2)}%`)}
+            lineLabel={x => (
+              projectAnalysis.overview.types[x.witId].name[1]
+              + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
+            )}
+            xAxisLabel={x => x.date.toISOString().split('T')[0]}
+          />
+          <div>
+            <div>
+              <h3>
+                Overall flow efficiency
+              </h3>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="border-b-2 border-black">
@@ -371,6 +452,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             group.workItemIds.length
               ? prettyMilliseconds(group.workItemIds.reduce((acc, wid) => (
                 acc + (
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
                 - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
                 )
@@ -391,6 +473,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
 
             const totalTime = group.workItemIds.reduce((acc, wid) => (
               acc + (
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
               - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
               )
@@ -399,13 +482,6 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             return totalTime === 0 ? 'na' : `${((workTime * 100) / totalTime).toFixed(2)}%`;
           }
         )}
-        {/* <div>
-        <AreaGraph
-          className="w-auto"
-          graphData={areaGraphData}
-          pointToValue={x => x.value}
-        />
-      </div> */}
       </div>
     </div>
   );
