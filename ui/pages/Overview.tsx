@@ -9,12 +9,7 @@ const Overview: React.FC = () => {
 
   if (projectAnalysis === 'loading') return <Loading />;
 
-  return (
-    <>
-      <h1>Overview</h1>
-      <FlowVelocity projectAnalysis={projectAnalysis} />
-    </>
-  );
+  return <FlowVelocity projectAnalysis={projectAnalysis} />;
 };
 
 export default Overview;

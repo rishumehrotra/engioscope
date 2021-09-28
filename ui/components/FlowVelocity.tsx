@@ -216,24 +216,98 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
     return colorCache.get(witId + groupName)!;
   }, []);
 
-  console.log({ closedWorkItemsForGraph });
-
   type ClosedWILine = typeof closedWorkItemsForGraph[number];
   type ClosedWIPoint = typeof closedWorkItemsForGraph[number]['workItems'][number];
 
   return (
     <div>
-      <LineGraph<ClosedWILine, ClosedWIPoint>
-        lines={closedWorkItemsForGraph}
-        points={x => x.workItems}
-        pointToValue={x => x.workItemIds.length}
-        lineColor={lineColor}
-        yAxisLabel={x => String(x)}
-        lineLabel={x => (
-          projectAnalysis.overview.types[x.witId].name[1]
-          + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
-        )}
-      />
+      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+        <h1 className="text-2xl">
+          Velocity
+        </h1>
+        <p className="text-base text-gray-600 mb-4">
+          Work items closed per day over the last month
+        </p>
+        <LineGraph<ClosedWILine, ClosedWIPoint>
+          lines={closedWorkItemsForGraph}
+          points={x => x.workItems}
+          pointToValue={x => x.workItemIds.length}
+          lineColor={lineColor}
+          yAxisLabel={x => String(x)}
+          lineLabel={x => (
+            projectAnalysis.overview.types[x.witId].name[1]
+            + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
+          )}
+          xAxisLabel={x => x.date.toISOString().split('T')[0]}
+        />
+      </div>
+
+      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+        <h1 className="text-2xl">
+          Average cycle time
+        </h1>
+        <p className="text-base text-gray-600 mb-4">
+          Average time taken to complete a work item
+        </p>
+        <LineGraph<ClosedWILine, ClosedWIPoint>
+          lines={closedWorkItemsForGraph}
+          points={x => x.workItems}
+          pointToValue={group => (
+            group.workItemIds.length
+              ? group.workItemIds.reduce((acc, wid) => (
+                acc + (
+                  new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+              - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                )
+              ), 0) / group.workItemIds.length
+              : 0
+          )}
+          lineColor={lineColor}
+          yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
+          lineLabel={x => (
+            projectAnalysis.overview.types[x.witId].name[1]
+            + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
+          )}
+          xAxisLabel={x => x.date.toISOString().split('T')[0]}
+        />
+      </div>
+
+      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+        <h1 className="text-2xl">
+          Flow efficiency
+        </h1>
+        <p className="text-base text-gray-600 mb-4">
+          Time spent working vs waiting
+        </p>
+        <LineGraph<ClosedWILine, ClosedWIPoint>
+          lines={closedWorkItemsForGraph}
+          points={x => x.workItems}
+          pointToValue={group => {
+            const workTime = group.workItemIds.reduce((acc, wid) => (
+              acc + projectAnalysis.overview.wiMeta[wid].workCenters.reduce((a, wc) => (
+                a + wc.time
+              ), 0)
+            ), 0);
+
+            const totalTime = group.workItemIds.reduce((acc, wid) => (
+              acc + (
+                new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+              - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+              )
+            ), 0);
+
+            return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
+          }}
+          lineColor={lineColor}
+          yAxisLabel={x => (x === 0 ? 'na' : `${x.toFixed(2)}%`)}
+          lineLabel={x => (
+            projectAnalysis.overview.types[x.witId].name[1]
+            + (x.groupName === noGroup ? '' : ` - ${x.groupName}`)
+          )}
+          xAxisLabel={x => x.date.toISOString().split('T')[0]}
+        />
+      </div>
+
       <div className="border-b-2 border-black">
         <h2 className="font-bold">WIP work items</h2>
         {Object.entries(organizedOpenWorkItems).map(([witId, group]) => (
