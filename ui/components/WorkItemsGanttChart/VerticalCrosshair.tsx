@@ -1,11 +1,12 @@
 import type { MutableRefObject } from 'react';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { mediumDate } from '../../helpers/utils';
 import {
   axisLabelsHeight, axisLabelsWidth, barStartPadding,
   svgWidth, textWidth, xCoordToDate
 } from './helpers';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
+import useSvgEvent from '../../hooks/use-svg-event';
 
 const useCrosshair = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
@@ -14,17 +15,6 @@ const useCrosshair = (
 ) => {
   const hoverXCoord = useRef<number | null>(null);
   const prevHoverXCoord = useRef<number | null>(null);
-
-  const useSvgEvent = <K extends keyof SVGSVGElementEventMap>(
-    eventName: K,
-    eventHandler: (this: SVGSVGElement, ev: SVGSVGElementEventMap[K]) => void
-  ) => useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    svg.addEventListener(eventName, eventHandler);
-    return () => svg.removeEventListener(eventName, eventHandler);
-  }, [eventHandler, eventName]);
 
   const repositionCrosshair = useCallback(() => {
     if (hoverXCoord.current === prevHoverXCoord.current) return;
@@ -73,10 +63,10 @@ const useCrosshair = (
     const mappedPosition = (svgWidth / rect.width) * e.offsetX;
     hoverXCoord.current = mappedPosition < (textWidth + barStartPadding) ? null : mappedPosition;
   }, [svgRef]);
-  useSvgEvent('mousemove', mouseMove);
+  useSvgEvent(svgRef, 'mousemove', mouseMove);
 
   const mouseLeave = useCallback(() => { hoverXCoord.current = null; }, []);
-  useSvgEvent('mouseleave', mouseLeave);
+  useSvgEvent(svgRef, 'mouseleave', mouseLeave);
 };
 
 type VerticalCrossharRef = {
