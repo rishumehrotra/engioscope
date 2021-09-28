@@ -37,7 +37,7 @@ export const getOverviewData = (
     acc.wiMeta[workItem.id] = {
       start: workItem.fields[workItemConfig.startDate]
         ? new Date(workItem.fields[workItemConfig.startDate]).toISOString()
-        : new Date(workItem.fields['System.CreatedDate']).toISOString(),
+        : undefined,
       end: getEndDate(workItem, workItemConfig)?.toISOString(),
       workCenters: workItemConfig.workCenters.map(wc => {
         if (!workItem.fields[wc.startDate] || !workItem.fields[wc.endDate]) return;

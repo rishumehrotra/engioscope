@@ -3,17 +3,14 @@ import React, { Fragment } from 'react';
 import Loading from '../Loading';
 
 const yAxisItemSpacing = 35;
-const yAxisLeftPadding = 100;
-const height = 500;
-const xAxisBottomPadding = 130;
+const yAxisLeftPadding = 70;
+const height = 600;
+const xAxisBottomPadding = 30;
 const xAxisLabelHeight = 30;
 const xAxisLabelWidth = 200;
 const axisOverhang = 10;
-const numberOfHorizontalGridLines = 3;
-const numberOfVerticalGridLines = 5;
-const legendItemsPerLine = 3;
-const legendItemHeight = 20;
-const legendItemPaddingTop = 10;
+const numberOfHorizontalGridLines = 10;
+const numberOfVerticalGridLines = 6;
 
 const Axes: React.FC<{ width: number }> = ({ width }) => (
   <g>
@@ -33,45 +30,6 @@ const Axes: React.FC<{ width: number }> = ({ width }) => (
       stroke="#ddd"
       strokeWidth={1}
     />
-  </g>
-);
-
-type LegendProps<Line> = {
-  lineColor: (line: Line) => string;
-  lines: Line[];
-  lineLabel: (line: Line) => string;
-  width: number;
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Legend = <Line extends any>({
-  lineColor, lines, lineLabel, width
-}: LegendProps<Line>) => (
-  <g>
-    {lines.map((line, i) => (
-      <foreignObject
-        key={lineLabel(line)}
-        x={(
-          ((width - yAxisLeftPadding) / legendItemsPerLine)
-            * (i % legendItemsPerLine)
-        ) + yAxisLeftPadding}
-        y={
-          (height - xAxisBottomPadding + xAxisLabelHeight)
-          + (Math.floor(i / legendItemsPerLine) * (legendItemHeight + legendItemPaddingTop))
-          + legendItemPaddingTop
-        }
-        width={300}
-        height={legendItemHeight}
-      >
-        <div className="flex align-middle text-gray-600 text-sm">
-          <span
-            className="inline-block mr-2 w-7 h-5"
-            style={{ backgroundColor: lineColor(line) }}
-          />
-          {lineLabel(line)}
-        </div>
-      </foreignObject>
-    ))}
   </g>
 );
 
@@ -98,7 +56,7 @@ const GridLines = <Point extends unknown>({
               y1={yCoord(gridLinesGap * i)}
               x2={width}
               y2={yCoord(gridLinesGap * i)}
-              stroke="#ddd"
+              stroke="#e9e9e9"
               strokeWidth={1}
             />
             <foreignObject
@@ -107,7 +65,7 @@ const GridLines = <Point extends unknown>({
               width={yAxisLeftPadding - axisOverhang}
               height={yAxisItemSpacing}
             >
-              <div className="flex text-gray-400 justify-end text-sm w-full h-8 items-center">
+              <div className="flex text-gray-500 justify-end text-sm w-full h-8 items-center">
                 {yAxisLabel(i * gridLinesGap)}
               </div>
             </foreignObject>
@@ -115,26 +73,30 @@ const GridLines = <Point extends unknown>({
         ))}
       </g>
       <g>
-        {range(1, numberOfVerticalGridLines).map(i => (
+        {range(1, numberOfVerticalGridLines + 1).map(i => (
           <Fragment key={i}>
             <line
               x1={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines)}
               y1={0}
               x2={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines)}
               y2={(height - xAxisBottomPadding)}
-              stroke="#ddd"
-              strokeWidth={1}
+              stroke="#e9e9e9"
+              strokeWidth={i === numberOfVerticalGridLines ? 3 : 1}
             />
-            <foreignObject
-              x={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines) - (xAxisLabelWidth / 2)}
-              y={height - xAxisBottomPadding + (axisOverhang / 2)}
-              width={xAxisLabelWidth}
-              height={xAxisLabelHeight}
-            >
-              <div className="flex text-gray-400 justify-center text-sm w-full items-center">
-                {xAxisLabel(points[i * (points.length / (numberOfVerticalGridLines + 1))])}
-              </div>
-            </foreignObject>
+            {i === numberOfVerticalGridLines
+              ? null
+              : (
+                <foreignObject
+                  x={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines) - (xAxisLabelWidth / 2)}
+                  y={height - xAxisBottomPadding + (axisOverhang / 2)}
+                  width={xAxisLabelWidth}
+                  height={xAxisLabelHeight}
+                >
+                  <div className="flex text-gray-500 justify-center text-sm w-full items-center">
+                    {xAxisLabel(points[Math.round(i * (points.length / (numberOfVerticalGridLines + 1)))])}
+                  </div>
+                </foreignObject>
+              )}
           </Fragment>
         ))}
       </g>
@@ -197,7 +159,7 @@ const LineGraph = <L, P>({
           strokeLinejoin="round"
         />
       ))}
-      <Legend lineColor={lineColor} lines={lines} lineLabel={lineLabel} width={width} />
+      {/* <Legend lineColor={lineColor} lines={lines} lineLabel={lineLabel} width={width} /> */}
     </svg>
   );
 };

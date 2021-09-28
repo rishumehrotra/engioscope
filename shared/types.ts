@@ -170,7 +170,7 @@ export type Overview = {
   types: Record<string, UIWorkItemType>;
   groups: Record<string, { wit: string; label: string; name: string }>;
   wiMeta: Record<number, {
-    start: string;
+    start?: string;
     end?: string;
     workCenters: {
       label: string;
