@@ -233,7 +233,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         <p className="text-base text-gray-600 mb-4">
           Work items closed per day over the last month
         </p>
-        <div className="flex gap-2">
+        <div className="grid gap-2 grid-flow-col">
           <LineGraph<ClosedWILine, ClosedWIPoint>
             lines={closedWorkItemsForGraph}
             points={x => x.workItems}
@@ -247,23 +247,33 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             xAxisLabel={x => x.date.toISOString().split('T')[0]}
           />
           <div>
-            <div>
+            <div className="bg-gray-800 text-white p-2 mb-2">
               <h3>
                 Overall velocity
               </h3>
-              {closedWorkItemsForGraph.reduce((acc, { workItems }) => (
-                acc + workItems.reduce((a, wi) => wi.workItemIds.length, 0)
-              ), 0)}
-            </div>
-            {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
-              <div key={witId + groupName} style={{ background: lineColor({ witId, groupName }) }}>
-                <h4>
-                  {projectAnalysis.overview.types[witId].name[1]}
-                  {groupName === noGroup ? '' : ` - ${groupName}`}
-                </h4>
-                {workItems.reduce((a, wi) => a + wi.workItemIds.length, 0)}
+              <div className="text-2xl">
+                {closedWorkItemsForGraph.reduce((acc, { workItems }) => (
+                  acc + widsInGroup(workItems).length
+                ), 0)}
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
+                <div
+                  key={witId + groupName}
+                  style={{ background: lineColor({ witId, groupName }) }}
+                  className="p-2"
+                >
+                  <h4 className="text-sm">
+                    {projectAnalysis.overview.types[witId].name[1]}
+                    {groupName === noGroup ? '' : ` - ${groupName}`}
+                  </h4>
+                  <div className="text-2xl">
+                    {workItems.reduce((a, wi) => a + wi.workItemIds.length, 0)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -275,7 +285,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         <p className="text-base text-gray-600 mb-4">
           Average time taken to complete a work item
         </p>
-        <div className="flex gap-2">
+        <div className="grid gap-2 grid-flow-col">
           <LineGraph<ClosedWILine, ClosedWIPoint>
             lines={closedWorkItemsForGraph}
             points={x => x.workItems}
@@ -299,46 +309,56 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             xAxisLabel={x => x.date.toISOString().split('T')[0]}
           />
           <div>
-            <div>
+            <div className="bg-gray-800 text-white p-2 mb-2">
               <h3>
                 Overall average cycle time
               </h3>
-              {prettyMilliseconds(closedWorkItemsForGraph.reduce<number[]>((acc, { workItems }) => (
-                acc.concat(workItems.flatMap(wi => wi.workItemIds))
-              ), []).reduce((acc, wid) => (
-                acc + (
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
-                  - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
-                )
-              ), 0) / (
-                closedWorkItemsForGraph.reduce<number[]>((acc, { workItems }) => (
+              <div className="text-2xl">
+                {prettyMilliseconds(closedWorkItemsForGraph.reduce<number[]>((acc, { workItems }) => (
                   acc.concat(workItems.flatMap(wi => wi.workItemIds))
-                ), []).length
-              ), { compact: true })}
-            </div>
-            {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
-              <div key={witId + groupName} style={{ background: lineColor({ witId, groupName }) }}>
-                <h4>
-                  {projectAnalysis.overview.types[witId].name[1]}
-                  {groupName === noGroup ? '' : ` - ${groupName}`}
-                </h4>
-                {
-                  widsInGroup(workItems).length
-                    ? prettyMilliseconds(
-                      widsInGroup(workItems).reduce((acc, wid) => (
-                        acc + (
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                          new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
-                            - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
-                        )
-                      ), 0) / widsInGroup(workItems).length,
-                      { compact: true }
-                    )
-                    : '-'
-                }
+                ), []).reduce((acc, wid) => (
+                  acc + (
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                    - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                  )
+                ), 0) / (
+                  closedWorkItemsForGraph.reduce<number[]>((acc, { workItems }) => (
+                    acc.concat(workItems.flatMap(wi => wi.workItemIds))
+                  ), []).length
+                ), { compact: true })}
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
+                <div
+                  key={witId + groupName}
+                  style={{ background: lineColor({ witId, groupName }) }}
+                  className="p-2"
+                >
+                  <h4 className="text-sm">
+                    {projectAnalysis.overview.types[witId].name[1]}
+                    {groupName === noGroup ? '' : ` - ${groupName}`}
+                  </h4>
+                  <div className="text-2xl">
+                    {
+                      widsInGroup(workItems).length
+                        ? prettyMilliseconds(
+                          widsInGroup(workItems).reduce((acc, wid) => (
+                            acc + (
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                              new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                              - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                            )
+                          ), 0) / widsInGroup(workItems).length,
+                          { compact: true }
+                        )
+                        : '-'
+                    }
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -350,7 +370,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         <p className="text-base text-gray-600 mb-4">
           Time spent working vs waiting
         </p>
-        <div className="flex gap-2">
+        <div className="grid gap-2 grid-flow-col">
           <LineGraph<ClosedWILine, ClosedWIPoint>
             lines={closedWorkItemsForGraph}
             points={x => x.workItems}
@@ -380,16 +400,70 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             xAxisLabel={x => x.date.toISOString().split('T')[0]}
           />
           <div>
-            <div>
+            <div className="bg-gray-800 text-white p-2 mb-2">
               <h3>
                 Overall flow efficiency
               </h3>
+              <div className="text-2xl">
+                {
+                  Math.round((closedWorkItemsForGraph
+                    .reduce<number[]>((acc, { workItems }) => acc.concat(widsInGroup(workItems)), [])
+                    .reduce((acc, wid) => (
+                      acc + projectAnalysis.overview.wiMeta[wid].workCenters.reduce((a, wc) => (
+                        a + wc.time
+                      ), 0)
+                    ), 0) * 100)
+                  / closedWorkItemsForGraph
+                    .reduce<number[]>((acc, { workItems }) => (
+                      acc.concat(widsInGroup(workItems))
+                    ), [])
+                    .reduce((acc, wid) => (
+                      acc + (
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                        - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                      )
+                    ), 0))
+                }
+                %
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {closedWorkItemsForGraph.map(({ workItems, witId, groupName }) => (
+                <div
+                  key={witId + groupName}
+                  style={{ background: lineColor({ witId, groupName }) }}
+                  className="p-2"
+                >
+                  <h4 className="text-sm">
+                    {projectAnalysis.overview.types[witId].name[1]}
+                    {groupName === noGroup ? '' : ` - ${groupName}`}
+                  </h4>
+                  <div className="text-2xl">
+                    {
+                      widsInGroup(workItems).length
+                        ? `${Math.round((widsInGroup(workItems).reduce((acc, wid) => (
+                          acc + projectAnalysis.overview.wiMeta[wid].workCenters.reduce((a, wc) => (
+                            a + wc.time
+                          ), 0)
+                        ), 0) * 100) / widsInGroup(workItems).reduce((acc, wid) => (
+                          acc + (
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            new Date(projectAnalysis.overview.wiMeta[wid].end!).getTime()
+                            - new Date(projectAnalysis.overview.wiMeta[wid].start).getTime()
+                          )
+                        ), 0))}%`
+                        : '-'
+                    }
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="border-b-2 border-black">
+      <div className="border-b-2 border-black mt-20">
         <h2 className="font-bold">WIP work items</h2>
         {Object.entries(organizedOpenWorkItems).map(([witId, group]) => (
           Object.entries(group).map(([groupName, workItemIds]) => (

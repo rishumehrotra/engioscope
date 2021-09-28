@@ -5,7 +5,7 @@ import Loading from '../Loading';
 const yAxisItemSpacing = 35;
 const yAxisLeftPadding = 100;
 const height = 500;
-const xAxisBottomPadding = 100;
+const xAxisBottomPadding = 130;
 const xAxisLabelHeight = 30;
 const xAxisLabelWidth = 200;
 const axisOverhang = 10;
