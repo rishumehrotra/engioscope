@@ -1,6 +1,8 @@
 import { range } from 'rambda';
 import type { MutableRefObject } from 'react';
-import React, { useCallback, Fragment, useRef } from 'react';
+import React, {
+  useState, useCallback, Fragment, useRef
+} from 'react';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 import useSvgEvent from '../../hooks/use-svg-event';
 import Loading from '../Loading';
@@ -14,6 +16,9 @@ const xAxisLabelWidth = 100;
 const axisOverhang = 10;
 const numberOfHorizontalGridLines = 10;
 const numberOfVerticalGridLines = 6;
+const hoverBubbleWidth = 300;
+
+const hoverBubbleMaxHeight = (height * 2) / 3;
 
 const Axes: React.FC<{ width: number }> = ({ width }) => (
   <g>
@@ -110,10 +115,13 @@ const GridLines = <Point extends unknown>({
 const useCrosshair = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
   crosshairRef: MutableRefObject<SVGGElement | null>,
-  width: number
+  width: number,
+  closestPointIndex: (xCoord: number) => number,
+  xCoord: (index: number) => number
 ) => {
   const hoverXCoord = useRef<number | null>(null);
   const prevHoverXCoord = useRef<number | null>(null);
+  const [closestIndex, setClosestIndex] = useState<number | null>(null);
 
   const repositionCrosshair = useCallback(() => {
     if (hoverXCoord.current === prevHoverXCoord.current) return;
@@ -124,31 +132,40 @@ const useCrosshair = (
 
     prevHoverXCoord.current = hoverXCoord.current;
 
-    if (!hoverXCoord.current || hoverXCoord.current < xAxisLabelWidth / 2) {
+    if (!hoverXCoord.current || hoverXCoord.current < yAxisLeftPadding) {
+      svg.style.cursor = 'default';
       crosshair.style.display = 'none';
       return;
     }
 
+    svg.style.cursor = 'pointer';
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const crosshairLabel = crosshair.querySelector('div')!;
 
-    crosshair.style.display = '';
-    crosshair.style.transform = `translateX(${hoverXCoord.current}px)`;
-    crosshairLabel.innerHTML = '';
+    const rect = svg.getBoundingClientRect();
+    const mappedPosition = (width / rect.width) * hoverXCoord.current;
+    const closest = closestPointIndex(mappedPosition);
 
-    const closeToRightEdge = width - hoverXCoord.current < xAxisLabelWidth / 2;
+    crosshair.style.display = '';
+    crosshair.style.transform = `translateX(${xCoord(closest)}px)`;
+    if (closest !== closestIndex) setClosestIndex(closest);
+
+    const closeToRightEdge = width - xCoord(closest) < hoverBubbleWidth / 2;
+    const closeToLeftEdge = xCoord(closest) < hoverBubbleWidth / 2;
     if (closeToRightEdge) {
-      crosshairLabel.style.transformOrigin = 'right';
+      // crosshairLabel.style.transformOrigin = 'right';
       crosshairLabel.style.transform = (
-        `translateX(${(width - hoverXCoord.current - xAxisLabelWidth / 2)}px)`
+        `translateX(${(width - xCoord(closest) - (hoverBubbleWidth / 2))}px)`
       );
-      crosshairLabel.style.textAlign = 'right';
+    } else if (closeToLeftEdge) {
+      crosshairLabel.style.transform = (
+        `translateX(${hoverBubbleWidth / 2 - xCoord(closest)}px)`
+      );
     } else {
       crosshairLabel.style.transform = 'translateX(0)';
-      crosshairLabel.style.textAlign = 'center';
-      crosshairLabel.style.width = `${xAxisLabelWidth}px`;
+      crosshairLabel.style.width = `${hoverBubbleWidth}px`;
     }
-  }, [svgRef, crosshairRef, width]);
+  }, [svgRef, crosshairRef, width, closestPointIndex, xCoord, closestIndex]);
   useRequestAnimationFrame(repositionCrosshair);
 
   const mouseMove = useCallback((e: MouseEvent) => {
@@ -158,44 +175,50 @@ const useCrosshair = (
     }
     const rect = svgRef.current.getBoundingClientRect();
     const mappedPosition = (width / rect.width) * e.offsetX;
-    hoverXCoord.current = mappedPosition < xAxisLabelWidth ? null : mappedPosition;
+    hoverXCoord.current = mappedPosition < yAxisLeftPadding ? null : mappedPosition;
   }, [svgRef, width]);
   useSvgEvent(svgRef, 'mousemove', mouseMove);
 
   const mouseLeave = useCallback(() => { hoverXCoord.current = null; }, []);
   useSvgEvent(svgRef, 'mouseleave', mouseLeave);
+
+  return closestIndex;
 };
 
 type VerticalCrosshairProps = {
   svgRef: MutableRefObject<SVGSVGElement | null>;
   width: number;
+  closestPointIndex: (xCoord: number) => number;
+  xCoord: (index: number) => number;
+  contents: (pointIndex: number) => React.ReactNode;
+  crosshairWidth: number;
 };
 
-const VerticalCrosshair = ({ svgRef, width }: VerticalCrosshairProps) => {
+const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
+  svgRef, width, closestPointIndex, xCoord, contents, crosshairWidth
+}) => {
   const crosshairRef = useRef<SVGGElement | null>(null);
-  useCrosshair(svgRef, crosshairRef, width);
+  const renderIndex = useCrosshair(svgRef, crosshairRef, width, closestPointIndex, xCoord);
 
   return (
-    <g ref={crosshairRef} style={{ display: 'none' }}>
-      <line
-        x1={0}
-        y1={0}
-        x2={0}
-        y2={height - xAxisBottomPadding}
-        className="pointer-events-none"
-        stroke="#999"
-        strokeWidth="1"
-        strokeDasharray="2,2"
+    <g ref={crosshairRef} className="pointer-events-none" style={{ display: 'none' }}>
+      <rect
+        x={-1 * (crosshairWidth / 2)}
+        y={0}
+        width={crosshairWidth}
+        height={height - xAxisBottomPadding}
+        fill="rgba(51, 170, 250, 0.2)"
       />
       <foreignObject
-        x={-1 * (xAxisLabelWidth / 2)}
-        y={height - xAxisLabelHeight + axisOverhang}
-        width={xAxisLabelWidth}
-        height={xAxisLabelHeight}
+        x={-1 * (hoverBubbleWidth / 2)}
+        y={axisOverhang}
+        width={hoverBubbleWidth}
+        height={hoverBubbleMaxHeight}
         overflow="visible"
       >
-        <div className="text-xs text-gray-500 text-center bg-white">
-          date
+        {/* This div is needed for the useCrosshair hook */}
+        <div>
+          {renderIndex === null ? null : contents(renderIndex)}
         </div>
       </foreignObject>
     </g>
@@ -211,12 +234,13 @@ type LineGraphProps<Line, Point> = {
   yAxisLabel: (value: number) => string;
   lineLabel: (line: Line) => string;
   xAxisLabel: (point: Point) => string;
+  crosshairBubble?: (pointIndex: number) => React.ReactNode;
   className?: string;
 };
 
 const LineGraph = <L, P>({
   lines, points, pointToValue, className, lineColor,
-  yAxisLabel, lineLabel, xAxisLabel
+  yAxisLabel, lineLabel, xAxisLabel, crosshairBubble = () => null
 }: LineGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const width = (points(lines[0]).length) * yAxisItemSpacing;
@@ -229,6 +253,10 @@ const LineGraph = <L, P>({
   const yCoord = useCallback((value: number) => (
     height - ((value / yAxisMax) * (height - xAxisBottomPadding)) - xAxisBottomPadding
   ), [yAxisMax]);
+
+  const closestPointIndex = useCallback((xCoord: number) => (
+    Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing)
+  ), []);
 
   if (!yAxisMax) return <Loading />;
 
@@ -261,8 +289,14 @@ const LineGraph = <L, P>({
           strokeLinejoin="round"
         />
       ))}
-      <VerticalCrosshair svgRef={svgRef} width={width} />
-      {/* <Legend lineColor={lineColor} lines={lines} lineLabel={lineLabel} width={width} /> */}
+      <VerticalCrosshair
+        svgRef={svgRef}
+        width={width}
+        xCoord={xCoord}
+        crosshairWidth={(width - yAxisLeftPadding) / points(lines[0]).length}
+        closestPointIndex={closestPointIndex}
+        contents={crosshairBubble}
+      />
     </svg>
   );
 };

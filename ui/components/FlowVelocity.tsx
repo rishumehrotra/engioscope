@@ -280,6 +280,58 @@ const LegendSidebar: React.FC<LegendSidebarProps> = ({
   </div>
 );
 
+type CrosshairBubbleProps = {
+  data: ReturnType<ReturnType<typeof splitByDateForLineGraph>>;
+  index: number;
+  projectAnalysis: ProjectOverviewAnalysis;
+  groupLabel: ({ witId, groupName }: { witId: string; groupName: string }) => string;
+  title: (x: { witId: string; groupName: string; date: Date; workItemIds: number[] }[]) => ReactNode;
+  itemStat: (x: { witId: string; groupName: string; date: Date; workItemIds: number[] }) => ReactNode;
+};
+
+const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
+  data, index, projectAnalysis, groupLabel, title, itemStat
+}) => {
+  const matching = data
+    .map(line => ({
+      witId: line.witId,
+      groupName: line.groupName,
+      date: line.workItems[index].date,
+      workItemIds: line.workItems[index].workItemIds
+    }))
+    .filter(({ workItemIds }) => workItemIds.length > 0);
+
+  return matching.length
+    ? (
+      <div className="bg-black bg-opacity-80 text-white text-xs p-2">
+        <h2>
+          {title(matching)}
+        </h2>
+        {matching
+          .map(({
+            witId, groupName, date, workItemIds
+          }) => (
+            <div key={witId + groupName}>
+              <div className="flex items-center">
+                <img
+                  className="inline-block mr-1"
+                  alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
+                  src={projectAnalysis.overview.types[witId].icon}
+                  width="16"
+                />
+                {groupLabel({ witId, groupName })}
+                {': '}
+                {itemStat({
+                  witId, groupName, date, workItemIds
+                })}
+              </div>
+            </div>
+          ))}
+      </div>
+    )
+    : null;
+};
+
 const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const organizedClosedWorkItemsByDate = useMemo(
     () => splitOrganizedWorkItemsByDate(
@@ -347,6 +399,16 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             yAxisLabel={x => String(x)}
             lineLabel={groupLabel}
             xAxisLabel={x => shortDate(x.date)}
+            crosshairBubble={(pointIndex: number) => (
+              <CrosshairBubble
+                data={closedWorkItemsForGraph}
+                index={pointIndex}
+                projectAnalysis={projectAnalysis}
+                groupLabel={groupLabel}
+                title={x => `Velocity for ${shortDate(x[0].date)}`}
+                itemStat={x => x.workItemIds.length}
+              />
+            )}
           />
           <LegendSidebar
             heading="Velocity this month"
@@ -363,7 +425,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
       </div>
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl">
+        <h1 className="text-2xl font-semibold">
           Average cycle time
         </h1>
         <p className="text-base text-gray-600 mb-4">
@@ -382,6 +444,23 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
             lineLabel={groupLabel}
             xAxisLabel={x => shortDate(x.date)}
+            crosshairBubble={(pointIndex: number) => (
+              <CrosshairBubble
+                data={closedWorkItemsForGraph}
+                index={pointIndex}
+                projectAnalysis={projectAnalysis}
+                groupLabel={groupLabel}
+                title={x => `Average cycle time for ${shortDate(x[0].date)}`}
+                itemStat={group => (
+                  group.workItemIds.length
+                    ? prettyMilliseconds(
+                      group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length,
+                      { compact: true }
+                    )
+                    : 0
+                )}
+              />
+            )}
           />
           <LegendSidebar
             heading="Overall average cycle time"
@@ -411,7 +490,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
       </div>
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl">
+        <h1 className="text-2xl font-semibold">
           Flow efficiency
         </h1>
         <p className="text-base text-gray-600 mb-4">
@@ -431,6 +510,21 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             yAxisLabel={x => (x === 0 ? 'na' : `${x.toFixed(2)}%`)}
             lineLabel={groupLabel}
             xAxisLabel={x => shortDate(x.date)}
+            crosshairBubble={(pointIndex: number) => (
+              <CrosshairBubble
+                data={closedWorkItemsForGraph}
+                index={pointIndex}
+                projectAnalysis={projectAnalysis}
+                groupLabel={groupLabel}
+                title={x => `Flow efficiency for ${shortDate(x[0].date)}`}
+                itemStat={group => {
+                  const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
+                  const totalTime = group.workItemIds.reduce(...totalCycleTime);
+
+                  return `${Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime)}%`;
+                }}
+              />
+            )}
           />
           <LegendSidebar
             heading="Overall flow efficiency"
