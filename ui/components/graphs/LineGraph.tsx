@@ -16,7 +16,7 @@ const xAxisLabelWidth = 100;
 const axisOverhang = 10;
 const numberOfHorizontalGridLines = 10;
 const numberOfVerticalGridLines = 6;
-const hoverBubbleWidth = 300;
+const hoverBubbleWidth = 350;
 
 const hoverBubbleMaxHeight = (height * 2) / 3;
 
@@ -211,7 +211,7 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
       />
       <foreignObject
         x={-1 * (hoverBubbleWidth / 2)}
-        y={axisOverhang}
+        y={0}
         width={hoverBubbleWidth}
         height={hoverBubbleMaxHeight}
         overflow="visible"

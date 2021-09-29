@@ -1,10 +1,15 @@
 import prettyMilliseconds from 'pretty-ms';
 import { range } from 'rambda';
 import type { ReactNode } from 'react';
-import React, { Fragment, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  Fragment, useCallback, useMemo
+} from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
 import { shortDate } from '../helpers/utils';
+import { useModal } from './common/Modal';
 import LineGraph from './graphs/LineGraph';
+import { contrastColour } from './WorkItemsGanttChart/helpers';
 
 const groupCreator = (overview: Overview) => (
   (workItemId: number) => {
@@ -321,23 +326,34 @@ type CrosshairBubbleProps = {
   groupLabel: (x: GroupLabel) => string;
   title: (x: MatchedDay[]) => ReactNode;
   itemStat: (x: number[]) => ReactNode;
+  lineColor: (x: GroupLabel) => string;
 };
 
 const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
-  data, index, projectAnalysis, groupLabel, title, itemStat
+  data, index, projectAnalysis, groupLabel, title, itemStat, lineColor
 }) => {
   const matching = getMatchingAtIndex(data, index);
 
   return matching.length
     ? (
-      <div className="bg-black bg-opacity-80 text-white text-xs p-2">
-        <h2>
-          {title(matching)}
+      <div className="bg-black bg-opacity-80 text-white text-sm py-3 px-4 rounded-md shadow">
+        <h2
+          className="font-semibold text-base mb-2 grid grid-cols-2 items-end"
+          style={{
+            gridTemplateColumns: '2fr 1fr'
+          }}
+        >
+          <div className="text-xl">
+            {title(matching)}
+          </div>
+          <div className="justify-self-end">
+            {shortDate(matching[0].date)}
+          </div>
         </h2>
         {matching
           .map(({ witId, groupName, workItemIds }) => (
             <div key={witId + groupName}>
-              <div className="flex items-center">
+              <div className="flex items-center pb-1">
                 <img
                   className="inline-block mr-1"
                   alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
@@ -345,8 +361,15 @@ const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
                   width="16"
                 />
                 {groupLabel({ witId, groupName })}
-                {': '}
-                {itemStat(workItemIds)}
+                <span
+                  className="rounded-full bg-white bg-opacity-20 text-xs font-semibold px-2 text-white ml-2 inline-block"
+                  style={{
+                    backgroundColor: lineColor({ witId, groupName }),
+                    color: contrastColour(lineColor({ witId, groupName }))
+                  }}
+                >
+                  {itemStat(workItemIds)}
+                </span>
               </div>
             </div>
           ))}
@@ -363,7 +386,6 @@ type GraphBlockProps = {
   itemStat: (x: number[]) => ReactNode;
   sidebarHeading: string;
   sidebarHeadlineStat: (x: WorkItemLine[]) => ReactNode;
-  onClick?: (pointIndex: number) => void;
 };
 
 const createGraphBlock = ({
@@ -377,48 +399,122 @@ const createGraphBlock = ({
   const workItems = (dataLine: WorkItemLine) => dataLine.workItems;
   const GraphBlock: React.FC<GraphBlockProps> = ({
     graphHeading, graphSubheading, pointToValue,
-    crosshairBubbleTitle, itemStat, onClick,
+    crosshairBubbleTitle, itemStat,
     sidebarHeading, sidebarHeadlineStat
-  }) => (
-    <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-      <h1 className="text-2xl font-semibold">
-        {graphHeading}
-      </h1>
-      <p className="text-base text-gray-600 mb-4">
-        {graphSubheading}
-      </p>
-      <div className="grid gap-8 grid-flow-col">
-        <LineGraph<WorkItemLine, WorkItemPoint>
-          lines={data}
-          points={workItems}
-          pointToValue={pointToValue}
-          lineColor={lineColor}
-          yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
-          lineLabel={groupLabel}
-          xAxisLabel={x => shortDate(x.date)}
-          crosshairBubble={(pointIndex: number) => (
-            <CrosshairBubble
-              data={data}
-              index={pointIndex}
-              projectAnalysis={projectAnalysis}
-              groupLabel={groupLabel}
-              title={crosshairBubbleTitle}
-              itemStat={itemStat}
-            />
+  }) => {
+    const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
+    const [Modal, modalProps, openModal] = useModal();
+
+    const matchingDateForModal = useMemo(() => (
+      dayIndexInModal ? getMatchingAtIndex(data, dayIndexInModal) : null
+    ), [dayIndexInModal]);
+
+    return (
+      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+        <Modal
+          {...modalProps}
+          heading={(
+            <h1 className="text-4xl font-semibold pb-8">
+              {graphHeading}
+              <span className="text-lg font-semibold pl-2">
+                {matchingDateForModal && shortDate(matchingDateForModal[0].date)}
+              </span>
+            </h1>
           )}
-          onClick={onClick}
-        />
-        <LegendSidebar
-          heading={sidebarHeading}
-          headlineStatValue={sidebarHeadlineStat(data)}
-          data={data}
-          projectAnalysis={projectAnalysis}
-          lineColor={lineColor}
-          childStat={itemStat}
-        />
+        >
+          {matchingDateForModal ? (
+            <div className="overflow-y-auto">
+              {matchingDateForModal?.map(({ witId, groupName, workItemIds }) => (
+                <div
+                  key={witId + groupName}
+                  className="mb-8"
+                >
+                  <h3 className="font-semibold text-lg">
+                    {groupLabel({ witId, groupName })}
+                    <span
+                      className="text-base inline-block ml-2 px-3 rounded-full"
+                      style={{
+                        color: contrastColour(lineColor({ witId, groupName })),
+                        backgroundColor: lineColor({ witId, groupName })
+                      }}
+                    >
+                      {itemStat(workItemIds)}
+                    </span>
+                  </h3>
+                  <div className="">
+                    {workItemIds.map(workItemId => (
+                      <div
+                        key={workItemId}
+                        className="py-2 rounded-md"
+                      >
+                        <a
+                          href={projectAnalysis.overview.byId[workItemId].url}
+                          className="text-blue-800 hover:underline inline-flex items-start"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <img
+                            className="inline-block mr-2 mt-1"
+                            alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
+                            src={projectAnalysis.overview.types[witId].icon}
+                            width="16"
+                          />
+                          {projectAnalysis.overview.byId[workItemId].id}
+                          {': '}
+                          {projectAnalysis.overview.byId[workItemId].title}
+                          {itemStat([workItemId])}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </Modal>
+        <h1 className="text-2xl font-semibold">
+          {graphHeading}
+        </h1>
+        <p className="text-base text-gray-600 mb-4">
+          {graphSubheading}
+        </p>
+        <div className="grid gap-8 grid-flow-col">
+          <LineGraph<WorkItemLine, WorkItemPoint>
+            lines={data}
+            points={workItems}
+            pointToValue={pointToValue}
+            lineColor={lineColor}
+            yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
+            lineLabel={groupLabel}
+            xAxisLabel={x => shortDate(x.date)}
+            crosshairBubble={(pointIndex: number) => (
+              <CrosshairBubble
+                data={data}
+                index={pointIndex}
+                projectAnalysis={projectAnalysis}
+                groupLabel={groupLabel}
+                title={crosshairBubbleTitle}
+                itemStat={itemStat}
+                lineColor={lineColor}
+              />
+            )}
+            onClick={(...args) => {
+              setDayIndexInModal(args[0]);
+              openModal();
+            }}
+          />
+          <LegendSidebar
+            heading={sidebarHeading}
+            headlineStatValue={sidebarHeadlineStat(data)}
+            data={data}
+            projectAnalysis={projectAnalysis}
+            lineColor={lineColor}
+            childStat={itemStat}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   return GraphBlock;
 };
 
@@ -481,26 +577,23 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         graphHeading="Velocity"
         graphSubheading="Work items closed per day over the last month"
         pointToValue={x => x.workItemIds.length}
-        crosshairBubbleTitle={x => `Velocity for ${shortDate(x[0].date)}`}
+        crosshairBubbleTitle={() => 'Velocity'}
         itemStat={x => x.length}
         sidebarHeading="Velocity this month"
         sidebarHeadlineStat={x => x.reduce((acc, { workItems }) => (
           acc + widsInGroup(workItems).length
         ), 0)}
-        onClick={(pointIndex: number) => {
-          console.log(pointIndex);
-        }}
       />
 
       <GraphBlock
-        graphHeading="Average cycle Time"
+        graphHeading="Average cycle time"
         graphSubheading="Average time taken to complete a work item"
         pointToValue={group => (
           group.workItemIds.length
             ? group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length
             : 0
         )}
-        crosshairBubbleTitle={x => `Average cycle time for ${shortDate(x[0].date)}`}
+        crosshairBubbleTitle={() => 'Average cycle time'}
         itemStat={workItemIds => (
           workItemIds.length
             ? prettyMilliseconds(
@@ -520,9 +613,6 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             )
             : '-';
         }}
-        onClick={(pointIndex: number) => {
-          console.log(pointIndex);
-        }}
       />
 
       <GraphBlock
@@ -534,7 +624,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
 
           return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
         }}
-        crosshairBubbleTitle={x => `Flow efficiency for ${shortDate(x[0].date)}`}
+        crosshairBubbleTitle={() => 'Flow efficiency'}
         itemStat={workItemIds => {
           const workTime = workItemIds.reduce(...totalWorkCenterTime);
           const totalTime = workItemIds.reduce(...totalCycleTime);
@@ -552,9 +642,6 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
           return cycleTime
             ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
             : 0;
-        }}
-        onClick={(pointIndex: number) => {
-          console.log(pointIndex);
         }}
       />
 
