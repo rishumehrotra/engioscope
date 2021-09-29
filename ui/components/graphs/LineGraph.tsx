@@ -236,11 +236,13 @@ type LineGraphProps<Line, Point> = {
   xAxisLabel: (point: Point) => string;
   crosshairBubble?: (pointIndex: number) => React.ReactNode;
   className?: string;
+  onClick?: (pointIndex: number) => void;
 };
 
 const LineGraph = <L, P>({
   lines, points, pointToValue, className, lineColor,
-  yAxisLabel, lineLabel, xAxisLabel, crosshairBubble = () => null
+  yAxisLabel, lineLabel, xAxisLabel, crosshairBubble = () => null,
+  onClick
 }: LineGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const width = (points(lines[0]).length) * yAxisItemSpacing;
@@ -258,6 +260,12 @@ const LineGraph = <L, P>({
     Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing)
   ), []);
 
+  const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (!onClick) return;
+    const index = closestPointIndex(e.nativeEvent.offsetX);
+    if (index !== null && index >= 0) onClick(index);
+  }, [closestPointIndex, onClick]);
+
   if (!yAxisMax) return <Loading />;
 
   return (
@@ -267,6 +275,7 @@ const LineGraph = <L, P>({
       height={height}
       className={className}
       ref={svgRef}
+      onClick={onSvgClick}
     >
       <Axes width={width} />
       <GridLines

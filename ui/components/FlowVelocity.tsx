@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import { length, prop, range } from 'rambda';
+import { range } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { Fragment, useCallback, useMemo } from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
@@ -191,6 +191,26 @@ const displayTable = (
   </table>
 );
 
+type WorkItemPoint = {
+  date: Date;
+  workItemIds: number[];
+};
+
+type WorkItemLine = {
+  witId: string;
+  groupName: string;
+  workItems: WorkItemPoint[];
+};
+
+type MatchedDay = {
+  date: Date;
+  witId: string;
+  groupName: string;
+  workItemIds: number[];
+};
+
+type GroupLabel = { witId: string; groupName: string };
+
 const getClosedWorkItemsForGraph = splitByDateForLineGraph(
   organizedClosedWorkItems,
   (workItemId, date, overview) => {
@@ -220,7 +240,7 @@ type LegendSidebarProps = {
   headlineStatUnits?: ReactNode;
   data: ReturnType<typeof getClosedWorkItemsForGraph>;
   projectAnalysis: ProjectOverviewAnalysis;
-  lineColor: ({ witId, groupName }: { witId: string; groupName: string }) => string;
+  lineColor: (x: GroupLabel) => string;
   childStat: (workItemIds: number[]) => ReactNode;
 };
 
@@ -280,26 +300,33 @@ const LegendSidebar: React.FC<LegendSidebarProps> = ({
   </div>
 );
 
-type CrosshairBubbleProps = {
-  data: ReturnType<ReturnType<typeof splitByDateForLineGraph>>;
-  index: number;
-  projectAnalysis: ProjectOverviewAnalysis;
-  groupLabel: ({ witId, groupName }: { witId: string; groupName: string }) => string;
-  title: (x: { witId: string; groupName: string; date: Date; workItemIds: number[] }[]) => ReactNode;
-  itemStat: (x: { witId: string; groupName: string; date: Date; workItemIds: number[] }) => ReactNode;
-};
-
-const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
-  data, index, projectAnalysis, groupLabel, title, itemStat
-}) => {
-  const matching = data
+const getMatchingAtIndex = (
+  data: ReturnType<ReturnType<typeof splitByDateForLineGraph>>,
+  index: number
+): MatchedDay[] => (
+  data
     .map(line => ({
       witId: line.witId,
       groupName: line.groupName,
       date: line.workItems[index].date,
       workItemIds: line.workItems[index].workItemIds
     }))
-    .filter(({ workItemIds }) => workItemIds.length > 0);
+    .filter(({ workItemIds }) => workItemIds.length > 0)
+);
+
+type CrosshairBubbleProps = {
+  data: ReturnType<ReturnType<typeof splitByDateForLineGraph>>;
+  index: number;
+  projectAnalysis: ProjectOverviewAnalysis;
+  groupLabel: (x: GroupLabel) => string;
+  title: (x: MatchedDay[]) => ReactNode;
+  itemStat: (x: number[]) => ReactNode;
+};
+
+const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
+  data, index, projectAnalysis, groupLabel, title, itemStat
+}) => {
+  const matching = getMatchingAtIndex(data, index);
 
   return matching.length
     ? (
@@ -308,9 +335,7 @@ const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
           {title(matching)}
         </h2>
         {matching
-          .map(({
-            witId, groupName, date, workItemIds
-          }) => (
+          .map(({ witId, groupName, workItemIds }) => (
             <div key={witId + groupName}>
               <div className="flex items-center">
                 <img
@@ -321,15 +346,80 @@ const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
                 />
                 {groupLabel({ witId, groupName })}
                 {': '}
-                {itemStat({
-                  witId, groupName, date, workItemIds
-                })}
+                {itemStat(workItemIds)}
               </div>
             </div>
           ))}
       </div>
     )
     : null;
+};
+
+type GraphBlockProps = {
+  graphHeading: string;
+  graphSubheading: string;
+  pointToValue: (point: WorkItemPoint) => number;
+  crosshairBubbleTitle: (x: MatchedDay[]) => ReactNode;
+  itemStat: (x: number[]) => ReactNode;
+  sidebarHeading: string;
+  sidebarHeadlineStat: (x: WorkItemLine[]) => ReactNode;
+  onClick?: (pointIndex: number) => void;
+};
+
+const createGraphBlock = ({
+  data, lineColor, groupLabel, projectAnalysis
+}: {
+  data: WorkItemLine[];
+  lineColor: (x: GroupLabel) => string;
+  groupLabel: (x: GroupLabel) => string;
+  projectAnalysis: ProjectOverviewAnalysis;
+}) => {
+  const workItems = (dataLine: WorkItemLine) => dataLine.workItems;
+  const GraphBlock: React.FC<GraphBlockProps> = ({
+    graphHeading, graphSubheading, pointToValue,
+    crosshairBubbleTitle, itemStat, onClick,
+    sidebarHeading, sidebarHeadlineStat
+  }) => (
+    <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+      <h1 className="text-2xl font-semibold">
+        {graphHeading}
+      </h1>
+      <p className="text-base text-gray-600 mb-4">
+        {graphSubheading}
+      </p>
+      <div className="grid gap-8 grid-flow-col">
+        <LineGraph<WorkItemLine, WorkItemPoint>
+          lines={data}
+          points={workItems}
+          pointToValue={pointToValue}
+          lineColor={lineColor}
+          yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
+          lineLabel={groupLabel}
+          xAxisLabel={x => shortDate(x.date)}
+          crosshairBubble={(pointIndex: number) => (
+            <CrosshairBubble
+              data={data}
+              index={pointIndex}
+              projectAnalysis={projectAnalysis}
+              groupLabel={groupLabel}
+              title={crosshairBubbleTitle}
+              itemStat={itemStat}
+            />
+          )}
+          onClick={onClick}
+        />
+        <LegendSidebar
+          heading={sidebarHeading}
+          headlineStatValue={sidebarHeadlineStat(data)}
+          data={data}
+          projectAnalysis={projectAnalysis}
+          lineColor={lineColor}
+          childStat={itemStat}
+        />
+      </div>
+    </div>
+  );
+  return GraphBlock;
 };
 
 const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
@@ -365,7 +455,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
     0
   ] as const, [projectAnalysis]);
 
-  const lineColor = useCallback(({ witId, groupName }: { witId: string; groupName: string }) => {
+  const lineColor = useCallback(({ witId, groupName }: GroupLabel) => {
     if (!colorCache.has(witId + groupName)) {
       colorCache.set(witId + groupName, colorPalette[colorCache.size % colorPalette.length]);
     }
@@ -373,189 +463,100 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
     return colorCache.get(witId + groupName)!;
   }, []);
 
-  const groupLabel = useCallback(({ witId, groupName }: { witId: string; groupName: string }) => (
+  const groupLabel = useCallback(({ witId, groupName }: GroupLabel) => (
     projectAnalysis.overview.types[witId].name[1]
       + (groupName === noGroup ? '' : ` - ${groupName}`)
   ), [projectAnalysis.overview.types]);
 
-  type ClosedWILine = typeof closedWorkItemsForGraph[number];
-  type ClosedWIPoint = typeof closedWorkItemsForGraph[number]['workItems'][number];
+  const GraphBlock = useMemo(() => createGraphBlock({
+    data: closedWorkItemsForGraph,
+    lineColor,
+    groupLabel,
+    projectAnalysis
+  }), [closedWorkItemsForGraph, groupLabel, lineColor, projectAnalysis]);
 
   return (
     <div>
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl font-semibold">
-          Velocity
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          Work items closed per day over the last month
-        </p>
-        <div className="grid gap-8 grid-flow-col">
-          <LineGraph<ClosedWILine, ClosedWIPoint>
-            lines={closedWorkItemsForGraph}
-            points={x => x.workItems}
-            pointToValue={x => x.workItemIds.length}
-            lineColor={lineColor}
-            yAxisLabel={x => String(x)}
-            lineLabel={groupLabel}
-            xAxisLabel={x => shortDate(x.date)}
-            crosshairBubble={(pointIndex: number) => (
-              <CrosshairBubble
-                data={closedWorkItemsForGraph}
-                index={pointIndex}
-                projectAnalysis={projectAnalysis}
-                groupLabel={groupLabel}
-                title={x => `Velocity for ${shortDate(x[0].date)}`}
-                itemStat={x => x.workItemIds.length}
-              />
-            )}
-          />
-          <LegendSidebar
-            heading="Velocity this month"
-            headlineStatValue={closedWorkItemsForGraph.reduce((acc, { workItems }) => (
-              acc + widsInGroup(workItems).length
-            ), 0)}
-            headlineStatUnits="work items"
-            data={closedWorkItemsForGraph}
-            projectAnalysis={projectAnalysis}
-            lineColor={lineColor}
-            childStat={length}
-          />
-        </div>
-      </div>
+      <GraphBlock
+        graphHeading="Velocity"
+        graphSubheading="Work items closed per day over the last month"
+        pointToValue={x => x.workItemIds.length}
+        crosshairBubbleTitle={x => `Velocity for ${shortDate(x[0].date)}`}
+        itemStat={x => x.length}
+        sidebarHeading="Velocity this month"
+        sidebarHeadlineStat={x => x.reduce((acc, { workItems }) => (
+          acc + widsInGroup(workItems).length
+        ), 0)}
+        onClick={(pointIndex: number) => {
+          console.log(pointIndex);
+        }}
+      />
 
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl font-semibold">
-          Average cycle time
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          Average time taken to complete a work item
-        </p>
-        <div className="grid gap-8 grid-flow-col">
-          <LineGraph<ClosedWILine, ClosedWIPoint>
-            lines={closedWorkItemsForGraph}
-            points={prop('workItems')}
-            pointToValue={group => (
-              group.workItemIds.length
-                ? group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length
-                : 0
-            )}
-            lineColor={lineColor}
-            yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
-            lineLabel={groupLabel}
-            xAxisLabel={x => shortDate(x.date)}
-            crosshairBubble={(pointIndex: number) => (
-              <CrosshairBubble
-                data={closedWorkItemsForGraph}
-                index={pointIndex}
-                projectAnalysis={projectAnalysis}
-                groupLabel={groupLabel}
-                title={x => `Average cycle time for ${shortDate(x[0].date)}`}
-                itemStat={group => (
-                  group.workItemIds.length
-                    ? prettyMilliseconds(
-                      group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length,
-                      { compact: true }
-                    )
-                    : 0
-                )}
-              />
-            )}
-          />
-          <LegendSidebar
-            heading="Overall average cycle time"
-            headlineStatValue={(() => {
-              const allWids = closedWorkItemsForGraph.reduce(...allWorkItemIds);
+      <GraphBlock
+        graphHeading="Average cycle Time"
+        graphSubheading="Average time taken to complete a work item"
+        pointToValue={group => (
+          group.workItemIds.length
+            ? group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length
+            : 0
+        )}
+        crosshairBubbleTitle={x => `Average cycle time for ${shortDate(x[0].date)}`}
+        itemStat={workItemIds => (
+          workItemIds.length
+            ? prettyMilliseconds(
+              workItemIds.reduce(...totalCycleTime) / workItemIds.length,
+              { compact: true }
+            )
+            : 0
+        )}
+        sidebarHeading="Overall average cycle time"
+        sidebarHeadlineStat={data => {
+          const allWids = data.reduce(...allWorkItemIds);
 
-              return allWids.length
-                ? prettyMilliseconds(
-                  allWids.reduce(...totalCycleTime) / allWids.length,
-                  { compact: true }
-                )
-                : '-';
-            })()}
-            data={closedWorkItemsForGraph}
-            projectAnalysis={projectAnalysis}
-            lineColor={lineColor}
-            childStat={wids => (
-              wids.length
-                ? prettyMilliseconds(
-                  wids.reduce(...totalCycleTime) / wids.length,
-                  { compact: true }
-                )
-                : '-'
-            )}
-          />
-        </div>
-      </div>
+          return allWids.length
+            ? prettyMilliseconds(
+              allWids.reduce(...totalCycleTime) / allWids.length,
+              { compact: true }
+            )
+            : '-';
+        }}
+        onClick={(pointIndex: number) => {
+          console.log(pointIndex);
+        }}
+      />
 
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl font-semibold">
-          Flow efficiency
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          Time spent working vs waiting
-        </p>
-        <div className="grid gap-8 grid-flow-col">
-          <LineGraph<ClosedWILine, ClosedWIPoint>
-            lines={closedWorkItemsForGraph}
-            points={x => x.workItems}
-            pointToValue={group => {
-              const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
-              const totalTime = group.workItemIds.reduce(...totalCycleTime);
+      <GraphBlock
+        graphHeading="Flow efficiency"
+        graphSubheading="Time spent waiting vs working"
+        pointToValue={group => {
+          const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
+          const totalTime = group.workItemIds.reduce(...totalCycleTime);
 
-              return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
-            }}
-            lineColor={lineColor}
-            yAxisLabel={x => (x === 0 ? 'na' : `${x.toFixed(2)}%`)}
-            lineLabel={groupLabel}
-            xAxisLabel={x => shortDate(x.date)}
-            crosshairBubble={(pointIndex: number) => (
-              <CrosshairBubble
-                data={closedWorkItemsForGraph}
-                index={pointIndex}
-                projectAnalysis={projectAnalysis}
-                groupLabel={groupLabel}
-                title={x => `Flow efficiency for ${shortDate(x[0].date)}`}
-                itemStat={group => {
-                  const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
-                  const totalTime = group.workItemIds.reduce(...totalCycleTime);
+          return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
+        }}
+        crosshairBubbleTitle={x => `Flow efficiency for ${shortDate(x[0].date)}`}
+        itemStat={workItemIds => {
+          const workTime = workItemIds.reduce(...totalWorkCenterTime);
+          const totalTime = workItemIds.reduce(...totalCycleTime);
 
-                  return `${Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime)}%`;
-                }}
-              />
-            )}
-          />
-          <LegendSidebar
-            heading="Overall flow efficiency"
-            headlineStatValue={(() => {
-              const allWids = closedWorkItemsForGraph.reduce<number[]>(
-                (acc, { workItems }) => acc.concat(widsInGroup(workItems)),
-                []
-              );
-              const cycleTime = allWids.reduce(...totalCycleTime);
+          return `${Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime)}%`;
+        }}
+        sidebarHeading="Overall flow efficiency"
+        sidebarHeadlineStat={data => {
+          const allWids = data.reduce<number[]>(
+            (acc, { workItems }) => acc.concat(widsInGroup(workItems)),
+            []
+          );
+          const cycleTime = allWids.reduce(...totalCycleTime);
 
-              return cycleTime
-                ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
-                : 0;
-            })()}
-            headlineStatUnits="%"
-            data={closedWorkItemsForGraph}
-            projectAnalysis={projectAnalysis}
-            lineColor={lineColor}
-            childStat={wids => {
-              const cycleTime = wids.reduce(...totalCycleTime);
-
-              return cycleTime
-                ? `${Math.round(
-                  (wids.reduce(...totalWorkCenterTime) * 100)
-                    / cycleTime
-                )}%`
-                : '-';
-            }}
-          />
-        </div>
-      </div>
+          return cycleTime
+            ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
+            : 0;
+        }}
+        onClick={(pointIndex: number) => {
+          console.log(pointIndex);
+        }}
+      />
 
       <div className="border-b-2 border-black mt-20">
         <h2 className="font-bold">WIP work items</h2>
