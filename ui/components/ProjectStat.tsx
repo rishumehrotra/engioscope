@@ -1,8 +1,8 @@
+import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../shared/types';
 import usePopover from '../hooks/use-popover';
 import type { FeaturesAndBugsSummaryProps } from './FeaturesAndBugsSummary';
-import WorkItemCharts from './WorkItemCharts';
 
 type Stat = {
   title: string;
@@ -17,29 +17,30 @@ export type ProjectStatProps = {
   childStats?: Stat[];
   chartType?: ChartType;
   isOpen?: boolean;
-  hasPopover?: boolean;
   workItemType?: (workItem: UIWorkItem) => UIWorkItemType;
+  popupContents?: (x: { topStats: Stat[]; childStats?: Stat[] }) => ReactNode;
 };
 
 const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryProps>> = ({
-  topStats, childStats, workItems, bugLeakage, chartType, hasPopover, workItemType
+  topStats, childStats, popupContents
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();
 
-  const selectChartType = useCallback(
+  const onButtonClick = useCallback(
     () => {
-      if (!hasPopover) return;
+      if (!popupContents) return;
       setIsOpen(!isOpen);
     },
-    [hasPopover, isOpen, setIsOpen]
+    [popupContents, isOpen, setIsOpen]
   );
 
   return (
     <li className="relative">
       <button
         className={`p-2 border border-gray-200 bg-white shadow-sm ml-1 rounded flex
-          ${isOpen ? 'border-gray-300 transform -translate-y-1' : ''}`}
-        onClick={selectChartType}
+          ${isOpen ? 'border-gray-300 transform -translate-y-1' : ''}
+          ${popupContents ? 'cursor-pointer' : 'cursor-default'}`}
+        onClick={onButtonClick}
       >
         {topStats ? topStats.map(({ title, value, tooltip }) => (
           <div
@@ -69,16 +70,15 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
           </div>
         )) : null}
       </button>
-      { isOpen && (workItems || bugLeakage) ? (
-        <WorkItemCharts
+      {popupContents && isOpen && (
+        <div
           ref={ref}
-          workItems={workItems}
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          workItemType={workItemType!}
-          bugLeakage={bugLeakage}
-          chartType={chartType}
-        />
-      ) : null}
+          style={{ top: '70px' }}
+          className="flex absolute right-0 z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-md border border-gray-300"
+        >
+          {popupContents({ topStats, childStats })}
+        </div>
+      )}
     </li>
   );
 };

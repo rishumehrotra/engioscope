@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
-import type { UIWorkItem, UIWorkItemRevision } from '../../shared/types';
+import type { ProjectWorkItemAnalysis, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { workItemMetrics, workItemRevisions } from '../network';
 import { dontFilter } from '../helpers/utils';
 import WorkItem from '../components/WorkItemHealth';
@@ -15,6 +15,7 @@ import Loading from '../components/Loading';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
 import FeaturesAndBugsSummary from '../components/FeaturesAndBugsSummary';
+import { workItemByIdUsing } from '../helpers/work-item-utils';
 
 const colorPalette = [
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -52,21 +53,24 @@ const useRevisionsForCollection = () => {
   return [revisions, getRevisions] as const;
 };
 
-const WorkItems: React.FC = () => {
-  const workItemAnalysis = useFetchForProject(workItemMetrics);
+const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({ workItemAnalysis }) => {
   const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam<string>('search');
   const colorsForStages = useRef<Record<string, string>>({});
   const [page, loadMore] = usePagination();
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const workItems = workItemAnalysis.workItems!;
+
   const sorterMap = useMemo(() => {
-    if (workItemAnalysis === 'loading') return sorters(() => 0);
     const { workItems } = workItemAnalysis;
     if (workItems === null) return sorters(() => 0);
     return sorters((id: number) => (workItems.ids[id] || []).length);
   }, [workItemAnalysis]);
 
   const sorter = useSort(sorterMap, 'Bundle size');
+
+  const workItemById = useMemo(() => workItemByIdUsing(workItems.byId), [workItems.byId]);
 
   const colorForStage = useCallback((stageName: string) => {
     if (colorsForStages.current[stageName]) return colorsForStages.current[stageName];
@@ -76,16 +80,15 @@ const WorkItems: React.FC = () => {
   }, [colorsForStages]);
 
   const filteredWorkItems = useMemo(() => {
-    if (workItemAnalysis === 'loading') return [];
     const { workItems } = workItemAnalysis;
     if (!workItems) return [];
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const topLevelWorkItems = workItems.ids[0]!.map(id => workItems.byId[id]);
+    const topLevelWorkItems = workItems.ids[0]!.map(workItemById);
     return topLevelWorkItems
       .filter(search === undefined ? dontFilter : bySearchTerm(search))
       .sort(sorter);
-  }, [search, sorter, workItemAnalysis]);
+  }, [search, sorter, workItemAnalysis, workItemById]);
 
   const [topWorkItems, bottomWorkItems] = useMemo(() => (
     [topItems(page, filteredWorkItems), bottomItems(filteredWorkItems)]
@@ -96,16 +99,10 @@ const WorkItems: React.FC = () => {
     getRevisions(ids);
   }, [filteredWorkItems, getRevisions, page, workItemAnalysis]);
 
-  const workItemType = useCallback((workItem: UIWorkItem) => {
-    if (workItemAnalysis === 'loading') throw new Error('Too soon');
+  const workItemType = useCallback((workItem: UIWorkItem) => (
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return workItemAnalysis.workItems!.types[workItem.typeId];
-  }, [workItemAnalysis]);
-
-  if (workItemAnalysis === 'loading') return <Loading />;
-  if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
-
-  const { workItems } = workItemAnalysis;
+    workItemAnalysis.workItems!.types[workItem.typeId]
+  ), [workItemAnalysis]);
 
   return (
     <>
@@ -113,8 +110,10 @@ const WorkItems: React.FC = () => {
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
         <FeaturesAndBugsSummary
           workItems={filteredWorkItems}
+          workItemById={workItemById}
           workItemType={workItemType}
-          bugLeakage={workItemAnalysis.workItems.bugLeakage}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          bugLeakage={workItemAnalysis.workItems!.bugLeakage}
         />
       </div>
 
@@ -152,4 +151,12 @@ const WorkItems: React.FC = () => {
   );
 };
 
+const WorkItems: React.FC = () => {
+  const workItemAnalysis = useFetchForProject(workItemMetrics);
+
+  if (workItemAnalysis === 'loading') return <Loading />;
+  if (!workItemAnalysis.workItems) return <div>No work items found.</div>;
+
+  return <WorkItemsInternal workItemAnalysis={workItemAnalysis} />;
+};
 export default WorkItems;

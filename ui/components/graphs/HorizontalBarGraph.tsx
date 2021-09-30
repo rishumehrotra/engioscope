@@ -15,9 +15,10 @@ const barWidth = (value: number, maxValue: number) => (
 type HorizontalBarGraphProps = {
   graphData: { label: string; value: number; color: string }[];
   width: number;
+  onBarClick?: (x: {label: string; value: number; color: string}) => void;
 };
 
-const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, width }) => {
+const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, width, onBarClick }) => {
   const height = useMemo(() => (graphData.length * (barThickness + barSpacing)) - barSpacing, [graphData]);
   const maxValue = useMemo(() => Math.max(...graphData.map(d => d.value)), [graphData]);
   const putLabelInBar = (value: number) => value > maxValue * 0.5;
@@ -43,6 +44,8 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, widt
             width={barWidth(value, maxValue)}
             height={barThickness}
             fill={color}
+            className={onBarClick ? 'cursor-pointer' : ''}
+            onClick={() => onBarClick?.({ label, value, color })}
           />
           <foreignObject
             x={putLabelInBar(value)
@@ -51,6 +54,7 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, widt
             y={index * (barThickness + barSpacing)}
             width={putLabelInBar(value) ? barWidth(value, maxValue) : width - barWidth(value, maxValue) - yAxisLabelWidth}
             height={barThickness}
+            className="pointer-events-none"
           >
             <div className={`h-full flex items-center px-2 font-semibold ${putLabelInBar(value) ? 'justify-end text-white' : ''}`}>
               {`${label} ${value}`}
