@@ -319,6 +319,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
         if (!collection.workitems.environmentField) return acc; // Stupid line for TS
         if (!workItem.fields['System.WorkItemType'].toLowerCase().includes('bug')) return acc;
         if (!workItem.fields[collection.workitems.environmentField]) return acc;
+        if (workItem.fields['System.State'] === 'Withdrawn') return acc;
 
         const env = workItem.fields[collection.workitems.environmentField];
 
