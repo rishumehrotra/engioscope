@@ -345,12 +345,12 @@ const createGraphBlock = ({
         <Modal
           {...modalProps}
           heading={(
-            <h1 className="text-4xl font-semibold pb-8">
+            <>
               {graphHeading}
               <span className="text-lg font-semibold pl-2">
                 {matchingDateForModal && shortDate(matchingDateForModal[0].date)}
               </span>
-            </h1>
+            </>
           )}
         >
           {matchingDateForModal ? (

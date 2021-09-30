@@ -14,8 +14,8 @@ const Modal: React.FC<ModalProps> = ({
   <ReactModal
     isOpen={isOpen}
     onRequestClose={close}
-    overlayClassName="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-40"
-    className="relative top-0 left-0 right-0 bottom-0 max-h-full m-36 bg-white outline-none rounded-3xl"
+    overlayClassName="fixed z-20 top-0 left-0 right-0 bottom-0 bg-black bg-opacity-40"
+    className="relative z-30 top-0 left-0 right-0 bottom-0 max-h-full m-36 bg-white outline-none rounded-3xl"
     style={{
       content: {
         height: '70%'
@@ -25,7 +25,10 @@ const Modal: React.FC<ModalProps> = ({
     preventScroll
   >
     <header className="absolute top-0 left-0 right-0 h-20 p-10">
-      {heading}
+      <h1 className="text-4xl font-semibold pb-8">
+        {heading}
+      </h1>
+
       <button onClick={close} className="absolute top-4 right-6 p-3 uppercase text-sm tracking-wide">
         Close
       </button>
