@@ -66,7 +66,12 @@ const computeBugLeakage = (
           .map(([type, bugs]) => ({ label: type, value: bugs.closed.length, color: barColor(type) }))}
         onBarClick={({ label }) => {
           showInModal({
-            title: `Bugs closed: ${label}`,
+            title: (
+              <>
+                Bugs closed
+                <span className="text-lg inline-block ml-2">{label}</span>
+              </>
+            ),
             workItemIds: bugLeakage[label].closed
           });
         }}
