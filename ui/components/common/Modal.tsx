@@ -21,6 +21,7 @@ const Modal: React.FC<ModalProps> = ({
         height: '70%'
       }
     }}
+    bodyOpenClassName="overflow-hidden"
     preventScroll
   >
     <header className="absolute top-0 left-0 right-0 h-20 p-10">

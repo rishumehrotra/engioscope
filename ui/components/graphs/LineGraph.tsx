@@ -16,7 +16,7 @@ const xAxisLabelWidth = 100;
 const axisOverhang = 10;
 const numberOfHorizontalGridLines = 10;
 const numberOfVerticalGridLines = 6;
-const hoverBubbleWidth = 350;
+const hoverBubbleWidth = 360;
 
 const hoverBubbleMaxHeight = (height * 2) / 3;
 

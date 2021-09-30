@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import { range } from 'rambda';
+import { length, range } from 'rambda';
 import type { ReactNode } from 'react';
 import React, {
   useState,
@@ -127,75 +127,6 @@ const allWorkItemIds = [
   [] as number[]
 ] as const;
 
-const splitOrganizedWorkItemsByDate = (
-  projectAnalysis: ProjectOverviewAnalysis,
-  organizedWorkItems: ReturnType<ReturnType<typeof organizeWorkItems>>,
-  filterWorkItems: (workItemId: number, date: Date) => boolean
-) => {
-  const { lastUpdated } = projectAnalysis;
-
-  return (
-    range(0, 31).map(day => {
-      // TODO: FIXME Bad hack of hardcoded 2021
-      const date = new Date(`${lastUpdated} 2021`);
-      date.setDate(date.getDate() - day);
-      date.setHours(0, 0, 0, 0);
-
-      return {
-        date,
-        items: Object.entries(organizedWorkItems)
-          .flatMap(([witId, groupName]) => (
-            Object.entries(groupName)
-              .flatMap(([groupName, workItemIds]) => ({
-                witId,
-                groupName,
-                workItemIds: workItemIds.filter(workItemId => (
-                  filterWorkItems(workItemId, date)
-                ))
-              }))
-          ))
-      };
-    }).reverse()
-  );
-};
-
-const displayTable = (
-  projectAnalysis: ProjectOverviewAnalysis,
-  organizedWorkItemsByDate: ReturnType<typeof splitOrganizedWorkItemsByDate>,
-  title: string,
-  value: (item: ReturnType<typeof splitOrganizedWorkItemsByDate>[number]['items'][number]) => ReactNode
-) => (
-  <table className="flex-1">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th style={{ height: '100px' }}>{title}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {organizedWorkItemsByDate.map(({ date, items }) => (
-        <tr key={date.toISOString()} className="border-b-2 border-black">
-          <td className="p-4">{date.toLocaleDateString()}</td>
-          <td style={{ height: '650px' }}>
-            <ul>
-              {items.map(item => (
-                <li key={item.groupName}>
-                  {`${
-                    projectAnalysis.overview.types[item.witId].name[1]
-                  }${
-                    item.groupName === noGroup ? '' : ` - ${item.groupName}`
-                  }: `}
-                  {value(item)}
-                </li>
-              ))}
-            </ul>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-);
-
 type WorkItemPoint = {
   date: Date;
   workItemIds: number[];
@@ -235,7 +166,7 @@ const colorPalette = [
 
 const colorCache = new Map<string, string>();
 
-const widsInGroup = (workItems: ReturnType<typeof getClosedWorkItemsForGraph>[number]['workItems']) => (
+const widsInGroup = (workItems: WorkItemPoint[]) => (
   workItems.flatMap(({ workItemIds }) => workItemIds)
 );
 
@@ -243,7 +174,7 @@ type LegendSidebarProps = {
   heading: ReactNode;
   headlineStatValue: ReactNode;
   headlineStatUnits?: ReactNode;
-  data: ReturnType<typeof getClosedWorkItemsForGraph>;
+  data: WorkItemLine[];
   projectAnalysis: ProjectOverviewAnalysis;
   lineColor: (x: GroupLabel) => string;
   childStat: (workItemIds: number[]) => ReactNode;
@@ -306,7 +237,7 @@ const LegendSidebar: React.FC<LegendSidebarProps> = ({
 );
 
 const getMatchingAtIndex = (
-  data: ReturnType<ReturnType<typeof splitByDateForLineGraph>>,
+  data: WorkItemLine[],
   index: number
 ): MatchedDay[] => (
   data
@@ -320,7 +251,7 @@ const getMatchingAtIndex = (
 );
 
 type CrosshairBubbleProps = {
-  data: ReturnType<ReturnType<typeof splitByDateForLineGraph>>;
+  data: WorkItemLine[];
   index: number;
   projectAnalysis: ProjectOverviewAnalysis;
   groupLabel: (x: GroupLabel) => string;
@@ -383,9 +314,10 @@ type GraphBlockProps = {
   graphSubheading: string;
   pointToValue: (point: WorkItemPoint) => number;
   crosshairBubbleTitle: (x: MatchedDay[]) => ReactNode;
-  itemStat: (x: number[]) => ReactNode;
+  aggregateStats: (x: number[]) => ReactNode;
   sidebarHeading: string;
   sidebarHeadlineStat: (x: WorkItemLine[]) => ReactNode;
+  showFlairForWorkItemInModal?: boolean;
 };
 
 const createGraphBlock = ({
@@ -398,9 +330,8 @@ const createGraphBlock = ({
 }) => {
   const workItems = (dataLine: WorkItemLine) => dataLine.workItems;
   const GraphBlock: React.FC<GraphBlockProps> = ({
-    graphHeading, graphSubheading, pointToValue,
-    crosshairBubbleTitle, itemStat,
-    sidebarHeading, sidebarHeadlineStat
+    graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle,
+    aggregateStats, sidebarHeading, sidebarHeadlineStat, showFlairForWorkItemInModal
   }) => {
     const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
     const [Modal, modalProps, openModal] = useModal();
@@ -438,14 +369,14 @@ const createGraphBlock = ({
                         backgroundColor: lineColor({ witId, groupName })
                       }}
                     >
-                      {itemStat(workItemIds)}
+                      {aggregateStats(workItemIds)}
                     </span>
                   </h3>
                   <div className="">
                     {workItemIds.map(workItemId => (
                       <div
                         key={workItemId}
-                        className="py-2 rounded-md"
+                        className="py-2"
                       >
                         <a
                           href={projectAnalysis.overview.byId[workItemId].url}
@@ -459,10 +390,16 @@ const createGraphBlock = ({
                             src={projectAnalysis.overview.types[witId].icon}
                             width="16"
                           />
-                          {projectAnalysis.overview.byId[workItemId].id}
-                          {': '}
-                          {projectAnalysis.overview.byId[workItemId].title}
-                          {itemStat([workItemId])}
+                          <span>
+                            {projectAnalysis.overview.byId[workItemId].id}
+                            {': '}
+                            {projectAnalysis.overview.byId[workItemId].title}
+                            {showFlairForWorkItemInModal && (
+                              <span className="ml-3 rounded-full bg-gray-200 px-3 text-sm hover:no-underline self-baseline -mb-1">
+                                {aggregateStats([workItemId])}
+                              </span>
+                            )}
+                          </span>
                         </a>
                       </div>
                     ))}
@@ -494,7 +431,7 @@ const createGraphBlock = ({
                 projectAnalysis={projectAnalysis}
                 groupLabel={groupLabel}
                 title={crosshairBubbleTitle}
-                itemStat={itemStat}
+                itemStat={aggregateStats}
                 lineColor={lineColor}
               />
             )}
@@ -509,7 +446,7 @@ const createGraphBlock = ({
             data={data}
             projectAnalysis={projectAnalysis}
             lineColor={lineColor}
-            childStat={itemStat}
+            childStat={aggregateStats}
           />
         </div>
       </div>
@@ -519,21 +456,6 @@ const createGraphBlock = ({
 };
 
 const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
-  const organizedClosedWorkItemsByDate = useMemo(
-    () => splitOrganizedWorkItemsByDate(
-      projectAnalysis,
-      organizedClosedWorkItems(projectAnalysis.overview),
-      (workItemId, date) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const closedAt = new Date(projectAnalysis.overview.wiMeta[workItemId].end!);
-        const dateEnd = new Date(date);
-        dateEnd.setDate(date.getDate() + 1);
-        return closedAt.getTime() >= date.getTime() && closedAt.getTime() < dateEnd.getTime();
-      }
-    ),
-    [projectAnalysis]
-  );
-
   const organizedOpenWorkItems = useMemo(
     () => organizedWipWorkItems(projectAnalysis.overview),
     [projectAnalysis]
@@ -578,7 +500,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         graphSubheading="Work items closed per day over the last month"
         pointToValue={x => x.workItemIds.length}
         crosshairBubbleTitle={() => 'Velocity'}
-        itemStat={x => x.length}
+        aggregateStats={length}
         sidebarHeading="Velocity this month"
         sidebarHeadlineStat={x => x.reduce((acc, { workItems }) => (
           acc + widsInGroup(workItems).length
@@ -594,7 +516,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             : 0
         )}
         crosshairBubbleTitle={() => 'Average cycle time'}
-        itemStat={workItemIds => (
+        aggregateStats={workItemIds => (
           workItemIds.length
             ? prettyMilliseconds(
               workItemIds.reduce(...totalCycleTime) / workItemIds.length,
@@ -613,6 +535,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             )
             : '-';
         }}
+        showFlairForWorkItemInModal
       />
 
       <GraphBlock
@@ -625,7 +548,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
           return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
         }}
         crosshairBubbleTitle={() => 'Flow efficiency'}
-        itemStat={workItemIds => {
+        aggregateStats={workItemIds => {
           const workTime = workItemIds.reduce(...totalWorkCenterTime);
           const totalTime = workItemIds.reduce(...totalCycleTime);
 
@@ -643,6 +566,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
             : 0;
         }}
+        showFlairForWorkItemInModal
       />
 
       <div className="border-b-2 border-black mt-20">
@@ -673,57 +597,6 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             </div>
           ))
         ))}
-      </div>
-
-      <div className="flex justify-between" style={{ alignItems: 'flex-start' }}>
-        {displayTable(
-          projectAnalysis,
-          organizedClosedWorkItemsByDate,
-          'Velocity - Count of completed work items per day',
-          group => (
-            <>
-              {group.workItemIds.length}
-              <br />
-              {group.workItemIds.map((workItemId, index) => (
-                <Fragment key={workItemId}>
-                  <a
-                    href={projectAnalysis.overview.byId[workItemId].url}
-                    className="text-blue-700 underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {workItemId}
-                  </a>
-                  {index < group.workItemIds.length - 1 ? ', ' : ''}
-                </Fragment>
-              ))}
-            </>
-          )
-        )}
-        {displayTable(
-          projectAnalysis,
-          organizedClosedWorkItemsByDate,
-          'Average cycle time - avg(end time - start time) for completed work items',
-          group => (
-            group.workItemIds.length
-              ? prettyMilliseconds(
-                group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length,
-                { compact: true }
-              )
-              : 0
-          )
-        )}
-        {displayTable(
-          projectAnalysis,
-          organizedClosedWorkItemsByDate,
-          'Flow efficiency - work time / (end time - start time) for completed work items',
-          group => {
-            const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
-            const totalTime = group.workItemIds.reduce(...totalCycleTime);
-
-            return totalTime === 0 ? 'na' : `${((workTime * 100) / totalTime).toFixed(2)}%`;
-          }
-        )}
       </div>
     </div>
   );
