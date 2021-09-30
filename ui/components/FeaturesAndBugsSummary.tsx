@@ -3,7 +3,7 @@ import { sum } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../shared/types';
-import { num, oneYear } from '../helpers/utils';
+import { createPalette, num, oneYear } from '../helpers/utils';
 import { getCLTTime, getLeadTime } from '../helpers/work-item-utils';
 import { useModal } from './common/Modal';
 import HorizontalBarGraph from './graphs/HorizontalBarGraph';
@@ -12,23 +12,14 @@ import type { ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 
-const colors = [
+const barColor = createPalette([
   '#f44336',
   '#673ab7',
   '#3f51b5',
   '#2196f3',
   '#ff9800',
   '#795548'
-];
-
-const assignedColors = new Map();
-const barColor = (env: string) => {
-  if (!assignedColors.has(env)) {
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    assignedColors.set(env, color);
-  }
-  return assignedColors.get(env);
-};
+]);
 
 const computeBugLeakage = (
   bugLeakage: AnalysedWorkItems['bugLeakage'],

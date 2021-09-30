@@ -1,11 +1,11 @@
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useState
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
 import type { ProjectWorkItemAnalysis, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { workItemMetrics, workItemRevisions } from '../network';
-import { dontFilter } from '../helpers/utils';
+import { createPalette, dontFilter } from '../helpers/utils';
 import WorkItem from '../components/WorkItemHealth';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import type { SortMap } from '../hooks/sort-hooks';
@@ -17,14 +17,14 @@ import LoadMore from '../components/LoadMore';
 import FeaturesAndBugsSummary from '../components/FeaturesAndBugsSummary';
 import { workItemByIdUsing } from '../helpers/work-item-utils';
 
-const colorPalette = [
+const colorForStage = createPalette([
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
   '#f6cd61', '#fe8a71', '#96ceb4', '#ffeead',
   '#ff6f69', '#ffcc5c', '#88d8b0', '#a8e6cf',
   '#dcedc1', '#ffd3b6', '#ffaaa5', '#ff8b94',
   '#00b159', '#00aedb', '#f37735', '#ffc425',
   '#edc951', '#eb6841', '#00a0b0', '#fe4a49'
-];
+]);
 
 const bySearchTerm = (searchTerm: string) => (workItem: UIWorkItem) => (
   (`${workItem.id}: ${workItem.title}`).toLowerCase().includes(searchTerm.toLowerCase())
@@ -56,7 +56,6 @@ const useRevisionsForCollection = () => {
 const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({ workItemAnalysis }) => {
   const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam<string>('search');
-  const colorsForStages = useRef<Record<string, string>>({});
   const [page, loadMore] = usePagination();
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -71,13 +70,6 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
   const sorter = useSort(sorterMap, 'Bundle size');
 
   const workItemById = useMemo(() => workItemByIdUsing(workItems.byId), [workItems.byId]);
-
-  const colorForStage = useCallback((stageName: string) => {
-    if (colorsForStages.current[stageName]) return colorsForStages.current[stageName];
-    const randomColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-    colorsForStages.current = { ...colorsForStages.current, [stageName]: randomColor };
-    return randomColor;
-  }, [colorsForStages]);
 
   const filteredWorkItems = useMemo(() => {
     const { workItems } = workItemAnalysis;

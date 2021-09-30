@@ -34,3 +34,14 @@ export const filterBySearch = (search: string, item: string) => (isWrappedAround
 export const exists = <T>(x: T | undefined | null): x is T => (
   x !== null && x !== undefined
 );
+
+export const createPalette = (colors: string[]) => {
+  const cache = new Map<string, string>();
+  return (key: string) => {
+    if (!cache.has(key)) {
+      cache.set(key, colors[cache.size % colors.length]);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return cache.get(key)!;
+  };
+};
