@@ -22,6 +22,7 @@ const NavBar: React.FC = () => {
   );
 
   const navItems = useMemo<NavItem[]>(() => [
+    { key: '', name: 'Overview' },
     { key: 'repos', name: pageName('repos', projectDetails?.reposCount || 0) },
     { key: 'release-pipelines', name: pageName('release-pipelines', projectDetails?.releasePipelineCount || 0) },
     ...(

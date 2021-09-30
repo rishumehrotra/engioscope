@@ -72,7 +72,7 @@ const Project: React.FC = () => {
           <Route path="/:collection/:project/workitems">
             <WorkItems />
           </Route>
-          <Route path="/:collection/:project">
+          <Route path="/:collection/:project/">
             <Overview />
           </Route>
         </Switch>

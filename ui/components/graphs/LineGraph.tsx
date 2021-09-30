@@ -5,7 +5,6 @@ import React, {
 } from 'react';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 import useSvgEvent from '../../hooks/use-svg-event';
-import Loading from '../Loading';
 
 const yAxisItemSpacing = 35;
 const yAxisLeftPadding = 70;
@@ -245,7 +244,7 @@ const LineGraph = <L, P>({
   onClick
 }: LineGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const width = (points(lines[0]).length) * yAxisItemSpacing;
+
   const yAxisMax = Math.max(...lines.map(line => Math.max(...points(line).map(pointToValue))));
 
   const xCoord = useCallback((index: number) => (
@@ -266,7 +265,9 @@ const LineGraph = <L, P>({
     if (index !== null && index >= 0) onClick(index);
   }, [closestPointIndex, onClick]);
 
-  if (!yAxisMax) return <Loading />;
+  if (lines.length === 0) return <div>Couldn't find any matching workitems</div>;
+
+  const width = (points(lines[0]).length) * yAxisItemSpacing;
 
   return (
     <svg

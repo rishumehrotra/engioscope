@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import { length, range } from 'rambda';
+import { length, pipe, range } from 'rambda';
 import type { ReactNode } from 'react';
 import React, {
   useState,
@@ -49,12 +49,12 @@ const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['wiMeta'][number]
 );
 
 const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => Boolean(workItemMeta.end);
-const isWorkItemOpen = (workItemMeta: Overview['wiMeta'][number]) => (
-  Boolean(workItemMeta.start) && !isWorkItemClosed(workItemMeta)
-);
+// const isWorkItemOpen = (workItemMeta: Overview['wiMeta'][number]) => (
+//   Boolean(workItemMeta.start) && !isWorkItemClosed(workItemMeta)
+// );
 
 const closedWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemClosed);
-const openWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemOpen);
+// const openWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemOpen);
 
 const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   (overview: Overview) => {
@@ -77,7 +77,7 @@ const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
 );
 
 const organizedClosedWorkItems = organizeWorkItems(closedWorkItemIds);
-const organizedWipWorkItems = organizeWorkItems(openWorkItemIds);
+// const organizedWipWorkItems = organizeWorkItems(openWorkItemIds);
 
 const splitByDateForLineGraph = (
   organizedWorkItems: ReturnType<typeof organizeWorkItems>,
@@ -314,10 +314,11 @@ type GraphBlockProps = {
   graphSubheading: string;
   pointToValue: (point: WorkItemPoint) => number;
   crosshairBubbleTitle: (x: MatchedDay[]) => ReactNode;
-  aggregateStats: (x: number[]) => ReactNode;
+  aggregateStats: (x: number[]) => number;
   sidebarHeading: string;
   sidebarHeadlineStat: (x: WorkItemLine[]) => ReactNode;
   showFlairForWorkItemInModal?: boolean;
+  formatValue: (x: number) => string;
 };
 
 const createGraphBlock = ({
@@ -330,11 +331,15 @@ const createGraphBlock = ({
 }) => {
   const workItems = (dataLine: WorkItemLine) => dataLine.workItems;
   const GraphBlock: React.FC<GraphBlockProps> = ({
-    graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle,
+    graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle, formatValue,
     aggregateStats, sidebarHeading, sidebarHeadlineStat, showFlairForWorkItemInModal
   }) => {
     const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
     const [Modal, modalProps, openModal] = useModal();
+    const aggregateAndFormat = useMemo(
+      () => pipe(aggregateStats, formatValue),
+      [aggregateStats, formatValue]
+    );
 
     const matchingDateForModal = useMemo(() => (
       dayIndexInModal ? getMatchingAtIndex(data, dayIndexInModal) : null
@@ -348,66 +353,68 @@ const createGraphBlock = ({
             <>
               {graphHeading}
               <span className="text-lg font-semibold pl-2">
-                {matchingDateForModal && shortDate(matchingDateForModal[0].date)}
+                {matchingDateForModal?.[0] && shortDate(matchingDateForModal[0].date)}
               </span>
             </>
           )}
         >
-          {matchingDateForModal ? (
-            <div className="overflow-y-auto">
-              {matchingDateForModal?.map(({ witId, groupName, workItemIds }) => (
-                <div
-                  key={witId + groupName}
-                  className="mb-8"
-                >
-                  <h3 className="font-semibold text-lg">
-                    {groupLabel({ witId, groupName })}
-                    <span
-                      className="text-base inline-block ml-2 px-3 rounded-full"
-                      style={{
-                        color: contrastColour(lineColor({ witId, groupName })),
-                        backgroundColor: lineColor({ witId, groupName })
-                      }}
+          {matchingDateForModal?.length
+            ? matchingDateForModal?.map(({ witId, groupName, workItemIds }) => (
+              <div
+                key={witId + groupName}
+                className="mb-8"
+              >
+                <h3 className="font-semibold text-lg">
+                  {groupLabel({ witId, groupName })}
+                  <span
+                    className="text-base inline-block ml-2 px-3 rounded-full"
+                    style={{
+                      color: contrastColour(lineColor({ witId, groupName })),
+                      backgroundColor: lineColor({ witId, groupName })
+                    }}
+                  >
+                    {aggregateAndFormat(workItemIds)}
+                  </span>
+                </h3>
+                <div className="">
+                  {workItemIds.map(workItemId => (
+                    <div
+                      key={workItemId}
+                      className="py-2"
                     >
-                      {aggregateStats(workItemIds)}
-                    </span>
-                  </h3>
-                  <div className="">
-                    {workItemIds.map(workItemId => (
-                      <div
-                        key={workItemId}
-                        className="py-2"
+                      <a
+                        href={projectAnalysis.overview.byId[workItemId].url}
+                        className="text-blue-800 hover:underline inline-flex items-start"
+                        target="_blank"
+                        rel="noreferrer"
                       >
-                        <a
-                          href={projectAnalysis.overview.byId[workItemId].url}
-                          className="text-blue-800 hover:underline inline-flex items-start"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <img
-                            className="inline-block mr-2 mt-1"
-                            alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
-                            src={projectAnalysis.overview.types[witId].icon}
-                            width="16"
-                          />
-                          <span>
-                            {projectAnalysis.overview.byId[workItemId].id}
-                            {': '}
-                            {projectAnalysis.overview.byId[workItemId].title}
-                            {showFlairForWorkItemInModal && (
-                              <span className="ml-3 rounded-full bg-gray-200 px-3 text-sm hover:no-underline self-baseline -mb-1">
-                                {aggregateStats([workItemId])}
-                              </span>
-                            )}
-                          </span>
-                        </a>
-                      </div>
-                    ))}
-                  </div>
+                        <img
+                          className="inline-block mr-2 mt-1"
+                          alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
+                          src={projectAnalysis.overview.types[witId].icon}
+                          width="16"
+                        />
+                        <span>
+                          {projectAnalysis.overview.byId[workItemId].id}
+                          {': '}
+                          {projectAnalysis.overview.byId[workItemId].title}
+                          {showFlairForWorkItemInModal && (
+                            <span className="ml-3 rounded-full bg-gray-200 px-3 text-sm hover:no-underline self-baseline -mb-1">
+                              {aggregateAndFormat([workItemId])}
+                            </span>
+                          )}
+                        </span>
+                      </a>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : null}
+              </div>
+            ))
+            : (
+              <div className="text-gray-600 italic">
+                Nothing to see here
+              </div>
+            )}
         </Modal>
         <h1 className="text-2xl font-semibold">
           {graphHeading}
@@ -416,38 +423,46 @@ const createGraphBlock = ({
           {graphSubheading}
         </p>
         <div className="grid gap-8 grid-flow-col">
-          <LineGraph<WorkItemLine, WorkItemPoint>
-            lines={data}
-            points={workItems}
-            pointToValue={pointToValue}
-            lineColor={lineColor}
-            yAxisLabel={x => prettyMilliseconds(x, { compact: true })}
-            lineLabel={groupLabel}
-            xAxisLabel={x => shortDate(x.date)}
-            crosshairBubble={(pointIndex: number) => (
-              <CrosshairBubble
-                data={data}
-                index={pointIndex}
-                projectAnalysis={projectAnalysis}
-                groupLabel={groupLabel}
-                title={crosshairBubbleTitle}
-                itemStat={aggregateStats}
+          {!data.length ? (
+            <div className="text-gray-500 italic">
+              Couldn't find any closed workitems in the last month.
+            </div>
+          ) : (
+            <>
+              <LineGraph<WorkItemLine, WorkItemPoint>
+                lines={data}
+                points={workItems}
+                pointToValue={pointToValue}
                 lineColor={lineColor}
+                yAxisLabel={formatValue}
+                lineLabel={groupLabel}
+                xAxisLabel={x => shortDate(x.date)}
+                crosshairBubble={(pointIndex: number) => (
+                  <CrosshairBubble
+                    data={data}
+                    index={pointIndex}
+                    projectAnalysis={projectAnalysis}
+                    groupLabel={groupLabel}
+                    title={crosshairBubbleTitle}
+                    itemStat={aggregateAndFormat}
+                    lineColor={lineColor}
+                  />
+                )}
+                onClick={(...args) => {
+                  setDayIndexInModal(args[0]);
+                  openModal();
+                }}
               />
-            )}
-            onClick={(...args) => {
-              setDayIndexInModal(args[0]);
-              openModal();
-            }}
-          />
-          <LegendSidebar
-            heading={sidebarHeading}
-            headlineStatValue={sidebarHeadlineStat(data)}
-            data={data}
-            projectAnalysis={projectAnalysis}
-            lineColor={lineColor}
-            childStat={aggregateStats}
-          />
+              <LegendSidebar
+                heading={sidebarHeading}
+                headlineStatValue={sidebarHeadlineStat(data)}
+                data={data}
+                projectAnalysis={projectAnalysis}
+                lineColor={lineColor}
+                childStat={aggregateAndFormat}
+              />
+            </>
+          )}
         </div>
       </div>
     );
@@ -456,10 +471,10 @@ const createGraphBlock = ({
 };
 
 const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
-  const organizedOpenWorkItems = useMemo(
-    () => organizedWipWorkItems(projectAnalysis.overview),
-    [projectAnalysis]
-  );
+  // const organizedOpenWorkItems = useMemo(
+  //   () => organizedWipWorkItems(projectAnalysis.overview),
+  //   [projectAnalysis]
+  // );
 
   const closedWorkItemsForGraph = useMemo(
     () => getClosedWorkItemsForGraph(projectAnalysis),
@@ -502,6 +517,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         crosshairBubbleTitle={() => 'Velocity'}
         aggregateStats={length}
         sidebarHeading="Velocity this month"
+        formatValue={String}
         sidebarHeadlineStat={x => x.reduce((acc, { workItems }) => (
           acc + widsInGroup(workItems).length
         ), 0)}
@@ -518,10 +534,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
         crosshairBubbleTitle={() => 'Average cycle time'}
         aggregateStats={workItemIds => (
           workItemIds.length
-            ? prettyMilliseconds(
-              workItemIds.reduce(...totalCycleTime) / workItemIds.length,
-              { compact: true }
-            )
+            ? workItemIds.reduce(...totalCycleTime) / workItemIds.length
             : 0
         )}
         sidebarHeading="Overall average cycle time"
@@ -536,11 +549,12 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             : '-';
         }}
         showFlairForWorkItemInModal
+        formatValue={x => prettyMilliseconds(x, { compact: true })}
       />
 
       <GraphBlock
         graphHeading="Flow efficiency"
-        graphSubheading="Time spent waiting vs working"
+        graphSubheading="Time spent waiting vs. working"
         pointToValue={group => {
           const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
           const totalTime = group.workItemIds.reduce(...totalCycleTime);
@@ -552,7 +566,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
           const workTime = workItemIds.reduce(...totalWorkCenterTime);
           const totalTime = workItemIds.reduce(...totalCycleTime);
 
-          return `${Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime)}%`;
+          return Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime);
         }}
         sidebarHeading="Overall flow efficiency"
         sidebarHeadlineStat={data => {
@@ -567,9 +581,10 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             : 0;
         }}
         showFlairForWorkItemInModal
+        formatValue={x => `${x}%`}
       />
 
-      <div className="border-b-2 border-black mt-20">
+      {/* <div className="border-b-2 border-black mt-20">
         <h2 className="font-bold">WIP work items</h2>
         {Object.entries(organizedOpenWorkItems).map(([witId, group]) => (
           Object.entries(group).map(([groupName, workItemIds]) => (
@@ -597,7 +612,7 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
             </div>
           ))
         ))}
-      </div>
+      </div> */}
     </div>
   );
 };

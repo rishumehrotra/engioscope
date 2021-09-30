@@ -45,7 +45,7 @@ const Collection: React.FC = () => {
                   <Project
                     key={collection.name[1]}
                     projectName={collection.name[1]}
-                    route={`/${collection.name.join('/')}/repos`}
+                    route={`/${collection.name.join('/')}/`}
                     collectionName={collection.name[0]}
                   />
                 ))
