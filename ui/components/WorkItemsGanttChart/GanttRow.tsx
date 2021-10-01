@@ -4,9 +4,9 @@ import React, {
 import prettyMilliseconds from 'pretty-ms';
 import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types';
 import {
-  textWidth, textHeight,
-  rowPadding, svgWidth, makeTransparent, barYCoord,
-  barHeight, contrastColour, barWidthUsing, makeDarker, barStartPadding, revisionTooltip, cltStats, rowItemTooltip
+  textWidth, textHeight, rowPadding, svgWidth, makeTransparent, barYCoord,
+  barHeight, barWidthUsing, makeDarker, barStartPadding, revisionTooltip,
+  cltStats, rowItemTooltip
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
 import type { Row } from './use-gantt-rows';
@@ -14,6 +14,7 @@ import {
   isProjectRow, isWorkItemEnvironmentRow, isWorkItemTypeRow, isWorkItemRow
 } from './use-gantt-rows';
 import { Minus, Plus } from '../common/Icons';
+import { contrastColour } from '../../helpers/utils';
 
 const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => (
   <>

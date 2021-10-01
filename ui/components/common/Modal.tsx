@@ -52,3 +52,12 @@ export const useModal = () => {
 
   return [Modal, modalProps, open, isOpen, close] as const;
 };
+
+export const modalHeading = (heading: ReactNode, subheading?: ReactNode) => (
+  <>
+    {heading}
+    <span className="text-lg font-semibold pl-2">
+      {subheading}
+    </span>
+  </>
+);

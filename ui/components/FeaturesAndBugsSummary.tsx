@@ -5,12 +5,13 @@ import React, { useCallback, useMemo, useState } from 'react';
 import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../shared/types';
 import { createPalette, num, oneYear } from '../helpers/utils';
 import { getCLTTime, getLeadTime } from '../helpers/work-item-utils';
-import { useModal } from './common/Modal';
+import { modalHeading, useModal } from './common/Modal';
 import HorizontalBarGraph from './graphs/HorizontalBarGraph';
 import ScatterLineGraph from './graphs/ScatterLineGraph';
 import type { ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
+import { WorkItemLinkForModal } from './WorkItemLinkForModalProps';
 
 const barColor = createPalette([
   '#f44336',
@@ -45,12 +46,7 @@ const computeBugLeakage = (
           .map(([type, bugs]) => ({ label: type, value: bugs.opened.length, color: barColor(type) }))}
         onBarClick={({ label }) => {
           showInModal({
-            title: (
-              <>
-                Bug leakage
-                <span className="text-lg inline-block ml-2">{label}</span>
-              </>
-            ),
+            title: modalHeading('Bug leakage', label),
             workItemIds: bugLeakage[label].opened
           });
         }}
@@ -66,12 +62,7 @@ const computeBugLeakage = (
           .map(([type, bugs]) => ({ label: type, value: bugs.closed.length, color: barColor(type) }))}
         onBarClick={({ label }) => {
           showInModal({
-            title: (
-              <>
-                Bugs closed
-                <span className="text-lg inline-block ml-2">{label}</span>
-              </>
-            ),
+            title: modalHeading('Bugs closed', label),
             workItemIds: bugLeakage[label].closed
           });
         }}
@@ -221,24 +212,11 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({
       <Modal {...modalProps} heading={modalContents?.title}>
         <ol className="ml-8">
           {modalContents?.workItemIds.map(id => (
-            <li key={id} className="mb-2 list-decimal">
-              <a
-                href={workItemById(id).url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex text-blue-800 hover:underline items-start"
-              >
-                <img
-                  src={workItemType(workItemById(id)).icon}
-                  width="16"
-                  height="16"
-                  className="inline-block mr-2 mt-1"
-                  alt={`Icon for ${workItemType(workItemById(id)).name[1]}`}
-                />
-                {workItemById(id).id}
-                {': '}
-                {workItemById(id).title}
-              </a>
+            <li key={id} className="py-2 list-decimal">
+              <WorkItemLinkForModal
+                workItem={workItemById(id)}
+                workItemType={workItemType(workItemById(id))}
+              />
             </li>
           ))}
         </ol>

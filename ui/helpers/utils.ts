@@ -45,3 +45,16 @@ export const createPalette = (colors: string[]) => {
     return cache.get(key)!;
   };
 };
+
+export const contrastColour = (hex: string) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  const contrast = (Math.round(r * 299) + Math.round(g * 587) + Math.round(b * 114)) / 1000;
+
+  return (contrast >= 128) ? '#222' : '#fff';
+  // const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+  // return luma > 120 ? '#222' : '#fff';
+};

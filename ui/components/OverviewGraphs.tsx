@@ -5,10 +5,10 @@ import React, {
   useState, useCallback, useMemo
 } from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
-import { createPalette, shortDate } from '../helpers/utils';
-import { useModal } from './common/Modal';
+import { contrastColour, createPalette, shortDate } from '../helpers/utils';
+import { modalHeading, useModal } from './common/Modal';
 import LineGraph from './graphs/LineGraph';
-import { contrastColour } from './WorkItemsGanttChart/helpers';
+import { WorkItemLinkForModal } from './WorkItemLinkForModalProps';
 
 const groupCreator = (overview: Overview) => (
   (workItemId: number) => {
@@ -179,63 +179,82 @@ type LegendSidebarProps = {
   data: WorkItemLine[];
   projectAnalysis: ProjectOverviewAnalysis;
   childStat: (workItemIds: number[]) => ReactNode;
+  modalContents: (x: WorkItemLine) => ReactNode;
 };
 
 const LegendSidebar: React.FC<LegendSidebarProps> = ({
   heading, headlineStatValue, headlineStatUnits, data,
-  projectAnalysis, childStat
-}) => (
-  <div>
-    <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md">
-      <h3 className="font-semibold pb-1">
-        {heading}
-      </h3>
-      <div className="">
-        <span className="text-2xl font-semibold">
-          {headlineStatValue}
-        </span>
-        {' '}
-        <span className="text-sm">
-          {headlineStatUnits}
-        </span>
+  projectAnalysis, childStat, modalContents
+}) => {
+  const [Modal, modalProps, open] = useModal();
+  const [dataForModal, setDataForModal] = useState<WorkItemLine | null>(null);
+
+  return (
+    <div>
+      <Modal
+        {...modalProps}
+        heading={dataForModal && modalHeading(
+          projectAnalysis.overview.types[dataForModal.witId].name[1],
+          dataForModal.groupName !== noGroup ? dataForModal.groupName : undefined
+        )}
+      >
+        {dataForModal && modalContents(dataForModal)}
+      </Modal>
+      <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md">
+        <h3 className="font-semibold pb-1">
+          {heading}
+        </h3>
+        <div className="">
+          <span className="text-2xl font-semibold">
+            {headlineStatValue}
+          </span>
+          {' '}
+          <span className="text-sm">
+            {headlineStatUnits}
+          </span>
+        </div>
+      </div>
+      <div className="grid gap-3 grid-cols-2">
+        {data.map(({ workItems, witId, groupName }) => (
+          <button
+            key={witId + groupName}
+            className="p-2 shadow rounded-md block text-left"
+            style={{
+              borderLeft: `4px solid ${lineColor({ witId, groupName })}`
+            }}
+            onClick={() => {
+              setDataForModal({ workItems, witId, groupName });
+              open();
+            }}
+          >
+            <h4
+              className="text-sm flex items-center h-10 overflow-hidden px-5"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                textIndent: '-20px'
+              }}
+              data-tip={`${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : `: ${groupName}`}`}
+            >
+              <img
+                className="inline-block mr-1"
+                alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
+                src={projectAnalysis.overview.types[witId].icon}
+                width="16"
+              />
+              {projectAnalysis.overview.types[witId].name[1]}
+              {groupName === noGroup ? '' : `: ${groupName}`}
+            </h4>
+            <div className="text-xl flex items-center pl-5 font-semibold">
+              {childStat(workItems.reduce<number[]>((a, wi) => a.concat(wi.workItemIds), []))}
+            </div>
+          </button>
+        ))}
       </div>
     </div>
-    <div className="grid gap-3 grid-cols-2">
-      {data.map(({ workItems, witId, groupName }) => (
-        <div
-          key={witId + groupName}
-          className="p-2 shadow rounded-md"
-          style={{
-            borderLeft: `4px solid ${lineColor({ witId, groupName })}`
-          }}
-        >
-          <h4
-            className="text-sm flex items-center h-10 overflow-hidden px-5"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              textIndent: '-20px'
-            }}
-            data-tip={`${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : `: ${groupName}`}`}
-          >
-            <img
-              className="inline-block mr-1"
-              alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
-              src={projectAnalysis.overview.types[witId].icon}
-              width="16"
-            />
-            {projectAnalysis.overview.types[witId].name[1]}
-            {groupName === noGroup ? '' : `: ${groupName}`}
-          </h4>
-          <div className="text-xl flex items-center pl-5 font-semibold">
-            {childStat(workItems.reduce<number[]>((a, wi) => a.concat(wi.workItemIds), []))}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 const getMatchingAtIndex = (
   data: WorkItemLine[],
@@ -348,13 +367,9 @@ const createGraphBlock = ({
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
         <Modal
           {...modalProps}
-          heading={(
-            <>
-              {graphHeading}
-              <span className="text-lg font-semibold pl-2">
-                {matchingDateForModal?.[0] && shortDate(matchingDateForModal[0].date)}
-              </span>
-            </>
+          heading={modalHeading(
+            graphHeading,
+            matchingDateForModal?.[0] && shortDate(matchingDateForModal[0].date)
           )}
         >
           {matchingDateForModal?.length
@@ -375,38 +390,17 @@ const createGraphBlock = ({
                     {aggregateAndFormat(workItemIds)}
                   </span>
                 </h3>
-                <div className="">
+                <ul>
                   {workItemIds.map(workItemId => (
-                    <div
-                      key={workItemId}
-                      className="py-2"
-                    >
-                      <a
-                        href={projectAnalysis.overview.byId[workItemId].url}
-                        className="text-blue-800 hover:underline inline-flex items-start"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <img
-                          className="inline-block mr-2 mt-1"
-                          alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
-                          src={projectAnalysis.overview.types[witId].icon}
-                          width="16"
-                        />
-                        <span>
-                          {projectAnalysis.overview.byId[workItemId].id}
-                          {': '}
-                          {projectAnalysis.overview.byId[workItemId].title}
-                          {showFlairForWorkItemInModal && (
-                            <span className="ml-3 rounded-full bg-gray-200 px-3 text-sm hover:no-underline self-baseline -mb-1">
-                              {aggregateAndFormat([workItemId])}
-                            </span>
-                          )}
-                        </span>
-                      </a>
-                    </div>
+                    <li key={workItemId} className="py-2">
+                      <WorkItemLinkForModal
+                        workItem={projectAnalysis.overview.byId[workItemId]}
+                        workItemType={projectAnalysis.overview.types[witId]}
+                        flair={showFlairForWorkItemInModal && aggregateAndFormat([workItemId])}
+                      />
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             ))
             : (
@@ -457,6 +451,41 @@ const createGraphBlock = ({
                 data={data}
                 projectAnalysis={projectAnalysis}
                 childStat={aggregateAndFormat}
+                modalContents={line => (
+                  <ul>
+                    {line.workItems.map(({ date, workItemIds }) => (
+                      workItemIds.length
+                        ? (
+                          <li key={date.toISOString()}>
+                            <div className="font-semibold text-lg mt-4 mb-1">
+                              {shortDate(date)}
+                              <span
+                                style={{
+                                  color: contrastColour(lineColor({ witId: line.witId, groupName: line.groupName })),
+                                  background: lineColor({ witId: line.witId, groupName: line.groupName })
+                                }}
+                                className="inline-block px-2 ml-2 rounded-full text-base"
+                              >
+                                {aggregateAndFormat(workItemIds)}
+                              </span>
+                            </div>
+                            <ul>
+                              {workItemIds.map(workItemId => (
+                                <li key={workItemId} className="py-2">
+                                  <WorkItemLinkForModal
+                                    workItem={projectAnalysis.overview.byId[workItemId]}
+                                    workItemType={projectAnalysis.overview.types[line.witId]}
+                                    flair={showFlairForWorkItemInModal && aggregateAndFormat([workItemId])}
+                                  />
+                                </li>
+                              ))}
+                            </ul>
+                          </li>
+                        )
+                        : null
+                    ))}
+                  </ul>
+                )}
               />
             </>
           )}
@@ -467,7 +496,7 @@ const createGraphBlock = ({
   return GraphBlock;
 };
 
-const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
+const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   // const organizedOpenWorkItems = useMemo(
   //   () => organizedWipWorkItems(projectAnalysis.overview),
   //   [projectAnalysis]
@@ -605,4 +634,4 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
   );
 };
 
-export default FlowVelocity;
+export default OverviewGraphs;
