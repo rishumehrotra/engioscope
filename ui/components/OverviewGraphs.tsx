@@ -2,11 +2,10 @@ import prettyMilliseconds from 'pretty-ms';
 import { length, pipe, range } from 'rambda';
 import type { ReactNode } from 'react';
 import React, {
-  useState,
-  Fragment, useCallback, useMemo
+  useState, useCallback, useMemo
 } from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
-import { shortDate } from '../helpers/utils';
+import { createPalette, shortDate } from '../helpers/utils';
 import { useModal } from './common/Modal';
 import LineGraph from './graphs/LineGraph';
 import { contrastColour } from './WorkItemsGanttChart/helpers';
@@ -76,7 +75,6 @@ const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   }
 );
 
-const organizedClosedWorkItems = organizeWorkItems(closedWorkItemIds);
 // const organizedWipWorkItems = organizeWorkItems(openWorkItemIds);
 
 const splitByDateForLineGraph = (
@@ -148,7 +146,7 @@ type MatchedDay = {
 type GroupLabel = { witId: string; groupName: string };
 
 const getClosedWorkItemsForGraph = splitByDateForLineGraph(
-  organizedClosedWorkItems,
+  organizeWorkItems(closedWorkItemIds),
   (workItemId, date, overview) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const closedAt = new Date(overview.wiMeta[workItemId].end!);
@@ -158,13 +156,17 @@ const getClosedWorkItemsForGraph = splitByDateForLineGraph(
   }
 );
 
-const colorPalette = [
-  '#b3b300', '#ffa500', '#ff0000', '#ff00ff',
-  '#a862ea', '#134e6f', '#4d4dff', '#9999ff',
-  '#00b300', '#b30000'
-];
+const lineColor = (() => {
+  const c = createPalette([
+    '#b3b300', '#ffa500', '#ff0000', '#ff00ff',
+    '#a862ea', '#134e6f', '#4d4dff', '#9999ff',
+    '#00b300', '#b30000'
+  ]);
 
-const colorCache = new Map<string, string>();
+  return ({ witId, groupName }: GroupLabel) => (
+    c(witId + groupName)
+  );
+})();
 
 const widsInGroup = (workItems: WorkItemPoint[]) => (
   workItems.flatMap(({ workItemIds }) => workItemIds)
@@ -176,13 +178,12 @@ type LegendSidebarProps = {
   headlineStatUnits?: ReactNode;
   data: WorkItemLine[];
   projectAnalysis: ProjectOverviewAnalysis;
-  lineColor: (x: GroupLabel) => string;
   childStat: (workItemIds: number[]) => ReactNode;
 };
 
 const LegendSidebar: React.FC<LegendSidebarProps> = ({
   heading, headlineStatValue, headlineStatUnits, data,
-  projectAnalysis, lineColor, childStat
+  projectAnalysis, childStat
 }) => (
   <div>
     <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md">
@@ -257,11 +258,10 @@ type CrosshairBubbleProps = {
   groupLabel: (x: GroupLabel) => string;
   title: (x: MatchedDay[]) => ReactNode;
   itemStat: (x: number[]) => ReactNode;
-  lineColor: (x: GroupLabel) => string;
 };
 
 const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
-  data, index, projectAnalysis, groupLabel, title, itemStat, lineColor
+  data, index, projectAnalysis, groupLabel, title, itemStat
 }) => {
   const matching = getMatchingAtIndex(data, index);
 
@@ -322,10 +322,9 @@ type GraphBlockProps = {
 };
 
 const createGraphBlock = ({
-  data, lineColor, groupLabel, projectAnalysis
+  data, groupLabel, projectAnalysis
 }: {
   data: WorkItemLine[];
-  lineColor: (x: GroupLabel) => string;
   groupLabel: (x: GroupLabel) => string;
   projectAnalysis: ProjectOverviewAnalysis;
 }) => {
@@ -433,10 +432,10 @@ const createGraphBlock = ({
                 lines={data}
                 points={workItems}
                 pointToValue={pointToValue}
-                lineColor={lineColor}
                 yAxisLabel={formatValue}
                 lineLabel={groupLabel}
                 xAxisLabel={x => shortDate(x.date)}
+                lineColor={lineColor}
                 crosshairBubble={(pointIndex: number) => (
                   <CrosshairBubble
                     data={data}
@@ -445,7 +444,6 @@ const createGraphBlock = ({
                     groupLabel={groupLabel}
                     title={crosshairBubbleTitle}
                     itemStat={aggregateAndFormat}
-                    lineColor={lineColor}
                   />
                 )}
                 onClick={(...args) => {
@@ -458,7 +456,6 @@ const createGraphBlock = ({
                 headlineStatValue={sidebarHeadlineStat(data)}
                 data={data}
                 projectAnalysis={projectAnalysis}
-                lineColor={lineColor}
                 childStat={aggregateAndFormat}
               />
             </>
@@ -488,14 +485,6 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
     0
   ] as const, [projectAnalysis]);
 
-  const lineColor = useCallback(({ witId, groupName }: GroupLabel) => {
-    if (!colorCache.has(witId + groupName)) {
-      colorCache.set(witId + groupName, colorPalette[colorCache.size % colorPalette.length]);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return colorCache.get(witId + groupName)!;
-  }, []);
-
   const groupLabel = useCallback(({ witId, groupName }: GroupLabel) => (
     projectAnalysis.overview.types[witId].name[1]
       + (groupName === noGroup ? '' : ` - ${groupName}`)
@@ -503,10 +492,9 @@ const FlowVelocity: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ 
 
   const GraphBlock = useMemo(() => createGraphBlock({
     data: closedWorkItemsForGraph,
-    lineColor,
     groupLabel,
     projectAnalysis
-  }), [closedWorkItemsForGraph, groupLabel, lineColor, projectAnalysis]);
+  }), [closedWorkItemsForGraph, groupLabel, projectAnalysis]);
 
   return (
     <div>

@@ -35,7 +35,7 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
   );
 
   return (
-    <li className="relative">
+    <li className="relative" ref={ref}>
       <button
         className={`p-2 border border-gray-200 bg-white shadow-sm ml-1 rounded flex
           ${isOpen ? 'border-gray-300 transform -translate-y-1' : ''}
@@ -72,7 +72,6 @@ const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryPro
       </button>
       {popupContents && isOpen && (
         <div
-          ref={ref}
           style={{ top: '70px' }}
           className="flex absolute right-0 z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-md border border-gray-300"
         >
