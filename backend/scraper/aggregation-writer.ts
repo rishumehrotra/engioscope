@@ -39,7 +39,7 @@ const projectSummary = (
   projectAnalysis: ProjectAnalysis
 ): UIProjectAnalysis => ({
   name: [collectionName, projectConfig.name],
-  lastUpdated: shortDateFormat(new Date()),
+  lastUpdated: new Date().toISOString(),
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,

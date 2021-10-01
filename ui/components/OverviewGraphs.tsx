@@ -87,8 +87,7 @@ const splitByDateForLineGraph = (
     const key = (witId: string, groupName: string) => `${witId}${separator}${groupName}`;
 
     const splitByDay = range(0, 30).reduce<Record<string, { date: Date; workItemIds: number[] }[]>>((acc, day) => {
-      // TODO: FIXME Bad hack of hardcoded 2021
-      const date = new Date(`${lastUpdated} 2021`);
+      const date = new Date(lastUpdated);
       date.setDate(date.getDate() - day);
       date.setHours(0, 0, 0, 0);
 

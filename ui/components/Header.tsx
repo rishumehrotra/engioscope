@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { shortDate } from '../helpers/utils';
 import logo from '../images/engioscope.png';
 
 type HeaderProps = {
-  lastUpdated?: string | null;
+  lastUpdated?: Date | null;
   title: string;
   subtitle?: () => React.ReactNode;
 };
@@ -22,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => (
         <div className="text-sm text-gray-300 justify-self-end">
           Last updated on
           <span className="font-semibold ml-1">
-            {lastUpdated || ''}
+            {lastUpdated ? shortDate(lastUpdated) : '...'}
           </span>
         </div>
       </div>

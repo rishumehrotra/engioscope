@@ -259,7 +259,7 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({
                       {group.workItems.length}
                     </span>
                   </h3>
-                  <ul className="ml-8 list-decimal">
+                  <ul>
                     {group.workItems.map(workItem => (
                       <li key={workItem.id} className="py-2">
                         <WorkItemLinkForModal

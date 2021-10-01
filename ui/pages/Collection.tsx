@@ -34,7 +34,7 @@ const Collection: React.FC = () => {
     <div>
       <div>
         <Header
-          lastUpdated={collections ? collections[0].lastUpdated : ''}
+          lastUpdated={collections?.[0]?.lastUpdated ? new Date(collections[0].lastUpdated) : null}
           title="Projects"
         />
         <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>

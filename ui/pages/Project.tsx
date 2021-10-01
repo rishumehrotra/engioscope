@@ -31,7 +31,7 @@ const Project: React.FC = () => {
   return (
     <div>
       <Header
-        lastUpdated={project ? project.lastUpdated : '...'}
+        lastUpdated={project && new Date(project.lastUpdated)}
         title={projectName || ' '}
         subtitle={() => (
           <div className="text-base mt-2 font-normal text-gray-200">

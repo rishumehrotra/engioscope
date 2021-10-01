@@ -25,7 +25,7 @@ export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({ work
       {': '}
       {workItem.title}
       {flair && (
-        <span className="ml-3 rounded-full bg-gray-200 px-3 py-1 text-sm no-underline self-baseline -mb-1">
+        <span className="ml-3 rounded-full bg-gray-200 px-3 py-1 text-sm no-underline self-end -mb-1">
           {flair}
         </span>
       )}

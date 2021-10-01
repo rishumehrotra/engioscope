@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
+import { shortDate } from '../helpers/utils';
 import { useProjectDetails } from '../hooks/project-details-hooks';
 import usePageName from '../hooks/use-page-name';
 
@@ -41,7 +42,7 @@ export const ProjectDetails: React.FC = () => {
           <>
             Last updated on
             <span className="font-semibold text-gray-400 ml-1">
-              {project ? project.lastUpdated : '...'}
+              {project ? shortDate(new Date(project.lastUpdated)) : '...'}
             </span>
           </>
         ) : <span>&nbsp;</span>}
