@@ -33,12 +33,12 @@ type CollectionWorkItemConfig = {
     type: string;
     groupByField?: string;
     groupLabel?: string;
-    startDate: string;
-    endDate?: string;
+    startDate: string | string[];
+    endDate?: string | string[];
     workCenters: ({ label: string } & (
-      { startDate: string }
-      | { endDate: string }
-      | { startDate: string; endDate: string }
+      { startDate: string | string[] }
+      | { endDate: string | string[] }
+      | { startDate: string | string[]; endDate: string | string[] }
     ))[];
   }[];
 };
@@ -101,14 +101,14 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   ignoredWorkItemsForFlowAnalysis?: string[];
   types?: {
     type: string;
-    startDate: string;
+    startDate: string[];
     groupByField?: string;
     groupLabel: string;
-    endDate: string;
+    endDate: string[];
     workCenters: {
       label: string;
-      startDate: string;
-      endDate: string;
+      startDate: string[];
+      endDate: string[];
     }[];
   }[];
 }>;
@@ -155,12 +155,24 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
       type: type.type,
       groupByField: type.groupByField,
       groupLabel: type.groupLabel || 'Unlabelled group',
-      startDate: type.startDate || 'System.CreatedDate',
-      endDate: type.endDate || 'Microsoft.VSTS.Common.ClosedDate',
+      // eslint-disable-next-line no-nested-ternary
+      startDate: type.startDate
+        ? (Array.isArray(type.startDate) ? type.startDate : [type.startDate])
+        : ['System.CreatedDate'],
+      // eslint-disable-next-line no-nested-ternary
+      endDate: type.endDate
+        ? (Array.isArray(type.endDate) ? type.endDate : [type.endDate])
+        : ['Microsoft.VSTS.Common.ClosedDate'],
       workCenters: type.workCenters.map(workCenter => ({
         label: workCenter.label,
-        startDate: 'startDate' in workCenter ? workCenter.startDate : 'System.CreatedDate',
-        endDate: 'endDate' in workCenter ? workCenter.endDate : 'Microsoft.VSTS.Common.ClosedDate'
+        // eslint-disable-next-line no-nested-ternary
+        startDate: 'startDate' in workCenter
+          ? (Array.isArray(workCenter.startDate) ? workCenter.startDate : [workCenter.startDate])
+          : ['System.CreatedDate'],
+        // eslint-disable-next-line no-nested-ternary
+        endDate: 'endDate' in workCenter
+          ? (Array.isArray(workCenter.endDate) ? workCenter.endDate : [workCenter.endDate])
+          : ['Microsoft.VSTS.Common.ClosedDate']
       }))
     }))
   };

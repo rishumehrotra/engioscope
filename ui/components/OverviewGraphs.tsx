@@ -587,8 +587,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     [projectAnalysis.overview]
   );
 
-  console.log(effortDistribution);
-
   return (
     <div>
       <GraphBlock

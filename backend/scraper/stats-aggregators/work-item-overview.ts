@@ -3,11 +3,23 @@ import { exists } from '../../utils';
 import type { ParsedCollection } from '../parse-config';
 import type { WorkItem, WorkItemType } from '../types-azure';
 
-const getEndDate = (workItem: WorkItem, workItemConfig: NonNullable<ParsedCollection['workitems']['types']>[number]) => (
-  workItem.fields[workItemConfig.endDate]
-    ? new Date(workItem.fields[workItemConfig.endDate])
-    : undefined
-);
+const getStartdate = (workItem: WorkItem, workItemConfig: NonNullable<ParsedCollection['workitems']['types']>[number]) => {
+  const startDates = workItemConfig.startDate.map(
+    startDateField => (workItem.fields[startDateField] ? new Date(workItem.fields[startDateField]) : null)
+  ).filter(exists);
+
+  return new Date(Math.max(...startDates.map(d => d.getTime())));
+};
+
+const getEndDate = (workItem: WorkItem, workItemConfig: NonNullable<ParsedCollection['workitems']['types']>[number]) => {
+  const endDates = workItemConfig.endDate.map(
+    endDateField => (workItem.fields[endDateField] ? new Date(workItem.fields[endDateField]) : null)
+  ).filter(exists);
+
+  if (!endDates.length) return undefined;
+
+  return new Date(Math.min(...endDates.map(d => d.getTime())));
+};
 
 export const getOverviewData = (
   collection: ParsedCollection,
@@ -35,17 +47,28 @@ export const getOverviewData = (
     acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
 
     acc.wiMeta[workItem.id] = {
-      start: workItem.fields[workItemConfig.startDate]
-        ? new Date(workItem.fields[workItemConfig.startDate]).toISOString()
-        : undefined,
+      start: getStartdate(workItem, workItemConfig).toISOString(),
       end: getEndDate(workItem, workItemConfig)?.toISOString(),
       workCenters: workItemConfig.workCenters.map(wc => {
-        if (!workItem.fields[wc.startDate] || !workItem.fields[wc.endDate]) return;
+        const hasStartDateField = wc.startDate.some(f => f in workItem.fields);
+        const hasEndDateField = wc.endDate.some(f => f in workItem.fields);
+        if (!hasStartDateField || !hasEndDateField) return;
+
+        const minStartDate = wc.startDate.reduce((acc, field) => {
+          const startDate = new Date(workItem.fields[field]);
+          return startDate < acc ? startDate : acc;
+        }, new Date(0));
+
+        const minEndDate = wc.endDate.reduce((acc, field) => {
+          const endDate = new Date(workItem.fields[field]);
+          return endDate < acc ? endDate : acc;
+        }, new Date(0));
+
         return {
           label: wc.label,
           time: (
-            new Date(workItem.fields[wc.endDate]).getTime()
-            - new Date(workItem.fields[wc.startDate]).getTime()
+            new Date(minEndDate).getTime()
+            - new Date(minStartDate).getTime()
           )
         };
       }).filter(exists)
