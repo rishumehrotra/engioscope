@@ -48,6 +48,7 @@
     "pretty-ms": "^7.0.1",
     "qs": "^6.7.0",
     "rambda": "^6.8.2",
+    "react-minimal-pie-chart": "^8.2.0",
     "react-modal": "^3.14.3",
     "react-tooltip": "^4.2.21",
     "ua-parser-js": "^0.7.28",

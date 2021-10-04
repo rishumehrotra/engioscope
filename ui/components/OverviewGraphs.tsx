@@ -1,4 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
+import { PieChart } from 'react-minimal-pie-chart';
 import {
   always, length, pipe, range
 } from 'rambda';
@@ -69,13 +70,9 @@ const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['wiMeta'][number]
 );
 
 const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => Boolean(workItemMeta.end);
-const isWorkItemOpen = (workItemMeta: Overview['wiMeta'][number]) => (
-  Boolean(workItemMeta.start) && !isWorkItemClosed(workItemMeta)
-);
 
 const closedWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemClosed);
-const openWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemOpen);
-const workItemIdsForWIP = getWorkItemIdsUsingMeta(always(true));
+const workItemIdsFull = getWorkItemIdsUsingMeta(always(true));
 
 const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   (overview: Overview) => {
@@ -97,7 +94,7 @@ const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   }
 );
 
-const organizedWipWorkItems = organizeWorkItems(openWorkItemIds);
+const workItemIdsForEffortDistribution = organizeWorkItems(workItemIdsFull);
 
 const splitByDateForLineGraph = (
   organizedWorkItems: ReturnType<typeof organizeWorkItems>,
@@ -160,7 +157,7 @@ const getClosedWorkItemsForGraph = splitByDateForLineGraph(
 );
 
 const getAllWorkItemsForWIPGraph = splitByDateForLineGraph(
-  organizeWorkItems(workItemIdsForWIP),
+  organizeWorkItems(workItemIdsFull),
   (workItemId, dayStart, overview) => {
     const workItem = overview.wiMeta[workItemId];
     const dayEnd = new Date(dayStart);
@@ -523,11 +520,6 @@ const createGraphBlock = ({ groupLabel, projectAnalysis }: {
 };
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
-  const organizedOpenWorkItems = useMemo(
-    () => organizedWipWorkItems(projectAnalysis.overview),
-    [projectAnalysis]
-  );
-
   const closedWorkItemsForGraph = useMemo(
     () => getClosedWorkItemsForGraph(projectAnalysis),
     [projectAnalysis]
@@ -554,6 +546,48 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     () => createGraphBlock({ groupLabel, projectAnalysis }),
     [groupLabel, projectAnalysis]
   );
+
+  const effortDistribution = useMemo(
+    () => {
+      const effortLayout = Object.entries(workItemIdsForEffortDistribution(projectAnalysis.overview))
+        .map(([witId, group]) => ({
+          witId,
+          workTimes: Object.entries(group).reduce<Record<string, number>>((acc, [groupName, witIds]) => {
+            acc[groupName] = witIds.reduce((acc, witId) => acc + (
+              projectAnalysis.overview.wiMeta[witId].workCenters.reduce(
+                (acc, workCenter) => acc + workCenter.time,
+                0
+              )
+            ), 0);
+            return acc;
+          }, {})
+        }));
+
+      // Effort for graph
+      const effortWithFullTime = effortLayout
+        .reduce<{ title: string; value: number; color: string }[]>((acc, { witId, workTimes }) => {
+          Object.entries(workTimes).forEach(([groupName, time]) => {
+            acc.push({
+              title: `${projectAnalysis.overview.types[witId].name[1]} ${groupName === noGroup ? '' : `- ${groupName}`}`.trim(),
+              value: time,
+              color: lineColor({ witId, groupName })
+            });
+          });
+          return acc;
+        }, []);
+
+      const totalEffort = effortWithFullTime.reduce((acc, { value }) => acc + value, 0);
+
+      return effortWithFullTime.map(({ value, title, color }) => ({
+        color,
+        title,
+        value: (value * 100) / totalEffort
+      })).sort((a, b) => b.value - a.value);
+    },
+    [projectAnalysis.overview]
+  );
+
+  console.log(effortDistribution);
 
   return (
     <div>
@@ -654,34 +688,45 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         formatValue={x => `${x}%`}
       />
 
-      <div className="border-b-2 border-black mt-20">
-        <h2 className="font-bold">WIP work items</h2>
-        {Object.entries(organizedOpenWorkItems).map(([witId, group]) => (
-          Object.entries(group).map(([groupName, workItemIds]) => (
-            <div key={witId + groupName}>
-              <strong className="font-bold">
-                {groupLabel({ witId, groupName })}
-              </strong>
-              {workItemIds.length}
-              {' '}
-              <small>
-                {workItemIds.map((workItemId, index) => (
-                  <Fragment key={workItemId}>
-                    <a
-                      href={projectAnalysis.overview.byId[workItemId].url}
-                      className="text-blue-700 underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {workItemId}
-                    </a>
-                    {index !== workItemIds.length - 1 ? ', ' : ''}
-                  </Fragment>
+      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+        <h1 className="text-2xl font-semibold">
+          Effort distribution
+        </h1>
+        <p className="text-base text-gray-600 mb-4">
+          Percentage of working time spent on various work items
+        </p>
+
+        <div className="flex gap-9">
+          <div style={{ width: 300 }}>
+            <PieChart
+              data={effortDistribution}
+              paddingAngle={1}
+              label={x => x.dataEntry.title}
+              labelStyle={{
+                fontSize: '0.25rem'
+              }}
+            />
+          </div>
+          <div>
+            <table cellPadding="5">
+              <tbody>
+                {effortDistribution.map(({ title, value, color }) => (
+                  <tr key={title}>
+                    <td className="pr-5">
+                      <span className="pl-2" style={{ borderLeft: `5px solid ${color}` }}>
+                        {title}
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      {value.toFixed(2)}
+                      %
+                    </td>
+                  </tr>
                 ))}
-              </small>
-            </div>
-          ))
-        ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
