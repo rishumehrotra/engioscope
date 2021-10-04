@@ -1,7 +1,10 @@
 import prettyMilliseconds from 'pretty-ms';
-import { length, pipe, range } from 'rambda';
+import {
+  always, length, pipe, range
+} from 'rambda';
 import type { ReactNode } from 'react';
 import React, {
+  Fragment,
   useState, useCallback, useMemo
 } from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
@@ -9,6 +12,24 @@ import { contrastColour, createPalette, shortDate } from '../helpers/utils';
 import { modalHeading, useModal } from './common/Modal';
 import LineGraph from './graphs/LineGraph';
 import { WorkItemLinkForModal } from './WorkItemLinkForModalProps';
+
+type WorkItemPoint = {
+  date: Date;
+  workItemIds: number[];
+};
+
+type WorkItemLine = {
+  witId: string;
+  groupName: string;
+  workItems: WorkItemPoint[];
+};
+
+type MatchedDay = {
+  date: Date;
+  witId: string;
+  groupName: string;
+  workItemIds: number[];
+};
 
 const groupCreator = (overview: Overview) => (
   (workItemId: number) => {
@@ -48,12 +69,13 @@ const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['wiMeta'][number]
 );
 
 const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => Boolean(workItemMeta.end);
-// const isWorkItemOpen = (workItemMeta: Overview['wiMeta'][number]) => (
-//   Boolean(workItemMeta.start) && !isWorkItemClosed(workItemMeta)
-// );
+const isWorkItemOpen = (workItemMeta: Overview['wiMeta'][number]) => (
+  Boolean(workItemMeta.start) && !isWorkItemClosed(workItemMeta)
+);
 
 const closedWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemClosed);
-// const openWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemOpen);
+const openWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemOpen);
+const workItemIdsForWIP = getWorkItemIdsUsingMeta(always(true));
 
 const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   (overview: Overview) => {
@@ -75,13 +97,13 @@ const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   }
 );
 
-// const organizedWipWorkItems = organizeWorkItems(openWorkItemIds);
+const organizedWipWorkItems = organizeWorkItems(openWorkItemIds);
 
 const splitByDateForLineGraph = (
   organizedWorkItems: ReturnType<typeof organizeWorkItems>,
   filterWorkItems: (workItemId: number, date: Date, overview: Overview) => boolean
 ) => (
-  (projectAnalysis: ProjectOverviewAnalysis) => {
+  (projectAnalysis: ProjectOverviewAnalysis): WorkItemLine[] => {
     const { lastUpdated } = projectAnalysis;
     const separator = ':';
     const key = (witId: string, groupName: string) => `${witId}${separator}${groupName}`;
@@ -118,29 +140,11 @@ const splitByDateForLineGraph = (
 );
 
 const allWorkItemIds = [
-  (acc: number[], { workItems }: ReturnType<ReturnType<typeof splitByDateForLineGraph>>[number]) => (
+  (acc: number[], { workItems }: WorkItemLine) => (
     acc.concat(workItems.flatMap(wi => wi.workItemIds))
   ),
   [] as number[]
 ] as const;
-
-type WorkItemPoint = {
-  date: Date;
-  workItemIds: number[];
-};
-
-type WorkItemLine = {
-  witId: string;
-  groupName: string;
-  workItems: WorkItemPoint[];
-};
-
-type MatchedDay = {
-  date: Date;
-  witId: string;
-  groupName: string;
-  workItemIds: number[];
-};
 
 type GroupLabel = { witId: string; groupName: string };
 
@@ -152,6 +156,24 @@ const getClosedWorkItemsForGraph = splitByDateForLineGraph(
     const dateEnd = new Date(date);
     dateEnd.setDate(date.getDate() + 1);
     return closedAt.getTime() >= date.getTime() && closedAt.getTime() < dateEnd.getTime();
+  }
+);
+
+const getAllWorkItemsForWIPGraph = splitByDateForLineGraph(
+  organizeWorkItems(workItemIdsForWIP),
+  (workItemId, date, overview) => {
+    const workItem = overview.wiMeta[workItemId];
+    const dayEnd = new Date(date);
+    dayEnd.setDate(date.getDate() + 1);
+
+    const start = workItem.start ? new Date(workItem.start) : undefined;
+    const end = workItem.end ? new Date(workItem.end) : undefined;
+
+    if (!start) return false; // Not yet started
+    if (start > dayEnd) return false; // Started after today
+    if (!end) return true; // Started, but hasn't finished at all
+    if (end < dayEnd) return false; // Finished on or before today
+    return true;
   }
 );
 
@@ -177,7 +199,7 @@ type LegendSidebarProps = {
   headlineStatUnits?: ReactNode;
   data: WorkItemLine[];
   projectAnalysis: ProjectOverviewAnalysis;
-  childStat: (workItemIds: number[]) => ReactNode;
+  childStat: (workItemIds: WorkItemLine) => ReactNode;
   modalContents: (x: WorkItemLine) => ReactNode;
 };
 
@@ -246,7 +268,7 @@ const LegendSidebar: React.FC<LegendSidebarProps> = ({
               {groupName === noGroup ? '' : `: ${groupName}`}
             </h4>
             <div className="text-xl flex items-center pl-5 font-semibold">
-              {childStat(workItems.reduce<number[]>((a, wi) => a.concat(wi.workItemIds), []))}
+              {childStat({ workItems, witId, groupName })}
             </div>
           </button>
         ))}
@@ -328,6 +350,7 @@ const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
 };
 
 type GraphBlockProps = {
+  data: WorkItemLine[];
   graphHeading: string;
   graphSubheading: string;
   pointToValue: (point: WorkItemPoint) => number;
@@ -335,21 +358,21 @@ type GraphBlockProps = {
   aggregateStats: (x: number[]) => number;
   sidebarHeading: string;
   sidebarHeadlineStat: (x: WorkItemLine[]) => ReactNode;
+  sidebarItemStat?: (x: WorkItemLine) => ReactNode;
   showFlairForWorkItemInModal?: boolean;
   formatValue: (x: number) => string;
+  headlineStatUnits?: string;
 };
 
-const createGraphBlock = ({
-  data, groupLabel, projectAnalysis
-}: {
-  data: WorkItemLine[];
+const createGraphBlock = ({ groupLabel, projectAnalysis }: {
   groupLabel: (x: GroupLabel) => string;
   projectAnalysis: ProjectOverviewAnalysis;
 }) => {
   const workItems = (dataLine: WorkItemLine) => dataLine.workItems;
   const GraphBlock: React.FC<GraphBlockProps> = ({
-    graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle, formatValue,
-    aggregateStats, sidebarHeading, sidebarHeadlineStat, showFlairForWorkItemInModal
+    data, graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle, formatValue,
+    aggregateStats, sidebarHeading, sidebarHeadlineStat, showFlairForWorkItemInModal,
+    sidebarItemStat, headlineStatUnits
   }) => {
     const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
     const [Modal, modalProps, openModal] = useModal();
@@ -360,7 +383,7 @@ const createGraphBlock = ({
 
     const matchingDateForModal = useMemo(() => (
       dayIndexInModal ? getMatchingAtIndex(data, dayIndexInModal) : null
-    ), [dayIndexInModal]);
+    ), [data, dayIndexInModal]);
 
     return (
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
@@ -449,7 +472,11 @@ const createGraphBlock = ({
                 headlineStatValue={sidebarHeadlineStat(data)}
                 data={data}
                 projectAnalysis={projectAnalysis}
-                childStat={aggregateAndFormat}
+                headlineStatUnits={headlineStatUnits}
+                childStat={
+                  sidebarItemStat
+                  || (({ workItems }) => aggregateAndFormat(workItems.reduce<number[]>((a, wi) => a.concat(wi.workItemIds), [])))
+                }
                 modalContents={line => (
                   <ul>
                     {line.workItems.map(({ date, workItemIds }) => (
@@ -496,13 +523,18 @@ const createGraphBlock = ({
 };
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
-  // const organizedOpenWorkItems = useMemo(
-  //   () => organizedWipWorkItems(projectAnalysis.overview),
-  //   [projectAnalysis]
-  // );
+  const organizedOpenWorkItems = useMemo(
+    () => organizedWipWorkItems(projectAnalysis.overview),
+    [projectAnalysis]
+  );
 
   const closedWorkItemsForGraph = useMemo(
     () => getClosedWorkItemsForGraph(projectAnalysis),
+    [projectAnalysis]
+  );
+
+  const organizedWIPWorkItems = useMemo(
+    () => getAllWorkItemsForWIPGraph(projectAnalysis),
     [projectAnalysis]
   );
 
@@ -518,15 +550,15 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       + (groupName === noGroup ? '' : ` - ${groupName}`)
   ), [projectAnalysis.overview.types]);
 
-  const GraphBlock = useMemo(() => createGraphBlock({
-    data: closedWorkItemsForGraph,
-    groupLabel,
-    projectAnalysis
-  }), [closedWorkItemsForGraph, groupLabel, projectAnalysis]);
+  const GraphBlock = useMemo(
+    () => createGraphBlock({ groupLabel, projectAnalysis }),
+    [groupLabel, projectAnalysis]
+  );
 
   return (
     <div>
       <GraphBlock
+        data={closedWorkItemsForGraph}
         graphHeading="Velocity"
         graphSubheading="Work items closed per day over the last month"
         pointToValue={x => x.workItemIds.length}
@@ -540,6 +572,26 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       />
 
       <GraphBlock
+        data={organizedWIPWorkItems}
+        graphHeading="Work in progress"
+        graphSubheading="Work items in progress per day over the last month"
+        pointToValue={x => x.workItemIds.length}
+        crosshairBubbleTitle={() => 'Work in progress'}
+        aggregateStats={length}
+        sidebarHeading="Work in progress items"
+        formatValue={String}
+        sidebarHeadlineStat={x => x
+          .reduce(
+            (acc, { workItems }) => acc + workItems[workItems.length - 1].workItemIds.length,
+            0
+          )}
+        sidebarItemStat={
+          x => x.workItems[x.workItems.length - 1].workItemIds.length
+        }
+      />
+
+      <GraphBlock
+        data={closedWorkItemsForGraph}
         graphHeading="Average cycle time"
         graphSubheading="Average time taken to complete a work item"
         pointToValue={group => (
@@ -569,6 +621,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       />
 
       <GraphBlock
+        data={closedWorkItemsForGraph}
         graphHeading="Flow efficiency"
         graphSubheading="Time spent waiting vs. working"
         pointToValue={group => {
@@ -596,11 +649,12 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
             : 0;
         }}
+        headlineStatUnits="%"
         showFlairForWorkItemInModal
         formatValue={x => `${x}%`}
       />
 
-      {/* <div className="border-b-2 border-black mt-20">
+      <div className="border-b-2 border-black mt-20">
         <h2 className="font-bold">WIP work items</h2>
         {Object.entries(organizedOpenWorkItems).map(([witId, group]) => (
           Object.entries(group).map(([groupName, workItemIds]) => (
@@ -628,7 +682,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             </div>
           ))
         ))}
-      </div> */}
+      </div>
     </div>
   );
 };

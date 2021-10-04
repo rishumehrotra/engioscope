@@ -267,7 +267,7 @@ const LineGraph = <L, P>({
 
   if (lines.length === 0) return <div>Couldn't find any matching workitems</div>;
 
-  const width = (points(lines[0]).length) * yAxisItemSpacing;
+  const width = (points(lines[0]).length + 1) * yAxisItemSpacing;
 
   return (
     <svg
