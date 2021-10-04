@@ -161,19 +161,19 @@ const getClosedWorkItemsForGraph = splitByDateForLineGraph(
 
 const getAllWorkItemsForWIPGraph = splitByDateForLineGraph(
   organizeWorkItems(workItemIdsForWIP),
-  (workItemId, date, overview) => {
+  (workItemId, dayStart, overview) => {
     const workItem = overview.wiMeta[workItemId];
-    const dayEnd = new Date(date);
-    dayEnd.setDate(date.getDate() + 1);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayStart.getDate() + 1);
 
     const start = workItem.start ? new Date(workItem.start) : undefined;
     const end = workItem.end ? new Date(workItem.end) : undefined;
 
     if (!start) return false; // Not yet started
     if (start > dayEnd) return false; // Started after today
-    if (!end) return true; // Started, but hasn't finished at all
-    if (end < dayEnd) return false; // Finished on or before today
-    return true;
+    if (!end) return true; // Started today or before, but hasn't finished at all
+    if (end < dayStart) return false; // Started today or before, finished before today
+    return true; // Started today or before, finished today or after
   }
 );
 
