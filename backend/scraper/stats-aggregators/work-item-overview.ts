@@ -3,11 +3,14 @@ import { exists } from '../../utils';
 import type { ParsedCollection } from '../parse-config';
 import type { WorkItem, WorkItemType } from '../types-azure';
 
-const getEndDate = (workItem: WorkItem, workItemConfig: NonNullable<ParsedCollection['workitems']['types']>[number]) => (
-  workItem.fields[workItemConfig.endDate]
-    ? new Date(workItem.fields[workItemConfig.endDate])
-    : undefined
-);
+const getMinDate = (fields: string[], workItem: WorkItem) => {
+  const possibleEndDates = fields
+    .map(field => workItem.fields[field])
+    .filter(exists)
+    .map(endDate => new Date(endDate).getTime());
+
+  return possibleEndDates.length > 0 ? new Date(Math.min(...possibleEndDates)) : undefined;
+};
 
 export const getOverviewData = (
   collection: ParsedCollection,
@@ -35,18 +38,16 @@ export const getOverviewData = (
     acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
 
     acc.wiMeta[workItem.id] = {
-      start: workItem.fields[workItemConfig.startDate]
-        ? new Date(workItem.fields[workItemConfig.startDate]).toISOString()
-        : undefined,
-      end: getEndDate(workItem, workItemConfig)?.toISOString(),
+      start: getMinDate(workItemConfig.startDate, workItem)?.toISOString(),
+      end: getMinDate(workItemConfig.endDate, workItem)?.toISOString(),
       workCenters: workItemConfig.workCenters.map(wc => {
-        if (!workItem.fields[wc.startDate] || !workItem.fields[wc.endDate]) return;
+        const wcStartDate = getMinDate(wc.startDate, workItem);
+        const wcEndDate = getMinDate(wc.endDate, workItem);
+        if (!wcStartDate || !wcEndDate) return;
+
         return {
           label: wc.label,
-          time: (
-            new Date(workItem.fields[wc.endDate]).getTime()
-            - new Date(workItem.fields[wc.startDate]).getTime()
-          )
+          time: wcEndDate.getTime() - wcStartDate.getTime()
         };
       }).filter(exists)
     };
