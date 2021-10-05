@@ -8,7 +8,7 @@ import React, {
   Fragment,
   useState, useCallback, useMemo
 } from 'react';
-import type { Overview, ProjectOverviewAnalysis } from '../../shared/types';
+import type { Overview, ProjectOverviewAnalysis, UIWorkItem } from '../../shared/types';
 import { contrastColour, createPalette, shortDate } from '../helpers/utils';
 import { modalHeading, useModal } from './common/Modal';
 import LineGraph from './graphs/LineGraph';
@@ -359,6 +359,7 @@ type GraphBlockProps = {
   showFlairForWorkItemInModal?: boolean;
   formatValue: (x: number) => string;
   headlineStatUnits?: string;
+  workItemInfoForModal?: (x: UIWorkItem) => ReactNode;
 };
 
 const createGraphBlock = ({ groupLabel, projectAnalysis }: {
@@ -369,7 +370,7 @@ const createGraphBlock = ({ groupLabel, projectAnalysis }: {
   const GraphBlock: React.FC<GraphBlockProps> = ({
     data, graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle, formatValue,
     aggregateStats, sidebarHeading, sidebarHeadlineStat, showFlairForWorkItemInModal,
-    sidebarItemStat, headlineStatUnits
+    sidebarItemStat, headlineStatUnits, workItemInfoForModal
   }) => {
     const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
     const [Modal, modalProps, openModal] = useModal();
@@ -417,6 +418,7 @@ const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                         workItemType={projectAnalysis.overview.types[witId]}
                         flair={showFlairForWorkItemInModal && aggregateAndFormat([workItemId])}
                       />
+                      {workItemInfoForModal?.(projectAnalysis.overview.byId[workItemId])}
                     </li>
                   ))}
                 </ul>
@@ -500,6 +502,7 @@ const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                                     workItemType={projectAnalysis.overview.types[line.witId]}
                                     flair={showFlairForWorkItemInModal && aggregateAndFormat([workItemId])}
                                   />
+                                  {workItemInfoForModal?.(projectAnalysis.overview.byId[workItemId])}
                                 </li>
                               ))}
                             </ul>
@@ -586,8 +589,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     },
     [projectAnalysis.overview]
   );
-
-  console.log(effortDistribution);
 
   return (
     <div>
@@ -686,6 +687,23 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         headlineStatUnits="%"
         showFlairForWorkItemInModal
         formatValue={x => `${x}%`}
+        workItemInfoForModal={workItem => {
+          const meta = projectAnalysis.overview.wiMeta[workItem.id];
+          const totalTime = cycleTime(workItem.id);
+          const timeString = meta.workCenters.map(
+            workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+          ).join(' + ');
+
+          return (
+            <div className="text-gray-500 text-sm ml-6 mb-2">
+              {meta.workCenters.length > 1 ? `(${timeString})` : timeString}
+              {' / '}
+              {totalTime
+                ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
+                : 'Not completed yet'}
+            </div>
+          );
+        }}
       />
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
