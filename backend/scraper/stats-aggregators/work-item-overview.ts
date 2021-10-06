@@ -1,6 +1,6 @@
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { exists } from '../../utils';
-import type { ParsedCollection } from '../parse-config';
+import { exists, isNewerThan } from '../../utils';
+import type { ParsedCollection, ParsedConfig } from '../parse-config';
 import type { WorkItem, WorkItemType } from '../types-azure';
 
 const getMinDate = (fields: string[], workItem: WorkItem) => {
@@ -12,7 +12,14 @@ const getMinDate = (fields: string[], workItem: WorkItem) => {
   return possibleEndDates.length > 0 ? new Date(Math.min(...possibleEndDates)) : undefined;
 };
 
+const stateChangedRecently = (validateDate: (x: Date) => boolean) => (workItem: WorkItem) => {
+  const stageChangeDate = workItem.fields['Microsoft.VSTS.Common.StateChangeDate'];
+  if (!stageChangeDate) return true; // Play safe
+  return validateDate(stageChangeDate);
+};
+
 export const getOverviewData = (
+  config: ParsedConfig,
   collection: ParsedCollection,
   workItemsForProject: WorkItem[],
   byId: Record<number, UIWorkItem>,
@@ -21,6 +28,8 @@ export const getOverviewData = (
 ): Overview => {
   const groupCache = new Map<string, { id: string; wit: string; label: string; name: string }>();
   let groupIndex = 0;
+  const isInQueryPeriod = isNewerThan(config.azure.queryFrom);
+  const changedRecently = stateChangedRecently(isInQueryPeriod);
 
   const results = workItemsForProject.reduce<{
     reducedIds: Record<number, UIWorkItem>;
@@ -31,6 +40,7 @@ export const getOverviewData = (
     const wit = getWorkItemType(workItem);
 
     const workItemConfig = collection.workitems.types?.find(wic => wic.type === wit.name);
+    if (!changedRecently(workItem)) return acc;
     if (!workItemConfig) return acc;
     if (workItem.fields['System.State'] === 'Withdrawn') return acc;
 

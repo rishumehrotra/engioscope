@@ -3,7 +3,7 @@ import { reduce } from 'rambda';
 import type {
   AnalysedWorkItems, UIWorkItem, UIWorkItemType
 } from '../../../shared/types';
-import { exists, unique } from '../../utils';
+import { exists, isNewerThan, unique } from '../../utils';
 import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
@@ -185,10 +185,6 @@ const uiWorkItemCreator = (
   }
 );
 
-const isNewerThan = (date1: Date) => (date2: Date) => (
-  date2.getTime() > date1.getTime()
-);
-
 const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedCollection) => {
   const {
     getCollectionWorkItemIdsForQuery, getWorkItemTypes, getCollectionWorkItems
@@ -345,7 +341,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
         byId, ids, bugLeakage, types
       },
       overview: getOverviewData(
-        collection, workItemsForProject, byId, types, getWorkItemType
+        config, collection, workItemsForProject, byId, types, getWorkItemType
       )
     };
   };

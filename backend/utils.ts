@@ -12,6 +12,10 @@ export const pastDate = (past?: string) => {
 const isWithin = (time: string) => (date: Date) => date > pastDate(time);
 export const isWithinFortnight = isWithin('15 days');
 
+export const isNewerThan = (date1: Date) => (date2: Date) => (
+  date2.getTime() > date1.getTime()
+);
+
 export const shortDateFormat = (date: Date) => [
   date.toLocaleString('default', { month: 'short' }),
   date.getDate()
