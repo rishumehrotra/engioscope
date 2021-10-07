@@ -23,11 +23,6 @@ type CollectionWorkItemConfig = {
   skipChildren?: string[];
   environmentField?: string;
   changeLeadTime?: Record<WorkItemType, CLTDefinition>;
-  workCenters?: {
-    label: string;
-    startDate: string;
-    endDate: string;
-  }[];
   ignoredWorkItemsForFlowAnalysis?: string[];
   types?: {
     type: string;
@@ -93,11 +88,6 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   skipChildren: string[];
   environmentField?: string;
   changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
-  workCenters?: {
-    label: string;
-    startDate: string;
-    endDate: string;
-  }[];
   ignoredWorkItemsForFlowAnalysis?: string[];
   types?: {
     type: string;
@@ -148,7 +138,6 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     skipChildren: collection.workitems?.skipChildren ?? config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
     environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
     changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime,
-    workCenters: collection.workitems?.workCenters ?? config.azure.workitems?.workCenters,
     ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
       ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
     types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(type => ({
