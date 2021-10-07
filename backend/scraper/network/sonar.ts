@@ -15,7 +15,7 @@ export type SonarRepo = {
   name: string;
   qualifier: string;
   visibility: string;
-  lastAnalysisDate: string;
+  lastAnalysisDate: Date;
   url: string;
   token: string;
 };
@@ -81,7 +81,8 @@ export default (config: ParsedConfig) => {
       })
     ).then(res => ({
       url: `${currentSonarRepo.url}/dashboard?id=${currentSonarRepo.name}`,
-      measures: res.data.component?.measures || []
+      measures: res.data.component?.measures || [],
+      lastAnalysisDate: currentSonarRepo.lastAnalysisDate
     }));
   };
 };

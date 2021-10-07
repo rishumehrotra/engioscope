@@ -1,6 +1,7 @@
 import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
 import type { UICodeQuality } from '../../../shared/types';
 
+// Get list of available metrics at <sonar-host>/api/metrics/search
 export const requiredMetrics = [
   'complexity',
   'bugs',
@@ -51,7 +52,8 @@ export default (sonarAnalysis: SonarAnalysisByRepo): AggregagedCodeQuality => {
       vulnerabilities: Number(findMeasure('vulnerabilities') || 0),
       duplication: Number(findMeasure('duplicated_lines_density') || 0),
       techDebt: Number(findMeasure('sqale_index') || '0'),
-      qualityGate: findMeasure('alert_status') as 'error' | 'warn' | 'ok'
+      qualityGate: findMeasure('alert_status') as 'error' | 'warn' | 'ok',
+      lastAnalysisDate: sonarAnalysis.lastAnalysisDate
     }
   };
 };

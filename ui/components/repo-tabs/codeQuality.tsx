@@ -1,6 +1,6 @@
 import React from 'react';
 import type { RepoAnalysis } from '../../../shared/types';
-import { formatDebt, num } from '../../helpers/utils';
+import { formatDebt, num, shortDate } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import Metric from '../Metric';
@@ -21,16 +21,21 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
           <Metric name="Tech debt" value={formatDebt(codeQuality.techDebt)} />
           <Metric name="Quality gate" value={codeQuality.qualityGate} position="last" />
         </div>
-        <p className="w-full text-right text-sm italic mt-4">
-          <a
-            className="link-text"
-            href={codeQuality.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            See full details on SonarQube
-          </a>
-        </p>
+        <div className="flex justify-between text-sm italic mt-4">
+          <div className="text-gray-600">
+            {`Last analysis was run on ${shortDate(new Date(codeQuality.lastAnalysisDate))}.`}
+          </div>
+          <div className="items-end">
+            <a
+              className="link-text"
+              href={codeQuality.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              See full details on SonarQube
+            </a>
+          </div>
+        </div>
       </TabContents>
     ) : (<TabContents gridCols={0}><AlertMessage message="Couldn't find this repo on SonarQube" /></TabContents>)
   )

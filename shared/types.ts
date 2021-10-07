@@ -84,6 +84,7 @@ export type UICodeQuality = null | {
   duplication: number;
   techDebt: number;
   qualityGate: 'error' | 'warn' | 'ok';
+  lastAnalysisDate: Date;
 };
 
 export type AggregatedCommitsByDev = {
