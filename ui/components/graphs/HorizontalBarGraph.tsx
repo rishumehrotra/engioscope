@@ -16,9 +16,12 @@ type HorizontalBarGraphProps = {
   graphData: { label: string; value: number; color: string }[];
   width: number;
   onBarClick?: (x: {label: string; value: number; color: string}) => void;
+  formatValue?: (value: number) => string;
 };
 
-const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, width, onBarClick }) => {
+const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
+  graphData, width, onBarClick, formatValue
+}) => {
   const height = useMemo(() => (graphData.length * (barThickness + barSpacing)) - barSpacing, [graphData]);
   const maxValue = useMemo(() => Math.max(...graphData.map(d => d.value)), [graphData]);
   const putLabelInBar = (value: number) => value > maxValue * 0.5;
@@ -57,7 +60,7 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({ graphData, widt
             className="pointer-events-none"
           >
             <div className={`h-full flex items-center px-2 font-semibold ${putLabelInBar(value) ? 'justify-end text-white' : ''}`}>
-              {`${label} ${value}`}
+              {`${label} ${formatValue?.(value) || value}`}
             </div>
           </foreignObject>
         </g>

@@ -1,5 +1,4 @@
 import prettyMilliseconds from 'pretty-ms';
-import { PieChart } from 'react-minimal-pie-chart';
 import {
   always, length, pipe, range
 } from 'rambda';
@@ -13,6 +12,7 @@ import { contrastColour, createPalette, shortDate } from '../helpers/utils';
 import { modalHeading, useModal } from './common/Modal';
 import LineGraph from './graphs/LineGraph';
 import { WorkItemLinkForModal } from './WorkItemLinkForModalProps';
+import HorizontalBarGraph from './graphs/HorizontalBarGraph';
 
 type WorkItemPoint = {
   date: Date;
@@ -568,10 +568,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       // Effort for graph
       const effortWithFullTime = effortLayout
-        .reduce<{ title: string; value: number; color: string }[]>((acc, { witId, workTimes }) => {
+        .reduce<{ label: string; value: number; color: string }[]>((acc, { witId, workTimes }) => {
           Object.entries(workTimes).forEach(([groupName, time]) => {
             acc.push({
-              title: `${projectAnalysis.overview.types[witId].name[1]} ${groupName === noGroup ? '' : `- ${groupName}`}`.trim(),
+              label: `${projectAnalysis.overview.types[witId].name[1]} ${groupName === noGroup ? '' : `- ${groupName}`}`.trim(),
               value: time,
               color: lineColor({ witId, groupName })
             });
@@ -581,9 +581,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       const totalEffort = effortWithFullTime.reduce((acc, { value }) => acc + value, 0);
 
-      return effortWithFullTime.map(({ value, title, color }) => ({
+      return effortWithFullTime.map(({ value, label, color }) => ({
         color,
-        title,
+        label,
         value: (value * 100) / totalEffort
       })).sort((a, b) => b.value - a.value);
     },
@@ -714,37 +714,11 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           Percentage of working time spent on various work items
         </p>
 
-        <div className="flex gap-9">
-          <div style={{ width: 300 }}>
-            <PieChart
-              data={effortDistribution}
-              paddingAngle={1}
-              label={x => x.dataEntry.title}
-              labelStyle={{
-                fontSize: '0.25rem'
-              }}
-            />
-          </div>
-          <div>
-            <table cellPadding="5">
-              <tbody>
-                {effortDistribution.map(({ title, value, color }) => (
-                  <tr key={title}>
-                    <td className="pr-5">
-                      <span className="pl-2" style={{ borderLeft: `5px solid ${color}` }}>
-                        {title}
-                      </span>
-                    </td>
-                    <td className="text-right">
-                      {value.toFixed(2)}
-                      %
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <HorizontalBarGraph
+          graphData={effortDistribution}
+          width={500}
+          formatValue={x => `${x.toFixed(2)}%`}
+        />
       </div>
     </div>
   );
