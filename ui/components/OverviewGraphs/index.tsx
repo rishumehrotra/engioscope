@@ -10,7 +10,7 @@ import {
   organizedClosedWorkItems, organizedAllWorkItems, cycleTimeFor,
   lineColor, noGroup
 } from './helpers';
-import type { WorkItemLine, WorkItemPoint } from './day-wise-line-graph-helpers';
+import type { WorkItemLine } from './day-wise-line-graph-helpers';
 import {
   splitByDateForLineGraph
 } from './day-wise-line-graph-helpers';
@@ -56,10 +56,6 @@ const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   return true;
 };
 
-const widsInGroup = (workItems: WorkItemPoint[]) => (
-  workItems.flatMap(({ workItemIds }) => workItemIds)
-);
-
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const memoizedOrganizedClosedWorkItems = useMemo(
     () => organizedClosedWorkItems(projectAnalysis.overview),
@@ -73,20 +69,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
   const closedWorkItemsForGraph = useMemo(
     () => splitByDateForLineGraph(
-      projectAnalysis,
-      memoizedOrganizedClosedWorkItems,
-      isClosedToday
+      projectAnalysis, memoizedOrganizedClosedWorkItems, isClosedToday
     ),
     [memoizedOrganizedClosedWorkItems, projectAnalysis]
-  );
-
-  const organizedWIPWorkItems = useMemo(
-    () => splitByDateForLineGraph(
-      projectAnalysis,
-      memoizedOrganizedAllWorkItems,
-      isWIPToday
-    ),
-    [memoizedOrganizedAllWorkItems, projectAnalysis]
   );
 
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
@@ -108,7 +93,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
   const effortDistribution = useMemo(
     () => {
-      const effortLayout = Object.entries(organizedAllWorkItems(projectAnalysis.overview))
+      const effortLayout = Object.entries(memoizedOrganizedAllWorkItems)
         .map(([witId, group]) => ({
           witId,
           workTimes: Object.entries(group).reduce<Record<string, number>>((acc, [groupName, witIds]) => {
@@ -143,42 +128,39 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         value: (value * 100) / totalEffort
       })).sort((a, b) => b.value - a.value);
     },
-    [projectAnalysis.overview]
+    [memoizedOrganizedAllWorkItems, projectAnalysis.overview.types, projectAnalysis.overview.wiMeta]
   );
 
   return (
     <div>
       <GraphBlock
-        data={closedWorkItemsForGraph}
+        data={memoizedOrganizedClosedWorkItems}
+        daySplitter={isClosedToday}
         graphHeading="Velocity"
         graphSubheading="Work items closed per day over the last month"
         pointToValue={x => x.workItemIds.length}
-        crosshairBubbleTitle={() => 'Velocity'}
+        crosshairBubbleTitle="Velocity"
         aggregateStats={length}
         sidebarHeading="Velocity this month"
         formatValue={String}
-        sidebarHeadlineStat={x => x.reduce((acc, { workItems }) => (
-          acc + widsInGroup(workItems).length
-        ), 0)}
+        sidebarHeadlineStat={lines => lines.reduce(...allWorkItemIds).length}
       />
 
       <GraphBlock
-        data={organizedWIPWorkItems}
+        data={memoizedOrganizedAllWorkItems}
+        daySplitter={isWIPToday}
         graphHeading="Work in progress"
         graphSubheading="Work items in progress per day over the last month"
         pointToValue={x => x.workItemIds.length}
-        crosshairBubbleTitle={() => 'Work in progress'}
+        crosshairBubbleTitle="Work in progress"
         aggregateStats={length}
         sidebarHeading="Work in progress items"
         formatValue={String}
-        sidebarHeadlineStat={x => x
-          .reduce(
-            (acc, { workItems }) => acc + workItems[workItems.length - 1].workItemIds.length,
-            0
-          )}
-        sidebarItemStat={
-          x => x.workItems[x.workItems.length - 1].workItemIds.length
-        }
+        sidebarHeadlineStat={lines => lines.reduce(
+          (acc, { workItems }) => acc + workItems[workItems.length - 1].workItemIds.length,
+          0
+        )}
+        sidebarItemStat={length}
       />
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
@@ -229,8 +211,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             ))}
           </div>
           <LegendSidebar
-            heading="Cycle time"
-            data={closedWorkItemsForGraph}
+            heading="Average cycle time"
+            data={memoizedOrganizedClosedWorkItems}
             headlineStatValue={(data => {
               const allWids = data.reduce(...allWorkItemIds);
 
@@ -242,15 +224,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                 : '-';
             })(closedWorkItemsForGraph)}
             projectAnalysis={projectAnalysis}
-            childStat={({ workItems }) => prettyMilliseconds(
-              workItems.reduce<number>((acc, { workItemIds }) => (
-                acc + workItemIds.reduce(...totalCycleTime)
-              ), 0) / workItems.length,
+            childStat={workItemIds => prettyMilliseconds(
+              workItemIds.reduce(...totalCycleTime) / workItemIds.length,
               { compact: true }
             )}
-            modalContents={line => (
-              line.workItems
-                .flatMap(({ workItemIds }) => workItemIds)
+            modalContents={({ witId, workItemIds }) => (
+              workItemIds
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 .sort((a, b) => cycleTime(b)! - cycleTime(a)!)
                 .map(id => {
                   const workItem = projectAnalysis.overview.byId[id];
@@ -260,7 +240,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                       <li className="my-3">
                         <WorkItemLinkForModal
                           workItem={workItem}
-                          workItemType={projectAnalysis.overview.types[workItem.typeId]}
+                          workItemType={projectAnalysis.overview.types[witId]}
+                          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                           flair={prettyMilliseconds(cycleTime(workItem.id)!, { compact: true })}
                         />
                       </li>
@@ -272,38 +253,40 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         </div>
       </div>
 
-      <GraphBlock
-        data={closedWorkItemsForGraph}
-        graphHeading="Average cycle time"
-        graphSubheading="Average time taken to complete a work item"
-        pointToValue={group => (
-          group.workItemIds.length
-            ? group.workItemIds.reduce(...totalCycleTime) / group.workItemIds.length
-            : 0
-        )}
-        crosshairBubbleTitle={() => 'Average cycle time'}
-        aggregateStats={workItemIds => (
-          workItemIds.length
-            ? workItemIds.reduce(...totalCycleTime) / workItemIds.length
-            : 0
-        )}
-        sidebarHeading="Overall average cycle time"
-        sidebarHeadlineStat={data => {
-          const allWids = data.reduce(...allWorkItemIds);
+      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+        <h1 className="text-2xl font-semibold">
+          Flow efficiency
+        </h1>
+        <p className="text-base text-gray-600 mb-4">
+          Percentage of time spent working
+        </p>
+        <HorizontalBarGraph
+          graphData={Object.entries(memoizedOrganizedClosedWorkItems).reduce<{ label: string; value: number; color: string }[]>(
+            (acc, [witId, group]) => {
+              Object.entries(group).forEach(([groupName, workItemIds]) => {
+                const workTime = workItemIds.reduce(...totalWorkCenterTime);
+                const totalTime = workItemIds.reduce(...totalCycleTime);
+                const value = totalTime === 0 ? 0 : (workTime * 100) / totalTime;
 
-          return allWids.length
-            ? prettyMilliseconds(
-              allWids.reduce(...totalCycleTime) / allWids.length,
-              { compact: true }
-            )
-            : '-';
-        }}
-        showFlairForWorkItemInModal
-        formatValue={x => prettyMilliseconds(x, { compact: true })}
-      />
+                acc.push({
+                  label: `${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : ` - ${groupName}`}`,
+                  value,
+                  color: lineColor({ witId, groupName })
+                });
+              });
+              return acc;
+            },
+            []
+          )}
+          width={500}
+          formatValue={value => `${Math.round(value)}%`}
+          // onBarClick={}
+        />
+      </div>
 
       <GraphBlock
-        data={closedWorkItemsForGraph}
+        data={memoizedOrganizedClosedWorkItems}
+        daySplitter={isClosedToday}
         graphHeading="Flow efficiency"
         graphSubheading="Time spent waiting vs. working"
         pointToValue={group => {
@@ -320,13 +303,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           return Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime);
         }}
         sidebarHeading="Overall flow efficiency"
-        sidebarHeadlineStat={data => {
-          const allWids = data.reduce<number[]>(
-            (acc, { workItems }) => acc.concat(widsInGroup(workItems)),
-            []
-          );
+        sidebarHeadlineStat={lines => {
+          const allWids = lines.reduce(...allWorkItemIds);
           const cycleTime = allWids.reduce(...totalCycleTime);
-
           return cycleTime
             ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
             : 0;

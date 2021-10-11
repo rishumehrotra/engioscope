@@ -4,7 +4,7 @@ import type { ProjectOverviewAnalysis } from '../../../shared/types';
 import { contrastColour, shortDate } from '../../helpers/utils';
 import { lineColor } from './helpers';
 import type { GroupLabel } from './helpers';
-import type { MatchedDay, WorkItemLine } from './day-wise-line-graph-helpers';
+import type { WorkItemLine } from './day-wise-line-graph-helpers';
 import { getMatchingAtIndex } from './day-wise-line-graph-helpers';
 
 type CrosshairBubbleProps = {
@@ -12,7 +12,7 @@ type CrosshairBubbleProps = {
   index: number;
   projectAnalysis: ProjectOverviewAnalysis;
   groupLabel: (x: GroupLabel) => string;
-  title: (x: MatchedDay[]) => ReactNode;
+  title: ReactNode;
   itemStat: (x: number[]) => ReactNode;
 };
 export const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
@@ -30,7 +30,7 @@ export const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
           }}
         >
           <div className="text-xl">
-            {title(matching)}
+            {title}
           </div>
           <div className="justify-self-end">
             {shortDate(matching[0].date)}
