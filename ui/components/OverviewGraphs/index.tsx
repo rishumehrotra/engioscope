@@ -97,12 +97,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         .map(([witId, group]) => ({
           witId,
           workTimes: Object.entries(group).reduce<Record<string, number>>((acc, [groupName, witIds]) => {
-            acc[groupName] = witIds.reduce((acc, witId) => acc + (
-              projectAnalysis.overview.wiMeta[witId].workCenters.reduce(
-                (acc, workCenter) => acc + workCenter.time,
-                0
-              )
-            ), 0);
+            acc[groupName] = witIds.reduce(...totalWorkCenterTime);
             return acc;
           }, {})
         }));
@@ -128,7 +123,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         value: (value * 100) / totalEffort
       })).sort((a, b) => b.value - a.value);
     },
-    [memoizedOrganizedAllWorkItems, projectAnalysis.overview.types, projectAnalysis.overview.wiMeta]
+    [memoizedOrganizedAllWorkItems, projectAnalysis.overview.types, totalWorkCenterTime]
   );
 
   return (
@@ -340,11 +335,60 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           Percentage of working time spent on various work items
         </p>
 
-        <HorizontalBarGraph
-          graphData={effortDistribution}
-          width={500}
-          formatValue={x => (Number.isNaN(x) ? '<unknown>' : `${x.toFixed(2)}%`)}
-        />
+        <div className="grid gap-8 grid-flow-col">
+          <HorizontalBarGraph
+            graphData={effortDistribution}
+            width={1080}
+            formatValue={x => (Number.isNaN(x) ? '<unknown>' : `${x.toFixed(2)}%`)}
+          />
+          <LegendSidebar
+            heading="Effort distribution"
+            data={memoizedOrganizedAllWorkItems}
+            childStat={workItemIds => {
+              const workTime = workItemIds.reduce(...totalWorkCenterTime);
+              const allWorkItemIds = Object.values(memoizedOrganizedAllWorkItems).reduce<number[]>(
+                (acc, group) => acc.concat(...Object.values(group)),
+                []
+              );
+
+              return `${((workTime * 100) / allWorkItemIds.reduce(...totalWorkCenterTime)).toFixed(2)}%`;
+            }}
+            modalContents={({ workItemIds }) => {
+              const workCenterTime = totalWorkCenterTimeUsing(projectAnalysis.overview);
+              return (
+                <ul>
+                  {workItemIds
+                    .map(id => projectAnalysis.overview.byId[id])
+                    .filter(workItem => projectAnalysis.overview.wiMeta[workItem.id].workCenters.length)
+                    .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
+                    .map(workItem => (
+                      <li key={workItem.id} className="my-4">
+                        <WorkItemLinkForModal
+                          workItem={workItem}
+                          workItemType={projectAnalysis.overview.types[workItem.typeId]}
+                          flair={prettyMilliseconds(
+                            projectAnalysis.overview.wiMeta[workItem.id].workCenters.reduce(
+                              (acc, workCenter) => acc + workCenter.time,
+                              0
+                            ),
+                            { compact: true }
+                          )}
+                        />
+                        <div className="text-gray-500 text-sm ml-6 mb-2">
+                          {projectAnalysis.overview.wiMeta[workItem.id].workCenters.map(
+                            workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+                          ).join(' + ')}
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              );
+            }}
+            headlineStatValue=""
+            projectAnalysis={projectAnalysis}
+
+          />
+        </div>
       </div>
     </div>
   );

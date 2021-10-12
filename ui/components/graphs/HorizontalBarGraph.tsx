@@ -4,11 +4,11 @@ const yAxisLabelWidth = 0;
 const xAxisHeight = 50;
 const barThickness = 30;
 const barSpacing = 10;
-const graphWidth = 500;
+// const graphWidth = 500;
 
-const barWidth = (value: number, maxValue: number) => (
+const barWidth = (value: number, maxValue: number, width: number) => (
   maxValue
-    ? (value / maxValue) * graphWidth
+    ? (value / maxValue) * width
     : 0
 );
 
@@ -27,7 +27,7 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
   const putLabelInBar = (value: number) => value > maxValue * 0.5;
 
   return (
-    <svg viewBox={`0 0 ${graphWidth} ${height}`} width={width}>
+    <svg viewBox={`0 0 ${width} ${height}`} width={width}>
       <g>
         <line
           x1={yAxisLabelWidth}
@@ -44,7 +44,7 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
             key={label}
             x={yAxisLabelWidth}
             y={index * (barThickness + barSpacing)}
-            width={barWidth(value, maxValue)}
+            width={barWidth(value, maxValue, width)}
             height={barThickness}
             fill={color}
             className={onBarClick ? 'cursor-pointer' : ''}
@@ -53,9 +53,9 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
           <foreignObject
             x={putLabelInBar(value)
               ? yAxisLabelWidth
-              : barWidth(value, maxValue) + yAxisLabelWidth}
+              : barWidth(value, maxValue, width) + yAxisLabelWidth}
             y={index * (barThickness + barSpacing)}
-            width={putLabelInBar(value) ? barWidth(value, maxValue) : width - barWidth(value, maxValue) - yAxisLabelWidth}
+            width={putLabelInBar(value) ? barWidth(value, maxValue, width) : width - barWidth(value, maxValue, width) - yAxisLabelWidth}
             height={barThickness}
             className="pointer-events-none"
           >
