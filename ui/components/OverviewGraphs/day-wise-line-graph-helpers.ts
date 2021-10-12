@@ -10,7 +10,7 @@ export type WorkItemPoint = {
 export type WorkItemLine = {
   witId: string;
   groupName: string;
-  workItems: WorkItemPoint[];
+  workItemPoints: WorkItemPoint[];
 };
 
 export type MatchedDay = {
@@ -28,8 +28,8 @@ export const getMatchingAtIndex = (
     .map(line => ({
       witId: line.witId,
       groupName: line.groupName,
-      date: line.workItems[index].date,
-      workItemIds: line.workItems[index].workItemIds
+      date: line.workItemPoints[index].date,
+      workItemIds: line.workItemPoints[index].workItemIds
     }))
     .filter(({ workItemIds }) => workItemIds.length > 0)
 );
@@ -69,7 +69,7 @@ export const splitByDateForLineGraph = (
     return {
       witId,
       groupName: rest.join(separator),
-      workItems: [...wids].reverse()
+      workItemPoints: [...wids].reverse()
     };
   });
 };

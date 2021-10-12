@@ -34,7 +34,7 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
   groupLabel: (x: GroupLabel) => string;
   projectAnalysis: ProjectOverviewAnalysis;
 }) => {
-  const workItems = (dataLine: WorkItemLine) => dataLine.workItems;
+  const workItems = (dataLine: WorkItemLine) => dataLine.workItemPoints;
   const GraphBlock: React.FC<GraphBlockProps> = ({
     data, graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle,
     formatValue, aggregateStats, sidebarHeading, sidebarHeadlineStat,
@@ -144,8 +144,7 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                 data={data}
                 projectAnalysis={projectAnalysis}
                 headlineStatUnits={headlineStatUnits}
-                childStat={sidebarItemStat
-                  || (workItemIds => aggregateAndFormat(workItemIds))}
+                childStat={sidebarItemStat || aggregateAndFormat}
                 modalContents={({ workItemIds }) => (
                   <ul>
                     {workItemIds.length

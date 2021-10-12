@@ -27,7 +27,7 @@ const totalWorkCenterTimeUsing = (overview: Overview) => (wid: number) => (
 );
 
 const allWorkItemIds = [
-  (acc: number[], { workItems }: WorkItemLine) => (
+  (acc: number[], { workItemPoints: workItems }: WorkItemLine) => (
     acc.concat(workItems.flatMap(wi => wi.workItemIds))
   ),
   [] as number[]
@@ -121,10 +121,14 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         color,
         label,
         value: (value * 100) / totalEffort
-      })).sort((a, b) => b.value - a.value);
+      }));
     },
     [memoizedOrganizedAllWorkItems, projectAnalysis.overview.types, totalWorkCenterTime]
   );
+
+  const wipSplitByDay = useMemo(() => splitByDateForLineGraph(
+    projectAnalysis, memoizedOrganizedAllWorkItems, isWIPToday
+  ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
   return (
     <div>
@@ -152,10 +156,17 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         sidebarHeading="Work in progress items"
         formatValue={String}
         sidebarHeadlineStat={lines => lines.reduce(
-          (acc, { workItems }) => acc + workItems[workItems.length - 1].workItemIds.length,
+          (acc, { workItemPoints: workItems }) => acc + workItems[workItems.length - 1].workItemIds.length,
           0
         )}
-        sidebarItemStat={length}
+        sidebarItemStat={allWorkItemIds => {
+          const matchingLine = wipSplitByDay
+            .find(line => line.workItemPoints
+              .flatMap(prop('workItemIds'))
+              .some(id => allWorkItemIds.includes(id)));
+
+          return matchingLine?.workItemPoints[matchingLine.workItemPoints.length - 1].workItemIds.length || 0;
+        }}
       />
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
@@ -386,7 +397,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             }}
             headlineStatValue=""
             projectAnalysis={projectAnalysis}
-
           />
         </div>
       </div>
