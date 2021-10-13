@@ -1,4 +1,4 @@
-import { pipe } from 'rambda';
+import { pipe, prop } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useState, useMemo } from 'react';
 import type { Overview, ProjectOverviewAnalysis, UIWorkItem } from '../../../shared/types';
@@ -26,6 +26,7 @@ type GraphBlockProps = {
   sidebarHeading: string;
   sidebarHeadlineStat: (workItemIds: WorkItemLine[]) => ReactNode;
   sidebarItemStat?: (workItemIds: number[]) => ReactNode;
+  sidebarModalContents: (line: WorkItemLine) => ReactNode;
   headlineStatUnits?: string;
   workItemInfoForModal?: (x: UIWorkItem) => ReactNode;
 };
@@ -39,7 +40,7 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
     data, graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle,
     formatValue, aggregateStats, sidebarHeading, sidebarHeadlineStat,
     showFlairForWorkItemInModal, sidebarItemStat, headlineStatUnits,
-    workItemInfoForModal, daySplitter
+    workItemInfoForModal, daySplitter, sidebarModalContents
   }) => {
     const dataByDay = useMemo(() => splitByDateForLineGraph(
       projectAnalysis, data, daySplitter
@@ -145,26 +146,16 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                 projectAnalysis={projectAnalysis}
                 headlineStatUnits={headlineStatUnits}
                 childStat={sidebarItemStat || aggregateAndFormat}
-                modalContents={({ workItemIds }) => (
-                  <ul>
-                    {workItemIds.length
-                      ? (
-                        <ul>
-                          {workItemIds.map(workItemId => (
-                            <li key={workItemId} className="py-2">
-                              <WorkItemLinkForModal
-                                workItem={projectAnalysis.overview.byId[workItemId]}
-                                workItemType={projectAnalysis.overview.types[projectAnalysis.overview.byId[workItemId].typeId]}
-                                flair={showFlairForWorkItemInModal && aggregateAndFormat([workItemId])}
-                              />
-                              {workItemInfoForModal?.(projectAnalysis.overview.byId[workItemId])}
-                            </li>
-                          ))}
-                        </ul>
-                      )
-                      : null}
-                  </ul>
-                )}
+                modalContents={({ workItemIds }) => {
+                  const matchingLine = dataByDay
+                    .find(line => line.workItemPoints
+                      .flatMap(prop('workItemIds'))
+                      .some(id => workItemIds.includes(id)));
+
+                  if (!matchingLine) return 'Nothing to see here';
+
+                  return sidebarModalContents(matchingLine);
+                }}
               />
             </>
           )}

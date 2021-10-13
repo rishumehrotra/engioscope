@@ -16,6 +16,7 @@ import {
 } from './day-wise-line-graph-helpers';
 import { createGraphBlock } from './LineGraphBlock';
 import { LegendSidebar } from './LegendSidebar';
+import { contrastColour, shortDate } from '../../helpers/utils';
 
 const totalCycleTimeUsing = (cycleTime: (wid: number) => number | undefined) => [
   (acc: number, wid: number) => acc + (cycleTime(wid) || 0),
@@ -144,7 +145,43 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         sidebarHeading="Velocity this month"
         formatValue={String}
         sidebarHeadlineStat={lines => lines.reduce(...allWorkItemIds).length}
-        workItemInfoForModal={workItem => projectAnalysis.overview.wiMeta[workItem.id].end}
+        sidebarModalContents={line => (
+          <ul>
+            {line.workItemPoints.map(({ date, workItemIds }) => (
+              workItemIds.length
+                ? (
+                  <li key={date.toISOString()}>
+                    <div className="font-semibold text-lg mt-4 mb-1">
+                      {shortDate(date)}
+                      <span
+                        style={{
+                          color: contrastColour(lineColor({
+                            witId: line.witId,
+                            groupName: line.groupName
+                          })),
+                          background: lineColor({ witId: line.witId, groupName: line.groupName })
+                        }}
+                        className="inline-block px-2 ml-2 rounded-full text-base"
+                      >
+                        {workItemIds.length}
+                      </span>
+                    </div>
+                    <ul>
+                      {workItemIds.map(workItemId => (
+                        <li key={workItemId} className="py-2">
+                          <WorkItemLinkForModal
+                            workItem={projectAnalysis.overview.byId[workItemId]}
+                            workItemType={projectAnalysis.overview.types[line.witId]}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                )
+                : null
+            ))}
+          </ul>
+        )}
       />
 
       <GraphBlock
@@ -168,6 +205,24 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               .some(id => allWorkItemIds.includes(id)));
 
           return matchingLine?.workItemPoints[matchingLine.workItemPoints.length - 1].workItemIds.length || 0;
+        }}
+        sidebarModalContents={line => {
+          const lastDaysWorkItemIds = line.workItemPoints[line.workItemPoints.length - 1].workItemIds;
+
+          if (!lastDaysWorkItemIds.length) return 'Nothing currently being worked on';
+
+          return (
+            <ul>
+              {lastDaysWorkItemIds.map(workItemId => (
+                <li key={workItemId} className="py-2">
+                  <WorkItemLinkForModal
+                    workItem={projectAnalysis.overview.byId[workItemId]}
+                    workItemType={projectAnalysis.overview.types[projectAnalysis.overview.byId[workItemId].typeId]}
+                  />
+                </li>
+              ))}
+            </ul>
+          );
         }}
       />
 
@@ -296,28 +351,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               })
             ))}
           </ul>
-          {/* <HorizontalBarGraph
-            graphData={Object.entries(memoizedOrganizedClosedWorkItems).reduce<{ label: string; value: number; color: string }[]>(
-              (acc, [witId, group]) => {
-                Object.entries(group).forEach(([groupName, workItemIds]) => {
-                  const workTime = workItemIds.reduce(...totalWorkCenterTime);
-                  const totalTime = workItemIds.reduce(...totalCycleTime);
-                  const value = totalTime === 0 ? 0 : (workTime * 100) / totalTime;
 
-                  acc.push({
-                    label: `${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : ` - ${groupName}`}`,
-                    value,
-                    color: lineColor({ witId, groupName })
-                  });
-                });
-                return acc;
-              },
-              []
-            )}
-            width={500}
-            formatValue={value => `${Math.round(value)}%`}
-            // onBarClick={}
-          /> */}
           <LegendSidebar
             heading="Flow efficiency"
             data={memoizedOrganizedClosedWorkItems}
