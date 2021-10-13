@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
-import type { ProjectOverviewAnalysis } from '../../../shared/types';
+import type { UIWorkItemType } from '../../../shared/types';
 import { modalHeading, useModal } from '../common/Modal';
 import type { OrganizedWorkItems } from './helpers';
 import { lineColor, noGroup } from './helpers';
@@ -10,7 +10,7 @@ type LegendSidebarProps = {
   headlineStatValue: ReactNode;
   headlineStatUnits?: ReactNode;
   data: OrganizedWorkItems;
-  projectAnalysis: ProjectOverviewAnalysis;
+  workItemType: (wit: string) => UIWorkItemType;
   childStat: (workItemIds: number[]) => ReactNode;
   modalContents: (x: {
     workItemIds: number[];
@@ -21,7 +21,7 @@ type LegendSidebarProps = {
 
 export const LegendSidebar: React.FC<LegendSidebarProps> = ({
   heading, headlineStatValue, headlineStatUnits, data,
-  projectAnalysis, childStat, modalContents
+  childStat, modalContents, workItemType
 }) => {
   const [Modal, modalProps, open] = useModal();
   const [dataForModal, setDataForModal] = useState<{
@@ -35,8 +35,9 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
       <Modal
         {...modalProps}
         heading={dataForModal && modalHeading(
-          projectAnalysis.overview.types[dataForModal.witId].name[1],
-          dataForModal.groupName !== noGroup ? dataForModal.groupName : undefined
+          heading,
+          workItemType(dataForModal.witId).name[1]
+          + (dataForModal.groupName !== noGroup ? ` / ${dataForModal.groupName}` : '')
         )}
       >
         {dataForModal && modalContents(dataForModal)}
@@ -77,24 +78,17 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
                   WebkitBoxOrient: 'vertical',
                   textIndent: '-20px'
                 }}
-                data-tip={`${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : `: ${groupName}`}`}
+                data-tip={`${workItemType(witId).name[1]}${groupName === noGroup ? '' : `: ${groupName}`}`}
               >
                 <img
                   className="inline-block mr-1"
-                  alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
-                  src={projectAnalysis.overview.types[witId].icon}
+                  alt={`Icon for ${workItemType(witId).name[0]}`}
+                  src={workItemType(witId).icon}
                   width="16"
                 />
                 {groupName === noGroup
-                  ? projectAnalysis.overview.types[witId].name[1]
-                  : groupName
-                  // : groupName.match(/.{1,9}/g)?.map(str => (
-                  //   <>
-                  //     {str}
-                  //     <wbr />
-                  //   </>
-                  // ))
-                }
+                  ? workItemType(witId).name[1]
+                  : groupName}
               </h4>
               <div className="text-xl flex items-center pl-5 font-semibold">
                 {childStat(workItemIds)}

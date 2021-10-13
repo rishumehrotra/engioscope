@@ -1,7 +1,9 @@
 import { pipe, prop } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useState, useMemo } from 'react';
-import type { Overview, ProjectOverviewAnalysis, UIWorkItem } from '../../../shared/types';
+import type {
+  Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
+} from '../../../shared/types';
 import { contrastColour, shortDate } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import LineGraph from '../graphs/LineGraph';
@@ -31,9 +33,13 @@ type GraphBlockProps = {
   workItemInfoForModal?: (x: UIWorkItem) => ReactNode;
 };
 
-export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
+export const createGraphBlock = ({
+  groupLabel, projectAnalysis, workItemType, workItemById
+}: {
   groupLabel: (x: GroupLabel) => string;
   projectAnalysis: ProjectOverviewAnalysis;
+  workItemType: (witId: string) => UIWorkItemType;
+  workItemById: (id: number) => UIWorkItem;
 }) => {
   const workItems = (dataLine: WorkItemLine) => dataLine.workItemPoints;
   const GraphBlock: React.FC<GraphBlockProps> = ({
@@ -87,11 +93,11 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                   {workItemIds.map(workItemId => (
                     <li key={workItemId} className="py-2">
                       <WorkItemLinkForModal
-                        workItem={projectAnalysis.overview.byId[workItemId]}
-                        workItemType={projectAnalysis.overview.types[witId]}
+                        workItem={workItemById(workItemId)}
+                        workItemType={workItemType(witId)}
                         flair={showFlairForWorkItemInModal && aggregateAndFormat([workItemId])}
                       />
-                      {workItemInfoForModal?.(projectAnalysis.overview.byId[workItemId])}
+                      {workItemInfoForModal?.(workItemById(workItemId))}
                     </li>
                   ))}
                 </ul>
@@ -128,7 +134,7 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                   <CrosshairBubble
                     data={dataByDay}
                     index={pointIndex}
-                    projectAnalysis={projectAnalysis}
+                    workItemType={workItemType}
                     groupLabel={groupLabel}
                     title={crosshairBubbleTitle}
                     itemStat={aggregateAndFormat}
@@ -143,7 +149,7 @@ export const createGraphBlock = ({ groupLabel, projectAnalysis }: {
                 heading={sidebarHeading}
                 headlineStatValue={sidebarHeadlineStat(dataByDay)}
                 data={data}
-                projectAnalysis={projectAnalysis}
+                workItemType={workItemType}
                 headlineStatUnits={headlineStatUnits}
                 childStat={sidebarItemStat || aggregateAndFormat}
                 modalContents={({ workItemIds }) => {

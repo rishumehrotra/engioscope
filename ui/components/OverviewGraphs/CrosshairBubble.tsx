@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import type { ProjectOverviewAnalysis } from '../../../shared/types';
+import type { UIWorkItemType } from '../../../shared/types';
 import { contrastColour, shortDate } from '../../helpers/utils';
 import { lineColor } from './helpers';
 import type { GroupLabel } from './helpers';
@@ -10,13 +10,13 @@ import { getMatchingAtIndex } from './day-wise-line-graph-helpers';
 type CrosshairBubbleProps = {
   data: WorkItemLine[];
   index: number;
-  projectAnalysis: ProjectOverviewAnalysis;
+  workItemType: (witId: string) => UIWorkItemType;
   groupLabel: (x: GroupLabel) => string;
   title: ReactNode;
   itemStat: (x: number[]) => ReactNode;
 };
 export const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
-  data, index, projectAnalysis, groupLabel, title, itemStat
+  data, index, workItemType, groupLabel, title, itemStat
 }) => {
   const matching = getMatchingAtIndex(data, index);
 
@@ -42,8 +42,8 @@ export const CrosshairBubble: React.FC<CrosshairBubbleProps> = ({
               <div className="flex items-center pb-1">
                 <img
                   className="inline-block mr-1"
-                  alt={`Icon for ${projectAnalysis.overview.types[witId].name[0]}`}
-                  src={projectAnalysis.overview.types[witId].icon}
+                  alt={`Icon for ${workItemType(witId).name[0]}`}
+                  src={workItemType(witId).icon}
                   width="16"
                 />
                 {groupLabel({ witId, groupName })}

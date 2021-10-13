@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import { length, prop } from 'rambda';
+import { last, length, prop } from 'rambda';
 import React, { useCallback, useMemo } from 'react';
 import type { Overview, ProjectOverviewAnalysis, UIWorkItem } from '../../../shared/types';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
@@ -76,6 +76,21 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     [memoizedOrganizedClosedWorkItems, projectAnalysis]
   );
 
+  const workItemType = useCallback(
+    (witId: string) => projectAnalysis.overview.types[witId],
+    [projectAnalysis.overview.types]
+  );
+
+  const workItemById = useCallback(
+    (wid: number) => projectAnalysis.overview.byId[wid],
+    [projectAnalysis.overview.byId]
+  );
+
+  const workItemMeta = useCallback(
+    (wid: number) => projectAnalysis.overview.wiMeta[wid],
+    [projectAnalysis.overview.wiMeta]
+  );
+
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
   const totalWorkCenterTime = useMemo(() => [
@@ -84,13 +99,15 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   ] as const, [projectAnalysis]);
 
   const groupLabel = useCallback(({ witId, groupName }: GroupLabel) => (
-    projectAnalysis.overview.types[witId].name[1]
+    workItemType(witId).name[1]
       + (groupName === noGroup ? '' : ` - ${groupName}`)
-  ), [projectAnalysis.overview.types]);
+  ), [workItemType]);
 
   const GraphBlock = useMemo(
-    () => createGraphBlock({ groupLabel, projectAnalysis }),
-    [groupLabel, projectAnalysis]
+    () => createGraphBlock({
+      groupLabel, projectAnalysis, workItemType, workItemById
+    }),
+    [groupLabel, projectAnalysis, workItemById, workItemType]
   );
 
   const effortDistribution = useMemo(
@@ -109,7 +126,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         .reduce<{ label: string; value: number; color: string }[]>((acc, { witId, workTimes }) => {
           Object.entries(workTimes).forEach(([groupName, time]) => {
             acc.push({
-              label: `${projectAnalysis.overview.types[witId].name[1]} ${groupName === noGroup ? '' : `- ${groupName}`}`.trim(),
+              label: `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `- ${groupName}`}`.trim(),
               value: time,
               color: lineColor({ witId, groupName })
             });
@@ -125,7 +142,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         value: (value * 100) / totalEffort
       }));
     },
-    [memoizedOrganizedAllWorkItems, projectAnalysis.overview.types, totalWorkCenterTime]
+    [memoizedOrganizedAllWorkItems, totalWorkCenterTime, workItemType]
   );
 
   const wipSplitByDay = useMemo(() => splitByDateForLineGraph(
@@ -170,8 +187,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                       {workItemIds.map(workItemId => (
                         <li key={workItemId} className="py-2">
                           <WorkItemLinkForModal
-                            workItem={projectAnalysis.overview.byId[workItemId]}
-                            workItemType={projectAnalysis.overview.types[line.witId]}
+                            workItem={workItemById(workItemId)}
+                            workItemType={workItemType(line.witId)}
                           />
                         </li>
                       ))}
@@ -195,7 +212,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         sidebarHeading="Work in progress items"
         formatValue={String}
         sidebarHeadlineStat={lines => lines.reduce(
-          (acc, { workItemPoints: workItems }) => acc + workItems[workItems.length - 1].workItemIds.length,
+          (acc, line) => acc + last(line.workItemPoints).workItemIds.length,
           0
         )}
         sidebarItemStat={allWorkItemIds => {
@@ -204,7 +221,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               .flatMap(prop('workItemIds'))
               .some(id => allWorkItemIds.includes(id)));
 
-          return matchingLine?.workItemPoints[matchingLine.workItemPoints.length - 1].workItemIds.length || 0;
+          return last(matchingLine?.workItemPoints || []).workItemIds.length;
         }}
         sidebarModalContents={line => {
           const lastDaysWorkItemIds = line.workItemPoints[line.workItemPoints.length - 1].workItemIds;
@@ -216,8 +233,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               {lastDaysWorkItemIds.map(workItemId => (
                 <li key={workItemId} className="py-2">
                   <WorkItemLinkForModal
-                    workItem={projectAnalysis.overview.byId[workItemId]}
-                    workItemType={projectAnalysis.overview.types[projectAnalysis.overview.byId[workItemId].typeId]}
+                    workItem={workItemById(workItemId)}
+                    workItemType={workItemType(workItemById(workItemId).typeId)}
                   />
                 </li>
               ))}
@@ -240,22 +257,22 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               <ScatterLineGraph
                 key={witId}
                 graphData={[{
-                  label: projectAnalysis.overview.types[witId].name[1],
+                  label: workItemType(witId).name[1],
                   data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
                     groupName,
                     workItemIds
                       .filter(wid => {
-                        const meta = projectAnalysis.overview.wiMeta[wid];
+                        const meta = workItemMeta(wid);
                         return meta.start && meta.end;
                       })
-                      .map(id => projectAnalysis.overview.byId[id])
+                      .map(workItemById)
                   ])),
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
                   tooltip: (workItem: UIWorkItem) => `
               <div class="w-72">
                 <div class="pl-3" style="text-indent: -1.15rem">
-                  <img src="${projectAnalysis.overview.types[workItem.typeId].icon}" width="14" height="14" class="inline-block -mt-1" />
+                  <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
                   <strong>#${workItem.id}:</strong> ${workItem.title}
                   <div class="pt-1">
                     <strong>Cycle time:</strong> ${prettyMilliseconds(
@@ -263,6 +280,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                 cycleTime(workItem.id)!,
                 { compact: true }
               )}
+                  </div>
+                  <div class="pt-1">
+                    <strong>Efficiency:</strong> ${Math.round(
+                (totalWorkCenterTimeUsing(projectAnalysis.overview)(workItem.id) * 100)
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        / cycleTime(workItem.id)!
+              )}%
                   </div>
                 </div>
               </div>
@@ -286,7 +310,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                 )
                 : '-';
             })(closedWorkItemsForGraph)}
-            projectAnalysis={projectAnalysis}
+            workItemType={workItemType}
             childStat={workItemIds => prettyMilliseconds(
               workItemIds.reduce(...totalCycleTime) / workItemIds.length,
               { compact: true }
@@ -296,14 +320,14 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 .sort((a, b) => cycleTime(b)! - cycleTime(a)!)
                 .map(id => {
-                  const workItem = projectAnalysis.overview.byId[id];
+                  const workItem = workItemById(id);
 
                   return (
                     <ul key={workItem.id}>
                       <li className="my-3">
                         <WorkItemLinkForModal
                           workItem={workItem}
-                          workItemType={projectAnalysis.overview.types[witId]}
+                          workItemType={workItemType(witId)}
                           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                           flair={prettyMilliseconds(cycleTime(workItem.id)!, { compact: true })}
                         />
@@ -334,7 +358,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                 return (
                   <li key={witId + groupName} className="grid gap-4 my-4 items-center" style={{ gridTemplateColumns: '30% 1fr' }}>
                     <div className="text-right">
-                      {projectAnalysis.overview.types[witId].name[1]}
+                      {workItemType(witId).name[1]}
                       {groupName === noGroup ? '' : ` ${groupName}`}
                       {`: ${Math.round(value)}%`}
                     </div>
@@ -361,7 +385,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               const totalTime = allWids.reduce(...totalCycleTime);
               return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
             })(closedWorkItemsForGraph)}
-            projectAnalysis={projectAnalysis}
+            workItemType={workItemType}
             childStat={workItemIds => {
               const workTime = workItemIds.reduce(...totalWorkCenterTime);
               const totalTime = workItemIds.reduce(...totalCycleTime);
@@ -369,33 +393,36 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             }}
             modalContents={({ witId, workItemIds }) => (
               <ul>
-                {workItemIds.map(id => {
-                  const workItem = projectAnalysis.overview.byId[id];
-                  const meta = projectAnalysis.overview.wiMeta[workItem.id];
-                  const totalTime = cycleTime(workItem.id);
-                  const timeString = meta.workCenters.map(
-                    workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
-                  ).join(' + ');
+                {workItemIds
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  .sort((a, b) => cycleTime(b)! - cycleTime(a)!)
+                  .map(id => {
+                    const workItem = workItemById(id);
+                    const meta = workItemMeta(id);
+                    const totalTime = cycleTime(id);
+                    const timeString = meta.workCenters.map(
+                      workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+                    ).join(' + ');
 
-                  return (
-                    <li className="my-4">
-                      <WorkItemLinkForModal
-                        workItem={workItem}
-                        workItemType={projectAnalysis.overview.types[witId]}
-                        flair={totalTime
-                          ? `${Math.round((meta.workCenters.reduce((acc, wc) => acc + wc.time, 0) * 100) / totalTime)}%`
-                          : '-'}
-                      />
-                      <div className="text-gray-500 text-sm ml-6 mb-3">
-                        {meta.workCenters.length > 1 ? `(${timeString})` : timeString}
-                        {' / '}
-                        {totalTime
-                          ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
-                          : 'Not completed yet'}
-                      </div>
-                    </li>
-                  );
-                })}
+                    return (
+                      <li className="my-4">
+                        <WorkItemLinkForModal
+                          workItem={workItem}
+                          workItemType={workItemType(witId)}
+                          flair={totalTime
+                            ? `${Math.round((meta.workCenters.reduce((acc, wc) => acc + wc.time, 0) * 100) / totalTime)}%`
+                            : '-'}
+                        />
+                        <div className="text-gray-500 text-sm ml-6 mb-3">
+                          {meta.workCenters.length > 1 ? `(${timeString})` : timeString}
+                          {' / '}
+                          {totalTime
+                            ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
+                            : 'Not completed yet'}
+                        </div>
+                      </li>
+                    );
+                  })}
               </ul>
             )}
           />
@@ -433,16 +460,16 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               return (
                 <ul>
                   {workItemIds
-                    .map(id => projectAnalysis.overview.byId[id])
-                    .filter(workItem => projectAnalysis.overview.wiMeta[workItem.id].workCenters.length)
+                    .map(workItemById)
+                    .filter(workItem => workItemMeta(workItem.id).workCenters.length)
                     .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
                     .map(workItem => (
                       <li key={workItem.id} className="my-4">
                         <WorkItemLinkForModal
                           workItem={workItem}
-                          workItemType={projectAnalysis.overview.types[workItem.typeId]}
+                          workItemType={workItemType(workItem.typeId)}
                           flair={prettyMilliseconds(
-                            projectAnalysis.overview.wiMeta[workItem.id].workCenters.reduce(
+                            workItemMeta(workItem.id).workCenters.reduce(
                               (acc, workCenter) => acc + workCenter.time,
                               0
                             ),
@@ -450,7 +477,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                           )}
                         />
                         <div className="text-gray-500 text-sm ml-6 mb-2">
-                          {projectAnalysis.overview.wiMeta[workItem.id].workCenters.map(
+                          {workItemMeta(workItem.id).workCenters.map(
                             workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
                           ).join(' + ')}
                         </div>
@@ -460,7 +487,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               );
             }}
             headlineStatValue=""
-            projectAnalysis={projectAnalysis}
+            workItemType={workItemType}
           />
         </div>
       </div>
