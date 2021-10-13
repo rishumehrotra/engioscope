@@ -37,9 +37,22 @@ export const cycleTimeFor = (overview: Overview) => (wid: number) => {
   return new Date(wi.end).getTime() - new Date(wi.start).getTime();
 };
 
-export const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => (
-  Boolean(workItemMeta.end) && Boolean(workItemMeta.start)
-);
+export const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => {
+  if (!workItemMeta.end) return false;
+  // The following should not be needed. However, it clearly is. :D
+
+  // Sometimes, due to incorrect custom field values in Azure, we don't have a
+  // start date. We ignore such cases.
+  if (!workItemMeta.start) return false;
+
+  // On the server, we're querying by state changed date. However, the last
+  // state change date might not be the end date, depending on config.json.
+  // So, we need to filter out items that have an end date older than the last month.
+  const queryPeriod = new Date();
+  queryPeriod.setDate(queryPeriod.getDate() - 29);
+  queryPeriod.setHours(0, 0, 0, 0);
+  return new Date(workItemMeta.end) > queryPeriod;
+};
 
 const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['wiMeta'][number]) => boolean) => (
   (overview: Overview) => (

@@ -27,18 +27,18 @@ const totalWorkCenterTimeUsing = (overview: Overview) => (wid: number) => (
 );
 
 const allWorkItemIds = [
-  (acc: number[], { workItemPoints: workItems }: WorkItemLine) => (
-    acc.concat(workItems.flatMap(wi => wi.workItemIds))
+  (acc: number[], { workItemPoints }: WorkItemLine) => (
+    acc.concat(workItemPoints.flatMap(wi => wi.workItemIds))
   ),
   [] as number[]
 ] as const;
 
-const isClosedToday = (workItemId: number, date: Date, overview: Overview) => {
+const isClosedToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const closedAt = new Date(overview.wiMeta[workItemId].end!);
-  const dateEnd = new Date(date);
-  dateEnd.setDate(date.getDate() + 1);
-  return closedAt.getTime() >= date.getTime() && closedAt.getTime() < dateEnd.getTime();
+  const dateEnd = new Date(dayStart);
+  dateEnd.setDate(dayStart.getDate() + 1);
+  return closedAt >= dayStart && closedAt < dateEnd;
 };
 
 const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
@@ -49,11 +49,12 @@ const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   const start = workItem.start ? new Date(workItem.start) : undefined;
   const end = workItem.end ? new Date(workItem.end) : undefined;
 
-  if (!start) { return false; } // Not yet started
-  if (start > dayEnd) { return false; } // Started after today
-  if (!end) { return true; } // Started today or before, but hasn't finished at all
-  if (end < dayStart) { return false; } // Started today or before, finished before today
-  return true;
+  if (!start) return false; // Not yet started
+  if (start > dayEnd) return false; // Started after today
+
+  // Started today or before today
+  if (!end) return true; // Started today or before, but hasn't finished at all
+  return end > dayEnd; // Started today or before, not finished today
 };
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
@@ -143,6 +144,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         sidebarHeading="Velocity this month"
         formatValue={String}
         sidebarHeadlineStat={lines => lines.reduce(...allWorkItemIds).length}
+        workItemInfoForModal={workItem => projectAnalysis.overview.wiMeta[workItem.id].end}
       />
 
       <GraphBlock
@@ -178,7 +180,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         </p>
 
         <div className="grid gap-8 grid-flow-col">
-          <div className="flex gap-4 justify-evenly" style={{ width: '1085px' }}>
+          <div className="flex gap-4 justify-evenly items-center" style={{ width: '1085px' }}>
             {Object.entries(memoizedOrganizedClosedWorkItems).map(([witId, group]) => (
               <ScatterLineGraph
                 key={witId}
@@ -266,77 +268,105 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         <p className="text-base text-gray-600 mb-4">
           Percentage of time spent working
         </p>
-        <HorizontalBarGraph
-          graphData={Object.entries(memoizedOrganizedClosedWorkItems).reduce<{ label: string; value: number; color: string }[]>(
-            (acc, [witId, group]) => {
-              Object.entries(group).forEach(([groupName, workItemIds]) => {
+        <div className="grid gap-8 grid-flow-col items-center">
+          <ul style={{ width: '1085px' }}>
+            {Object.entries(memoizedOrganizedClosedWorkItems).flatMap(([witId, group]) => (
+              Object.entries(group).map(([groupName, workItemIds]) => {
                 const workTime = workItemIds.reduce(...totalWorkCenterTime);
                 const totalTime = workItemIds.reduce(...totalCycleTime);
                 const value = totalTime === 0 ? 0 : (workTime * 100) / totalTime;
 
-                acc.push({
-                  label: `${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : ` - ${groupName}`}`,
-                  value,
-                  color: lineColor({ witId, groupName })
+                return (
+                  <li key={witId + groupName} className="grid gap-4 my-4 items-center" style={{ gridTemplateColumns: '30% 1fr' }}>
+                    <div className="text-right">
+                      {projectAnalysis.overview.types[witId].name[1]}
+                      {groupName === noGroup ? '' : ` ${groupName}`}
+                      {`: ${Math.round(value)}%`}
+                    </div>
+                    <div className="bg-gray-200">
+                      <div style={{
+                        width: `${value}%`,
+                        backgroundColor: lineColor({ witId, groupName }),
+                        height: '30px'
+                      }}
+                      />
+                    </div>
+                  </li>
+                );
+              })
+            ))}
+          </ul>
+          {/* <HorizontalBarGraph
+            graphData={Object.entries(memoizedOrganizedClosedWorkItems).reduce<{ label: string; value: number; color: string }[]>(
+              (acc, [witId, group]) => {
+                Object.entries(group).forEach(([groupName, workItemIds]) => {
+                  const workTime = workItemIds.reduce(...totalWorkCenterTime);
+                  const totalTime = workItemIds.reduce(...totalCycleTime);
+                  const value = totalTime === 0 ? 0 : (workTime * 100) / totalTime;
+
+                  acc.push({
+                    label: `${projectAnalysis.overview.types[witId].name[1]}${groupName === noGroup ? '' : ` - ${groupName}`}`,
+                    value,
+                    color: lineColor({ witId, groupName })
+                  });
                 });
-              });
-              return acc;
-            },
-            []
-          )}
-          width={500}
-          formatValue={value => `${Math.round(value)}%`}
-          // onBarClick={}
-        />
+                return acc;
+              },
+              []
+            )}
+            width={500}
+            formatValue={value => `${Math.round(value)}%`}
+            // onBarClick={}
+          /> */}
+          <LegendSidebar
+            heading="Flow efficiency"
+            data={memoizedOrganizedClosedWorkItems}
+            headlineStatValue={(data => {
+              const allWids = data.reduce(...allWorkItemIds);
+              const workTime = allWids.reduce(...totalWorkCenterTime);
+              const totalTime = allWids.reduce(...totalCycleTime);
+              return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
+            })(closedWorkItemsForGraph)}
+            projectAnalysis={projectAnalysis}
+            childStat={workItemIds => {
+              const workTime = workItemIds.reduce(...totalWorkCenterTime);
+              const totalTime = workItemIds.reduce(...totalCycleTime);
+              return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
+            }}
+            modalContents={({ witId, workItemIds }) => (
+              <ul>
+                {workItemIds.map(id => {
+                  const workItem = projectAnalysis.overview.byId[id];
+                  const meta = projectAnalysis.overview.wiMeta[workItem.id];
+                  const totalTime = cycleTime(workItem.id);
+                  const timeString = meta.workCenters.map(
+                    workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+                  ).join(' + ');
+
+                  return (
+                    <li className="my-4">
+                      <WorkItemLinkForModal
+                        workItem={workItem}
+                        workItemType={projectAnalysis.overview.types[witId]}
+                        flair={totalTime
+                          ? `${Math.round((meta.workCenters.reduce((acc, wc) => acc + wc.time, 0) * 100) / totalTime)}%`
+                          : '-'}
+                      />
+                      <div className="text-gray-500 text-sm ml-6 mb-3">
+                        {meta.workCenters.length > 1 ? `(${timeString})` : timeString}
+                        {' / '}
+                        {totalTime
+                          ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
+                          : 'Not completed yet'}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          />
+        </div>
       </div>
-
-      <GraphBlock
-        data={memoizedOrganizedClosedWorkItems}
-        daySplitter={isClosedToday}
-        graphHeading="Flow efficiency"
-        graphSubheading="Time spent waiting vs. working"
-        pointToValue={group => {
-          const workTime = group.workItemIds.reduce(...totalWorkCenterTime);
-          const totalTime = group.workItemIds.reduce(...totalCycleTime);
-
-          return totalTime === 0 ? 0 : (workTime * 100) / totalTime;
-        }}
-        crosshairBubbleTitle={() => 'Flow efficiency'}
-        aggregateStats={workItemIds => {
-          const workTime = workItemIds.reduce(...totalWorkCenterTime);
-          const totalTime = workItemIds.reduce(...totalCycleTime);
-
-          return Math.round(totalTime === 0 ? 0 : (workTime * 100) / totalTime);
-        }}
-        sidebarHeading="Overall flow efficiency"
-        sidebarHeadlineStat={lines => {
-          const allWids = lines.reduce(...allWorkItemIds);
-          const cycleTime = allWids.reduce(...totalCycleTime);
-          return cycleTime
-            ? Math.round((allWids.reduce(...totalWorkCenterTime) * 100) / cycleTime)
-            : 0;
-        }}
-        headlineStatUnits="%"
-        showFlairForWorkItemInModal
-        formatValue={x => `${x}%`}
-        workItemInfoForModal={workItem => {
-          const meta = projectAnalysis.overview.wiMeta[workItem.id];
-          const totalTime = cycleTime(workItem.id);
-          const timeString = meta.workCenters.map(
-            workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
-          ).join(' + ');
-
-          return (
-            <div className="text-gray-500 text-sm ml-6 mb-2">
-              {meta.workCenters.length > 1 ? `(${timeString})` : timeString}
-              {' / '}
-              {totalTime
-                ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
-                : 'Not completed yet'}
-            </div>
-          );
-        }}
-      />
 
       <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
         <h1 className="text-2xl font-semibold">
