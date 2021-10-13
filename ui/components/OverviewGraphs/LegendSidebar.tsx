@@ -31,7 +31,7 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
   } | null>(null);
 
   return (
-    <div>
+    <div style={{ width: '317px' }} className="justify-self-end">
       <Modal
         {...modalProps}
         heading={dataForModal && modalHeading(
@@ -85,8 +85,16 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
                   src={projectAnalysis.overview.types[witId].icon}
                   width="16"
                 />
-                {projectAnalysis.overview.types[witId].name[1]}
-                {groupName === noGroup ? '' : `: ${groupName}`}
+                {groupName === noGroup
+                  ? projectAnalysis.overview.types[witId].name[1]
+                  : groupName
+                  // : groupName.match(/.{1,9}/g)?.map(str => (
+                  //   <>
+                  //     {str}
+                  //     <wbr />
+                  //   </>
+                  // ))
+                }
               </h4>
               <div className="text-xl flex items-center pl-5 font-semibold">
                 {childStat(workItemIds)}

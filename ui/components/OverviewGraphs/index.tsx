@@ -235,7 +235,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         </p>
 
         <div className="grid gap-8 grid-flow-col">
-          <div className="flex gap-4 justify-evenly items-center" style={{ width: '1085px' }}>
+          <div className="flex gap-4 justify-evenly items-center">
             {Object.entries(memoizedOrganizedClosedWorkItems).map(([witId, group]) => (
               <ScatterLineGraph
                 key={witId}
@@ -323,8 +323,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         <p className="text-base text-gray-600 mb-4">
           Percentage of time spent working
         </p>
-        <div className="grid gap-8 grid-flow-col items-center">
-          <ul style={{ width: '1085px' }}>
+        <div className="grid gap-8 grid-flow-col items-center" style={{ gridTemplateColumns: '1fr 317px' }}>
+          <ul>
             {Object.entries(memoizedOrganizedClosedWorkItems).flatMap(([witId, group]) => (
               Object.entries(group).map(([groupName, workItemIds]) => {
                 const workTime = workItemIds.reduce(...totalWorkCenterTime);
@@ -410,10 +410,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           Percentage of working time spent on various work items
         </p>
 
-        <div className="grid gap-8 grid-flow-col">
+        <div className="grid gap-8 grid-flow-col items-center" style={{ gridTemplateColumns: '1fr 317px' }}>
           <HorizontalBarGraph
             graphData={effortDistribution}
-            width={1080}
+            width={1023}
             formatValue={x => (Number.isNaN(x) ? '<unknown>' : `${x.toFixed(2)}%`)}
           />
           <LegendSidebar
