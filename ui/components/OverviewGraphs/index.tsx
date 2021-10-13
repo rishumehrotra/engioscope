@@ -17,6 +17,7 @@ import {
 import { createGraphBlock } from './LineGraphBlock';
 import { LegendSidebar } from './LegendSidebar';
 import { contrastColour, shortDate } from '../../helpers/utils';
+import GraphCard from './GraphCard';
 
 const totalCycleTimeUsing = (cycleTime: (wid: number) => number | undefined) => [
   (acc: number, wid: number) => acc + (cycleTime(wid) || 0),
@@ -99,8 +100,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   ] as const, [projectAnalysis]);
 
   const groupLabel = useCallback(({ witId, groupName }: GroupLabel) => (
-    workItemType(witId).name[1]
-      + (groupName === noGroup ? '' : ` - ${groupName}`)
+    workItemType(witId).name[1] + (groupName === noGroup ? '' : ` - ${groupName}`)
   ), [workItemType]);
 
   const GraphBlock = useMemo(
@@ -243,15 +243,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         }}
       />
 
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl font-semibold">
-          Cycle time
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          Time taken to complete a work item.
-        </p>
-
-        <div className="grid gap-8 grid-flow-col">
+      <GraphCard
+        title="Cycle time"
+        subtitle="Time taken to complete a work item"
+        left={(
           <div className="flex gap-4 justify-evenly items-center">
             {Object.entries(memoizedOrganizedClosedWorkItems).map(([witId, group]) => (
               <ScatterLineGraph
@@ -270,33 +265,35 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
                   tooltip: (workItem: UIWorkItem) => `
-              <div class="w-72">
-                <div class="pl-3" style="text-indent: -1.15rem">
-                  <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
-                  <strong>#${workItem.id}:</strong> ${workItem.title}
-                  <div class="pt-1">
-                    <strong>Cycle time:</strong> ${prettyMilliseconds(
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            <div class="w-72">
+              <div class="pl-3" style="text-indent: -1.15rem">
+                <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
+                <strong>#${workItem.id}:</strong> ${workItem.title}
+                <div class="pt-1">
+                  <strong>Cycle time:</strong> ${prettyMilliseconds(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 cycleTime(workItem.id)!,
                 { compact: true }
               )}
-                  </div>
-                  <div class="pt-1">
-                    <strong>Efficiency:</strong> ${Math.round(
+                </div>
+                <div class="pt-1">
+                  <strong>Efficiency:</strong> ${Math.round(
                 (totalWorkCenterTimeUsing(projectAnalysis.overview)(workItem.id) * 100)
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        / cycleTime(workItem.id)!
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                      / cycleTime(workItem.id)!
               )}%
-                  </div>
                 </div>
               </div>
-            `.trim()
+            </div>
+          `.trim()
                 }]}
                 height={420}
                 linkForItem={prop('url')}
               />
             ))}
           </div>
+        )}
+        right={(
           <LegendSidebar
             heading="Average cycle time"
             data={memoizedOrganizedClosedWorkItems}
@@ -337,17 +334,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                 })
             )}
           />
-        </div>
-      </div>
+        )}
+      />
 
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl font-semibold">
-          Flow efficiency
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          Percentage of time spent working
-        </p>
-        <div className="grid gap-8 grid-flow-col items-center" style={{ gridTemplateColumns: '1fr 317px' }}>
+      <GraphCard
+        title="Flow efficiency"
+        subtitle="Percentage of time spent working"
+        left={(
           <ul>
             {Object.entries(memoizedOrganizedClosedWorkItems).flatMap(([witId, group]) => (
               Object.entries(group).map(([groupName, workItemIds]) => {
@@ -375,7 +368,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               })
             ))}
           </ul>
-
+        )}
+        right={(
           <LegendSidebar
             heading="Flow efficiency"
             data={memoizedOrganizedClosedWorkItems}
@@ -426,23 +420,20 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               </ul>
             )}
           />
-        </div>
-      </div>
+        )}
+      />
 
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
-        <h1 className="text-2xl font-semibold">
-          Effort distribution
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          Percentage of working time spent on various work items
-        </p>
-
-        <div className="grid gap-8 grid-flow-col items-center" style={{ gridTemplateColumns: '1fr 317px' }}>
+      <GraphCard
+        title="Effort distribution"
+        subtitle="Percentage of working time spent on various work items"
+        left={(
           <HorizontalBarGraph
             graphData={effortDistribution}
             width={1023}
             formatValue={x => (Number.isNaN(x) ? '<unknown>' : `${x.toFixed(2)}%`)}
           />
+        )}
+        right={(
           <LegendSidebar
             heading="Effort distribution"
             data={memoizedOrganizedAllWorkItems}
@@ -489,8 +480,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             headlineStatValue=""
             workItemType={workItemType}
           />
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 };

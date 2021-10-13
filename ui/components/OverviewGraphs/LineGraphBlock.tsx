@@ -14,6 +14,7 @@ import { getMatchingAtIndex, splitByDateForLineGraph } from './day-wise-line-gra
 import type { WorkItemLine, WorkItemPoint } from './day-wise-line-graph-helpers';
 import { CrosshairBubble } from './CrosshairBubble';
 import { LegendSidebar } from './LegendSidebar';
+import GraphCard from './GraphCard';
 
 type GraphBlockProps = {
   data: OrganizedWorkItems;
@@ -63,7 +64,7 @@ export const createGraphBlock = ({
     ), [dataByDay, dayIndexInModal]);
 
     return (
-      <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+      <>
         <Modal
           {...modalProps}
           heading={modalHeading(
@@ -109,64 +110,56 @@ export const createGraphBlock = ({
               </div>
             )}
         </Modal>
-        <h1 className="text-2xl font-semibold">
-          {graphHeading}
-        </h1>
-        <p className="text-base text-gray-600 mb-4">
-          {graphSubheading}
-        </p>
-        <div className="grid gap-8 grid-flow-col">
-          {!dataByDay.length ? (
-            <div className="text-gray-500 italic">
-              Couldn't find any closed workitems in the last month.
-            </div>
-          ) : (
-            <>
-              <LineGraph<WorkItemLine, WorkItemPoint>
-                lines={dataByDay}
-                points={workItems}
-                pointToValue={pointToValue}
-                yAxisLabel={formatValue}
-                lineLabel={groupLabel}
-                xAxisLabel={x => shortDate(x.date)}
-                lineColor={lineColor}
-                crosshairBubble={(pointIndex: number) => (
-                  <CrosshairBubble
-                    data={dataByDay}
-                    index={pointIndex}
-                    workItemType={workItemType}
-                    groupLabel={groupLabel}
-                    title={crosshairBubbleTitle}
-                    itemStat={aggregateAndFormat}
-                  />
-                )}
-                onClick={(...args) => {
-                  setDayIndexInModal(args[0]);
-                  openModal();
-                }}
-              />
-              <LegendSidebar
-                heading={sidebarHeading}
-                headlineStatValue={sidebarHeadlineStat(dataByDay)}
-                data={data}
-                workItemType={workItemType}
-                headlineStatUnits={headlineStatUnits}
-                childStat={sidebarItemStat || aggregateAndFormat}
-                modalContents={({ workItemIds }) => {
-                  const matchingLine = dataByDay
-                    .find(line => line.workItemPoints
-                      .flatMap(prop('workItemIds'))
-                      .some(id => workItemIds.includes(id)));
-
-                  if (!matchingLine) return 'Nothing to see here';
-
-                  return sidebarModalContents(matchingLine);
-                }}
-              />
-            </>
+        <GraphCard
+          title={graphHeading}
+          subtitle={graphSubheading}
+          left={(
+            <LineGraph<WorkItemLine, WorkItemPoint>
+              lines={dataByDay}
+              points={workItems}
+              pointToValue={pointToValue}
+              yAxisLabel={formatValue}
+              lineLabel={groupLabel}
+              xAxisLabel={x => shortDate(x.date)}
+              lineColor={lineColor}
+              crosshairBubble={(pointIndex: number) => (
+                <CrosshairBubble
+                  data={dataByDay}
+                  index={pointIndex}
+                  workItemType={workItemType}
+                  groupLabel={groupLabel}
+                  title={crosshairBubbleTitle}
+                  itemStat={aggregateAndFormat}
+                />
+              )}
+              onClick={(...args) => {
+                setDayIndexInModal(args[0]);
+                openModal();
+              }}
+            />
           )}
-        </div>
-      </div>
+          right={(
+            <LegendSidebar
+              heading={sidebarHeading}
+              headlineStatValue={sidebarHeadlineStat(dataByDay)}
+              data={data}
+              workItemType={workItemType}
+              headlineStatUnits={headlineStatUnits}
+              childStat={sidebarItemStat || aggregateAndFormat}
+              modalContents={({ workItemIds }) => {
+                const matchingLine = dataByDay
+                  .find(line => line.workItemPoints
+                    .flatMap(prop('workItemIds'))
+                    .some(id => workItemIds.includes(id)));
+
+                if (!matchingLine) return 'Nothing to see here';
+
+                return sidebarModalContents(matchingLine);
+              }}
+            />
+          )}
+        />
+      </>
     );
   };
   return GraphBlock;
