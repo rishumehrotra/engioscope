@@ -5,6 +5,8 @@ import { modalHeading, useModal } from '../common/Modal';
 import type { OrganizedWorkItems } from './helpers';
 import { lineColor, noGroup } from './helpers';
 
+export const sidebarWidth = '317px';
+
 type LegendSidebarProps = {
   heading: ReactNode;
   headlineStatValue: ReactNode;
@@ -31,7 +33,7 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
   } | null>(null);
 
   return (
-    <div style={{ width: '317px' }} className="justify-self-end">
+    <div style={{ width: sidebarWidth }} className="justify-self-end">
       <Modal
         {...modalProps}
         heading={dataForModal && modalHeading(

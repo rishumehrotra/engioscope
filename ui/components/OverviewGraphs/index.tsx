@@ -1,7 +1,9 @@
 import prettyMilliseconds from 'pretty-ms';
 import { last, length, prop } from 'rambda';
 import React, { useCallback, useMemo } from 'react';
-import type { Overview, ProjectOverviewAnalysis, UIWorkItem } from '../../../shared/types';
+import type {
+  Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
+} from '../../../shared/types';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
@@ -19,21 +21,27 @@ import { LegendSidebar } from './LegendSidebar';
 import { contrastColour, shortDate } from '../../helpers/utils';
 import GraphCard from './GraphCard';
 
+const workItemAccessors = (overview: Overview) => ({
+  workItemType: (witId: string) => overview.types[witId],
+  workItemById: (wid: number) => overview.byId[wid],
+  workItemMeta: (wid: number) => overview.wiMeta[wid]
+});
+
 const totalCycleTimeUsing = (cycleTime: (wid: number) => number | undefined) => [
   (acc: number, wid: number) => acc + (cycleTime(wid) || 0),
   0
 ] as const;
 
-const totalWorkCenterTimeUsing = (overview: Overview) => (wid: number) => (
-  overview.wiMeta[wid].workCenters.reduce((a, wc) => a + wc.time, 0)
+const workCenterTimeUsing = (workItemMeta: (wid: number) => Overview['wiMeta'][number]) => (wid: number) => (
+  workItemMeta(wid).workCenters.reduce((a, wc) => a + wc.time, 0)
 );
 
-const allWorkItemIds = [
-  (acc: number[], { workItemPoints }: WorkItemLine) => (
-    acc.concat(workItemPoints.flatMap(wi => wi.workItemIds))
-  ),
-  [] as number[]
-] as const;
+const workItemIdsFromLines = (lines: WorkItemLine[]) => (
+  lines.reduce<number[]>(
+    (acc, { workItemPoints }) => acc.concat(workItemPoints.flatMap(prop('workItemIds'))),
+    []
+  )
+);
 
 const isClosedToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -59,6 +67,32 @@ const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   return end > dayEnd; // Started today or before, not finished today
 };
 
+const createTooltip = (
+  workItemType: (witId: string) => UIWorkItemType,
+  cycleTime: (wid: number) => number | undefined,
+  workCenterTime: (wid: number) => number
+) => (workItem: UIWorkItem) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const ct = cycleTime(workItem.id)!;
+  const cycleTimeText = prettyMilliseconds(ct, { compact: true });
+  const efficiency = Math.round((workCenterTime(workItem.id) / ct) * 100);
+
+  return `
+    <div class="w-72">
+      <div class="pl-3" style="text-indent: -1.15rem">
+        <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
+        <strong>#${workItem.id}:</strong> ${workItem.title}
+        <div class="pt-1">
+          <strong>Cycle time:</strong> ${cycleTimeText}
+        </div>
+        <div class="pt-1">
+          <strong>Efficiency:</strong> ${efficiency}%
+        </div>
+      </div>
+    </div>
+  `.trim();
+};
+
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const memoizedOrganizedClosedWorkItems = useMemo(
     () => organizedClosedWorkItems(projectAnalysis.overview),
@@ -77,27 +111,26 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     [memoizedOrganizedClosedWorkItems, projectAnalysis]
   );
 
-  const workItemType = useCallback(
-    (witId: string) => projectAnalysis.overview.types[witId],
-    [projectAnalysis.overview.types]
-  );
+  const wipSplitByDay = useMemo(() => splitByDateForLineGraph(
+    projectAnalysis, memoizedOrganizedAllWorkItems, isWIPToday
+  ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
-  const workItemById = useCallback(
-    (wid: number) => projectAnalysis.overview.byId[wid],
-    [projectAnalysis.overview.byId]
-  );
-
-  const workItemMeta = useCallback(
-    (wid: number) => projectAnalysis.overview.wiMeta[wid],
-    [projectAnalysis.overview.wiMeta]
+  const { workItemById, workItemType, workItemMeta } = useMemo(
+    () => workItemAccessors(projectAnalysis.overview),
+    [projectAnalysis.overview]
   );
 
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
+  const workCenterTime = useMemo(() => workCenterTimeUsing(workItemMeta), [workItemMeta]);
   const totalWorkCenterTime = useMemo(() => [
-    (acc: number, wid: number) => acc + totalWorkCenterTimeUsing(projectAnalysis.overview)(wid),
+    (acc: number, wid: number) => acc + workCenterTime(wid),
     0
-  ] as const, [projectAnalysis]);
+  ] as const, [workCenterTime]);
+  const workItemTooltip = useMemo(
+    () => createTooltip(workItemType, cycleTime, workCenterTime),
+    [cycleTime, workCenterTime, workItemType]
+  );
 
   const groupLabel = useCallback(({ witId, groupName }: GroupLabel) => (
     workItemType(witId).name[1] + (groupName === noGroup ? '' : ` - ${groupName}`)
@@ -126,7 +159,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         .reduce<{ label: string; value: number; color: string }[]>((acc, { witId, workTimes }) => {
           Object.entries(workTimes).forEach(([groupName, time]) => {
             acc.push({
-              label: `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `- ${groupName}`}`.trim(),
+              label: groupLabel({ witId, groupName }),
               value: time,
               color: lineColor({ witId, groupName })
             });
@@ -142,12 +175,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         value: (value * 100) / totalEffort
       }));
     },
-    [memoizedOrganizedAllWorkItems, totalWorkCenterTime, workItemType]
+    [groupLabel, memoizedOrganizedAllWorkItems, totalWorkCenterTime]
   );
-
-  const wipSplitByDay = useMemo(() => splitByDateForLineGraph(
-    projectAnalysis, memoizedOrganizedAllWorkItems, isWIPToday
-  ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
   return (
     <div>
@@ -161,7 +190,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         aggregateStats={length}
         sidebarHeading="Velocity this month"
         formatValue={String}
-        sidebarHeadlineStat={lines => lines.reduce(...allWorkItemIds).length}
+        sidebarHeadlineStat={lines => workItemIdsFromLines(lines).length}
         sidebarModalContents={line => (
           <ul>
             {line.workItemPoints.map(({ date, workItemIds }) => (
@@ -224,7 +253,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           return last(matchingLine?.workItemPoints || []).workItemIds.length;
         }}
         sidebarModalContents={line => {
-          const lastDaysWorkItemIds = line.workItemPoints[line.workItemPoints.length - 1].workItemIds;
+          const lastDaysWorkItemIds = last(line.workItemPoints).workItemIds;
 
           if (!lastDaysWorkItemIds.length) return 'Nothing currently being worked on';
 
@@ -264,28 +293,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                   ])),
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
-                  tooltip: (workItem: UIWorkItem) => `
-            <div class="w-72">
-              <div class="pl-3" style="text-indent: -1.15rem">
-                <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
-                <strong>#${workItem.id}:</strong> ${workItem.title}
-                <div class="pt-1">
-                  <strong>Cycle time:</strong> ${prettyMilliseconds(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                cycleTime(workItem.id)!,
-                { compact: true }
-              )}
-                </div>
-                <div class="pt-1">
-                  <strong>Efficiency:</strong> ${Math.round(
-                (totalWorkCenterTimeUsing(projectAnalysis.overview)(workItem.id) * 100)
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      / cycleTime(workItem.id)!
-              )}%
-                </div>
-              </div>
-            </div>
-          `.trim()
+                  tooltip: workItemTooltip
                 }]}
                 height={420}
                 linkForItem={prop('url')}
@@ -297,8 +305,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           <LegendSidebar
             heading="Average cycle time"
             data={memoizedOrganizedClosedWorkItems}
-            headlineStatValue={(data => {
-              const allWids = data.reduce(...allWorkItemIds);
+            headlineStatValue={(lines => {
+              const allWids = workItemIdsFromLines(lines);
 
               return allWids.length
                 ? prettyMilliseconds(
@@ -373,8 +381,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           <LegendSidebar
             heading="Flow efficiency"
             data={memoizedOrganizedClosedWorkItems}
-            headlineStatValue={(data => {
-              const allWids = data.reduce(...allWorkItemIds);
+            headlineStatValue={(lines => {
+              const allWids = workItemIdsFromLines(lines);
               const workTime = allWids.reduce(...totalWorkCenterTime);
               const totalTime = allWids.reduce(...totalCycleTime);
               return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
@@ -446,37 +454,34 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
               return `${((workTime * 100) / allWorkItemIds.reduce(...totalWorkCenterTime)).toFixed(2)}%`;
             }}
-            modalContents={({ workItemIds }) => {
-              const workCenterTime = totalWorkCenterTimeUsing(projectAnalysis.overview);
-              return (
-                <ul>
-                  {workItemIds
-                    .map(workItemById)
-                    .filter(workItem => workItemMeta(workItem.id).workCenters.length)
-                    .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
-                    .map(workItem => (
-                      <li key={workItem.id} className="my-4">
-                        <WorkItemLinkForModal
-                          workItem={workItem}
-                          workItemType={workItemType(workItem.typeId)}
-                          flair={prettyMilliseconds(
-                            workItemMeta(workItem.id).workCenters.reduce(
-                              (acc, workCenter) => acc + workCenter.time,
-                              0
-                            ),
-                            { compact: true }
-                          )}
-                        />
-                        <div className="text-gray-500 text-sm ml-6 mb-2">
-                          {workItemMeta(workItem.id).workCenters.map(
-                            workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
-                          ).join(' + ')}
-                        </div>
-                      </li>
-                    ))}
-                </ul>
-              );
-            }}
+            modalContents={({ workItemIds }) => (
+              <ul>
+                {workItemIds
+                  .map(workItemById)
+                  .filter(workItem => workItemMeta(workItem.id).workCenters.length)
+                  .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
+                  .map(workItem => (
+                    <li key={workItem.id} className="my-4">
+                      <WorkItemLinkForModal
+                        workItem={workItem}
+                        workItemType={workItemType(workItem.typeId)}
+                        flair={prettyMilliseconds(
+                          workItemMeta(workItem.id).workCenters.reduce(
+                            (acc, workCenter) => acc + workCenter.time,
+                            0
+                          ),
+                          { compact: true }
+                        )}
+                      />
+                      <div className="text-gray-500 text-sm ml-6 mb-2">
+                        {workItemMeta(workItem.id).workCenters.map(
+                          workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+                        ).join(' + ')}
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            )}
             headlineStatValue=""
             workItemType={workItemType}
           />

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import React from 'react';
+import { sidebarWidth } from './LegendSidebar';
 
 type GraphCardProps = {
   title: string;
@@ -20,7 +21,7 @@ const GraphCard: React.FC<GraphCardProps> = ({
     </p>
 
     <div className="grid gap-8 grid-flow-col">
-      <div className="flex gap-4 justify-evenly items-center" style={{ gridTemplateColumns: '1fr 317px' }}>
+      <div className="flex gap-4 justify-evenly items-center" style={{ gridTemplateColumns: `1fr ${sidebarWidth}` }}>
         <div className="w-full">{left}</div>
         <div>{right}</div>
       </div>
