@@ -104,7 +104,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     [projectAnalysis.overview]
   );
 
-  const closedWorkItemsForGraph = useMemo(
+  const closedWorkItemsSplitByDay = useMemo(
     () => splitByDateForLineGraph(
       projectAnalysis, memoizedOrganizedClosedWorkItems, isClosedToday
     ),
@@ -123,10 +123,12 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
   const workCenterTime = useMemo(() => workCenterTimeUsing(workItemMeta), [workItemMeta]);
-  const totalWorkCenterTime = useMemo(() => [
-    (acc: number, wid: number) => acc + workCenterTime(wid),
-    0
-  ] as const, [workCenterTime]);
+  const totalWorkCenterTime = useCallback((wids: number[]) => (
+    wids.reduce(
+      (acc: number, wid: number) => acc + workCenterTime(wid),
+      0
+    )
+  ), [workCenterTime]);
   const workItemTooltip = useMemo(
     () => createTooltip(workItemType, cycleTime, workCenterTime),
     [cycleTime, workCenterTime, workItemType]
@@ -148,10 +150,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       const effortLayout = Object.entries(memoizedOrganizedAllWorkItems)
         .map(([witId, group]) => ({
           witId,
-          workTimes: Object.entries(group).reduce<Record<string, number>>((acc, [groupName, witIds]) => {
-            acc[groupName] = witIds.reduce(...totalWorkCenterTime);
-            return acc;
-          }, {})
+          workTimes: Object.entries(group).reduce<Record<string, number>>(
+            (acc, [groupName, workItemIds]) => {
+              acc[groupName] = totalWorkCenterTime(workItemIds);
+              return acc;
+            },
+            {}
+          )
         }));
 
       // Effort for graph
@@ -201,11 +206,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                       {shortDate(date)}
                       <span
                         style={{
-                          color: contrastColour(lineColor({
-                            witId: line.witId,
-                            groupName: line.groupName
-                          })),
-                          background: lineColor({ witId: line.witId, groupName: line.groupName })
+                          color: contrastColour(lineColor(line)),
+                          background: lineColor(line)
                         }}
                         className="inline-block px-2 ml-2 rounded-full text-base"
                       >
@@ -250,10 +252,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               .flatMap(prop('workItemIds'))
               .some(id => allWorkItemIds.includes(id)));
 
-          return last(matchingLine?.workItemPoints || []).workItemIds.length;
+          return last(matchingLine?.workItemPoints || [])?.workItemIds?.length || '-';
         }}
         sidebarModalContents={line => {
-          const lastDaysWorkItemIds = last(line.workItemPoints).workItemIds;
+          const lastDaysWorkItemIds = last(line.workItemPoints)?.workItemIds || [];
 
           if (!lastDaysWorkItemIds.length) return 'Nothing currently being worked on';
 
@@ -314,7 +316,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                   { compact: true }
                 )
                 : '-';
-            })(closedWorkItemsForGraph)}
+            })(closedWorkItemsSplitByDay)}
             workItemType={workItemType}
             childStat={workItemIds => prettyMilliseconds(
               workItemIds.reduce(...totalCycleTime) / workItemIds.length,
@@ -352,7 +354,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           <ul>
             {Object.entries(memoizedOrganizedClosedWorkItems).flatMap(([witId, group]) => (
               Object.entries(group).map(([groupName, workItemIds]) => {
-                const workTime = workItemIds.reduce(...totalWorkCenterTime);
+                const workTime = totalWorkCenterTime(workItemIds);
                 const totalTime = workItemIds.reduce(...totalCycleTime);
                 const value = totalTime === 0 ? 0 : (workTime * 100) / totalTime;
 
@@ -383,13 +385,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             data={memoizedOrganizedClosedWorkItems}
             headlineStatValue={(lines => {
               const allWids = workItemIdsFromLines(lines);
-              const workTime = allWids.reduce(...totalWorkCenterTime);
+              const workTime = totalWorkCenterTime(allWids);
               const totalTime = allWids.reduce(...totalCycleTime);
               return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
-            })(closedWorkItemsForGraph)}
+            })(closedWorkItemsSplitByDay)}
             workItemType={workItemType}
             childStat={workItemIds => {
-              const workTime = workItemIds.reduce(...totalWorkCenterTime);
+              const workTime = totalWorkCenterTime(workItemIds);
               const totalTime = workItemIds.reduce(...totalCycleTime);
               return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
             }}
@@ -446,13 +448,16 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             heading="Effort distribution"
             data={memoizedOrganizedAllWorkItems}
             childStat={workItemIds => {
-              const workTime = workItemIds.reduce(...totalWorkCenterTime);
+              const workTime = totalWorkCenterTime(workItemIds);
               const allWorkItemIds = Object.values(memoizedOrganizedAllWorkItems).reduce<number[]>(
                 (acc, group) => acc.concat(...Object.values(group)),
                 []
               );
+              const totalTime = totalWorkCenterTime(allWorkItemIds);
 
-              return `${((workTime * 100) / allWorkItemIds.reduce(...totalWorkCenterTime)).toFixed(2)}%`;
+              return totalTime
+                ? `${((workTime * 100) / totalWorkCenterTime(allWorkItemIds)).toFixed(2)}%`
+                : '-';
             }}
             modalContents={({ workItemIds }) => (
               <ul>

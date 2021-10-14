@@ -52,6 +52,7 @@ export const createGraphBlock = ({
     const dataByDay = useMemo(() => splitByDateForLineGraph(
       projectAnalysis, data, daySplitter
     ), [data, daySplitter]);
+
     const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
     const [Modal, modalProps, openModal] = useModal();
     const aggregateAndFormat = useMemo(
