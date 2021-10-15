@@ -49,7 +49,7 @@ type GridLinesProps<Point> = {
   points: Point[];
 };
 
-const GridLines = <Point extends unknown>({
+const GridLines = <Point, >({
   yAxisMax, yCoord, width, yAxisLabel, xAxisLabel, points
 }: GridLinesProps<Point>) => {
   const gridLinesGap = Math.round(yAxisMax / (numberOfHorizontalGridLines + 1));

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const createContextState = <ValueType extends unknown>(defaultValue: ValueType) => {
+const createContextState = <ValueType, >(defaultValue: ValueType) => {
   type ContextType = [ValueType, (x: ValueType) => void];
   const ProjectDetailsContext = createContext<ContextType>([defaultValue, () => undefined]);
 
