@@ -408,9 +408,34 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                     const workItem = workItemById(id);
                     const times = workItemTimes(id);
                     const totalTime = cycleTime(id);
-                    const timeString = times.workCenters.map(
+                    const workingTime = prettyMilliseconds(
+                      times.workCenters.reduce(
+                        (acc, wc) => acc + timeDifference(wc), 0
+                      ), { compact: true }
+                    );
+                    const workingTimeDetails = times.workCenters.map(
                       wc => `${wc.label} time: ${prettyMilliseconds(timeDifference(wc), { compact: true })}`
                     ).join(' + ');
+                    const waitingTime = times.workCenters.length > 1
+                      ? prettyMilliseconds(
+                        times.workCenters.slice(1).reduce(
+                          (acc, wc, index) => acc + timeDifference({
+                            start: times.workCenters[index].end,
+                            end: wc.start
+                          }), 0
+                        ), { compact: true }
+                      )
+                      : 'unknown';
+                    const waitingTimeDetails = times.workCenters.length > 1
+                      ? times.workCenters.slice(1).map(
+                        (wc, index) => `${
+                          times.workCenters[index].label
+                        } to ${wc.label}: ${prettyMilliseconds(
+                          timeDifference({ start: times.workCenters[index].end, end: wc.start }),
+                          { compact: true }
+                        )}`
+                      ).join(' + ')
+                      : 'unknown';
 
                     return (
                       <li className="my-4">
@@ -426,11 +451,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                             : '-'}
                         />
                         <div className="text-gray-500 text-sm ml-6 mb-3">
-                          {times.workCenters.length > 1 ? `(${timeString})` : timeString}
-                          {' / '}
-                          {totalTime
-                            ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
-                            : 'Not completed yet'}
+                          {`Total working time: ${workingTime} (${workingTimeDetails})`}
+                          <br />
+                          {`Total waiting time: ${waitingTime} (${waitingTimeDetails})`}
                         </div>
                       </li>
                     );
