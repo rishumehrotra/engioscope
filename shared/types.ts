@@ -173,10 +173,10 @@ export type Overview = {
   times: Record<number, {
     start?: string;
     end?: string;
-    split: {
-      // type: 'work' | 'wait';
+    workCenters: {
       label: string;
-      time: number;
+      start: string;
+      end: string;
     }[];
   }>;
 };

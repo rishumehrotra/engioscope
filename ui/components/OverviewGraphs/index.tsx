@@ -27,13 +27,17 @@ const workItemAccessors = (overview: Overview) => ({
   workItemTimes: (wid: number) => overview.times[wid]
 });
 
+const timeDifference = ({ start, end }: { start: string; end: string }) => (
+  new Date(end).getTime() - new Date(start).getTime()
+);
+
 const totalCycleTimeUsing = (cycleTime: (wid: number) => number | undefined) => [
   (acc: number, wid: number) => acc + (cycleTime(wid) || 0),
   0
 ] as const;
 
 const workCenterTimeUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => (wid: number) => (
-  workItemTimes(wid).split.reduce((a, part) => a + part.time, 0)
+  workItemTimes(wid).workCenters.reduce((a, wc) => a + timeDifference(wc), 0)
 );
 
 const workItemIdsFromLines = (lines: WorkItemLine[]) => (
@@ -404,8 +408,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                     const workItem = workItemById(id);
                     const times = workItemTimes(id);
                     const totalTime = cycleTime(id);
-                    const timeString = times.split.map(
-                      part => `${part.label} time: ${prettyMilliseconds(part.time, { compact: true })}`
+                    const timeString = times.workCenters.map(
+                      wc => `${wc.label} time: ${prettyMilliseconds(timeDifference(wc), { compact: true })}`
                     ).join(' + ');
 
                     return (
@@ -414,11 +418,15 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                           workItem={workItem}
                           workItemType={workItemType(witId)}
                           flair={totalTime
-                            ? `${Math.round((times.split.reduce((acc, part) => acc + part.time, 0) * 100) / totalTime)}%`
+                            ? `${Math.round(
+                              (times.workCenters.reduce(
+                                (acc, wc) => acc + timeDifference(wc), 0
+                              ) * 100) / totalTime
+                            )}%`
                             : '-'}
                         />
                         <div className="text-gray-500 text-sm ml-6 mb-3">
-                          {times.split.length > 1 ? `(${timeString})` : timeString}
+                          {times.workCenters.length > 1 ? `(${timeString})` : timeString}
                           {' / '}
                           {totalTime
                             ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
@@ -463,7 +471,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               <ul>
                 {workItemIds
                   .map(workItemById)
-                  .filter(workItem => workItemTimes(workItem.id).split.length)
+                  .filter(workItem => workItemTimes(workItem.id).workCenters.length)
                   .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
                   .map(workItem => (
                     <li key={workItem.id} className="my-4">
@@ -471,16 +479,16 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                         workItem={workItem}
                         workItemType={workItemType(workItem.typeId)}
                         flair={prettyMilliseconds(
-                          workItemTimes(workItem.id).split.reduce(
-                            (acc, part) => acc + part.time,
+                          workItemTimes(workItem.id).workCenters.reduce(
+                            (acc, wc) => acc + timeDifference(wc),
                             0
                           ),
                           { compact: true }
                         )}
                       />
                       <div className="text-gray-500 text-sm ml-6 mb-2">
-                        {workItemTimes(workItem.id).split.map(
-                          part => `${part.label} time: ${prettyMilliseconds(part.time, { compact: true })}`
+                        {workItemTimes(workItem.id).workCenters.map(
+                          wc => `${wc.label} time: ${prettyMilliseconds(timeDifference(wc), { compact: true })}`
                         ).join(' + ')}
                       </div>
                     </li>

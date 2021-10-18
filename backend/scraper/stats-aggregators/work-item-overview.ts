@@ -50,14 +50,15 @@ export const getOverviewData = (
     acc.times[workItem.id] = {
       start: getMinDate(workItemConfig.startDate, workItem)?.toISOString(),
       end: getMinDate(workItemConfig.endDate, workItem)?.toISOString(),
-      split: workItemConfig.workCenters.map(wc => {
+      workCenters: workItemConfig.workCenters.map(wc => {
         const wcStartDate = getMinDate(wc.startDate, workItem);
         const wcEndDate = getMinDate(wc.endDate, workItem);
         if (!wcStartDate || !wcEndDate) return;
 
         return {
           label: wc.label,
-          time: wcEndDate.getTime() - wcStartDate.getTime()
+          start: wcStartDate.toISOString(),
+          end: wcEndDate.toISOString()
         };
       }).filter(exists)
     };
