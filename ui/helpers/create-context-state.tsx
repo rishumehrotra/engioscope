@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const createContextState = <ValueType, >(defaultValue: ValueType) => {
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+const createContextState = <ValueType extends unknown>(defaultValue: ValueType) => {
   type ContextType = [ValueType, (x: ValueType) => void];
   const ProjectDetailsContext = createContext<ContextType>([defaultValue, () => undefined]);
 

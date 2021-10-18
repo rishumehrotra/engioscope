@@ -31,19 +31,19 @@ const witIdCreator = (overview: Overview) => (
 export const noGroup = 'no-group';
 
 export const cycleTimeFor = (overview: Overview) => (wid: number) => {
-  const wi = overview.wiMeta[wid];
+  const wi = overview.times[wid];
   if (!wi.start || !wi.end) return undefined;
 
   return new Date(wi.end).getTime() - new Date(wi.start).getTime();
 };
 
-export const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => {
-  if (!workItemMeta.end) return false;
+export const isWorkItemClosed = (workItemTimes: Overview['times'][number]) => {
+  if (!workItemTimes.end) return false;
   // The following should not be needed. However, it clearly is. :D
 
   // Sometimes, due to incorrect custom field values in Azure, we don't have a
   // start date. We ignore such cases.
-  if (!workItemMeta.start) return false;
+  if (!workItemTimes.start) return false;
 
   // On the server, we're querying by state changed date. However, the last
   // state change date might not be the end date, depending on config.json.
@@ -51,13 +51,13 @@ export const isWorkItemClosed = (workItemMeta: Overview['wiMeta'][number]) => {
   const queryPeriod = new Date();
   queryPeriod.setDate(queryPeriod.getDate() - 29);
   queryPeriod.setHours(0, 0, 0, 0);
-  return new Date(workItemMeta.end) > queryPeriod;
+  return new Date(workItemTimes.end) > queryPeriod;
 };
 
-const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['wiMeta'][number]) => boolean) => (
+const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['times'][number]) => boolean) => (
   (overview: Overview) => (
-    Object.entries(overview.wiMeta)
-      .filter(([, meta]) => pred(meta))
+    Object.entries(overview.times)
+      .filter(([, times]) => pred(times))
       .map(([id]) => Number(id))
   )
 );

@@ -49,7 +49,8 @@ type GridLinesProps<Point> = {
   points: Point[];
 };
 
-const GridLines = <Point, >({
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+const GridLines = <Point extends unknown>({
   yAxisMax, yCoord, width, yAxisLabel, xAxisLabel, points
 }: GridLinesProps<Point>) => {
   const gridLinesGap = Math.round(yAxisMax / (numberOfHorizontalGridLines + 1));

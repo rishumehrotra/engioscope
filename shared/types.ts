@@ -170,10 +170,11 @@ export type Overview = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
   groups: Record<string, { wit: string; label: string; name: string }>;
-  wiMeta: Record<number, {
+  times: Record<number, {
     start?: string;
     end?: string;
-    workCenters: {
+    split: {
+      // type: 'work' | 'wait';
       label: string;
       time: number;
     }[];

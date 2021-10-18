@@ -24,7 +24,7 @@ import GraphCard from './GraphCard';
 const workItemAccessors = (overview: Overview) => ({
   workItemType: (witId: string) => overview.types[witId],
   workItemById: (wid: number) => overview.byId[wid],
-  workItemMeta: (wid: number) => overview.wiMeta[wid]
+  workItemTimes: (wid: number) => overview.times[wid]
 });
 
 const totalCycleTimeUsing = (cycleTime: (wid: number) => number | undefined) => [
@@ -32,8 +32,8 @@ const totalCycleTimeUsing = (cycleTime: (wid: number) => number | undefined) => 
   0
 ] as const;
 
-const workCenterTimeUsing = (workItemMeta: (wid: number) => Overview['wiMeta'][number]) => (wid: number) => (
-  workItemMeta(wid).workCenters.reduce((a, wc) => a + wc.time, 0)
+const workCenterTimeUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => (wid: number) => (
+  workItemTimes(wid).split.reduce((a, part) => a + part.time, 0)
 );
 
 const workItemIdsFromLines = (lines: WorkItemLine[]) => (
@@ -45,14 +45,14 @@ const workItemIdsFromLines = (lines: WorkItemLine[]) => (
 
 const isClosedToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const closedAt = new Date(overview.wiMeta[workItemId].end!);
+  const closedAt = new Date(overview.times[workItemId].end!);
   const dateEnd = new Date(dayStart);
   dateEnd.setDate(dayStart.getDate() + 1);
   return closedAt >= dayStart && closedAt < dateEnd;
 };
 
 const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
-  const workItem = overview.wiMeta[workItemId];
+  const workItem = overview.times[workItemId];
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayStart.getDate() + 1);
 
@@ -115,14 +115,14 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     projectAnalysis, memoizedOrganizedAllWorkItems, isWIPToday
   ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
-  const { workItemById, workItemType, workItemMeta } = useMemo(
+  const { workItemById, workItemType, workItemTimes } = useMemo(
     () => workItemAccessors(projectAnalysis.overview),
     [projectAnalysis.overview]
   );
 
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
-  const workCenterTime = useMemo(() => workCenterTimeUsing(workItemMeta), [workItemMeta]);
+  const workCenterTime = useMemo(() => workCenterTimeUsing(workItemTimes), [workItemTimes]);
   const totalWorkCenterTime = useCallback((wids: number[]) => (
     wids.reduce(
       (acc: number, wid: number) => acc + workCenterTime(wid),
@@ -288,8 +288,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                     groupName,
                     workItemIds
                       .filter(wid => {
-                        const meta = workItemMeta(wid);
-                        return meta.start && meta.end;
+                        const times = workItemTimes(wid);
+                        return times.start && times.end;
                       })
                       .map(workItemById)
                   ])),
@@ -402,10 +402,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                   .sort((a, b) => cycleTime(b)! - cycleTime(a)!)
                   .map(id => {
                     const workItem = workItemById(id);
-                    const meta = workItemMeta(id);
+                    const times = workItemTimes(id);
                     const totalTime = cycleTime(id);
-                    const timeString = meta.workCenters.map(
-                      workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+                    const timeString = times.split.map(
+                      part => `${part.label} time: ${prettyMilliseconds(part.time, { compact: true })}`
                     ).join(' + ');
 
                     return (
@@ -414,11 +414,11 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                           workItem={workItem}
                           workItemType={workItemType(witId)}
                           flair={totalTime
-                            ? `${Math.round((meta.workCenters.reduce((acc, wc) => acc + wc.time, 0) * 100) / totalTime)}%`
+                            ? `${Math.round((times.split.reduce((acc, part) => acc + part.time, 0) * 100) / totalTime)}%`
                             : '-'}
                         />
                         <div className="text-gray-500 text-sm ml-6 mb-3">
-                          {meta.workCenters.length > 1 ? `(${timeString})` : timeString}
+                          {times.split.length > 1 ? `(${timeString})` : timeString}
                           {' / '}
                           {totalTime
                             ? `Total time: ${prettyMilliseconds(totalTime, { compact: true })}`
@@ -463,7 +463,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               <ul>
                 {workItemIds
                   .map(workItemById)
-                  .filter(workItem => workItemMeta(workItem.id).workCenters.length)
+                  .filter(workItem => workItemTimes(workItem.id).split.length)
                   .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
                   .map(workItem => (
                     <li key={workItem.id} className="my-4">
@@ -471,16 +471,16 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                         workItem={workItem}
                         workItemType={workItemType(workItem.typeId)}
                         flair={prettyMilliseconds(
-                          workItemMeta(workItem.id).workCenters.reduce(
-                            (acc, workCenter) => acc + workCenter.time,
+                          workItemTimes(workItem.id).split.reduce(
+                            (acc, part) => acc + part.time,
                             0
                           ),
                           { compact: true }
                         )}
                       />
                       <div className="text-gray-500 text-sm ml-6 mb-2">
-                        {workItemMeta(workItem.id).workCenters.map(
-                          workCenter => `${workCenter.label} time: ${prettyMilliseconds(workCenter.time, { compact: true })}`
+                        {workItemTimes(workItem.id).split.map(
+                          part => `${part.label} time: ${prettyMilliseconds(part.time, { compact: true })}`
                         ).join(' + ')}
                       </div>
                     </li>

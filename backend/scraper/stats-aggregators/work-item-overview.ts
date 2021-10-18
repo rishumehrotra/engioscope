@@ -35,7 +35,7 @@ export const getOverviewData = (
     reducedIds: Record<number, UIWorkItem>;
     types: Record<string, UIWorkItemType>;
     groups: Overview['groups'];
-    wiMeta: Overview['wiMeta'];
+    times: Overview['times'];
   }>((acc, workItem) => {
     const wit = getWorkItemType(workItem);
 
@@ -47,10 +47,10 @@ export const getOverviewData = (
     acc.reducedIds[workItem.id] = byId[workItem.id];
     acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
 
-    acc.wiMeta[workItem.id] = {
+    acc.times[workItem.id] = {
       start: getMinDate(workItemConfig.startDate, workItem)?.toISOString(),
       end: getMinDate(workItemConfig.endDate, workItem)?.toISOString(),
-      workCenters: workItemConfig.workCenters.map(wc => {
+      split: workItemConfig.workCenters.map(wc => {
         const wcStartDate = getMinDate(wc.startDate, workItem);
         const wcEndDate = getMinDate(wc.endDate, workItem);
         if (!wcStartDate || !wcEndDate) return;
@@ -84,13 +84,13 @@ export const getOverviewData = (
 
     return acc;
   }, {
-    reducedIds: {}, types: {}, groups: {}, wiMeta: {}
+    reducedIds: {}, types: {}, groups: {}, times: {}
   });
 
   return {
     byId: results.reducedIds,
     types: results.types,
     groups: results.groups,
-    wiMeta: results.wiMeta
+    times: results.times
   };
 };
