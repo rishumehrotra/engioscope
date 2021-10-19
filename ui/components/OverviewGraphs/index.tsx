@@ -71,7 +71,7 @@ const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   return end > dayEnd; // Started today or before, not finished today
 };
 
-const createTooltip = (
+const createCompletedWorkItemTooltip = (
   workItemType: (witId: string) => UIWorkItemType,
   cycleTime: (wid: number) => number | undefined,
   workCenterTime: (wid: number) => number
@@ -96,6 +96,20 @@ const createTooltip = (
     </div>
   `.trim();
 };
+
+const createWIPWorkItemTooltip = (
+  workItemType: (witId: string) => UIWorkItemType
+) => (workItem: UIWorkItem) => `
+    <div class="w-72">
+      <div class="pl-3" style="text-indent: -1.15rem">
+        <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
+        <strong>#${workItem.id}:</strong> ${workItem.title}
+        <div class="pt-1">
+          <strong>Age:</strong> ${prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
+        </div>
+      </div>
+    </div>
+  `.trim();
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const memoizedOrganizedClosedWorkItems = useMemo(
@@ -133,9 +147,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       0
     )
   ), [workCenterTime]);
-  const workItemTooltip = useMemo(
-    () => createTooltip(workItemType, cycleTime, workCenterTime),
+  const completedWorkItemTooltip = useMemo(
+    () => createCompletedWorkItemTooltip(workItemType, cycleTime, workCenterTime),
     [cycleTime, workCenterTime, workItemType]
+  );
+  const wipWorkItemTooltip = useMemo(
+    () => createWIPWorkItemTooltip(workItemType),
+    [workItemType]
   );
 
   const groupLabel = useCallback(({ witId, groupName }: GroupLabel) => (
@@ -270,12 +288,101 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                   <WorkItemLinkForModal
                     workItem={workItemById(workItemId)}
                     workItemType={workItemType(workItemById(workItemId).typeId)}
+                    flair={prettyMilliseconds(Date.now() - new Date(workItemById(workItemId).created.on).getTime(), { compact: true })}
                   />
                 </li>
               ))}
             </ul>
           );
         }}
+      />
+
+      <GraphCard
+        title="Age of work-in-progress items"
+        subtitle="How old are the currently work-in-progress items"
+        left={(
+          <div className="flex gap-4 justify-evenly items-center">
+            {Object.entries(memoizedOrganizedAllWorkItems).map(([witId, group]) => (
+              <ScatterLineGraph
+                key={witId}
+                graphData={[{
+                  label: workItemType(witId).name[1],
+                  data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
+                    groupName,
+                    workItemIds
+                      .filter(wid => {
+                        const times = workItemTimes(wid);
+                        return times.start && !times.end;
+                      })
+                      .map(workItemById)
+                  ]).filter(x => x[1].length)),
+                  yAxisPoint: (workItem: UIWorkItem) => Date.now() - new Date(workItem.created.on).getTime(),
+                  tooltip: wipWorkItemTooltip
+                }]}
+                height={420}
+                linkForItem={prop('url')}
+              />
+            ))}
+          </div>
+        )}
+        right={(
+          <LegendSidebar
+            heading="Age of WIP items"
+            headlineStatValue={(() => {
+              const itemsWithoutEndDate = Object.values(memoizedOrganizedAllWorkItems)
+                .flatMap(x => Object.values(x))
+                .flat()
+                .filter(x => {
+                  const times = workItemTimes(x);
+                  return times.start && !times.end;
+                })
+                .map(workItemById);
+
+              if (!itemsWithoutEndDate.length) return '-';
+              const totalAge = itemsWithoutEndDate.reduce((acc, { created }) => acc + (Date.now() - new Date(created.on).getTime()), 0);
+              const averageAge = totalAge / itemsWithoutEndDate.length;
+              return prettyMilliseconds(averageAge, { compact: true });
+            })()}
+            data={memoizedOrganizedAllWorkItems}
+            workItemType={workItemType}
+            childStat={workItemIds => {
+              const itemsWithoutEndDate = workItemIds
+                .filter(wid => {
+                  const times = workItemTimes(wid);
+                  return times.start && !times.end;
+                })
+                .map(workItemById);
+
+              if (!itemsWithoutEndDate.length) return '-';
+
+              const totalAge = itemsWithoutEndDate.reduce((acc, { created }) => acc + (Date.now() - new Date(created.on).getTime()), 0);
+              const averageAge = totalAge / itemsWithoutEndDate.length;
+              return prettyMilliseconds(averageAge, { compact: true });
+            }}
+            modalContents={({ workItemIds }) => {
+              const itemsWithoutEndDate = workItemIds
+                .filter(wid => {
+                  const times = workItemTimes(wid);
+                  return times.start && !times.end;
+                })
+                .map(workItemById);
+
+              return (
+                <ul>
+                  {itemsWithoutEndDate.map(workItem => (
+                    <li key={workItem.id} className="py-2">
+                      <WorkItemLinkForModal
+                        workItem={workItem}
+                        workItemType={workItemType(workItem.typeId)}
+                        flair={prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              );
+            }}
+          />
+        )}
       />
 
       <GraphCard
@@ -299,7 +406,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                   ])),
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
-                  tooltip: workItemTooltip
+                  tooltip: completedWorkItemTooltip
                 }]}
                 height={420}
                 linkForItem={prop('url')}
@@ -403,7 +510,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               <ul>
                 {workItemIds
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  .sort((a, b) => cycleTime(b)! - cycleTime(a)!)
+                  .sort((a, b) => workCenterTime(a) / cycleTime(a)! - workCenterTime(b) / cycleTime(b)!)
                   .map(id => {
                     const workItem = workItemById(id);
                     const times = workItemTimes(id);
