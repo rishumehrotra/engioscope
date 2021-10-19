@@ -74,12 +74,34 @@ const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
 const createCompletedWorkItemTooltip = (
   workItemType: (witId: string) => UIWorkItemType,
   cycleTime: (wid: number) => number | undefined,
-  workCenterTime: (wid: number) => number
+  workCenterTime: (wid: number) => number,
+  workItemTimes: (wid: number) => Overview['times'][number]
 ) => (workItem: UIWorkItem) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ct = cycleTime(workItem.id)!;
   const cycleTimeText = prettyMilliseconds(ct, { compact: true });
   const efficiency = Math.round((workCenterTime(workItem.id) / ct) * 100);
+
+  const times = workItemTimes(workItem.id).workCenters.reduce<{ label: string; timeDiff: number}[]>(
+    (acc, wc, index, wcs) => {
+      acc.push({
+        label: `${wc.label} time`,
+        timeDiff: timeDifference(wc)
+      });
+
+      if (index !== wcs.length - 1) {
+        acc.push({
+          label: `${wc.label} to ${wcs[index + 1].label}`,
+          timeDiff: timeDifference({ start: wc.end, end: wcs[index + 1].start })
+        });
+      }
+
+      return acc;
+    },
+    []
+  );
+
+  const worstOffender = times.sort((a, b) => b.timeDiff - a.timeDiff)[0];
 
   return `
     <div class="w-72">
@@ -88,6 +110,9 @@ const createCompletedWorkItemTooltip = (
         <strong>#${workItem.id}:</strong> ${workItem.title}
         <div class="pt-1">
           <strong>Cycle time:</strong> ${cycleTimeText}
+        </div>
+        <div class="pt-1">
+          <strong>Longest time:</strong> ${worstOffender.label} (${prettyMilliseconds(worstOffender.timeDiff, { compact: true })})
         </div>
         <div class="pt-1">
           <strong>Efficiency:</strong> ${efficiency}%
@@ -223,8 +248,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     )
   ), [workCenterTime]);
   const completedWorkItemTooltip = useMemo(
-    () => createCompletedWorkItemTooltip(workItemType, cycleTime, workCenterTime),
-    [cycleTime, workCenterTime, workItemType]
+    () => createCompletedWorkItemTooltip(workItemType, cycleTime, workCenterTime, workItemTimes),
+    [cycleTime, workCenterTime, workItemTimes, workItemType]
   );
   const wipWorkItemTooltip = useMemo(
     () => createWIPWorkItemTooltip(workItemType),
