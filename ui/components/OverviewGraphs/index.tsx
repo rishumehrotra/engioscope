@@ -85,7 +85,7 @@ const createCompletedWorkItemTooltip = (
   const times = workItemTimes(workItem.id).workCenters.reduce<{ label: string; timeDiff: number}[]>(
     (acc, wc, index, wcs) => {
       acc.push({
-        label: `${wc.label} time`,
+        label: wc.label,
         timeDiff: timeDifference(wc)
       });
 
