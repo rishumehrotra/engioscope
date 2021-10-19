@@ -105,11 +105,86 @@ const createWIPWorkItemTooltip = (
         <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
         <strong>#${workItem.id}:</strong> ${workItem.title}
         <div class="pt-1">
+          <strong>Current status:</strong> ${workItem.state}
+        </div>
+        <div class="pt-1">
           <strong>Age:</strong> ${prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
         </div>
       </div>
     </div>
   `.trim();
+
+type WorkItemTypeDetailsProps = {
+  workItem: UIWorkItem;
+  workItemTimes: (wid: number) => Overview['times'][number];
+};
+
+const WorkItemTimeDetails: React.FC<WorkItemTypeDetailsProps> = ({ workItem, workItemTimes }) => {
+  const times = workItemTimes(workItem.id);
+
+  const workingTime = prettyMilliseconds(
+    times.workCenters.reduce(
+      (acc, wc) => acc + timeDifference(wc), 0
+    ), { compact: true }
+  );
+
+  const showTimeSplit = (split: { label: string; timeDiff: number }[]) => {
+    const maxTimeDiff = Math.max(...split.map(prop('timeDiff')));
+
+    return (
+      <ul className="inline">
+        {split.map(({ label, timeDiff }, index) => (
+          <li key={label} className="inline">
+            {index !== 0 && ' + '}
+            {timeDiff === maxTimeDiff
+              ? (
+                <strong className="font-semibold">
+                  {`${label}: ${prettyMilliseconds(timeDiff, { compact: true })}`}
+                </strong>
+              )
+              : (
+                `${label}: ${prettyMilliseconds(timeDiff, { compact: true })}`
+              )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const waitingTime = times.workCenters.length > 1
+    ? prettyMilliseconds(
+      times.workCenters.slice(1).reduce(
+        (acc, wc, index) => acc + timeDifference({
+          start: times.workCenters[index].end,
+          end: wc.start
+        }), 0
+      ), { compact: true }
+    )
+    : 'unknown';
+
+  return (
+    <div className="text-gray-500 text-sm ml-6 mb-3">
+      {`Total working time: ${workingTime} (`}
+      {showTimeSplit(times.workCenters.map(wc => ({
+        label: `${wc.label} time`,
+        timeDiff: timeDifference(wc)
+      })))}
+      )
+      <br />
+      {`Total waiting time: ${waitingTime} (`}
+      {times.workCenters.length === 1
+        ? 'unknown'
+        : showTimeSplit(times.workCenters.slice(1).map((wc, index) => ({
+          label: `${times.workCenters[index].label} to ${wc.label}`,
+          timeDiff: timeDifference({
+            start: times.workCenters[index].end,
+            end: wc.start
+          })
+        })))}
+      )
+    </div>
+  );
+};
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const memoizedOrganizedClosedWorkItems = useMemo(
@@ -449,6 +524,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                           flair={prettyMilliseconds(cycleTime(workItem.id)!, { compact: true })}
                         />
+                        <WorkItemTimeDetails
+                          workItem={workItem}
+                          workItemTimes={workItemTimes}
+                        />
                       </li>
                     </ul>
                   );
@@ -515,34 +594,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                     const workItem = workItemById(id);
                     const times = workItemTimes(id);
                     const totalTime = cycleTime(id);
-                    const workingTime = prettyMilliseconds(
-                      times.workCenters.reduce(
-                        (acc, wc) => acc + timeDifference(wc), 0
-                      ), { compact: true }
-                    );
-                    const workingTimeDetails = times.workCenters.map(
-                      wc => `${wc.label} time: ${prettyMilliseconds(timeDifference(wc), { compact: true })}`
-                    ).join(' + ');
-                    const waitingTime = times.workCenters.length > 1
-                      ? prettyMilliseconds(
-                        times.workCenters.slice(1).reduce(
-                          (acc, wc, index) => acc + timeDifference({
-                            start: times.workCenters[index].end,
-                            end: wc.start
-                          }), 0
-                        ), { compact: true }
-                      )
-                      : 'unknown';
-                    const waitingTimeDetails = times.workCenters.length > 1
-                      ? times.workCenters.slice(1).map(
-                        (wc, index) => `${
-                          times.workCenters[index].label
-                        } to ${wc.label}: ${prettyMilliseconds(
-                          timeDifference({ start: times.workCenters[index].end, end: wc.start }),
-                          { compact: true }
-                        )}`
-                      ).join(' + ')
-                      : 'unknown';
 
                     return (
                       <li className="my-4">
@@ -557,11 +608,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
                             )}%`
                             : '-'}
                         />
-                        <div className="text-gray-500 text-sm ml-6 mb-3">
-                          {`Total working time: ${workingTime} (${workingTimeDetails})`}
-                          <br />
-                          {`Total waiting time: ${waitingTime} (${waitingTimeDetails})`}
-                        </div>
+                        <WorkItemTimeDetails
+                          workItem={workItem}
+                          workItemTimes={workItemTimes}
+                        />
                       </li>
                     );
                   })}
