@@ -89,7 +89,7 @@ const AdvancedFilters: React.FC = () => {
   const [selectedTab] = useTabs();
   const [ref, isOpen, setIsOpen] = usePopover();
 
-  if (selectedTab === 'workitems' || selectedTab === 'devs') return null;
+  if (selectedTab === 'workitems' || selectedTab === 'devs' || selectedTab === '') return null;
 
   return (
     <span className="relative">

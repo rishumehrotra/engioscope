@@ -1,10 +1,14 @@
 import type { ChangeEvent } from 'react';
 import React from 'react';
 import { useQueryParam } from 'use-query-params';
+import { useTabs } from '../../hooks/use-tabs';
 import { Search } from './Icons';
 
 const SearchInput: React.FC = () => {
+  const [selectedTab] = useTabs();
   const [search, setSearchTerm] = useQueryParam<string>('search');
+
+  if (!selectedTab) return null;
 
   return (
     <div className="w-full text-gray-600 h-full flex items-between items-center
