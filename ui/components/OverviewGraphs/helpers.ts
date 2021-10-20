@@ -1,5 +1,5 @@
 import { always } from 'rambda';
-import type { Overview } from '../../../shared/types';
+import type { Overview, UIWorkItemType } from '../../../shared/types';
 import { createPalette } from '../../helpers/utils';
 
 export type GroupLabel = { witId: string; groupName: string };
@@ -30,12 +30,42 @@ const witIdCreator = (overview: Overview) => (
 
 export const noGroup = 'no-group';
 
+export const timeDifference = ({ start, end }: { start: string; end: string }) => (
+  new Date(end).getTime() - new Date(start).getTime()
+);
+
 export const cycleTimeFor = (overview: Overview) => (wid: number) => {
   const wi = overview.times[wid];
   if (!wi.start || !wi.end) return undefined;
 
   return new Date(wi.end).getTime() - new Date(wi.start).getTime();
 };
+
+export const totalCycleTimeUsing = (cycleTime: (workItemId: number) => number | undefined) => (
+  (workItemIds: number[]) => (
+    workItemIds.reduce((acc, wid) => acc + (cycleTime(wid) || 0), 0)
+  )
+);
+
+export const workCenterTimeUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => (wid: number) => (
+  workItemTimes(wid).workCenters.reduce((a, wc) => a + timeDifference(wc), 0)
+);
+
+export const totalWorkCenterTimeUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
+  const workCenterTime = workCenterTimeUsing(workItemTimes);
+  return (
+    (wids: number[]) => wids.reduce(
+      (acc: number, wid: number) => acc + workCenterTime(wid),
+      0
+    )
+  );
+};
+
+export const groupLabelUsing = (workItemType: (witId: string) => UIWorkItemType) => (
+  ({ witId, groupName }: GroupLabel) => (
+    workItemType(witId).name[1] + (groupName === noGroup ? '' : ` - ${groupName}`)
+  )
+);
 
 export const isWorkItemClosed = (workItemTimes: Overview['times'][number]) => {
   if (!workItemTimes.end) return false;
@@ -54,7 +84,7 @@ export const isWorkItemClosed = (workItemTimes: Overview['times'][number]) => {
   return new Date(workItemTimes.end) > queryPeriod;
 };
 
-const getWorkItemIdsUsingMeta = (pred: (workItemMeta: Overview['times'][number]) => boolean) => (
+const getWorkItemIdsUsingTimes = (pred: (workItemTimes: Overview['times'][number]) => boolean) => (
   (overview: Overview) => (
     Object.entries(overview.times)
       .filter(([, times]) => pred(times))
@@ -68,7 +98,7 @@ const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
     const group = groupCreator(overview);
 
     return workItemIds(overview)
-      .reduce<Record<string, Record<string, number[]>>>(
+      .reduce<OrganizedWorkItems>(
         (acc, workItemId) => {
           const groupName = group(workItemId)?.name ?? noGroup;
           const typeId = witId(workItemId);
@@ -82,8 +112,13 @@ const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
   }
 );
 
-const closedWorkItemIds = getWorkItemIdsUsingMeta(isWorkItemClosed);
-const workItemIdsFull = getWorkItemIdsUsingMeta(always(true));
+const closedWorkItemIds = getWorkItemIdsUsingTimes(isWorkItemClosed);
+const workItemIdsFull = getWorkItemIdsUsingTimes(always(true));
 
 export const organizedClosedWorkItems = organizeWorkItems(closedWorkItemIds);
 export const organizedAllWorkItems = organizeWorkItems(workItemIdsFull);
+
+export const allWorkItemIdsFromOrganizedGroup = (organizedGroups: OrganizedWorkItems) => (
+  Object.values(organizedGroups)
+    .reduce<number[]>((acc, group) => acc.concat(...Object.values(group)), [])
+);

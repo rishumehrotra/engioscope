@@ -121,7 +121,6 @@ export type RepoAnalysis = {
 export type UIWorkItem = {
   id: number;
   project: string;
-  // type: string;
   typeId: string;
   state: string;
   created: {
@@ -139,8 +138,6 @@ export type UIWorkItem = {
   title: string;
   // description: string;
   url: string;
-  // icon: string;
-  // color: string;
   env?: string;
   clt?: { start?: string; end?: string };
   leadTime: { start: string; end?: string };

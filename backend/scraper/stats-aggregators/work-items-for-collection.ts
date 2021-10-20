@@ -163,12 +163,9 @@ const uiWorkItemCreator = (
       id: workItem.id,
       title: workItem.fields['System.Title'],
       url: workItem.url.replace('_apis/wit/workItems', '_workitems/edit'),
-      // type: workItem.fields['System.WorkItemType'],
       typeId: workItemTypeId(workItemType),
       state: workItem.fields['System.State'],
       project: workItem.fields['System.TeamProject'],
-      // color: workItemType.color,
-      // icon: workItemType.icon.url,
       created: {
         on: workItem.fields['System.CreatedDate'].toISOString()
         // name: workItem.fields['System.CreatedBy']
