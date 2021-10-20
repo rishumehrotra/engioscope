@@ -7,10 +7,13 @@ import { lineColor, noGroup } from './helpers';
 
 export const sidebarWidth = '317px';
 
-type LegendSidebarProps = {
+export type LegendSidebarProps = {
   heading: ReactNode;
-  headlineStatValue: ReactNode;
-  headlineStatUnits?: ReactNode;
+  headlineStats?: (data: OrganizedWorkItems) => {
+    heading: string;
+    value: string | number;
+    unit?: string;
+  }[];
   data: OrganizedWorkItems;
   workItemType: (wit: string) => UIWorkItemType;
   childStat: (workItemIds: number[]) => ReactNode;
@@ -22,8 +25,7 @@ type LegendSidebarProps = {
 };
 
 export const LegendSidebar: React.FC<LegendSidebarProps> = ({
-  heading, headlineStatValue, headlineStatUnits, data,
-  childStat, modalContents, workItemType
+  heading, data, childStat, modalContents, workItemType, headlineStats
 }) => {
   const [Modal, modalProps, open] = useModal();
   const [dataForModal, setDataForModal] = useState<{
@@ -44,19 +46,23 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
       >
         {dataForModal && modalContents(dataForModal)}
       </Modal>
-      <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md">
-        <h3 className="font-semibold pb-1">
-          {heading}
-        </h3>
-        <div className="">
-          <span className="text-2xl font-semibold">
-            {headlineStatValue}
-          </span>
-          {' '}
-          <span className="text-sm">
-            {headlineStatUnits}
-          </span>
-        </div>
+      <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md grid grid-cols-2 gap-4">
+        {headlineStats?.(data).map(({ heading, value, unit }) => (
+          <div key={heading}>
+            <h3 className="font-semibold pb-1">
+              {heading}
+            </h3>
+            <div className="">
+              <span className="text-2xl font-semibold">
+                {value}
+              </span>
+              {' '}
+              <span className="text-sm">
+                {unit}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
       <div className="grid gap-3 grid-cols-2">
         {Object.entries(data).flatMap(([witId, groupedWorkItems]) => (

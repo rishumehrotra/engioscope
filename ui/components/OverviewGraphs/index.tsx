@@ -7,7 +7,7 @@ import type {
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import {
   organizedClosedWorkItems, organizedAllWorkItems, cycleTimeFor,
-  lineColor, timeDifference, workCenterTimeUsing, groupLabelUsing
+  lineColor, timeDifference, workCenterTimeUsing, groupLabelUsing, groupByWorkItemType
 } from './helpers';
 import type { WorkItemLine } from './day-wise-line-graph-helpers';
 import {
@@ -19,6 +19,7 @@ import { WIPAgeGraph } from './WIPAgeGraph';
 import { CycleTimeGraph } from './CycleTimeGraph';
 import { FlowEfficiencyGraph } from './FlowEfficiencyGraph';
 import { EffortDistributionGraph } from './EffortDistributionGraph';
+import { useRemoveSort } from '../../hooks/sort-hooks';
 
 const workItemAccessors = (overview: Overview) => ({
   workItemType: (witId: string) => overview.types[witId],
@@ -146,6 +147,7 @@ const createWIPWorkItemTooltip = (
 `.trim();
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
+  useRemoveSort();
   const memoizedOrganizedClosedWorkItems = useMemo(
     () => organizedClosedWorkItems(projectAnalysis.overview),
     [projectAnalysis.overview]
@@ -199,7 +201,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         aggregateStats={length}
         sidebarHeading="Velocity this month"
         formatValue={String}
-        sidebarHeadlineStat={lines => workItemIdsFromLines(lines).length}
+        sidebarHeadlineStats={data => (
+          Object.entries(groupByWorkItemType(data))
+            .map(([witId, items]) => ({
+              heading: workItemType(witId).name[1],
+              value: items.length
+            }))
+        )}
         sidebarModalContents={line => (
           <ul>
             {line.workItemPoints.map(({ date, workItemIds }) => (
@@ -246,9 +254,17 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         aggregateStats={length}
         sidebarHeading="Work in progress items"
         formatValue={String}
-        sidebarHeadlineStat={lines => lines.reduce(
-          (acc, line) => acc + last(line.workItemPoints).workItemIds.length,
-          0
+        sidebarHeadlineStats={data => (
+          Object.entries(groupByWorkItemType(data))
+            .map(([witId, workItemIds]) => ({
+              heading: workItemType(witId).name[1],
+              value: workItemIds
+                .filter(workItemId => {
+                  const times = workItemTimes(workItemId);
+                  return times.start && !times.end;
+                })
+                .length
+            }))
         )}
         sidebarItemStat={allWorkItemIds => {
           const matchingLine = wipSplitByDay

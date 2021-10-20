@@ -3,10 +3,8 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import type { OrganizedWorkItems } from './helpers';
 import {
-  workCenterTimeUsing,
-  totalWorkCenterTimeUsing,
-  timeDifference,
-  totalCycleTimeUsing, allWorkItemIdsFromOrganizedGroup, lineColor, noGroup
+  groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
+  timeDifference, totalCycleTimeUsing, lineColor, noGroup
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
@@ -63,12 +61,19 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
         <LegendSidebar
           heading="Flow efficiency"
           data={closedWorkItems}
-          headlineStatValue={(organized => {
-            const allWids = allWorkItemIdsFromOrganizedGroup(organized);
-            const workTime = totalWorkCenterTime(allWids);
-            const totalTime = totalCycleTime(allWids);
-            return totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`;
-          })(closedWorkItems)}
+          headlineStats={data => (
+            Object.entries(groupByWorkItemType(data))
+              .map(([witId, workItemIds]) => {
+                const workTime = totalWorkCenterTime(workItemIds);
+                const totalTime = totalCycleTime(workItemIds);
+                const value = totalTime === 0 ? '-' : (workTime * 100) / totalTime;
+                return {
+                  heading: workItemType(witId).name[1],
+                  value: `${typeof value === 'string' ? value : Math.round(value)}%`,
+                  unit: 'avg'
+                };
+              })
+          )}
           workItemType={workItemType}
           childStat={workItemIds => {
             const workTime = totalWorkCenterTime(workItemIds);

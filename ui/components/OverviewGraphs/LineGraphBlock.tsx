@@ -13,6 +13,7 @@ import type { GroupLabel, OrganizedWorkItems } from './helpers';
 import { getMatchingAtIndex, splitByDateForLineGraph } from './day-wise-line-graph-helpers';
 import type { WorkItemLine, WorkItemPoint } from './day-wise-line-graph-helpers';
 import { CrosshairBubble } from './CrosshairBubble';
+import type { LegendSidebarProps } from './LegendSidebar';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 
@@ -27,7 +28,7 @@ type GraphBlockProps = {
   showFlairForWorkItemInModal?: boolean;
   formatValue: (x: number) => string;
   sidebarHeading: string;
-  sidebarHeadlineStat: (workItemIds: WorkItemLine[]) => ReactNode;
+  sidebarHeadlineStats: LegendSidebarProps['headlineStats'];
   sidebarItemStat?: (workItemIds: number[]) => ReactNode;
   sidebarModalContents: (line: WorkItemLine) => ReactNode;
   headlineStatUnits?: string;
@@ -45,8 +46,8 @@ export const createGraphBlock = ({
   const workItems = (dataLine: WorkItemLine) => dataLine.workItemPoints;
   const GraphBlock: React.FC<GraphBlockProps> = ({
     data, graphHeading, graphSubheading, pointToValue, crosshairBubbleTitle,
-    formatValue, aggregateStats, sidebarHeading, sidebarHeadlineStat,
-    showFlairForWorkItemInModal, sidebarItemStat, headlineStatUnits,
+    formatValue, aggregateStats, sidebarHeading, sidebarHeadlineStats,
+    showFlairForWorkItemInModal, sidebarItemStat,
     workItemInfoForModal, daySplitter, sidebarModalContents
   }) => {
     const dataByDay = useMemo(() => splitByDateForLineGraph(
@@ -142,10 +143,9 @@ export const createGraphBlock = ({
           right={(
             <LegendSidebar
               heading={sidebarHeading}
-              headlineStatValue={sidebarHeadlineStat(dataByDay)}
+              headlineStats={sidebarHeadlineStats}
               data={data}
               workItemType={workItemType}
-              headlineStatUnits={headlineStatUnits}
               childStat={sidebarItemStat || aggregateAndFormat}
               modalContents={({ workItemIds }) => {
                 const matchingLine = dataByDay

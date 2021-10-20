@@ -5,7 +5,7 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import type { OrganizedWorkItems } from './helpers';
-import { totalCycleTimeUsing, allWorkItemIdsFromOrganizedGroup } from './helpers';
+import { groupByWorkItemType, totalCycleTimeUsing } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { WorkItemTimeDetails } from './WorkItemTimeDetails';
@@ -59,16 +59,16 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
         <LegendSidebar
           heading="Average cycle time"
           data={closedWorkItems}
-          headlineStatValue={(organized => {
-            const allWids = allWorkItemIdsFromOrganizedGroup(organized);
-
-            return allWids.length
-              ? prettyMilliseconds(
-                totalCycleTime(allWids) / allWids.length,
-                { compact: true }
-              )
-              : '-';
-          })(closedWorkItems)}
+          headlineStats={data => (
+            Object.entries(groupByWorkItemType(data))
+              .map(([witId, workItemIds]) => ({
+                heading: workItemType(witId).name[1],
+                value: workItemIds.length
+                  ? prettyMilliseconds(totalCycleTime(workItemIds) / workItemIds.length, { compact: true })
+                  : '-',
+                unit: 'avg'
+              }))
+          )}
           workItemType={workItemType}
           childStat={workItemIds => prettyMilliseconds(
             totalCycleTime(workItemIds) / workItemIds.length,

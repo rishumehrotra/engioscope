@@ -122,3 +122,10 @@ export const allWorkItemIdsFromOrganizedGroup = (organizedGroups: OrganizedWorkI
   Object.values(organizedGroups)
     .reduce<number[]>((acc, group) => acc.concat(...Object.values(group)), [])
 );
+
+export const groupByWorkItemType = (organizedGroups: OrganizedWorkItems) => (
+  Object.entries(organizedGroups).reduce<Record<string, number[]>>((acc, [witId, group]) => {
+    acc[witId] = (acc[witId] || []).concat(...Object.values(group));
+    return acc;
+  }, {})
+);

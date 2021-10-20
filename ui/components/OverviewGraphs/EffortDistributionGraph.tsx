@@ -5,6 +5,7 @@ import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import type { OrganizedWorkItems } from './helpers';
 import {
+  groupByWorkItemType,
   totalWorkCenterTimeUsing,
   workCenterTimeUsing, lineColor, groupLabelUsing, timeDifference
 } from './helpers';
@@ -77,7 +78,22 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
         <LegendSidebar
           heading="Effort distribution"
           data={allWorkItems}
-          headlineStatValue=""
+          headlineStats={data => {
+            const grouped = groupByWorkItemType(data);
+            const totalTime = Object.values(grouped).reduce(
+              (acc, workItemIds) => acc + totalWorkCenterTime(workItemIds),
+              0
+            );
+            return (
+              Object.entries(grouped)
+                .map(([witId, workItemIds]) => ({
+                  heading: workItemType(witId).name[1],
+                  value: totalTime
+                    ? `${((totalWorkCenterTime(workItemIds) * 100) / totalTime).toFixed(2)}%`
+                    : '-'
+                }))
+            );
+          }}
           workItemType={workItemType}
           childStat={workItemIds => {
             const workTime = totalWorkCenterTime(workItemIds);

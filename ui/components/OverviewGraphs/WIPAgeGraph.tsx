@@ -7,6 +7,7 @@ import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
+import { groupByWorkItemType } from './helpers';
 
 type WIPAgeGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -50,21 +51,30 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
     right={(
       <LegendSidebar
         heading="Age of WIP items"
-        headlineStatValue={(() => {
-          const itemsWithoutEndDate = Object.values(allWorkItems)
-            .flatMap(x => Object.values(x))
-            .flat()
-            .filter(x => {
-              const times = workItemTimes(x);
-              return times.start && !times.end;
-            })
-            .map(workItemById);
+        headlineStats={data => (
+          Object.entries(groupByWorkItemType(data))
+            .map(([witId, workItemIds]) => {
+              const workItems = workItemIds
+                .filter(wid => {
+                  const times = workItemTimes(wid);
+                  return times.start && !times.end;
+                })
+                .map(workItemById);
 
-          if (!itemsWithoutEndDate.length) { return '-'; }
-          const totalAge = itemsWithoutEndDate.reduce((acc, { created }) => acc + (Date.now() - new Date(created.on).getTime()), 0);
-          const averageAge = totalAge / itemsWithoutEndDate.length;
-          return prettyMilliseconds(averageAge, { compact: true });
-        })()}
+              return {
+                heading: workItemType(witId).name[1],
+                value: workItems.length
+                  ? prettyMilliseconds(
+                    workItems.reduce(
+                      (acc, workItem) => acc + (Date.now() - new Date(workItem.created.on).getTime()),
+                      0
+                    ) / workItems.length, { compact: true }
+                  )
+                  : '-',
+                unit: 'avg'
+              };
+            })
+        )}
         data={allWorkItems}
         workItemType={workItemType}
         childStat={workItemIds => {
