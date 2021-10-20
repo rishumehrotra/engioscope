@@ -145,6 +145,8 @@ export type UIWorkItem = {
   clt?: { start?: string; end?: string };
   leadTime: { start: string; end?: string };
   groupId?: string;
+  priority?: number;
+  severity?: string;
 };
 
 export type UIWorkItemRevision = {

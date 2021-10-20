@@ -108,6 +108,16 @@ const createCompletedWorkItemTooltip = (
       <div class="pl-3" style="text-indent: -1.15rem">
         <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
         <strong>#${workItem.id}:</strong> ${workItem.title}
+        ${workItem.priority ? `
+        <div class="pt-1">
+          <strong>Priority:</strong> ${workItem.priority}
+        </div>
+        ` : ''}
+        ${workItem.severity ? `
+        <div class="pt-1">
+          <strong>Severity:</strong> ${workItem.severity}
+        </div>
+        ` : ''}
         <div class="pt-1">
           <strong>Cycle time:</strong> ${cycleTimeText}
         </div>
@@ -125,19 +135,29 @@ const createCompletedWorkItemTooltip = (
 const createWIPWorkItemTooltip = (
   workItemType: (witId: string) => UIWorkItemType
 ) => (workItem: UIWorkItem) => `
-    <div class="w-72">
-      <div class="pl-3" style="text-indent: -1.15rem">
-        <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
-        <strong>#${workItem.id}:</strong> ${workItem.title}
-        <div class="pt-1">
-          <strong>Current status:</strong> ${workItem.state}
-        </div>
-        <div class="pt-1">
-          <strong>Age:</strong> ${prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
-        </div>
+  <div class="w-72">
+    <div class="pl-3" style="text-indent: -1.15rem">
+      <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
+      <strong>#${workItem.id}:</strong> ${workItem.title}
+      ${workItem.priority ? `
+      <div class="pt-1">
+        <strong>Priority:</strong> ${workItem.priority}
+      </div>
+      ` : ''}
+      ${workItem.severity ? `
+      <div class="pt-1">
+        <strong>Severity:</strong> ${workItem.severity}
+      </div>
+      ` : ''}
+      <div class="pt-1">
+        <strong>Current status:</strong> ${workItem.state}
+      </div>
+      <div class="pt-1">
+        <strong>Age:</strong> ${prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
       </div>
     </div>
-  `.trim();
+  </div>
+`.trim();
 
 type WorkItemTypeDetailsProps = {
   workItem: UIWorkItem;
@@ -148,9 +168,8 @@ const WorkItemTimeDetails: React.FC<WorkItemTypeDetailsProps> = ({ workItem, wor
   const times = workItemTimes(workItem.id);
 
   const workingTime = prettyMilliseconds(
-    times.workCenters.reduce(
-      (acc, wc) => acc + timeDifference(wc), 0
-    ), { compact: true }
+    times.workCenters.reduce((acc, wc) => acc + timeDifference(wc), 0),
+    { compact: true }
   );
 
   const showTimeSplit = (split: { label: string; timeDiff: number }[]) => {

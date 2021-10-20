@@ -179,6 +179,8 @@ const uiWorkItemCreator = (
       env: collectionConfig.workitems.environmentField
         ? workItem.fields[collectionConfig.workitems.environmentField]
         : undefined,
+      priority: workItem.fields['Microsoft.VSTS.Common.Priority'],
+      severity: workItem.fields['Microsoft.VSTS.Common.Severity'],
       ...computeCLT(collectionConfig, workItem),
       ...computeLeadTime(workItem)
     };

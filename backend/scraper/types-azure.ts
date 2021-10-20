@@ -458,6 +458,8 @@ export type WorkItem = {
     'Microsoft.VSTS.TCM.AutomationStatus'?: 'Not Automated' | 'Automated';
     'Microsoft.VSTS.Common.ClosedDate'?: Date;
     'Microsoft.VSTS.Common.StateChangeDate'?: Date;
+    'Microsoft.VSTS.Common.Priority'?: number;
+    'Microsoft.VSTS.Common.Severity'?: string;
   } & Record<string, string>;
   url: string;
 };
