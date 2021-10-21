@@ -1,16 +1,37 @@
 import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
+import { add } from 'rambda';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import type { OrganizedWorkItems } from './helpers';
 import {
-  groupByWorkItemType,
-  totalWorkCenterTimeUsing,
-  workCenterTimeUsing, lineColor, groupLabelUsing, timeDifference
+  groupByWorkItemType, lineColor, groupLabelUsing, timeDifference
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
+import { exists, shortDate } from '../../helpers/utils';
+
+const workCenterTimeThisMonthUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
+  const monthAgo = new Date();
+  monthAgo.setDate(monthAgo.getDate() - 30);
+
+  return (workItemId: number) => {
+    const times = workItemTimes(workItemId);
+    return times.workCenters.map(({ start, end }) => {
+      if (new Date(end) < monthAgo) return 0;
+      if (new Date(start) > monthAgo) return timeDifference({ start, end });
+      return timeDifference({ start: monthAgo.toISOString(), end });
+    }).reduce(add, 0);
+  };
+};
+
+const totalWorkCenterTimeThisMonthUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
+  const workCenterTimeThisMonth = workCenterTimeThisMonthUsing(workItemTimes);
+  return (workItemIds: number[]) => (
+    workItemIds.reduce((acc, workItemId) => acc + workCenterTimeThisMonth(workItemId), 0)
+  );
+};
 
 type EffortDistributionGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -22,8 +43,10 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
   allWorkItems, workItemById, workItemTimes, workItemType
 }) => {
   const groupLabel = useMemo(() => groupLabelUsing(workItemType), [workItemType]);
-  const workCenterTime = useMemo(() => workCenterTimeUsing(workItemTimes), [workItemTimes]);
-  const totalWorkCenterTime = useMemo(() => totalWorkCenterTimeUsing(workItemTimes), [workItemTimes]);
+  const workCenterTimeThisMonth = useMemo(() => workCenterTimeThisMonthUsing(workItemTimes), [workItemTimes]);
+  const totalWorkCenterTimeThisMonth = useMemo(() => totalWorkCenterTimeThisMonthUsing(workItemTimes), [workItemTimes]);
+  const monthAgo = new Date();
+  monthAgo.setDate(monthAgo.getDate() - 30);
 
   const effortDistribution = useMemo(
     () => {
@@ -32,7 +55,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
           witId,
           workTimes: Object.entries(group).reduce<Record<string, number>>(
             (acc, [groupName, workItemIds]) => {
-              acc[groupName] = totalWorkCenterTime(workItemIds);
+              acc[groupName] = totalWorkCenterTimeThisMonth(workItemIds);
               return acc;
             },
             {}
@@ -60,13 +83,13 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
         value: (value * 100) / totalEffort
       }));
     },
-    [groupLabel, allWorkItems, totalWorkCenterTime]
+    [groupLabel, allWorkItems, totalWorkCenterTimeThisMonth]
   );
 
   return (
     <GraphCard
       title="Effort distribution"
-      subtitle="Percentage of working time spent on various work items"
+      subtitle="Percentage of working time spent on various work items over the last 30 days"
       left={(
         <HorizontalBarGraph
           graphData={effortDistribution}
@@ -81,7 +104,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
           headlineStats={data => {
             const grouped = groupByWorkItemType(data);
             const totalTime = Object.values(grouped).reduce(
-              (acc, workItemIds) => acc + totalWorkCenterTime(workItemIds),
+              (acc, workItemIds) => acc + totalWorkCenterTimeThisMonth(workItemIds),
               0
             );
             return (
@@ -89,19 +112,19 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
                 .map(([witId, workItemIds]) => ({
                   heading: workItemType(witId).name[1],
                   value: totalTime
-                    ? `${((totalWorkCenterTime(workItemIds) * 100) / totalTime).toFixed(2)}%`
+                    ? `${((totalWorkCenterTimeThisMonth(workItemIds) * 100) / totalTime).toFixed(2)}%`
                     : '-'
                 }))
             );
           }}
           workItemType={workItemType}
           childStat={workItemIds => {
-            const workTime = totalWorkCenterTime(workItemIds);
+            const workTime = totalWorkCenterTimeThisMonth(workItemIds);
             const allWorkItemIds = Object.values(allWorkItems).reduce<number[]>(
               (acc, group) => acc.concat(...Object.values(group)),
               []
             );
-            const totalTime = totalWorkCenterTime(allWorkItemIds);
+            const totalTime = totalWorkCenterTimeThisMonth(allWorkItemIds);
 
             return totalTime
               ? `${((workTime * 100) / totalTime).toFixed(2)}%`
@@ -112,7 +135,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
               {workItemIds
                 .map(workItemById)
                 .filter(workItem => workItemTimes(workItem.id).workCenters.length)
-                .sort((a, b) => workCenterTime(b.id) - workCenterTime(a.id))
+                .sort((a, b) => workCenterTimeThisMonth(b.id) - workCenterTimeThisMonth(a.id))
                 .map(workItem => (
                   <li key={workItem.id} className="my-4">
                     <WorkItemLinkForModal
@@ -127,9 +150,21 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
                       )}
                     />
                     <div className="text-gray-500 text-sm ml-6 mb-2">
-                      {workItemTimes(workItem.id).workCenters.map(
-                        wc => `${wc.label} time: ${prettyMilliseconds(timeDifference(wc), { compact: true })}`
-                      ).join(' + ')}
+                      {workItemTimes(workItem.id).workCenters
+                        .map(wc => {
+                          if (new Date(wc.end) < monthAgo) return null;
+                          if (new Date(wc.start) > monthAgo) return wc;
+                          return {
+                            ...wc,
+                            start: monthAgo.toISOString()
+                          };
+                        })
+                        .filter(exists)
+                        .map(
+                          wc => `${wc.label} time ${
+                            prettyMilliseconds(timeDifference(wc), { compact: true })
+                          } (${shortDate(new Date(wc.start))} to ${shortDate(new Date(wc.end))})`
+                        ).join(' + ')}
                     </div>
                   </li>
                 ))}

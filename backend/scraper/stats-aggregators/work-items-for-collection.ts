@@ -152,6 +152,15 @@ const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName
   }
 );
 
+const rca = (collectionConfig: ParsedCollection, workItem: WorkItem, workItemType: WorkItemType) => {
+  if (workItemType.name !== 'Bug') return;
+  const match = collectionConfig.workitems.types?.find(({ type }) => type === workItemType.name);
+  if (!match?.rootCause) return;
+  if (match.rootCause.every(field => !workItem.fields[field])) return;
+
+  return { rca: match.rootCause.map(field => workItem.fields[field]) };
+};
+
 const uiWorkItemCreator = (
   collectionConfig: ParsedCollection,
   getWorkItemType: (workItem: WorkItem) => WorkItemType
@@ -179,7 +188,8 @@ const uiWorkItemCreator = (
       priority: workItem.fields['Microsoft.VSTS.Common.Priority'],
       severity: workItem.fields['Microsoft.VSTS.Common.Severity'],
       ...computeCLT(collectionConfig, workItem),
-      ...computeLeadTime(workItem)
+      ...computeLeadTime(workItem),
+      ...rca(collectionConfig, workItem, workItemType)
     };
   }
 );

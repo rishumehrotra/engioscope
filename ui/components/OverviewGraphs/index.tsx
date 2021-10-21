@@ -105,6 +105,11 @@ const createCompletedWorkItemTooltip = (
           <strong>Severity:</strong> ${workItem.severity}
         </div>
         ` : ''}
+        ${workItem.rca ? `
+        <div class="pt-1">
+          <strong>RCA:</strong> ${workItem.rca.join(' - ')}
+        </div>
+        ` : ''}
         <div class="pt-1">
           <strong>Cycle time:</strong> ${cycleTimeText}
         </div>
@@ -134,6 +139,11 @@ const createWIPWorkItemTooltip = (
       ${workItem.severity ? `
       <div class="pt-1">
         <strong>Severity:</strong> ${workItem.severity}
+      </div>
+      ` : ''}
+      ${workItem.rca ? `
+      <div class="pt-1">
+        <strong>RCA:</strong> ${workItem.rca.join(' - ')}
       </div>
       ` : ''}
       <div class="pt-1">
@@ -195,11 +205,11 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         data={memoizedOrganizedClosedWorkItems}
         daySplitter={isClosedToday}
         graphHeading="Velocity"
-        graphSubheading="Work items closed per day over the last month"
+        graphSubheading="Work items closed per day over the last 30 days"
         pointToValue={x => x.workItemIds.length}
         crosshairBubbleTitle="Velocity"
         aggregateStats={length}
-        sidebarHeading="Velocity this month"
+        sidebarHeading="Velocity over the last 30 days"
         formatValue={String}
         sidebarHeadlineStats={data => (
           Object.entries(groupByWorkItemType(data))
@@ -248,7 +258,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         data={memoizedOrganizedAllWorkItems}
         daySplitter={isWIPToday}
         graphHeading="Work in progress"
-        graphSubheading="Work items in progress per day over the last month"
+        graphSubheading="Work items in progress per day over the last 30 days"
         pointToValue={x => x.workItemIds.length}
         crosshairBubbleTitle="Work in progress"
         aggregateStats={length}

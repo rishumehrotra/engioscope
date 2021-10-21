@@ -28,6 +28,7 @@ type CollectionWorkItemConfig = {
     type: string;
     groupByField?: string;
     groupLabel?: string;
+    rootCause?: string | string[];
     startDate: string | string[];
     endDate?: string | string[];
     workCenters: ({ label: string } & (
@@ -91,10 +92,11 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   ignoredWorkItemsForFlowAnalysis?: string[];
   types?: {
     type: string;
-    startDate: string[];
     groupByField?: string;
     groupLabel: string;
+    startDate: string[];
     endDate: string[];
+    rootCause?: string[];
     workCenters: {
       label: string;
       startDate: string[];
@@ -146,6 +148,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
       groupLabel: type.groupLabel || 'Unlabelled group',
       startDate: Array.isArray(type.startDate) ? type.startDate : [type.startDate || 'System.CreatedDate'],
       endDate: Array.isArray(type.endDate) ? type.endDate : [type.endDate || 'Microsoft.VSTS.Common.ClosedDate'],
+      // eslint-disable-next-line no-nested-ternary
+      rootCause: type.rootCause ? (Array.isArray(type.rootCause) ? type.rootCause : [type.rootCause]) : undefined,
       workCenters: type.workCenters.map(workCenter => ({
         label: workCenter.label,
         // eslint-disable-next-line no-nested-ternary

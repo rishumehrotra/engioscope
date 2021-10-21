@@ -442,6 +442,7 @@ export type WorkItemType = {
   transitions: Record<string, { to: string }[]>;
   states: { name: string; color: string; category: string }[];
   url: string;
+  rootCause?: string[];
 };
 
 export type WorkItem = {

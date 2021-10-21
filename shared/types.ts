@@ -144,6 +144,7 @@ export type UIWorkItem = {
   groupId?: string;
   priority?: number;
   severity?: string;
+  rca?: string[];
 };
 
 export type UIWorkItemRevision = {

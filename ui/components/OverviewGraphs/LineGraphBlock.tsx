@@ -134,8 +134,8 @@ export const createGraphBlock = ({
                   itemStat={aggregateAndFormat}
                 />
               )}
-              onClick={(...args) => {
-                setDayIndexInModal(args[0]);
+              onClick={pointIndex => {
+                setDayIndexInModal(pointIndex);
                 openModal();
               }}
             />
