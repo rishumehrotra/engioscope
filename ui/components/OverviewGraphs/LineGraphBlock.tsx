@@ -1,6 +1,6 @@
 import { pipe, prop } from 'rambda';
 import type { ReactNode } from 'react';
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import type {
   Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
 } from '../../../shared/types';
@@ -53,6 +53,24 @@ export const createGraphBlock = ({
     const dataByDay = useMemo(() => splitByDateForLineGraph(
       projectAnalysis, data, daySplitter
     ), [data, daySplitter]);
+
+    const [checkboxState, setCheckboxState] = useState<Record<string, boolean>>(
+      dataByDay.reduce<Record<string, boolean>>((acc, day) => {
+        acc[day.witId + day.groupName] = true;
+        return acc;
+      }, {})
+    );
+
+    const isCheckboxChecked = useCallback(({ witId, groupName }: GroupLabel) => (
+      checkboxState[witId + groupName]
+    ), [checkboxState]);
+
+    const onCheckboxChange = useCallback(({ witId, groupName }: GroupLabel) => {
+      setCheckboxState(prevState => ({
+        ...prevState,
+        [witId + groupName]: !prevState[witId + groupName]
+      }));
+    }, []);
 
     const [dayIndexInModal, setDayIndexInModal] = useState<number | null>(null);
     const [Modal, modalProps, openModal] = useModal();
@@ -117,7 +135,7 @@ export const createGraphBlock = ({
           subtitle={graphSubheading}
           left={(
             <LineGraph<WorkItemLine, WorkItemPoint>
-              lines={dataByDay}
+              lines={dataByDay.filter(isCheckboxChecked)}
               points={workItems}
               pointToValue={pointToValue}
               yAxisLabel={formatValue}
@@ -147,6 +165,8 @@ export const createGraphBlock = ({
               data={data}
               workItemType={workItemType}
               childStat={sidebarItemStat || aggregateAndFormat}
+              onCheckboxChange={onCheckboxChange}
+              isCheckboxChecked={isCheckboxChecked}
               modalContents={({ workItemIds }) => {
                 const matchingLine = dataByDay
                   .find(line => line.workItemPoints

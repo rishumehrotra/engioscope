@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import type { UIWorkItemType } from '../../../shared/types';
 import { modalHeading, useModal } from '../common/Modal';
-import type { OrganizedWorkItems } from './helpers';
+import type { GroupLabel, OrganizedWorkItems } from './helpers';
 import { lineColor, noGroup } from './helpers';
 
 export const sidebarWidth = '317px';
@@ -22,10 +22,13 @@ export type LegendSidebarProps = {
     witId: string;
     groupName: string;
   }) => ReactNode;
+  isCheckboxChecked?: ({ witId, groupName }: GroupLabel) => boolean;
+  onCheckboxChange?: ({ witId, groupName }: GroupLabel) => void;
 };
 
 export const LegendSidebar: React.FC<LegendSidebarProps> = ({
-  heading, data, childStat, modalContents, workItemType, headlineStats
+  heading, data, childStat, modalContents, workItemType, headlineStats,
+  isCheckboxChecked, onCheckboxChange
 }) => {
   const [Modal, modalProps, open] = useModal();
   const [dataForModal, setDataForModal] = useState<{
@@ -67,41 +70,56 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
       <div className="grid gap-3 grid-cols-2">
         {Object.entries(data).flatMap(([witId, groupedWorkItems]) => (
           Object.entries(groupedWorkItems).map(([groupName, workItemIds]) => (
-            <button
-              key={witId + groupName}
-              className="p-2 shadow rounded-md block text-left"
-              style={{
-                borderLeft: `4px solid ${lineColor({ witId, groupName })}`
-              }}
-              onClick={() => {
-                setDataForModal({ workItemIds, witId, groupName });
-                open();
-              }}
-            >
-              <h4
-                className="text-sm flex items-center h-10 overflow-hidden px-5"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  textIndent: '-20px'
-                }}
-                data-tip={`${workItemType(witId).name[1]}${groupName === noGroup ? '' : `: ${groupName}`}`}
-              >
-                <img
-                  className="inline-block mr-1"
-                  alt={`Icon for ${workItemType(witId).name[0]}`}
-                  src={workItemType(witId).icon}
-                  width="16"
+            <div className="relative">
+              {isCheckboxChecked && (
+                <input
+                  type="checkbox"
+                  className="absolute right-2 top-2 opacity-40"
+                  checked={isCheckboxChecked({ witId, groupName })}
+                  onChange={e => {
+                    if (!onCheckboxChange) return;
+                    onCheckboxChange({ witId, groupName });
+                    e.stopPropagation();
+                  }}
                 />
-                {groupName === noGroup
-                  ? workItemType(witId).name[1]
-                  : groupName}
-              </h4>
-              <div className="text-xl flex items-center pl-5 font-semibold">
-                {childStat(workItemIds)}
-              </div>
-            </button>
+              )}
+
+              <button
+                key={witId + groupName}
+                className="p-2 shadow rounded-md block text-left w-full"
+                style={{
+                  borderLeft: `4px solid ${lineColor({ witId, groupName })}`
+                }}
+                onClick={() => {
+                  setDataForModal({ workItemIds, witId, groupName });
+                  open();
+                }}
+              >
+                <h4
+                  className="text-sm flex items-center h-10 overflow-hidden px-5"
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    textIndent: '-20px'
+                  }}
+                  data-tip={`${workItemType(witId).name[1]}${groupName === noGroup ? '' : `: ${groupName}`}`}
+                >
+                  <img
+                    className="inline-block mr-1"
+                    alt={`Icon for ${workItemType(witId).name[0]}`}
+                    src={workItemType(witId).icon}
+                    width="16"
+                  />
+                  {groupName === noGroup
+                    ? workItemType(witId).name[1]
+                    : groupName}
+                </h4>
+                <div className="text-xl flex items-center pl-5 font-semibold">
+                  {childStat(workItemIds)}
+                </div>
+              </button>
+            </div>
           ))
         ))}
       </div>
