@@ -23,7 +23,7 @@ const GraphCard: React.FC<GraphCardProps> = ({
     <div className="grid gap-8 grid-flow-col">
       <div className="flex gap-4 justify-evenly items-center" style={{ gridTemplateColumns: `1fr ${sidebarWidth}` }}>
         <div className="w-full">{left}</div>
-        <div>{right}</div>
+        <div className="self-start">{right}</div>
       </div>
     </div>
   </div>

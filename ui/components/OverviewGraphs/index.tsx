@@ -20,6 +20,7 @@ import { CycleTimeGraph } from './CycleTimeGraph';
 import { FlowEfficiencyGraph } from './FlowEfficiencyGraph';
 import { EffortDistributionGraph } from './EffortDistributionGraph';
 import { useRemoveSort } from '../../hooks/sort-hooks';
+import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
 
 const workItemAccessors = (overview: Overview) => ({
   workItemType: (witId: string) => overview.types[witId],
@@ -334,6 +335,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         allWorkItems={memoizedOrganizedAllWorkItems}
         workItemType={workItemType}
         workItemTimes={workItemTimes}
+        workItemById={workItemById}
+      />
+
+      <BugLeakageAndRCAGraph
+        allWorkItems={memoizedOrganizedAllWorkItems}
+        lastUpdated={projectAnalysis.lastUpdated}
+        workItemType={workItemType}
         workItemById={workItemById}
       />
     </div>

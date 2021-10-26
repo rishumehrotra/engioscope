@@ -70,7 +70,7 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
       <div className="grid gap-3 grid-cols-2">
         {Object.entries(data).flatMap(([witId, groupedWorkItems]) => (
           Object.entries(groupedWorkItems).map(([groupName, workItemIds]) => (
-            <div className="relative">
+            <div className="relative" key={witId + groupName}>
               {isCheckboxChecked && (
                 <input
                   type="checkbox"
@@ -85,7 +85,6 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
               )}
 
               <button
-                key={witId + groupName}
                 className="p-2 shadow rounded-md block text-left w-full"
                 style={{
                   borderLeft: `4px solid ${lineColor({ witId, groupName })}`
