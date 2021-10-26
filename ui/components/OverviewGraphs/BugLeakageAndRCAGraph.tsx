@@ -1,6 +1,7 @@
 import { length } from 'rambda';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { modalHeading, useModal } from '../common/Modal';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import GraphCard from './GraphCard';
@@ -55,6 +56,8 @@ type WorkItemCardProps = {
 const WorkItemCard: React.FC<WorkItemCardProps> = ({
   witId, workItemById, workItemType, groups
 }) => {
+  const [Modal, modalProps, open] = useModal();
+  const [modalBar, setModalBar] = useState<{label: string; color: string} | null>(null);
   const [selectedCheckboxes, setSelectedCheckboxes] = React.useState<Record<string, boolean>>(
     Object.keys(groups).reduce<Record<string, boolean>>((acc, groupName) => {
       acc[groupName] = true;
@@ -62,32 +65,97 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
     }, {})
   );
 
+  const organizedByRCACategory = useMemo(() => (
+    organizeWorkItemsByRCACategory(
+      workItemById,
+      Object.entries(groups).reduce<number[]>((acc, [groupName, wids]) => {
+        if (selectedCheckboxes[groupName]) acc.push(...wids);
+        return acc;
+      }, [])
+    )
+  ), [groups, selectedCheckboxes, workItemById]);
+
+  const graphData = useMemo(() => (
+    Object.entries(organizedByRCACategory)
+      .sort(([, a], [, b]) => b.length - a.length)
+      .map(([rcaCategory, wids]) => ({
+        label: rcaCategory,
+        value: wids.length,
+        color: '#00bcd4'
+      }))
+  ), [organizedByRCACategory]);
+
   return (
     <GraphCard
       title={`${workItemType(witId).name[0]} leakage and root cause`}
       subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days and their root cause`}
       left={(
-        <HorizontalBarGraph
-          graphData={
-            Object.entries(
-              organizeWorkItemsByRCACategory(
+        <>
+          <Modal
+            heading={modalBar ? modalHeading('Bug leakage', `${modalBar.label} (${organizedByRCACategory[modalBar.label].length})`) : ''}
+            {...modalProps}
+          >
+            {(() => {
+              if (!modalBar) return 'Nothing to see here';
+
+              const organizedByReason = organizeWorkItemsByRCAReason(
                 workItemById,
-                Object.entries(groups).reduce<number[]>((acc, [groupName, wids]) => {
-                  if (selectedCheckboxes[groupName]) acc.push(...wids);
-                  return acc;
-                }, [])
-              )
-            )
-              .sort(([, a], [, b]) => b.length - a.length)
-              .map(([rcaCategory, wids]) => ({
-                label: rcaCategory,
-                value: wids.length,
-                color: '#00bcd4'
-              }))
-          }
-          width={1023}
-          formatValue={String}
-        />
+                organizedByRCACategory[modalBar.label].map(wi => wi.id)
+              );
+
+              const maxBarValue = Math.max(...Object.values(organizedByReason).map(length));
+
+              return Object.entries(organizedByReason)
+                .sort(([, a], [, b]) => b.length - a.length)
+                .map(([rcaReason, wis]) => (
+                  <details key={rcaReason} className="mb-2">
+                    <summary className="cursor-pointer">
+                      <div
+                        style={{ width: 'calc(100% - 20px)' }}
+                        className="inline-block relative"
+                      >
+                        <div
+                          style={{
+                            width: `${(wis.length / maxBarValue) * 100}%`,
+                            backgroundColor: modalBar.color
+                          }}
+                          className="absolute top-0 left-0 h-full bg-opacity-50"
+                        />
+                        <h3
+                          className="z-10 relative text-lg pl-2"
+                        >
+                          {`${rcaReason}: ${wis.length}`}
+                        </h3>
+                      </div>
+                    </summary>
+                    <ul className="pl-6">
+                      {wis
+                        .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+                        .map(wi => (
+                          <li key={wi.id} className="py-2">
+                            <WorkItemLinkForModal
+                              key={wi.id}
+                              workItem={wi}
+                              workItemType={workItemType(witId)}
+                              flair={`Priority ${wi.priority || 'unknown'}`}
+                            />
+                          </li>
+                        ))}
+                    </ul>
+                  </details>
+                ));
+            })()}
+          </Modal>
+          <HorizontalBarGraph
+            graphData={graphData}
+            width={1023}
+            formatValue={String}
+            onBarClick={({ label, color }) => {
+              setModalBar({ label, color });
+              open();
+            }}
+          />
+        </>
       )}
       right={(
         <LegendSidebar
@@ -151,15 +219,17 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                                 </div>
                               </summary>
                               <ul className="pl-6">
-                                {wis.map(wi => (
-                                  <li key={wi.id} className="py-2">
-                                    <WorkItemLinkForModal
-                                      workItem={wi}
-                                      workItemType={workItemType(witId)}
-                                      flair={`Priority ${wi.priority || 'unknown'}`}
-                                    />
-                                  </li>
-                                ))}
+                                {wis
+                                  .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+                                  .map(wi => (
+                                    <li key={wi.id} className="py-2">
+                                      <WorkItemLinkForModal
+                                        workItem={wi}
+                                        workItemType={workItemType(witId)}
+                                        flair={`Priority ${wi.priority || 'unknown'}`}
+                                      />
+                                    </li>
+                                  ))}
                               </ul>
                             </details>
                           ))}
