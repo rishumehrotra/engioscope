@@ -85,10 +85,12 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
       }))
   ), [organizedByRCACategory]);
 
+  const total = graphData.reduce((acc, { value }) => acc + value, 0);
+
   return (
     <GraphCard
-      title={`${workItemType(witId).name[0]} leakage and root cause`}
-      subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days and their root cause`}
+      title={`${workItemType(witId).name[0]} leakage with root cause`}
+      subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days with their root cause`}
       left={(
         <>
           <Modal
@@ -104,6 +106,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
               );
 
               const maxBarValue = Math.max(...Object.values(organizedByReason).map(length));
+              const total = Object.values(organizedByReason).reduce((acc, wids) => acc + wids.length, 0);
 
               return Object.entries(organizedByReason)
                 .sort(([, a], [, b]) => b.length - a.length)
@@ -124,7 +127,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                         <h3
                           className="z-10 relative text-lg pl-2"
                         >
-                          {`${rcaReason}: ${wis.length}`}
+                          {`${rcaReason}: ${wis.length} (${Math.round((wis.length * 100) / total)}%)`}
                         </h3>
                       </div>
                     </summary>
@@ -149,7 +152,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
           <HorizontalBarGraph
             graphData={graphData}
             width={1023}
-            formatValue={String}
+            formatValue={value => `${value} (${Math.round((value * 100) / total)}%)`}
             onBarClick={({ label, color }) => {
               setModalBar({ label, color });
               open();
@@ -177,13 +180,14 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
           )}
           modalContents={({ workItemIds }) => {
             const organizedByCategory = organizeWorkItemsByRCACategory(workItemById, workItemIds);
-            const maxInCategory = Object.values(organizedByCategory).reduce((acc, group) => Math.max(acc, group.length), 0);
+            const maxInCategory = Object.values(organizedByCategory).reduce((acc, wis) => Math.max(acc, wis.length), 0);
+            const totalOfCategories = Object.values(organizedByCategory).reduce((acc, wis) => acc + wis.length, 0);
 
             return (
               Object.entries(organizedByCategory)
                 .sort(([, a], [, b]) => b.length - a.length)
-                .map(([rcaCategory, wis]) => {
-                  const organizedByReason = organizeWorkItemsByRCAReason(workItemById, wis.map(wi => wi.id));
+                .map(([rcaCategory, wisInCategory]) => {
+                  const organizedByReason = organizeWorkItemsByRCAReason(workItemById, wisInCategory.map(wi => wi.id));
                   const maxInReason = Object.values(organizedByReason).reduce((acc, group) => Math.max(acc, group.length), 0);
 
                   return (
@@ -194,32 +198,36 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                           className="inline-block relative"
                         >
                           <div
-                            style={{ width: `${(wis.length / maxInCategory) * 100}%` }}
+                            style={{ width: `${(wisInCategory.length / maxInCategory) * 100}%` }}
                             className="absolute top-0 left-0 h-full bg-blue-600 bg-opacity-50"
                           />
                           <h3
                             className="z-10 relative text-lg pl-2"
                           >
-                            {`${rcaCategory}: ${wis.length}`}
+                            {`${rcaCategory}: ${wisInCategory.length} (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
                           </h3>
                         </div>
                       </summary>
                       <div className="pl-6">
                         {Object.entries(organizedByReason)
                           .sort(([, a], [, b]) => b.length - a.length)
-                          .map(([rcaReason, wis]) => (
+                          .map(([rcaReason, wisForReason]) => (
                             <details key={rcaReason} className="mt-2">
                               <summary className="cursor-pointer">
                                 <div className="w-11/12 inline-block relative">
                                   <div
-                                    style={{ width: `${(wis.length / maxInReason) * 100}%` }}
+                                    style={{ width: `${(wisForReason.length / maxInReason) * 100}%` }}
                                     className="absolute top-0 left-0 h-full bg-yellow-600 bg-opacity-50"
                                   />
-                                  <h4 className="inline text-lg pl-2">{`${rcaReason}: ${wis.length}`}</h4>
+                                  <h4 className="inline text-lg pl-2">
+                                    {`${rcaReason}: ${wisForReason.length} (${
+                                      Math.round((wisForReason.length * 100) / wisInCategory.length)
+                                    }%)`}
+                                  </h4>
                                 </div>
                               </summary>
                               <ul className="pl-6">
-                                {wis
+                                {wisForReason
                                   .sort((a, b) => (a.priority || 5) - (b.priority || 5))
                                   .map(wi => (
                                     <li key={wi.id} className="py-2">

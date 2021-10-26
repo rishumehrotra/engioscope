@@ -258,8 +258,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       <GraphBlock
         data={memoizedOrganizedAllWorkItems}
         daySplitter={isWIPToday}
-        graphHeading="Work in progress"
-        graphSubheading="Work items in progress per day over the last 30 days"
+        graphHeading="Work in progress trend"
+        graphSubheading="Trend of work items in progress per day over the last 30 days"
         pointToValue={x => x.workItemIds.length}
         crosshairBubbleTitle="Work in progress"
         aggregateStats={length}
