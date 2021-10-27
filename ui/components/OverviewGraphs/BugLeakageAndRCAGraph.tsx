@@ -159,6 +159,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
           <HorizontalBarGraph
             graphData={graphData}
             width={1023}
+            className="w-full"
             formatValue={value => `${value} (${Math.round((value * 100) / total)}%)`}
             onBarClick={({ label, color }) => {
               setModalBar({ label, color });

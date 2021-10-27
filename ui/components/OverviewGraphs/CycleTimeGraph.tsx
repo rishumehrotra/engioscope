@@ -30,7 +30,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
       title="Cycle time"
       subtitle="Time taken to complete a work item"
       left={(
-        <div className="flex gap-4 justify-evenly items-center">
+        <div className="grid gap-4 justify-evenly items-center grid-cols-2">
           {Object.entries(closedWorkItems).map(([witId, group]) => (
             <ScatterLineGraph
               key={witId}
@@ -51,6 +51,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
               }]}
               height={420}
               linkForItem={prop('url')}
+              className="w-full"
             />
           ))}
         </div>

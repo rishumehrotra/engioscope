@@ -94,6 +94,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
         <HorizontalBarGraph
           graphData={effortDistribution}
           width={1023}
+          className="w-full"
           formatValue={x => (Number.isNaN(x) ? '<unknown>' : `${x.toFixed(2)}%`)}
         />
       )}

@@ -17,17 +17,18 @@ type HorizontalBarGraphProps = {
   width: number;
   onBarClick?: (x: {label: string; value: number; color: string}) => void;
   formatValue?: (value: number) => string;
+  className?: string;
 };
 
 const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
-  graphData, width, onBarClick, formatValue
+  graphData, width, onBarClick, formatValue, className
 }) => {
   const height = useMemo(() => (graphData.length * (barThickness + barSpacing)) - barSpacing, [graphData]);
   const maxValue = useMemo(() => Math.max(...graphData.map(d => d.value)), [graphData]);
   const putLabelInBar = (value: number) => value > maxValue * 0.5;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width={width}>
+    <svg viewBox={`0 0 ${width} ${height}`} width={width} className={className}>
       <g>
         <line
           x1={yAxisLabelWidth}

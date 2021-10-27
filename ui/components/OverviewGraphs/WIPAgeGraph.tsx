@@ -24,7 +24,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
     title="Age of work-in-progress items"
     subtitle="How old are the currently work-in-progress items"
     left={(
-      <div className="flex gap-4 justify-evenly items-center">
+      <div className="grid gap-4 justify-evenly items-center grid-flow-col">
         {Object.entries(allWorkItems).map(([witId, group]) => (
           <ScatterLineGraph
             key={witId}
@@ -44,6 +44,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
             }]}
             height={420}
             linkForItem={prop('url')}
+            className="w-full"
           />
         ))}
       </div>
