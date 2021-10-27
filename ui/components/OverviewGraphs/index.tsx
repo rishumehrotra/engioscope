@@ -360,4 +360,3 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 };
 
 export default OverviewGraphs;
-

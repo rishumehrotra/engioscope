@@ -3,6 +3,7 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import type { OrganizedWorkItems } from './helpers';
 import {
+  hasWorkItems,
   groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
   timeDifference, totalCycleTimeUsing, lineColor, noGroup
 } from './helpers';
@@ -28,6 +29,8 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
     <GraphCard
       title="Flow efficiency"
       subtitle="Percentage of time spent working"
+      hasData={hasWorkItems(closedWorkItems)}
+      noDataMessage="Couldn't find any matching workitems"
       left={(
         <ul>
           {Object.entries(closedWorkItems).flatMap(([witId, group]) => (

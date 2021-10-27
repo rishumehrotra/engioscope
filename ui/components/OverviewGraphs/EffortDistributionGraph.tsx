@@ -6,6 +6,7 @@ import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import type { OrganizedWorkItems } from './helpers';
 import {
+  hasWorkItems,
   groupByWorkItemType, lineColor, groupLabelUsing, timeDifference
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
@@ -90,6 +91,8 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
     <GraphCard
       title="Effort distribution"
       subtitle="Percentage of working time spent on various work items over the last 30 days"
+      hasData={hasWorkItems(allWorkItems)}
+      noDataMessage="Couldn't find any matching workitems"
       left={(
         <HorizontalBarGraph
           graphData={effortDistribution}

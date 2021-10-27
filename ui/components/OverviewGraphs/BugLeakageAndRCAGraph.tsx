@@ -6,6 +6,7 @@ import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
+import { hasWorkItems } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 
 const isBugLike = (workItemType: (witId: string) => UIWorkItemType, witId: string) => (
@@ -96,6 +97,8 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
     <GraphCard
       title={`${workItemType(witId).name[0]} leakage with root cause`}
       subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days with their root cause`}
+      hasData={hasWorkItems({ [witId]: groups })}
+      noDataMessage="Couldn't find any matching workitems"
       left={(
         <>
           <Modal
@@ -109,7 +112,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
 
               const organizedByReason = organizeWorkItemsByRCAReason(
                 workItemById,
-                organizedByRCACategory[modalBar.label].map(wi => wi.id)
+                (organizedByRCACategory[modalBar.label] || []).map(wi => wi.id)
               );
 
               const maxBarValue = Math.max(...Object.values(organizedByReason).map(length));

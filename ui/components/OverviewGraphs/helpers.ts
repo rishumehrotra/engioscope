@@ -160,3 +160,9 @@ export const collectFilters = (workItems: UIWorkItem[]) => (
     }, {})
   ).map(([label, tags]) => ({ label, tags: [...tags].sort() }))
 );
+
+export const hasWorkItems = (organizedWorkItems: OrganizedWorkItems) => (
+  Object.values(organizedWorkItems).some(group => (
+    Object.values(group).some(workItemIds => workItemIds.length)
+  ))
+);

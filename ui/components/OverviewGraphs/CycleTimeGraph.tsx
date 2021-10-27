@@ -5,7 +5,7 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import type { OrganizedWorkItems } from './helpers';
-import { groupByWorkItemType, totalCycleTimeUsing } from './helpers';
+import { hasWorkItems, groupByWorkItemType, totalCycleTimeUsing } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { WorkItemTimeDetails } from './WorkItemTimeDetails';
@@ -29,6 +29,8 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
     <GraphCard
       title="Cycle time"
       subtitle="Time taken to complete a work item"
+      hasData={hasWorkItems(closedWorkItems)}
+      noDataMessage="Couldn't find any matching work items"
       left={(
         <div className="grid gap-4 justify-evenly items-center grid-cols-2">
           {Object.entries(closedWorkItems).map(([witId, group]) => (

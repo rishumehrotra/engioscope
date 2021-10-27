@@ -7,7 +7,7 @@ import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
-import { groupByWorkItemType } from './helpers';
+import { hasWorkItems, groupByWorkItemType } from './helpers';
 
 type WIPAgeGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -23,6 +23,8 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
   <GraphCard
     title="Age of work-in-progress items"
     subtitle="How old are the currently work-in-progress items"
+    hasData={hasWorkItems(allWorkItems)}
+    noDataMessage="Couldn't find any matching work items"
     left={(
       <div className="grid gap-4 justify-evenly items-center grid-flow-col">
         {Object.entries(allWorkItems).map(([witId, group]) => (
