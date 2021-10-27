@@ -1,5 +1,5 @@
 import { length } from 'rambda';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { modalHeading, useModal } from '../common/Modal';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
@@ -46,6 +46,14 @@ const organizeWorkItemsByRCAIndex = (index: number, noValue: string) => (workIte
 const organizeWorkItemsByRCACategory = organizeWorkItemsByRCAIndex(0, 'Not classified');
 const organizeWorkItemsByRCAReason = organizeWorkItemsByRCAIndex(1, 'No reason provided');
 
+const initialCheckboxState = (groups: Record<string, number[]>) => (
+  Object.keys(groups)
+    .reduce<Record<string, boolean>>((acc, groupName) => {
+      acc[groupName] = true;
+      return acc;
+    }, {})
+);
+
 type WorkItemCardProps = {
   witId: string;
   workItemById: (wid: number) => UIWorkItem;
@@ -58,12 +66,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
 }) => {
   const [Modal, modalProps, open] = useModal();
   const [modalBar, setModalBar] = useState<{label: string; color: string} | null>(null);
-  const [selectedCheckboxes, setSelectedCheckboxes] = React.useState<Record<string, boolean>>(
-    Object.keys(groups).reduce<Record<string, boolean>>((acc, groupName) => {
-      acc[groupName] = true;
-      return acc;
-    }, {})
-  );
+  const [selectedCheckboxes, setSelectedCheckboxes] = React.useState(initialCheckboxState(groups));
 
   const organizedByRCACategory = useMemo(() => (
     organizeWorkItemsByRCACategory(
@@ -84,6 +87,8 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
         color: '#00bcd4'
       }))
   ), [organizedByRCACategory]);
+
+  useEffect(() => setSelectedCheckboxes(initialCheckboxState(groups)), [groups]);
 
   const total = graphData.reduce((acc, { value }) => acc + value, 0);
 

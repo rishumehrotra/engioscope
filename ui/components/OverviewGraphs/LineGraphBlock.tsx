@@ -1,6 +1,8 @@
 import { pipe, prop } from 'rambda';
 import type { ReactNode } from 'react';
-import React, { useCallback, useState, useMemo } from 'react';
+import React, {
+  useEffect, useCallback, useState, useMemo
+} from 'react';
 import type {
   Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
 } from '../../../shared/types';
@@ -16,6 +18,13 @@ import { CrosshairBubble } from './CrosshairBubble';
 import type { LegendSidebarProps } from './LegendSidebar';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
+
+const initialCheckboxState = (dataByDay: WorkItemLine[]) => (
+  dataByDay.reduce<Record<string, boolean>>((acc, day) => {
+    acc[day.witId + day.groupName] = true;
+    return acc;
+  }, {})
+);
 
 type GraphBlockProps = {
   data: OrganizedWorkItems;
@@ -55,10 +64,7 @@ export const createGraphBlock = ({
     ), [data, daySplitter]);
 
     const [checkboxState, setCheckboxState] = useState<Record<string, boolean>>(
-      dataByDay.reduce<Record<string, boolean>>((acc, day) => {
-        acc[day.witId + day.groupName] = true;
-        return acc;
-      }, {})
+      initialCheckboxState(dataByDay)
     );
 
     const isCheckboxChecked = useCallback(({ witId, groupName }: GroupLabel) => (
@@ -82,6 +88,10 @@ export const createGraphBlock = ({
     const matchingDateForModal = useMemo(() => (
       dayIndexInModal ? getMatchingAtIndex(dataByDay, dayIndexInModal) : null
     ), [dataByDay, dayIndexInModal]);
+
+    useEffect(() => {
+      setCheckboxState(initialCheckboxState(dataByDay));
+    }, [dataByDay]);
 
     return (
       <>
