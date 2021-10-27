@@ -122,7 +122,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                             width: `${(wis.length / maxBarValue) * 100}%`,
                             backgroundColor: modalBar.color
                           }}
-                          className="absolute top-0 left-0 h-full bg-opacity-50"
+                          className="absolute top-0 left-0 h-full bg-opacity-50 rounded-md"
                         />
                         <h3
                           className="z-10 relative text-lg pl-2"
@@ -199,10 +199,10 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                         >
                           <div
                             style={{ width: `${(wisInCategory.length / maxInCategory) * 100}%` }}
-                            className="absolute top-0 left-0 h-full bg-blue-600 bg-opacity-50"
+                            className="absolute top-0 left-0 h-full bg-blue-600 bg-opacity-50 rounded-md"
                           />
                           <h3
-                            className="z-10 relative text-lg pl-2"
+                            className="z-10 relative text-lg pl-2 py-1"
                           >
                             {`${rcaCategory}: ${wisInCategory.length} (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
                           </h3>
@@ -217,7 +217,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                                 <div className="w-11/12 inline-block relative">
                                   <div
                                     style={{ width: `${(wisForReason.length / maxInReason) * 100}%` }}
-                                    className="absolute top-0 left-0 h-full bg-yellow-600 bg-opacity-50"
+                                    className="absolute top-0 left-0 h-full bg-yellow-600 bg-opacity-50 rounded-md"
                                   />
                                   <h4 className="inline text-lg pl-2">
                                     {`${rcaReason}: ${wisForReason.length} (${
