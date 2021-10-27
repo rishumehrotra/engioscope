@@ -24,6 +24,11 @@ type CollectionWorkItemConfig = {
   environmentField?: string;
   changeLeadTime?: Record<WorkItemType, CLTDefinition>;
   ignoredWorkItemsForFlowAnalysis?: string[];
+  filterBy?: {
+    label: string;
+    field: string | string[];
+    delimiter?: string;
+  }[];
   types?: {
     type: string;
     groupByField?: string;
@@ -90,6 +95,11 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   environmentField?: string;
   changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
   ignoredWorkItemsForFlowAnalysis?: string[];
+  filterBy?: {
+    label: string;
+    fields: string[];
+    delimiter?: string;
+  }[];
   types?: {
     type: string;
     groupByField?: string;
@@ -142,6 +152,11 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime,
     ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
       ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
+    filterBy: (collection.workitems?.filterBy || config.azure.workitems?.filterBy || []).map(filter => ({
+      label: filter.label,
+      fields: Array.isArray(filter.field) ? filter.field : [filter.field],
+      delimiter: filter.delimiter
+    })),
     types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(type => ({
       type: type.type,
       groupByField: type.groupByField,

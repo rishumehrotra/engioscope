@@ -145,6 +145,7 @@ export type UIWorkItem = {
   priority?: number;
   severity?: string;
   rca?: string[];
+  filterBy?: { label: string; tags: string[] }[];
 };
 
 export type UIWorkItemRevision = {

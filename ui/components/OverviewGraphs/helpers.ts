@@ -1,5 +1,5 @@
 import { always } from 'rambda';
-import type { Overview, UIWorkItemType } from '../../../shared/types';
+import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { createPalette } from '../../helpers/utils';
 
 export type GroupLabel = { witId: string; groupName: string };
@@ -93,13 +93,29 @@ const getWorkItemIdsUsingTimes = (pred: (workItemTimes: Overview['times'][number
 );
 
 const organizeWorkItems = (workItemIds: (overview: Overview) => number[]) => (
-  (overview: Overview) => {
+  (
+    overview: Overview,
+    workItemById: (wid: number) => UIWorkItem,
+    selectedFilters: { label: string; tags: string[] }[]
+  ) => {
     const witId = witIdCreator(overview);
     const group = groupCreator(overview);
+
+    const filtersToApply = selectedFilters.filter(f => f.tags.length);
 
     return workItemIds(overview)
       .reduce<OrganizedWorkItems>(
         (acc, workItemId) => {
+          if (filtersToApply.length) {
+            const workItem = workItemById(workItemId);
+            const matchesFilter = filtersToApply.every(filter => {
+              const matchingFilter = workItem.filterBy?.find(f => f.label === filter.label);
+              if (!matchingFilter) return false;
+
+              return filter.tags.some(tag => matchingFilter.tags.includes(tag));
+            });
+            if (!matchesFilter) return acc;
+          }
           const groupName = group(workItemId)?.name ?? noGroup;
           const typeId = witId(workItemId);
 
@@ -128,4 +144,19 @@ export const groupByWorkItemType = (organizedGroups: OrganizedWorkItems) => (
     acc[witId] = (acc[witId] || []).concat(...Object.values(group));
     return acc;
   }, {})
+);
+
+export const collectFilters = (workItems: UIWorkItem[]) => (
+  Object.entries(
+    workItems.reduce<Record<string, Set<string>>>((acc, workItem) => {
+      if (!workItem.filterBy) return acc;
+
+      workItem.filterBy.forEach(filter => {
+        acc[filter.label] = acc[filter.label] || new Set();
+        filter.tags.forEach(tag => acc[filter.label].add(tag));
+      });
+
+      return acc;
+    }, {})
+  ).map(([label, tags]) => ({ label, tags: [...tags].sort() }))
 );

@@ -161,6 +161,32 @@ const rca = (collectionConfig: ParsedCollection, workItem: WorkItem, workItemTyp
   return { rca: match.rootCause.map(field => workItem.fields[field]) };
 };
 
+const filterTags = (collectionConfig: ParsedCollection, workItem: WorkItem) => {
+  if ((collectionConfig.workitems.filterBy || []).length === 0) return;
+
+  const filterBy = collectionConfig.workitems.filterBy?.map(filter => {
+    const tags = filter.fields.map(field => {
+      const fieldValue = workItem.fields[field];
+      if (fieldValue && filter.delimiter) {
+        return fieldValue.split(filter.delimiter);
+      }
+      return fieldValue;
+    }).flat().filter(exists).filter(x => x.length);
+
+    if (tags.length === 0) return;
+
+    return {
+      label: filter.label,
+      tags
+    };
+  }).filter(exists);
+
+  if (!filterBy) return;
+  if (filterBy.length === 0) return;
+
+  return { filterBy };
+};
+
 const uiWorkItemCreator = (
   collectionConfig: ParsedCollection,
   getWorkItemType: (workItem: WorkItem) => WorkItemType
@@ -189,7 +215,8 @@ const uiWorkItemCreator = (
       severity: workItem.fields['Microsoft.VSTS.Common.Severity'],
       ...computeCLT(collectionConfig, workItem),
       ...computeLeadTime(workItem),
-      ...rca(collectionConfig, workItem, workItemType)
+      ...rca(collectionConfig, workItem, workItemType),
+      ...filterTags(collectionConfig, workItem)
     };
   }
 );

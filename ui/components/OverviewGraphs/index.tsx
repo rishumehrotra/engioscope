@@ -1,13 +1,14 @@
 import prettyMilliseconds from 'pretty-ms';
 import { last, length, prop } from 'rambda';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type {
   Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
 } from '../../../shared/types';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import {
   organizedClosedWorkItems, organizedAllWorkItems, cycleTimeFor,
-  lineColor, timeDifference, workCenterTimeUsing, groupLabelUsing, groupByWorkItemType
+  lineColor, timeDifference, workCenterTimeUsing, groupLabelUsing,
+  groupByWorkItemType, collectFilters
 } from './helpers';
 import type { WorkItemLine } from './day-wise-line-graph-helpers';
 import {
@@ -21,6 +22,7 @@ import { FlowEfficiencyGraph } from './FlowEfficiencyGraph';
 import { EffortDistributionGraph } from './EffortDistributionGraph';
 import { useRemoveSort } from '../../hooks/sort-hooks';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
+import OverviewFilters from './OverviewFilters';
 
 const workItemAccessors = (overview: Overview) => ({
   workItemType: (witId: string) => overview.types[witId],
@@ -158,25 +160,32 @@ const createWIPWorkItemTooltip = (
 `.trim();
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
+  const [selectedFilters, setSelectedFilters] = useState<{ label: string; tags: string[] }[]>([]);
   useRemoveSort();
-  const memoizedOrganizedClosedWorkItems = useMemo(
-    () => organizedClosedWorkItems(projectAnalysis.overview),
-    [projectAnalysis.overview]
-  );
-
-  const memoizedOrganizedAllWorkItems = useMemo(
-    () => organizedAllWorkItems(projectAnalysis.overview),
-    [projectAnalysis.overview]
-  );
-
-  const wipSplitByDay = useMemo(() => splitByDateForLineGraph(
-    projectAnalysis, memoizedOrganizedAllWorkItems, isWIPToday
-  ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
   const { workItemById, workItemType, workItemTimes } = useMemo(
     () => workItemAccessors(projectAnalysis.overview),
     [projectAnalysis.overview]
   );
+
+  const filters = useMemo(
+    () => collectFilters(Object.values(projectAnalysis.overview.byId)),
+    [projectAnalysis.overview.byId]
+  );
+
+  const memoizedOrganizedClosedWorkItems = useMemo(
+    () => organizedClosedWorkItems(projectAnalysis.overview, workItemById, selectedFilters),
+    [projectAnalysis.overview, selectedFilters, workItemById]
+  );
+
+  const memoizedOrganizedAllWorkItems = useMemo(
+    () => organizedAllWorkItems(projectAnalysis.overview, workItemById, selectedFilters),
+    [projectAnalysis.overview, selectedFilters, workItemById]
+  );
+
+  const wipSplitByDay = useMemo(() => splitByDateForLineGraph(
+    projectAnalysis, memoizedOrganizedAllWorkItems, isWIPToday
+  ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
   const workCenterTime = useMemo(() => workCenterTimeUsing(workItemTimes), [workItemTimes]);
@@ -202,6 +211,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
   return (
     <div>
+      <OverviewFilters filters={filters} onChange={setSelectedFilters} />
+
       <GraphBlock
         data={memoizedOrganizedClosedWorkItems}
         daySplitter={isClosedToday}

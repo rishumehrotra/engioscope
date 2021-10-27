@@ -94,7 +94,9 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
       left={(
         <>
           <Modal
-            heading={modalBar ? modalHeading('Bug leakage', `${modalBar.label} (${organizedByRCACategory[modalBar.label].length})`) : ''}
+            heading={modalBar
+              ? modalHeading('Bug leakage', `${modalBar.label} (${(organizedByRCACategory[modalBar.label] || []).length})`)
+              : ''}
             {...modalProps}
           >
             {(() => {
