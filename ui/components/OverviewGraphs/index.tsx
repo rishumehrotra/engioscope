@@ -15,7 +15,7 @@ import {
   splitByDateForLineGraph
 } from './day-wise-line-graph-helpers';
 import { createGraphBlock } from './LineGraphBlock';
-import { contrastColour, shortDate } from '../../helpers/utils';
+import { contrastColour, num, shortDate } from '../../helpers/utils';
 import { WIPAgeGraph } from './WIPAgeGraph';
 import { CycleTimeGraph } from './CycleTimeGraph';
 import { FlowEfficiencyGraph } from './FlowEfficiencyGraph';
@@ -227,7 +227,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           Object.entries(groupByWorkItemType(data))
             .map(([witId, items]) => ({
               heading: workItemType(witId).name[1],
-              value: items.length
+              value: num(items.length),
+              unit: 'total'
             }))
         )}
         sidebarModalContents={line => (
@@ -280,12 +281,13 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           Object.entries(groupByWorkItemType(data))
             .map(([witId, workItemIds]) => ({
               heading: workItemType(witId).name[1],
-              value: workItemIds
+              value: num(workItemIds
                 .filter(workItemId => {
                   const times = workItemTimes(workItemId);
                   return times.start && !times.end;
                 })
-                .length
+                .length),
+              unit: 'today'
             }))
         )}
         sidebarItemStat={allWorkItemIds => {

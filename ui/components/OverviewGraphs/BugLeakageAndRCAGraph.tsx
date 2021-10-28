@@ -1,12 +1,13 @@
 import { length } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { num } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
-import { hasWorkItems } from './helpers';
+import { lineColor, hasWorkItems } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 
 const isBugLike = (workItemType: (witId: string) => UIWorkItemType, witId: string) => (
@@ -175,13 +176,13 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
         <LegendSidebar
           data={{ [witId]: groups }}
           childStat={length}
-          heading={`${workItemType(witId).name[1]} leaked`}
+          heading={`${workItemType(witId).name[0]} leakage`}
           workItemType={workItemType}
           headlineStats={x => ([{
             heading: `Total ${workItemType(witId).name[1].toLowerCase()} leaked`,
-            value: Object.values(x).reduce((acc, group) => (
+            value: num(Object.values(x).reduce((acc, group) => (
               acc + Object.values(group).reduce((acc2, wids) => acc2 + wids.length, 0)
-            ), 0)
+            ), 0))
           }])}
           isCheckboxChecked={({ groupName }) => selectedCheckboxes[groupName]}
           onCheckboxChange={({ groupName }) => (
@@ -189,7 +190,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
               selectedCheckboxes => ({ ...selectedCheckboxes, [groupName]: !selectedCheckboxes[groupName] })
             )
           )}
-          modalContents={({ workItemIds }) => {
+          modalContents={({ workItemIds, groupName }) => {
             const organizedByCategory = organizeWorkItemsByRCACategory(workItemById, workItemIds);
             const maxInCategory = Object.values(organizedByCategory).reduce((acc, wis) => Math.max(acc, wis.length), 0);
             const totalOfCategories = Object.values(organizedByCategory).reduce((acc, wis) => acc + wis.length, 0);
@@ -209,13 +210,20 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                           className="inline-block relative"
                         >
                           <div
-                            style={{ width: `${(wisInCategory.length / maxInCategory) * 100}%` }}
-                            className="absolute top-0 left-0 h-full bg-blue-600 bg-opacity-50 rounded-md"
+                            style={{
+                              width: `${(wisInCategory.length / maxInCategory) * 100}%`,
+                              backgroundColor: `${lineColor({ witId, groupName })}99`
+                            }}
+                            className="absolute top-0 left-0 h-full rounded-md"
                           />
                           <h3
                             className="z-10 relative text-lg pl-2 py-1"
                           >
-                            {`${rcaCategory}: ${wisInCategory.length} (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
+                            {`${rcaCategory} - `}
+                            <strong>
+                              {`${wisInCategory.length}`}
+                            </strong>
+                            {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
                           </h3>
                         </div>
                       </summary>
@@ -225,13 +233,23 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                           .map(([rcaReason, wisForReason]) => (
                             <details key={rcaReason} className="mt-2">
                               <summary className="cursor-pointer">
-                                <div className="w-11/12 inline-block relative">
+                                <div
+                                  style={{ width: 'calc(100% - 20px)' }}
+                                  className="inline-block relative"
+                                >
                                   <div
-                                    style={{ width: `${(wisForReason.length / maxInReason) * 100}%` }}
-                                    className="absolute top-0 left-0 h-full bg-yellow-600 bg-opacity-50 rounded-md"
+                                    style={{
+                                      width: `${(wisForReason.length / maxInReason) * 100}%`,
+                                      backgroundColor: `${lineColor({ witId, groupName })}55`
+                                    }}
+                                    className="absolute top-0 left-0 h-full rounded-md"
                                   />
-                                  <h4 className="inline text-lg pl-2">
-                                    {`${rcaReason}: ${wisForReason.length} (${
+                                  <h4 className="z-10 relative text-lg pl-2 py-1">
+                                    {`${rcaReason} - `}
+                                    <strong>
+                                      {`${wisForReason.length}`}
+                                    </strong>
+                                    {` (${
                                       Math.round((wisForReason.length * 100) / wisInCategory.length)
                                     }%)`}
                                   </h4>

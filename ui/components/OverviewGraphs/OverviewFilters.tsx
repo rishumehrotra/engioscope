@@ -43,7 +43,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, onChange }) => {
       {filters.map(({ label, tags }) => (
         // eslint-disable-next-line jsx-a11y/label-has-associated-control
         <label key={label} className="w-72 block text-sm">
-          <span className="text-gray-500">
+          <span className="text-gray-600 font-semibold">
             {label}
           </span>
           <Select

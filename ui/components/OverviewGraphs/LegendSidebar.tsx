@@ -87,7 +87,7 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
               <button
                 className="p-2 shadow rounded-md block text-left w-full"
                 style={{
-                  borderLeft: `4px solid ${lineColor({ witId, groupName })}`
+                  borderLeft: `5px solid ${lineColor({ witId, groupName })}`
                 }}
                 onClick={() => {
                   setDataForModal({ workItemIds, witId, groupName });

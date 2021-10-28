@@ -3,9 +3,8 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import type { OrganizedWorkItems } from './helpers';
 import {
-  hasWorkItems,
-  groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
-  timeDifference, totalCycleTimeUsing, lineColor, noGroup
+  hasWorkItems, groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
+  timeDifference, totalCycleTimeUsing, lineColor
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
@@ -28,7 +27,7 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
   return (
     <GraphCard
       title="Flow efficiency"
-      subtitle="Percentage of time spent working"
+      subtitle="Fraction of overall time that work items spend in work centers on average"
       hasData={hasWorkItems(closedWorkItems)}
       noDataMessage="Couldn't find any matching workitems"
       left={(
@@ -41,9 +40,9 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
 
               return (
                 <li key={witId + groupName} className="grid gap-4 my-4 items-center" style={{ gridTemplateColumns: '30% 1fr' }}>
-                  <div className="text-right">
-                    {workItemType(witId).name[1]}
-                    {groupName === noGroup ? '' : ` ${groupName}`}
+                  <div className="flex items-center justify-end">
+                    <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
+                    {groupName}
                     {`: ${Math.round(value)}%`}
                   </div>
                   <div className="bg-gray-200">
