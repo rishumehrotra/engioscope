@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { last } from 'rambda';
 import React, { useMemo, useState } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { num } from '../../helpers/utils';
+import { num, priorityBasedColor } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
@@ -160,6 +160,8 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
               if (!group) return true;
               return checkboxStatesForGroups[group.name];
             });
+          } else {
+            acc[state] = [];
           }
 
           return acc;
@@ -215,6 +217,10 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
             }]}
             height={400}
             linkForItem={({ wid }) => workItemById(wid).url}
+            pointColor={({ wid }) => {
+              const { priority } = workItemById(wid);
+              return priority ? priorityBasedColor(priority) : null;
+            }}
           />
         </>
       )}

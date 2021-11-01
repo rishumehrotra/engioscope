@@ -9,6 +9,7 @@ import { hasWorkItems, groupByWorkItemType, totalCycleTimeUsing } from './helper
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { WorkItemTimeDetails } from './WorkItemTimeDetails';
+import { priorityBasedColor } from '../../helpers/utils';
 
 type CycleTimeGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -51,6 +52,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
                 yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
                 tooltip: workItemTooltip
               }]}
+              pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
               height={420}
               linkForItem={prop('url')}
               className="w-full"

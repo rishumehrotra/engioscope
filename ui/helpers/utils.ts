@@ -54,7 +54,17 @@ export const contrastColour = (hex: string) => {
   const contrast = (Math.round(r * 299) + Math.round(g * 587) + Math.round(b * 114)) / 1000;
 
   return (contrast >= 128) ? '#222' : '#fff';
-  // const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
 
-  // return luma > 120 ? '#222' : '#fff';
+export const priorityBasedColor = (priority: number) => {
+  switch (priority) {
+    case 1:
+      return '#F00505';
+    case 2:
+      return '#FD6104';
+    case 3:
+      return '#FFCE03';
+    default:
+      return '#FEF001';
+  }
 };

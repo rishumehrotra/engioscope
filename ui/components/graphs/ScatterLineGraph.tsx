@@ -4,6 +4,7 @@ import { add, map, range } from 'rambda';
 import React, {
   Fragment, useCallback, useLayoutEffect, useMemo, useState
 } from 'react';
+import hexToHsl from '../../helpers/hex-to-hsl';
 import { oneYear } from '../../helpers/utils';
 
 const xAxisLabelAreaHeight = 80;
@@ -27,6 +28,7 @@ type Group<T> = {
   data: GraphData<T> | undefined;
   yAxisPoint: (value: T) => number;
   tooltip: (value: T) => string;
+  pointColor?: (value: T) => string | null | undefined;
 };
 
 const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
@@ -79,13 +81,14 @@ type BarProps<T extends {}> = {
   yAxisPoint: (x: T) => number;
   xCoord: number;
   yCoord: (x: number) => number;
+  pointColor?: (x: T) => string | null | undefined;
   tooltip: (x: T) => string;
   label: string;
   linkForItem: (x: T) => string;
 };
 
 const Bar = <T extends {}>({
-  items, yAxisPoint, xCoord, tooltip, yCoord, label, linkForItem
+  items, yAxisPoint, xCoord, tooltip, yCoord, pointColor, label, linkForItem
 }: BarProps<T>) => {
   const averageValueOfItems = items.length
     ? items.map(yAxisPoint).reduce(add, 0) / items.length
@@ -104,20 +107,26 @@ const Bar = <T extends {}>({
           {`${label}`}
         </div>
       </foreignObject>
-      {items.map((item, index) => (
-        // eslint-disable-next-line react/no-array-index-key
-        <a key={index} href={linkForItem(item)} target="_blank" rel="noreferrer">
-          <circle
-            cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
-            cy={yCoord(yAxisPoint(item))}
-            r={bubbleSize}
-            fill={`hsla(${(Math.round(Math.random() * 30)) + (yAxisPoint(item) < 0 ? 0 : 190)}, 80%, 50%, 0.7)`}
-            stroke="0"
-            data-html
-            data-tip={tooltip(item)}
-          />
-        </a>
-      ))}
+      {items.map((item, index) => {
+        const fillColorHSL = hexToHsl(pointColor?.(item) || '#197fe6');
+        const fillColorWithJitter = `hsla(${
+          (Math.round(Math.random() * 30)) + (fillColorHSL[0] - 15)
+        }, 80%, 50%, 0.7)`;
+        return (
+          // eslint-disable-next-line react/no-array-index-key
+          <a key={index} href={linkForItem(item)} target="_blank" rel="noreferrer">
+            <circle
+              cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
+              cy={yCoord(yAxisPoint(item))}
+              r={bubbleSize}
+              fill={fillColorWithJitter}
+              stroke="0"
+              data-html
+              data-tip={tooltip(item)}
+            />
+          </a>
+        );
+      })}
       {items.length
         ? (
           <line
@@ -158,11 +167,12 @@ type BarGroupProps<T extends {}> = {
   group: Group<T>;
   xCoord: number;
   yCoord: (x: number) => number;
+  pointToColor?: (x: T) => string | null | undefined;
   linkForItem: (x: T) => string;
 };
 
 const BarGroup = <T extends {}>({
-  group, xCoord, yCoord, linkForItem
+  group, xCoord, yCoord, linkForItem, pointToColor
 }: BarGroupProps<T>) => (
   <g>
     {Object.entries(group.data || {}).length > 1
@@ -192,6 +202,7 @@ const BarGroup = <T extends {}>({
         yAxisPoint={group.yAxisPoint}
         xCoord={xCoord + (barSpacingInGroup * index)}
         yCoord={yCoord}
+        pointColor={pointToColor}
         tooltip={group.tooltip}
         linkForItem={linkForItem}
       />
@@ -262,11 +273,12 @@ type ScatterLineGraphProps<T> = {
   graphData: Group<T>[];
   height: number;
   linkForItem: (x: T) => string;
+  pointColor?: (x: T) => string | null | undefined;
   className?: string;
 };
 
 const ScatterLineGraph = <T extends {}>({
-  graphData, height, linkForItem, className
+  graphData, height, linkForItem, className, pointColor
 }: ScatterLineGraphProps<T>): React.ReactElement => {
   const [showPoints, setShowPoints] = useState(false);
   const maxOfSpread = useMemo(() => Math.max(...valuesUsing(graphData)), [graphData]);
@@ -288,6 +300,7 @@ const ScatterLineGraph = <T extends {}>({
             group={group}
             xCoord={xCoordForBarGroup(graphData, group)}
             yCoord={yCoord}
+            pointToColor={pointColor}
             linkForItem={linkForItem}
           />
         ))

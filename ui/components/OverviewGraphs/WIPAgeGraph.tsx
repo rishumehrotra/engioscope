@@ -8,6 +8,7 @@ import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { hasWorkItems, groupByWorkItemType } from './helpers';
+import { priorityBasedColor } from '../../helpers/utils';
 
 type WIPAgeGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -46,6 +47,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
             }]}
             height={420}
             linkForItem={prop('url')}
+            pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
             className="w-full"
           />
         ))}
