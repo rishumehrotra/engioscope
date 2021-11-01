@@ -20,7 +20,7 @@ const workCenterTimeThisMonthUsing = (workItemTimes: (wid: number) => Overview['
   return (workItemId: number) => {
     const times = workItemTimes(workItemId);
     return times.workCenters.map(({ start, end }) => {
-      if (new Date(end) < monthAgo) return 0;
+      if (!end || new Date(end) < monthAgo) return 0;
       if (new Date(start) > monthAgo) return timeDifference({ start, end });
       return timeDifference({ start: monthAgo.toISOString(), end });
     }).reduce(add, 0);
@@ -156,7 +156,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
                     <div className="text-gray-500 text-sm ml-6 mb-2">
                       {workItemTimes(workItem.id).workCenters
                         .map(wc => {
-                          if (new Date(wc.end) < monthAgo) return null;
+                          if (!wc.end || new Date(wc.end) < monthAgo) return null;
                           if (new Date(wc.start) > monthAgo) return wc;
                           return {
                             ...wc,
@@ -167,7 +167,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
                         .map(
                           wc => `${wc.label} time ${
                             prettyMilliseconds(timeDifference(wc), { compact: true })
-                          } (${shortDate(new Date(wc.start))} to ${shortDate(new Date(wc.end))})`
+                          } (${shortDate(new Date(wc.start))} to ${shortDate(new Date(wc.end || new Date().toISOString()))})`
                         ).join(' + ')}
                     </div>
                   </li>

@@ -53,12 +53,12 @@ export const getOverviewData = (
       workCenters: workItemConfig.workCenters.map(wc => {
         const wcStartDate = getMinDate(wc.startDate, workItem);
         const wcEndDate = getMinDate(wc.endDate, workItem);
-        if (!wcStartDate || !wcEndDate) return;
+        if (!wcStartDate) return;
 
         return {
           label: wc.label,
           start: wcStartDate.toISOString(),
-          end: wcEndDate.toISOString()
+          end: wcEndDate ? wcEndDate.toISOString() : undefined
         };
       }).filter(exists)
     };

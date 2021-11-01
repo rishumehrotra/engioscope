@@ -7,9 +7,9 @@ export type OrganizedWorkItems = Record<string, Record<string, number[]>>;
 
 export const lineColor = (() => {
   const c = createPalette([
-    '#b3b300', '#ffa500', '#ff0000', '#ff00ff',
-    '#a862ea', '#134e6f', '#4d4dff', '#9999ff',
-    '#00b300', '#b30000'
+    '#9A6324', '#e6194B', '#3cb44b', '#ffe119',
+    '#000075', '#f58231', '#911eb4', '#42d4f4',
+    '#bfef45', '#fabed4', '#a9a9a9'
   ]);
 
   return ({ witId, groupName }: GroupLabel) => (
@@ -30,8 +30,8 @@ const witIdCreator = (overview: Overview) => (
 
 export const noGroup = 'no-group';
 
-export const timeDifference = ({ start, end }: { start: string; end: string }) => (
-  new Date(end).getTime() - new Date(start).getTime()
+export const timeDifference = ({ start, end }: { start: string; end?: string }) => (
+  new Date(end || new Date().toISOString()).getTime() - new Date(start).getTime()
 );
 
 export const cycleTimeFor = (overview: Overview) => (wid: number) => {
@@ -48,7 +48,8 @@ export const totalCycleTimeUsing = (cycleTime: (workItemId: number) => number | 
 );
 
 export const workCenterTimeUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => (wid: number) => (
-  workItemTimes(wid).workCenters.reduce((a, wc) => a + timeDifference(wc), 0)
+  // If a wc doesn't have an end date, we should disregard it
+  workItemTimes(wid).workCenters.reduce((a, wc) => a + (wc.end ? timeDifference(wc) : 0), 0)
 );
 
 export const totalWorkCenterTimeUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
@@ -79,7 +80,7 @@ export const isWorkItemClosed = (workItemTimes: Overview['times'][number]) => {
   // state change date might not be the end date, depending on config.json.
   // So, we need to filter out items that have an end date older than the last month.
   const queryPeriod = new Date();
-  queryPeriod.setDate(queryPeriod.getDate() - 29);
+  queryPeriod.setDate(queryPeriod.getDate() - 30);
   queryPeriod.setHours(0, 0, 0, 0);
   return new Date(workItemTimes.end) > queryPeriod;
 };

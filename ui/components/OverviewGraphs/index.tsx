@@ -23,6 +23,7 @@ import { EffortDistributionGraph } from './EffortDistributionGraph';
 import { useRemoveSort } from '../../hooks/sort-hooks';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
 import OverviewFilters from './OverviewFilters';
+import WorkItemStatus from './WorkItemStatus';
 
 const workItemAccessors = (overview: Overview) => ({
   workItemType: (witId: string) => overview.types[witId],
@@ -82,7 +83,7 @@ const createCompletedWorkItemTooltip = (
       if (index !== wcs.length - 1) {
         acc.push({
           label: `${wc.label} to ${wcs[index + 1].label}`,
-          timeDiff: timeDifference({ start: wc.end, end: wcs[index + 1].start })
+          timeDiff: timeDifference({ start: wc.end || new Date().toISOString(), end: wcs[index + 1].start })
         });
       }
 
@@ -222,7 +223,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         crosshairBubbleTitle="Velocity"
         aggregateStats={length}
         sidebarHeading="Velocity over the last 30 days"
-        formatValue={String}
+        formatValue={num}
         sidebarHeadlineStats={data => (
           Object.entries(groupByWorkItemType(data))
             .map(([witId, items]) => ({
@@ -276,7 +277,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         crosshairBubbleTitle="Work in progress"
         aggregateStats={length}
         sidebarHeading="Work in progress items"
-        formatValue={String}
+        formatValue={num}
         sidebarHeadlineStats={data => (
           Object.entries(groupByWorkItemType(data))
             .map(([witId, workItemIds]) => ({
@@ -356,6 +357,14 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         lastUpdated={projectAnalysis.lastUpdated}
         workItemType={workItemType}
         workItemById={workItemById}
+      />
+
+      <WorkItemStatus
+        allWorkItems={memoizedOrganizedAllWorkItems}
+        workItemTimes={workItemTimes}
+        workItemType={workItemType}
+        workItemById={workItemById}
+        workItemTooltip={wipWorkItemTooltip}
       />
     </div>
   );

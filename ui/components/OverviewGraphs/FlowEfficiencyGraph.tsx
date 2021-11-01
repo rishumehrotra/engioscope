@@ -4,7 +4,7 @@ import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
 import type { OrganizedWorkItems } from './helpers';
 import {
   hasWorkItems, groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
-  timeDifference, totalCycleTimeUsing, lineColor
+  totalCycleTimeUsing, lineColor
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
@@ -39,7 +39,11 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
               const value = totalTime === 0 ? 0 : (workTime * 100) / totalTime;
 
               return (
-                <li key={witId + groupName} className="grid gap-4 my-4 items-center" style={{ gridTemplateColumns: '30% 1fr' }}>
+                <li
+                  key={witId + groupName}
+                  className="grid gap-4 my-4 items-center"
+                  style={{ gridTemplateColumns: '30% 1fr' }}
+                >
                   <div className="flex items-center justify-end">
                     <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
                     {groupName}
@@ -68,10 +72,10 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
               .map(([witId, workItemIds]) => {
                 const workTime = totalWorkCenterTime(workItemIds);
                 const totalTime = totalCycleTime(workItemIds);
-                const value = totalTime === 0 ? '-' : (workTime * 100) / totalTime;
+
                 return {
                   heading: workItemType(witId).name[1],
-                  value: `${typeof value === 'string' ? value : Math.round(value)}%`,
+                  value: totalTime === 0 ? '-' : `${Math.round((workTime * 100) / totalTime)}%`,
                   unit: 'avg'
                 };
               })
@@ -85,24 +89,19 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
           modalContents={({ witId, workItemIds }) => (
             <ul>
               {workItemIds
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 .sort((a, b) => workCenterTime(a) / cycleTime(a)! - workCenterTime(b) / cycleTime(b)!)
-                .map(id => {
-                  const workItem = workItemById(id);
-                  const times = workItemTimes(id);
-                  const totalTime = cycleTime(id);
+                .map(wid => {
+                  const workItem = workItemById(wid);
+                  const totalTime = cycleTime(wid);
 
                   return (
-                    <li className="my-4">
+                    <li className="my-4" key={wid}>
                       <WorkItemLinkForModal
                         workItem={workItem}
                         workItemType={workItemType(witId)}
                         flair={totalTime
-                          ? `${Math.round(
-                            (times.workCenters.reduce(
-                              (acc, wc) => acc + timeDifference(wc), 0
-                            ) * 100) / totalTime
-                          )}%`
+                          ? `${Math.round(workCenterTime(wid) / totalTime)}%`
                           : '-'}
                       />
                       <WorkItemTimeDetails

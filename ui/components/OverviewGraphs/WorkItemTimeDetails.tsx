@@ -1,5 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
-import { prop } from 'rambda';
+import { last, prop } from 'rambda';
 import React from 'react';
 import type { Overview, UIWorkItem } from '../../../shared/types';
 import { timeDifference } from './helpers';
@@ -40,14 +40,22 @@ export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workIt
     );
   };
 
+  const lastWorkCenter = last(times.workCenters);
+
   const waitingTime = times.workCenters.length > 1
     ? prettyMilliseconds(
       times.workCenters.slice(1).reduce(
         (acc, wc, index) => acc + timeDifference({
-          start: times.workCenters[index].end,
+          start: times.workCenters[index].end || new Date().toISOString(),
           end: wc.start
         }), 0
-      ), { compact: true }
+      ) + (
+        // Time after last work center
+        lastWorkCenter.end && lastWorkCenter.end !== times.end
+          ? timeDifference({ start: lastWorkCenter.end, end: times.end })
+          : 0
+      ),
+      { compact: true }
     )
     : 'unknown';
 
@@ -63,13 +71,24 @@ export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workIt
       {`Total waiting time: ${waitingTime} (`}
       {times.workCenters.length === 1
         ? 'unknown'
-        : showTimeSplit(times.workCenters.slice(1).map((wc, index) => ({
-          label: `${times.workCenters[index].label} to ${wc.label}`,
-          timeDiff: timeDifference({
-            start: times.workCenters[index].end,
-            end: wc.start
-          })
-        })))}
+        : showTimeSplit([
+          ...times.workCenters.slice(1).map((wc, index) => ({
+            label: `${times.workCenters[index].label} to ${wc.label}`,
+            timeDiff: timeDifference({
+              start: times.workCenters[index].end || new Date().toISOString(),
+              end: wc.start
+            })
+          })),
+          ...(times.end !== lastWorkCenter.end
+            ? [{
+              label: `After ${lastWorkCenter.label}`,
+              timeDiff: timeDifference({
+                start: lastWorkCenter.end || new Date().toISOString(),
+                end: times.end
+              })
+            }]
+            : [])
+        ])}
       )
     </div>
   );

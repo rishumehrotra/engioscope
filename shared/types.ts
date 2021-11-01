@@ -158,6 +158,7 @@ export type UIWorkItemType = {
   icon: string;
   color: string;
   iconColor: string | null;
+  workCenters: string[];
 };
 
 export type AnalysedWorkItems = {
@@ -177,7 +178,7 @@ export type Overview = {
     workCenters: {
       label: string;
       start: string;
-      end: string;
+      end?: string;
     }[];
   }>;
 };

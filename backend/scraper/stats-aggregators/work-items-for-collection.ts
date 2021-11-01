@@ -328,7 +328,11 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
           name: [workItemType.name, pluralize(workItemType.name)],
           color: workItemType.color,
           icon: `data:image/svg+xml;utf8,${encodeURIComponent(workItemIconSvgs[workItemType.icon.id](iconColor))}`,
-          iconColor
+          iconColor,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+          workCenters: collection.workitems
+            .types?.find(wit => wit.type === workItemType.name)?.workCenters
+            .map(wc => wc.label)!
         };
       }
 
