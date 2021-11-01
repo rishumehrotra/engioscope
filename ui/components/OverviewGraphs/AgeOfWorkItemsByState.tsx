@@ -5,7 +5,7 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { num, priorityBasedColor } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { hasWorkItems } from './helpers';
@@ -185,9 +185,9 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
               <li key={groupName} className="inline-block">
                 {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                 <label
-                  className={`flex items-center text-sm pl-3 pr-1 mr-1 mb-1
-                  border-2 border-gray-600 rounded-full  cursor-pointer shadow-inner
-                  ${checkboxStatesForGroups[groupName] ? 'bg-gray-600 text-white' : 'bg-gray-300 text-gray-600'}`}
+                  className={`flex items-center text-sm pl-3 py-1 pr-2 mr-1 mb-1
+                  rounded-full cursor-pointer shadow-sm
+                  ${checkboxStatesForGroups[groupName] ? 'bg-gray-600 text-white' : 'bg-gray-300 text-gray-700'}`}
                 >
                   <input
                     type="checkbox"
@@ -201,7 +201,11 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
                     )}
                   />
                   {groupName}
-                  <span className="bg-yellow-400 text-black inline-block px-2 py-0 ml-2 rounded-full text-xs">
+                  <span
+                    className={`text-black inline-block px-2 py-0 ml-2 rounded-full text-xs
+                      ${checkboxStatesForGroups[groupName] ? 'bg-gray-300' : 'bg-gray-200'}
+                    `}
+                  >
                     {num(wids.length)}
                   </span>
                 </label>
@@ -239,11 +243,8 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
                       <WorkItemLinkForModal
                         workItem={workItemById(wid)}
                         workItemType={workItemType}
+                        flair={prettyMilliseconds(Date.now() - since.getTime(), { compact: true })}
                       />
-                      <div className="text-sm text-gray-500 ml-6">
-                        {`In the '${stateForModal}' state since `}
-                        {prettyMilliseconds(Date.now() - since.getTime(), { compact: true })}
-                      </div>
                     </li>
                   ))}
               </ul>
@@ -270,7 +271,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
               <li key={state} className="relative">
                 <input
                   type="checkbox"
-                  className="absolute right-2 top-2 opacity-40"
+                  className="absolute right-2 top-2 opacity-70"
                   checked={checkboxStatesForSidebar[state]}
                   onChange={e => {
                     setCheckboxStatesForSidebar(

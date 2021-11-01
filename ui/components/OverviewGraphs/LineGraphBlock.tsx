@@ -9,7 +9,7 @@ import type {
 import { contrastColour, shortDate } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import LineGraph from '../graphs/LineGraph';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import { hasWorkItems, lineColor } from './helpers';
 import type { GroupLabel, OrganizedWorkItems } from './helpers';
 import { getMatchingAtIndex, splitByDateForLineGraph } from './day-wise-line-graph-helpers';

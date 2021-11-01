@@ -4,7 +4,7 @@ import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { lineColor, hasWorkItems } from './helpers';

@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import type {
   Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
 } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import {
   organizedClosedWorkItems, organizedAllWorkItems, cycleTimeFor,
   lineColor, timeDifference, workCenterTimeUsing, groupLabelUsing,

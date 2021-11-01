@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import { add } from 'rambda';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import type { OrganizedWorkItems } from './helpers';
 import {

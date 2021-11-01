@@ -74,7 +74,7 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
               {isCheckboxChecked && (
                 <input
                   type="checkbox"
-                  className="absolute right-2 top-2 opacity-40"
+                  className="absolute right-2 top-2 opacity-70"
                   checked={isCheckboxChecked({ witId, groupName })}
                   onChange={e => {
                     if (!onCheckboxChange) return;

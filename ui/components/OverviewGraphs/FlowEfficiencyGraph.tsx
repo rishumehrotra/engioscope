@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import type { OrganizedWorkItems } from './helpers';
 import {
   hasWorkItems, groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
@@ -49,12 +49,14 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
                     {groupName}
                     {`: ${Math.round(value)}%`}
                   </div>
-                  <div className="bg-gray-200">
-                    <div style={{
-                      width: `${value}%`,
-                      backgroundColor: lineColor({ witId, groupName }),
-                      height: '30px'
-                    }}
+                  <div className="bg-gray-200 rounded-md overflow-hidden">
+                    <div
+                      className="rounded-md"
+                      style={{
+                        width: `${value}%`,
+                        backgroundColor: lineColor({ witId, groupName }),
+                        height: '30px'
+                      }}
                     />
                   </div>
                 </li>

@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { prop } from 'rambda';
 import React, { useMemo } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModalProps';
+import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import type { OrganizedWorkItems } from './helpers';
 import { hasWorkItems, groupByWorkItemType, totalCycleTimeUsing } from './helpers';
