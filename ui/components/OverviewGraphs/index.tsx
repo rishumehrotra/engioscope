@@ -23,12 +23,16 @@ import { EffortDistributionGraph } from './EffortDistributionGraph';
 import { useRemoveSort } from '../../hooks/sort-hooks';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
 import OverviewFilters from './OverviewFilters';
-import WorkItemStatus from './WorkItemStatus';
+import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
 
 const workItemAccessors = (overview: Overview) => ({
   workItemType: (witId: string) => overview.types[witId],
   workItemById: (wid: number) => overview.byId[wid],
-  workItemTimes: (wid: number) => overview.times[wid]
+  workItemTimes: (wid: number) => overview.times[wid],
+  workItemGroup: (wid: number) => (overview.byId[wid].groupId
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    ? overview.groups[overview.byId[wid].groupId!]
+    : null)
 });
 
 export const workItemIdsFromLines = (lines: WorkItemLine[]) => (
@@ -164,7 +168,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   const [selectedFilters, setSelectedFilters] = useState<{ label: string; tags: string[] }[]>([]);
   useRemoveSort();
 
-  const { workItemById, workItemType, workItemTimes } = useMemo(
+  const {
+    workItemById, workItemType, workItemTimes, workItemGroup
+  } = useMemo(
     () => workItemAccessors(projectAnalysis.overview),
     [projectAnalysis.overview]
   );
@@ -268,6 +274,46 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         )}
       />
 
+      <CycleTimeGraph
+        closedWorkItems={memoizedOrganizedClosedWorkItems}
+        workItemType={workItemType}
+        workItemTimes={workItemTimes}
+        workItemById={workItemById}
+        cycleTime={cycleTime}
+        workItemTooltip={completedWorkItemTooltip}
+      />
+
+      <FlowEfficiencyGraph
+        closedWorkItems={memoizedOrganizedClosedWorkItems}
+        workItemType={workItemType}
+        workItemTimes={workItemTimes}
+        workItemById={workItemById}
+        cycleTime={cycleTime}
+      />
+
+      <EffortDistributionGraph
+        allWorkItems={memoizedOrganizedAllWorkItems}
+        workItemType={workItemType}
+        workItemTimes={workItemTimes}
+        workItemById={workItemById}
+      />
+
+      <BugLeakageAndRCAGraph
+        allWorkItems={memoizedOrganizedAllWorkItems}
+        lastUpdated={projectAnalysis.lastUpdated}
+        workItemType={workItemType}
+        workItemById={workItemById}
+      />
+
+      <AgeOfWorkItemsByStatus
+        allWorkItems={memoizedOrganizedAllWorkItems}
+        workItemTimes={workItemTimes}
+        workItemType={workItemType}
+        workItemById={workItemById}
+        workItemTooltip={wipWorkItemTooltip}
+        workItemGroup={workItemGroup}
+      />
+
       <GraphBlock
         data={memoizedOrganizedAllWorkItems}
         daySplitter={isWIPToday}
@@ -324,45 +370,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         allWorkItems={memoizedOrganizedAllWorkItems}
         workItemType={workItemType}
         workItemTimes={workItemTimes}
-        workItemById={workItemById}
-        workItemTooltip={wipWorkItemTooltip}
-      />
-
-      <CycleTimeGraph
-        closedWorkItems={memoizedOrganizedClosedWorkItems}
-        workItemType={workItemType}
-        workItemTimes={workItemTimes}
-        workItemById={workItemById}
-        cycleTime={cycleTime}
-        workItemTooltip={completedWorkItemTooltip}
-      />
-
-      <FlowEfficiencyGraph
-        closedWorkItems={memoizedOrganizedClosedWorkItems}
-        workItemType={workItemType}
-        workItemTimes={workItemTimes}
-        workItemById={workItemById}
-        cycleTime={cycleTime}
-      />
-
-      <EffortDistributionGraph
-        allWorkItems={memoizedOrganizedAllWorkItems}
-        workItemType={workItemType}
-        workItemTimes={workItemTimes}
-        workItemById={workItemById}
-      />
-
-      <BugLeakageAndRCAGraph
-        allWorkItems={memoizedOrganizedAllWorkItems}
-        lastUpdated={projectAnalysis.lastUpdated}
-        workItemType={workItemType}
-        workItemById={workItemById}
-      />
-
-      <WorkItemStatus
-        allWorkItems={memoizedOrganizedAllWorkItems}
-        workItemTimes={workItemTimes}
-        workItemType={workItemType}
         workItemById={workItemById}
         workItemTooltip={wipWorkItemTooltip}
       />

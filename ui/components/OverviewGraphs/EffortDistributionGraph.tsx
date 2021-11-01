@@ -90,7 +90,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
   return (
     <GraphCard
       title="Effort distribution"
-      subtitle="Percentage of working time spent on various work items over the last 30 days"
+      subtitle="Percentage of time various work items have spent in work centers over the last 30 days"
       hasData={hasWorkItems(allWorkItems)}
       noDataMessage="Couldn't find any matching workitems"
       left={(
