@@ -1,18 +1,24 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import type { UIWorkItem, UIWorkItemType } from '../../shared/types';
+import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 
 type WorkItemLinkForModalProps = {
   workItem: UIWorkItem;
   workItemType: UIWorkItemType;
   flair?: ReactNode;
+  tooltip?: (workItem: UIWorkItem, additionalSections?: { label: string; value: string | number }[]) => string;
 };
-export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({ workItem, workItemType, flair }) => (
+
+export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({
+  workItem, workItemType, flair, tooltip
+}) => (
   <a
     href={workItem.url}
     className="text-blue-800 hover:underline inline-flex items-start"
     target="_blank"
     rel="noreferrer"
+    data-html
+    data-tip={tooltip?.(workItem)}
   >
     <img
       className="inline-block mr-2 mt-1"

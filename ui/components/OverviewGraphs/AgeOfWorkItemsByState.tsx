@@ -6,7 +6,7 @@ import { num, priorityBasedColor } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { hasWorkItems } from './helpers';
@@ -95,7 +95,7 @@ type AgeOfWorkItemsByStatusInnerProps = {
   workItemType: UIWorkItemType;
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemById: (wid: number) => UIWorkItem;
-  workItemTooltip: (workItem: UIWorkItem, additionalValues: { label: string; value: string | number }[]) => string;
+  workItemTooltip: (workItem: UIWorkItem, additionalValues?: { label: string; value: string | number }[]) => string;
   workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 
@@ -227,6 +227,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
                       <WorkItemLinkForModal
                         workItem={workItemById(wid)}
                         workItemType={workItemType}
+                        tooltip={workItemTooltip}
                         flair={prettyMilliseconds(Date.now() - since.getTime(), { compact: true })}
                       />
                     </li>

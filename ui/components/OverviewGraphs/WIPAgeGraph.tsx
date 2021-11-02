@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { prop } from 'rambda';
 import React, { useMemo } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
@@ -118,6 +118,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
                     <WorkItemLinkForModal
                       workItem={workItem}
                       workItemType={workItemType(workItem.typeId)}
+                      tooltip={workItemTooltip}
                       flair={prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
                     />
                   </li>

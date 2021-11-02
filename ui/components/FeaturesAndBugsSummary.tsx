@@ -13,7 +13,7 @@ import ScatterLineGraph from './graphs/ScatterLineGraph';
 import type { ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
-import { WorkItemLinkForModal } from './WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './OverviewGraphs/WorkItemLinkForModal';
 
 const barColor = createPalette([
   '#f44336',
@@ -282,7 +282,6 @@ const FeaturesAndBugsSummary: React.FC<FeaturesAndBugsSummaryProps> = ({
           />
         ))}
       </ProjectStats>
-
     </div>
   );
 };

@@ -2,14 +2,15 @@ import prettyMilliseconds from 'pretty-ms';
 import React, { useMemo } from 'react';
 import { add } from 'rambda';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import type { OrganizedWorkItems } from './helpers';
 import {
-  hasWorkItems, groupByWorkItemType, lineColor, timeDifference
+  noGroup, groupByWorkItemType, lineColor, timeDifference
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { exists, shortDate } from '../../helpers/utils';
+import { createWIPWorkItemTooltip } from './tooltips';
 
 const workCenterTimeThisMonthUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
   const monthAgo = new Date();
@@ -37,12 +38,18 @@ type EffortDistributionGraphProps = {
   workItemById: (wid: number) => UIWorkItem;
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemType: (witId: string) => UIWorkItemType;
+  workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = ({
-  allWorkItems, workItemById, workItemTimes, workItemType
+  allWorkItems, workItemById, workItemTimes, workItemType, workItemGroup
 }) => {
   const workCenterTimeThisMonth = useMemo(() => workCenterTimeThisMonthUsing(workItemTimes), [workItemTimes]);
   const totalWorkCenterTimeThisMonth = useMemo(() => totalWorkCenterTimeThisMonthUsing(workItemTimes), [workItemTimes]);
+  const workItemTooltip = useMemo(
+    () => createWIPWorkItemTooltip(workItemType, workItemTimes, workItemGroup),
+    [workItemGroup, workItemTimes, workItemType]
+  );
+
   const monthAgo = new Date();
   monthAgo.setDate(monthAgo.getDate() - 30);
 
@@ -78,7 +85,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
 
       return effortWithFullTime.map(effort => ({
         ...effort,
-        value: (effort.value * 100) / totalEffort
+        value: totalEffort ? (effort.value * 100) / totalEffort : 0
       }));
     },
     [allWorkItems, totalWorkCenterTimeThisMonth]
@@ -90,8 +97,8 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
     <GraphCard
       title="Effort distribution"
       subtitle="Percentage of time various work items have spent in work centers over the last 30 days"
-      hasData={hasWorkItems(allWorkItems)}
-      noDataMessage="Couldn't find any matching workitems"
+      hasData={maxValue > 0}
+      noDataMessage="Couldn't find any matching work items"
       left={(
         <ul>
           {effortDistribution.map(({
@@ -105,7 +112,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
               <div className="flex items-center justify-end">
                 <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
                 <span className="truncate">
-                  {label}
+                  {label === noGroup ? workItemType(witId).name[1] : label}
                 </span>
               </div>
               <div className="justify-self-end">
@@ -115,7 +122,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
                 <div
                   className="h-8 rounded-lg"
                   style={{
-                    width: `${(value * 100) / maxValue}%`,
+                    width: `${maxValue ? (value * 100) / maxValue : 0}%`,
                     backgroundColor: color
                   }}
                 />
@@ -168,6 +175,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
                     <WorkItemLinkForModal
                       workItem={workItem}
                       workItemType={workItemType(workItem.typeId)}
+                      tooltip={workItemTooltip}
                       flair={prettyMilliseconds(
                         workItemTimes(workItem.id).workCenters.reduce(
                           (acc, wc) => acc + timeDifference(wc),

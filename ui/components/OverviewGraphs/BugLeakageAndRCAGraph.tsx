@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { lineColor, hasWorkItems } from './helpers';

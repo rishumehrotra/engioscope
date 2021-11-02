@@ -9,7 +9,7 @@ import type {
 import { contrastColour, shortDate } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import LineGraph from '../graphs/LineGraph';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import { hasWorkItems, lineColor } from './helpers';
 import type { GroupLabel, OrganizedWorkItems } from './helpers';
 import { getMatchingAtIndex, splitByDateForLineGraph } from './day-wise-line-graph-helpers';
@@ -144,7 +144,7 @@ export const createGraphBlock = ({
           title={graphHeading}
           subtitle={graphSubheading}
           hasData={hasWorkItems(data)}
-          noDataMessage="Couldn't find any matching workitems"
+          noDataMessage="Couldn't find any matching work items"
           left={(
             <LineGraph<WorkItemLine, WorkItemPoint>
               lines={dataByDay.filter(isCheckboxChecked)}

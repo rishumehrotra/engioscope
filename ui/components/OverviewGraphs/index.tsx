@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { last, length, prop } from 'rambda';
 import React, { useMemo, useState } from 'react';
 import type { Overview, ProjectOverviewAnalysis } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import {
   organizedClosedWorkItems, organizedAllWorkItems, cycleTimeFor,
   lineColor, groupLabelUsing, groupByWorkItemType, collectFilters
@@ -176,6 +176,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemTimes={workItemTimes}
         workItemById={workItemById}
         cycleTime={cycleTime}
+        workItemGroup={workItemGroup}
       />
 
       <EffortDistributionGraph
@@ -183,6 +184,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemType={workItemType}
         workItemTimes={workItemTimes}
         workItemById={workItemById}
+        workItemGroup={workItemGroup}
       />
 
       <BugLeakageAndRCAGraph

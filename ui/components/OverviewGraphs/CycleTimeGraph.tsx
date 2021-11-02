@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { prop } from 'rambda';
 import React, { useMemo } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import type { OrganizedWorkItems } from './helpers';
 import {
@@ -100,6 +100,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
                       <WorkItemLinkForModal
                         workItem={workItem}
                         workItemType={workItemType(witId)}
+                        tooltip={workItemTooltip}
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         flair={prettyMilliseconds(cycleTime(workItem.id)!, { compact: true })}
                       />

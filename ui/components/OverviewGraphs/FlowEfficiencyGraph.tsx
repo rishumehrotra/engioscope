@@ -1,14 +1,16 @@
 import React, { useMemo } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
+import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import type { OrganizedWorkItems } from './helpers';
 import {
+  noGroup,
   hasWorkItems, groupByWorkItemType, workCenterTimeUsing, totalWorkCenterTimeUsing,
   totalCycleTimeUsing, lineColor
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { WorkItemTimeDetails } from './WorkItemTimeDetails';
+import { createCompletedWorkItemTooltip } from './tooltips';
 
 type FlowEfficiencyGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -16,13 +18,20 @@ type FlowEfficiencyGraphProps = {
   workItemById: (wid: number) => UIWorkItem;
   workItemTimes: (wid: number) => Overview['times'][number];
   cycleTime: (wid: number) => number | undefined;
+  workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
-  closedWorkItems, workItemType, cycleTime, workItemById, workItemTimes
+  closedWorkItems, workItemType, cycleTime, workItemById, workItemTimes, workItemGroup
 }) => {
   const workCenterTime = useMemo(() => workCenterTimeUsing(workItemTimes), [workItemTimes]);
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
   const totalWorkCenterTime = useMemo(() => totalWorkCenterTimeUsing(workItemTimes), [workItemTimes]);
+  const workItemTooltip = useMemo(
+    () => createCompletedWorkItemTooltip(
+      workItemType, cycleTime, workCenterTimeUsing(workItemTimes), workItemTimes, workItemGroup
+    ),
+    [cycleTime, workItemGroup, workItemTimes, workItemType]
+  );
 
   return (
     <GraphCard
@@ -47,7 +56,7 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
                   <div className="flex items-center justify-end">
                     <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
                     <span className="truncate">
-                      {groupName}
+                      {groupName === noGroup ? workItemType(witId).name[1] : groupName}
                     </span>
                   </div>
                   <span className="justify-self-end">
@@ -106,6 +115,7 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
                       <WorkItemLinkForModal
                         workItem={workItem}
                         workItemType={workItemType(witId)}
+                        tooltip={workItemTooltip}
                         flair={totalTime
                           ? `${Math.round(workCenterTime(wid) / totalTime)}%`
                           : '-'}
