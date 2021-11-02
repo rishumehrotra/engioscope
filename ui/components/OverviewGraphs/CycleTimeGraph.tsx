@@ -5,11 +5,14 @@ import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types
 import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import type { OrganizedWorkItems } from './helpers';
-import { hasWorkItems, groupByWorkItemType, totalCycleTimeUsing } from './helpers';
+import {
+  workCenterTimeUsing, hasWorkItems, groupByWorkItemType, totalCycleTimeUsing
+} from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { WorkItemTimeDetails } from './WorkItemTimeDetails';
 import { priorityBasedColor } from '../../helpers/utils';
+import { createCompletedWorkItemTooltip } from './tooltips';
 
 type CycleTimeGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -17,14 +20,18 @@ type CycleTimeGraphProps = {
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemById: (wid: number) => UIWorkItem;
   cycleTime: (wid: number) => number | undefined;
-  workItemTooltip: (workItem: UIWorkItem) => string;
 };
 
 export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
-  closedWorkItems, workItemType, workItemTimes, workItemById, cycleTime,
-  workItemTooltip
+  closedWorkItems, workItemType, workItemTimes, workItemById, cycleTime
 }) => {
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
+  const workItemTooltip = useMemo(
+    () => createCompletedWorkItemTooltip(
+      workItemType, cycleTime, workCenterTimeUsing(workItemTimes), workItemTimes
+    ),
+    [cycleTime, workItemTimes, workItemType]
+  );
 
   return (
     <GraphCard
@@ -50,7 +57,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
                 ])),
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
-                tooltip: workItemTooltip
+                tooltip: x => workItemTooltip(x)
               }]}
               pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
               height={420}

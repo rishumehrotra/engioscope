@@ -10,6 +10,7 @@ import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { hasWorkItems } from './helpers';
 import { sidebarWidth } from './LegendSidebar';
+import { createWIPWorkItemTooltip } from './tooltips';
 
 const workItemStateUsing = (
   workItemTimes: (wid: number) => Overview['times'][number],
@@ -81,7 +82,7 @@ const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => 
 
   if (stateLabel.startsWith('After ')) {
     return (workItemType.workCenters
-      .findIndex(wc => wc === stateLabel.replace('After ', '')) * 2) + 1;
+      .findIndex(wc => wc === stateLabel.replace('After ', '')) * 2) + 2;
   }
 
   // 'Done'
@@ -93,7 +94,7 @@ type AgeOfWorkItemsByStatusInnerProps = {
   workItemType: UIWorkItemType;
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemById: (wid: number) => UIWorkItem;
-  workItemTooltip: (workItem: UIWorkItem) => string;
+  workItemTooltip: (workItem: UIWorkItem, additionalValues: { label: string; value: string | number }[]) => string;
   workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 
@@ -202,9 +203,11 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
                   />
                   {groupName}
                   <span
-                    className={`text-black inline-block px-2 py-0 ml-2 rounded-full text-xs
-                      ${checkboxStatesForGroups[groupName] ? 'bg-gray-300' : 'bg-gray-200'}
-                    `}
+                    className={
+                      `text-black inline-block px-2 py-0 ml-2 rounded-full text-xs ${
+                        checkboxStatesForGroups[groupName] ? 'bg-gray-300' : 'bg-gray-200'
+                      }`
+                    }
                   >
                     {num(wids.length)}
                   </span>
@@ -217,7 +220,12 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
               label: workItemType.name[1],
               data: statesToRender,
               yAxisPoint: x => Date.now() - x.since.getTime(),
-              tooltip: ({ wid }) => workItemTooltip(workItemById(wid))
+              tooltip: ({ wid }, label, timeTaken) => (
+                workItemTooltip(
+                  workItemById(wid),
+                  [{ label: `In '${label.replace('In ', '')}' since`, value: prettyMilliseconds(timeTaken, { compact: true }) }]
+                )
+              )
             }]}
             height={400}
             linkForItem={({ wid }) => workItemById(wid).url}
@@ -314,26 +322,32 @@ type AgeOfWorkItemsByStatusProps = {
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemById: (wid: number) => UIWorkItem;
   workItemType: (witId: string) => UIWorkItemType;
-  workItemTooltip: (workItem: UIWorkItem) => string;
   workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 
 const AgeOfWorkItemsByStatus: React.FC<AgeOfWorkItemsByStatusProps> = ({
-  allWorkItems, workItemTimes, workItemById, workItemType, workItemTooltip, workItemGroup
-}) => (
-  <>
-    {Object.entries(allWorkItems).map(([witId, groups]) => (
-      <AgeOfWorkItemsByStatusInner
-        key={witId}
-        groups={groups}
-        workItemType={workItemType(witId)}
-        workItemTimes={workItemTimes}
-        workItemById={workItemById}
-        workItemGroup={workItemGroup}
-        workItemTooltip={workItemTooltip}
-      />
-    ))}
-  </>
-);
+  allWorkItems, workItemTimes, workItemById, workItemType, workItemGroup
+}) => {
+  const workItemTooltip = useMemo(
+    () => createWIPWorkItemTooltip(workItemType, workItemTimes),
+    [workItemTimes, workItemType]
+  );
+
+  return (
+    <>
+      {Object.entries(allWorkItems).map(([witId, groups]) => (
+        <AgeOfWorkItemsByStatusInner
+          key={witId}
+          groups={groups}
+          workItemType={workItemType(witId)}
+          workItemTimes={workItemTimes}
+          workItemById={workItemById}
+          workItemGroup={workItemGroup}
+          workItemTooltip={workItemTooltip}
+        />
+      ))}
+    </>
+  );
+};
 
 export default AgeOfWorkItemsByStatus;

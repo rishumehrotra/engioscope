@@ -1,14 +1,11 @@
 import prettyMilliseconds from 'pretty-ms';
 import { last, length, prop } from 'rambda';
 import React, { useMemo, useState } from 'react';
-import type {
-  Overview, ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType
-} from '../../../shared/types';
+import type { Overview, ProjectOverviewAnalysis } from '../../../shared/types';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import {
   organizedClosedWorkItems, organizedAllWorkItems, cycleTimeFor,
-  lineColor, timeDifference, workCenterTimeUsing, groupLabelUsing,
-  groupByWorkItemType, collectFilters
+  lineColor, groupLabelUsing, groupByWorkItemType, collectFilters
 } from './helpers';
 import type { WorkItemLine } from './day-wise-line-graph-helpers';
 import {
@@ -66,104 +63,6 @@ const isWIPToday = (workItemId: number, dayStart: Date, overview: Overview) => {
   return end > dayEnd; // Started today or before, not finished today
 };
 
-const createCompletedWorkItemTooltip = (
-  workItemType: (witId: string) => UIWorkItemType,
-  cycleTime: (wid: number) => number | undefined,
-  workCenterTime: (wid: number) => number,
-  workItemTimes: (wid: number) => Overview['times'][number]
-) => (workItem: UIWorkItem) => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const ct = cycleTime(workItem.id)!;
-  const cycleTimeText = prettyMilliseconds(ct, { compact: true });
-  const efficiency = Math.round((workCenterTime(workItem.id) / ct) * 100);
-
-  const times = workItemTimes(workItem.id).workCenters.reduce<{ label: string; timeDiff: number}[]>(
-    (acc, wc, index, wcs) => {
-      acc.push({
-        label: wc.label,
-        timeDiff: timeDifference(wc)
-      });
-
-      if (index !== wcs.length - 1) {
-        acc.push({
-          label: `${wc.label} to ${wcs[index + 1].label}`,
-          timeDiff: timeDifference({ start: wc.end || new Date().toISOString(), end: wcs[index + 1].start })
-        });
-      }
-
-      return acc;
-    },
-    []
-  );
-
-  const worstOffender = times.sort((a, b) => b.timeDiff - a.timeDiff)[0];
-
-  return `
-    <div class="w-72">
-      <div class="pl-3" style="text-indent: -1.15rem">
-        <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
-        <strong>#${workItem.id}:</strong> ${workItem.title}
-        ${workItem.priority ? `
-        <div class="pt-1">
-          <strong>Priority:</strong> ${workItem.priority}
-        </div>
-        ` : ''}
-        ${workItem.severity ? `
-        <div class="pt-1">
-          <strong>Severity:</strong> ${workItem.severity}
-        </div>
-        ` : ''}
-        ${workItem.rca ? `
-        <div class="pt-1">
-          <strong>RCA:</strong> ${workItem.rca.join(' - ')}
-        </div>
-        ` : ''}
-        <div class="pt-1">
-          <strong>Cycle time:</strong> ${cycleTimeText}
-        </div>
-        <div class="pt-1">
-          <strong>Longest time:</strong> ${worstOffender.label} (${prettyMilliseconds(worstOffender.timeDiff, { compact: true })})
-        </div>
-        <div class="pt-1">
-          <strong>Efficiency:</strong> ${efficiency}%
-        </div>
-      </div>
-    </div>
-  `.trim();
-};
-
-const createWIPWorkItemTooltip = (
-  workItemType: (witId: string) => UIWorkItemType
-) => (workItem: UIWorkItem) => `
-  <div class="w-72">
-    <div class="pl-3" style="text-indent: -1.15rem">
-      <img src="${workItemType(workItem.typeId).icon}" width="14" height="14" class="inline-block -mt-1" />
-      <strong>#${workItem.id}:</strong> ${workItem.title}
-      ${workItem.priority ? `
-      <div class="pt-1">
-        <strong>Priority:</strong> ${workItem.priority}
-      </div>
-      ` : ''}
-      ${workItem.severity ? `
-      <div class="pt-1">
-        <strong>Severity:</strong> ${workItem.severity}
-      </div>
-      ` : ''}
-      ${workItem.rca ? `
-      <div class="pt-1">
-        <strong>RCA:</strong> ${workItem.rca.join(' - ')}
-      </div>
-      ` : ''}
-      <div class="pt-1">
-        <strong>Current status:</strong> ${workItem.state}
-      </div>
-      <div class="pt-1">
-        <strong>Age:</strong> ${prettyMilliseconds(Date.now() - new Date(workItem.created.on).getTime(), { compact: true })}
-      </div>
-    </div>
-  </div>
-`.trim();
-
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const [selectedFilters, setSelectedFilters] = useState<{ label: string; tags: string[] }[]>([]);
   useRemoveSort();
@@ -195,17 +94,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
-  const workCenterTime = useMemo(() => workCenterTimeUsing(workItemTimes), [workItemTimes]);
-
-  const completedWorkItemTooltip = useMemo(
-    () => createCompletedWorkItemTooltip(workItemType, cycleTime, workCenterTime, workItemTimes),
-    [cycleTime, workCenterTime, workItemTimes, workItemType]
-  );
-
-  const wipWorkItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(workItemType),
-    [workItemType]
-  );
 
   const groupLabel = useMemo(() => groupLabelUsing(workItemType), [workItemType]);
 
@@ -280,7 +168,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemTimes={workItemTimes}
         workItemById={workItemById}
         cycleTime={cycleTime}
-        workItemTooltip={completedWorkItemTooltip}
       />
 
       <FlowEfficiencyGraph
@@ -310,7 +197,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemTimes={workItemTimes}
         workItemType={workItemType}
         workItemById={workItemById}
-        workItemTooltip={wipWorkItemTooltip}
         workItemGroup={workItemGroup}
       />
 
@@ -371,7 +257,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemType={workItemType}
         workItemTimes={workItemTimes}
         workItemById={workItemById}
-        workItemTooltip={wipWorkItemTooltip}
       />
     </div>
   );

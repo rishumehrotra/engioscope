@@ -27,7 +27,7 @@ type Group<T> = {
   label: string;
   data: GraphData<T> | undefined;
   yAxisPoint: (value: T) => number;
-  tooltip: (value: T) => string;
+  tooltip: (x: T, label: string, yAxisPoint: number) => string;
   pointColor?: (value: T) => string | null | undefined;
 };
 
@@ -82,7 +82,7 @@ type BarProps<T extends {}> = {
   xCoord: number;
   yCoord: (x: number) => number;
   pointColor?: (x: T) => string | null | undefined;
-  tooltip: (x: T) => string;
+  tooltip: (x: T, label: string, yAxisPoint: number) => string;
   label: string;
   linkForItem: (x: T) => string;
 };
@@ -112,17 +112,19 @@ const Bar = <T extends {}>({
         const fillColorWithJitter = `hsla(${
           (Math.round(Math.random() * 30)) + (fillColorHSL[0] - 15)
         }, 80%, 50%, 0.7)`;
+        const yPoint = yAxisPoint(item);
+
         return (
           // eslint-disable-next-line react/no-array-index-key
           <a key={index} href={linkForItem(item)} target="_blank" rel="noreferrer">
             <circle
               cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
-              cy={yCoord(yAxisPoint(item))}
+              cy={yCoord(yPoint)}
               r={bubbleSize}
               fill={fillColorWithJitter}
               stroke="0"
               data-html
-              data-tip={tooltip(item)}
+              data-tip={tooltip(item, label, yPoint)}
             />
           </a>
         );
