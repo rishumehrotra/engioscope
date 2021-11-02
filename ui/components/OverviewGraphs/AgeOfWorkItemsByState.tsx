@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num, priorityBasedColor } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import GraphCard from './GraphCard';
@@ -144,12 +145,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     }, {})
   );
 
-  const [checkboxStatesForGroups, setCheckboxStatesForGroups] = React.useState(
-    Object.keys(groups).reduce<Record<string, boolean>>((acc, group) => {
-      acc[group] = true;
-      return acc;
-    }, {})
-  );
+  const [selectedStatesForGroups, setSelectedStatesForGroups] = React.useState([] as string[]);
 
   const statesToRender = useMemo(
     () => (
@@ -159,7 +155,8 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
             acc[state] = wids.filter(({ wid }) => {
               const group = workItemGroup(wid);
               if (!group) return true;
-              return checkboxStatesForGroups[group.name];
+              if (selectedStatesForGroups.length === 0) return true;
+              return selectedStatesForGroups.includes(group.name);
             });
           } else {
             acc[state] = [];
@@ -170,7 +167,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         {}
       )
     ),
-    [checkboxStatesForGroups, checkboxStatesForSidebar, states, workItemGroup]
+    [checkboxStatesForSidebar, selectedStatesForGroups, states, workItemGroup]
   );
 
   return (
@@ -181,40 +178,19 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       noDataMessage={`No ${workItemType.name[1].toLowerCase()} found`}
       left={(
         <>
-          <ul className="mb-8">
-            {Object.entries(groups).map(([groupName, wids]) => (
-              <li key={groupName} className="inline-block">
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label
-                  className={`flex items-center text-sm pl-3 py-1 pr-2 mr-1 mb-1
-                  rounded-full cursor-pointer shadow-sm
-                  ${checkboxStatesForGroups[groupName] ? 'bg-gray-600 text-white' : 'bg-gray-300 text-gray-700'}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checkboxStatesForGroups[groupName]}
-                    className="absolute opacity-0"
-                    onChange={() => setCheckboxStatesForGroups(
-                      checkboxStatesForGroups => ({
-                        ...checkboxStatesForGroups,
-                        [groupName]: !checkboxStatesForGroups[groupName]
-                      })
-                    )}
-                  />
-                  {groupName}
-                  <span
-                    className={
-                      `text-black inline-block px-2 py-0 ml-2 rounded-full text-xs ${
-                        checkboxStatesForGroups[groupName] ? 'bg-gray-300' : 'bg-gray-200'
-                      }`
-                    }
-                  >
-                    {num(wids.length)}
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
+          {Object.keys(groups).length > 1
+            ? (
+              <div className="mb-8 flex justify-end mr-4">
+                <MultiSelectDropdownWithLabel
+                  name="groups"
+                  label={workItemType.groupLabel || 'Groups'}
+                  options={Object.entries(groups).map(([group, wids]) => ({ label: `${group} (${wids.length})`, value: group }))}
+                  value={selectedStatesForGroups}
+                  onChange={setSelectedStatesForGroups}
+                />
+              </div>
+            )
+            : null}
           <ScatterLineGraph
             graphData={[{
               label: workItemType.name[1],
@@ -329,8 +305,8 @@ const AgeOfWorkItemsByStatus: React.FC<AgeOfWorkItemsByStatusProps> = ({
   allWorkItems, workItemTimes, workItemById, workItemType, workItemGroup
 }) => {
   const workItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(workItemType, workItemTimes),
-    [workItemTimes, workItemType]
+    () => createWIPWorkItemTooltip(workItemType, workItemTimes, workItemGroup),
+    [workItemGroup, workItemTimes, workItemType]
   );
 
   return (

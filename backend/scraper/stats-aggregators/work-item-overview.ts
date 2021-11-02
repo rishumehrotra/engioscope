@@ -26,7 +26,7 @@ export const getOverviewData = (
   types: Record<string, UIWorkItemType>,
   getWorkItemType: (workItem: WorkItem) => WorkItemType
 ): Overview => {
-  const groupCache = new Map<string, { id: string; wit: string; label: string; name: string }>();
+  const groupCache = new Map<string, { id: string; witId: string; name: string }>();
   let groupIndex = 0;
   const isInQueryPeriod = isNewerThan(config.azure.queryFrom);
   const changedRecently = stateChangedRecently(isInQueryPeriod);
@@ -70,8 +70,7 @@ export const getOverviewData = (
       if (!groupCache.has(groupCacheKey)) {
         groupCache.set(groupCacheKey, {
           id: `g${groupIndex}`,
-          wit: wit.name,
-          label: workItemConfig.groupLabel,
+          witId: byId[workItem.id].typeId,
           name: groupName
         });
         groupIndex += 1;

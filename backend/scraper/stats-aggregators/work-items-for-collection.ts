@@ -332,7 +332,9 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
           workCenters: collection.workitems
             .types?.find(wit => wit.type === workItemType.name)?.workCenters
-            .map(wc => wc.label)!
+            .map(wc => wc.label)!,
+          groupLabel: collection.workitems
+            .types?.find(wit => wit.type === workItemType.name)?.groupLabel
         };
       }
 

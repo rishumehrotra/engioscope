@@ -26,7 +26,7 @@ const GraphCard: React.FC<GraphCardProps> = ({
       ? (
         <div className="grid gap-8 grid-flow-col">
           <div
-            className="flex gap-4 justify-evenly items-center"
+            className="flex gap-4 justify-evenly pt-2"
             style={{ gridTemplateColumns: `1fr ${sidebarWidth}` }}
           >
             <div className="w-full">{left}</div>

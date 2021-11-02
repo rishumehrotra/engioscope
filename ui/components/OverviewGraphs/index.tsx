@@ -94,7 +94,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   ), [memoizedOrganizedAllWorkItems, projectAnalysis]);
 
   const cycleTime = useMemo(() => cycleTimeFor(projectAnalysis.overview), [projectAnalysis]);
-
   const groupLabel = useMemo(() => groupLabelUsing(workItemType), [workItemType]);
 
   const GraphBlock = useMemo(
@@ -168,6 +167,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemTimes={workItemTimes}
         workItemById={workItemById}
         cycleTime={cycleTime}
+        workItemGroup={workItemGroup}
       />
 
       <FlowEfficiencyGraph
@@ -257,6 +257,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         workItemType={workItemType}
         workItemTimes={workItemTimes}
         workItemById={workItemById}
+        workItemGroup={workItemGroup}
       />
     </div>
   );

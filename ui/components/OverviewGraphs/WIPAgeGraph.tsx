@@ -16,14 +16,15 @@ type WIPAgeGraphProps = {
   workItemType: (witId: string) => UIWorkItemType;
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemById: (wid: number) => UIWorkItem;
+  workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 
 export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
-  allWorkItems, workItemType, workItemTimes, workItemById
+  allWorkItems, workItemType, workItemTimes, workItemById, workItemGroup
 }) => {
   const workItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(workItemType, workItemTimes),
-    [workItemTimes, workItemType]
+    () => createWIPWorkItemTooltip(workItemType, workItemTimes, workItemGroup),
+    [workItemGroup, workItemTimes, workItemType]
   );
 
   return (

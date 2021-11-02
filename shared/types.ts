@@ -159,6 +159,7 @@ export type UIWorkItemType = {
   color: string;
   iconColor: string | null;
   workCenters: string[];
+  groupLabel?: string;
 };
 
 export type AnalysedWorkItems = {
@@ -171,7 +172,7 @@ export type AnalysedWorkItems = {
 export type Overview = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
-  groups: Record<string, { wit: string; label: string; name: string }>;
+  groups: Record<string, { witId: string; name: string }>;
   times: Record<number, {
     start?: string;
     end?: string;

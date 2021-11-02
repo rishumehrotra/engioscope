@@ -20,17 +20,18 @@ type CycleTimeGraphProps = {
   workItemTimes: (wid: number) => Overview['times'][number];
   workItemById: (wid: number) => UIWorkItem;
   cycleTime: (wid: number) => number | undefined;
+  workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 
 export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
-  closedWorkItems, workItemType, workItemTimes, workItemById, cycleTime
+  closedWorkItems, workItemType, workItemTimes, workItemById, cycleTime, workItemGroup
 }) => {
   const totalCycleTime = useMemo(() => totalCycleTimeUsing(cycleTime), [cycleTime]);
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(
-      workItemType, cycleTime, workCenterTimeUsing(workItemTimes), workItemTimes
+      workItemType, cycleTime, workCenterTimeUsing(workItemTimes), workItemTimes, workItemGroup
     ),
-    [cycleTime, workItemTimes, workItemType]
+    [cycleTime, workItemGroup, workItemTimes, workItemType]
   );
 
   return (
