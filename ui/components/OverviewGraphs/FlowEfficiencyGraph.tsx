@@ -41,15 +41,19 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
               return (
                 <li
                   key={witId + groupName}
-                  className="grid gap-4 my-4 items-center"
-                  style={{ gridTemplateColumns: '30% 1fr' }}
+                  className="grid gap-4 my-4 items-center mr-4"
+                  style={{ gridTemplateColumns: '25% 3ch 1fr' }}
                 >
                   <div className="flex items-center justify-end">
                     <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
-                    {groupName}
-                    {`: ${Math.round(value)}%`}
+                    <span className="truncate">
+                      {groupName}
+                    </span>
                   </div>
-                  <div className="bg-gray-200 rounded-md overflow-hidden">
+                  <span className="justify-self-end">
+                    {`${Math.round(value)}%`}
+                  </span>
+                  <div className="bg-gray-100 rounded-md overflow-hidden">
                     <div
                       className="rounded-md"
                       style={{

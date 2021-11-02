@@ -3,11 +3,9 @@ import React, { useMemo } from 'react';
 import { add } from 'rambda';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
-import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import type { OrganizedWorkItems } from './helpers';
 import {
-  hasWorkItems,
-  groupByWorkItemType, lineColor, groupLabelUsing, timeDifference
+  hasWorkItems, groupByWorkItemType, lineColor, timeDifference
 } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
@@ -43,7 +41,6 @@ type EffortDistributionGraphProps = {
 export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = ({
   allWorkItems, workItemById, workItemTimes, workItemType
 }) => {
-  const groupLabel = useMemo(() => groupLabelUsing(workItemType), [workItemType]);
   const workCenterTimeThisMonth = useMemo(() => workCenterTimeThisMonthUsing(workItemTimes), [workItemTimes]);
   const totalWorkCenterTimeThisMonth = useMemo(() => totalWorkCenterTimeThisMonthUsing(workItemTimes), [workItemTimes]);
   const monthAgo = new Date();
@@ -65,10 +62,11 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
 
       // Effort for graph
       const effortWithFullTime = effortLayout
-        .reduce<{ label: string; value: number; color: string }[]>((acc, { witId, workTimes }) => {
+        .reduce<{ label: string; value: number; witId: string; color: string }[]>((acc, { witId, workTimes }) => {
           Object.entries(workTimes).forEach(([groupName, time]) => {
             acc.push({
-              label: groupLabel({ witId, groupName }),
+              label: groupName,
+              witId,
               value: time,
               color: lineColor({ witId, groupName })
             });
@@ -78,14 +76,15 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
 
       const totalEffort = effortWithFullTime.reduce((acc, { value }) => acc + value, 0);
 
-      return effortWithFullTime.map(({ value, label, color }) => ({
-        color,
-        label,
-        value: (value * 100) / totalEffort
+      return effortWithFullTime.map(effort => ({
+        ...effort,
+        value: (effort.value * 100) / totalEffort
       }));
     },
-    [groupLabel, allWorkItems, totalWorkCenterTimeThisMonth]
+    [allWorkItems, totalWorkCenterTimeThisMonth]
   );
+
+  const maxValue = useMemo(() => Math.max(...effortDistribution.map(({ value }) => value)), [effortDistribution]);
 
   return (
     <GraphCard
@@ -94,12 +93,36 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
       hasData={hasWorkItems(allWorkItems)}
       noDataMessage="Couldn't find any matching workitems"
       left={(
-        <HorizontalBarGraph
-          graphData={effortDistribution}
-          width={1023}
-          className="w-full"
-          formatValue={x => (Number.isNaN(x) ? '<unknown>' : `${x.toFixed(2)}%`)}
-        />
+        <ul>
+          {effortDistribution.map(({
+            label, value, color, witId
+          }) => (
+            <li
+              key={label}
+              className="grid gap-4 my-4 items-center mr-4"
+              style={{ gridTemplateColumns: '25% 5.5ch 1fr' }}
+            >
+              <div className="flex items-center justify-end">
+                <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
+                <span className="truncate">
+                  {label}
+                </span>
+              </div>
+              <div className="justify-self-end">
+                {`${value.toFixed(2)}%`}
+              </div>
+              <div className="bg-gray-100 rounded-md overflow-hidden">
+                <div
+                  className="h-8 rounded-lg"
+                  style={{
+                    width: `${(value * 100) / maxValue}%`,
+                    backgroundColor: color
+                  }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
       right={(
         <LegendSidebar

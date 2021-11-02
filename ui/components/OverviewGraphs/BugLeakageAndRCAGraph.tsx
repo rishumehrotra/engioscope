@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
-import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 import { WorkItemLinkForModal } from '../WorkItemLinkForModal';
 import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
@@ -93,6 +92,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
   useEffect(() => setSelectedCheckboxes(initialCheckboxState(groups)), [groups]);
 
   const total = graphData.reduce((acc, { value }) => acc + value, 0);
+  const maxValue = Math.max(...graphData.map(({ value }) => value));
 
   return (
     <GraphCard
@@ -160,16 +160,39 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                 ));
             })()}
           </Modal>
-          <HorizontalBarGraph
-            graphData={graphData}
-            width={1023}
-            className="w-full"
-            formatValue={value => `${value} (${Math.round((value * 100) / total)}%)`}
-            onBarClick={({ label, color }) => {
-              setModalBar({ label, color });
-              open();
-            }}
-          />
+          <ul>
+            {graphData.map(({ label, value, color }) => (
+              <li key={label} className="mr-4">
+                <button
+                  className="grid gap-4 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
+                  style={{ gridTemplateColumns: '20% 85px 1fr' }}
+                  onClick={() => {
+                    setModalBar({ label, color });
+                    open();
+                  }}
+                >
+                  <div className="flex items-center justify-end">
+                    <span className="truncate">
+                      {label}
+                    </span>
+                  </div>
+                  <span className="justify-self-end">
+                    {`${value} (${Math.round((value * 100) / total)}%)`}
+                  </span>
+                  <div className="bg-gray-100 rounded-md overflow-hidden">
+                    <div
+                      className="rounded-md"
+                      style={{
+                        width: `${(value * 100) / maxValue}%`,
+                        backgroundColor: color,
+                        height: '30px'
+                      }}
+                    />
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
         </>
       )}
       right={(

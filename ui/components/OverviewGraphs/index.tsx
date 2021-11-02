@@ -112,7 +112,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         data={memoizedOrganizedClosedWorkItems}
         daySplitter={isClosedToday}
         graphHeading="Velocity"
-        graphSubheading="Work items closed per day over the last 30 days"
+        graphSubheading="Work items completed over the last 30 days"
         pointToValue={x => x.workItemIds.length}
         crosshairBubbleTitle="Velocity"
         aggregateStats={length}

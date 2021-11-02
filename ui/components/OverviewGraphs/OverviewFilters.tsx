@@ -52,6 +52,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, onChange }) => {
             styles={styles}
             name={label}
             value={selectValue[label]}
+            placeholder="All"
             onChange={value => {
               setSelectValue(s => ({ ...s, [label]: value }));
             }}
