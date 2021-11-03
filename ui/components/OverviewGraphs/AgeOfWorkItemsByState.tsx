@@ -138,6 +138,22 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     [groups, workItemState, workItemType]
   );
 
+  const [prioritiesState, setPrioritiesState] = useState<string[]>([]);
+  const priorities = useMemo(
+    () => (
+      [
+        ...Object.values(states).reduce((acc, s) => {
+          s.forEach(({ wid }) => {
+            const wi = workItemById(wid);
+            if (wi.priority) acc.add(wi.priority);
+          });
+          return acc;
+        }, new Set<number>())
+      ].sort((a, b) => a - b)
+    ),
+    [states, workItemById]
+  );
+
   const [checkboxStatesForSidebar, setCheckboxStatesForSidebar] = React.useState(
     Object.keys(states).reduce<Record<string, boolean>>((acc, state) => {
       acc[state] = true;
@@ -152,12 +168,19 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       Object.entries(states).reduce<typeof states>(
         (acc, [state, wids]) => {
           if (checkboxStatesForSidebar[state]) {
-            acc[state] = wids.filter(({ wid }) => {
-              const group = workItemGroup(wid);
-              if (!group) return true;
-              if (selectedStatesForGroups.length === 0) return true;
-              return selectedStatesForGroups.includes(group.name);
-            });
+            acc[state] = wids
+              .filter(({ wid }) => {
+                const group = workItemGroup(wid);
+                if (!group) return true;
+                if (selectedStatesForGroups.length === 0) return true;
+                return selectedStatesForGroups.includes(group.name);
+              })
+              .filter(({ wid }) => {
+                if (prioritiesState.length === 0) return true;
+                const wi = workItemById(wid);
+                if (!wi.priority) return false;
+                return prioritiesState.includes(wi.priority.toString());
+              });
           } else {
             acc[state] = [];
           }
@@ -167,7 +190,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         {}
       )
     ),
-    [checkboxStatesForSidebar, selectedStatesForGroups, states, workItemGroup]
+    [checkboxStatesForSidebar, prioritiesState, selectedStatesForGroups, states, workItemById, workItemGroup]
   );
 
   return (
@@ -178,16 +201,29 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       noDataMessage={`No ${workItemType.name[1].toLowerCase()} found`}
       left={(
         <>
-          {Object.keys(groups).length > 1
+          {Object.keys(groups).length > 1 || priorities.length > 1
             ? (
-              <div className="mb-8 flex justify-end mr-4">
-                <MultiSelectDropdownWithLabel
-                  name="groups"
-                  label={workItemType.groupLabel || 'Groups'}
-                  options={Object.entries(groups).map(([group, wids]) => ({ label: `${group} (${wids.length})`, value: group }))}
-                  value={selectedStatesForGroups}
-                  onChange={setSelectedStatesForGroups}
-                />
+              <div className="mb-8 flex justify-end mr-4 gap-2">
+                {Object.keys(groups).length > 1 && (
+                  <MultiSelectDropdownWithLabel
+                    name="groups"
+                    label={workItemType.groupLabel || 'Groups'}
+                    options={Object.entries(groups).map(([group, wids]) => ({ label: `${group} (${wids.length})`, value: group }))}
+                    value={selectedStatesForGroups}
+                    onChange={setSelectedStatesForGroups}
+                    className="w-64 text-sm"
+                  />
+                )}
+                {priorities.length > 1 && (
+                  <MultiSelectDropdownWithLabel
+                    name="priority"
+                    label="Priority"
+                    options={priorities.map(p => ({ label: `${p}`, value: `${p}` }))}
+                    value={prioritiesState}
+                    onChange={setPrioritiesState}
+                    className="w-48 text-sm"
+                  />
+                )}
               </div>
             )
             : null}

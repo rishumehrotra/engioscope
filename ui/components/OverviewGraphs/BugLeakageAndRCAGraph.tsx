@@ -213,6 +213,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
               options={priorities.map(priority => ({ label: String(priority), value: String(priority) }))}
               value={priorityState}
               onChange={setPriorityState}
+              className="w-48 text-sm"
             />
           </div>
           <ul>

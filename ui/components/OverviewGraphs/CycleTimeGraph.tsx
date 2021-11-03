@@ -77,6 +77,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
                 options={priorities.map(x => ({ value: String(x), label: String(x) }))}
                 onChange={setPriorityState}
                 value={priorityState}
+                className="w-48 text-sm"
               />
             </div>
           )}

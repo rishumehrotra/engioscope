@@ -67,6 +67,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
               options={priorities.map(x => ({ value: String(x), label: String(x) }))}
               value={priorityState}
               onChange={setPriorityState}
+              className="w-48 text-sm"
             />
           </div>
           <div
