@@ -13,6 +13,7 @@ import GraphCard from './GraphCard';
 import { WorkItemTimeDetails } from './WorkItemTimeDetails';
 import { priorityBasedColor } from '../../helpers/utils';
 import { createCompletedWorkItemTooltip } from './tooltips';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 
 type CycleTimeGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -34,6 +35,24 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
     [cycleTime, workItemGroup, workItemTimes, workItemType]
   );
 
+  const [priorityState, setPriorityState] = React.useState<string[]>([]);
+
+  const priorities = useMemo(
+    () => (
+      [
+        ...Object.values(closedWorkItems)
+          .flatMap(x => Object.values(x))
+          .flat()
+          .reduce((acc, x) => {
+            const { priority } = workItemById(x);
+            if (priority) acc.add(priority);
+            return acc;
+          }, new Set<number>())
+      ].sort((a, b) => a - b)
+    ),
+    [closedWorkItems, workItemById]
+  );
+
   return (
     <GraphCard
       title="Cycle time"
@@ -41,32 +60,47 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
       hasData={hasWorkItems(closedWorkItems)}
       noDataMessage="Couldn't find any matching work items"
       left={(
-        <div className="grid gap-4 justify-evenly items-center grid-cols-2">
-          {Object.entries(closedWorkItems).map(([witId, group]) => (
-            <ScatterLineGraph
-              key={witId}
-              graphData={[{
-                label: workItemType(witId).name[1],
-                data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
-                  groupName,
-                  workItemIds
-                    .filter(wid => {
-                      const times = workItemTimes(wid);
-                      return times.start && times.end;
-                    })
-                    .map(workItemById)
-                ])),
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
-                tooltip: x => workItemTooltip(x)
-              }]}
-              pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
-              height={420}
-              linkForItem={prop('url')}
-              className="w-full"
+        <>
+          <div className="flex justify-end mb-8">
+            <MultiSelectDropdownWithLabel
+              name="priority"
+              label="Priority"
+              options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+              onChange={setPriorityState}
+              value={priorityState}
             />
-          ))}
-        </div>
+          </div>
+          <div className="grid gap-4 justify-evenly items-center grid-cols-2">
+            {Object.entries(closedWorkItems).map(([witId, group]) => (
+              <ScatterLineGraph
+                key={witId}
+                graphData={[{
+                  label: workItemType(witId).name[1],
+                  data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
+                    groupName,
+                    workItemIds
+                      .filter(wid => {
+                        const times = workItemTimes(wid);
+                        return times.start && times.end;
+                      })
+                      .map(workItemById)
+                      .filter(x => {
+                        if (!priorityState.length) return true;
+                        return priorityState.includes(String(x.priority));
+                      })
+                  ])),
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
+                  tooltip: x => workItemTooltip(x)
+                }]}
+                pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
+                height={420}
+                linkForItem={prop('url')}
+                className="w-full"
+              />
+            ))}
+          </div>
+        </>
       )}
       right={(
         <LegendSidebar
