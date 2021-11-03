@@ -145,6 +145,7 @@ export const createGraphBlock = ({
           subtitle={graphSubheading}
           hasData={hasWorkItems(data)}
           noDataMessage="Couldn't find any matching work items"
+          renderLazily={false}
           left={(
             <LineGraph<WorkItemLine, WorkItemPoint>
               lines={dataByDay.filter(isCheckboxChecked)}
