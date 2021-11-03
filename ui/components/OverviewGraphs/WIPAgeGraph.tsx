@@ -10,6 +10,7 @@ import type { OrganizedWorkItems } from './helpers';
 import { hasWorkItems, groupByWorkItemType } from './helpers';
 import { priorityBasedColor } from '../../helpers/utils';
 import { createWIPWorkItemTooltip } from './tooltips';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 
 type WIPAgeGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -27,6 +28,31 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
     [workItemGroup, workItemTimes, workItemType]
   );
 
+  const [priorityState, setPriorityState] = React.useState<string[]>([]);
+  const priorities = useMemo(
+    () => (
+      [
+        ...Object.values(allWorkItems)
+          .flatMap(x => Object.values(x))
+          .flat()
+          .reduce((acc, x) => {
+            const { priority } = workItemById(x);
+            if (priority) acc.add(priority);
+            return acc;
+          }, new Set<number>())
+      ].sort((a, b) => a - b)
+    ),
+    [allWorkItems, workItemById]
+  );
+
+  const graphScalingRatio = useMemo(
+    () => (
+      Object.values(allWorkItems)
+        .map(x => Object.values(x).length)
+    ),
+    [allWorkItems]
+  );
+
   return (
     <GraphCard
       title="Age of work-in-progress items"
@@ -34,31 +60,49 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
       hasData={hasWorkItems(allWorkItems)}
       noDataMessage="Couldn't find any matching work items"
       left={(
-        <div className="grid gap-4 justify-evenly items-center grid-flow-col">
-          {Object.entries(allWorkItems).map(([witId, group]) => (
-            <ScatterLineGraph
-              key={witId}
-              graphData={[{
-                label: workItemType(witId).name[1],
-                data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
-                  groupName,
-                  workItemIds
-                    .filter(wid => {
-                      const times = workItemTimes(wid);
-                      return times.start && !times.end;
-                    })
-                    .map(workItemById)
-                ]).filter(x => x[1].length)),
-                yAxisPoint: (workItem: UIWorkItem) => Date.now() - new Date(workItem.created.on).getTime(),
-                tooltip: x => workItemTooltip(x)
-              }]}
-              height={420}
-              linkForItem={prop('url')}
-              pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
-              className="w-full"
+        <>
+          <div className="flex justify-end mb-8">
+            <MultiSelectDropdownWithLabel
+              label="Priority"
+              options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+              value={priorityState}
+              onChange={setPriorityState}
             />
-          ))}
-        </div>
+          </div>
+          <div
+            className="grid gap-4 justify-evenly items-center grid-flow-col"
+            style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}
+          >
+            {Object.entries(allWorkItems).map(([witId, group]) => (
+              <ScatterLineGraph
+                key={witId}
+                graphData={[{
+                  label: workItemType(witId).name[1],
+                  data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
+                    groupName,
+                    workItemIds
+                      .filter(wid => {
+                        const times = workItemTimes(wid);
+                        return times.start && !times.end;
+                      })
+                      .map(workItemById)
+                      .filter(wi => {
+                        if (!priorityState.length) return true;
+                        if (!wi.priority) return false;
+                        return priorityState.includes(String(wi.priority));
+                      })
+                  ]).filter(x => x[1].length)),
+                  yAxisPoint: (workItem: UIWorkItem) => Date.now() - new Date(workItem.created.on).getTime(),
+                  tooltip: x => workItemTooltip(x)
+                }]}
+                height={420}
+                linkForItem={prop('url')}
+                pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
+                className="w-full"
+              />
+            ))}
+          </div>
+        </>
       )}
       right={(
         <LegendSidebar

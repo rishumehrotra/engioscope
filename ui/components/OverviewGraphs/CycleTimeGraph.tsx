@@ -53,6 +53,14 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
     [closedWorkItems, workItemById]
   );
 
+  const graphScalingRatio = useMemo(
+    () => (
+      Object.values(closedWorkItems)
+        .map(x => Object.values(x).length)
+    ),
+    [closedWorkItems]
+  );
+
   return (
     <GraphCard
       title="Cycle time"
@@ -61,16 +69,21 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
       noDataMessage="Couldn't find any matching work items"
       left={(
         <>
-          <div className="flex justify-end mb-8">
-            <MultiSelectDropdownWithLabel
-              name="priority"
-              label="Priority"
-              options={priorities.map(x => ({ value: String(x), label: String(x) }))}
-              onChange={setPriorityState}
-              value={priorityState}
-            />
-          </div>
-          <div className="grid gap-4 justify-evenly items-center grid-cols-2">
+          {priorities.length > 1 && (
+            <div className="flex justify-end mb-8">
+              <MultiSelectDropdownWithLabel
+                name="priority"
+                label="Priority"
+                options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+                onChange={setPriorityState}
+                value={priorityState}
+              />
+            </div>
+          )}
+          <div
+            className="grid gap-4 justify-evenly items-center grid-cols-2"
+            style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}
+          >
             {Object.entries(closedWorkItems).map(([witId, group]) => (
               <ScatterLineGraph
                 key={witId}
