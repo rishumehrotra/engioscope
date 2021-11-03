@@ -70,7 +70,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
       left={(
         <>
           {priorities.length > 1 && (
-            <div className="flex justify-end mb-8">
+            <div className="flex justify-end mb-8 mr-4">
               <MultiSelectDropdownWithLabel
                 name="priority"
                 label="Priority"
@@ -81,7 +81,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
             </div>
           )}
           <div
-            className="grid gap-4 justify-evenly items-center grid-cols-2"
+            className="grid gap-4 justify-evenly items-center grid-cols-2 mr-4"
             style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}
           >
             {Object.entries(closedWorkItems).map(([witId, group]) => (

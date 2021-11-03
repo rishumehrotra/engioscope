@@ -2,7 +2,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add, map, range } from 'rambda';
 import React, {
-  Fragment, useCallback, useLayoutEffect, useMemo, useState
+  Fragment, useCallback, useMemo
 } from 'react';
 import hexToHsl from '../../helpers/hex-to-hsl';
 import { oneYear } from '../../helpers/utils';
@@ -282,7 +282,6 @@ type ScatterLineGraphProps<T> = {
 const ScatterLineGraph = <T extends {}>({
   graphData, height, linkForItem, className, pointColor
 }: ScatterLineGraphProps<T>): React.ReactElement => {
-  const [showPoints, setShowPoints] = useState(false);
   const maxOfSpread = useMemo(() => Math.max(...valuesUsing(graphData)), [graphData]);
   const computedWidth = useMemo(() => graphWidth(graphData), [graphData]);
   const yCoord = useCallback((value: number) => {
@@ -290,23 +289,19 @@ const ScatterLineGraph = <T extends {}>({
     return availableHeight - ((value / maxOfSpread) * availableHeight) + graphTopPadding;
   }, [maxOfSpread]);
 
-  useLayoutEffect(() => { setShowPoints(true); }, []);
-
   return (
     <svg viewBox={`0 0 ${computedWidth} ${graphHeight}`} height={height} className={className}>
       <Axes width={computedWidth} maxValue={maxOfSpread} yCoord={yCoord} />
-      {showPoints && (
-        graphData.map(group => (
-          <BarGroup
-            key={group.label}
-            group={group}
-            xCoord={xCoordForBarGroup(graphData, group)}
-            yCoord={yCoord}
-            pointToColor={pointColor}
-            linkForItem={linkForItem}
-          />
-        ))
-      )}
+      {graphData.map(group => (
+        <BarGroup
+          key={group.label}
+          group={group}
+          xCoord={xCoordForBarGroup(graphData, group)}
+          yCoord={yCoord}
+          pointToColor={pointColor}
+          linkForItem={linkForItem}
+        />
+      ))}
     </svg>
   );
 };

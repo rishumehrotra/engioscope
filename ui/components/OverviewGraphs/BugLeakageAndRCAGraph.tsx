@@ -1,6 +1,6 @@
 import { length } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
-import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import { WorkItemLinkForModal } from './WorkItemLinkForModal';
@@ -8,6 +8,8 @@ import GraphCard from './GraphCard';
 import type { OrganizedWorkItems } from './helpers';
 import { lineColor, hasWorkItems } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import { createWIPWorkItemTooltip } from './tooltips';
 
 const isBugLike = (workItemType: (witId: string) => UIWorkItemType, witId: string) => (
   workItemType(witId).name[0].toLowerCase().includes('bug')
@@ -59,15 +61,22 @@ type WorkItemCardProps = {
   witId: string;
   workItemById: (wid: number) => UIWorkItem;
   workItemType: (witId: string) => UIWorkItemType;
+  workItemTimes: (wid: number) => Overview['times'][number];
+  workItemGroup: (wid: number) => Overview['groups'][string] | null;
   groups: OrganizedWorkItems[string];
 };
 
 const WorkItemCard: React.FC<WorkItemCardProps> = ({
-  witId, workItemById, workItemType, groups
+  witId, workItemById, workItemType, groups, workItemTimes, workItemGroup
 }) => {
   const [Modal, modalProps, open] = useModal();
   const [modalBar, setModalBar] = useState<{label: string; color: string} | null>(null);
   const [selectedCheckboxes, setSelectedCheckboxes] = React.useState(initialCheckboxState(groups));
+
+  const workItemTooltip = useMemo(
+    () => createWIPWorkItemTooltip(workItemType, workItemTimes, workItemGroup),
+    [workItemGroup, workItemTimes, workItemType]
+  );
 
   const organizedByRCACategory = useMemo(() => (
     organizeWorkItemsByRCACategory(
@@ -79,15 +88,36 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
     )
   ), [groups, selectedCheckboxes, workItemById]);
 
+  const [priorityState, setPriorityState] = useState<string[]>([]);
+
+  const priorities = useMemo(() => (
+    [
+      ...Object.values(organizedByRCACategory)
+        .reduce((acc, wis) => {
+          wis.forEach(wi => {
+            if (wi.priority) acc.add(wi.priority);
+          });
+          return acc;
+        }, new Set<number>())
+    ].sort((a, b) => a - b)
+  ), [organizedByRCACategory]);
+
   const graphData = useMemo(() => (
     Object.entries(organizedByRCACategory)
-      .sort(([, a], [, b]) => b.length - a.length)
-      .map(([rcaCategory, wids]) => ({
+      .map(([rcaCategory, wis]) => ({
         label: rcaCategory,
-        value: wids.length,
+        value: wis
+          .filter(wi => {
+            if (priorityState.length === 0) return true;
+            if (!wi.priority) return false;
+            return priorityState.includes(String(wi.priority));
+          })
+          .length,
         color: '#00bcd4'
       }))
-  ), [organizedByRCACategory]);
+      .filter(({ value }) => value > 0)
+      .sort((a, b) => b.value - a.value)
+  ), [organizedByRCACategory, priorityState]);
 
   useEffect(() => setSelectedCheckboxes(initialCheckboxState(groups)), [groups]);
 
@@ -102,64 +132,89 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
       noDataMessage="Couldn't find any matching workitems"
       left={(
         <>
-          <Modal
-            heading={modalBar
-              ? modalHeading('Bug leakage', `${modalBar.label} (${(organizedByRCACategory[modalBar.label] || []).length})`)
-              : ''}
-            {...modalProps}
-          >
-            {(() => {
-              if (!modalBar) return 'Nothing to see here';
+          {(() => {
+            const organizedByReason = Object.entries(
+              modalBar
+                ? (
+                  organizeWorkItemsByRCAReason(
+                    workItemById,
+                    (organizedByRCACategory[modalBar.label] || []).map(wi => wi.id)
+                  )
+                )
+                : {}
+            )
+              .map(([rcaReason, wis]) => ([
+                rcaReason,
+                wis.filter(wi => {
+                  if (priorityState.length === 0) return true;
+                  if (!wi.priority) return false;
+                  return priorityState.includes(String(wi.priority));
+                })
+              ] as const))
+              .filter(([, wis]) => wis.length > 0)
+              .sort(([, a], [, b]) => b.length - a.length);
 
-              const organizedByReason = organizeWorkItemsByRCAReason(
-                workItemById,
-                (organizedByRCACategory[modalBar.label] || []).map(wi => wi.id)
-              );
+            const maxBarValue = Math.max(...organizedByReason.map(([, wis]) => wis.length));
+            const total = organizedByReason.reduce((acc, [, wids]) => acc + wids.length, 0);
 
-              const maxBarValue = Math.max(...Object.values(organizedByReason).map(length));
-              const total = Object.values(organizedByReason).reduce((acc, wids) => acc + wids.length, 0);
-
-              return Object.entries(organizedByReason)
-                .sort(([, a], [, b]) => b.length - a.length)
-                .map(([rcaReason, wis]) => (
-                  <details key={rcaReason} className="mb-2">
-                    <summary className="cursor-pointer">
-                      <div
-                        style={{ width: 'calc(100% - 20px)' }}
-                        className="inline-block relative"
-                      >
+            return (
+              <Modal
+                heading={modalBar
+                  ? modalHeading('Bug leakage', `${modalBar.label} (${total})`)
+                  : ''}
+                {...modalProps}
+              >
+                {!modalBar
+                  ? 'Nothing to see here'
+                  : organizedByReason.map(([rcaReason, wis]) => (
+                    <details key={rcaReason} className="mb-2">
+                      <summary className="cursor-pointer">
                         <div
-                          style={{
-                            width: `${(wis.length / maxBarValue) * 100}%`,
-                            backgroundColor: modalBar.color
-                          }}
-                          className="absolute top-0 left-0 h-full bg-opacity-50 rounded-md"
-                        />
-                        <h3
-                          className="z-10 relative text-lg pl-2"
+                          style={{ width: 'calc(100% - 20px)' }}
+                          className="inline-block relative"
                         >
-                          {`${rcaReason}: ${wis.length} (${Math.round((wis.length * 100) / total)}%)`}
-                        </h3>
-                      </div>
-                    </summary>
-                    <ul className="pl-6">
-                      {wis
-                        .sort((a, b) => (a.priority || 5) - (b.priority || 5))
-                        .map(wi => (
-                          <li key={wi.id} className="py-2">
-                            <WorkItemLinkForModal
-                              key={wi.id}
-                              workItem={wi}
-                              workItemType={workItemType(witId)}
-                              flair={`Priority ${wi.priority || 'unknown'}`}
-                            />
-                          </li>
-                        ))}
-                    </ul>
-                  </details>
-                ));
-            })()}
-          </Modal>
+                          <div
+                            style={{
+                              width: `${(wis.length / maxBarValue) * 100}%`,
+                              backgroundColor: modalBar.color
+                            }}
+                            className="absolute top-0 left-0 h-full bg-opacity-50 rounded-md"
+                          />
+                          <h3
+                            className="z-10 relative text-lg pl-2"
+                          >
+                            {`${rcaReason}: ${wis.length} (${Math.round((wis.length * 100) / total)}%)`}
+                          </h3>
+                        </div>
+                      </summary>
+                      <ul className="pl-6">
+                        {wis
+                          .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+                          .map(wi => (
+                            <li key={wi.id} className="py-2">
+                              <WorkItemLinkForModal
+                                key={wi.id}
+                                workItem={wi}
+                                workItemType={workItemType(witId)}
+                                tooltip={workItemTooltip}
+                                flair={`Priority ${wi.priority || 'unknown'}`}
+                              />
+                            </li>
+                          ))}
+                      </ul>
+                    </details>
+                  ))}
+              </Modal>
+            );
+          })()}
+          <div className="flex justify-end mb-8 mr-4">
+            <MultiSelectDropdownWithLabel
+              label="Priority"
+              options={priorities.map(priority => ({ label: String(priority), value: String(priority) }))}
+              value={priorityState}
+              onChange={setPriorityState}
+            />
+          </div>
           <ul>
             {graphData.map(({ label, value, color }) => (
               <li key={label} className="mr-4">
@@ -286,6 +341,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
                                       <WorkItemLinkForModal
                                         workItem={wi}
                                         workItemType={workItemType(witId)}
+                                        tooltip={workItemTooltip}
                                         flair={`Priority ${wi.priority || 'unknown'}`}
                                       />
                                     </li>
@@ -310,10 +366,12 @@ type BugLeakageAndRCAGraphProps = {
   lastUpdated: string;
   workItemType: (witId: string) => UIWorkItemType;
   workItemById: (wid: number) => UIWorkItem;
+  workItemTimes: (wid: number) => Overview['times'][number];
+  workItemGroup: (wid: number) => Overview['groups'][string] | null;
 };
 
 const BugLeakageAndRCAGraph: React.FC<BugLeakageAndRCAGraphProps> = ({
-  allWorkItems, lastUpdated, workItemType, workItemById
+  allWorkItems, lastUpdated, workItemType, workItemById, workItemTimes, workItemGroup
 }) => {
   const bugs = bugLikeWorkItems(allWorkItems, workItemType);
   const hasLeakedInLastMonth = bugsLeakedInLastMonth(lastUpdated, workItemById);
@@ -333,6 +391,8 @@ const BugLeakageAndRCAGraph: React.FC<BugLeakageAndRCAGraphProps> = ({
           witId={witId}
           workItemById={workItemById}
           workItemType={workItemType}
+          workItemTimes={workItemTimes}
+          workItemGroup={workItemGroup}
           groups={groups}
         />
       ))}

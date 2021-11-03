@@ -192,6 +192,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
             )
             : null}
           <ScatterLineGraph
+            className="max-w-full"
             graphData={[{
               label: workItemType.name[1],
               data: statesToRender,

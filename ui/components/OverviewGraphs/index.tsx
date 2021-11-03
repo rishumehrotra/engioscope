@@ -192,6 +192,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         lastUpdated={projectAnalysis.lastUpdated}
         workItemType={workItemType}
         workItemById={workItemById}
+        workItemGroup={workItemGroup}
+        workItemTimes={workItemTimes}
       />
 
       <AgeOfWorkItemsByStatus
