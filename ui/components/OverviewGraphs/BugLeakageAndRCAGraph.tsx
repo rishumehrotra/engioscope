@@ -1,4 +1,4 @@
-import { length } from 'rambda';
+import { length, not, pipe } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
@@ -10,6 +10,9 @@ import { lineColor, hasWorkItems } from './helpers';
 import { LegendSidebar } from './LegendSidebar';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import { createWIPWorkItemTooltip } from './tooltips';
+import { DownChevron, UpChevron } from '../common/Icons';
+
+const collapsedCount = 10;
 
 const isBugLike = (workItemType: (witId: string) => UIWorkItemType, witId: string) => (
   workItemType(witId).name[0].toLowerCase().includes('bug')
@@ -37,17 +40,14 @@ const bugsLeakedInLastMonth = (
   };
 };
 
-const organizeWorkItemsByRCAIndex = (index: number, noValue: string) => (workItemById: (wid: number) => UIWorkItem, wids: number[]) => (
+const organizeWorkItemsByRCA = (workItemById: (wid: number) => UIWorkItem, wids: number[]) => (
   wids.reduce<Record<string, UIWorkItem[]>>((acc, wid) => {
     const wi = workItemById(wid);
-    const categoryName = wi.rca?.[index] || noValue;
+    const categoryName = wi.rca || 'No RCA provided';
     acc[categoryName] = (acc[categoryName] || []).concat(wi);
     return acc;
   }, {})
 );
-
-const organizeWorkItemsByRCACategory = organizeWorkItemsByRCAIndex(0, 'Not classified');
-const organizeWorkItemsByRCAReason = organizeWorkItemsByRCAIndex(1, 'No reason provided');
 
 const initialCheckboxState = (groups: Record<string, number[]>) => (
   Object.keys(groups)
@@ -55,6 +55,14 @@ const initialCheckboxState = (groups: Record<string, number[]>) => (
       acc[groupName] = true;
       return acc;
     }, {})
+);
+
+const applyFilter = (priorityState: string[]) => (
+  (wi: UIWorkItem) => {
+    if (priorityState.length === 0) { return true; }
+    if (!wi.priority) { return false; }
+    return priorityState.includes(String(wi.priority));
+  }
 );
 
 type WorkItemCardProps = {
@@ -71,15 +79,16 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
 }) => {
   const [Modal, modalProps, open] = useModal();
   const [modalBar, setModalBar] = useState<{label: string; color: string} | null>(null);
-  const [selectedCheckboxes, setSelectedCheckboxes] = React.useState(initialCheckboxState(groups));
+  const [selectedCheckboxes, setSelectedCheckboxes] = useState(initialCheckboxState(groups));
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const workItemTooltip = useMemo(
     () => createWIPWorkItemTooltip(workItemType, workItemTimes, workItemGroup),
     [workItemGroup, workItemTimes, workItemType]
   );
 
-  const organizedByRCACategory = useMemo(() => (
-    organizeWorkItemsByRCACategory(
+  const organizedByRCA = useMemo(() => (
+    organizeWorkItemsByRCA(
       workItemById,
       Object.entries(groups).reduce<number[]>((acc, [groupName, wids]) => {
         if (selectedCheckboxes[groupName]) acc.push(...wids);
@@ -92,7 +101,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
 
   const priorities = useMemo(() => (
     [
-      ...Object.values(organizedByRCACategory)
+      ...Object.values(organizedByRCA)
         .reduce((acc, wis) => {
           wis.forEach(wi => {
             if (wi.priority) acc.add(wi.priority);
@@ -100,29 +109,27 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
           return acc;
         }, new Set<number>())
     ].sort((a, b) => a - b)
-  ), [organizedByRCACategory]);
+  ), [organizedByRCA]);
+
+  const dataToShow = useMemo(() => (
+    Object.entries(organizedByRCA)
+      .reduce<typeof organizedByRCA>((acc, [rca, wis]) => {
+        acc[rca] = wis.filter(applyFilter(priorityState));
+        return acc;
+      }, {})
+  ), [organizedByRCA, priorityState]);
 
   const graphData = useMemo(() => (
-    Object.entries(organizedByRCACategory)
-      .map(([rcaCategory, wis]) => ({
-        label: rcaCategory,
-        value: wis
-          .filter(wi => {
-            if (priorityState.length === 0) return true;
-            if (!wi.priority) return false;
-            return priorityState.includes(String(wi.priority));
-          })
-          .length,
-        color: '#00bcd4'
-      }))
-      .filter(({ value }) => value > 0)
-      .sort((a, b) => b.value - a.value)
-  ), [organizedByRCACategory, priorityState]);
+    Object.entries(dataToShow)
+      .map(([rca, wis]) => ({ rca, wis, color: '#00bcd4' }))
+      .filter(({ wis }) => wis.length > 0)
+      .sort((a, b) => b.wis.length - a.wis.length)
+  ), [dataToShow]);
 
   useEffect(() => setSelectedCheckboxes(initialCheckboxState(groups)), [groups]);
 
-  const total = graphData.reduce((acc, { value }) => acc + value, 0);
-  const maxValue = Math.max(...graphData.map(({ value }) => value));
+  const total = graphData.reduce((acc, { wis }) => acc + wis.length, 0);
+  const maxValue = Math.max(...graphData.map(({ wis }) => wis.length));
 
   return (
     <GraphCard
@@ -132,81 +139,35 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
       noDataMessage="Couldn't find any matching workitems"
       left={(
         <>
-          {(() => {
-            const organizedByReason = Object.entries(
-              modalBar
-                ? (
-                  organizeWorkItemsByRCAReason(
-                    workItemById,
-                    (organizedByRCACategory[modalBar.label] || []).map(wi => wi.id)
-                  )
-                )
-                : {}
-            )
-              .map(([rcaReason, wis]) => ([
-                rcaReason,
-                wis.filter(wi => {
-                  if (priorityState.length === 0) return true;
-                  if (!wi.priority) return false;
-                  return priorityState.includes(String(wi.priority));
-                })
-              ] as const))
-              .filter(([, wis]) => wis.length > 0)
-              .sort(([, a], [, b]) => b.length - a.length);
+          <Modal
+            heading={modalBar
+              ? modalHeading('Bug leakage', `${modalBar.label} (${dataToShow[modalBar.label].length})`)
+              : ''}
+            {...modalProps}
+          >
+            {(() => {
+              if (!modalBar) return 'Nothing to see here';
 
-            const maxBarValue = Math.max(...organizedByReason.map(([, wis]) => wis.length));
-            const total = organizedByReason.reduce((acc, [, wids]) => acc + wids.length, 0);
+              return (
+                <ul>
+                  {dataToShow[modalBar.label]
+                    .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+                    .map(wi => (
+                      <li key={wi.id} className="py-2">
+                        <WorkItemLinkForModal
+                          key={wi.id}
+                          workItem={wi}
+                          workItemType={workItemType(witId)}
+                          tooltip={workItemTooltip}
+                          flair={`Priority ${wi.priority || 'unknown'}`}
+                        />
+                      </li>
+                    ))}
+                </ul>
+              );
+            })()}
+          </Modal>
 
-            return (
-              <Modal
-                heading={modalBar
-                  ? modalHeading('Bug leakage', `${modalBar.label} (${total})`)
-                  : ''}
-                {...modalProps}
-              >
-                {!modalBar
-                  ? 'Nothing to see here'
-                  : organizedByReason.map(([rcaReason, wis]) => (
-                    <details key={rcaReason} className="mb-2">
-                      <summary className="cursor-pointer">
-                        <div
-                          style={{ width: 'calc(100% - 20px)' }}
-                          className="inline-block relative"
-                        >
-                          <div
-                            style={{
-                              width: `${(wis.length / maxBarValue) * 100}%`,
-                              backgroundColor: modalBar.color
-                            }}
-                            className="absolute top-0 left-0 h-full bg-opacity-50 rounded-md"
-                          />
-                          <h3
-                            className="z-10 relative text-lg pl-2"
-                          >
-                            {`${rcaReason}: ${wis.length} (${Math.round((wis.length * 100) / total)}%)`}
-                          </h3>
-                        </div>
-                      </summary>
-                      <ul className="pl-6">
-                        {wis
-                          .sort((a, b) => (a.priority || 5) - (b.priority || 5))
-                          .map(wi => (
-                            <li key={wi.id} className="py-2">
-                              <WorkItemLinkForModal
-                                key={wi.id}
-                                workItem={wi}
-                                workItemType={workItemType(witId)}
-                                tooltip={workItemTooltip}
-                                flair={`Priority ${wi.priority || 'unknown'}`}
-                              />
-                            </li>
-                          ))}
-                      </ul>
-                    </details>
-                  ))}
-              </Modal>
-            );
-          })()}
           <div className="flex justify-end mb-8 mr-4">
             <MultiSelectDropdownWithLabel
               label="Priority"
@@ -217,43 +178,65 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
             />
           </div>
           <ul>
-            {graphData.map(({ label, value, color }) => (
-              <li key={label} className="mr-4">
-                <button
-                  className="grid gap-4 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
-                  style={{ gridTemplateColumns: '20% 85px 1fr' }}
-                  onClick={() => {
-                    setModalBar({ label, color });
-                    open();
-                  }}
-                >
-                  <div className="flex items-center justify-end">
-                    <span className="truncate">
-                      {label}
+            {graphData
+              .slice(0, isExpanded ? undefined : collapsedCount)
+              .map(({ rca, wis, color }) => (
+                <li key={rca} className="mr-4">
+                  <button
+                    className="grid gap-4 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
+                    style={{ gridTemplateColumns: '20% 85px 1fr' }}
+                    onClick={() => {
+                      setModalBar({ label: rca, color });
+                      open();
+                    }}
+                  >
+                    <div className="flex items-center justify-end">
+                      <span className="truncate">
+                        {rca}
+                      </span>
+                    </div>
+                    <span className="justify-self-end">
+                      {`${wis.length} (${Math.round((wis.length * 100) / total)}%)`}
                     </span>
-                  </div>
-                  <span className="justify-self-end">
-                    {`${value} (${Math.round((value * 100) / total)}%)`}
-                  </span>
-                  <div className="bg-gray-100 rounded-md overflow-hidden">
-                    <div
-                      className="rounded-md"
-                      style={{
-                        width: `${(value * 100) / maxValue}%`,
-                        backgroundColor: color,
-                        height: '30px'
-                      }}
-                    />
-                  </div>
-                </button>
-              </li>
-            ))}
+                    <div className="bg-gray-100 rounded-md overflow-hidden">
+                      <div
+                        className="rounded-md"
+                        style={{
+                          width: `${(wis.length * 100) / maxValue}%`,
+                          backgroundColor: color,
+                          height: '30px'
+                        }}
+                      />
+                    </div>
+                  </button>
+                </li>
+              ))}
           </ul>
+          {graphData.length > collapsedCount && (
+            <div className="flex justify-end mr-4">
+              <button
+                className="text-blue-700 text-sm flex items-center hover:text-blue-900 hover:underline"
+                onClick={() => setIsExpanded(not)}
+              >
+                {isExpanded ? <UpChevron className="w-4 mr-1" /> : <DownChevron className="w-4 mr-1" />}
+                {isExpanded ? 'Show less' : 'Show more'}
+              </button>
+            </div>
+          )}
         </>
       )}
       right={(
         <LegendSidebar
-          data={{ [witId]: groups }}
+          data={{
+            [witId]: Object.entries(groups)
+              .reduce<OrganizedWorkItems[string]>(
+                (acc, [groupName, wids]) => {
+                  acc[groupName] = wids.filter(pipe(workItemById, applyFilter(priorityState)));
+                  return acc;
+                },
+                {}
+              )
+          }}
           childStat={length}
           heading={`${workItemType(witId).name[0]} leakage`}
           workItemType={workItemType}
@@ -270,90 +253,59 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
             )
           )}
           modalContents={({ workItemIds, groupName }) => {
-            const organizedByCategory = organizeWorkItemsByRCACategory(workItemById, workItemIds);
-            const maxInCategory = Object.values(organizedByCategory).reduce((acc, wis) => Math.max(acc, wis.length), 0);
-            const totalOfCategories = Object.values(organizedByCategory).reduce((acc, wis) => acc + wis.length, 0);
+            const organized = organizeWorkItemsByRCA(
+              workItemById,
+              workItemIds.filter(pipe(workItemById, applyFilter(priorityState)))
+            );
+            const maxInCategory = Object.values(organized).reduce((acc, wis) => Math.max(acc, wis.length), 0);
+            const totalOfCategories = Object.values(organized).reduce((acc, wis) => acc + wis.length, 0);
 
             return (
-              Object.entries(organizedByCategory)
+              Object.entries(organized)
                 .sort(([, a], [, b]) => b.length - a.length)
-                .map(([rcaCategory, wisInCategory]) => {
-                  const organizedByReason = organizeWorkItemsByRCAReason(workItemById, wisInCategory.map(wi => wi.id));
-                  const maxInReason = Object.values(organizedByReason).reduce((acc, group) => Math.max(acc, group.length), 0);
-
-                  return (
-                    <details key={rcaCategory} className="mb-2">
-                      <summary className="cursor-pointer">
+                .map(([rcaCategory, wisInCategory]) => (
+                  <details key={rcaCategory} className="mb-2">
+                    <summary className="cursor-pointer">
+                      <div
+                        style={{ width: 'calc(100% - 20px)' }}
+                        className="inline-block relative"
+                      >
                         <div
-                          style={{ width: 'calc(100% - 20px)' }}
-                          className="inline-block relative"
+                          style={{
+                            width: `${(wisInCategory.length / maxInCategory) * 100}%`,
+                            backgroundColor: `${lineColor({ witId, groupName })}99`
+                          }}
+                          className="absolute top-0 left-0 h-full rounded-md"
+                        />
+                        <h3
+                          className="z-10 relative text-lg pl-2 py-1"
                         >
-                          <div
-                            style={{
-                              width: `${(wisInCategory.length / maxInCategory) * 100}%`,
-                              backgroundColor: `${lineColor({ witId, groupName })}99`
-                            }}
-                            className="absolute top-0 left-0 h-full rounded-md"
-                          />
-                          <h3
-                            className="z-10 relative text-lg pl-2 py-1"
-                          >
-                            {`${rcaCategory} - `}
-                            <strong>
-                              {`${wisInCategory.length}`}
-                            </strong>
-                            {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
-                          </h3>
-                        </div>
-                      </summary>
-                      <div className="pl-6">
-                        {Object.entries(organizedByReason)
-                          .sort(([, a], [, b]) => b.length - a.length)
-                          .map(([rcaReason, wisForReason]) => (
-                            <details key={rcaReason} className="mt-2">
-                              <summary className="cursor-pointer">
-                                <div
-                                  style={{ width: 'calc(100% - 20px)' }}
-                                  className="inline-block relative"
-                                >
-                                  <div
-                                    style={{
-                                      width: `${(wisForReason.length / maxInReason) * 100}%`,
-                                      backgroundColor: `${lineColor({ witId, groupName })}55`
-                                    }}
-                                    className="absolute top-0 left-0 h-full rounded-md"
-                                  />
-                                  <h4 className="z-10 relative text-lg pl-2 py-1">
-                                    {`${rcaReason} - `}
-                                    <strong>
-                                      {`${wisForReason.length}`}
-                                    </strong>
-                                    {` (${
-                                      Math.round((wisForReason.length * 100) / wisInCategory.length)
-                                    }%)`}
-                                  </h4>
-                                </div>
-                              </summary>
-                              <ul className="pl-6">
-                                {wisForReason
-                                  .sort((a, b) => (a.priority || 5) - (b.priority || 5))
-                                  .map(wi => (
-                                    <li key={wi.id} className="py-2">
-                                      <WorkItemLinkForModal
-                                        workItem={wi}
-                                        workItemType={workItemType(witId)}
-                                        tooltip={workItemTooltip}
-                                        flair={`Priority ${wi.priority || 'unknown'}`}
-                                      />
-                                    </li>
-                                  ))}
-                              </ul>
-                            </details>
-                          ))}
+                          {`${rcaCategory} - `}
+                          <strong>
+                            {`${wisInCategory.length}`}
+                          </strong>
+                          {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
+                        </h3>
                       </div>
-                    </details>
-                  );
-                })
+                    </summary>
+                    <div className="pl-6">
+                      <ul className="pl-6">
+                        {wisInCategory
+                          .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+                          .map(wi => (
+                            <li key={wi.id} className="py-2">
+                              <WorkItemLinkForModal
+                                workItem={wi}
+                                workItemType={workItemType(witId)}
+                                tooltip={workItemTooltip}
+                                flair={`Priority ${wi.priority || 'unknown'}`}
+                              />
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  </details>
+                ))
             );
           }}
         />

@@ -156,9 +156,10 @@ const rca = (collectionConfig: ParsedCollection, workItem: WorkItem, workItemTyp
   if (workItemType.name !== 'Bug') return;
   const match = collectionConfig.workitems.types?.find(({ type }) => type === workItemType.name);
   if (!match?.rootCause) return;
-  if (match.rootCause.every(field => !workItem.fields[field])) return;
 
-  return { rca: match.rootCause.map(field => workItem.fields[field]) };
+  const rootCause = workItem.fields[match.rootCause];
+  if (!rootCause) return;
+  return { rca: rootCause };
 };
 
 const filterTags = (collectionConfig: ParsedCollection, workItem: WorkItem) => {

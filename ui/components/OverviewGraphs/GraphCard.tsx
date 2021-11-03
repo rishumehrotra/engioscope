@@ -14,7 +14,10 @@ type GraphCardProps = {
 const GraphCard: React.FC<GraphCardProps> = ({
   title, subtitle, left, right, hasData, noDataMessage
 }) => (
-  <div className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow">
+  <div
+    className="bg-white border-l-4 p-6 mb-4 rounded-lg shadow"
+    style={{ pageBreakInside: 'avoid' }}
+  >
     <h1 className="text-2xl font-semibold">
       {title}
     </h1>

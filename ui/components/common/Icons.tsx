@@ -75,7 +75,7 @@ export const DownChevron: React.FC<{ className?: string }> = ({ className }) => 
     strokeWidth="2"
     viewBox="0 0 24 24"
     stroke="currentColor"
-    className={`w-8 h-6 ${className || ''}`}
+    className={className || 'w-8 h-6'}
   >
     <path d="M19 9l-7 7-7-7" />
   </svg>
@@ -89,7 +89,7 @@ export const UpChevron: React.FC<{ className?: string }> = ({ className }) => (
     strokeWidth="2"
     viewBox="0 0 24 24"
     stroke="currentColor"
-    className={`w-8 h-6 ${className || ''}`}
+    className={className || 'w-8 h-6'}
   >
     <path d="M5 15l7-7 7 7" />
   </svg>

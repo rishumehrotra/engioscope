@@ -144,7 +144,7 @@ export type UIWorkItem = {
   groupId?: string;
   priority?: number;
   severity?: string;
-  rca?: string[];
+  rca?: string;
   filterBy?: { label: string; tags: string[] }[];
 };
 
