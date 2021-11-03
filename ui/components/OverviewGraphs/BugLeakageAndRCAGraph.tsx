@@ -14,6 +14,47 @@ import { DownChevron, UpChevron } from '../common/Icons';
 
 const collapsedCount = 10;
 
+const barTooltip = (rca: string, workItems: UIWorkItem[]) => {
+  const statuses = Object.entries(
+    workItems
+      .reduce<Record<string, number>>((acc, wi) => {
+        acc[wi.state] = (acc[wi.state] || 0) + 1;
+        return acc;
+      }, {})
+  ).map(([status, count]) => `${status} (${count})`);
+
+  const priorities = Object.entries(
+    workItems
+      .reduce<Record<string, number>>((acc, wi) => {
+        const priority = wi.priority || 'Unprioritised';
+        acc[priority] = (acc[priority] || 0) + 1;
+        return acc;
+      }, {})
+  )
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([priority, count]) => `${priority} (${count})`);
+
+  return `
+    <div class="w-80">
+      <div class="font-bold mb-2">${rca}</div>
+      <dl>
+        ${statuses.length ? `
+          <dt class="font-bold mt-2">Statuses:</dt>
+          <dd class="ml-4">
+            ${statuses.join(', ')}
+          </dd>
+        ` : ''}
+        ${priorities.length ? `
+          <dt class="font-bold mt-2">Priorities:</dt>
+          <dd class="ml-4">
+            ${priorities.join(', ')}
+          </dd>
+        ` : ''}
+      </dl>
+    </div>
+  `;
+};
+
 const isBugLike = (workItemType: (witId: string) => UIWorkItemType, witId: string) => (
   workItemType(witId).name[0].toLowerCase().includes('bug')
 );
@@ -183,12 +224,14 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
               .map(({ rca, wis, color }) => (
                 <li key={rca} className="mr-4">
                   <button
-                    className="grid gap-4 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
+                    className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
                     style={{ gridTemplateColumns: '20% 85px 1fr' }}
                     onClick={() => {
                       setModalBar({ label: rca, color });
                       open();
                     }}
+                    data-tip={barTooltip(rca, wis)}
+                    data-html
                   >
                     <div className="flex items-center justify-end">
                       <span className="truncate">
@@ -249,7 +292,10 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
           isCheckboxChecked={({ groupName }) => selectedCheckboxes[groupName]}
           onCheckboxChange={({ groupName }) => (
             setSelectedCheckboxes(
-              selectedCheckboxes => ({ ...selectedCheckboxes, [groupName]: !selectedCheckboxes[groupName] })
+              selectedCheckboxes => ({
+                ...selectedCheckboxes,
+                [groupName]: !selectedCheckboxes[groupName]
+              })
             )
           )}
           modalContents={({ workItemIds, groupName }) => {
@@ -257,8 +303,12 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
               workItemById,
               workItemIds.filter(pipe(workItemById, applyFilter(priorityState)))
             );
-            const maxInCategory = Object.values(organized).reduce((acc, wis) => Math.max(acc, wis.length), 0);
-            const totalOfCategories = Object.values(organized).reduce((acc, wis) => acc + wis.length, 0);
+
+            const maxInCategory = Object.values(organized)
+              .reduce((acc, wis) => Math.max(acc, wis.length), 0);
+
+            const totalOfCategories = Object.values(organized)
+              .reduce((acc, wis) => acc + wis.length, 0);
 
             return (
               Object.entries(organized)
