@@ -110,18 +110,12 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     [workItemById, workItemTimes, workItemType]
   );
 
-  const totalWorkItems = useMemo(() => Object.values(groups).reduce(
-    (acc, group) => acc + group.length,
-    0
-  ), [groups]);
-
   const states = useMemo(
     () => {
       const unsorted = Object.entries(groups).reduce<Record<string, { wid: number; since: Date }[]>>(
         (acc, [, wids]) => {
           wids.forEach(wid => {
             const { state, since } = workItemState(wid);
-            // console.log(workItemType(witId).name, workItemById(wid).url, { state, since });
             acc[state] = acc[state] || [];
             acc[state].push({ wid, since });
           });
@@ -192,6 +186,11 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     ),
     [checkboxStatesForSidebar, prioritiesState, selectedStatesForGroups, states, workItemById, workItemGroup]
   );
+
+  const totalWorkItems = useMemo(() => Object.values(statesToRender).reduce(
+    (acc, group) => acc + group.length,
+    0
+  ), [statesToRender]);
 
   return (
     <GraphCard
@@ -289,7 +288,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
             </div>
           </div>
           <ul className="grid gap-3 grid-cols-2">
-            {Object.entries(states).map(([state, wids]) => (
+            {Object.entries(statesToRender).map(([state, wids]) => (
               <li key={state} className="relative">
                 <input
                   type="checkbox"

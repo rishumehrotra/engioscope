@@ -53,12 +53,32 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
     [closedWorkItems, workItemById]
   );
 
+  const workItemsToDisplay = useMemo(() => (
+    Object.entries(closedWorkItems)
+      .reduce<OrganizedWorkItems>((acc, [witId, groups]) => {
+        acc[witId] = Object.entries(groups)
+          .reduce<OrganizedWorkItems[string]>((acc, [group, wids]) => {
+            acc[group] = wids
+              .filter(wid => {
+                const times = workItemTimes(wid);
+                return times.start && times.end;
+              })
+              .filter(wid => {
+                if (!priorityState.length) return true;
+                return priorityState.includes(String(workItemById(wid).priority));
+              });
+            return acc;
+          }, {});
+        return acc;
+      }, {})
+  ), [closedWorkItems, priorityState, workItemById, workItemTimes]);
+
   const graphScalingRatio = useMemo(
     () => (
-      Object.values(closedWorkItems)
+      Object.values(workItemsToDisplay)
         .map(x => Object.values(x).length)
     ),
-    [closedWorkItems]
+    [workItemsToDisplay]
   );
 
   return (
@@ -85,23 +105,14 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
             className="grid gap-4 justify-evenly items-center grid-cols-2 mr-4"
             style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}
           >
-            {Object.entries(closedWorkItems).map(([witId, group]) => (
+            {Object.entries(workItemsToDisplay).map(([witId, group]) => (
               <ScatterLineGraph
                 key={witId}
                 graphData={[{
                   label: workItemType(witId).name[1],
                   data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
                     groupName,
-                    workItemIds
-                      .filter(wid => {
-                        const times = workItemTimes(wid);
-                        return times.start && times.end;
-                      })
-                      .map(workItemById)
-                      .filter(x => {
-                        if (!priorityState.length) return true;
-                        return priorityState.includes(String(x.priority));
-                      })
+                    workItemIds.map(workItemById)
                   ])),
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem.id)!,
@@ -119,7 +130,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
       right={(
         <LegendSidebar
           heading="Average cycle time"
-          data={closedWorkItems}
+          data={workItemsToDisplay}
           headlineStats={data => (
             Object.entries(groupByWorkItemType(data))
               .map(([witId, workItemIds]) => ({
@@ -131,10 +142,12 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
               }))
           )}
           workItemType={workItemType}
-          childStat={workItemIds => prettyMilliseconds(
-            totalCycleTime(workItemIds) / workItemIds.length,
-            { compact: true }
-          )}
+          childStat={workItemIds => (workItemIds.length
+            ? prettyMilliseconds(
+              totalCycleTime(workItemIds) / workItemIds.length,
+              { compact: true }
+            )
+            : '-')}
           modalContents={({ witId, workItemIds }) => (
             workItemIds
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

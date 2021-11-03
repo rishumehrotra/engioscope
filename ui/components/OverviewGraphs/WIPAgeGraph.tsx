@@ -53,6 +53,28 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
     [allWorkItems]
   );
 
+  const workItemsToShow = useMemo(() => (
+    Object.entries(allWorkItems)
+      .reduce<OrganizedWorkItems>((acc, [witId, groups]) => {
+        acc[witId] = Object.entries(groups)
+          .reduce<OrganizedWorkItems[string]>((acc, [group, wids]) => {
+            acc[group] = wids
+              .filter(wid => {
+                const times = workItemTimes(wid);
+                return times.start && !times.end;
+              })
+              .filter(wid => {
+                if (!priorityState.length) return true;
+                const wi = workItemById(wid);
+                if (!wi.priority) return false;
+                return priorityState.includes(String(wi.priority));
+              });
+            return acc;
+          }, {});
+        return acc;
+      }, {})
+  ), [allWorkItems, priorityState, workItemById, workItemTimes]);
+
   return (
     <GraphCard
       title="Age of work-in-progress items"
@@ -74,24 +96,14 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
             className="grid gap-4 justify-evenly items-center grid-flow-col"
             style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}
           >
-            {Object.entries(allWorkItems).map(([witId, group]) => (
+            {Object.entries(workItemsToShow).map(([witId, group]) => (
               <ScatterLineGraph
                 key={witId}
                 graphData={[{
                   label: workItemType(witId).name[1],
                   data: Object.fromEntries(Object.entries(group).map(([groupName, workItemIds]) => [
                     groupName,
-                    workItemIds
-                      .filter(wid => {
-                        const times = workItemTimes(wid);
-                        return times.start && !times.end;
-                      })
-                      .map(workItemById)
-                      .filter(wi => {
-                        if (!priorityState.length) return true;
-                        if (!wi.priority) return false;
-                        return priorityState.includes(String(wi.priority));
-                      })
+                    workItemIds.map(workItemById)
                   ]).filter(x => x[1].length)),
                   yAxisPoint: (workItem: UIWorkItem) => Date.now() - new Date(workItem.created.on).getTime(),
                   tooltip: x => workItemTooltip(x)
@@ -111,28 +123,23 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
           headlineStats={data => (
             Object.entries(groupByWorkItemType(data))
               .map(([witId, workItemIds]) => {
-                const workItems = workItemIds
-                  .filter(wid => {
-                    const times = workItemTimes(wid);
-                    return times.start && !times.end;
-                  })
-                  .map(workItemById);
+                const workItems = workItemIds.map(workItemById);
 
                 return {
                   heading: workItemType(witId).name[1],
                   value: workItems.length
                     ? prettyMilliseconds(
-                      workItems.reduce(
-                        (acc, workItem) => acc + (Date.now() - new Date(workItem.created.on).getTime()),
-                        0
-                      ) / workItems.length, { compact: true }
+                      workItems.reduce((acc, workItem) => (
+                        acc + (Date.now() - new Date(workItem.created.on).getTime())
+                      ), 0) / workItems.length,
+                      { compact: true }
                     )
                     : '-',
                   unit: 'avg'
                 };
               })
           )}
-          data={allWorkItems}
+          data={workItemsToShow}
           workItemType={workItemType}
           childStat={workItemIds => {
             const itemsWithoutEndDate = workItemIds
