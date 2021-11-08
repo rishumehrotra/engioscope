@@ -149,7 +149,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
       right={(
         <LegendSidebar
           heading="Effort distribution"
-          data={allWorkItems}
+          data={filteredData}
           headlineStats={data => {
             const grouped = groupByWorkItemType(data);
             const totalTime = Object.values(grouped).reduce(

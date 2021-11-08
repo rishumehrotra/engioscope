@@ -256,7 +256,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
           >
             {stateForModal && (
               <ul className="mb-8">
-                {states[stateForModal]
+                {statesToRender[stateForModal]
                   .sort((a, b) => a.since.getTime() - b.since.getTime())
                   .map(({ wid, since }) => (
                     <li key={wid} className="py-2">
