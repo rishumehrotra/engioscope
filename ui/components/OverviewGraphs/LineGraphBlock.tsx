@@ -148,6 +148,7 @@ export const createGraphBlock = ({
           renderLazily={false}
           left={(
             <LineGraph<WorkItemLine, WorkItemPoint>
+              className="max-w-full"
               lines={dataByDay.filter(isCheckboxChecked)}
               points={workItems}
               pointToValue={pointToValue}

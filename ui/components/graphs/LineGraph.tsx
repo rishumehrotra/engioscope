@@ -141,10 +141,7 @@ const useCrosshair = (
     svg.style.cursor = 'pointer';
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const crosshairLabel = crosshair.querySelector('div')!;
-
-    const rect = svg.getBoundingClientRect();
-    const mappedPosition = (width / rect.width) * hoverXCoord.current;
-    const closest = closestPointIndex(mappedPosition);
+    const closest = closestPointIndex(hoverXCoord.current);
 
     crosshair.style.display = '';
     crosshair.style.transform = `translateX(${xCoord(closest)}px)`;
