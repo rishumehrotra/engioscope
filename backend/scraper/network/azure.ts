@@ -6,8 +6,8 @@ import { chunkArray } from '../../utils';
 import type {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
-  WorkItem, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemRevision,
-  WorkItemType, WorkItemTypeCategory
+  WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
+  WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
 import createPaginatedGetter from './create-paginated-getter';
 import type { FetchResponse } from './fetch-with-disk-cache';
@@ -231,6 +231,16 @@ export default (config: ParsedConfig) => {
 
       return workItemIds.map(wid => workItemsById[wid]);
     },
+
+    getCollectionWorkItemFields: (collectionName: string) => (
+      usingDiskCache<{count: number; value: WorkItemField[]}>(
+        [collectionName, 'work-items', 'fields'],
+        () => fetch(
+          url(collectionName, null, `/wit/fields?${qs.stringify(apiVersion)}`),
+          { headers: authHeader }
+        )
+      ).then(res => res.data.value)
+    ),
 
     getWorkItemIdsForQuery: (collectionName: string, projectName: string) => (
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(query: string) => (

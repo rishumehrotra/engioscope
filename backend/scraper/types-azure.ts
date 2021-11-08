@@ -511,3 +511,22 @@ export type WorkItemRevision = {
     'System.Title': string;
   };
 };
+
+export type WorkItemField = {
+  name: string;
+  referenceName: string;
+  url: string;
+  description: string | null;
+  type: 'boolean' | 'dateTime' | 'double' | 'guid' | 'history' | 'html'
+  | 'identity' | 'integer' | 'picklistDouble' | 'picklistInteger'
+  | 'picklistString' | 'plainText' | 'string' | 'treePath';
+  isDeleted: boolean;
+  isIdentity: boolean;
+  isPicklist: boolean;
+  isPicklistSuggested: boolean;
+  isQueryable: boolean;
+  picklistId: string;
+  readOnly: boolean;
+  supportedOperations: { name: string; referenceName: string }[];
+  usage: 'none' | 'tree' | 'workItem' | 'workItemLink' | 'workItemTypeExtension';
+};
