@@ -11,6 +11,7 @@ import { hasWorkItems, groupByWorkItemType } from './helpers';
 import { priorityBasedColor } from '../../helpers/utils';
 import { createWIPWorkItemTooltip } from './tooltips';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import usePriorityFilter from './use-priority-filter';
 
 type WIPAgeGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -28,22 +29,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
     [workItemGroup, workItemTimes, workItemType]
   );
 
-  const [priorityState, setPriorityState] = React.useState<string[]>([]);
-  const priorities = useMemo(
-    () => (
-      [
-        ...Object.values(allWorkItems)
-          .flatMap(x => Object.values(x))
-          .flat()
-          .reduce((acc, x) => {
-            const { priority } = workItemById(x);
-            if (priority) acc.add(priority);
-            return acc;
-          }, new Set<number>())
-      ].sort((a, b) => a - b)
-    ),
-    [allWorkItems, workItemById]
-  );
+  const [priorities, priorityState, setPriorityState, dataToShow] = usePriorityFilter(allWorkItems, workItemById);
 
   const graphScalingRatio = useMemo(
     () => (
@@ -54,7 +40,7 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
   );
 
   const workItemsToShow = useMemo(() => (
-    Object.entries(allWorkItems)
+    Object.entries(dataToShow)
       .reduce<OrganizedWorkItems>((acc, [witId, groups]) => {
         acc[witId] = Object.entries(groups)
           .reduce<OrganizedWorkItems[string]>((acc, [group, wids]) => {
@@ -62,18 +48,12 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
               .filter(wid => {
                 const times = workItemTimes(wid);
                 return times.start && !times.end;
-              })
-              .filter(wid => {
-                if (!priorityState.length) return true;
-                const wi = workItemById(wid);
-                if (!wi.priority) return false;
-                return priorityState.includes(String(wi.priority));
               });
             return acc;
           }, {});
         return acc;
       }, {})
-  ), [allWorkItems, priorityState, workItemById, workItemTimes]);
+  ), [dataToShow, workItemTimes]);
 
   return (
     <GraphCard
@@ -83,17 +63,17 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
       noDataMessage="Couldn't find any matching work items"
       left={(
         <>
-          <div className="flex justify-end mb-8">
+          <div className="flex justify-end mb-8 mr-4">
             <MultiSelectDropdownWithLabel
               label="Priority"
-              options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+              options={priorities}
               value={priorityState}
               onChange={setPriorityState}
               className="w-48 text-sm"
             />
           </div>
           <div
-            className="grid gap-4 justify-evenly items-center grid-flow-col"
+            className="grid gap-4 justify-evenly items-center grid-flow-col mr-4"
             style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}
           >
             {Object.entries(workItemsToShow).map(([witId, group]) => (

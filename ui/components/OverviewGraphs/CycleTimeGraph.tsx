@@ -14,6 +14,7 @@ import { WorkItemTimeDetails } from './WorkItemTimeDetails';
 import { priorityBasedColor } from '../../helpers/utils';
 import { createCompletedWorkItemTooltip } from './tooltips';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import usePriorityFilter from './use-priority-filter';
 
 type CycleTimeGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -35,26 +36,10 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
     [cycleTime, workItemGroup, workItemTimes, workItemType]
   );
 
-  const [priorityState, setPriorityState] = React.useState<string[]>([]);
-
-  const priorities = useMemo(
-    () => (
-      [
-        ...Object.values(closedWorkItems)
-          .flatMap(x => Object.values(x))
-          .flat()
-          .reduce((acc, x) => {
-            const { priority } = workItemById(x);
-            if (priority) acc.add(priority);
-            return acc;
-          }, new Set<number>())
-      ].sort((a, b) => a - b)
-    ),
-    [closedWorkItems, workItemById]
-  );
+  const [priorities, priorityState, setPriorityState, filteredData] = usePriorityFilter(closedWorkItems, workItemById);
 
   const workItemsToDisplay = useMemo(() => (
-    Object.entries(closedWorkItems)
+    Object.entries(filteredData)
       .reduce<OrganizedWorkItems>((acc, [witId, groups]) => {
         acc[witId] = Object.entries(groups)
           .reduce<OrganizedWorkItems[string]>((acc, [group, wids]) => {
@@ -62,16 +47,12 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
               .filter(wid => {
                 const times = workItemTimes(wid);
                 return times.start && times.end;
-              })
-              .filter(wid => {
-                if (!priorityState.length) return true;
-                return priorityState.includes(String(workItemById(wid).priority));
               });
             return acc;
           }, {});
         return acc;
       }, {})
-  ), [closedWorkItems, priorityState, workItemById, workItemTimes]);
+  ), [filteredData, workItemTimes]);
 
   const graphScalingRatio = useMemo(
     () => (
@@ -94,7 +75,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
               <MultiSelectDropdownWithLabel
                 name="priority"
                 label="Priority"
-                options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+                options={priorities}
                 onChange={setPriorityState}
                 value={priorityState}
                 className="w-48 text-sm"

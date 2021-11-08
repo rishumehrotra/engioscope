@@ -11,6 +11,8 @@ import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { exists, shortDate } from '../../helpers/utils';
 import { createWIPWorkItemTooltip } from './tooltips';
+import usePriorityFilter from './use-priority-filter';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 
 const workCenterTimeThisMonthUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
   const monthAgo = new Date();
@@ -50,12 +52,14 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
     [workItemGroup, workItemTimes, workItemType]
   );
 
+  const [priorities, priorityState, setPriorityState, filteredData] = usePriorityFilter(allWorkItems, workItemById);
+
   const monthAgo = new Date();
   monthAgo.setDate(monthAgo.getDate() - 30);
 
   const effortDistribution = useMemo(
     () => {
-      const effortLayout = Object.entries(allWorkItems)
+      const effortLayout = Object.entries(filteredData)
         .map(([witId, group]) => ({
           witId,
           workTimes: Object.entries(group).reduce<Record<string, number>>(
@@ -88,7 +92,7 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
         value: totalEffort ? (effort.value * 100) / totalEffort : 0
       }));
     },
-    [allWorkItems, totalWorkCenterTimeThisMonth]
+    [filteredData, totalWorkCenterTimeThisMonth]
   );
 
   const maxValue = useMemo(() => Math.max(...effortDistribution.map(({ value }) => value)), [effortDistribution]);
@@ -100,36 +104,47 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
       hasData={maxValue > 0}
       noDataMessage="Couldn't find any matching work items"
       left={(
-        <ul>
-          {effortDistribution.map(({
-            label, value, color, witId
-          }) => (
-            <li
-              key={label}
-              className="grid gap-4 my-4 items-center mr-4"
-              style={{ gridTemplateColumns: '25% 5.5ch 1fr' }}
-            >
-              <div className="flex items-center justify-end">
-                <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
-                <span className="truncate">
-                  {label === noGroup ? workItemType(witId).name[1] : label}
-                </span>
-              </div>
-              <div className="justify-self-end">
-                {`${value.toFixed(2)}%`}
-              </div>
-              <div className="bg-gray-100 rounded-md overflow-hidden">
-                <div
-                  className="h-8 rounded-lg"
-                  style={{
-                    width: `${maxValue ? (value * 100) / maxValue : 0}%`,
-                    backgroundColor: color
-                  }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="flex justify-end mb-8 mr-4">
+            <MultiSelectDropdownWithLabel
+              label="Priority"
+              options={priorities}
+              value={priorityState}
+              onChange={setPriorityState}
+              className="w-48 text-sm"
+            />
+          </div>
+          <ul>
+            {effortDistribution.map(({
+              label, value, color, witId
+            }) => (
+              <li
+                key={label}
+                className="grid gap-4 my-4 items-center mr-4"
+                style={{ gridTemplateColumns: '25% 5.5ch 1fr' }}
+              >
+                <div className="flex items-center justify-end">
+                  <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
+                  <span className="truncate">
+                    {label === noGroup ? workItemType(witId).name[1] : label}
+                  </span>
+                </div>
+                <div className="justify-self-end">
+                  {`${value.toFixed(2)}%`}
+                </div>
+                <div className="bg-gray-100 rounded-md overflow-hidden">
+                  <div
+                    className="h-8 rounded-lg"
+                    style={{
+                      width: `${maxValue ? (value * 100) / maxValue : 0}%`,
+                      backgroundColor: color
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       right={(
         <LegendSidebar

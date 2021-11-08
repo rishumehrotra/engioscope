@@ -19,6 +19,7 @@ import type { LegendSidebarProps } from './LegendSidebar';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import usePriorityFilter from './use-priority-filter';
 
 const initialCheckboxState = (dataByDay: WorkItemLine[]) => (
   dataByDay.reduce<Record<string, boolean>>((acc, day) => {
@@ -60,39 +61,13 @@ export const createGraphBlock = ({
     showFlairForWorkItemInModal, sidebarItemStat,
     workItemInfoForModal, daySplitter, sidebarModalContents
   }) => {
-    const [priorityState, setPriorityState] = React.useState<string[]>([]);
-    const priorities = useMemo(
-      () => (
-        [
-          ...Object.values(data)
-            .flatMap(x => Object.values(x))
-            .flat()
-            .reduce((acc, x) => {
-              const { priority } = workItemById(x);
-              if (priority) acc.add(priority);
-              return acc;
-            }, new Set<number>())
-        ].sort((a, b) => a - b)
-      ),
-      [data]
-    );
+    const [priorities, priorityState, setPriorityState, filteredData] = usePriorityFilter(data, workItemById);
 
     const dataByDay = useMemo(() => (
       splitByDateForLineGraph(
-        projectAnalysis, data, daySplitter
-      ).map(line => ({
-        ...line,
-        workItemPoints: line.workItemPoints.map(point => ({
-          ...point,
-          workItemIds: point.workItemIds.filter(
-            id => {
-              if (priorityState.length === 0) return true;
-              return priorityState.includes(String(workItemById(id).priority));
-            }
-          )
-        }))
-      }))
-    ), [data, daySplitter, priorityState]);
+        projectAnalysis, filteredData, daySplitter
+      )
+    ), [daySplitter, filteredData]);
 
     const [checkboxState, setCheckboxState] = useState<Record<string, boolean>>(
       initialCheckboxState(dataByDay)
@@ -182,7 +157,7 @@ export const createGraphBlock = ({
               <div className="flex justify-end mb-8 mr-4">
                 <MultiSelectDropdownWithLabel
                   label="Priority"
-                  options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+                  options={priorities}
                   value={priorityState}
                   onChange={setPriorityState}
                   className="w-48 text-sm"
@@ -219,7 +194,7 @@ export const createGraphBlock = ({
             <LegendSidebar
               heading={sidebarHeading}
               headlineStats={sidebarHeadlineStats}
-              data={data}
+              data={filteredData}
               workItemType={workItemType}
               childStat={sidebarItemStat || aggregateAndFormat}
               onCheckboxChange={onCheckboxChange}

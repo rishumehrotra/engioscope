@@ -11,6 +11,7 @@ import { LegendSidebar } from './LegendSidebar';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import { createWIPWorkItemTooltip } from './tooltips';
 import { DownChevron, UpChevron } from '../common/Icons';
+import usePriorityFilter from './use-priority-filter';
 
 const collapsedCount = 10;
 
@@ -39,7 +40,7 @@ const barTooltip = (rca: string, workItems: UIWorkItem[]) => {
       <div class="font-bold mb-2">${rca}</div>
       <dl>
         ${statuses.length ? `
-          <dt class="font-bold mt-2">Statuses:</dt>
+          <dt class="font-bold mt-2">States:</dt>
           <dd class="ml-4">
             ${statuses.join(', ')}
           </dd>
@@ -128,44 +129,26 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
     [workItemGroup, workItemTimes, workItemType]
   );
 
+  const [priorities, priorityState, setPriorityState, dataToShow] = usePriorityFilter(
+    { [witId]: groups }, workItemById
+  );
+
   const organizedByRCA = useMemo(() => (
     organizeWorkItemsByRCA(
       workItemById,
-      Object.entries(groups).reduce<number[]>((acc, [groupName, wids]) => {
+      Object.entries(dataToShow[witId]).reduce<number[]>((acc, [groupName, wids]) => {
         if (selectedCheckboxes[groupName]) acc.push(...wids);
         return acc;
       }, [])
     )
-  ), [groups, selectedCheckboxes, workItemById]);
-
-  const [priorityState, setPriorityState] = useState<string[]>([]);
-
-  const priorities = useMemo(() => (
-    [
-      ...Object.values(organizedByRCA)
-        .reduce((acc, wis) => {
-          wis.forEach(wi => {
-            if (wi.priority) acc.add(wi.priority);
-          });
-          return acc;
-        }, new Set<number>())
-    ].sort((a, b) => a - b)
-  ), [organizedByRCA]);
-
-  const dataToShow = useMemo(() => (
-    Object.entries(organizedByRCA)
-      .reduce<typeof organizedByRCA>((acc, [rca, wis]) => {
-        acc[rca] = wis.filter(applyFilter(priorityState));
-        return acc;
-      }, {})
-  ), [organizedByRCA, priorityState]);
+  ), [dataToShow, selectedCheckboxes, witId, workItemById]);
 
   const graphData = useMemo(() => (
-    Object.entries(dataToShow)
+    Object.entries(organizedByRCA)
       .map(([rca, wis]) => ({ rca, wis, color: '#00bcd4' }))
       .filter(({ wis }) => wis.length > 0)
       .sort((a, b) => b.wis.length - a.wis.length)
-  ), [dataToShow]);
+  ), [organizedByRCA]);
 
   useEffect(() => setSelectedCheckboxes(initialCheckboxState(groups)), [groups]);
 
@@ -182,7 +165,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
         <>
           <Modal
             heading={modalBar
-              ? modalHeading('Bug leakage', `${modalBar.label} (${dataToShow[modalBar.label].length})`)
+              ? modalHeading('Bug leakage', `${modalBar.label} (${organizedByRCA[modalBar.label].length})`)
               : ''}
             {...modalProps}
           >
@@ -191,7 +174,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
 
               return (
                 <ul>
-                  {dataToShow[modalBar.label]
+                  {organizedByRCA[modalBar.label]
                     .sort((a, b) => (a.priority || 5) - (b.priority || 5))
                     .map(wi => (
                       <li key={wi.id} className="py-2">
@@ -212,7 +195,7 @@ const WorkItemCard: React.FC<WorkItemCardProps> = ({
           <div className="flex justify-end mb-8 mr-4">
             <MultiSelectDropdownWithLabel
               label="Priority"
-              options={priorities.map(priority => ({ label: String(priority), value: String(priority) }))}
+              options={priorities}
               value={priorityState}
               onChange={setPriorityState}
               className="w-48 text-sm"
