@@ -9,7 +9,7 @@ import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
 import type { WorkItemAnalysis } from '../types';
 import type {
-  WorkItem, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
+  WorkItem, WorkItemField, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
 } from '../types-azure';
 import { queryForCollectionWorkItems } from '../work-item-queries';
 import { getOverviewData } from './work-item-overview';
@@ -291,10 +291,14 @@ const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedColle
 export default (config: ParsedConfig) => (collection: ParsedCollection) => {
   const pCollectionData = fireOffCollectionAPICalls(config, collection);
 
-  return async (project: ParsedProjectConfig): Promise<WorkItemAnalysis> => {
+  return async (
+    project: ParsedProjectConfig,
+    workItemFieldsPromise: Promise<WorkItemField[]>
+  ): Promise<WorkItemAnalysis> => {
     const [
-      getWorkItemType, [workItemRelations, workItemsById]
-    ] = await pCollectionData;
+      [getWorkItemType, [workItemRelations, workItemsById]],
+      workItemFields
+    ] = await Promise.all([pCollectionData, workItemFieldsPromise]);
 
     const createUIWorkItem = uiWorkItemCreator(collection, getWorkItemType);
 
@@ -316,6 +320,16 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       types: Record<string, UIWorkItemType>;
     };
 
+    const workItemFieldsByReferenceName = workItemFields.reduce<Record<string, WorkItemField>>(
+      (acc, field) => {
+        acc[field.referenceName] = field;
+        return acc;
+      },
+      {}
+    );
+
+    const getFieldName = (f: string) => workItemFieldsByReferenceName[f]?.name || undefined;
+
     const { byId, types } = Object.entries(workItemsById).reduce<AggregatedWorkItemsAndTypes>((acc, [id, workItem]) => {
       acc.byId[Number(id)] = createUIWorkItem(workItem);
 
@@ -324,18 +338,22 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
 
       if (!acc.types[witId]) {
         const iconColor = workItemTypeIconColor(workItemType);
+        const matchingWit = collection.workitems
+          .types?.find(wit => wit.type === workItemType.name);
 
         acc.types[witId] = {
           name: [workItemType.name, pluralize(workItemType.name)],
           color: workItemType.color,
           icon: `data:image/svg+xml;utf8,${encodeURIComponent(workItemIconSvgs[workItemType.icon.id](iconColor))}`,
           iconColor,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
-          workCenters: collection.workitems
-            .types?.find(wit => wit.type === workItemType.name)?.workCenters
-            .map(wc => wc.label)!,
-          groupLabel: collection.workitems
-            .types?.find(wit => wit.type === workItemType.name)?.groupLabel
+          startDateFields: matchingWit?.startDate.map(getFieldName).filter(exists),
+          endDateFields: matchingWit?.endDate.map(getFieldName).filter(exists),
+          workCenters: (matchingWit?.workCenters || []).map(wc => ({
+            label: wc.label,
+            startDateField: wc.startDate.map(getFieldName).filter(exists),
+            endDateField: wc.endDate.map(getFieldName).filter(exists)
+          })),
+          groupLabel: matchingWit?.groupLabel
         };
       }
 

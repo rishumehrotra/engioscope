@@ -14,6 +14,7 @@ import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
 import type { RepoAnalysis } from '../../shared/types';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
+import type { WorkItemField } from './types-azure';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -34,7 +35,8 @@ export default (config: ParsedConfig) => {
   return async (
     collection: ParsedCollection,
     projectConfig: ParsedProjectConfig,
-    workItemsPromise: Promise<WorkItemAnalysis>
+    getWorkItems: (projectConfig: ParsedProjectConfig, workItemFieldsPromise: Promise<WorkItemField[]>) => Promise<WorkItemAnalysis>,
+    workItemFieldsPromise: Promise<WorkItemField[]>
   ): Promise<ProjectAnalysis> => {
     const startTime = Date.now();
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collection.name, projectConfig.name);
@@ -53,7 +55,7 @@ export default (config: ParsedConfig) => {
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
-      workItemsPromise
+      getWorkItems(projectConfig, workItemFieldsPromise)
     ]);
 
     const getTestsByRepoId = aggregateTestRuns(

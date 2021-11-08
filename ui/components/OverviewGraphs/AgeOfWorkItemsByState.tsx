@@ -27,7 +27,7 @@ const workItemStateUsing = (
     if (!lastState) {
       // Not entered first work center yet
       return {
-        state: `Before ${wit.workCenters[0]}`,
+        state: `Before ${wit.workCenters[0].label}`,
         since: new Date(times.start || workItem.created.on)
       };
     }
@@ -35,7 +35,7 @@ const workItemStateUsing = (
     if (lastState.end) {
       // Completed the last state
       // This either means it's done, or it's in a waiting state
-      const stateIndex = wit.workCenters.findIndex(wc => wc === lastState.label);
+      const stateIndex = wit.workCenters.findIndex(wc => wc.label === lastState.label);
       if (stateIndex === wit.workCenters.length - 1) {
         // It's done with workcenters
         // But it still may not be closed
@@ -55,7 +55,7 @@ const workItemStateUsing = (
 
       // It's in a waiting state
       return {
-        state: `Waiting for ${wit.workCenters[stateIndex + 1]}`,
+        state: `Waiting for ${wit.workCenters[stateIndex + 1].label}`,
         since: new Date(lastState.end)
       };
     }
@@ -73,17 +73,17 @@ const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => 
 
   if (stateLabel.startsWith('In ')) {
     return (workItemType.workCenters
-      .findIndex(wc => wc === stateLabel.replace('In ', '')) * 2) + 1;
+      .findIndex(wc => wc.label === stateLabel.replace('In ', '')) * 2) + 1;
   }
 
   if (stateLabel.startsWith('Waiting for ')) {
     return (workItemType.workCenters
-      .findIndex(wc => wc === stateLabel.replace('Waiting for ', '')) * 2);
+      .findIndex(wc => wc.label === stateLabel.replace('Waiting for ', '')) * 2);
   }
 
   if (stateLabel.startsWith('After ')) {
     return (workItemType.workCenters
-      .findIndex(wc => wc === stateLabel.replace('After ', '')) * 2) + 2;
+      .findIndex(wc => wc.label === stateLabel.replace('After ', '')) * 2) + 2;
   }
 
   // 'Done'

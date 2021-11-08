@@ -158,8 +158,10 @@ export type UIWorkItemType = {
   icon: string;
   color: string;
   iconColor: string | null;
-  workCenters: string[];
+  workCenters: { label: string; startDateField: string[]; endDateField: string[]}[];
   groupLabel?: string;
+  startDateFields?: string[];
+  endDateFields?: string[];
 };
 
 export type AnalysedWorkItems = {

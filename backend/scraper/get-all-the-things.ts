@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import debug from 'debug';
 import { zip } from 'rambda';
 import aggregationWriter from './aggregation-writer';
+import azure from './network/azure';
 import type { ParsedConfig } from './parse-config';
 import projectAnalyser from './project-analyser';
 import workItemsForCollection from './stats-aggregators/work-items-for-collection';
@@ -11,20 +12,19 @@ process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
 
 export default async (config: ParsedConfig) => {
+  const { getCollectionWorkItemFields } = azure(config);
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
   const collectionWorkItems = workItemsForCollection(config);
   const now = Date.now();
 
-  const projects = config.azure.collections.flatMap(collection => {
-    const workItems = collectionWorkItems(collection);
-
-    return collection.projects.map(project => ([
+  const projects = config.azure.collections.flatMap(collection => (
+    collection.projects.map(project => ([
       collection,
       project,
-      workItems(project)
-    ] as const));
-  });
+      collectionWorkItems(collection),
+      getCollectionWorkItemFields(collection.name)
+    ] as const))));
 
   const results = zip(
     projects,
