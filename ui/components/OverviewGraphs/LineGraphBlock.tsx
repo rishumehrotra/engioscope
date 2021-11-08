@@ -18,6 +18,7 @@ import { CrosshairBubble } from './CrosshairBubble';
 import type { LegendSidebarProps } from './LegendSidebar';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 
 const initialCheckboxState = (dataByDay: WorkItemLine[]) => (
   dataByDay.reduce<Record<string, boolean>>((acc, day) => {
@@ -59,9 +60,39 @@ export const createGraphBlock = ({
     showFlairForWorkItemInModal, sidebarItemStat,
     workItemInfoForModal, daySplitter, sidebarModalContents
   }) => {
-    const dataByDay = useMemo(() => splitByDateForLineGraph(
-      projectAnalysis, data, daySplitter
-    ), [data, daySplitter]);
+    const [priorityState, setPriorityState] = React.useState<string[]>([]);
+    const priorities = useMemo(
+      () => (
+        [
+          ...Object.values(data)
+            .flatMap(x => Object.values(x))
+            .flat()
+            .reduce((acc, x) => {
+              const { priority } = workItemById(x);
+              if (priority) acc.add(priority);
+              return acc;
+            }, new Set<number>())
+        ].sort((a, b) => a - b)
+      ),
+      [data]
+    );
+
+    const dataByDay = useMemo(() => (
+      splitByDateForLineGraph(
+        projectAnalysis, data, daySplitter
+      ).map(line => ({
+        ...line,
+        workItemPoints: line.workItemPoints.map(point => ({
+          ...point,
+          workItemIds: point.workItemIds.filter(
+            id => {
+              if (priorityState.length === 0) return true;
+              return priorityState.includes(String(workItemById(id).priority));
+            }
+          )
+        }))
+      }))
+    ), [data, daySplitter, priorityState]);
 
     const [checkboxState, setCheckboxState] = useState<Record<string, boolean>>(
       initialCheckboxState(dataByDay)
@@ -147,30 +178,42 @@ export const createGraphBlock = ({
           noDataMessage="Couldn't find any matching work items"
           renderLazily={false}
           left={(
-            <LineGraph<WorkItemLine, WorkItemPoint>
-              className="max-w-full"
-              lines={dataByDay.filter(isCheckboxChecked)}
-              points={workItems}
-              pointToValue={pointToValue}
-              yAxisLabel={formatValue}
-              lineLabel={groupLabel}
-              xAxisLabel={x => shortDate(x.date)}
-              lineColor={lineColor}
-              crosshairBubble={(pointIndex: number) => (
-                <CrosshairBubble
-                  data={dataByDay}
-                  index={pointIndex}
-                  workItemType={workItemType}
-                  groupLabel={groupLabel}
-                  title={crosshairBubbleTitle}
-                  itemStat={aggregateAndFormat}
+            <>
+              <div className="flex justify-end mb-8 mr-4">
+                <MultiSelectDropdownWithLabel
+                  label="Priority"
+                  options={priorities.map(x => ({ value: String(x), label: String(x) }))}
+                  value={priorityState}
+                  onChange={setPriorityState}
+                  className="w-48 text-sm"
                 />
-              )}
-              onClick={pointIndex => {
-                setDayIndexInModal(pointIndex);
-                openModal();
-              }}
-            />
+              </div>
+
+              <LineGraph<WorkItemLine, WorkItemPoint>
+                className="max-w-full"
+                lines={dataByDay.filter(isCheckboxChecked)}
+                points={workItems}
+                pointToValue={pointToValue}
+                yAxisLabel={formatValue}
+                lineLabel={groupLabel}
+                xAxisLabel={x => shortDate(x.date)}
+                lineColor={lineColor}
+                crosshairBubble={(pointIndex: number) => (
+                  <CrosshairBubble
+                    data={dataByDay.filter(isCheckboxChecked)}
+                    index={pointIndex}
+                    workItemType={workItemType}
+                    groupLabel={groupLabel}
+                    title={crosshairBubbleTitle}
+                    itemStat={aggregateAndFormat}
+                  />
+                )}
+                onClick={pointIndex => {
+                  setDayIndexInModal(pointIndex);
+                  openModal();
+                }}
+              />
+            </>
           )}
           right={(
             <LegendSidebar
