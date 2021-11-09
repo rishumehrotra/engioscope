@@ -15,6 +15,7 @@ import { priorityBasedColor } from '../../helpers/utils';
 import { createCompletedWorkItemTooltip } from './tooltips';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import usePriorityFilter from './use-priority-filter';
+import useSizeFilter from './use-size-filter';
 
 type CycleTimeGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -36,7 +37,8 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
     [cycleTime, workItemGroup, workItemTimes, workItemType]
   );
 
-  const [priorities, priorityState, setPriorityState, filteredData] = usePriorityFilter(closedWorkItems, workItemById);
+  const [priorities, priorityState, setPriorityState, priorityFilteredData] = usePriorityFilter(closedWorkItems, workItemById);
+  const [sizes, sizeState, setSizeState, filteredData] = useSizeFilter(priorityFilteredData, workItemById);
 
   const workItemsToDisplay = useMemo(() => (
     Object.entries(filteredData)
@@ -70,16 +72,28 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
       noDataMessage="Couldn't find any matching work items"
       left={(
         <>
-          {priorities.length > 1 && (
-            <div className="flex justify-end mb-8 mr-4">
-              <MultiSelectDropdownWithLabel
-                name="priority"
-                label="Priority"
-                options={priorities}
-                onChange={setPriorityState}
-                value={priorityState}
-                className="w-48 text-sm"
-              />
+          {(priorities.length > 1 || sizes.length > 1) && (
+            <div className="flex justify-end mb-8 mr-4 gap-2">
+              {sizes.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="size"
+                  label="Size"
+                  options={sizes}
+                  onChange={setSizeState}
+                  value={sizeState}
+                  className="w-80 text-sm"
+                />
+              )}
+              {priorities.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="priority"
+                  label="Priority"
+                  options={priorities}
+                  onChange={setPriorityState}
+                  value={priorityState}
+                  className="w-48 text-sm"
+                />
+              )}
             </div>
           )}
           <div

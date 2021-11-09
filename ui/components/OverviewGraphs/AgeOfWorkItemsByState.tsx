@@ -8,8 +8,8 @@ import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import { WorkItemLinkForModal } from './WorkItemLinkForModal';
 import GraphCard from './GraphCard';
-import type { OrganizedWorkItems } from './helpers';
-import { hasWorkItems } from './helpers';
+import type { OrganizedWorkItems, sizes } from './helpers';
+import { getSize, hasWorkItems } from './helpers';
 import { sidebarWidth } from './LegendSidebar';
 import { createWIPWorkItemTooltip } from './tooltips';
 
@@ -148,6 +148,23 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     [states, workItemById]
   );
 
+  const [sizeFilter, setSizeFilter] = useState<string[]>([]);
+  const sizeOptions = useMemo(() => (
+    [
+      ...Object.values(states)
+        .flatMap(x => Object.values(x))
+        .flat()
+        .reduce((acc, x) => {
+          const size = getSize(workItemById(x.wid));
+          if (size) acc.add(size);
+          return acc;
+        }, new Set<typeof sizes['small']>())
+    ]
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .map(x => ({ value: x.key, label: x.label }))
+
+  ), [states, workItemById]);
+
   const [checkboxStatesForSidebar, setCheckboxStatesForSidebar] = React.useState(
     Object.keys(states).reduce<Record<string, boolean>>((acc, state) => {
       acc[state] = true;
@@ -174,6 +191,12 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
                 const wi = workItemById(wid);
                 if (!wi.priority) return false;
                 return prioritiesState.includes(wi.priority.toString());
+              })
+              .filter(({ wid }) => {
+                if (sizeFilter.length === 0) return true;
+                const size = getSize(workItemById(wid));
+                if (!size) return false;
+                return sizeFilter.includes(size.key);
               });
           } else {
             acc[state] = [];
@@ -184,7 +207,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         {}
       )
     ),
-    [checkboxStatesForSidebar, prioritiesState, selectedStatesForGroups, states, workItemById, workItemGroup]
+    [checkboxStatesForSidebar, prioritiesState, selectedStatesForGroups, sizeFilter, states, workItemById, workItemGroup]
   );
 
   const totalWorkItems = useMemo(() => Object.values(statesToRender).reduce(
@@ -211,6 +234,16 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
                     value={selectedStatesForGroups}
                     onChange={setSelectedStatesForGroups}
                     className="w-64 text-sm"
+                  />
+                )}
+                {sizeOptions.length > 1 && (
+                  <MultiSelectDropdownWithLabel
+                    name="size"
+                    label="Size"
+                    options={sizeOptions}
+                    onChange={setSizeFilter}
+                    value={sizeFilter}
+                    className="w-80 text-sm"
                   />
                 )}
                 {priorities.length > 1 && (

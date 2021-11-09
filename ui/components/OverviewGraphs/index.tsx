@@ -229,9 +229,11 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
         )}
         sidebarItemStat={allWorkItemIds => {
           const matchingLine = wipSplitByDay
-            .find(line => line.workItemPoints
-              .flatMap(prop('workItemIds'))
-              .some(id => allWorkItemIds.includes(id)));
+            .find(
+              line => line.workItemPoints
+                .flatMap(prop('workItemIds'))
+                .some(id => allWorkItemIds.includes(id))
+            );
 
           return last(matchingLine?.workItemPoints || [])?.workItemIds?.length || '-';
         }}

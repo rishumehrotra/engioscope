@@ -12,6 +12,7 @@ import { priorityBasedColor } from '../../helpers/utils';
 import { createWIPWorkItemTooltip } from './tooltips';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import usePriorityFilter from './use-priority-filter';
+import useSizeFilter from './use-size-filter';
 
 type WIPAgeGraphProps = {
   allWorkItems: OrganizedWorkItems;
@@ -29,7 +30,8 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
     [workItemGroup, workItemTimes, workItemType]
   );
 
-  const [priorities, priorityState, setPriorityState, dataToShow] = usePriorityFilter(allWorkItems, workItemById);
+  const [priorities, priorityState, setPriorityState, priorityFilteredData] = usePriorityFilter(allWorkItems, workItemById);
+  const [sizes, sizeState, setSizeState, dataToShow] = useSizeFilter(priorityFilteredData, workItemById);
 
   const graphScalingRatio = useMemo(
     () => (
@@ -63,15 +65,31 @@ export const WIPAgeGraph: React.FC<WIPAgeGraphProps> = ({
       noDataMessage="Couldn't find any matching work items"
       left={(
         <>
-          <div className="flex justify-end mb-8 mr-4">
-            <MultiSelectDropdownWithLabel
-              label="Priority"
-              options={priorities}
-              value={priorityState}
-              onChange={setPriorityState}
-              className="w-48 text-sm"
-            />
-          </div>
+          {(priorities.length > 1 || sizes.length > 1) && (
+            <div className="flex justify-end mb-8 mr-4 gap-2">
+              {sizes.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="size"
+                  label="Size"
+                  options={sizes}
+                  onChange={setSizeState}
+                  value={sizeState}
+                  className="w-80 text-sm"
+                />
+              )}
+              {priorities.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="priority"
+                  label="Priority"
+                  options={priorities}
+                  onChange={setPriorityState}
+                  value={priorityState}
+                  className="w-48 text-sm"
+                />
+              )}
+            </div>
+          )}
+
           <div
             className="grid gap-4 justify-evenly items-center grid-flow-col mr-4"
             style={{ gridTemplateColumns: graphScalingRatio.map(x => `${x + 1}fr`).join(' ') }}

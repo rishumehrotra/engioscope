@@ -167,3 +167,25 @@ export const hasWorkItems = (organizedWorkItems: OrganizedWorkItems) => (
     Object.values(group).some(workItemIds => workItemIds.length)
   ))
 );
+
+export const sizes = {
+  small: { label: 'Small (1 impacted system)', sortIndex: 0, key: 'small' },
+  medium: { label: 'Medium (upto 3 impacted systems)', sortIndex: 1, key: 'medium' },
+  large: { label: 'Large (upto 5 impacted systems)', sortIndex: 2, key: 'large' },
+  veryLarge: { label: 'Very large (> 5 impacted systems)', sortIndex: 3, key: 'veryLarge' }
+};
+
+export const impactedSystems = (workItem: UIWorkItem) => (
+  workItem.filterBy?.find(f => f.label === 'Impacted systems')?.tags
+);
+
+export const getSize = (workItem: UIWorkItem) => {
+  const numberOfImpactedSystems = impactedSystems(workItem)?.length || 0;
+
+  if (numberOfImpactedSystems === 0) return;
+  if (numberOfImpactedSystems === 1) return sizes.small;
+  if (numberOfImpactedSystems <= 3) return sizes.medium;
+  if (numberOfImpactedSystems <= 5) return sizes.large;
+  return sizes.veryLarge;
+};
+

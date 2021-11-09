@@ -13,6 +13,7 @@ import { exists, shortDate } from '../../helpers/utils';
 import { createWIPWorkItemTooltip } from './tooltips';
 import usePriorityFilter from './use-priority-filter';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import useSizeFilter from './use-size-filter';
 
 const workCenterTimeThisMonthUsing = (workItemTimes: (wid: number) => Overview['times'][number]) => {
   const monthAgo = new Date();
@@ -52,7 +53,8 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
     [workItemGroup, workItemTimes, workItemType]
   );
 
-  const [priorities, priorityState, setPriorityState, filteredData] = usePriorityFilter(allWorkItems, workItemById);
+  const [priorities, priorityState, setPriorityState, priorityFilteredData] = usePriorityFilter(allWorkItems, workItemById);
+  const [sizes, sizeState, setSizeState, filteredData] = useSizeFilter(priorityFilteredData, workItemById);
 
   const monthAgo = new Date();
   monthAgo.setDate(monthAgo.getDate() - 30);
@@ -105,15 +107,30 @@ export const EffortDistributionGraph: React.FC<EffortDistributionGraphProps> = (
       noDataMessage="Couldn't find any matching work items"
       left={(
         <>
-          <div className="flex justify-end mb-8 mr-4">
-            <MultiSelectDropdownWithLabel
-              label="Priority"
-              options={priorities}
-              value={priorityState}
-              onChange={setPriorityState}
-              className="w-48 text-sm"
-            />
-          </div>
+          {(priorities.length > 1 || sizes.length > 1) && (
+            <div className="flex justify-end mb-8 mr-4 gap-2">
+              {sizes.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="size"
+                  label="Size"
+                  options={sizes}
+                  onChange={setSizeState}
+                  value={sizeState}
+                  className="w-80 text-sm"
+                />
+              )}
+              {priorities.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="priority"
+                  label="Priority"
+                  options={priorities}
+                  onChange={setPriorityState}
+                  value={priorityState}
+                  className="w-48 text-sm"
+                />
+              )}
+            </div>
+          )}
           <ul>
             {effortDistribution.map(({
               label, value, color, witId

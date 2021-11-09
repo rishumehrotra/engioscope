@@ -13,6 +13,7 @@ import { WorkItemTimeDetails } from './WorkItemTimeDetails';
 import { createCompletedWorkItemTooltip } from './tooltips';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import usePriorityFilter from './use-priority-filter';
+import useSizeFilter from './use-size-filter';
 
 type FlowEfficiencyGraphProps = {
   closedWorkItems: OrganizedWorkItems;
@@ -35,9 +36,8 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
     [cycleTime, workItemGroup, workItemTimes, workItemType]
   );
 
-  const [
-    priorities, priorityState, setPriorityState, dataToShow
-  ] = usePriorityFilter(closedWorkItems, workItemById);
+  const [priorities, priorityState, setPriorityState, priorityFilteredData] = usePriorityFilter(closedWorkItems, workItemById);
+  const [sizes, sizeState, setSizeState, dataToShow] = useSizeFilter(priorityFilteredData, workItemById);
 
   return (
     <GraphCard
@@ -47,15 +47,30 @@ export const FlowEfficiencyGraph: React.FC<FlowEfficiencyGraphProps> = ({
       noDataMessage="Couldn't find any matching workitems"
       left={(
         <>
-          <div className="flex justify-end mb-8 mr-4">
-            <MultiSelectDropdownWithLabel
-              label="Priority"
-              options={priorities}
-              value={priorityState}
-              onChange={setPriorityState}
-              className="w-48 text-sm"
-            />
-          </div>
+          {(priorities.length > 1 || sizes.length > 1) && (
+            <div className="flex justify-end mb-8 mr-4 gap-2">
+              {sizes.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="size"
+                  label="Size"
+                  options={sizes}
+                  onChange={setSizeState}
+                  value={sizeState}
+                  className="w-80 text-sm"
+                />
+              )}
+              {priorities.length > 1 && (
+                <MultiSelectDropdownWithLabel
+                  name="priority"
+                  label="Priority"
+                  options={priorities}
+                  onChange={setPriorityState}
+                  value={priorityState}
+                  className="w-48 text-sm"
+                />
+              )}
+            </div>
+          )}
 
           <ul>
             {Object.entries(dataToShow).flatMap(([witId, group]) => (
