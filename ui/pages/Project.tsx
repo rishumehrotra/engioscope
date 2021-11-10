@@ -12,6 +12,7 @@ import Header from '../components/Header';
 import { useProjectDetails } from '../hooks/project-details-hooks';
 import usePageName from '../hooks/use-page-name';
 import Overview from './Overview';
+import Overview2 from './Overview2';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>
@@ -71,6 +72,9 @@ const Project: React.FC = () => {
           </Route>
           <Route path="/:collection/:project/workitems">
             <WorkItems />
+          </Route>
+          <Route path="/:collection/:project/v2">
+            <Overview2 />
           </Route>
           <Route path="/:collection/:project/">
             <Overview />
