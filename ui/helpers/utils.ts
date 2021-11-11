@@ -1,4 +1,6 @@
-export const oneYear = 31536000000;
+import prettyMilliseconds from 'pretty-ms';
+
+export const oneYear = 1000 * 60 * 60 * 24 * 365;
 
 export const num = (num: number) => Intl.NumberFormat().format(num);
 
@@ -68,3 +70,7 @@ export const priorityBasedColor = (priority: number) => {
       return '#FEF001';
   }
 };
+
+export const prettyMS = (ms: number) => (
+  prettyMilliseconds(ms, { unitCount: ms > oneYear ? 2 : 1 })
+);
