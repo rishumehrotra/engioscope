@@ -23,8 +23,7 @@ type CycleTimeGraphProps = {
 
 export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemTimes,
-    workItemType, cycleTime: cTime
+    isWorkItemClosed, organizeByWorkItemType, workItemType, cycleTime: cTime
   } = accessors;
 
   const cycleTime = useCallback(
@@ -38,13 +37,8 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
   const preFilteredWorkItems = useMemo(
-    () => workItems
-      .filter(isWorkItemClosed)
-      .filter(workItem => {
-        const wiTimes = workItemTimes(workItem);
-        return wiTimes.start && wiTimes.end;
-      }),
-    [isWorkItemClosed, workItemTimes, workItems]
+    () => workItems.filter(isWorkItemClosed),
+    [isWorkItemClosed, workItems]
   );
 
   const filter = useCallback(
@@ -105,7 +99,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
 
   const graphWidthRatio = useMemo(
     () => Object.values(workItemsToDisplay)
-      .map(x => `${Object.values(x).length}fr`)
+      .map(x => `${Object.values(x).length + 1}fr`)
       .join(' '),
     [workItemsToDisplay]
   );

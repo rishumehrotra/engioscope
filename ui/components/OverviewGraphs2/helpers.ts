@@ -42,14 +42,16 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
   };
 
   const workItemGroup = (groupId: string) => overview.groups[groupId];
+  const workItemType = (wit: string) => overview.types[wit];
 
   const allWorkItems = Object.values(overview.byId);
 
   const startOfQueryPeriod = oneMonthAgo(projectAnalysis.lastUpdated);
 
-  return ({
+  return {
     allWorkItems,
-    workItemType: (wit: string) => overview.types[wit],
+    lastUpdated: new Date(projectAnalysis.lastUpdated),
+    workItemType,
     workItemTimes,
     workItemGroup,
     cycleTime,
@@ -83,8 +85,12 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
         if (filter(wi)) acc[wi.typeId][groupName].push(wi);
         return acc;
       }, {})
+    ),
+    groupLabel: ({ witId, groupName }: GroupLabel) => (
+      workItemType(witId).name[1] + (groupName === noGroup ? '' : ` - ${groupName}`)
     )
-  });
+
+  };
 };
 
 export type WorkItemAccessors = ReturnType<typeof workItemAccessors>;

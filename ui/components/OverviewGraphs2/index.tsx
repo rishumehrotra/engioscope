@@ -6,6 +6,7 @@ import useGlobalFilters from './use-global-filters';
 import { CycleTimeGraph } from './CycleTimeGraph';
 import { workItemAccessors } from './helpers';
 import { useWorkItemModal } from './modal-helpers';
+import VelocityGraph from './VelocityGraph';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
@@ -20,7 +21,18 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       <OverviewFilters filters={filters} onChange={setSelectedFilters} />
 
-      <CycleTimeGraph workItems={filteredWorkItems} accessors={wiAccessors} openModal={openModal} />
+      <VelocityGraph
+        workItems={filteredWorkItems}
+        accessors={wiAccessors}
+        openModal={openModal}
+      />
+
+      <CycleTimeGraph
+        workItems={filteredWorkItems}
+        accessors={wiAccessors}
+        openModal={openModal}
+      />
+
     </>
   );
 };

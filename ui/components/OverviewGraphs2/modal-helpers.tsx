@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { useMemo, useCallback, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { contrastColour } from '../../helpers/utils';
 import { modalHeading, useModal } from '../common/Modal';
 import type { WorkItemAccessors } from './helpers';
 
@@ -88,6 +89,53 @@ export const WorkItemFlatList: React.FC<WorkItemFlatListProps> = ({
           tooltip={tooltip?.(workItem)}
         />
         {extra?.(workItem)}
+      </li>
+    ))}
+  </ul>
+);
+
+type WorkItemsNestedProps = {
+  workItems: { heading: { label: string; flair?: string; flairColor?: string }; workItems: UIWorkItem[] }[];
+  accessors: WorkItemAccessors;
+  flairs?: (workItem: UIWorkItem) => ReactNode[];
+  extra?: (workItem: UIWorkItem) => ReactNode;
+  tooltip?: (workItem: UIWorkItem, additionalSections?: { label: string; value: string | number }[]) => string;
+};
+
+export const WorkItemsNested: React.FC<WorkItemsNestedProps> = ({
+  workItems, accessors, flairs, extra, tooltip
+}) => (
+  <ul>
+    {workItems.map(({ heading, workItems }) => (
+      <li key={heading.label} className="my-3">
+        <h3 className="font-semibold text-lg">
+          {heading.label}
+          {heading.flair && (
+            <span
+              className="text-base inline-block ml-2 px-3 rounded-full"
+              style={{
+                color: contrastColour(heading.flairColor || '#888'),
+                backgroundColor: heading.flairColor || '#888'
+              }}
+            >
+              {heading.flair}
+            </span>
+          )}
+        </h3>
+        <ul>
+          {workItems.map(workItem => (
+            <li key={workItem.id} className="py-2">
+              <WorkItemLinkForModal
+                workItem={workItem}
+                workItemType={accessors.workItemType(workItem.typeId)}
+                flairs={flairs?.(workItem)}
+                tooltip={tooltip?.(workItem)}
+              />
+              {extra?.(workItem)}
+            </li>
+          ))}
+        </ul>
+
       </li>
     ))}
   </ul>

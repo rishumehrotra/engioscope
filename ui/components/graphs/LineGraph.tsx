@@ -223,7 +223,7 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
   );
 };
 
-type LineGraphProps<Line, Point> = {
+export type LineGraphProps<Line, Point> = {
   lines: Line[];
   points: (line: Line) => Point[];
   pointToValue: (point: Point) => number;
