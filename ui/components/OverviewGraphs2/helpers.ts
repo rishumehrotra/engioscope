@@ -127,3 +127,15 @@ export const getSidebarItemStats = (
       return acc;
     }, [])
 );
+
+export const getSidebarStatByKey = (key: string, organizedWorkIItems: OrganizedWorkItems) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const [matchingWitId, groups] = Object.entries(organizedWorkIItems)
+    .find(([witId]) => key.startsWith(witId))!;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const [matchingGroup, workItems] = Object.entries(groups)
+    .find(([groupName]) => key.endsWith(groupName))!;
+
+  return [matchingWitId, matchingGroup, workItems] as const;
+};

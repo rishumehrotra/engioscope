@@ -271,7 +271,7 @@ const Axes: React.FC<AxesProps> = ({ width, maxValue, yCoord }) => (
   </>
 );
 
-type ScatterLineGraphProps<T> = {
+export type ScatterLineGraphProps<T> = {
   graphData: Group<T>[];
   height: number;
   linkForItem: (x: T) => string;

@@ -1,25 +1,38 @@
 import { prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
+import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
+import type { LegendSidebarProps } from './LegendSidebar';
 import { LegendSidebar } from './LegendSidebar';
 import GraphCard from './GraphCard';
 import { prettyMS, priorityBasedColor } from '../../helpers/utils';
 import type { WorkItemAccessors } from './helpers';
-import { getSidebarItemStats, getSidebarHeadlineStats } from './helpers';
+import { getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats } from './helpers';
 import { createCompletedWorkItemTooltip } from './tooltips';
 import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
+import type { ModalArgs } from './modal-helpers';
+import { WorkItemFlatList, workItemSubheading } from './modal-helpers';
+import { WorkItemTimeDetails } from './WorkItemTimeDetails';
 
 type CycleTimeGraphProps = {
   workItems: UIWorkItem[];
   accessors: WorkItemAccessors;
+  openModal: (x: ModalArgs) => void;
 };
 
-export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors }) => {
+export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
     isWorkItemClosed, organizeByWorkItemType, workItemTimes,
-    workItemType, cycleTime, totalCycleTime
+    workItemType, cycleTime: cTime
   } = accessors;
+
+  const cycleTime = useCallback(
+    // In this component, cycleTime will always be non-null
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    (workItem: UIWorkItem) => cTime(workItem)!,
+    [cTime]
+  );
 
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -44,30 +57,76 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     [accessors]
   );
 
-  const aggregator = useCallback((workItems: UIWorkItem[]) => (
-    workItems.length ? prettyMS(totalCycleTime(workItems) / workItems.length) : '-'
-  ), [totalCycleTime]);
-
   const workItemsToDisplay = useMemo(
     () => organizeByWorkItemType(preFilteredWorkItems, filter),
     [organizeByWorkItemType, preFilteredWorkItems, filter]
   );
 
-  const sidebarHeadlineStats = useMemo(
-    () => getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg'),
-    [aggregator, workItemType, workItemsToDisplay]
-  );
+  const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
+    const {
+      totalCycleTime, workItemTimes, workItemType
+    } = accessors;
 
-  const sidebarItemStats = useMemo(
-    () => getSidebarItemStats(workItemsToDisplay, workItemType, aggregator),
-    [aggregator, workItemType, workItemsToDisplay]
-  );
+    const aggregator = (workItems: UIWorkItem[]) => (
+      workItems.length ? prettyMS(totalCycleTime(workItems) / workItems.length) : '-'
+    );
+    const items = getSidebarItemStats(workItemsToDisplay, workItemType, aggregator);
+    const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
+
+    return {
+      headlineStats,
+      items,
+      onItemClick: key => {
+        const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
+
+        return openModal({
+          heading: 'Cycle time',
+          subheading: workItemSubheading(witId, groupName, workItems, workItemType),
+          body: (
+            <WorkItemFlatList
+              workItems={(
+                workItems.sort((a, b) => cycleTime(b) - cycleTime(a))
+              )}
+              workItemType={workItemType(witId)}
+              tooltip={workItemTooltip}
+              flairs={workItem => [prettyMS(cycleTime(workItem))]}
+              extra={workItem => (
+                <WorkItemTimeDetails
+                  workItem={workItem}
+                  workItemTimes={workItemTimes}
+                />
+              )}
+            />
+          )
+        });
+      }
+    };
+  }, [accessors, cycleTime, openModal, workItemTooltip, workItemsToDisplay]);
 
   const graphWidthRatio = useMemo(
     () => Object.values(workItemsToDisplay)
       .map(x => `${Object.values(x).length}fr`)
       .join(' '),
     [workItemsToDisplay]
+  );
+
+  const scatterLineGraphProps = useMemo(
+    () => Object.entries(workItemsToDisplay).map<ScatterLineGraphProps<UIWorkItem>>(
+      ([witId, group]) => ({
+        key: witId,
+        graphData: [{
+          label: workItemType(witId).name[1],
+          data: group,
+          yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem),
+          tooltip: wi => workItemTooltip(wi)
+        }],
+        pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
+        height: 420,
+        linkForItem: prop('url'),
+        className: 'w-full'
+      })
+    ),
+    [cycleTime, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
   return (
@@ -86,31 +145,12 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
             className="grid gap-4 justify-between items-center grid-cols-2"
             style={{ gridTemplateColumns: graphWidthRatio }}
           >
-            {Object.entries(workItemsToDisplay).map(([witId, group]) => (
-              <ScatterLineGraph
-                key={witId}
-                graphData={[{
-                  label: workItemType(witId).name[1],
-                  data: group,
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  yAxisPoint: (workItem: UIWorkItem) => cycleTime(workItem)!,
-                  tooltip: x => workItemTooltip(x)
-                }]}
-                pointColor={workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined)}
-                height={420}
-                linkForItem={prop('url')}
-                className="w-full"
-              />
-            ))}
+            {scatterLineGraphProps.map(props => <ScatterLineGraph {...props} />)}
           </div>
         </>
       )}
       right={(
-        <LegendSidebar
-          headlineStats={sidebarHeadlineStats}
-          items={sidebarItemStats}
-          onItemClick={() => null}
-        />
+        <LegendSidebar {...legendSidebarProps} />
       )}
     />
   );
