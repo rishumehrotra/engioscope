@@ -79,7 +79,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
     lineColor,
     crosshairBubble: (pointIndex: number) => (
       <CrosshairBubble
-        data={dataByDay}
+        data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
         index={pointIndex}
         title="Velocity"
         itemStat={pipe(length, num)}

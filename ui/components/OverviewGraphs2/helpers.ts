@@ -49,6 +49,11 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
   const startOfQueryPeriod = oneMonthAgo(projectAnalysis.lastUpdated);
 
+  const workCenterTime = (wi: UIWorkItem) => (
+    // If a wc doesn't have an end date, we should disregard it
+    workItemTimes(wi).workCenters.reduce((a, wc) => a + (wc.end ? timeDifference(wc) : 0), 0)
+  );
+
   return {
     allWorkItems,
     lastUpdated: new Date(projectAnalysis.lastUpdated),
@@ -59,9 +64,9 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     totalCycleTime: (workItems: UIWorkItem[]) => (
       workItems.reduce((acc, wi) => acc + (cycleTime(wi) || 0), 0)
     ),
-    workCenterTime: (wi: UIWorkItem) => (
-      // If a wc doesn't have an end date, we should disregard it
-      workItemTimes(wi).workCenters.reduce((a, wc) => a + (wc.end ? timeDifference(wc) : 0), 0)
+    workCenterTime,
+    totalWorkCenterTime: (workItems: UIWorkItem[]) => (
+      workItems.reduce((acc, wi) => acc + workCenterTime(wi), 0)
     ),
     isWorkItemClosed: (wi: UIWorkItem) => {
       const wiTimes = workItemTimes(wi);
