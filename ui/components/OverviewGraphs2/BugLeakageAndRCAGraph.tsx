@@ -6,6 +6,8 @@ import { DownChevron, UpChevron } from '../common/Icons';
 import GraphCard from './GraphCard';
 import type { WorkItemAccessors } from './helpers';
 import {
+  noGroup,
+  useSidebarCheckboxState,
   lineColor,
   getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
 } from './helpers';
@@ -261,10 +263,9 @@ type BugLeakageByWitProps = {
 const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   witId, workItems, accessors, openModal
 }) => {
-  const { workItemType, organizeByWorkItemType } = accessors;
+  const { workItemType, organizeByWorkItemType, workItemGroup } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-
   const filter = useCallback(
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
@@ -275,9 +276,13 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
     [filter, organizeByWorkItemType, workItems]
   );
 
+  const [toggle, isChecked] = useSidebarCheckboxState(organized);
+
   const organizedByRCA = useMemo(
-    () => organizeWorkItemsByRCA(workItems.filter(filter)),
-    [filter, workItems]
+    () => organizeWorkItemsByRCA(workItems.filter(
+      x => filter(x) && isChecked(witId + (x.groupId ? workItemGroup(x.groupId).name : noGroup))
+    )),
+    [filter, isChecked, witId, workItemGroup, workItems]
   );
 
   const graphData: GraphItem[] = useMemo(() => (
@@ -294,7 +299,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const items = getSidebarItemStats(
-      organized, workItemType, pipe(length, num)
+      organized, workItemType, pipe(length, num), isChecked
     );
 
     const headlineStats = getSidebarHeadlineStats(
@@ -304,6 +309,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
     return {
       headlineStats,
       items,
+      onCheckboxClick: toggle,
       onItemClick: key => {
         const [witId, groupName, workItems] = getSidebarStatByKey(key, organized);
 
@@ -322,7 +328,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
         });
       }
     };
-  }, [openModal, organized, workItemTooltip, workItemType]);
+  }, [isChecked, openModal, organized, toggle, workItemTooltip, workItemType]);
 
   return (
     <GraphCard
