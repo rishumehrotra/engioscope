@@ -59,8 +59,9 @@ export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({
       {workItem.id}
       {': '}
       {workItem.title}
-      {flairs.map(flair => (
-        <span className="ml-3 rounded-full bg-gray-200 px-3 py-1 text-sm no-underline self-end -mb-1">
+      {flairs.map((flair, index) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <span key={index} className="ml-3 rounded-full bg-gray-200 px-3 py-1 text-sm no-underline self-end -mb-1">
           {flair}
         </span>
       ))}

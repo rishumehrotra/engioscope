@@ -133,7 +133,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     );
 
     const headlineStats = getSidebarHeadlineStats(
-      workItemsToDisplay, workItemType, effortDistributionStringifiedForWit, 'avg'
+      workItemsToDisplay, workItemType, effortDistributionStringifiedForWit, ''
     );
 
     return {

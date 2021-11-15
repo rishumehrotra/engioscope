@@ -9,6 +9,7 @@ import { useWorkItemModal } from './modal-helpers';
 import VelocityGraph from './VelocityGraph';
 import FlowEfficiencyGraph from './FlowEfficiencyGraph';
 import EffortDistributionGraph from './EffortDistributionGraph';
+import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
@@ -42,6 +43,12 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       />
 
       <EffortDistributionGraph
+        workItems={filteredWorkItems}
+        accessors={wiAccessors}
+        openModal={openModal}
+      />
+
+      <BugLeakageAndRCAGraph
         workItems={filteredWorkItems}
         accessors={wiAccessors}
         openModal={openModal}
