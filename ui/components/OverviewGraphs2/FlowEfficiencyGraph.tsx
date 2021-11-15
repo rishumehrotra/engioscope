@@ -24,7 +24,8 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
   workItems, accessors, openModal
 }) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes
+    isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes,
+    totalWorkCenterTime, totalCycleTime, cycleTime, workCenterTime
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -50,10 +51,10 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
   );
 
   const efficiency = useCallback((workItems: UIWorkItem[]) => {
-    const totalTime = accessors.totalCycleTime(workItems);
+    const totalTime = totalCycleTime(workItems);
     if (totalTime === 0) return 0;
-    return (accessors.totalWorkCenterTime(workItems) * 100) / totalTime;
-  }, [accessors]);
+    return (totalWorkCenterTime(workItems) * 100) / totalTime;
+  }, [totalCycleTime, totalWorkCenterTime]);
 
   const stringifyEfficiency = useCallback(
     (efficiency: number) => (efficiency === 0 ? '-' : `${Math.round(efficiency)}%`),
@@ -61,8 +62,6 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
   );
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
-    const { workItemType } = accessors;
-
     const items = getSidebarItemStats(
       workItemsToDisplay, workItemType, pipe(efficiency, stringifyEfficiency)
     );
@@ -76,15 +75,24 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
       items,
       onItemClick: key => {
         const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
+        const flairs = (workItem: UIWorkItem) => {
+          const total = cycleTime(workItem);
+          if (!total) return [];
+          return [`${Math.round((workCenterTime(workItem) * 100) / total)}%`];
+        };
 
         return openModal({
-          heading: 'Velocity over the last 30 days',
+          heading: 'Flow efficiency',
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemFlatList
               workItemType={workItemType(witId)}
-              workItems={workItems}
+              workItems={workItems.sort(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                (a, b) => (workCenterTime(a) / cycleTime(a)!) - (workCenterTime(b) / cycleTime(b)!)
+              )}
               tooltip={workItemTooltip}
+              flairs={flairs}
               extra={workItem => (
                 <WorkItemTimeDetails
                   workItem={workItem}
@@ -96,7 +104,10 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
         });
       }
     };
-  }, [accessors, efficiency, openModal, stringifyEfficiency, workItemTimes, workItemTooltip, workItemsToDisplay]);
+  }, [
+    cycleTime, efficiency, openModal, stringifyEfficiency, workCenterTime,
+    workItemTimes, workItemTooltip, workItemType, workItemsToDisplay
+  ]);
 
   return (
     <GraphCard

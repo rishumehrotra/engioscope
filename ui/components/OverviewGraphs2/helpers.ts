@@ -102,15 +102,15 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 export type WorkItemAccessors = ReturnType<typeof workItemAccessors>;
 
 export const getSidebarHeadlineStats = (
-  organizedWorkIItems: OrganizedWorkItems,
+  organizedWorkItems: OrganizedWorkItems,
   workItemType: WorkItemAccessors['workItemType'],
-  aggregator: (workItems: UIWorkItem[]) => string,
+  aggregator: (workItems: UIWorkItem[], witId: string) => string,
   unit: string
 ) => (
-  Object.entries(organizedWorkIItems)
-    .map(([typeId, groups]) => ({
-      label: workItemType(typeId).name[1],
-      value: aggregator(Object.values(groups).flat()),
+  Object.entries(organizedWorkItems)
+    .map(([witId, groups]) => ({
+      label: workItemType(witId).name[1],
+      value: aggregator(Object.values(groups).flat(), witId),
       unit
     }))
 );
@@ -118,7 +118,7 @@ export const getSidebarHeadlineStats = (
 export const getSidebarItemStats = (
   organizedWorkIItems: OrganizedWorkItems,
   workItemType: WorkItemAccessors['workItemType'],
-  aggregator: (workItems: UIWorkItem[]) => string,
+  aggregator: (workItems: UIWorkItem[], witId: string, groupName: string) => string,
   isChecked?: (key: string) => boolean,
   color = lineColor
 ) => (
@@ -129,7 +129,7 @@ export const getSidebarItemStats = (
         const label = groupName === noGroup ? wit.name[1] : groupName;
         acc.push({
           label,
-          value: aggregator(workItems),
+          value: aggregator(workItems, witId, groupName),
           iconUrl: wit.icon,
           key: witId + groupName,
           color: color({ witId, groupName }),
