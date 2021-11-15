@@ -10,6 +10,7 @@ import { getMatchingAtIndex, splitByDateForLineGraph } from './day-wise-line-gra
 import GraphCard from './GraphCard';
 import type { WorkItemAccessors } from './helpers';
 import {
+  useSidebarCheckboxState,
   lineColor, getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
 } from './helpers';
 import type { LegendSidebarProps } from './LegendSidebar';
@@ -65,9 +66,11 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
     [accessors, workItemsToDisplay]
   );
 
+  const [onCheckboxClick, isChecked] = useSidebarCheckboxState(workItemsToDisplay);
+
   const lineGraphProps = useMemo<LineGraphProps<WorkItemLine, WorkItemPoint>>(() => ({
     className: 'max-w-full',
-    lines: dataByDay,
+    lines: dataByDay.filter(x => isChecked(x.witId + x.groupName)),
     points: prop('workItemPoints'),
     pointToValue: pipe(prop('workItems'), length),
     yAxisLabel: num,
@@ -107,13 +110,17 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, openModal, workItemTooltip]);
+  }), [accessors, dataByDay, isChecked, openModal, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;
 
-    const items = getSidebarItemStats(workItemsToDisplay, workItemType, pipe(length, num));
-    const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, pipe(length, num), 'avg');
+    const items = getSidebarItemStats(
+      workItemsToDisplay, workItemType, pipe(length, num), isChecked
+    );
+    const headlineStats = getSidebarHeadlineStats(
+      workItemsToDisplay, workItemType, pipe(length, num), 'total'
+    );
 
     return {
       headlineStats,
@@ -144,9 +151,10 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
             />
           )
         });
-      }
+      },
+      onCheckboxClick
     };
-  }, [accessors, dataByDay, openModal, workItemTooltip, workItemsToDisplay]);
+  }, [accessors, dataByDay, isChecked, onCheckboxClick, openModal, workItemTooltip, workItemsToDisplay]);
 
   return (
     <GraphCard

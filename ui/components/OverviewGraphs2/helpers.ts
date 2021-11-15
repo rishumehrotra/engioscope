@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../shared/types';
 import { createPalette } from '../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
@@ -113,8 +114,8 @@ export const getSidebarItemStats = (
   organizedWorkIItems: OrganizedWorkItems,
   workItemType: WorkItemAccessors['workItemType'],
   aggregator: (workItems: UIWorkItem[]) => string,
-  color = lineColor,
-  isChecked?: (key: string) => boolean
+  isChecked?: (key: string) => boolean,
+  color = lineColor
 ) => (
   Object.entries(organizedWorkIItems)
     .reduce<LegendSidebarProps['items']>((acc, [witId, groups]) => {
@@ -134,9 +135,28 @@ export const getSidebarItemStats = (
     }, [])
 );
 
-export const getSidebarStatByKey = (key: string, organizedWorkIItems: OrganizedWorkItems) => {
+export const useSidebarCheckboxState = (organizedAllWorkItems: OrganizedWorkItems) => {
+  const [checked, setChecked] = useState(
+    Object.entries(organizedAllWorkItems).reduce<Record<string, boolean>>((acc, [witId, groups]) => {
+      Object.keys(groups).forEach(groupName => {
+        acc[witId + groupName] = true;
+      });
+      return acc;
+    }, {})
+  );
+
+  const toggleChecked = (key: string) => {
+    setChecked(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const getChecked = (key: string) => checked[key];
+
+  return [toggleChecked, getChecked] as const;
+};
+
+export const getSidebarStatByKey = (key: string, organizedWorkItems: OrganizedWorkItems) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const [matchingWitId, groups] = Object.entries(organizedWorkIItems)
+  const [matchingWitId, groups] = Object.entries(organizedWorkItems)
     .find(([witId]) => key.startsWith(witId))!;
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
