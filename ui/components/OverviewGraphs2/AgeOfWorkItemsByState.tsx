@@ -5,14 +5,14 @@ import { num, prettyMS, priorityBasedColor } from '../../helpers/utils';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import GraphCard from './GraphCard';
-import type { OrganizedWorkItems, WorkItemAccessors } from './helpers';
-import type { LegendSidebarProps } from './LegendSidebar';
-import { LegendSidebar } from './LegendSidebar';
-import type { ModalArgs } from './modal-helpers';
-import { WorkItemFlatList } from './modal-helpers';
-import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
-import { createWIPWorkItemTooltip } from './tooltips';
+import GraphCard from './helpers/GraphCard';
+import type { OrganizedWorkItems, WorkItemAccessors } from './helpers/helpers';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemFlatList } from './helpers/modal-helpers';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
 const workItemStateUsing = (
   { workItemTimes }: WorkItemAccessors,

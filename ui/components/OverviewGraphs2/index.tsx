@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
 import type { ProjectOverviewAnalysis } from '../../../shared/types';
-import OverviewFilters from './OverviewFilters';
+import OverviewFilters from './helpers/OverviewFilters';
 import { useRemoveSort } from '../../hooks/sort-hooks';
-import useGlobalFilters from './use-global-filters';
-import { CycleTimeGraph } from './CycleTimeGraph';
-import { workItemAccessors } from './helpers';
-import { useWorkItemModal } from './modal-helpers';
-import VelocityGraph from './VelocityGraph';
-import FlowEfficiencyGraph from './FlowEfficiencyGraph';
-import EffortDistributionGraph from './EffortDistributionGraph';
-import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
+import useGlobalFilters from './helpers/use-global-filters';
+import { CycleTimeGraph } from './CycleTime';
+import { workItemAccessors } from './helpers/helpers';
+import { useWorkItemModal } from './helpers/modal-helpers';
+import VelocityGraph from './Velocity';
+import FlowEfficiencyGraph from './FlowEfficiency';
+import EffortDistributionGraph from './EffortDistribution';
+import BugLeakageAndRCAGraph from './BugLeakageAndRCA';
 import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {

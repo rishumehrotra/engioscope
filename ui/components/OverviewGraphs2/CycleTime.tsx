@@ -3,17 +3,17 @@ import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import type { LegendSidebarProps } from './LegendSidebar';
-import { LegendSidebar } from './LegendSidebar';
-import GraphCard from './GraphCard';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import GraphCard from './helpers/GraphCard';
 import { prettyMS, priorityBasedColor } from '../../helpers/utils';
-import type { WorkItemAccessors } from './helpers';
-import { getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats } from './helpers';
-import { createCompletedWorkItemTooltip } from './tooltips';
-import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
-import type { ModalArgs } from './modal-helpers';
-import { WorkItemFlatList, workItemSubheading } from './modal-helpers';
-import { WorkItemTimeDetails } from './WorkItemTimeDetails';
+import type { WorkItemAccessors } from './helpers/helpers';
+import { getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats } from './helpers/helpers';
+import { createCompletedWorkItemTooltip } from './helpers/tooltips';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
+import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
 
 type CycleTimeGraphProps = {
   workItems: UIWorkItem[];

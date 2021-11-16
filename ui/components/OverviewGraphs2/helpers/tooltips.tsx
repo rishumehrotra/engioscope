@@ -1,5 +1,5 @@
-import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { prettyMS } from '../../helpers/utils';
+import type { Overview, UIWorkItem, UIWorkItemType } from '../../../../shared/types';
+import { prettyMS } from '../../../helpers/utils';
 import type { WorkItemAccessors } from './helpers';
 import { timeDifference } from './helpers';
 

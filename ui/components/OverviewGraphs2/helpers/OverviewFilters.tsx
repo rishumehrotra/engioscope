@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown';
 import type { Filter } from './use-global-filters';
 
 type FiltersProps = {

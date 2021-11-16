@@ -1,7 +1,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { last, prop } from 'rambda';
 import React from 'react';
-import type { Overview, UIWorkItem } from '../../../shared/types';
+import type { Overview, UIWorkItem } from '../../../../shared/types';
 import { timeDifference } from './helpers';
 
 type WorkItemTimeDetailsProps = {

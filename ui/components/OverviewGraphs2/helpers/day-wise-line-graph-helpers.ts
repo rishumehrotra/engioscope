@@ -1,5 +1,5 @@
 import { range } from 'rambda';
-import type { UIWorkItem } from '../../../shared/types';
+import type { UIWorkItem } from '../../../../shared/types';
 import type { OrganizedWorkItems, WorkItemAccessors } from './helpers';
 
 export type WorkItemPoint = {

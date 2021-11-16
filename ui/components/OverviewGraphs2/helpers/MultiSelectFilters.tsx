@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { UIWorkItem } from '../../../shared/types';
-import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import type { UIWorkItem } from '../../../../shared/types';
+import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown';
 
 type FilterProps = {
   workItems: UIWorkItem[];

@@ -2,19 +2,19 @@ import { add } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
 import { exists, prettyMS, shortDate } from '../../helpers/utils';
-import GraphCard from './GraphCard';
-import type { WorkItemAccessors } from './helpers';
+import GraphCard from './helpers/GraphCard';
+import type { WorkItemAccessors } from './helpers/helpers';
 import {
   lineColor, noGroup,
   getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey,
   timeDifference
-} from './helpers';
-import type { LegendSidebarProps } from './LegendSidebar';
-import { LegendSidebar } from './LegendSidebar';
-import type { ModalArgs } from './modal-helpers';
-import { WorkItemFlatList, workItemSubheading } from './modal-helpers';
-import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
-import { createWIPWorkItemTooltip } from './tooltips';
+} from './helpers/helpers';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
 const workCenterTimeThisMonthUsing = (workItemTimes: WorkItemAccessors['workItemTimes']) => {
   const monthAgo = new Date();

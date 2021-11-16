@@ -3,20 +3,20 @@ import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import { DownChevron, UpChevron } from '../common/Icons';
-import GraphCard from './GraphCard';
-import type { WorkItemAccessors } from './helpers';
+import GraphCard from './helpers/GraphCard';
+import type { WorkItemAccessors } from './helpers/helpers';
 import {
   noGroup,
   useSidebarCheckboxState,
   lineColor,
   getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
-} from './helpers';
-import type { LegendSidebarProps } from './LegendSidebar';
-import { LegendSidebar } from './LegendSidebar';
-import type { ModalArgs } from './modal-helpers';
-import { WorkItemLinkForModal, WorkItemFlatList, workItemSubheading } from './modal-helpers';
-import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
-import { createWIPWorkItemTooltip } from './tooltips';
+} from './helpers/helpers';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemLinkForModal, WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
 type GraphItem = {
   rca: string;

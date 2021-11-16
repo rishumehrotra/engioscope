@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../shared/types';
-import { createPalette } from '../../helpers/utils';
+import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../../shared/types';
+import { createPalette } from '../../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
 
 export type GroupLabel = { witId: string; groupName: string };

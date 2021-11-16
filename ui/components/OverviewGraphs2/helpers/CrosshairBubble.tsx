@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import type { UIWorkItem } from '../../../shared/types';
-import { contrastColour, shortDate } from '../../helpers/utils';
+import type { UIWorkItem } from '../../../../shared/types';
+import { contrastColour, shortDate } from '../../../helpers/utils';
 import { lineColor } from './helpers';
 import type { WorkItemAccessors } from './helpers';
 import type { WorkItemLine } from './day-wise-line-graph-helpers';

@@ -1,18 +1,18 @@
 import { pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
-import GraphCard from './GraphCard';
-import type { WorkItemAccessors } from './helpers';
+import GraphCard from './helpers/GraphCard';
+import type { WorkItemAccessors } from './helpers/helpers';
 import {
   lineColor, noGroup, getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey
-} from './helpers';
-import type { LegendSidebarProps } from './LegendSidebar';
-import { LegendSidebar } from './LegendSidebar';
-import type { ModalArgs } from './modal-helpers';
-import { WorkItemFlatList, workItemSubheading } from './modal-helpers';
-import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
-import { createCompletedWorkItemTooltip } from './tooltips';
-import { WorkItemTimeDetails } from './WorkItemTimeDetails';
+} from './helpers/helpers';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import { createCompletedWorkItemTooltip } from './helpers/tooltips';
+import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
 
 type FlowEfficiencyProps = {
   workItems: UIWorkItem[];

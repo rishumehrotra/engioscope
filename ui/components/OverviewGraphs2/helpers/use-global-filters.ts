@@ -1,6 +1,6 @@
 import { allPass } from 'rambda';
 import { useMemo, useState } from 'react';
-import type { UIWorkItem } from '../../../shared/types';
+import type { UIWorkItem } from '../../../../shared/types';
 
 export type Filter = { label: string; tags: string[] };
 

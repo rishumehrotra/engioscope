@@ -4,21 +4,21 @@ import type { UIWorkItem } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import type { LineGraphProps } from '../graphs/LineGraph';
 import LineGraph from '../graphs/LineGraph';
-import { CrosshairBubble } from './CrosshairBubble';
-import type { WorkItemLine, WorkItemPoint } from './day-wise-line-graph-helpers';
-import { getMatchingAtIndex, splitByDateForLineGraph } from './day-wise-line-graph-helpers';
-import GraphCard from './GraphCard';
-import type { WorkItemAccessors } from './helpers';
+import { CrosshairBubble } from './helpers/CrosshairBubble';
+import type { WorkItemLine, WorkItemPoint } from './helpers/day-wise-line-graph-helpers';
+import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-line-graph-helpers';
+import GraphCard from './helpers/GraphCard';
+import type { WorkItemAccessors } from './helpers/helpers';
 import {
   useSidebarCheckboxState,
   lineColor, getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
-} from './helpers';
-import type { LegendSidebarProps } from './LegendSidebar';
-import { LegendSidebar } from './LegendSidebar';
-import type { ModalArgs } from './modal-helpers';
-import { WorkItemsNested, workItemSubheading } from './modal-helpers';
-import { PriorityFilter, SizeFilter } from './MultiSelectFilters';
-import { createCompletedWorkItemTooltip } from './tooltips';
+} from './helpers/helpers';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemsNested, workItemSubheading } from './helpers/modal-helpers';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import { createCompletedWorkItemTooltip } from './helpers/tooltips';
 
 const isClosedToday = (workItem: UIWorkItem, dayStart: Date, accessors: WorkItemAccessors) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
