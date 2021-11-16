@@ -88,64 +88,24 @@ export const revisionTooltip = (revision: UIWorkItemRevision, nextRevision: UIWo
   </div>
 `;
 
-type CltStats = { clt: number | undefined; cltStage: 'Dev not done' | 'Dev done' | 'Done' };
-
-export const cltStats = (workItem: UIWorkItem): CltStats => {
-  if (workItem.clt?.start && workItem.clt.end) {
-    return {
-      cltStage: 'Done',
-      clt: new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime()
-    };
-  }
-  if (workItem.clt?.start && !workItem.clt?.end) {
-    return {
-      cltStage: 'Dev done',
-      clt: new Date().getTime() - new Date(workItem.clt?.start).getTime()
-    };
-  }
-  return {
-    cltStage: 'Dev not done',
-    clt: undefined
-  };
-};
-
-export const cltStatsTooltip = (cltStats: CltStats) => {
-  const { clt, cltStage } = cltStats;
-  if (clt === undefined) return '';
-
-  const prettyClt = prettyMilliseconds(clt, { compact: true, verbose: true });
-  if (cltStage === 'Done') {
-    return `<span class="font-bold">CLT (dev done to production):</span> <span class="text-green-500">${prettyClt}</span>`;
-  }
-  if (cltStage === 'Dev done') {
-    return `<span class="font-bold">${cltStage}</span> <span class="text-red-300">${prettyClt}</span> ago`;
-  }
-};
-
-export const rowItemTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => {
-  const { cltStage, clt } = cltStats(workItem);
-  return `
-    <div class="max-w-xs">
-      <div class="pl-3" style="text-indent: -1.15rem">
-        <span class="font-bold">
-          <img src="${type.icon}" width="14" height="14" class="inline-block -mt-1" />
-          ${type.name[0]} #${workItem.id}:
-        </span>
-        ${workItem.title}
-      </div>
-      ${workItem.env ? (`
-        <div class="mt-2">
-          <span class="font-bold">Environment: </span>
-          ${workItem.env}
-        </div>
-      `) : ''}
-      <div class="mt-2">
-        <span class="font-bold">Project: </span>
-        ${workItem.project}
-      </div>
-      <div class="mt-2">
-        ${cltStatsTooltip({ cltStage, clt })}
-        </div>
+export const rowItemTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => `
+  <div class="max-w-xs">
+    <div class="pl-3" style="text-indent: -1.15rem">
+      <span class="font-bold">
+        <img src="${type.icon}" width="14" height="14" class="inline-block -mt-1" />
+        ${type.name[0]} #${workItem.id}:
+      </span>
+      ${workItem.title}
     </div>
-  `;
-};
+    ${workItem.env ? (`
+      <div class="mt-2">
+        <span class="font-bold">Environment: </span>
+        ${workItem.env}
+      </div>
+    `) : ''}
+    <div class="mt-2">
+      <span class="font-bold">Project: </span>
+      ${workItem.project}
+    </div>
+  </div>
+`;

@@ -14,8 +14,6 @@ import AppliedFilters from '../components/AppliedFilters';
 import Loading from '../components/Loading';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
-import FeaturesAndBugsSummary from '../components/FeaturesAndBugsSummary';
-import { workItemByIdUsing } from '../helpers/work-item-utils';
 
 const colorForStage = createPalette([
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -69,7 +67,10 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
 
   const sorter = useSort(sorterMap, 'Bundle size');
 
-  const workItemById = useMemo(() => workItemByIdUsing(workItems.byId), [workItems.byId]);
+  const workItemById = useCallback(
+    (id: number) => workItems.byId[id],
+    [workItems.byId]
+  );
 
   const filteredWorkItems = useMemo(() => {
     const { workItems } = workItemAnalysis;
@@ -100,13 +101,6 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
     <>
       <div className="flex justify-between items-center my-3 w-full -mt-5">
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
-        <FeaturesAndBugsSummary
-          workItems={filteredWorkItems}
-          workItemById={workItemById}
-          workItemType={workItemType}
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          bugLeakage={workItemAnalysis.workItems!.bugLeakage}
-        />
       </div>
 
       <ul>

@@ -1,8 +1,6 @@
 import pluralize from 'pluralize';
 import { reduce } from 'rambda';
-import type {
-  AnalysedWorkItems, UIWorkItem, UIWorkItemType
-} from '../../../shared/types';
+import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { exists, isNewerThan, unique } from '../../utils';
 import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
@@ -96,54 +94,6 @@ const sourcesUntilMatch = (
   return (workItemId: number) => recurse(workItemId, []);
 };
 
-type CLT = {
-  clt: {
-    start?: string;
-    end?: string;
-  };
-};
-
-const computeCLT = (collectionConfig: ParsedCollection, workItem: WorkItem): CLT | undefined => {
-  if (!collectionConfig.workitems.changeLeadTime) return undefined;
-
-  const matchingCLTConfig = collectionConfig.workitems.changeLeadTime[workItem.fields['System.WorkItemType']];
-  if (!matchingCLTConfig) return undefined;
-
-  if (matchingCLTConfig.whenMatchesField) {
-    const matchesWorkItem = matchingCLTConfig.whenMatchesField?.every(({ field, value }) => (
-      workItem.fields[field] === value
-    ));
-    if (!matchesWorkItem) return undefined;
-  }
-
-  const computeDate = (fieldArray: string[]) => {
-    const minDates = fieldArray.reduce<number[]>((acc, fieldName) => {
-      const value = workItem.fields[fieldName];
-      if (!value) return acc;
-      return acc.concat(new Date(value).getTime());
-    }, []);
-
-    if (minDates.length === 0) return undefined;
-    return new Date(Math.min(...minDates)).toISOString();
-  };
-
-  return {
-    clt: {
-      start: computeDate(matchingCLTConfig.startDateField),
-      end: computeDate(matchingCLTConfig.endDateField)
-    }
-  };
-};
-
-const computeLeadTime = (workItem: WorkItem) => ({
-  leadTime: {
-    start: new Date(workItem.fields['System.CreatedDate']).toISOString(),
-    end: workItem.fields['Microsoft.VSTS.Common.ClosedDate']
-      ? new Date(workItem.fields['Microsoft.VSTS.Common.ClosedDate']).toISOString()
-      : undefined
-  }
-});
-
 const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName, WorkItemTypeByTypeName>) => (
   (workItem: WorkItem) => {
     const projectName = workItem.fields['System.TeamProject'];
@@ -214,8 +164,6 @@ const uiWorkItemCreator = (
         : undefined,
       priority: workItem.fields['Microsoft.VSTS.Common.Priority'],
       severity: workItem.fields['Microsoft.VSTS.Common.Severity'],
-      ...computeCLT(collectionConfig, workItem),
-      ...computeLeadTime(workItem),
       ...rca(collectionConfig, workItem, workItemType),
       ...filterTags(collectionConfig, workItem)
     };
@@ -371,35 +319,9 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     const monthAgo = new Date();
     monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-    const bugLeakage = collection.workitems.environmentField
-      ? workItemsForProject.reduce<NonNullable<AnalysedWorkItems['bugLeakage']>>((acc, workItem) => {
-        if (!collection.workitems.environmentField) return acc; // Stupid line for TS
-        if (!workItem.fields['System.WorkItemType'].toLowerCase().includes('bug')) return acc;
-        if (!workItem.fields[collection.workitems.environmentField]) return acc;
-        if (workItem.fields['System.State'] === 'Withdrawn') return acc;
-
-        const env = workItem.fields[collection.workitems.environmentField];
-
-        const isCreatedInLastMonth = workItem.fields['System.CreatedDate'] >= monthAgo;
-        const isClosedInLastMonth = (
-          workItem.fields['Microsoft.VSTS.Common.ClosedDate']
-          && workItem.fields['Microsoft.VSTS.Common.ClosedDate'] >= monthAgo
-        );
-
-        if (!isCreatedInLastMonth && !isClosedInLastMonth) return acc;
-
-        acc[env] = {
-          opened: [...(acc[env]?.opened || []), ...(isCreatedInLastMonth ? [workItem.id] : [])],
-          closed: [...(acc[env]?.closed || []), ...(isClosedInLastMonth ? [workItem.id] : [])]
-        };
-
-        return acc;
-      }, {})
-      : null;
-
     return {
       analysedWorkItems: {
-        byId, ids, bugLeakage, types
+        byId, ids, types
       },
       overview: getOverviewData(
         config, collection, workItemsForProject, byId, types, getWorkItemType

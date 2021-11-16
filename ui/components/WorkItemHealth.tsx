@@ -1,10 +1,7 @@
-import prettyMilliseconds from 'pretty-ms';
-import { add } from 'rambda';
 import React, { useCallback } from 'react';
 import type {
   AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
 } from '../../shared/types';
-import { exists } from '../helpers/utils';
 import WorkItemsGanttChart from './WorkItemsGanttChart';
 import { Revisions } from './WorkItemsGanttChart/GanttRow';
 import {
@@ -69,19 +66,6 @@ const WorkItem: React.FC<WorkItemProps> = ({
   const workItemRevisions = revisions[workItemId];
   const workItem = workItemsById[workItemId];
 
-  const clts = (workItemsIdTree[workItemId] || [])
-    .reduce<(number | undefined) []>((acc, id) => {
-      const workItem = workItemsById[id];
-      return [
-        ...acc,
-        workItem.clt?.start && workItem.clt.end
-          ? (new Date(workItem.clt?.end).getTime() - new Date(workItem.clt?.start).getTime())
-          : undefined
-      ];
-    }, []);
-
-  const filteredClts = clts.filter(exists);
-
   const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
     const coordsGetter = workItemRevisions === 'loading'
       ? () => 0
@@ -138,24 +122,6 @@ const WorkItem: React.FC<WorkItemProps> = ({
               </svg>
             ) : null
         }
-      </div>
-      <div className="text-base font-normal text-gray-800">
-        <div>
-          { filteredClts.length
-            ? (
-              <span className="text-blue-gray text-sm my-2">
-                <span>CLT:  </span>
-                <span className="font-semibold">
-                  {`${prettyMilliseconds(Math.min(...filteredClts), { compact: true })} - 
-                  ${prettyMilliseconds(Math.max(...filteredClts), { compact: true })}`}
-                </span>
-                <span>
-                  {` (average ${prettyMilliseconds(filteredClts.reduce(add, 0) / filteredClts.length, { compact: true })})`}
-                </span>
-              </span>
-            )
-            : null}
-        </div>
       </div>
       <div className="mt-4 cursor-default">
         <WorkItemsGanttChart

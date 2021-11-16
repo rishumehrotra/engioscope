@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../shared/types';
 import usePopover from '../hooks/use-popover';
-import type { FeaturesAndBugsSummaryProps } from './FeaturesAndBugsSummary';
 
 type Stat = {
   title: string;
@@ -21,7 +20,7 @@ export type ProjectStatProps = {
   popupContents?: (x: { topStats: Stat[]; childStats?: Stat[] }) => ReactNode;
 };
 
-const ProjectStat: React.FC<ProjectStatProps & Partial<FeaturesAndBugsSummaryProps>> = ({
+const ProjectStat: React.FC<ProjectStatProps> = ({
   topStats, childStats, popupContents
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();

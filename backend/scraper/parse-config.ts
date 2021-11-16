@@ -5,24 +5,12 @@ type ReleasePipelineConfig = {
   stagesToHighlight: string[];
 };
 
-type CLTDefinition = {
-  whenMatchesField?: {
-    field: string;
-    value: string;
-  }[];
-  startDateField: string[];
-  endDateField: string[];
-};
-
-type WorkItemType = string;
-
 type CollectionWorkItemConfig = {
   label?: string;
   getWorkItems: string[];
   groupUnder: string[];
   skipChildren?: string[];
   environmentField?: string;
-  changeLeadTime?: Record<WorkItemType, CLTDefinition>;
   ignoredWorkItemsForFlowAnalysis?: string[];
   filterBy?: {
     label: string;
@@ -94,7 +82,6 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   groupUnder: string[];
   skipChildren: string[];
   environmentField?: string;
-  changeLeadTime?: Record<WorkItemType, ParsedCLTDefinition>;
   ignoredWorkItemsForFlowAnalysis?: string[];
   filterBy?: {
     label: string;
@@ -151,7 +138,6 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     groupUnder: collection.workitems?.groupUnder ?? config.azure.workitems?.groupUnder ?? ['Feature', 'Bug'],
     skipChildren: collection.workitems?.skipChildren ?? config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
     environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
-    changeLeadTime: collection.workitems?.changeLeadTime ?? config.azure.workitems?.changeLeadTime,
     ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
       ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
     filterBy: (collection.workitems?.filterBy || config.azure.workitems?.filterBy || []).map(filter => ({

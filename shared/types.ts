@@ -139,8 +139,6 @@ export type UIWorkItem = {
   // description: string;
   url: string;
   env?: string;
-  clt?: { start?: string; end?: string };
-  leadTime: { start: string; end?: string };
   groupId?: string;
   priority?: number;
   severity?: string;
@@ -168,7 +166,6 @@ export type AnalysedWorkItems = {
   ids: Record<number, number[] | undefined>;
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
-  bugLeakage: Record<string, {opened: number[]; closed: number[]}> | null;
 };
 
 export type Overview = {

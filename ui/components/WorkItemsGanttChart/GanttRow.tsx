@@ -6,7 +6,7 @@ import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../sh
 import {
   textWidth, textHeight, rowPadding, svgWidth, makeTransparent, barYCoord,
   barHeight, barWidthUsing, makeDarker, barStartPadding, revisionTooltip,
-  cltStats, rowItemTooltip
+  rowItemTooltip
 } from './helpers';
 import { TreeNodeButton } from './TreeNodeButton';
 import type { Row } from './use-gantt-rows';
@@ -151,16 +151,6 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
         height={textHeight}
         fill={rowColor}
       />
-      {isWorkItemRow(row) && cltStats(row.workItem).cltStage !== 'Dev not done' ? (
-        <line
-          x1="1"
-          y1={(textHeight + (rowPadding * 2)) * rowIndex}
-          x2="1"
-          y2={((textHeight + (rowPadding * 2)) * rowIndex) + textHeight}
-          strokeWidth="3"
-          stroke={cltStats(row.workItem).cltStage === 'Dev done' ? 'salmon' : 'limegreen'}
-        />
-      ) : null}
       <foreignObject
       // The stuff on the left
         x="10"
