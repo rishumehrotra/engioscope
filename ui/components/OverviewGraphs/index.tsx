@@ -13,6 +13,7 @@ import BugLeakageAndRCAGraph from './BugLeakageAndRCA';
 import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
 import WIPTrendGraph from './WIPTrend';
 import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
+import { ChangeLeadTimeGraph } from './ChangeLeadTime';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
@@ -28,8 +29,8 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       <OverviewFilters filters={filters} onChange={setSelectedFilters} />
 
       {[
-        VelocityGraph, CycleTimeGraph, FlowEfficiencyGraph,
-        EffortDistributionGraph, BugLeakageAndRCAGraph,
+        VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
+        FlowEfficiencyGraph, EffortDistributionGraph, BugLeakageAndRCAGraph,
         AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
       ].map((Graph, index) => (
         <Graph

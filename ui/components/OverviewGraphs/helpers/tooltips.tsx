@@ -42,13 +42,19 @@ const computeTimes = (workCenters: Overview['times'][number]['workCenters']) => 
 export const createCompletedWorkItemTooltip = ({
   workItemType, cycleTime, workCenterTime, workItemTimes, workItemGroup
 }: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: { label: string; value: string | number }[] = []) => {
+  const times = workItemTimes(workItem);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ct = cycleTime(workItem)!;
   const efficiency = Math.round((workCenterTime(workItem) / ct) * 100);
   const wit = workItemType(workItem.typeId);
   const wig = workItem.groupId ? workItemGroup(workItem.groupId) : undefined;
 
-  const worstOffender = computeTimes(workItemTimes(workItem).workCenters)
+  const clt = times.devComplete
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    ? new Date(times.end!).getTime() - new Date(times.devComplete!).getTime()
+    : undefined;
+
+  const worstOffender = computeTimes(times.workCenters)
     .sort((a, b) => b.timeDiff - a.timeDiff)[0];
 
   return `
@@ -56,6 +62,7 @@ export const createCompletedWorkItemTooltip = ({
       <div class="pl-3" style="text-indent: -1.15rem">
         ${workItemBasicDetails(workItem, wit, wig?.name)}
         ${addSection('Cycle Time', prettyMS(ct))}
+        ${clt ? addSection('Change lead time', prettyMS(clt)) : ''}
         ${addSection('Longest time', `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`)}
         ${addSection('Efficiency', `${efficiency}%`)}
         ${additionalSections.map(({ label, value }) => addSection(label, value)).join('')}

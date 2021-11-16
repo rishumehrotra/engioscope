@@ -50,6 +50,7 @@ export const getOverviewData = (
     acc.times[workItem.id] = {
       start: getMinDate(workItemConfig.startDate, workItem)?.toISOString(),
       end: getMinDate(workItemConfig.endDate, workItem)?.toISOString(),
+      devComplete: getMinDate(workItemConfig.devCompletionDate, workItem)?.toISOString(),
       workCenters: workItemConfig.workCenters.map(wc => {
         const wcStartDate = getMinDate(wc.startDate, workItem);
         const wcEndDate = getMinDate(wc.endDate, workItem);

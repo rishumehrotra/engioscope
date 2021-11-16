@@ -15,30 +15,23 @@ import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
 
-type CycleTimeGraphProps = {
+type ChangeLeadTimeGraphProps = {
   workItems: UIWorkItem[];
   accessors: WorkItemAccessors;
   openModal: (x: ModalArgs) => void;
 };
 
-export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors, openModal }) => {
+export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, cycleTime: cTime
+    isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes
   } = accessors;
-
-  const cycleTime = useCallback(
-    // In this component, cycleTime will always be non-null
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (workItem: UIWorkItem) => cTime(workItem)!,
-    [cTime]
-  );
 
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
   const preFilteredWorkItems = useMemo(
-    () => workItems.filter(isWorkItemClosed),
-    [isWorkItemClosed, workItems]
+    () => workItems.filter(wi => isWorkItemClosed(wi) && workItemTimes(wi).devComplete),
+    [isWorkItemClosed, workItemTimes, workItems]
   );
 
   const filter = useCallback(
@@ -56,13 +49,28 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     [organizeByWorkItemType, preFilteredWorkItems, filter]
   );
 
+  const clt = useCallback(
+    (workItem: UIWorkItem) => {
+      const times = workItemTimes(workItem);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return new Date(times.end!).getTime() - new Date(times.devComplete!).getTime();
+    },
+    [workItemTimes]
+  );
+
+  const totalClt = useCallback(
+    (workItems: UIWorkItem[]) => workItems.reduce(
+      (acc, workItem) => acc + clt(workItem),
+      0
+    ),
+    [clt]
+  );
+
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
-    const {
-      totalCycleTime, workItemTimes, workItemType
-    } = accessors;
+    const { workItemTimes, workItemType } = accessors;
 
     const aggregator = (workItems: UIWorkItem[]) => (
-      workItems.length ? prettyMS(totalCycleTime(workItems) / workItems.length) : '-'
+      workItems.length ? prettyMS(totalClt(workItems) / workItems.length) : '-'
     );
     const items = getSidebarItemStats(workItemsToDisplay, workItemType, aggregator);
     const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
@@ -74,16 +82,16 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
         const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
 
         return openModal({
-          heading: 'Cycle time',
+          heading: 'Change lead time',
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemFlatList
               workItems={(
-                workItems.sort((a, b) => cycleTime(b) - cycleTime(a))
+                workItems.sort((a, b) => clt(b) - clt(a))
               )}
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}
-              flairs={workItem => [prettyMS(cycleTime(workItem))]}
+              flairs={workItem => [`CLT: ${prettyMS(clt(workItem))}`]}
               extra={workItem => (
                 <WorkItemTimeDetails
                   workItem={workItem}
@@ -95,7 +103,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
         });
       }
     };
-  }, [accessors, cycleTime, openModal, workItemTooltip, workItemsToDisplay]);
+  }, [accessors, clt, openModal, totalClt, workItemTooltip, workItemsToDisplay]);
 
   const graphWidthRatio = useMemo(
     () => Object.values(workItemsToDisplay)
@@ -111,7 +119,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
         graphData: [{
           label: workItemType(witId).name[1],
           data: group,
-          yAxisPoint: cycleTime,
+          yAxisPoint: clt,
           tooltip: wi => workItemTooltip(wi)
         }],
         pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
@@ -120,13 +128,15 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
         className: 'w-full'
       })
     ),
-    [cycleTime, workItemTooltip, workItemType, workItemsToDisplay]
+    [clt, workItemTooltip, workItemType, workItemsToDisplay]
   );
+
+  if (preFilteredWorkItems.length === 0) return null;
 
   return (
     <GraphCard
-      title="Cycle time"
-      subtitle="Time taken to complete a work item"
+      title="Change lead time"
+      subtitle="Time taken to take a work item to production after development is complete"
       hasData={preFilteredWorkItems.length > 0}
       noDataMessage="Couldn't find any matching work items"
       left={(

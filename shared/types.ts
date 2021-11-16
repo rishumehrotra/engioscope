@@ -178,6 +178,7 @@ export type Overview = {
   times: Record<number, {
     start?: string;
     end?: string;
+    devComplete?: string;
     workCenters: {
       label: string;
       start: string;
