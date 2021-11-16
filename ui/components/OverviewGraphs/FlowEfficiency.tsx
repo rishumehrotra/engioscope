@@ -130,7 +130,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
                 return (
                   <li
                     key={witId + groupName}
-                    className="grid gap-4 my-4 items-center mr-4"
+                    className="grid gap-4 my-4 items-center"
                     style={{ gridTemplateColumns: '25% 3ch 1fr' }}
                   >
                     <div className="flex items-center justify-end">

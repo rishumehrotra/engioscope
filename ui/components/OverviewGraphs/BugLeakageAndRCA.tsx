@@ -120,7 +120,7 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
         {graphData
           .slice(0, isExpanded ? undefined : collapsedCount)
           .map(({ rca, wis, color }) => (
-            <li key={rca} className="mr-4">
+            <li key={rca}>
               <button
                 className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
                 style={{ gridTemplateColumns: '20% 85px 1fr' }}
