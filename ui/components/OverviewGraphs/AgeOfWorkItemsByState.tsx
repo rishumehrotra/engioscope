@@ -1,26 +1,25 @@
-import prettyMilliseconds from 'pretty-ms';
-import { last } from 'rambda';
-import React, { useMemo, useState } from 'react';
-import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { num, priorityBasedColor } from '../../helpers/utils';
-import { modalHeading, useModal } from '../common/Modal';
+import { last, prop } from 'rambda';
+import React, { useCallback, useMemo, useState } from 'react';
+import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { num, prettyMS, priorityBasedColor } from '../../helpers/utils';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
+import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import { WorkItemLinkForModal } from './WorkItemLinkForModal';
-import GraphCard from './GraphCard';
-import type { OrganizedWorkItems, sizes } from './helpers';
-import { getSize, hasWorkItems } from './helpers';
-import { sidebarWidth } from './LegendSidebar';
-import { createWIPWorkItemTooltip } from './tooltips';
+import GraphCard from './helpers/GraphCard';
+import type { OrganizedWorkItems, WorkItemAccessors } from './helpers/helpers';
+import type { LegendSidebarProps } from './helpers/LegendSidebar';
+import { LegendSidebar } from './helpers/LegendSidebar';
+import type { ModalArgs } from './helpers/modal-helpers';
+import { WorkItemFlatList } from './helpers/modal-helpers';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
 const workItemStateUsing = (
-  workItemTimes: (wid: number) => Overview['times'][number],
-  workItemById: (wid: number) => UIWorkItem,
+  { workItemTimes }: WorkItemAccessors,
   wit: UIWorkItemType
 ) => (
-  (workItemId: number) => {
-    const workItem = workItemById(workItemId);
-    const times = workItemTimes(workItemId);
+  (workItem: UIWorkItem) => {
+    const times = workItemTimes(workItem);
 
     const lastState = last(times.workCenters);
 
@@ -90,34 +89,19 @@ const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => 
   return (workItemType.workCenters.length * 2) + 2;
 };
 
-type AgeOfWorkItemsByStatusInnerProps = {
-  groups: OrganizedWorkItems[string];
-  workItemType: UIWorkItemType;
-  workItemTimes: (wid: number) => Overview['times'][number];
-  workItemById: (wid: number) => UIWorkItem;
-  workItemTooltip: (workItem: UIWorkItem, additionalValues?: { label: string; value: string | number }[]) => string;
-  workItemGroup: (wid: number) => Overview['groups'][string] | null;
-};
-
-const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = ({
-  groups, workItemType, workItemTimes, workItemById, workItemTooltip, workItemGroup
-}) => {
-  const [Modal, modalProps, open] = useModal();
-  const [stateForModal, setStateForModal] = useState<string | null>(null);
-
-  const workItemState = useMemo(
-    () => workItemStateUsing(workItemTimes, workItemById, workItemType),
-    [workItemById, workItemTimes, workItemType]
-  );
-
-  const states = useMemo(
+const useSplitByState = (
+  groups: OrganizedWorkItems[string],
+  workItemType: UIWorkItemType,
+  workItemState: (workItem: UIWorkItem) => { state: string; since: Date }
+) => (
+  useMemo(
     () => {
-      const unsorted = Object.entries(groups).reduce<Record<string, { wid: number; since: Date }[]>>(
-        (acc, [, wids]) => {
-          wids.forEach(wid => {
-            const { state, since } = workItemState(wid);
+      const unsorted = Object.entries(groups).reduce<Record<string, { wi: UIWorkItem; since: Date }[]>>(
+        (acc, [, wis]) => {
+          wis.forEach(wi => {
+            const { state, since } = workItemState(wi);
             acc[state] = acc[state] || [];
-            acc[state].push({ wid, since });
+            acc[state].push({ wi, since });
           });
           return acc;
         },
@@ -130,40 +114,52 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       )));
     },
     [groups, workItemState, workItemType]
+  )
+);
+
+type AgeOfWorkItemsByStatusInnerProps = {
+  groups: OrganizedWorkItems[string];
+  workItemType: UIWorkItemType;
+  accessors: WorkItemAccessors;
+  workItemTooltip: (workItem: UIWorkItem, additionalSections?: {
+    label: string;
+    value: string | number;
+  }[]) => string;
+  openModal: (x: ModalArgs) => void;
+};
+
+const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = ({
+  groups, workItemType, accessors, workItemTooltip, openModal
+}) => {
+  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
+  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
+
+  const [selectedStatesForGroups, setSelectedStatesForGroups] = React.useState([] as string[]);
+  const selectedStateFilter = useCallback((workItem: UIWorkItem) => {
+    if (selectedStatesForGroups.length === 0) return true;
+    const group = workItem.groupId ? accessors.workItemGroup(workItem.groupId) : undefined;
+    if (!group) return false;
+    return selectedStatesForGroups.includes(group.name);
+  }, [accessors, selectedStatesForGroups]);
+
+  const allWorkItems = useMemo(
+    () => Object.values(groups).flat(),
+    [groups]
   );
 
-  const [prioritiesState, setPrioritiesState] = useState<string[]>([]);
-  const priorities = useMemo(
-    () => (
-      [
-        ...Object.values(states).reduce((acc, s) => {
-          s.forEach(({ wid }) => {
-            const wi = workItemById(wid);
-            if (wi.priority) acc.add(wi.priority);
-          });
-          return acc;
-        }, new Set<number>())
-      ].sort((a, b) => a - b)
+  const filter = useCallback(
+    (workItem: UIWorkItem) => (
+      priorityFilter(workItem) && sizeFilter(workItem) && selectedStateFilter(workItem)
     ),
-    [states, workItemById]
+    [priorityFilter, selectedStateFilter, sizeFilter]
   );
 
-  const [sizeFilter, setSizeFilter] = useState<string[]>([]);
-  const sizeOptions = useMemo(() => (
-    [
-      ...Object.values(states)
-        .flatMap(x => Object.values(x))
-        .flat()
-        .reduce((acc, x) => {
-          const size = getSize(workItemById(x.wid));
-          if (size) acc.add(size);
-          return acc;
-        }, new Set<typeof sizes['small']>())
-    ]
-      .sort((a, b) => a.sortIndex - b.sortIndex)
-      .map(x => ({ value: x.key, label: x.label }))
+  const workItemState = useMemo(
+    () => workItemStateUsing(accessors, workItemType),
+    [accessors, workItemType]
+  );
 
-  ), [states, workItemById]);
+  const states = useSplitByState(groups, workItemType, workItemState);
 
   const [checkboxStatesForSidebar, setCheckboxStatesForSidebar] = React.useState(
     Object.keys(states).reduce<Record<string, boolean>>((acc, state) => {
@@ -172,32 +168,12 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     }, {})
   );
 
-  const [selectedStatesForGroups, setSelectedStatesForGroups] = React.useState([] as string[]);
-
   const statesToRender = useMemo(
     () => (
       Object.entries(states).reduce<typeof states>(
-        (acc, [state, wids]) => {
+        (acc, [state, wis]) => {
           if (checkboxStatesForSidebar[state]) {
-            acc[state] = wids
-              .filter(({ wid }) => {
-                const group = workItemGroup(wid);
-                if (!group) return true;
-                if (selectedStatesForGroups.length === 0) return true;
-                return selectedStatesForGroups.includes(group.name);
-              })
-              .filter(({ wid }) => {
-                if (prioritiesState.length === 0) return true;
-                const wi = workItemById(wid);
-                if (!wi.priority) return false;
-                return prioritiesState.includes(wi.priority.toString());
-              })
-              .filter(({ wid }) => {
-                if (sizeFilter.length === 0) return true;
-                const size = getSize(workItemById(wid));
-                if (!size) return false;
-                return sizeFilter.includes(size.key);
-              });
+            acc[state] = wis.filter(({ wi }) => filter(wi));
           } else {
             acc[state] = [];
           }
@@ -207,7 +183,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         {}
       )
     ),
-    [checkboxStatesForSidebar, prioritiesState, selectedStatesForGroups, sizeFilter, states, workItemById, workItemGroup]
+    [checkboxStatesForSidebar, filter, states]
   );
 
   const totalWorkItems = useMemo(() => Object.values(statesToRender).reduce(
@@ -215,181 +191,123 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     0
   ), [statesToRender]);
 
+  const statterLineGraphProps = useMemo(
+    (): ScatterLineGraphProps<{ wi: UIWorkItem; since: Date }> => ({
+      className: 'max-w-full',
+      graphData: [{
+        label: workItemType.name[1],
+        data: statesToRender,
+        yAxisPoint: x => Date.now() - x.since.getTime(),
+        tooltip: ({ wi }, label, timeTaken) => (
+          workItemTooltip(
+            wi,
+            [{ label: `In '${label.replace('In ', '')}' since`, value: prettyMS(timeTaken) }]
+          )
+        )
+      }],
+      height: 400,
+      linkForItem: ({ wi }) => wi.url,
+      pointColor: ({ wi }) => (wi.priority ? priorityBasedColor(wi.priority) : null)
+    }),
+    [statesToRender, workItemTooltip, workItemType.name]
+  );
+
+  const legendSidebarProps: LegendSidebarProps = useMemo(
+    () => ({
+      headlineStats: [{
+        label: workItemType.name[1],
+        value: num(totalWorkItems),
+        unit: 'total'
+      }],
+      items: Object.entries(statesToRender).map(([state, wis]) => ({
+        label: state,
+        value: num(wis.length),
+        key: state,
+        color: '#9ca3af',
+        isChecked: checkboxStatesForSidebar[state]
+      })),
+      onItemClick: key => openModal({
+        heading: key,
+        subheading: `${workItemType.name[1]} (${statesToRender[key].length})`,
+        body: (
+          <WorkItemFlatList
+            workItemType={workItemType}
+            workItems={statesToRender[key].map(prop('wi'))}
+            tooltip={workItemTooltip}
+            flairs={workItem => [
+              prettyMS(Date.now()
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              - statesToRender[key].find(({ wi }) => wi.id === workItem.id)!.since.getTime())
+            ]}
+          />
+        )
+      }),
+      onCheckboxClick: key => (
+        setCheckboxStatesForSidebar(state => ({ ...state, [key]: !state[key] }))
+      )
+    }),
+    [checkboxStatesForSidebar, openModal, statesToRender, totalWorkItems, workItemTooltip, workItemType]
+  );
+
   return (
     <GraphCard
       title={`Age of ${workItemType.name[1].toLowerCase()} by state`}
       subtitle={`Where various ${workItemType.name[1].toLowerCase()} are located, and how long they've been there`}
-      hasData={hasWorkItems({ foo: groups })}
+      hasData={allWorkItems.length > 0}
       noDataMessage={`No ${workItemType.name[1].toLowerCase()} found`}
       left={(
         <>
-          {Object.keys(groups).length > 1 || priorities.length > 1
-            ? (
-              <div className="mb-8 flex justify-end mr-4 gap-2">
-                {Object.keys(groups).length > 1 && (
-                  <MultiSelectDropdownWithLabel
-                    name="groups"
-                    label={workItemType.groupLabel || 'Groups'}
-                    options={Object.entries(groups).map(([group, wids]) => ({ label: `${group} (${wids.length})`, value: group }))}
-                    value={selectedStatesForGroups}
-                    onChange={setSelectedStatesForGroups}
-                    className="w-64 text-sm"
-                  />
-                )}
-                {sizeOptions.length > 1 && (
-                  <MultiSelectDropdownWithLabel
-                    name="size"
-                    label="Size"
-                    options={sizeOptions}
-                    onChange={setSizeFilter}
-                    value={sizeFilter}
-                    className="w-80 text-sm"
-                  />
-                )}
-                {priorities.length > 1 && (
-                  <MultiSelectDropdownWithLabel
-                    name="priority"
-                    label="Priority"
-                    options={priorities.map(p => ({ label: `${p}`, value: `${p}` }))}
-                    value={prioritiesState}
-                    onChange={setPrioritiesState}
-                    className="w-48 text-sm"
-                  />
-                )}
-              </div>
-            )
-            : null}
-          <ScatterLineGraph
-            className="max-w-full"
-            graphData={[{
-              label: workItemType.name[1],
-              data: statesToRender,
-              yAxisPoint: x => Date.now() - x.since.getTime(),
-              tooltip: ({ wid }, label, timeTaken) => (
-                workItemTooltip(
-                  workItemById(wid),
-                  [{ label: `In '${label.replace('In ', '')}' since`, value: prettyMilliseconds(timeTaken, { compact: true }) }]
-                )
-              )
-            }]}
-            height={400}
-            linkForItem={({ wid }) => workItemById(wid).url}
-            pointColor={({ wid }) => {
-              const { priority } = workItemById(wid);
-              return priority ? priorityBasedColor(priority) : null;
-            }}
-          />
+          <div className="mb-8 flex justify-end mr-4 gap-2">
+            {Object.keys(groups).length > 1 && (
+              <MultiSelectDropdownWithLabel
+                name="groups"
+                label={workItemType.groupLabel || 'Groups'}
+                options={Object.entries(groups).map(([group, wids]) => ({ label: `${group} (${wids.length})`, value: group }))}
+                value={selectedStatesForGroups}
+                onChange={setSelectedStatesForGroups}
+                className="w-64 text-sm"
+              />
+            )}
+            <SizeFilter setFilter={setSizeFilter} workItems={allWorkItems} />
+            <PriorityFilter setFilter={setPriorityFilter} workItems={allWorkItems} />
+          </div>
+          <ScatterLineGraph {...statterLineGraphProps} />
         </>
       )}
-      right={(
-        <div style={{ width: sidebarWidth }} className="justify-self-end">
-          <Modal
-            {...modalProps}
-            heading={modalHeading(stateForModal, workItemType.name[1])}
-          >
-            {stateForModal && (
-              <ul className="mb-8">
-                {statesToRender[stateForModal]
-                  .sort((a, b) => a.since.getTime() - b.since.getTime())
-                  .map(({ wid, since }) => (
-                    <li key={wid} className="py-2">
-                      <WorkItemLinkForModal
-                        workItem={workItemById(wid)}
-                        workItemType={workItemType}
-                        tooltip={workItemTooltip}
-                        flair={prettyMilliseconds(Date.now() - since.getTime(), { compact: true })}
-                      />
-                    </li>
-                  ))}
-              </ul>
-            )}
-          </Modal>
-          <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-semibold pb-1">
-                {workItemType.name[1]}
-              </h3>
-              <div className="">
-                <span className="text-2xl font-semibold">
-                  {num(totalWorkItems)}
-                </span>
-                {' '}
-                <span className="text-sm">
-                  total
-                </span>
-              </div>
-            </div>
-          </div>
-          <ul className="grid gap-3 grid-cols-2">
-            {Object.entries(statesToRender).map(([state, wids]) => (
-              <li key={state} className="relative">
-                <input
-                  type="checkbox"
-                  className="absolute right-2 top-2 opacity-70"
-                  checked={checkboxStatesForSidebar[state]}
-                  onChange={e => {
-                    setCheckboxStatesForSidebar(
-                      checkboxStatesForSidebar => ({
-                        ...checkboxStatesForSidebar,
-                        [state]: !checkboxStatesForSidebar[state]
-                      })
-                    );
-                    e.stopPropagation();
-                  }}
-                />
-
-                <button
-                  className="p-2 shadow rounded-md block text-left w-full border-l-4 border-gray-400"
-                  onClick={() => {
-                    setStateForModal(state);
-                    open();
-                  }}
-                >
-                  <h4
-                    className="text-sm h-10 overflow-hidden pr-3"
-                  >
-                    {state}
-                  </h4>
-                  <div className="text-xl flex items-center font-semibold">
-                    {num(wids.length)}
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      right={<LegendSidebar {...legendSidebarProps} />}
     />
   );
 };
 
 type AgeOfWorkItemsByStatusProps = {
-  allWorkItems: OrganizedWorkItems;
-  workItemTimes: (wid: number) => Overview['times'][number];
-  workItemById: (wid: number) => UIWorkItem;
-  workItemType: (witId: string) => UIWorkItemType;
-  workItemGroup: (wid: number) => Overview['groups'][string] | null;
+  workItems: UIWorkItem[];
+  accessors: WorkItemAccessors;
+  openModal: (x: ModalArgs) => void;
 };
 
 const AgeOfWorkItemsByStatus: React.FC<AgeOfWorkItemsByStatusProps> = ({
-  allWorkItems, workItemTimes, workItemById, workItemType, workItemGroup
+  workItems, accessors, openModal
 }) => {
   const workItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(workItemType, workItemTimes, workItemGroup),
-    [workItemGroup, workItemTimes, workItemType]
+    () => createWIPWorkItemTooltip(accessors),
+    [accessors]
+  );
+
+  const organised = useMemo(
+    () => accessors.organizeByWorkItemType(workItems, () => true),
+    [accessors, workItems]
   );
 
   return (
     <>
-      {Object.entries(allWorkItems).map(([witId, groups]) => (
+      {Object.entries(organised).map(([witId, groups]) => (
         <AgeOfWorkItemsByStatusInner
           key={witId}
           groups={groups}
-          workItemType={workItemType(witId)}
-          workItemTimes={workItemTimes}
-          workItemById={workItemById}
-          workItemGroup={workItemGroup}
+          accessors={accessors}
           workItemTooltip={workItemTooltip}
+          workItemType={accessors.workItemType(witId)}
+          openModal={openModal}
         />
       ))}
     </>

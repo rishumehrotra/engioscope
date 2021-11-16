@@ -6,13 +6,13 @@ import type { UIWorkItem } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import type { LineGraphProps } from '../graphs/LineGraph';
 import LineGraph from '../graphs/LineGraph';
-import { noGroup } from '../OverviewGraphs/helpers';
 import { CrosshairBubble } from './helpers/CrosshairBubble';
 import type { WorkItemLine, WorkItemPoint } from './helpers/day-wise-line-graph-helpers';
 import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-line-graph-helpers';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
+  noGroup,
   useSidebarCheckboxState,
   lineColor, getSidebarStatByKey, getSidebarHeadlineStats
 } from './helpers/helpers';

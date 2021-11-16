@@ -10,10 +10,10 @@ import { getCLTTime, getLeadTime } from '../helpers/work-item-utils';
 import { modalHeading, useModal } from './common/Modal';
 import HorizontalBarGraph from './graphs/HorizontalBarGraph';
 import ScatterLineGraph from './graphs/ScatterLineGraph';
+import { WorkItemLinkForModal } from './OverviewGraphs/helpers/modal-helpers';
 import type { ProjectStatProps } from './ProjectStat';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
-import { WorkItemLinkForModal } from './OverviewGraphs/WorkItemLinkForModal';
 
 const barColor = createPalette([
   '#f44336',
