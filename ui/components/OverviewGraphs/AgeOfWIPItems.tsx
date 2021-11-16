@@ -30,14 +30,18 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
+  const preFilteredWorkItems = useMemo(
+    () => workItems.filter(workItem => (
+      Boolean(workItemTimes(workItem).start) && !workItemTimes(workItem).end)),
+    [workItemTimes, workItems]
+  );
+
   const filter = useCallback(
     (workItem: UIWorkItem) => (
       priorityFilter(workItem)
       && sizeFilter(workItem)
-      && Boolean(workItemTimes(workItem).start)
-      && !workItemTimes(workItem).end
     ),
-    [priorityFilter, sizeFilter, workItemTimes]
+    [priorityFilter, sizeFilter]
   );
 
   const workItemTooltip = useMemo(
@@ -46,8 +50,8 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
   );
 
   const workItemsToDisplay = useMemo(
-    () => organizeByWorkItemType(workItems, filter),
-    [organizeByWorkItemType, workItems, filter]
+    () => organizeByWorkItemType(preFilteredWorkItems, filter),
+    [organizeByWorkItemType, preFilteredWorkItems, filter]
   );
 
   const ageOfWorkItem = useCallback(
@@ -124,7 +128,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
     <GraphCard
       title="Age of work-in-progress items"
       subtitle="How old are the currently work-in-progress items"
-      hasData={workItems.length > 0}
+      hasData={preFilteredWorkItems.length > 0}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
@@ -142,7 +146,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
               <li>
                 {`Age of ${workItemType(witId).name[1].toLowerCase()} is computed from `}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {`'${stringifyDateField(workItemType(witId).startDateFields!)}'`}
+                {stringifyDateField(workItemType(witId).startDateFields!)}
                 {` to today (${shortDate(lastUpdated)}).`}
               </li>
             ))}

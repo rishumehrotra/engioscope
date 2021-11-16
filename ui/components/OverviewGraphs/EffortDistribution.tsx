@@ -233,7 +233,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
             {Object.keys(workItemsToDisplay).map(witId => (
               <li>
                 <details>
-                  <summary>
+                  <summary className="cursor-pointer">
                     {`Effort for ${workItemType(witId).name[1].toLowerCase()} is the time spent in `}
                     {`${listFormat(workItemType(witId).workCenters.map(wc => wc.label))}.`}
                   </summary>

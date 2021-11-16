@@ -157,9 +157,9 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
               <li>
                 {`Change lead time for ${workItemType(witId).name[1].toLowerCase()} is computed from `}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {`'${stringifyDateField(workItemType(witId).devCompleteFields!)}'`}
+                {stringifyDateField(workItemType(witId).devCompleteFields!)}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {` to '${stringifyDateField(workItemType(witId).endDateFields!)}'.`}
+                {` to ${stringifyDateField(workItemType(witId).endDateFields!)}.`}
               </li>
             ))}
           </ul>

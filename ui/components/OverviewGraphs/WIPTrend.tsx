@@ -52,6 +52,12 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
+  const hasData = useMemo(
+    () => splitByDateForLineGraph(accessors, organizeByWorkItemType(workItems, () => true), isWIPToday)
+      .reduce((acc, line) => acc + length(line.workItemPoints.flatMap(p => p.workItems)), 0) > 0,
+    [accessors, organizeByWorkItemType, workItems]
+  );
+
   const filter = useCallback(
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
@@ -165,7 +171,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
     <GraphCard
       title="Work in progress trend"
       subtitle="Trend of work items in progress per day over the last 30 days"
-      hasData={workItems.length > 0}
+      hasData={hasData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

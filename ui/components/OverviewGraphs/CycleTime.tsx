@@ -147,9 +147,9 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
               <li>
                 {`Cycle time for ${workItemType(witId).name[1].toLowerCase()} is computed from `}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {`'${stringifyDateField(workItemType(witId).startDateFields!)}'`}
+                {stringifyDateField(workItemType(witId).startDateFields!)}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {` to '${stringifyDateField(workItemType(witId).endDateFields!)}'.`}
+                {` to ${stringifyDateField(workItemType(witId).endDateFields!)}.`}
               </li>
             ))}
           </ul>

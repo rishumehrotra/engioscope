@@ -161,7 +161,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
             {Object.keys(workItemsToDisplay).map(witId => (
               <li>
                 <details>
-                  <summary>
+                  <summary className="cursor-pointer">
                     {`Flow efficiency for ${workItemType(witId).name[1].toLowerCase()} is the time spent in `}
                     {`${listFormat(workItemType(witId).workCenters.map(wc => wc.label))}`}
                     {' divided by the total time.'}
