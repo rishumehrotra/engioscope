@@ -5,6 +5,7 @@ import { exists, prettyMS, shortDate } from '../../helpers/utils';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
+  listFormat, stringifyDateField,
   lineColor, noGroup,
   getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey,
   timeDifference
@@ -193,7 +194,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
             <SizeFilter workItems={workItems} setFilter={setSizeFilter} />
             <PriorityFilter workItems={workItems} setFilter={setPriorityFilter} />
           </div>
-          <ul>
+          <ul className="pb-4">
             {Object.entries(workItemsToDisplay).flatMap(([witId, group]) => (
               Object.keys(group).map(groupName => (
                 <li
@@ -222,6 +223,27 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
                   </div>
                 </li>
               ))
+            ))}
+          </ul>
+          <ul className="text-sm text-gray-600 pl-4 mt-4 bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
+            {Object.keys(workItemsToDisplay).map(witId => (
+              <li>
+                <details>
+                  <summary>
+                    {`Effort for ${workItemType(witId).name[1].toLowerCase()} is the time spent in `}
+                    {`${listFormat(workItemType(witId).workCenters.map(wc => wc.label))}.`}
+                  </summary>
+                  <ul className="pl-8 list-disc mb-2">
+                    {workItemType(witId).workCenters.map(wc => (
+                      <li key={wc.label}>
+                        {`Time spent in '${wc.label}' is computed from ${
+                          stringifyDateField(wc.startDateField)
+                        } to ${stringifyDateField(wc.endDateField)}.`}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
             ))}
           </ul>
         </>

@@ -160,6 +160,7 @@ export type UIWorkItemType = {
   groupLabel?: string;
   startDateFields?: string[];
   endDateFields?: string[];
+  devCompleteFields?: string[];
 };
 
 export type AnalysedWorkItems = {

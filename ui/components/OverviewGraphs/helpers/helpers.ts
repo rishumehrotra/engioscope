@@ -95,7 +95,6 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     groupLabel: ({ witId, groupName }: GroupLabel) => (
       workItemType(witId).name[1] + (groupName === noGroup ? '' : ` - ${groupName}`)
     )
-
   };
 };
 
@@ -170,3 +169,15 @@ export const getSidebarStatByKey = (key: string, organizedWorkItems: OrganizedWo
 
   return [matchingWitId, matchingGroup, workItems] as const;
 };
+
+export const listFormat = (list: string[], joiner = 'and') => {
+  if (list.length === 1) return list[0];
+
+  const l = [...list];
+  const last = l.pop();
+  return `${`${l.join(', ')} ${joiner}`} ${last}`;
+};
+
+export const stringifyDateField = (fields: string[]) => (
+  fields.length === 1 ? `'${fields[0]}'` : `min of ${listFormat(fields.map(f => `'${f}'`))}`
+);

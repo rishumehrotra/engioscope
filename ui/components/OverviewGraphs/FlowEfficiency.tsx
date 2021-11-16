@@ -4,6 +4,8 @@ import type { UIWorkItem } from '../../../shared/types';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
+  listFormat,
+  stringifyDateField,
   lineColor, noGroup, getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey
 } from './helpers/helpers';
 import type { LegendSidebarProps } from './helpers/LegendSidebar';
@@ -121,39 +123,70 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
             <SizeFilter workItems={preFilteredWorkItems} setFilter={setSizeFilter} />
             <PriorityFilter workItems={preFilteredWorkItems} setFilter={setPriorityFilter} />
           </div>
-          {Object.entries(workItemsToDisplay).flatMap(([witId, group]) => (
-            Object.entries(group).map(([groupName, workItemIds]) => {
-              const eff = efficiency(workItemIds);
+          <ul className="pb-4">
+            {Object.entries(workItemsToDisplay).flatMap(([witId, group]) => (
+              Object.entries(group).map(([groupName, workItemIds]) => {
+                const eff = efficiency(workItemIds);
 
-              return (
-                <li
-                  key={witId + groupName}
-                  className="grid gap-4 my-4 items-center mr-4"
-                  style={{ gridTemplateColumns: '25% 3ch 1fr' }}
-                >
-                  <div className="flex items-center justify-end">
-                    <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
-                    <span className="truncate">
-                      {groupName === noGroup ? workItemType(witId).name[1] : groupName}
+                return (
+                  <li
+                    key={witId + groupName}
+                    className="grid gap-4 my-4 items-center mr-4"
+                    style={{ gridTemplateColumns: '25% 3ch 1fr' }}
+                  >
+                    <div className="flex items-center justify-end">
+                      <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
+                      <span className="truncate">
+                        {groupName === noGroup ? workItemType(witId).name[1] : groupName}
+                      </span>
+                    </div>
+                    <span className="justify-self-end">
+                      {stringifyEfficiency(eff)}
                     </span>
-                  </div>
-                  <span className="justify-self-end">
-                    {stringifyEfficiency(eff)}
-                  </span>
-                  <div className="bg-gray-100 rounded-md overflow-hidden">
-                    <div
-                      className="rounded-md"
-                      style={{
-                        width: `${eff}%`,
-                        backgroundColor: lineColor({ witId, groupName }),
-                        height: '30px'
-                      }}
-                    />
-                  </div>
-                </li>
-              );
-            })
-          ))}
+                    <div className="bg-gray-100 rounded-md overflow-hidden">
+                      <div
+                        className="rounded-md"
+                        style={{
+                          width: `${eff}%`,
+                          backgroundColor: lineColor({ witId, groupName }),
+                          height: '30px'
+                        }}
+                      />
+                    </div>
+                  </li>
+                );
+              })
+            ))}
+          </ul>
+          <ul className="text-sm text-gray-600 pl-4 mt-4 bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
+            {Object.keys(workItemsToDisplay).map(witId => (
+              <li>
+                <details>
+                  <summary>
+                    {`Flow efficiency for ${workItemType(witId).name[1].toLowerCase()} is the time spent in `}
+                    {`${listFormat(workItemType(witId).workCenters.map(wc => wc.label))}`}
+                    {' divided by the total time.'}
+                  </summary>
+                  <ul className="pl-8 list-disc mb-2">
+                    {workItemType(witId).workCenters.map(wc => (
+                      <li key={wc.label}>
+                        {`Time spent in '${wc.label}' is computed from ${
+                          stringifyDateField(wc.startDateField)
+                        } to ${stringifyDateField(wc.endDateField)}.`}
+                      </li>
+                    ))}
+                    <li>
+                      {`Total time is the time from ${
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        stringifyDateField(workItemType(witId).startDateFields!)
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                      } to ${stringifyDateField(workItemType(witId).endDateFields!)}.`}
+                    </li>
+                  </ul>
+                </details>
+              </li>
+            ))}
+          </ul>
         </>
       )}
       right={<LegendSidebar {...legendSidebarProps} />}

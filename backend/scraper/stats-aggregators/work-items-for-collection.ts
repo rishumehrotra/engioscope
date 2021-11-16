@@ -296,6 +296,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
           iconColor,
           startDateFields: matchingWit?.startDate.map(getFieldName).filter(exists),
           endDateFields: matchingWit?.endDate.map(getFieldName).filter(exists),
+          devCompleteFields: matchingWit?.devCompletionDate.map(getFieldName).filter(exists),
           workCenters: (matchingWit?.workCenters || []).map(wc => ({
             label: wc.label,
             startDateField: wc.startDate.map(getFieldName).filter(exists),
