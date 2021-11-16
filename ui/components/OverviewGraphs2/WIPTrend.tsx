@@ -167,7 +167,6 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
       subtitle="Trend of work items in progress per day over the last 30 days"
       hasData={workItems.length > 0}
       noDataMessage="Couldn't find any work items"
-      renderLazily={false}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

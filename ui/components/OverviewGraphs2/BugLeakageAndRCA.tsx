@@ -336,7 +336,6 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
       subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days with their root cause`}
       hasData={workItems.length > 0}
       noDataMessage="Couldn't find any work items"
-      renderLazily={false}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
