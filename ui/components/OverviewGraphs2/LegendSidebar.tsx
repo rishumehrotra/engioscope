@@ -65,20 +65,22 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
             onClick={() => onItemClick(key)}
           >
             <h4
-              className={`text-sm flex items-center h-10 overflow-hidden ${iconUrl ? 'px-5' : ''}`}
+              className={`text-sm flex items-center h-10 overflow-hidden ${iconUrl ? 'px-5' : ''} ${onCheckboxClick ? 'pr-2' : ''}`}
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
-                textIndent: '-20px'
+                textIndent: iconUrl ? '-20px' : '0'
               }}
             >
-              <img
-                className="inline-block mr-1"
-                alt={`Icon for ${label}`}
-                src={iconUrl}
-                width="16"
-              />
+              {iconUrl && (
+                <img
+                  className="inline-block mr-1"
+                  alt={`Icon for ${label}`}
+                  src={iconUrl}
+                  width="16"
+                />
+              )}
               {label}
             </h4>
             <div className={`text-xl flex items-center font-semibold ${iconUrl ? 'pl-5' : ''}`}>

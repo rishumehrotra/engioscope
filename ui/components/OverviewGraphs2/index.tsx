@@ -10,6 +10,7 @@ import VelocityGraph from './VelocityGraph';
 import FlowEfficiencyGraph from './FlowEfficiencyGraph';
 import EffortDistributionGraph from './EffortDistributionGraph';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCAGraph';
+import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
@@ -49,6 +50,12 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       />
 
       <BugLeakageAndRCAGraph
+        workItems={filteredWorkItems}
+        accessors={wiAccessors}
+        openModal={openModal}
+      />
+
+      <AgeOfWorkItemsByStatus
         workItems={filteredWorkItems}
         accessors={wiAccessors}
         openModal={openModal}
