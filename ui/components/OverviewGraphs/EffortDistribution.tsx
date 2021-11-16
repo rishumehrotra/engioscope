@@ -53,14 +53,19 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
+  const preFilteredWorkItems = useMemo(
+    () => workItems.filter(workItem => Boolean(workItemTimes(workItem).start)),
+    [workItemTimes, workItems]
+  );
+
   const filter = useCallback(
-    (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem) && Boolean(workItemTimes(workItem).start),
-    [priorityFilter, sizeFilter, workItemTimes]
+    (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
+    [priorityFilter, sizeFilter]
   );
 
   const workItemsToDisplay = useMemo(
-    () => organizeByWorkItemType(workItems, filter),
-    [organizeByWorkItemType, workItems, filter]
+    () => organizeByWorkItemType(preFilteredWorkItems, filter),
+    [organizeByWorkItemType, preFilteredWorkItems, filter]
   );
 
   const workItemTooltip = useMemo(
@@ -186,8 +191,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     <GraphCard
       title="Effort distribution"
       subtitle="Percentage of time various work items have spent in work centers over the last 30 days"
-      hasData={workItems.length > 0}
-      noDataMessage="Couldn't find any work items"
+      hasData={preFilteredWorkItems.length > 0}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

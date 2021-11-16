@@ -6,7 +6,6 @@ import { sidebarWidth } from './LegendSidebar';
 type GraphCardProps = {
   title: string;
   subtitle: string;
-  noDataMessage: string;
   hasData: boolean;
   left: ReactNode;
   right: ReactNode;
@@ -14,7 +13,7 @@ type GraphCardProps = {
 };
 
 const GraphCard: React.FC<GraphCardProps> = ({
-  title, subtitle, left, right, hasData, noDataMessage, renderLazily = true
+  title, subtitle, left, right, hasData, renderLazily = true
 }) => {
   const [ref, inView] = useInView({
     threshold: 0,
@@ -47,7 +46,11 @@ const GraphCard: React.FC<GraphCardProps> = ({
             </div>
           </div>
         )
-        : noDataMessage}
+        : (
+          <p className="text-gray-600 italic text-sm">
+            Couldn't find any data.
+          </p>
+        )}
     </div>
   );
 };

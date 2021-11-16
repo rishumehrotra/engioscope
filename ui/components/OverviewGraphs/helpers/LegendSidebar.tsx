@@ -24,24 +24,26 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
   headlineStats, items, onItemClick, onCheckboxClick
 }) => (
   <div style={{ width: sidebarWidth }} className="justify-self-end">
-    <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md grid grid-cols-2 gap-4">
-      {headlineStats.map(({ label, value, unit }) => (
-        <div key={label}>
-          <h3 className="font-semibold pb-1">
-            {label}
-          </h3>
-          <div className="">
-            <span className="text-2xl font-semibold">
-              {value}
-            </span>
-            {' '}
-            <span className="text-sm">
-              {unit}
-            </span>
+    {headlineStats.length > 0 && (
+      <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md grid grid-cols-2 gap-4">
+        {headlineStats.map(({ label, value, unit }) => (
+          <div key={label}>
+            <h3 className="font-semibold pb-1">
+              {label}
+            </h3>
+            <div className="">
+              <span className="text-2xl font-semibold">
+                {value}
+              </span>
+              {' '}
+              <span className="text-sm">
+                {unit}
+              </span>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    )}
     <div className="grid gap-3 grid-cols-2">
       {items.map(({
         iconUrl, label, value, key, color, isChecked

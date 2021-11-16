@@ -130,7 +130,6 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
       title="Cycle time"
       subtitle="Time taken to complete a work item"
       hasData={preFilteredWorkItems.length > 0}
-      noDataMessage="Couldn't find any matching work items"
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
@@ -147,7 +146,9 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
             {Object.keys(workItemsToDisplay).map(witId => (
               <li>
                 {`Cycle time for ${workItemType(witId).name[1].toLowerCase()} is computed from `}
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {`'${stringifyDateField(workItemType(witId).startDateFields!)}'`}
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {` to '${stringifyDateField(workItemType(witId).endDateFields!)}'.`}
               </li>
             ))}

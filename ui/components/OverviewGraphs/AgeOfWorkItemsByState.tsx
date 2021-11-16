@@ -254,7 +254,6 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       title={`Age of ${workItemType.name[1].toLowerCase()} by state`}
       subtitle={`Where various ${workItemType.name[1].toLowerCase()} are located, and how long they've been there`}
       hasData={allWorkItems.length > 0}
-      noDataMessage={`No ${workItemType.name[1].toLowerCase()} found`}
       left={(
         <>
           <div className="mb-8 flex justify-end mr-4 gap-2">

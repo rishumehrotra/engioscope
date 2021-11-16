@@ -140,7 +140,6 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
       title="Change lead time"
       subtitle="Time taken to take a work item to production after development is complete"
       hasData={preFilteredWorkItems.length > 0}
-      noDataMessage="Couldn't find any matching work items"
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
@@ -164,7 +163,6 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
               </li>
             ))}
           </ul>
-
         </>
       )}
       right={(

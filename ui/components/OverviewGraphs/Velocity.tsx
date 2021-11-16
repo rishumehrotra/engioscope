@@ -160,8 +160,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
     <GraphCard
       title="Velocity"
       subtitle="Work items completed over the last 30 days"
-      hasData={workItems.length > 0}
-      noDataMessage="Couldn't find any work items"
+      hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
       left={(
         <>

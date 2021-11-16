@@ -6,9 +6,11 @@ import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import type { LegendSidebarProps } from './helpers/LegendSidebar';
 import { LegendSidebar } from './helpers/LegendSidebar';
 import GraphCard from './helpers/GraphCard';
-import { prettyMS, priorityBasedColor } from '../../helpers/utils';
+import { prettyMS, priorityBasedColor, shortDate } from '../../helpers/utils';
 import type { WorkItemAccessors } from './helpers/helpers';
-import { getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats } from './helpers/helpers';
+import {
+  stringifyDateField, getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats
+} from './helpers/helpers';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import type { ModalArgs } from './helpers/modal-helpers';
@@ -123,7 +125,6 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
       title="Age of work-in-progress items"
       subtitle="How old are the currently work-in-progress items"
       hasData={workItems.length > 0}
-      noDataMessage="Couldn't find any matching work items"
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
@@ -136,6 +137,16 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
           >
             {scatterLineGraphProps.map(props => <ScatterLineGraph {...props} />)}
           </div>
+          <ul className="text-sm text-gray-600 pl-8 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
+            {Object.keys(workItemsToDisplay).map(witId => (
+              <li>
+                {`Age of ${workItemType(witId).name[1].toLowerCase()} is computed from `}
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                {`'${stringifyDateField(workItemType(witId).startDateFields!)}'`}
+                {` to today (${shortDate(lastUpdated)}).`}
+              </li>
+            ))}
+          </ul>
         </>
       )}
       right={(

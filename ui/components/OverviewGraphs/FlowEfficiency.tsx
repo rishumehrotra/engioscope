@@ -115,8 +115,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     <GraphCard
       title="Flow efficiency"
       subtitle="Fraction of overall time that work items spend in work centers on average"
-      hasData={workItems.length > 0}
-      noDataMessage="Couldn't find any work items"
+      hasData={preFilteredWorkItems.length > 0}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
