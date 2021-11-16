@@ -11,6 +11,7 @@ import FlowEfficiencyGraph from './FlowEfficiency';
 import EffortDistributionGraph from './EffortDistribution';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCA';
 import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
+import WIPTrendGraph from './WIPTrend';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
@@ -56,6 +57,12 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       />
 
       <AgeOfWorkItemsByStatus
+        workItems={filteredWorkItems}
+        accessors={wiAccessors}
+        openModal={openModal}
+      />
+
+      <WIPTrendGraph
         workItems={filteredWorkItems}
         accessors={wiAccessors}
         openModal={openModal}
