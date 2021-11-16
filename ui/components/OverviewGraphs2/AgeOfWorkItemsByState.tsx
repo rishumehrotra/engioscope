@@ -228,7 +228,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       })),
       onItemClick: key => openModal({
         heading: key,
-        subheading: workItemType.name[1],
+        subheading: `${workItemType.name[1]} (${statesToRender[key].length})`,
         body: (
           <WorkItemFlatList
             workItemType={workItemType}

@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import prettyMilliseconds from 'pretty-ms';
 import { add, map, range } from 'rambda';
 import React, {
   Fragment, useCallback, useMemo
 } from 'react';
 import hexToHsl from '../../helpers/hex-to-hsl';
-import { oneYear } from '../../helpers/utils';
+import { prettyMS } from '../../helpers/utils';
 
 const xAxisLabelAreaHeight = 80;
 const xAxisLabelHeight = 50;
@@ -138,10 +137,7 @@ const Bar = <T extends {}>({
             y2={yCoord(averageValueOfItems)}
             stroke="rgba(255,0,0,0.6)"
             strokeWidth={5}
-            data-tip={`Average ${label}: ${prettyMilliseconds(
-              averageValueOfItems,
-              averageValueOfItems < oneYear ? { compact: true } : { unitCount: 2 }
-            )} of ${items.length} items`}
+            data-tip={`Average ${label}: ${prettyMS(averageValueOfItems)} of ${items.length} items`}
           />
         )
         : null}
@@ -154,10 +150,7 @@ const Bar = <T extends {}>({
             y2={yCoord(medianValue)}
             stroke="rgba(0,0,255,0.6)"
             strokeWidth={5}
-            data-tip={`Median ${label}: ${prettyMilliseconds(
-              medianValue,
-              medianValue < oneYear ? { compact: true } : { unitCount: 2 }
-            )} of ${items.length} items`}
+            data-tip={`Median ${label}: ${prettyMS(medianValue)} of ${items.length} items`}
           />
         )
         : null}
@@ -259,9 +252,7 @@ const Axes: React.FC<AxesProps> = ({ width, maxValue, yCoord }) => (
           >
             <div className="text-right text-sm text-gray-700 pr-3">
               {gridLineValue > 0
-                ? prettyMilliseconds(gridLineValue, gridLineValue > oneYear
-                  ? { unitCount: 2 }
-                  : { compact: true })
+                ? prettyMS(gridLineValue)
                 : '-'}
             </div>
           </foreignObject>

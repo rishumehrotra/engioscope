@@ -16,7 +16,7 @@ import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
-  const wiAccessors = useMemo(() => workItemAccessors(projectAnalysis), [projectAnalysis]);
+  const accessors = useMemo(() => workItemAccessors(projectAnalysis), [projectAnalysis]);
   const [filteredWorkItems, filters, setSelectedFilters] = useGlobalFilters(workItems);
   const [Modal, modalProps, openModal] = useWorkItemModal();
   useRemoveSort();
@@ -27,53 +27,19 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       <OverviewFilters filters={filters} onChange={setSelectedFilters} />
 
-      <VelocityGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <CycleTimeGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <FlowEfficiencyGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <EffortDistributionGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <BugLeakageAndRCAGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <AgeOfWorkItemsByStatus
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <WIPTrendGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
-
-      <AgeOfWIPItemsGraph
-        workItems={filteredWorkItems}
-        accessors={wiAccessors}
-        openModal={openModal}
-      />
+      {[
+        VelocityGraph, CycleTimeGraph, FlowEfficiencyGraph,
+        EffortDistributionGraph, BugLeakageAndRCAGraph,
+        AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
+      ].map((Graph, index) => (
+        <Graph
+          // eslint-disable-next-line react/no-array-index-key
+          key={index}
+          workItems={filteredWorkItems}
+          accessors={accessors}
+          openModal={openModal}
+        />
+      ))}
     </>
   );
 };

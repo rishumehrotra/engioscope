@@ -53,8 +53,8 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
   const filter = useCallback(
-    (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
-    [priorityFilter, sizeFilter]
+    (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem) && Boolean(workItemTimes(workItem).start),
+    [priorityFilter, sizeFilter, workItemTimes]
   );
 
   const workItemsToDisplay = useMemo(
