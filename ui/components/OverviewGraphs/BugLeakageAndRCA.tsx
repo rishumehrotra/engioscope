@@ -162,7 +162,7 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
           ))}
       </ul>
       {graphData.length > collapsedCount && (
-        <div className="flex justify-end mr-4">
+        <div className="flex justify-end">
           <button
             className="text-blue-700 text-sm flex items-center hover:text-blue-900 hover:underline"
             onClick={() => setIsExpanded(not)}

@@ -144,7 +144,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
           </div>
           <ul className="text-sm text-gray-600 pl-8 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
             {Object.keys(workItemsToDisplay).map(witId => (
-              <li>
+              <li key={witId}>
                 {`Cycle time for ${workItemType(witId).name[1].toLowerCase()} is computed from `}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {stringifyDateField(workItemType(witId).startDateFields!)}
