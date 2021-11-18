@@ -12,6 +12,7 @@ type CollectionWorkItemConfig = {
   skipChildren?: string[];
   environmentField?: string;
   ignoredWorkItemsForFlowAnalysis?: string[];
+  ignoreStates?: string[];
   filterBy?: {
     label: string;
     field: string | string[];
@@ -83,6 +84,7 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   skipChildren: string[];
   environmentField?: string;
   ignoredWorkItemsForFlowAnalysis?: string[];
+  ignoreStates?: string[];
   filterBy?: {
     label: string;
     fields: string[];
@@ -140,6 +142,7 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
     ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
       ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
+    ignoreStates: collection.workitems?.ignoreStates ?? config.azure.workitems?.ignoreStates,
     filterBy: (collection.workitems?.filterBy || config.azure.workitems?.filterBy || []).map(filter => ({
       label: filter.label,
       fields: Array.isArray(filter.field) ? filter.field : [filter.field],

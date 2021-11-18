@@ -9,7 +9,7 @@ import type { WorkItemAnalysis } from '../types';
 import type {
   WorkItem, WorkItemField, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
 } from '../types-azure';
-import { queryForCollectionWorkItems } from '../work-item-queries';
+import { queryForCompletedCollectionWorkItems } from '../work-item-queries';
 import { getOverviewData } from './work-item-overview';
 import { workItemTypeId, workItemTypeIconColor } from './work-item-utils';
 
@@ -181,7 +181,7 @@ const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedColle
 
   const workItemDetails = async () => {
     const workItemTreeForCollection: WorkItemIDTree = await getCollectionWorkItemIdsForQuery(
-      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
+      collection.name, queryForCompletedCollectionWorkItems(config.azure.queryFrom, collection)
     );
 
     const workItems = await workItemIdTree(workItemTreeForCollection);

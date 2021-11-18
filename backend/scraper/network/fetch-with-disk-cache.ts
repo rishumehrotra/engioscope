@@ -112,7 +112,7 @@ export default (diskCacheTimeMs: number) => ({
         data: JSON.parse(dataString, parseDate)
       };
     } catch (e) {
-      await fs.unlink(filePath);
+      if (await doesFileExist(filePath)) await fs.unlink(filePath);
       throw e;
     }
   },
