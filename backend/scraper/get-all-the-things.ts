@@ -18,13 +18,18 @@ export default async (config: ParsedConfig) => {
   const collectionWorkItems = workItemsForCollection(config);
   const now = Date.now();
 
-  const projects = config.azure.collections.flatMap(collection => (
-    collection.projects.map(project => ([
+  const projects = config.azure.collections.flatMap(collection => {
+    // Execute these only once per collection
+    const workItems = collectionWorkItems(collection);
+    const workItemFields = getCollectionWorkItemFields(collection.name);
+
+    return collection.projects.map(project => ([
       collection,
       project,
-      collectionWorkItems(collection),
-      getCollectionWorkItemFields(collection.name)
-    ] as const))));
+      workItems,
+      workItemFields
+    ] as const));
+  });
 
   const results = zip(
     projects,
