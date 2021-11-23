@@ -12,11 +12,27 @@ const skipChildren = (collectionConfig: ParsedCollection) => (
 
 const ignoreStates = (collectionConfig: ParsedCollection) => (
   collectionConfig.workitems.ignoreStates?.length
-    ? `AND NOT [Target].[System.State] IN (${join(collectionConfig.workitems.ignoreStates)}) `
+    ? `
+      AND NOT [Source].[System.State] IN (${join(collectionConfig.workitems.ignoreStates)})
+      AND NOT [Target].[System.State] IN (${join(collectionConfig.workitems.ignoreStates)}) 
+    `
     : ''
 );
 
-export const queryForCompletedCollectionWorkItems = (queryFrom: Date, collectionConfig: ParsedCollection) => {
+const additionalClausesForWIPWorkItems = (collectionConfig: ParsedCollection) => {
+  const clause = (collectionConfig.workitems.types || [])
+    .filter(type => type.startDate.length && type.endDate.length)
+    .map(type => `(
+      [Source].[System.WorkItemType] = '${type.type}'
+      AND (${type.startDate.map(startDate => `[Source].[${startDate}] <> ''`).join(' OR ')})
+      AND ${type.endDate.map(endDate => `[Source].[${endDate}] <> ''`).join(' AND ')}
+    )`)
+    .join(' OR ');
+
+  return clause ? `OR ${clause}` : '';
+};
+
+export const queryForCollectionWorkItems = (queryFrom: Date, collectionConfig: ParsedCollection) => {
   const daysToLookup = Math.round((Date.now() - queryFrom.getTime()) / dayInMs);
 
   return `
@@ -24,7 +40,10 @@ export const queryForCompletedCollectionWorkItems = (queryFrom: Date, collection
     FROM workitemLinks
     WHERE
       [Source].[System.WorkItemType] IN (${join(collectionConfig.workitems.getWorkItems)})
-      AND [Source].[Microsoft.VSTS.Common.StateChangeDate] >= @today-${daysToLookup}
+      AND (
+        [Source].[Microsoft.VSTS.Common.StateChangeDate] >= @today-${daysToLookup}
+        ${additionalClausesForWIPWorkItems(collectionConfig)}
+      )
       ${skipChildren(collectionConfig)}
       ${ignoreStates(collectionConfig)}
       AND [Source].[System.TeamProject] IN (${join(collectionConfig.projects.map(p => p.name))})

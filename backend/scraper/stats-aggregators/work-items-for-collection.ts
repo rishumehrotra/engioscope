@@ -1,7 +1,7 @@
 import pluralize from 'pluralize';
 import { reduce } from 'rambda';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { exists, isNewerThan, unique } from '../../utils';
+import { exists, unique } from '../../utils';
 import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
@@ -9,7 +9,7 @@ import type { WorkItemAnalysis } from '../types';
 import type {
   WorkItem, WorkItemField, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
 } from '../types-azure';
-import { queryForCompletedCollectionWorkItems } from '../work-item-queries';
+import { queryForCollectionWorkItems } from '../work-item-queries';
 import { getOverviewData } from './work-item-overview';
 import { workItemTypeId, workItemTypeIconColor } from './work-item-utils';
 
@@ -154,7 +154,6 @@ const uiWorkItemCreator = (
       project: workItem.fields['System.TeamProject'],
       created: {
         on: workItem.fields['System.CreatedDate'].toISOString()
-        // name: workItem.fields['System.CreatedBy']
       },
       updated: {
         on: workItem.fields['System.ChangedDate'].toISOString()
@@ -181,40 +180,15 @@ const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedColle
 
   const workItemDetails = async () => {
     const workItemTreeForCollection: WorkItemIDTree = await getCollectionWorkItemIdsForQuery(
-      collection.name, queryForCompletedCollectionWorkItems(config.azure.queryFrom, collection)
+      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
     );
 
     const workItems = await workItemIdTree(workItemTreeForCollection);
 
-    const isInQueryPeriod = isNewerThan(config.azure.queryFrom);
-
-    const reducedWorkItemRelations = workItemTreeForCollection.workItemRelations
-      .filter(wir => {
-        const source = wir.source ? workItems[wir.source.id] : undefined;
-        const target = wir.target ? workItems[wir.target.id] : undefined;
-
-        const sourceLastStateChangeDate = source?.fields['Microsoft.VSTS.Common.StateChangeDate'];
-        const targetLastStateChangeDate = target?.fields['Microsoft.VSTS.Common.StateChangeDate'];
-
-        if (source && !target) {
-          return sourceLastStateChangeDate ? isInQueryPeriod(sourceLastStateChangeDate) : true;
-        }
-
-        if (!source && target) {
-          return targetLastStateChangeDate ? isInQueryPeriod(targetLastStateChangeDate) : true;
-        }
-
-        if (!source && !target) return true; // This should not be a possibility
-
-        // We have both source and target
-        if (!targetLastStateChangeDate) return true; // Target is not closed, so it's in the query period
-        if (!sourceLastStateChangeDate) return true; // Source is not closed, so it's in the query period
-
-        return isInQueryPeriod(targetLastStateChangeDate) || isInQueryPeriod(sourceLastStateChangeDate);
-      });
+    const { workItemRelations } = workItemTreeForCollection;
 
     const reducedWorkItemIds = unique(
-      reducedWorkItemRelations.flatMap(
+      workItemRelations.flatMap(
         wir => [wir.source?.id, wir.target?.id]
       )
     ).filter(exists);
@@ -227,7 +201,7 @@ const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedColle
         return acc;
       }, {});
 
-    return [reducedWorkItemRelations, reducedWorkItems] as const;
+    return [workItemRelations, reducedWorkItems] as const;
   };
 
   return Promise.all([
@@ -316,9 +290,6 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       acc[parent] = unique([...(acc[parent] || []), wir.target?.id].filter(exists));
       return acc;
     }, { 0: topLevelItems });
-
-    const monthAgo = new Date();
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
 
     return {
       analysedWorkItems: {

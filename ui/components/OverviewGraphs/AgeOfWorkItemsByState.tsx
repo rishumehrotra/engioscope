@@ -21,6 +21,14 @@ const workItemStateUsing = (
   (workItem: UIWorkItem) => {
     const times = workItemTimes(workItem);
 
+    if (times.end) {
+      // It's closed
+      return {
+        state: 'Done',
+        since: new Date(times.end)
+      };
+    }
+
     const lastState = last(times.workCenters);
 
     if (!lastState) {
@@ -33,19 +41,11 @@ const workItemStateUsing = (
 
     if (lastState.end) {
       // Completed the last state
-      // This either means it's done, or it's in a waiting state
+      // This either means it's done with all work centers, or it's in a waiting state
+
       const stateIndex = wit.workCenters.findIndex(wc => wc.label === lastState.label);
       if (stateIndex === wit.workCenters.length - 1) {
         // It's done with workcenters
-        // But it still may not be closed
-        if (times.end) {
-          // Ok, it's closed
-          return {
-            state: 'Done',
-            since: new Date(times.end)
-          };
-        }
-
         return {
           state: `After ${lastState.label}`,
           since: new Date(lastState.end)
