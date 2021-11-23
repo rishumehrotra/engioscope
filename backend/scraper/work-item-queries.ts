@@ -25,7 +25,7 @@ const additionalClausesForWIPWorkItems = (collectionConfig: ParsedCollection) =>
     .map(type => `(
       [Source].[System.WorkItemType] = '${type.type}'
       AND (${type.startDate.map(startDate => `[Source].[${startDate}] <> ''`).join(' OR ')})
-      AND ${type.endDate.map(endDate => `[Source].[${endDate}] <> ''`).join(' AND ')}
+      AND ${type.endDate.map(endDate => `[Source].[${endDate}] = ''`).join(' AND ')}
     )`)
     .join(' OR ');
 
