@@ -1,5 +1,6 @@
 import { allPass } from 'rambda';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useQueryParam } from 'use-query-params';
 import type { UIWorkItem } from '../../../../shared/types';
 
 export type Filter = { label: string; tags: string[] };
@@ -44,13 +45,41 @@ const combinedFilter = (selectedFilters: Filter[]) => {
   );
 };
 
+const toUrlFilter = (filter: Filter[]) => (
+  filter
+    .filter(({ tags }) => tags.length)
+    .map(({ label, tags }) => `${label}:${tags.join(',')}`)
+    .join(';')
+  || undefined
+);
+
+const fromUrlFilter = (urlParam = '') => (
+  !urlParam
+    ? []
+    : urlParam
+      .split(';')
+      .map(part => part.split(':'))
+      .map(([label, tags]) => ({ label, tags: tags.split(',') }))
+);
+
 export default (workItems: UIWorkItem[]) => {
-  const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
+  const [urlFilter, setUrlFilter] = useQueryParam<string | undefined>('filter');
+
   const filters = useMemo(() => collectFilters(workItems), [workItems]);
+
   const filtered = useMemo(
-    () => workItems.filter(combinedFilter(selectedFilters)),
-    [selectedFilters, workItems]
+    () => workItems.filter(combinedFilter(fromUrlFilter(urlFilter))),
+    [urlFilter, workItems]
   );
 
-  return [filtered, filters, setSelectedFilters] as const;
+  const setSelectedFilters = useCallback((filters: Filter[]) => {
+    setUrlFilter(toUrlFilter(filters), 'replaceIn');
+  }, [setUrlFilter]);
+
+  const selectedFilters = useMemo(
+    () => fromUrlFilter(urlFilter),
+    [urlFilter]
+  );
+
+  return [filtered, filters, selectedFilters, setSelectedFilters] as const;
 };

@@ -18,7 +18,7 @@ import { ChangeLeadTimeGraph } from './ChangeLeadTime';
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
   const accessors = useMemo(() => workItemAccessors(projectAnalysis), [projectAnalysis]);
-  const [filteredWorkItems, filters, setSelectedFilters] = useGlobalFilters(workItems);
+  const [filteredWorkItems, filters, selectedFilters, setSelectedFilters] = useGlobalFilters(workItems);
   const [Modal, modalProps, openModal] = useWorkItemModal();
   useRemoveSort();
 
@@ -26,7 +26,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     <>
       <Modal {...modalProps} />
 
-      <OverviewFilters filters={filters} onChange={setSelectedFilters} />
+      <OverviewFilters filters={filters} selectedFilters={selectedFilters} onChange={setSelectedFilters} />
 
       {[
         VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
