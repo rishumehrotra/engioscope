@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import type { ProjectOverviewAnalysis } from '../../../shared/types';
 import OverviewFilters from './helpers/OverviewFilters';
 import { useRemoveSort } from '../../hooks/sort-hooks';
@@ -16,14 +16,30 @@ import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
 import { ChangeLeadTimeGraph } from './ChangeLeadTime';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
+  const rootNode = useRef<HTMLDivElement>(null);
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
   const accessors = useMemo(() => workItemAccessors(projectAnalysis), [projectAnalysis]);
   const [filteredWorkItems, filters, selectedFilters, setSelectedFilters] = useGlobalFilters(workItems);
   const [Modal, modalProps, openModal] = useWorkItemModal();
   useRemoveSort();
 
+  useLayoutEffect(() => {
+    if (window.location.hash) {
+      const element = document.querySelector(window.location.hash);
+      if (element) element.scrollIntoView();
+    }
+
+    // The root node has a margin-bottom of 100vh so that the location
+    // hash jump and lazy loading don't interfere with each other.
+    // However, once we've done the scroll to location hash if needed,
+    // we don't need the margin bottom anymore.
+    setTimeout(() => {
+      if (rootNode.current) rootNode.current.style.marginBottom = '0';
+    }, 1000);
+  }, []);
+
   return (
-    <>
+    <div style={{ marginBottom: '100vh' }} ref={rootNode}>
       <Modal {...modalProps} />
 
       <OverviewFilters filters={filters} selectedFilters={selectedFilters} onChange={setSelectedFilters} />
@@ -41,7 +57,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           openModal={openModal}
         />
       ))}
-    </>
+    </div>
   );
 };
 
