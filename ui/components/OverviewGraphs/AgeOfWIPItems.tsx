@@ -81,7 +81,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
         const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
 
         return openModal({
-          heading: 'Cycle time',
+          heading: 'Age of work-in-progress items',
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemFlatList

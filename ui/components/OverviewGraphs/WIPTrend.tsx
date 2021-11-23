@@ -137,7 +137,15 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
     }));
 
     const headlineStats = getSidebarHeadlineStats(
-      workItemsToDisplay, workItemType, pipe(length, num), 'today'
+      workItemsToDisplay, workItemType, (_, witId) => (
+        num(
+          dataByDay
+            .filter(item => item.witId === witId)
+            .map(item => last(item.workItemPoints).workItems)
+            .flat()
+            .length
+        )
+      ), 'today'
     );
 
     return {

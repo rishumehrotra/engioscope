@@ -13,7 +13,7 @@ export default defineConfig({
   plugins: [
     reactRefresh(),
     legacy({
-      targets: ['defaults', 'ie >= 11'],
+      targets: ['defaults', 'ie >= 11', 'chrome >= 60'],
       additionalLegacyPolyfills: ['regenerator-runtime/runtime']
     })
   ],
