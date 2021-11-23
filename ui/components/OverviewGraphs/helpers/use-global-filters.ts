@@ -19,10 +19,7 @@ const collectFilters = (workItems: UIWorkItem[]) => (
   ).map(([label, tags]) => ({ label, tags: [...tags].sort() }))
 );
 
-const combinedFilter = (
-  filters: Filter[],
-  selectedFilters: Filter[]
-) => {
+const combinedFilter = (selectedFilters: Filter[]) => {
   const collectedFilters = selectedFilters.reduce<Record<string, string[]>>(
     (acc, { label, tags }) => {
       acc[label] = tags;
@@ -51,8 +48,8 @@ export default (workItems: UIWorkItem[]) => {
   const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
   const filters = useMemo(() => collectFilters(workItems), [workItems]);
   const filtered = useMemo(
-    () => workItems.filter(combinedFilter(filters, selectedFilters)),
-    [filters, selectedFilters, workItems]
+    () => workItems.filter(combinedFilter(selectedFilters)),
+    [selectedFilters, workItems]
   );
 
   return [filtered, filters, setSelectedFilters] as const;

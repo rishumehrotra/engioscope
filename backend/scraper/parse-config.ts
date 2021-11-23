@@ -61,7 +61,7 @@ export type SonarConfig = {
   token: string;
 };
 
-type Config = Readonly<{
+export type Config = Readonly<{
   port: number;
   cacheToDiskFor: string;
   azure: AzureConfig;
