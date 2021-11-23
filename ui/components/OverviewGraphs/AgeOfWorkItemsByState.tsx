@@ -100,6 +100,8 @@ const useSplitByState = (
         (acc, [, wis]) => {
           wis.forEach(wi => {
             const { state, since } = workItemState(wi);
+            if (state.startsWith('Before ')) return;
+            if (state === 'Done') return;
             acc[state] = acc[state] || [];
             acc[state].push({ wi, since });
           });
@@ -251,7 +253,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
 
   return (
     <GraphCard
-      title={`Age of ${workItemType.name[1].toLowerCase()} by state`}
+      title={`Age of work-in-progress ${workItemType.name[1].toLowerCase()} by state`}
       subtitle={`Where various ${workItemType.name[1].toLowerCase()} are located, and how long they've been there`}
       hasData={allWorkItems.length > 0}
       left={(
