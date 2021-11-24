@@ -2,7 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const Analytics: React.FC = () => {
+const RecordAnalytics: React.FC = () => {
   const location = useLocation();
 
   const sendPageView = useCallback(() => {
@@ -25,4 +25,4 @@ const Analytics: React.FC = () => {
   return null;
 };
 
-export default Analytics;
+export default RecordAnalytics;

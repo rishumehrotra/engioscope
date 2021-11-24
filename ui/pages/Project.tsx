@@ -11,7 +11,7 @@ import AdvancedFilters from '../components/AdvancedFilters';
 import Header from '../components/Header';
 import { useProjectDetails } from '../hooks/project-details-hooks';
 import usePageName from '../hooks/use-page-name';
-import Overview from './Overview2';
+import Overview from './Overview';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>

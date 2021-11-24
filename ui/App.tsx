@@ -10,7 +10,8 @@ import Project from './pages/Project';
 import Collection from './pages/Collection';
 import { ProjectDetailsProvider } from './hooks/project-details-hooks';
 import { SortContextProvider } from './hooks/sort-hooks';
-import Analytics from './components/Analytics';
+import RecordAnalytics from './components/RecordAnalytics';
+import Analytics from './pages/Analytics';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -28,8 +29,11 @@ const App: React.FC = () => {
           <ReactTooltip />
           <Router>
             <QueryParamProvider ReactRouterRoute={Route}>
-              <Analytics />
+              <RecordAnalytics />
               <Switch>
+                <Route path="/analytics">
+                  <Analytics />
+                </Route>
                 <Route path="/:collection/:project">
                   <Project />
                 </Route>

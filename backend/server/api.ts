@@ -41,7 +41,7 @@ export default (config: ParsedConfig) => {
     res.status(200).send('all your base are belong to us');
   });
 
-  router.get('/api/analytics', async (req, res) => {
+  router.get('/api/an', async (req, res) => {
     analytics().pipe(res);
   });
 

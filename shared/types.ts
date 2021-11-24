@@ -3,6 +3,18 @@ export type ScrapedProject = {
   lastUpdated: string | null;
 };
 
+export type AnalyticsItem = {
+  label: string;
+  start: string;
+  end: string;
+  pageLoads: number;
+  uniques: number;
+  pages: {
+    pathname: string;
+    count: number;
+  }[];
+};
+
 export type PipelineStageStats = {
   id: number;
   name: string;
