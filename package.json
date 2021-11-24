@@ -50,6 +50,7 @@
     "rambda": "^6.8.2",
     "react-modal": "^3.14.3",
     "react-tooltip": "^4.2.21",
+    "split2": "^4.1.0",
     "ua-parser-js": "^0.7.28",
     "yaml": "^1.10.2",
     "yargs": "^17.0.1"
@@ -91,6 +92,7 @@
     "@types/react-dom": "^17.0.8",
     "@types/react-modal": "^3.12.1",
     "@types/react-router-dom": "^5.1.5",
+    "@types/split2": "^3.2.1",
     "@types/ua-parser-js": "^0.7.36",
     "@types/yaml": "^1.9.7",
     "@types/yargs": "^17.0.2",
