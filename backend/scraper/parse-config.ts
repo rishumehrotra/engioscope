@@ -26,7 +26,7 @@ type CollectionWorkItemConfig = {
     startDate: string | string[];
     endDate?: string | string[];
     devCompletionDate?: string | string[];
-    workCenters: ({ label: string } & (
+    workCenters?: ({ label: string } & (
       { startDate: string | string[] }
       | { endDate: string | string[] }
       | { startDate: string | string[]; endDate: string | string[] }
@@ -159,7 +159,7 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
         ? type.devCompletionDate
         : (type.devCompletionDate ? [type.devCompletionDate] : []),
       rootCause: type.rootCause,
-      workCenters: type.workCenters.map(workCenter => ({
+      workCenters: (type.workCenters || []).map(workCenter => ({
         label: workCenter.label,
         // eslint-disable-next-line no-nested-ternary
         startDate: 'startDate' in workCenter
