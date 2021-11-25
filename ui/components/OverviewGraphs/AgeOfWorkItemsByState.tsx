@@ -34,7 +34,7 @@ const workItemStateUsing = (
     if (!lastState) {
       // Not entered first work center yet
       return {
-        state: `Before ${wit.workCenters[0].label}`,
+        state: `Before ${wit.workCenters.length ? wit.workCenters[0].label : 'start'}`,
         since: new Date(times.start || workItem.created.on)
       };
     }
@@ -188,6 +188,11 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     [checkboxStatesForSidebar, filter, states]
   );
 
+  const hasData = useMemo(
+    () => Object.values(statesToRender).some(wis => wis.length > 0),
+    [statesToRender]
+  );
+
   const totalWorkItems = useMemo(() => Object.values(statesToRender).reduce(
     (acc, group) => acc + group.length,
     0
@@ -255,7 +260,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     <GraphCard
       title={`Age of work-in-progress ${workItemType.name[1].toLowerCase()} by state`}
       subtitle={`Where various ${workItemType.name[1].toLowerCase()} are located, and how long they've been there`}
-      hasData={allWorkItems.length > 0}
+      hasData={allWorkItems.length > 0 && hasData}
       left={(
         <>
           <div className="mb-8 flex justify-end mr-4 gap-2">

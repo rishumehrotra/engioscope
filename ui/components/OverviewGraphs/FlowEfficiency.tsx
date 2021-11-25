@@ -52,6 +52,11 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     [accessors]
   );
 
+  const hasData = useMemo(
+    () => totalWorkCenterTime(preFilteredWorkItems) !== 0,
+    [preFilteredWorkItems, totalWorkCenterTime]
+  );
+
   const efficiency = useCallback((workItems: UIWorkItem[]) => {
     const totalTime = totalCycleTime(workItems);
     if (totalTime === 0) return 0;
@@ -115,7 +120,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     <GraphCard
       title="Flow efficiency"
       subtitle="Fraction of overall time that work items spend in work centers on average"
-      hasData={preFilteredWorkItems.length > 0}
+      hasData={preFilteredWorkItems.length > 0 && hasData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

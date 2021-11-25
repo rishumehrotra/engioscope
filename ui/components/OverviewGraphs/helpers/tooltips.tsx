@@ -63,7 +63,7 @@ export const createCompletedWorkItemTooltip = ({
         ${workItemBasicDetails(workItem, wit, wig?.name)}
         ${addSection('Cycle Time', prettyMS(ct))}
         ${clt ? addSection('Change lead time', prettyMS(clt)) : ''}
-        ${addSection('Longest time', `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`)}
+        ${worstOffender ? addSection('Longest time', `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`) : ''}
         ${addSection('Efficiency', `${efficiency}%`)}
         ${additionalSections.map(({ label, value }) => addSection(label, value)).join('')}
       </div>

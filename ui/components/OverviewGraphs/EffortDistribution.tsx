@@ -92,6 +92,11 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     [lastUpdated]
   );
 
+  const hasData = useMemo(
+    () => totalWorkCenterTimeThisMonth(preFilteredWorkItems) > 0,
+    [preFilteredWorkItems, totalWorkCenterTimeThisMonth]
+  );
+
   const effortDistribution = useMemo(
     () => (
       Object.entries(workItemsToDisplay).reduce<{ byGroup: Record<string, number>; total: number; maxValue: number}>(
@@ -191,7 +196,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     <GraphCard
       title="Effort distribution"
       subtitle="Percentage of time various work items have spent in work centers over the last 30 days"
-      hasData={preFilteredWorkItems.length > 0}
+      hasData={preFilteredWorkItems.length > 0 && hasData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
