@@ -4,6 +4,7 @@ import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types';
 import { contrastColour } from '../../../helpers/utils';
 import { modalHeading, useModal } from '../../common/Modal';
 import type { WorkItemAccessors } from './helpers';
+import { noGroup } from './helpers';
 
 export type ModalArgs = {
   heading: ReactNode;
@@ -146,5 +147,5 @@ export const workItemSubheading = (
   witId: string, groupName: string,
   workItems: UIWorkItem[], workItemType: WorkItemAccessors['workItemType']
 ) => (
-  `${workItemType(witId).name[1]} / ${groupName} (${workItems.length})`
+  `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `/ ${groupName}`} (${workItems.length})`
 );

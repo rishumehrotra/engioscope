@@ -1,7 +1,8 @@
 import prettyMilliseconds from 'pretty-ms';
-import { last, prop } from 'rambda';
+import { prop } from 'rambda';
 import React from 'react';
 import type { Overview, UIWorkItem } from '../../../../shared/types';
+import { last } from '../../../helpers/utils';
 import { timeDifference } from './helpers';
 
 type WorkItemTimeDetailsProps = {
@@ -51,13 +52,15 @@ export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workIt
         }), 0
       ) + (
         // Time after last work center
-        lastWorkCenter.end && lastWorkCenter.end !== times.end
+        lastWorkCenter?.end && lastWorkCenter.end !== times.end
           ? timeDifference({ start: lastWorkCenter.end, end: times.end })
           : 0
       ),
       { compact: true }
     )
     : 'unknown';
+
+  if (times.workCenters.length === 0) return null;
 
   return (
     <div className="text-gray-500 text-sm ml-6 mb-3">
@@ -79,7 +82,7 @@ export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workIt
               end: wc.start
             })
           })),
-          ...(times.end !== lastWorkCenter.end
+          ...(lastWorkCenter && times.end !== lastWorkCenter.end
             ? [{
               label: `After ${lastWorkCenter.label}`,
               timeDiff: timeDifference({

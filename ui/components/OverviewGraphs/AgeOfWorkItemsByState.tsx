@@ -1,7 +1,9 @@
-import { last, prop } from 'rambda';
+import { prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { num, prettyMS, priorityBasedColor } from '../../helpers/utils';
+import {
+  last, num, prettyMS, priorityBasedColor
+} from '../../helpers/utils';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';

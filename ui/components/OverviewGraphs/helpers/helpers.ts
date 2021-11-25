@@ -165,7 +165,7 @@ export const getSidebarStatByKey = (key: string, organizedWorkItems: OrganizedWo
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [matchingGroup, workItems] = Object.entries(groups)
-    .find(([groupName]) => key.endsWith(groupName))!;
+    .find(([groupName]) => key === matchingWitId + groupName)!;
 
   return [matchingWitId, matchingGroup, workItems] as const;
 };
