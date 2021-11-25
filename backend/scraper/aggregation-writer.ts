@@ -8,7 +8,7 @@ import type {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
-import { doesFileExist, map, shortDateFormat } from '../utils';
+import { doesFileExist, map } from '../utils';
 import type { ProjectAnalysis } from './types';
 import type { ParsedConfig, ParsedProjectConfig } from './parse-config';
 
@@ -146,7 +146,7 @@ const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: Omit<Scr
     .then(populateWithEmptyValuesIfNeeded(config))
     .then(map(p => (
       matchingProject(p.name)(scrapedProject)
-        ? { ...scrapedProject, lastUpdated: shortDateFormat(new Date()) }
+        ? { ...scrapedProject, lastUpdated: new Date().toISOString() }
         : p
     )))
     .then(writeOverallSummaryFile)
