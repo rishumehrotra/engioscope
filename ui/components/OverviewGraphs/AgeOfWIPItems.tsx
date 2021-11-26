@@ -98,28 +98,36 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
     };
   }, [accessors, ageOfWorkItem, openModal, workItemTooltip, workItemsToDisplay]);
 
-  const graphWidthRatio = useMemo(
-    () => Object.values(workItemsToDisplay)
-      .map(x => `${Object.values(x).length + 1}fr`)
-      .join(' '),
-    [workItemsToDisplay]
-  );
+  const graphBlocks = useMemo(
+    () => (
+      Object.entries(workItemsToDisplay).reduce<{
+        width: number;
+        witId: string;
+        scatterLineGraphProps: ScatterLineGraphProps<UIWorkItem>;
+      }[][]>(
+        (acc, [witId, group], index) => {
+          const rowIndex = Math.floor(index / 2);
+          if (!acc[rowIndex]) acc[rowIndex] = [];
+          acc[rowIndex].push({
+            width: Object.values(group).length,
+            witId,
+            scatterLineGraphProps: {
+              graphData: [{
+                label: workItemType(witId).name[1],
+                data: group,
+                yAxisPoint: ageOfWorkItem,
+                tooltip: wi => workItemTooltip(wi)
+              }],
+              pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
+              height: 420,
+              linkForItem: prop('url'),
+              className: 'w-full'
+            }
+          });
 
-  const scatterLineGraphProps = useMemo(
-    () => Object.entries(workItemsToDisplay).map<ScatterLineGraphProps<UIWorkItem>>(
-      ([witId, group]) => ({
-        key: witId,
-        graphData: [{
-          label: workItemType(witId).name[1],
-          data: group,
-          yAxisPoint: ageOfWorkItem,
-          tooltip: wi => workItemTooltip(wi)
-        }],
-        pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
-        height: 420,
-        linkForItem: prop('url'),
-        className: 'w-full'
-      })
+          return acc;
+        }, []
+      )
     ),
     [ageOfWorkItem, workItemTooltip, workItemType, workItemsToDisplay]
   );
@@ -135,12 +143,19 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
             <SizeFilter workItems={workItems} setFilter={setSizeFilter} />
             <PriorityFilter workItems={workItems} setFilter={setPriorityFilter} />
           </div>
-          <div
-            className="grid gap-4 justify-between items-center grid-cols-2"
-            style={{ gridTemplateColumns: graphWidthRatio }}
-          >
-            {scatterLineGraphProps.map(props => <ScatterLineGraph {...props} />)}
-          </div>
+          {graphBlocks.map(row => (
+            <div
+              className="grid gap-4 justify-between items-center grid-cols-2 mb-16"
+              key={row[0].witId}
+              style={{
+                gridTemplateColumns: row.map(({ width }) => `${width + 1}fr`).join(' ')
+              }}
+            >
+              {row.map(({ witId, scatterLineGraphProps }) => (
+                <ScatterLineGraph key={witId} {...scatterLineGraphProps} />
+              ))}
+            </div>
+          ))}
           <ul className="text-sm text-gray-600 pl-8 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
             {Object.keys(workItemsToDisplay).map(witId => (
               <li key={witId}>
