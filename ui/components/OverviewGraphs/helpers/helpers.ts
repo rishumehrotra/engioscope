@@ -179,5 +179,5 @@ export const listFormat = (list: string[], joiner = 'and') => {
 };
 
 export const stringifyDateField = (fields: string[]) => (
-  fields.length === 1 ? `'${fields[0]}'` : `min of ${listFormat(fields.map(f => `'${f}'`))}`
+  fields.length === 1 ? `'${fields[0]}'` : `${listFormat(fields.map(f => `'${f}'`), 'or')}, whichever is earlier`
 );

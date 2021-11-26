@@ -27,7 +27,7 @@ const Analytics: React.FC = () => {
                   <div className="flex flex-row gap-4 p-4">
                     <div className="text-2xl bg-gray-200 rounded-md p-2 px-3">
                       {num(pageLoads)}
-                      <div className="text-sm text-gray-600">Page loads</div>
+                      <div className="text-sm text-gray-600">Page views</div>
                     </div>
                     <div className="text-2xl bg-gray-200 rounded-md p-2 px-3">
                       {num(uniques)}

@@ -26,7 +26,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, selectedFilters, onChange })
   if (!filters.length) return null;
 
   return (
-    <div className="flex justify-end gap-2 items-center mb-6">
+    <div className="flex gap-2 items-center mb-6 ml-5">
       {filtersProps.map(({ label, ...rest }) => (
         <MultiSelectDropdownWithLabel
           key={label}
