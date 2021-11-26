@@ -12,6 +12,16 @@ const getMinDate = (fields: string[], workItem: WorkItem) => {
   return possibleEndDates.length > 0 ? new Date(Math.min(...possibleEndDates)) : undefined;
 };
 
+const wasClosedOutsideQueryPeriod = (
+  workItem: WorkItem,
+  config: ParsedConfig,
+  workItemConfig: NonNullable<ParsedCollection['workitems']['types']>[number]
+) => {
+  const closeDate = getMinDate(workItemConfig.endDate, workItem);
+  if (!closeDate) return false;
+  return closeDate.getTime() < config.azure.queryFrom.getTime();
+};
+
 export const getOverviewData = (
   config: ParsedConfig,
   collection: ParsedCollection,
@@ -33,6 +43,7 @@ export const getOverviewData = (
 
     const workItemConfig = collection.workitems.types?.find(wic => wic.type === wit.name);
     if (!workItemConfig) return acc;
+    if (wasClosedOutsideQueryPeriod(workItem, config, workItemConfig)) return acc;
 
     acc.reducedIds[workItem.id] = byId[workItem.id];
     acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
