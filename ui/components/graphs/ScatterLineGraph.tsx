@@ -9,7 +9,7 @@ import { prettyMS } from '../../helpers/utils';
 const xAxisLabelAreaHeight = 80;
 const xAxisLabelHeight = 50;
 const xAxisLabelWidth = 100;
-const yAxisLabelWidth = 60;
+const yAxisLabelWidth = 80;
 const graphHeight = 400;
 const scatterWidth = 30;
 const groupSpacing = 70;

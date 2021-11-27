@@ -42,9 +42,18 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     [priorityFilter, sizeFilter]
   );
 
+  const efficiency = useCallback((workItems: UIWorkItem[]) => {
+    const totalTime = totalCycleTime(workItems);
+    if (totalTime === 0) return 0;
+    return (totalWorkCenterTime(workItems) * 100) / totalTime;
+  }, [totalCycleTime, totalWorkCenterTime]);
+
   const workItemsToDisplay = useMemo(
-    () => organizeByWorkItemType(preFilteredWorkItems, filter),
-    [organizeByWorkItemType, preFilteredWorkItems, filter]
+    () => Object.fromEntries(
+      Object.entries(organizeByWorkItemType(preFilteredWorkItems, filter))
+        .filter(([, group]) => Object.values(group).reduce((acc, wis) => acc + efficiency(wis), 0) > 0)
+    ),
+    [organizeByWorkItemType, preFilteredWorkItems, filter, efficiency]
   );
 
   const workItemTooltip = useMemo(
@@ -56,12 +65,6 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     () => totalWorkCenterTime(preFilteredWorkItems) !== 0,
     [preFilteredWorkItems, totalWorkCenterTime]
   );
-
-  const efficiency = useCallback((workItems: UIWorkItem[]) => {
-    const totalTime = totalCycleTime(workItems);
-    if (totalTime === 0) return 0;
-    return (totalWorkCenterTime(workItems) * 100) / totalTime;
-  }, [totalCycleTime, totalWorkCenterTime]);
 
   const stringifyEfficiency = useCallback(
     (efficiency: number) => (efficiency === 0 ? '-' : `${Math.round(efficiency)}%`),

@@ -63,16 +63,6 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     [priorityFilter, sizeFilter]
   );
 
-  const workItemsToDisplay = useMemo(
-    () => organizeByWorkItemType(preFilteredWorkItems, filter),
-    [organizeByWorkItemType, preFilteredWorkItems, filter]
-  );
-
-  const workItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(accessors),
-    [accessors]
-  );
-
   const workCenterTimeThisMonth = useMemo(
     () => workCenterTimeThisMonthUsing(workItemTimes),
     [workItemTimes]
@@ -81,6 +71,21 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
   const totalWorkCenterTimeThisMonth = useMemo(
     () => totalWorkCenterTimeThisMonthUsing(workItemTimes),
     [workItemTimes]
+  );
+
+  const workItemsToDisplay = useMemo(
+    () => Object.fromEntries(
+      Object.entries(organizeByWorkItemType(preFilteredWorkItems, filter))
+        .filter(([, group]) => Object.values(group).reduce(
+          (acc, wis) => acc + totalWorkCenterTimeThisMonth(wis), 0
+        ) > 0)
+    ),
+    [organizeByWorkItemType, preFilteredWorkItems, filter, totalWorkCenterTimeThisMonth]
+  );
+
+  const workItemTooltip = useMemo(
+    () => createWIPWorkItemTooltip(accessors),
+    [accessors]
   );
 
   const monthAgo = useMemo(
