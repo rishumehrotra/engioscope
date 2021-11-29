@@ -50,13 +50,20 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({ pipelin
     <ProjectStat
       topStats={[{
         title: 'Deployments from master',
-        value: num(pipelines.reduce((acc, pipeline) => (
-          acc + (
-            Object.values(pipeline.repos)
-              .every(repoBranches => repoBranches.length === 1 && repoBranches[0] === 'master')
-              ? 1 : 0
-          )
-        ), 0)),
+        value: num(pipelines.reduce((acc, pipeline) => {
+          const repoBranches = Object.values(pipeline.repos);
+          if (repoBranches.length === 0) return acc;
+
+          return (
+            acc + (
+              repoBranches
+                .every(repoBranches => (
+                  repoBranches.length === 1 && repoBranches[0].toLowerCase() === 'master'
+                ))
+                ? 1 : 0
+            )
+          );
+        }, 0)),
         tooltip: 'Release pipelines that deploy exclusively from master.'
       }]}
     />

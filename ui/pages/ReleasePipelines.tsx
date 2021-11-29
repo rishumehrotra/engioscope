@@ -19,8 +19,12 @@ const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) =
 );
 const bySearch = (search: string) => (pipeline: ReleasePipelineStats) => (search.startsWith('repo:')
   ? filterPipelinesByRepo(search, pipeline) : filterBySearch(search, pipeline.name));
-const byNonMasterReleases = (pipeline: ReleasePipelineStats) => Object.values(pipeline.repos)
-  .some(branches => branches.some(branch => !branch.toLowerCase().includes('master')));
+const byNonMasterReleases = (pipeline: ReleasePipelineStats) => {
+  const repoBranches = Object.values(pipeline.repos);
+  if (repoBranches.length === 0) return true;
+  return repoBranches
+    .some(branches => branches.some(branch => !branch.toLowerCase().includes('master')));
+};
 const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
 const byStageNameExists = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
   pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()))

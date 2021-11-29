@@ -6,7 +6,7 @@ import type { LegendSidebarProps } from './LegendSidebar';
 export type GroupLabel = { witId: string; groupName: string };
 export type OrganizedWorkItems = Record<string, Record<string, UIWorkItem[]>>;
 
-export const noGroup = 'no-group';
+export const noGroup = 'Not classified';
 
 export const lineColor = (() => {
   const c = createPalette([
