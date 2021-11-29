@@ -7,12 +7,7 @@ import Card from './common/ExpandingCard';
 import Flair from './common/Flair';
 import { ArrowRight, Branches } from './common/Icons';
 import Metric from './Metric';
-
-type StagesToHighlight = {
-  stageName: string;
-  exists: boolean;
-  usesStage: boolean;
-};
+import { pipelineHasStageNamed, pipelineUsesStageNamed } from './pipeline-utils';
 
 type StageNameProps = {
   isSelected: boolean;
@@ -127,20 +122,6 @@ const StageName: React.FC<StageNameProps> = ({
 const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: string[]}> = ({ pipeline, stagesToHighlight }) => {
   const [selectedStage, setSelectedStage] = useState<PipelineStageStats | null>(null);
 
-  const highlightExistanceOfStages: StagesToHighlight[] = stagesToHighlight
-    ? stagesToHighlight.map(stageToHighlight => {
-      const matchingStage = pipeline.stages.find(
-        stage => stage.name.toLowerCase().includes(stageToHighlight.toLowerCase())
-      );
-
-      return {
-        stageName: stageToHighlight,
-        exists: !!matchingStage,
-        usesStage: (matchingStage?.successCount || 0) > 0
-      };
-    })
-    : [];
-
   return (
     <Card
       key={pipeline.name}
@@ -150,14 +131,19 @@ const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: s
       onCardClick={() => setSelectedStage(!selectedStage ? pipeline.stages[0] : null)}
       subtitle={(
         <>
-          {highlightExistanceOfStages.map(stage => (
-            <Flair
-              key={stage.stageName}
-              // eslint-disable-next-line no-nested-ternary
-              colorClassName={stage.exists && stage.usesStage ? 'bg-green-600' : stage.exists ? 'bg-yellow-400' : 'bg-gray-400'}
-              label={`${stage.stageName}: ${stage.exists ? `Exists, ${stage.usesStage ? 'and used' : 'but unused'}` : "Doesn't exist"}`}
-            />
-          ))}
+          {stagesToHighlight?.map(stageToHighlight => {
+            const doesStageExist = pipelineHasStageNamed(stageToHighlight)(pipeline);
+            const isStageUsed = pipelineUsesStageNamed(stageToHighlight)(pipeline);
+
+            return (
+              <Flair
+                key={stageToHighlight}
+                // eslint-disable-next-line no-nested-ternary
+                colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : doesStageExist ? 'bg-yellow-400' : 'bg-gray-400'}
+                label={`${stageToHighlight}: ${doesStageExist ? `Exists, ${isStageUsed ? 'and used' : 'but unused'}` : "Doesn't exist"}`}
+              />
+            );
+          })}
         </>
       )}
     >

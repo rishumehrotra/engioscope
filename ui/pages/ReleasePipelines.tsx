@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
+import { not, pipe } from 'rambda';
 import type { ReleasePipelineStats } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
@@ -12,6 +13,7 @@ import Loading from '../components/Loading';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
+import { pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed } from '../components/pipeline-utils';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) => (
@@ -19,19 +21,8 @@ const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) =
 );
 const bySearch = (search: string) => (pipeline: ReleasePipelineStats) => (search.startsWith('repo:')
   ? filterPipelinesByRepo(search, pipeline) : filterBySearch(search, pipeline.name));
-const byNonMasterReleases = (pipeline: ReleasePipelineStats) => {
-  const repoBranches = Object.values(pipeline.repos);
-  if (repoBranches.length === 0) return true;
-  return repoBranches
-    .some(branches => branches.some(branch => !branch.toLowerCase().includes('master')));
-};
+const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, not);
 const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
-const byStageNameExists = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
-  pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()))
-);
-const byStageNameExistsNotUsed = (stageNameExists: string) => (pipeline: ReleasePipelineStats) => (
-  pipeline.stages.some(stage => stage.name.toLowerCase().includes(stageNameExists.toLowerCase()) && stage.releaseCount === 0)
-);
 
 const ReleasePipelines: React.FC = () => {
   const releaseAnalysis = useFetchForProject(pipelineMetrics);
@@ -50,8 +41,8 @@ const ReleasePipelines: React.FC = () => {
       .filter(search === undefined ? dontFilter : bySearch(search))
       .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
       .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
-      .filter(stageNameExists === undefined ? dontFilter : byStageNameExists(stageNameExists))
-      .filter(stageNameExistsNotUsed === undefined ? dontFilter : byStageNameExistsNotUsed(stageNameExistsNotUsed));
+      .filter(stageNameExists === undefined ? dontFilter : pipelineHasStageNamed(stageNameExists))
+      .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed));
   }, [releaseAnalysis, search, nonMasterReleases, notStartsWithArtifact, stageNameExists, stageNameExistsNotUsed]);
 
   const topPipelines = useMemo(() => topItems(page, pipelines), [page, pipelines]);

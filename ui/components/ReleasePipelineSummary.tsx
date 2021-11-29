@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react';
 import type { ReleasePipelineStats } from '../../shared/types';
 import { num } from '../helpers/utils';
+import { pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineUsesStageNamed } from './pipeline-utils';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 
@@ -18,12 +19,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({ pipelin
             {
               title: `${stageName}: Exists`,
               value: num(
-                pipelines.reduce((acc, pipeline) => {
-                  const matchingStage = pipeline.stages
-                    .find(stage => stage.name.toLowerCase().includes(stageName.toLowerCase()));
-
-                  return acc + (matchingStage ? 1 : 0);
-                }, 0)
+                pipelines.reduce((acc, pipeline) => (
+                  pipelineHasStageNamed(stageName)(pipeline) ? acc + 1 : acc
+                ), 0)
               ),
               tooltip: `Release pipelines that have a stage named (or containing) ${stageName}.`
             }
@@ -34,13 +32,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({ pipelin
           topStats={[{
             title: `${stageName}: Exists and used`,
             value: num(
-              pipelines.reduce((acc, pipeline) => {
-                const matchingStage = pipeline.stages
-                  .find(stage => stage.name.toLowerCase().includes(stageName.toLowerCase()));
-
-                if (!matchingStage) return acc;
-                return acc + (matchingStage.successCount ? 1 : 0);
-              }, 0)
+              pipelines.reduce((acc, pipeline) => (
+                pipelineUsesStageNamed(stageName)(pipeline) ? acc + 1 : acc
+              ), 0)
             ),
             tooltip: `Release pipelines that have a successful deployment from ${stageName}.`
           }]}
@@ -50,20 +44,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({ pipelin
     <ProjectStat
       topStats={[{
         title: 'Deployments from master',
-        value: num(pipelines.reduce((acc, pipeline) => {
-          const repoBranches = Object.values(pipeline.repos);
-          if (repoBranches.length === 0) return acc;
-
-          return (
-            acc + (
-              repoBranches
-                .every(repoBranches => (
-                  repoBranches.length === 1 && repoBranches[0].toLowerCase() === 'master'
-                ))
-                ? 1 : 0
-            )
-          );
-        }, 0)),
+        value: num(pipelines.reduce((acc, pipeline) => (
+          pipelineDeploysExclusivelyFromMaster(pipeline) ? acc + 1 : acc
+        ), 0)),
         tooltip: 'Release pipelines that deploy exclusively from master.'
       }]}
     />
