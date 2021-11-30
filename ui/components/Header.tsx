@@ -17,10 +17,12 @@ const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => (
       </Link>
     </div>
     <div className="mt-24">
-      <h1 className="text-5xl font-bold text-gray-200 pr-2">{title}</h1>
-      <div className={`flex ${subtitle ? 'justify-between' : 'justify-end'} w-full`}>
-        {subtitle ? subtitle() : null}
-        <div className="text-sm text-gray-300 justify-self-end">
+      <div className={`flex align-baseline justify-between ${subtitle ? '' : 'mb-6'}`}>
+        <div>
+          <h1 className="text-5xl font-bold text-gray-200 pr-2">{title}</h1>
+          {subtitle ? subtitle() : null}
+        </div>
+        <div className="text-sm text-gray-300 justify-self-end place-self-end">
           Last updated on
           <span className="font-semibold ml-1">
             {lastUpdated ? shortDate(lastUpdated) : '...'}
