@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => (
       <h1 className="text-5xl font-bold text-gray-200 pr-2">{title}</h1>
       <div className={`flex ${subtitle ? 'justify-between' : 'justify-end'} w-full`}>
         {subtitle ? subtitle() : null}
-        <div className="text-sm text-gray-300 justify-self-end">
+        <div className="text-sm text-gray-300 justify-self-end place-self-end">
           Last updated on
           <span className="font-semibold ml-1">
             {lastUpdated ? shortDate(lastUpdated) : '...'}
