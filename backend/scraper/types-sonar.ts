@@ -17,3 +17,14 @@ export type SonarAnalysisByRepo = null | {
   measures: Measure[];
   lastAnalysisDate: Date;
 };
+
+export type SonarQualityGateDetails = {
+  level: 'OK' | 'ERROR' | 'WARN';
+  conditions: {
+    metric: string;
+    op: 'LT' | 'GT';
+    error: string;
+    actual: string;
+    level: 'OK' | 'ERROR' | 'WARN';
+  }[];
+};

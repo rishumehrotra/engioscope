@@ -26,9 +26,9 @@ const sonarStats = (repos: RepoAnalysis[]) => (
     (acc, r) => ({
       ...acc,
       configured: acc.configured + (r.codeQuality ? 1 : 0),
-      ok: acc.ok + (r.codeQuality?.qualityGate.toLowerCase() === 'ok' ? 1 : 0),
-      warn: acc.warn + (r.codeQuality?.qualityGate.toLowerCase() === 'warn' ? 1 : 0),
-      error: acc.error + (r.codeQuality?.qualityGate.toLowerCase() === 'error' ? 1 : 0)
+      ok: acc.ok + (r.codeQuality?.quality.gate === 'pass' ? 1 : 0),
+      warn: acc.warn + (r.codeQuality?.quality.gate === 'warn' ? 1 : 0),
+      error: acc.error + (r.codeQuality?.quality.gate === 'fail' ? 1 : 0)
     }),
     {
       configured: 0, ok: 0, warn: 0, error: 0

@@ -87,16 +87,55 @@ export type UITests = null | {
   }[];
 };
 
+export type QualityGateDetails = {
+  value?: number;
+  op?: 'gt' | 'lt';
+  level?: number;
+  status: 'pass' | 'warn' | 'fail' | 'unknown';
+};
+
 export type UICodeQuality = null | {
   url: string;
-  complexity: number;
-  bugs: number;
-  codeSmells: number;
-  vulnerabilities: number;
-  duplication: number;
-  techDebt: number;
-  qualityGate: 'error' | 'warn' | 'ok';
   lastAnalysisDate: Date;
+  files?: number;
+  complexity: {
+    cyclomatic?: number;
+    cognitive?: number;
+  };
+  quality: {
+    gate: QualityGateDetails['status'];
+    securityRating?: QualityGateDetails;
+    coverage?: QualityGateDetails;
+    duplicatedLinesDensity?: QualityGateDetails;
+    blockerViolations?: QualityGateDetails;
+    codeSmells?: QualityGateDetails;
+    criticalViolations?: QualityGateDetails;
+  };
+  maintainability: {
+    rating?: number;
+    techDebt?: number;
+    codeSmells?: number;
+  };
+  coverage: {
+    byTests?: number;
+    line?: number;
+    linesToCover?: number;
+    uncoveredLines?: number;
+    branch?: number;
+    conditionsToCover?: number;
+    uncoveredConditions?: number;
+  };
+  reliability: {
+    bugs?: number;
+    rating?: number;
+    vulnerabilities?: number;
+  };
+  duplication: {
+    blocks?: number;
+    files?: number;
+    lines?: number;
+    linesDensity?: number;
+  };
 };
 
 export type AggregatedCommitsByDev = {

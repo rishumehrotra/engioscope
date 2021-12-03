@@ -17,8 +17,8 @@ import RepoSummary from '../components/RepoSummary';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
-  if (codeQuality.qualityGate.toLowerCase() === 'ok') return 3;
-  if (codeQuality.qualityGate.toLowerCase() === 'warn') return 2;
+  if (codeQuality.quality.gate === 'pass') return 3;
+  if (codeQuality.quality.gate === 'warn') return 2;
   return 1;
 };
 
@@ -29,7 +29,7 @@ const byFailingLastBuilds = (repo: RepoAnalysis) => (
   repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded')
 );
 const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) => (
-  (repo.codeQuality?.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
+  (repo.codeQuality?.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
 );
 
 const sorters: SortMap<RepoAnalysis> = {
