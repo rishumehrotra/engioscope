@@ -28,7 +28,7 @@ const fieldDefinitions = {
     {
       key: 'coverage',
       label: 'Coverage',
-      formatter: num
+      formatter: percent
     },
     {
       key: 'duplicatedLinesDensity',
@@ -162,17 +162,19 @@ type SubCardProps = {
 const SubCard: React.FC<SubCardProps> = ({
   heading, rating, ratingClassName, children, className
 }) => (
-  <div className={`bg-gray-50 relative rounded-lg shadow-sm ${className || ''}`}>
-    <h2 className="text-xl p-4 font-semibold">{heading}</h2>
-    {rating !== undefined && (
-      <div
-        className={`absolute text-center top-0 right-2 px-2 py-1 rounded-b-lg shadow-sm font-semibold
-          ${ratingClassName || 'bg-purple-600 text-lg text-white'}`}
-        style={{ minWidth: '3em' }}
-      >
-        {rating}
-      </div>
-    )}
+  <div className={`bg-gray-50 rounded-lg shadow-sm ${className || ''}`}>
+    <div className="flex justify-between py-4">
+      <h2 className="text-xl font-semibold px-4">{heading}</h2>
+      {rating !== undefined && (
+        <div
+          className={`text-center px-4 py-1 rounded-l-lg shadow-sm font-semibold
+            ${ratingClassName || 'bg-purple-600 text-lg text-white'}`}
+          style={{ minWidth: '3em' }}
+        >
+          {rating}
+        </div>
+      )}
+    </div>
     <div className="m-3">
       {children}
     </div>
@@ -187,7 +189,7 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
       <TabContents gridCols={1}>
         <div className="grid grid-cols-3 gap-4">
           <SubCard
-            heading="Gates"
+            heading="Quality gates"
             rating={codeQuality.quality.gate.toUpperCase()}
             ratingClassName={`${gateClassName(codeQuality.quality.gate)}`}
             className="row-span-2"
@@ -220,6 +222,9 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
                   })}
               </tbody>
             </table>
+            <div className="text-xs text-gray-600 mt-4 p-1">
+              Some quality gates are not shown.
+            </div>
           </SubCard>
           <SubCard
             heading="Maintainability"
