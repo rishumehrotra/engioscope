@@ -23,13 +23,20 @@ export type PipelineStageStats = {
   successCount: number;
 };
 
+export type BranchPolicy =
+  | { type: 'minimumNumberOfReviewers'; minimumApproverCount: number }
+  | { type: 'workItemLinking' }
+  | { type: 'builds' }
+  | { type: 'commentRequirements' }
+  | { type: 'requireMergeStrategy' };
+
 export type ReleasePipelineStats = {
   id: number;
   name: string;
   url: string;
   description: string | null;
   stages: PipelineStageStats[];
-  repos: Record<string, string[]>;
+  repos: Record<string, { branch: string; policies: BranchPolicy[] }[]>;
 };
 
 export type UIBuildPipeline = {

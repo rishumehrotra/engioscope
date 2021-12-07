@@ -530,3 +530,108 @@ export type WorkItemField = {
   supportedOperations: { name: string; referenceName: string }[];
   usage: 'none' | 'tree' | 'workItem' | 'workItemLink' | 'workItemTypeExtension';
 };
+
+type PolicyBase = {
+  createdBy: IdentityRef;
+  createdDate: Date;
+  id: number;
+  isBlocking: boolean;
+  isDeleted: boolean;
+  isEnabled: boolean;
+};
+
+type BranchPolicyType<TypeName extends string, AdditionalSettings> = PolicyBase & {
+  settings: {
+    scope: {
+      refName: string;
+      matchKind: 'Exact';
+      repositoryId: string;
+    }[];
+  } & AdditionalSettings;
+  type: {
+    id: string;
+    url: string;
+    displayName: TypeName;
+  };
+};
+
+type RepoPolicyType<TypeName extends string, AdditionalSettings> = PolicyBase & {
+  settings: {
+    scope: {
+      repositoryId: string;
+    }[];
+  } & AdditionalSettings;
+  type: {
+    id: string;
+    url: string;
+    displayName: TypeName;
+  };
+};
+
+type FileSizeRestrictionPolicy = RepoPolicyType<'File size restriction', {
+  maximumGitBlobSizeInBytes: number;
+  useUncompressedSize: boolean;
+}>;
+type PathLengthRestrictionPolicy = RepoPolicyType<'Path Length restriction', { maxPathLength: number }>;
+type ReservedNamesRestrictionPolicy = RepoPolicyType<'Reserved names restriction', Record<string, never>>;
+type MinimumNumberOfReviewersPolicy = BranchPolicyType<'Minimum number of reviewers', {
+  minimumApproverCount: number;
+  creatorVoteCounts: boolean;
+  allowDownvotes: boolean;
+  resetOnSourcePush: boolean;
+}>;
+type CommentRequirementsPolicy = BranchPolicyType<'Comment requirements', Record<string, never>>;
+type WorkItemLinkingPolicy = BranchPolicyType<'Work item linking', Record<string, never>>;
+type BuildPolicy = BranchPolicyType<'Build', {
+  buildDefinitionId: number;
+  queueOnSourceUpdateOnly: boolean;
+  manualQueueOnly: boolean;
+  displayName: string | null;
+  validDuration: number;
+}>;
+type RequiredReviewersPolicy = BranchPolicyType<'Required reviewers', {
+  requiredReviewerIds: string[];
+  filenamePatterns?: string[];
+}>;
+type RequireMergeStrategyPolicy = BranchPolicyType<'Require a merge strategy', {
+  allowRebase?: boolean;
+}>;
+
+export type PolicyConfiguration =
+  | FileSizeRestrictionPolicy
+  | PathLengthRestrictionPolicy
+  | ReservedNamesRestrictionPolicy
+  | MinimumNumberOfReviewersPolicy
+  | CommentRequirementsPolicy
+  | WorkItemLinkingPolicy
+  | BuildPolicy
+  | RequiredReviewersPolicy
+  | RequireMergeStrategyPolicy;
+
+export const isFileSizeRestrictionPolicy = (policy: PolicyConfiguration): policy is FileSizeRestrictionPolicy => (
+  policy.type.displayName === 'File size restriction'
+);
+export const isPathLengthRestrictionPolicy = (policy: PolicyConfiguration): policy is PathLengthRestrictionPolicy => (
+  policy.type.displayName === 'Path Length restriction'
+);
+export const isReservedNamesRestrictionPolicy = (policy: PolicyConfiguration): policy is ReservedNamesRestrictionPolicy => (
+  policy.type.displayName === 'Reserved names restriction'
+);
+export const isMinimumNumberOfReviewersPolicy = (policy: PolicyConfiguration): policy is MinimumNumberOfReviewersPolicy => (
+  policy.type.displayName === 'Minimum number of reviewers'
+);
+export const isCommentRequirementsPolicy = (policy: PolicyConfiguration): policy is CommentRequirementsPolicy => (
+  policy.type.displayName === 'Comment requirements'
+);
+export const isWorkItemLinkingPolicy = (policy: PolicyConfiguration): policy is WorkItemLinkingPolicy => (
+  policy.type.displayName === 'Work item linking'
+);
+export const isBuildPolicy = (policy: PolicyConfiguration): policy is BuildPolicy => (
+  policy.type.displayName === 'Build'
+);
+export const isRequiredReviewersPolicy = (policy: PolicyConfiguration): policy is RequiredReviewersPolicy => (
+  policy.type.displayName === 'Required reviewers'
+);
+export const isRequireMergeStrategyPolicy = (policy: PolicyConfiguration): policy is RequireMergeStrategyPolicy => (
+  policy.type.displayName === 'Require a merge strategy'
+);

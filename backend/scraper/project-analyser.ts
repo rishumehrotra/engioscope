@@ -7,6 +7,7 @@ import aggregateReleases from './stats-aggregators/releases';
 import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
 import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
+import aggregatePolicyConfigurations from './stats-aggregators/policy-configurations';
 import sonar from './network/sonar';
 import type { ProjectAnalysis, WorkItemAnalysis } from './types';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
@@ -28,7 +29,8 @@ const analyserLog = debug('analyser');
 export default (config: ParsedConfig) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions
+    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions,
+    getPolicyConfigurations
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
@@ -48,6 +50,7 @@ export default (config: ParsedConfig) => {
       releaseDefinitionById,
       releases,
       prByRepoId,
+      policyConfigurationByRepoBranch,
       workItemAnalysis
     ] = await Promise.all([
       forProject(getRepositories),
@@ -55,6 +58,7 @@ export default (config: ParsedConfig) => {
       forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
+      forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
       getWorkItems(projectConfig, workItemFieldsPromise)
     ]);
 
@@ -91,7 +95,9 @@ export default (config: ParsedConfig) => {
       };
     }));
 
-    const releaseAnalysis = aggregateReleases(releaseDefinitionById, releases);
+    const releaseAnalysis = aggregateReleases(
+      releaseDefinitionById, releases, policyConfigurationByRepoBranch
+    );
 
     const analysisResults: ProjectAnalysis = {
       repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),

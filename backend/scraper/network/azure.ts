@@ -5,7 +5,7 @@ import fetch from './fetch-with-timeout';
 import { chunkArray } from '../../utils';
 import type {
   Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
-  GitRepository, Release, ReleaseDefinition, TeamProjectReference, TestRun,
+  GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestRun,
   WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
   WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
 } from '../types-azure';
@@ -250,6 +250,13 @@ export default (config: ParsedConfig) => {
           { headers: authHeader }
         )
       ).then(x => x.data.value)
+    ),
+
+    getPolicyConfigurations: (collectionName: string, projectName: string) => (
+      list<PolicyConfiguration>({
+        url: url(collectionName, projectName, '/policy/configurations'),
+        cacheFile: [collectionName, projectName, 'policy-configurations']
+      })
     )
   };
 };

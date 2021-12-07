@@ -29,5 +29,5 @@ export const pipelineHasUnusedStageNamed = (stageName: string) => (
 export const pipelineDeploysExclusivelyFromMaster = (pipeline: ReleasePipelineStats) => {
   const repoBranches = Object.values(pipeline.repos);
   if (!repoBranches.length) return false;
-  return repoBranches.every(branches => branches.length === 1 && branches[0] === 'master');
+  return repoBranches.every(branches => branches.length === 1 && branches[0].branch === 'master');
 };
