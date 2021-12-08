@@ -93,7 +93,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
       <CrosshairBubble
         data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
         index={pointIndex}
-        title="Velocity"
+        title="Work in progress"
         itemStat={pipe(length, num)}
         accessors={accessors}
       />
@@ -102,7 +102,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
       const matchingDate = getMatchingAtIndex(dataByDay, pointIndex);
 
       return openModal({
-        heading: 'Work in progress trend',
+        heading: 'Work in progress items',
         subheading: matchingDate.length ? shortDate(matchingDate[0].date) : '',
         body: (
           <WorkItemsNested
@@ -160,7 +160,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
         )?.workItems || [];
 
         return openModal({
-          heading: 'Velocity over the last 30 days',
+          heading: 'WIP items over the last 30 days',
           subheading: workItemSubheading(witId, groupName, workItemsForLastDay, workItemType),
           body: (
             <WorkItemFlatList
