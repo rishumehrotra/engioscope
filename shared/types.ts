@@ -23,12 +23,13 @@ export type PipelineStageStats = {
   successCount: number;
 };
 
-export type BranchPolicy =
+export type BranchPolicy = (
   | { type: 'minimumNumberOfReviewers'; minimumApproverCount: number }
   | { type: 'workItemLinking' }
   | { type: 'builds' }
   | { type: 'commentRequirements' }
-  | { type: 'requireMergeStrategy' };
+  | { type: 'requireMergeStrategy' }
+) & { isOptional: boolean };
 
 export type ReleasePipelineStats = {
   id: number;
