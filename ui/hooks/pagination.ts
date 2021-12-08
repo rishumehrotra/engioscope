@@ -5,12 +5,12 @@ const BOTTOM = 10;
 
 export const topItems = <T>(page: number, items: T[]) => {
   if (items.length <= TOP) return items;
-  return [...items.slice(0, page * TOP)];
+  return items.slice(0, page * TOP);
 };
 
 export const bottomItems = <T>(items: T[]) => {
   if (items.length <= TOP) return [];
-  return [...items.slice(items.length - BOTTOM)];
+  return items.slice(items.length - BOTTOM - 1);
 };
 
 const usePagination = () => {
