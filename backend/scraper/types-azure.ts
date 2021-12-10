@@ -143,6 +143,12 @@ export type ReleaseEnvironment = {
   deploySteps: DeploymentAttempt[];
   rank: number;
   definitionEnvironmentId: number;
+  conditions: {
+    conditionType: 'artifact' | 'environmentState' | 'event' | 'undefined';
+    name: string;
+    result: boolean;
+    value: string;
+  }[];
   // incomplete
 };
 

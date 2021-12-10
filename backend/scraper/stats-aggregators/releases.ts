@@ -1,16 +1,20 @@
 import type { BranchPolicy, ReleasePipelineStats } from '../../../shared/types';
-import type { Release, ReleaseDefinition } from '../types-azure';
+import type { Release } from '../types-azure';
 
-const initialiseReleaseDetails = (releaseDefinition: ReleaseDefinition): ReleasePipelineStats => ({
-  id: releaseDefinition.id,
-  name: releaseDefinition.name,
-  url: releaseDefinition.url.replace('_apis/Release/definitions/', '_release?definitionId='),
-  description: releaseDefinition.description,
-  stages: releaseDefinition.environments
+const initialiseReleaseDetails = (release: Release): ReleasePipelineStats => ({
+  id: release.releaseDefinition.id,
+  name: release.releaseDefinition.name,
+  url: release.releaseDefinition.url.replace('_apis/Release/definitions/', '_release?definitionId='),
+  description: null,
+  stages: release.environments
     .sort((a, b) => a.rank - b.rank)
     .map(env => ({
       id: env.id,
       name: env.name,
+      conditions: env.conditions.map(cond => ({
+        name: cond.name,
+        type: cond.conditionType
+      })),
       lastReleaseDate: new Date(0),
       releaseCount: 0,
       successCount: 0
@@ -60,16 +64,12 @@ const addToReleaseStats = (
 });
 
 export default (
-  releaseDefinitionById: (id: number) => ReleaseDefinition | undefined,
   releases: Release[],
   policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicy[]
 ) => (
   Object.values(releases.reduce<Record<number, ReleasePipelineStats>>((acc, release) => {
-    const releaseDefn = releaseDefinitionById(release.releaseDefinition.id);
-    if (!releaseDefn) return acc;
-
-    acc[releaseDefn.id] = addToReleaseStats(
-      acc[releaseDefn.id] || initialiseReleaseDetails(releaseDefn),
+    acc[release.releaseDefinition.id] = addToReleaseStats(
+      acc[release.releaseDefinition.id] || initialiseReleaseDetails(release),
       release,
       policyConfigurationByRepoId
     );

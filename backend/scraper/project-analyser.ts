@@ -6,7 +6,6 @@ import aggregatePrs from './stats-aggregators/prs';
 import aggregateReleases from './stats-aggregators/releases';
 import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
-import aggregateReleaseDefinitions from './stats-aggregators/release-definitions';
 import aggregatePolicyConfigurations from './stats-aggregators/policy-configurations';
 import sonar from './network/sonar';
 import type { ProjectAnalysis, WorkItemAnalysis } from './types';
@@ -29,8 +28,7 @@ const analyserLog = debug('analyser');
 export default (config: ParsedConfig) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getReleases, getReleaseDefinitions,
-    getPolicyConfigurations
+    getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
@@ -47,7 +45,6 @@ export default (config: ParsedConfig) => {
     const [
       repos,
       { buildsByRepoId, latestMasterBuilds },
-      releaseDefinitionById,
       releases,
       prByRepoId,
       policyConfigurationByRepoBranch,
@@ -55,7 +52,6 @@ export default (config: ParsedConfig) => {
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
-      forProject(getReleaseDefinitions).then(aggregateReleaseDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
@@ -95,9 +91,7 @@ export default (config: ParsedConfig) => {
       };
     }));
 
-    const releaseAnalysis = aggregateReleases(
-      releaseDefinitionById, releases, policyConfigurationByRepoBranch
-    );
+    const releaseAnalysis = aggregateReleases(releases, policyConfigurationByRepoBranch);
 
     const analysisResults: ProjectAnalysis = {
       repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),

@@ -1,3 +1,5 @@
+import type { ReleaseEnvironment } from '../backend/scraper/types-azure';
+
 export type ScrapedProject = {
   name: [collection: string, project: string];
   lastUpdated: string | null;
@@ -18,6 +20,10 @@ export type AnalyticsItem = {
 export type PipelineStageStats = {
   id: number;
   name: string;
+  conditions: {
+    type: ReleaseEnvironment['conditions'][number]['conditionType'];
+    name: string;
+  }[];
   lastReleaseDate: Date;
   releaseCount: number;
   successCount: number;
