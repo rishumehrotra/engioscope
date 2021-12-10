@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { BranchPolicy, PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
 import { num } from '../helpers/utils';
 import AlertMessage from './common/AlertMessage';
@@ -129,60 +129,53 @@ type StageNameProps = {
   selectedStage: PipelineStageStats | null;
 };
 
-const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => {
-  const history = useHistory();
-  const goToRepo = useCallback((repoName: string) => {
-    history.push(history.location.pathname.replace('/release-pipelines', `/repos?search="${repoName}"`));
-  }, [history]);
+const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => (
+  <div className="my-4">
+    <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts from repos</div>
+    {Object.keys(pipeline.repos).length ? (
+      <ol className="grid grid-flow-col justify-start">
+        {Object.entries(pipeline.repos).map(([repoName, branches]) => (
+          <Link
+            key={repoName}
+            to={`repos?search="${repoName}"`}
+            className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
+          >
+            <div className="font-semibold flex items-center mb-1 text-blue-600 artifact-title">
+              {repoName}
+            </div>
+            <ol className="flex flex-wrap">
+              {branches.map(({ branch, policies }) => {
+                const aggregatedPolicy = aggregatePolicies(policies);
+                const policyClassName = aggregatePolicyColorClass(aggregatedPolicy);
 
-  return (
-    <div className="my-4">
-      <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts from repos</div>
-      {Object.keys(pipeline.repos).length ? (
-        <ol className="grid grid-flow-col justify-start">
-          {Object.entries(pipeline.repos).map(([repoName, branches]) => (
-            <button
-              onClick={() => goToRepo(repoName)}
-              key={repoName}
-              className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
-            >
-              <div className="font-semibold flex items-center mb-1 text-blue-600 artifact-title">
-                {repoName}
-              </div>
-              <ol className="flex flex-wrap">
-                {branches.map(({ branch, policies }) => {
-                  const aggregatedPolicy = aggregatePolicies(policies);
-                  const policyClassName = aggregatePolicyColorClass(aggregatedPolicy);
-
-                  return (
-                    <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
-                      <Branches className="h-4 mr-1" />
-                      {branch.replace('refs/heads/', '')}
-                      <span
-                        className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
-                        data-tip={policyTooltip(aggregatedPolicy)}
-                        data-html
-                      >
-                        Policies
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </button>
-          ))}
-        </ol>
-      ) : (
-        <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
-          <AlertMessage
-            message="No starting artifact found"
-            type="info"
-          />
-        </div>
-      )}
-    </div>
-  );
-};
+                return (
+                  <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
+                    <Branches className="h-4 mr-1" />
+                    {branch.replace('refs/heads/', '')}
+                    <span
+                      className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
+                      data-tip={policyTooltip(aggregatedPolicy)}
+                      data-html
+                    >
+                      Policies
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </Link>
+        ))}
+      </ol>
+    ) : (
+      <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
+        <AlertMessage
+          message="No starting artifact found"
+          type="info"
+        />
+      </div>
+    )}
+  </div>
+);
 
 const StageName: React.FC<StageNameProps> = ({
   isSelected, onToggleSelect, count, label, selectedStage, isLast
