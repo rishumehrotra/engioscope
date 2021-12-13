@@ -1,90 +1,39 @@
 import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { BranchPolicy, PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
+import type { PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
 import { num } from '../helpers/utils';
 import AlertMessage from './common/AlertMessage';
 import Card from './common/ExpandingCard';
 import Flair from './common/Flair';
 import { ArrowRight, Branches } from './common/Icons';
 import Metric from './Metric';
-import { pipelineHasStageNamed, pipelineUsesStageNamed } from './pipeline-utils';
+import type { FormattedPolicy } from './pipeline-utils';
+import {
+  fullPolicyStatus,
+  formatPolicies, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
+} from './pipeline-utils';
 
-const aggregatePolicies = (policies: BranchPolicy[]) => (
-  policies.reduce(
-    (acc, policy) => {
-      if (policy.type === 'minimumNumberOfReviewers') {
-        acc.numberOfReviewers.value = policy.minimumApproverCount;
-        acc.numberOfReviewers.isOptional = policy.isOptional;
-      } else if (policy.type === 'workItemLinking') {
-        acc.workItemLinking.state = true;
-        acc.workItemLinking.isOptional = policy.isOptional;
-      } else if (policy.type === 'builds') {
-        acc.builds.state = true;
-        acc.builds.isOptional = policy.isOptional;
-      } else if (policy.type === 'commentRequirements') {
-        acc.commentRequirements.state = true;
-        acc.commentRequirements.isOptional = policy.isOptional;
-      } else if (policy.type === 'requireMergeStrategy') {
-        acc.requireMergeStrategy.state = true;
-        acc.requireMergeStrategy.isOptional = policy.isOptional;
-      }
-      return acc;
-    },
-    {
-      numberOfReviewers: { value: 0, isOptional: false },
-      workItemLinking: { state: false, isOptional: false },
-      builds: { state: false, isOptional: false },
-      commentRequirements: { state: false, isOptional: false },
-      requireMergeStrategy: { state: false, isOptional: false }
-    }
-  )
-);
-
-const policyColorClass = (aggregatedPolicy: ReturnType<typeof aggregatePolicies>, key: keyof ReturnType<typeof aggregatePolicies>) => {
-  if (key === 'numberOfReviewers') {
-    if (aggregatedPolicy.numberOfReviewers.value === 0) return 'bg-red-500';
-    if (aggregatedPolicy.numberOfReviewers.isOptional
-      || aggregatedPolicy.numberOfReviewers.value < 2
-    ) {
-      return 'bg-yellow-500';
-    }
-    if (
-      aggregatedPolicy.numberOfReviewers.value >= 2
-      && !aggregatedPolicy.numberOfReviewers.isOptional
-    ) {
-      return 'bg-green-500';
-    }
-    return 'bg-red-500';
-  }
-  if (aggregatedPolicy[key].isOptional && aggregatedPolicy[key].state) {
-    return 'bg-yellow-500';
-  }
-  if (!aggregatedPolicy[key].isOptional && aggregatedPolicy[key].state) {
-    return 'bg-green-500';
-  }
+const policyColorClass = (policy: FormattedPolicy, key: keyof FormattedPolicy) => {
+  const status = policyStatus(policy, key);
+  if (status === 'pass') return 'bg-green-500';
+  if (status === 'warn') return 'bg-yellow-500';
   return 'bg-red-500';
 };
 
-const aggregatePolicyColorClass = (aggregatedPolicy: ReturnType<typeof aggregatePolicies>) => {
-  const classes = Object.keys(aggregatedPolicy).map(
-    key => policyColorClass(aggregatedPolicy, key as keyof ReturnType<typeof aggregatePolicies>)
-  );
-  if (classes.every(c => c === 'bg-green-500')) {
-    return 'text-green-700 bg-green-50';
-  }
-  if (classes.some(c => c === 'bg-red-500')) {
-    return 'text-red-700 bg-red-50';
-  }
-  return 'text-yellow-700 bg-yellow-100';
+const aggregatePolicyColorClass = (policy: FormattedPolicy) => {
+  const status = fullPolicyStatus(policy);
+  if (status === 'pass') return 'text-green-700 bg-green-50';
+  if (status === 'warn') return 'text-yellow-700 bg-yellow-100';
+  return 'text-red-700 bg-red-50';
 };
 
-const policyTooltip = (aggregatedPolicy: ReturnType<typeof aggregatePolicies>) => {
+const policyTooltip = (policy: FormattedPolicy) => {
   const indicatorClasses = 'rounded inline-block w-2 h-2 mr-1';
   const indicator = (additionalClassName: string) => (
     `<span class="${indicatorClasses} ${additionalClassName}"> </span>`
   );
-  const optionalTag = (key: keyof typeof aggregatedPolicy) => (
-    aggregatedPolicy[key].isOptional
+  const optionalTag = (key: keyof typeof policy) => (
+    policy[key].isOptional
       ? '(optional)'
       : ''
   );
@@ -92,27 +41,27 @@ const policyTooltip = (aggregatedPolicy: ReturnType<typeof aggregatePolicies>) =
     <strong>Branch policies</strong>
     <ul class="w-72">
       <li>
-        ${indicator(policyColorClass(aggregatedPolicy, 'numberOfReviewers'))}
-        Minimum number of reviewers ${aggregatedPolicy.numberOfReviewers.value === 0 ? '' : `(${aggregatedPolicy.numberOfReviewers.value})`}
+        ${indicator(policyColorClass(policy, 'numberOfReviewers'))}
+        Minimum number of reviewers ${policy.numberOfReviewers.value === 0 ? '' : `(${policy.numberOfReviewers.value})`}
         ${optionalTag('numberOfReviewers')}
       </li>
       <li>
-        ${indicator(policyColorClass(aggregatedPolicy, 'builds'))}
+        ${indicator(policyColorClass(policy, 'builds'))}
         Runs builds
         ${optionalTag('builds')}
       </li>
       <li>
-        ${indicator(policyColorClass(aggregatedPolicy, 'workItemLinking'))}
+        ${indicator(policyColorClass(policy, 'workItemLinking'))}
         Requires links to work items
         ${optionalTag('workItemLinking')}
       </li>
       <li>
-        ${indicator(policyColorClass(aggregatedPolicy, 'commentRequirements'))}
+        ${indicator(policyColorClass(policy, 'commentRequirements'))}
         Requires comment resolution
         ${optionalTag('commentRequirements')}
       </li>
       <li>
-        ${indicator(policyColorClass(aggregatedPolicy, 'requireMergeStrategy'))}
+        ${indicator(policyColorClass(policy, 'requireMergeStrategy'))}
         Enforces merge strategy
         ${optionalTag('requireMergeStrategy')}
       </li>
@@ -145,7 +94,7 @@ const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => 
             </div>
             <ol className="flex flex-wrap">
               {branches.map(({ branch, policies }) => {
-                const aggregatedPolicy = aggregatePolicies(policies);
+                const aggregatedPolicy = formatPolicies(policies);
                 const policyClassName = aggregatePolicyColorClass(aggregatedPolicy);
 
                 return (
