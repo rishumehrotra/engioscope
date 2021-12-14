@@ -1,4 +1,4 @@
-import type { BranchPolicy, ReleasePipelineStats } from '../../../shared/types';
+import type { BranchPolicies, ReleasePipelineStats } from '../../../shared/types';
 import type { Release } from '../types-azure';
 
 const initialiseReleaseDetails = (release: Release): ReleasePipelineStats => ({
@@ -25,7 +25,7 @@ const initialiseReleaseDetails = (release: Release): ReleasePipelineStats => ({
 const addToReleaseStats = (
   releaseStats: ReleasePipelineStats,
   release: Release,
-  policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicy[]
+  policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicies
 ): ReleasePipelineStats => ({
   ...releaseStats,
   stages: releaseStats.stages.map(stage => {
@@ -65,7 +65,7 @@ const addToReleaseStats = (
 
 export default (
   releases: Release[],
-  policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicy[]
+  policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicies
 ) => (
   Object.values(releases.reduce<Record<number, ReleasePipelineStats>>((acc, release) => {
     acc[release.releaseDefinition.id] = addToReleaseStats(

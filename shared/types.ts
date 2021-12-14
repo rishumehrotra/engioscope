@@ -29,13 +29,13 @@ export type PipelineStageStats = {
   successCount: number;
 };
 
-export type BranchPolicy = (
-  | { type: 'minimumNumberOfReviewers'; minimumApproverCount: number }
-  | { type: 'workItemLinking' }
-  | { type: 'builds' }
-  | { type: 'commentRequirements' }
-  | { type: 'requireMergeStrategy' }
-) & { isOptional: boolean };
+export type BranchPolicies = Partial<{
+  minimumNumberOfReviewers: { count: number; isOptional: boolean };
+  workItemLinking: { isOptional: boolean };
+  builds: { isOptional: boolean };
+  commentRequirements: { isOptional: boolean };
+  requireMergeStrategy: { isOptional: boolean };
+}>;
 
 export type ReleasePipelineStats = {
   id: number;
@@ -43,7 +43,7 @@ export type ReleasePipelineStats = {
   url: string;
   description: string | null;
   stages: PipelineStageStats[];
-  repos: Record<string, { branch: string; policies: BranchPolicy[] }[]>;
+  repos: Record<string, { branch: string; policies: BranchPolicies }[]>;
 };
 
 export type UIBuildPipeline = {

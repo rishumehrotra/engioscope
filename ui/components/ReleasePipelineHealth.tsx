@@ -7,27 +7,27 @@ import Card from './common/ExpandingCard';
 import Flair from './common/Flair';
 import { ArrowRight, Branches } from './common/Icons';
 import Metric from './Metric';
-import type { FormattedPolicy } from './pipeline-utils';
+import type { NormalizedPolicies } from './pipeline-utils';
 import {
   fullPolicyStatus,
-  formatPolicies, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
+  normalizePolicy, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
 } from './pipeline-utils';
 
-const policyColorClass = (policy: FormattedPolicy, key: keyof FormattedPolicy) => {
+const policyColorClass = (policy: NormalizedPolicies, key: keyof NormalizedPolicies) => {
   const status = policyStatus(policy, key);
   if (status === 'pass') return 'bg-green-500';
   if (status === 'warn') return 'bg-yellow-500';
   return 'bg-red-500';
 };
 
-const aggregatePolicyColorClass = (policy: FormattedPolicy) => {
+const aggregatePolicyColorClass = (policy: NormalizedPolicies) => {
   const status = fullPolicyStatus(policy);
   if (status === 'pass') return 'text-green-700 bg-green-50';
   if (status === 'warn') return 'text-yellow-700 bg-yellow-100';
   return 'text-red-700 bg-red-50';
 };
 
-const policyTooltip = (policy: FormattedPolicy) => {
+const policyTooltip = (policy: NormalizedPolicies) => {
   const indicatorClasses = 'rounded inline-block w-2 h-2 mr-1';
   const indicator = (additionalClassName: string) => (
     `<span class="${indicatorClasses} ${additionalClassName}"> </span>`
@@ -41,9 +41,9 @@ const policyTooltip = (policy: FormattedPolicy) => {
     <strong>Branch policies</strong>
     <ul class="w-72">
       <li>
-        ${indicator(policyColorClass(policy, 'numberOfReviewers'))}
-        Minimum number of reviewers ${policy.numberOfReviewers.value === 0 ? '' : `(${policy.numberOfReviewers.value})`}
-        ${optionalTag('numberOfReviewers')}
+        ${indicator(policyColorClass(policy, 'minimumNumberOfReviewers'))}
+        Minimum number of reviewers ${policy.minimumNumberOfReviewers.count === 0 ? '' : `(${policy.minimumNumberOfReviewers.count})`}
+        ${optionalTag('minimumNumberOfReviewers')}
       </li>
       <li>
         ${indicator(policyColorClass(policy, 'builds'))}
@@ -94,7 +94,7 @@ const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => 
             </div>
             <ol className="flex flex-wrap">
               {branches.map(({ branch, policies }) => {
-                const aggregatedPolicy = formatPolicies(policies);
+                const aggregatedPolicy = normalizePolicy(policies);
                 const policyClassName = aggregatePolicyColorClass(aggregatedPolicy);
 
                 return (
@@ -150,8 +150,9 @@ const StageName: React.FC<StageNameProps> = ({
           <div className={`mr-2  font-semibold ${isSelected ? 'text-black text-2xl' : 'text-gray-600 text-lg'} `}>
             {typeof count === 'number' ? num(count) : count}
           </div>
-          <div className={`uppercase text-xs
-        ${isSelected ? 'font-bold text-base text-black tracking-wide' : 'text-gray-600 tracking-wider'}`}
+          <div className={`uppercase text-xs ${
+            isSelected ? 'font-bold text-base text-black tracking-wide' : 'text-gray-600 tracking-wider'
+          }`}
           >
             {label}
           </div>
@@ -205,7 +206,7 @@ const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: s
                 key={stageToHighlight}
                 // eslint-disable-next-line no-nested-ternary
                 colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : doesStageExist ? 'bg-yellow-400' : 'bg-gray-400'}
-                label={`${stageToHighlight}: ${doesStageExist ? `Exists, ${isStageUsed ? 'and used' : 'but unused'}` : "Doesn't exist"}`}
+                label={`${stageToHighlight}: ${doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"}`}
               />
             );
           })}

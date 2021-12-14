@@ -1,5 +1,5 @@
 import { equals, pipe, prop } from 'rambda';
-import type { BranchPolicy, PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
+import type { BranchPolicies, PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
 
 const stageHasName = (stageName: string) => (
   (stage: PipelineStageStats) => (
@@ -35,50 +35,42 @@ export const pipelineDeploysExclusivelyFromMaster = (pipeline: ReleasePipelineSt
   );
 };
 
-export const formatPolicies = (policies: BranchPolicy[]) => (
-  policies.reduce(
-    (acc, policy) => {
-      if (policy.type === 'minimumNumberOfReviewers') {
-        acc.numberOfReviewers.value = policy.minimumApproverCount;
-        acc.numberOfReviewers.isOptional = policy.isOptional;
-      } else if (policy.type === 'workItemLinking') {
-        acc.workItemLinking.state = true;
-        acc.workItemLinking.isOptional = policy.isOptional;
-      } else if (policy.type === 'builds') {
-        acc.builds.state = true;
-        acc.builds.isOptional = policy.isOptional;
-      } else if (policy.type === 'commentRequirements') {
-        acc.commentRequirements.state = true;
-        acc.commentRequirements.isOptional = policy.isOptional;
-      } else if (policy.type === 'requireMergeStrategy') {
-        acc.requireMergeStrategy.state = true;
-        acc.requireMergeStrategy.isOptional = policy.isOptional;
-      }
-      return acc;
-    },
-    {
-      numberOfReviewers: { value: 0, isOptional: false },
-      workItemLinking: { state: false, isOptional: false },
-      builds: { state: false, isOptional: false },
-      commentRequirements: { state: false, isOptional: false },
-      requireMergeStrategy: { state: false, isOptional: false }
-    }
-  )
-);
+export const normalizePolicy = (policies: BranchPolicies) => ({
+  minimumNumberOfReviewers: {
+    count: policies.minimumNumberOfReviewers?.count ?? 0,
+    isOptional: policies.minimumNumberOfReviewers?.isOptional ?? false
+  },
+  workItemLinking: {
+    state: Boolean(policies.workItemLinking),
+    isOptional: policies.workItemLinking?.isOptional ?? false
+  },
+  builds: {
+    state: Boolean(policies.builds),
+    isOptional: policies.builds?.isOptional ?? false
+  },
+  commentRequirements: {
+    state: Boolean(policies.commentRequirements),
+    isOptional: policies.commentRequirements?.isOptional ?? false
+  },
+  requireMergeStrategy: {
+    state: Boolean(policies.requireMergeStrategy),
+    isOptional: policies.requireMergeStrategy?.isOptional ?? false
+  }
+});
 
-export type FormattedPolicy = ReturnType<typeof formatPolicies>;
+export type NormalizedPolicies = ReturnType<typeof normalizePolicy>;
 
-export const policyStatus = (aggregatedPolicy: FormattedPolicy, key: keyof FormattedPolicy) => {
-  if (key === 'numberOfReviewers') {
-    if (aggregatedPolicy.numberOfReviewers.value === 0) return 'fail';
-    if (aggregatedPolicy.numberOfReviewers.isOptional
-      || aggregatedPolicy.numberOfReviewers.value < 2
+export const policyStatus = (aggregatedPolicy: NormalizedPolicies, key: keyof NormalizedPolicies) => {
+  if (key === 'minimumNumberOfReviewers') {
+    if (aggregatedPolicy.minimumNumberOfReviewers.count === 0) return 'fail';
+    if (aggregatedPolicy.minimumNumberOfReviewers.isOptional
+      || aggregatedPolicy.minimumNumberOfReviewers.count < 2
     ) {
       return 'warn';
     }
     if (
-      aggregatedPolicy.numberOfReviewers.value >= 2
-      && !aggregatedPolicy.numberOfReviewers.isOptional
+      aggregatedPolicy.minimumNumberOfReviewers.count >= 2
+      && !aggregatedPolicy.minimumNumberOfReviewers.isOptional
     ) {
       return 'pass';
     }
@@ -93,9 +85,9 @@ export const policyStatus = (aggregatedPolicy: FormattedPolicy, key: keyof Forma
   return 'fail';
 };
 
-export const fullPolicyStatus = (policy: FormattedPolicy) => {
+export const fullPolicyStatus = (policy: NormalizedPolicies) => {
   const states = Object.keys(policy).map(
-    key => policyStatus(policy, key as keyof FormattedPolicy)
+    key => policyStatus(policy, key as keyof NormalizedPolicies)
   );
   if (states.every(c => c === 'pass')) {
     return 'pass';
@@ -110,6 +102,6 @@ export const pipelineMeetsBranchPolicyRequirements = (pipeline: ReleasePipelineS
   const repoBranches = Object.values(pipeline.repos);
   if (!repoBranches.length) return false;
   return repoBranches.every(branches => branches.every(
-    pipe(prop('policies'), formatPolicies, fullPolicyStatus, equals('pass'))
+    pipe(prop('policies'), normalizePolicy, fullPolicyStatus, equals('pass'))
   ));
 };
