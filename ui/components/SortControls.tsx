@@ -21,10 +21,10 @@ const SortControls: React.FC = () => {
       <button
         className="text-base font-medium text-gray-500 flex items-center justify-end
          cursor-pointer ml-1 hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400"
-        style={{ outline: 'none' }}
         onClick={toggleSortDirection}
+        data-tip={`Sort ${sortParams.sort === 'asc' ? 'descending' : 'ascending'}`}
       >
-        {sortParams.sort === 'asc' ? <Ascending tooltip="Ascending" /> : <Descending tooltip="Descending" />}
+        {sortParams.sort === 'asc' ? <Ascending /> : <Descending />}
         {/* <p className="mb-1 ml-2 text-sm">Sort By</p> */}
       </button>
     </div>
