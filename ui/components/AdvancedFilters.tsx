@@ -85,7 +85,7 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
       <Checkbox
         value={Boolean(nonPolicyConforming)}
         onChange={value => setNonPolicyConforming(value ? true : undefined, 'replaceIn')}
-        label={<span>Doesn't confirm to policies</span>}
+        label={<span>Doesn't conform to branch policies</span>}
       />
     </span>
   ) : null;

@@ -38,53 +38,53 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
       {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
       {
         search ? (
-          <FilterTag label={`Search: ${search}`} onClose={() => setSearch(undefined)} />
+          <FilterTag label={`Search: ${search}`} onClose={() => setSearch(undefined, 'replaceIn')} />
         ) : null
       }
       {
         commitsGreaterThanZero ? (
-          <FilterTag label="Has commits" onClose={() => setCommitsGreaterThanZero(undefined)} />
+          <FilterTag label="Has commits" onClose={() => setCommitsGreaterThanZero(undefined, 'replaceIn')} />
         ) : null
       }
       {
         buildsGreaterThanZero ? (
-          <FilterTag label="Has builds" onClose={() => setBuildsGreaterThanZero(undefined)} />
+          <FilterTag label="Has builds" onClose={() => setBuildsGreaterThanZero(undefined, 'replaceIn')} />
         ) : null
       }
       {
         withFailingLastBuilds ? (
-          <FilterTag label="Has failing builds" onClose={() => setWithFailingLastBuilds(undefined)} />
+          <FilterTag label="Has failing builds" onClose={() => setWithFailingLastBuilds(undefined, 'replaceIn')} />
         ) : null
       }
       {
         techDebtGreaterThan ? (
-          <FilterTag label={`Tech debt > ${techDebtGreaterThan}`} onClose={() => setTechDebtGreaterThan(undefined)} />
+          <FilterTag label={`Tech debt > ${techDebtGreaterThan}`} onClose={() => setTechDebtGreaterThan(undefined, 'replaceIn')} />
         ) : null
       }
 
       {
         nonMasterReleases ? (
-          <FilterTag label="Non-master releases" onClose={() => setNonMasterReleases(undefined)} />
+          <FilterTag label="Non-master releases" onClose={() => setNonMasterReleases(undefined, 'replaceIn')} />
         ) : null
       }
       {
         notStartsWithArtifact ? (
-          <FilterTag label="No starting artifact" onClose={() => setNotStartsWithArtifact(undefined)} />
+          <FilterTag label="No starting artifact" onClose={() => setNotStartsWithArtifact(undefined, 'replaceIn')} />
         ) : null
       }
       {
         stageNameExists ? (
-          <FilterTag label={`Has stage: ${stageNameExists}`} onClose={() => setStageNameExists(undefined)} />
+          <FilterTag label={`Has stage: ${stageNameExists}`} onClose={() => setStageNameExists(undefined, 'replaceIn')} />
         ) : null
       }
       {
         stageNameExistsNotUsed ? (
-          <FilterTag label={`Unused stage: ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined)} />
+          <FilterTag label={`Unused stage: ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined, 'replaceIn')} />
         ) : null
       }
       {
         nonPolicyConforming ? (
-          <FilterTag label="Doesn't confirm to policies" onClose={() => setNonPolicyConforming(undefined)} />
+          <FilterTag label="Doesn't conform to branch policies" onClose={() => setNonPolicyConforming(undefined, 'replaceIn')} />
         ) : null
       }
     </div>
