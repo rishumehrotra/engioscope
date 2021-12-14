@@ -73,7 +73,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({ pipelin
       />
       <ProjectStat
         topStats={[{
-          title: 'Conforms to policies',
+          title: 'Conforms to branch policies',
           value: pipelines.length === 0 ? '0' : `${Math.round((policyPassCount * 100) / pipelines.length)}%`,
           tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches tbat conform to the branch policy.`
 
