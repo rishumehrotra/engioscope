@@ -95,15 +95,12 @@ const AdvancedFilters: React.FC = () => {
     <span className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`h-full flex items-center
-          hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400
+        className={`h-full flex items-center hover:bg-white hover:shadow p-1 rounded
+        border border-transparent hover:border-gray-400 cursor-pointer
         ${isOpen ? 'bg-white shadow' : ''}`}
+        data-tip="Advanced filters"
       >
-        <Filters
-          className={`text-gray-500 border-gray-800
-             cursor-pointer`}
-          tooltip="Advanced Filters"
-        />
+        <Filters className="text-gray-500 border-gray-800" />
       </button>
       <div ref={ref}>
         {selectedTab === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
