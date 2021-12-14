@@ -13,7 +13,10 @@ import Loading from '../components/Loading';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
 import usePagination, { bottomItems, topItems } from '../hooks/pagination';
 import LoadMore from '../components/LoadMore';
-import { pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed } from '../components/pipeline-utils';
+import {
+  pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed,
+  pipelineMeetsBranchPolicyRequirements
+} from '../components/pipeline-utils';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) => (
@@ -31,6 +34,7 @@ const ReleasePipelines: React.FC = () => {
   const [notStartsWithArtifact] = useQueryParam<boolean>('notStartsWithArtifact');
   const [stageNameExists] = useQueryParam<string>('stageNameExists');
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
+  const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
   const [page, loadMore] = usePagination();
   useRemoveSort();
 
@@ -42,8 +46,9 @@ const ReleasePipelines: React.FC = () => {
       .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
       .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
       .filter(stageNameExists === undefined ? dontFilter : pipelineHasStageNamed(stageNameExists))
-      .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed));
-  }, [releaseAnalysis, search, nonMasterReleases, notStartsWithArtifact, stageNameExists, stageNameExistsNotUsed]);
+      .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed))
+      .filter(nonPolicyConforming === undefined ? dontFilter : pipe(pipelineMeetsBranchPolicyRequirements, not));
+  }, [nonMasterReleases, nonPolicyConforming, notStartsWithArtifact, releaseAnalysis, search, stageNameExists, stageNameExistsNotUsed]);
 
   const topPipelines = useMemo(() => topItems(page, pipelines), [page, pipelines]);
   const bottomPipelines = useMemo(() => bottomItems(pipelines), [pipelines]);

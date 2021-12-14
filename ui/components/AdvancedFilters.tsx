@@ -50,6 +50,7 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
   const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
   const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
+  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam<boolean | undefined>('nonPolicyConforming');
 
   return isOpen ? (
     <span
@@ -80,6 +81,11 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
         onChange={value => setStageNameExistsNotUsed(value || undefined, 'replaceIn')}
         textBoxPrefix="Stage names containing"
         textBoxSuffix="exists, but not used"
+      />
+      <Checkbox
+        value={Boolean(nonPolicyConforming)}
+        onChange={value => setNonPolicyConforming(value ? true : undefined, 'replaceIn')}
+        label={<span>Doesn't confirm to policies</span>}
       />
     </span>
   ) : null;

@@ -26,10 +26,11 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
   const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
   const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
   const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
+  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam<boolean | undefined>('nonPolicyConforming');
 
   const isFilterApplied = search || commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds
   || (techDebtGreaterThan !== undefined) || nonMasterReleases || notStartsWithArtifact || stageNameExists
-  || stageNameExistsNotUsed;
+  || stageNameExistsNotUsed || nonPolicyConforming;
   if (!isFilterApplied) return <div />;
 
   return (
@@ -79,6 +80,11 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
       {
         stageNameExistsNotUsed ? (
           <FilterTag label={`Unused stage: ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined)} />
+        ) : null
+      }
+      {
+        nonPolicyConforming ? (
+          <FilterTag label="Doesn't confirm to policies" onClose={() => setNonPolicyConforming(undefined)} />
         ) : null
       }
     </div>
