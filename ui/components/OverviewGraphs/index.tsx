@@ -8,7 +8,6 @@ import { workItemAccessors } from './helpers/helpers';
 import { useWorkItemModal } from './helpers/modal-helpers';
 import VelocityGraph from './Velocity';
 import FlowEfficiencyGraph from './FlowEfficiency';
-import EffortDistributionGraph from './EffortDistribution';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCA';
 import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
 import WIPTrendGraph from './WIPTrend';
@@ -46,7 +45,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       {[
         VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
-        FlowEfficiencyGraph, EffortDistributionGraph, BugLeakageAndRCAGraph,
+        FlowEfficiencyGraph, BugLeakageAndRCAGraph,
         AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
       ].map((Graph, index) => (
         <Graph
