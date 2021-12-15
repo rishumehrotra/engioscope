@@ -1,3 +1,4 @@
+import { omit } from 'rambda';
 import type { BranchPolicies, ReleasePipelineStats } from '../../../shared/types';
 import type { Release } from '../types-azure';
 
@@ -11,10 +12,6 @@ const initialiseReleaseDetails = (release: Release): ReleasePipelineStats => ({
     .map(env => ({
       id: env.id,
       name: env.name,
-      conditions: env.conditions.map(cond => ({
-        name: cond.name,
-        type: cond.conditionType
-      })),
       lastReleaseDate: new Date(0),
       releaseCount: 0,
       successCount: 0
@@ -22,11 +19,20 @@ const initialiseReleaseDetails = (release: Release): ReleasePipelineStats => ({
   repos: {}
 });
 
+type InternalReleasePipelineStats = Omit<ReleasePipelineStats, 'repos'> & {
+  repos: Record<string, {
+    branch: string;
+    policies: BranchPolicies;
+    farthestStage: string;
+    farthestStageRank: number;
+  }[]>;
+};
+
 const addToReleaseStats = (
-  releaseStats: ReleasePipelineStats,
+  releaseStats: InternalReleasePipelineStats,
   release: Release,
   policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicies
-): ReleasePipelineStats => ({
+): InternalReleasePipelineStats => ({
   ...releaseStats,
   stages: releaseStats.stages.map(stage => {
     const matchingStageInRelease = release.environments.find(e => e.name === stage.name);
@@ -53,12 +59,27 @@ const addToReleaseStats = (
     if (!repoName) return acc;
 
     acc[repoName] = acc[repoName] || [];
-    if (acc[repoName].find(b => b.branch === branch)) return acc;
 
-    acc[repoName].push({
-      branch,
-      policies: policyConfigurationByRepoId(repoId, branch)
-    });
+    const farthestStage = [...release.environments].reverse()
+      .find(e => e.status === 'succeeded');
+
+    if (!farthestStage) return acc;
+
+    const existingBranch = acc[repoName].find(b => b.branch === branch);
+    if (existingBranch) {
+      if (existingBranch.farthestStageRank < farthestStage.rank) {
+        existingBranch.farthestStage = farthestStage.name;
+        existingBranch.farthestStageRank = farthestStage.rank;
+      }
+    } else {
+      acc[repoName].push({
+        branch,
+        policies: policyConfigurationByRepoId(repoId, branch),
+        farthestStage: farthestStage.name,
+        farthestStageRank: farthestStage.rank
+      });
+    }
+
     return acc;
   }, releaseStats.repos)
 });
@@ -66,13 +87,22 @@ const addToReleaseStats = (
 export default (
   releases: Release[],
   policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicies
-) => (
-  Object.values(releases.reduce<Record<number, ReleasePipelineStats>>((acc, release) => {
+): ReleasePipelineStats[] => {
+  const internalReleaseStats = Object.values(releases.reduce<Record<number, InternalReleasePipelineStats>>((acc, release) => {
     acc[release.releaseDefinition.id] = addToReleaseStats(
       acc[release.releaseDefinition.id] || initialiseReleaseDetails(release),
       release,
       policyConfigurationByRepoId
     );
     return acc;
-  }, {}))
-);
+  }, {}));
+
+  return internalReleaseStats.map(release => ({
+    ...release,
+    repos: Object.entries(release.repos)
+      .reduce<ReleasePipelineStats['repos']>((acc, [repoName, repos]) => {
+        acc[repoName] = repos.map(omit(['farthestStageRank']));
+        return acc;
+      }, {})
+  }));
+};

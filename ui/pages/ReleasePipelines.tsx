@@ -24,8 +24,11 @@ const filterPipelinesByRepo = (search: string, pipeline: ReleasePipelineStats) =
 );
 const bySearch = (search: string) => (pipeline: ReleasePipelineStats) => (search.startsWith('repo:')
   ? filterPipelinesByRepo(search, pipeline) : filterBySearch(search, pipeline.name));
-const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, not);
+const byNonMasterReleases = (ignoreStagesBefore?: string) => pipe(pipelineDeploysExclusivelyFromMaster(ignoreStagesBefore), not);
 const byNotStartsWithArtifact = (pipeline: ReleasePipelineStats) => Object.keys(pipeline.repos).length === 0;
+const byNonPolicyConforming = (ignoreStagesBefore?: string) => pipe(
+  pipelineMeetsBranchPolicyRequirements(ignoreStagesBefore), not
+);
 
 const ReleasePipelines: React.FC = () => {
   const releaseAnalysis = useFetchForProject(pipelineMetrics);
@@ -43,11 +46,11 @@ const ReleasePipelines: React.FC = () => {
 
     return releaseAnalysis.pipelines
       .filter(search === undefined ? dontFilter : bySearch(search))
-      .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
+      .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases(releaseAnalysis.ignoreStagesBefore))
       .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
       .filter(stageNameExists === undefined ? dontFilter : pipelineHasStageNamed(stageNameExists))
       .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed))
-      .filter(nonPolicyConforming === undefined ? dontFilter : pipe(pipelineMeetsBranchPolicyRequirements, not));
+      .filter(nonPolicyConforming === undefined ? dontFilter : byNonPolicyConforming(releaseAnalysis.ignoreStagesBefore));
   }, [nonMasterReleases, nonPolicyConforming, notStartsWithArtifact, releaseAnalysis, search, stageNameExists, stageNameExistsNotUsed]);
 
   const topPipelines = useMemo(() => topItems(page, pipelines), [page, pipelines]);

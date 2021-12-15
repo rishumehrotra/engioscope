@@ -1,5 +1,3 @@
-import type { ReleaseEnvironment } from '../backend/scraper/types-azure';
-
 export type ScrapedProject = {
   name: [collection: string, project: string];
   lastUpdated: string | null;
@@ -20,10 +18,10 @@ export type AnalyticsItem = {
 export type PipelineStageStats = {
   id: number;
   name: string;
-  conditions: {
-    type: ReleaseEnvironment['conditions'][number]['conditionType'];
-    name: string;
-  }[];
+  // conditions: {
+  //   type: ReleaseEnvironment['conditions'][number]['conditionType'];
+  //   name: string;
+  // }[];
   lastReleaseDate: Date;
   releaseCount: number;
   successCount: number;
@@ -43,7 +41,7 @@ export type ReleasePipelineStats = {
   url: string;
   description: string | null;
   stages: PipelineStageStats[];
-  repos: Record<string, { branch: string; policies: BranchPolicies }[]>;
+  repos: Record<string, { branch: string; policies: BranchPolicies; farthestStage?: string }[]>;
 };
 
 export type UIBuildPipeline = {
@@ -264,6 +262,7 @@ export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
 export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & {
   pipelines: ReleasePipelineStats[];
   stagesToHighlight?: string[];
+  ignoreStagesBefore?: string;
 };
 
 export type ProjectWorkItemAnalysis = UIProjectAnalysis & {

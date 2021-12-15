@@ -1,4 +1,6 @@
-import { equals, pipe, prop } from 'rambda';
+import {
+  always, equals, pipe, prop
+} from 'rambda';
 import type { BranchPolicies, PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
 
 const stageHasName = (stageName: string) => (
@@ -27,12 +29,42 @@ export const pipelineHasUnusedStageNamed = (stageName: string) => (
   }
 );
 
-export const pipelineDeploysExclusivelyFromMaster = (pipeline: ReleasePipelineStats) => {
+const getStageIndexFor = (pipeline: ReleasePipelineStats) => (stageName?: string) => (
+  stageName === undefined
+    ? -1
+    : pipeline.stages.reduce(
+      (acc, stage, index) => {
+        if (stageHasName(stageName)(stage)) return index;
+        return acc;
+      },
+      -1
+    )
+);
+
+export const mustIncludeBranch = (ignoreStagesBefore: string | undefined, pipeline: ReleasePipelineStats) => {
+  if (!ignoreStagesBefore) return always(true);
+
+  const getStageIndex = getStageIndexFor(pipeline);
+  const ignoredStageIndex = getStageIndex(ignoreStagesBefore);
+
+  if (ignoredStageIndex === -1) return always(true);
+
+  return (branch: ReleasePipelineStats['repos'][string][number]) => {
+    const stageIndex = pipeline.stages.findIndex(s => s.name === branch.branch);
+    return stageIndex > ignoredStageIndex;
+  };
+};
+
+export const pipelineDeploysExclusivelyFromMaster = (ignoreStagesBefore?: string) => (pipeline: ReleasePipelineStats) => {
   const repoBranches = Object.values(pipeline.repos);
   if (!repoBranches.length) return false;
-  return repoBranches.every(
-    branches => branches.length === 1 && branches[0].branch === 'refs/heads/master'
-  );
+  return repoBranches
+    .every(
+      branches => {
+        const consideredBranches = branches.filter(mustIncludeBranch(ignoreStagesBefore, pipeline));
+        return consideredBranches.length === 1 && consideredBranches[0].branch === 'refs/heads/master';
+      }
+    );
 };
 
 export const normalizePolicy = (policies: BranchPolicies) => ({
@@ -98,10 +130,12 @@ export const fullPolicyStatus = (policy: NormalizedPolicies) => {
   return 'warn';
 };
 
-export const pipelineMeetsBranchPolicyRequirements = (pipeline: ReleasePipelineStats) => {
+export const pipelineMeetsBranchPolicyRequirements = (ignoreStagesBefore?: string) => (pipeline: ReleasePipelineStats) => {
   const repoBranches = Object.values(pipeline.repos);
   if (!repoBranches.length) return false;
-  return repoBranches.every(branches => branches.every(
-    pipe(prop('policies'), normalizePolicy, fullPolicyStatus, equals('pass'))
-  ));
+  return repoBranches.every(branches => branches
+    .filter(mustIncludeBranch(ignoreStagesBefore, pipeline))
+    .every(
+      pipe(prop('policies'), normalizePolicy, fullPolicyStatus, equals('pass'))
+    ));
 };

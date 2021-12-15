@@ -3,6 +3,7 @@ import { pastDate } from '../utils';
 
 type ReleasePipelineConfig = {
   stagesToHighlight: string[];
+  ignoreStagesBefore?: string;
 };
 
 type CollectionWorkItemConfig = {

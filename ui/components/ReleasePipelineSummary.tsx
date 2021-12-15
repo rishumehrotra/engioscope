@@ -10,16 +10,19 @@ import ProjectStats from './ProjectStats';
 type ReleasePipelineSummaryProps = {
   pipelines: ReleasePipelineStats[];
   stagesToHighlight?: string[];
+  ignoreStagesBefore?: string;
 };
 
-const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({ pipelines, stagesToHighlight }) => {
+const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
+  pipelines, stagesToHighlight, ignoreStagesBefore
+}) => {
   const masterDeploysCount = pipelines.reduce(
-    (acc, pipeline) => acc + (pipelineDeploysExclusivelyFromMaster(pipeline) ? 1 : 0),
+    (acc, pipeline) => acc + (pipelineDeploysExclusivelyFromMaster(ignoreStagesBefore)(pipeline) ? 1 : 0),
     0
   );
 
   const policyPassCount = pipelines.reduce(
-    (acc, pipeline) => acc + (pipelineMeetsBranchPolicyRequirements(pipeline) ? 1 : 0),
+    (acc, pipeline) => acc + (pipelineMeetsBranchPolicyRequirements(ignoreStagesBefore)(pipeline) ? 1 : 0),
     0
   );
 
