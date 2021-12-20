@@ -135,6 +135,13 @@ export type DeploymentAttempt = {
   hasStarted: boolean;
 };
 
+export type ReleaseCondition = {
+  conditionType: 'artifact' | 'environmentState' | 'event' | 'undefined';
+  name: string;
+  result: boolean;
+  value: string;
+};
+
 export type ReleaseEnvironment = {
   id: number;
   releaseId: number;
@@ -143,12 +150,7 @@ export type ReleaseEnvironment = {
   deploySteps: DeploymentAttempt[];
   rank: number;
   definitionEnvironmentId: number;
-  conditions: {
-    conditionType: 'artifact' | 'environmentState' | 'event' | 'undefined';
-    name: string;
-    result: boolean;
-    value: string;
-  }[];
+  conditions: ReleaseCondition[];
   // incomplete
 };
 
