@@ -2,7 +2,7 @@ import { last, omit } from 'rambda';
 import type { BranchPolicies, ReleasePipelineStats } from '../../../shared/types';
 import { exists } from '../../utils';
 import type {
-  Release, ReleaseCondition, EnvironmentStatus, ReleaseEnvironment
+  Release, ReleaseCondition, EnvironmentStatus
 } from '../types-azure';
 
 const initialiseReleaseDetails = (release: Release): ReleasePipelineStats => ({
@@ -92,13 +92,6 @@ const createCondition = (condition: ReleaseCondition) => ({
   name: condition.name
 });
 
-type EnvReleaseAttempt = {
-  status: EnvironmentStatus;
-  date: Date;
-  repos: Record<string, { name: string; branch: string }>;
-  releaseId: number;
-};
-
 type EnvDetails = {
   name: string;
   conditions: {
@@ -106,21 +99,31 @@ type EnvDetails = {
     name: string;
   }[];
   rank: number;
-  releaseAttempts: EnvReleaseAttempt[];
 };
 
-type ReleaseDetails = {
+type PipelineDetails = {
   definitionId: number;
   name: string;
   url: string;
   envs: Record<number, EnvDetails>;
+  attempts: {
+    id: number;
+    name: string;
+    reposAndBranches: Readonly<[string, string]>[];
+    progression: {
+      env: string;
+      date: Date;
+      state: EnvironmentStatus;
+    }[];
+  }[];
 };
 
-const bareRelease = (release: Release): ReleaseDetails => ({
+const barePipeline = (release: Release): PipelineDetails => ({
   definitionId: release.releaseDefinition.id,
   name: release.releaseDefinition.name,
   url: release.releaseDefinition.url.replace('_apis/Release/definitions/', '_release?definitionId='),
-  envs: {}
+  envs: {},
+  attempts: []
 });
 
 const getArtifactDetails = (release: Release) => (
@@ -134,49 +137,38 @@ const getArtifactDetails = (release: Release) => (
   }).filter(exists)
 );
 
-const createReleaseAttemptFor = (release: Release) => {
-  const repos = getArtifactDetails(release)
-    .reduce<EnvReleaseAttempt['repos']>((acc, { repoName, repoId, branch }) => {
-      acc[repoId] = acc[repoId] || { name: repoName, branch };
-      return acc;
-    }, {});
-
-  return (
-    (env: ReleaseEnvironment): EnvReleaseAttempt | undefined => {
-      if (env.status === 'notStarted') return;
-
-      return {
-        status: env.status,
-        date: last(env.deploySteps).lastModifiedOn,
-        releaseId: release.id,
-        repos
-      };
-    }
-  );
-};
-
 export const aggregateReleases = (releases: Release[]) => {
-  const combinedReleases = releases.reduce<Record<number, ReleaseDetails>>((acc, release) => {
-    acc[release.releaseDefinition.id] = acc[release.releaseDefinition.id] || bareRelease(release);
+  const combinedReleases = releases.reduce<Record<number, PipelineDetails>>((acc, release) => {
+    acc[release.releaseDefinition.id] = acc[release.releaseDefinition.id] || barePipeline(release);
 
-    const createReleaseAttempt = createReleaseAttemptFor(release);
+    acc[release.releaseDefinition.id].attempts.push({
+      id: release.id,
+      name: release.name,
+      reposAndBranches: getArtifactDetails(release)
+        .reduce<[string, string][]>((acc, { repoName, branch }) => {
+          acc.push([repoName, branch]);
+          return acc;
+        }, []),
+      progression: release.environments
+        .filter(env => env.status !== 'notStarted')
+        .map(env => ({
+          env: env.name,
+          date: last(env.deploySteps).lastModifiedOn,
+          state: env.status
+        }))
+        .filter(exists)
+    });
 
     acc[release.releaseDefinition.id].envs = release.environments
       .reduce<Record<number, EnvDetails>>((acc, env) => {
-        const releaseAttempt = createReleaseAttempt(env);
-
         if (!acc[env.rank]) {
           acc[env.rank] = {
             name: env.name,
             conditions: env.conditions.map(createCondition),
-            rank: env.rank,
-            releaseAttempts: releaseAttempt ? [releaseAttempt] : []
+            rank: env.rank
           };
-        } else {
-          if (!acc[env.rank].conditions.length) {
-            acc[env.rank].conditions = env.conditions.map(createCondition);
-          }
-          if (releaseAttempt) acc[env.rank].releaseAttempts.push(releaseAttempt);
+        } else if (!acc[env.rank].conditions.length) {
+          acc[env.rank].conditions = env.conditions.map(createCondition);
         }
 
         return acc;
@@ -191,7 +183,6 @@ export const aggregateReleases = (releases: Release[]) => {
     return {
       ...rest,
       envs: Object.values(envs)
-        .filter(e => e.releaseAttempts.length > 0)
         .sort((a, b) => a.rank - b.rank)
     };
   });
