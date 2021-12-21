@@ -1,70 +1,37 @@
-import {
-  always, equals, pipe, prop
-} from 'rambda';
-import type { BranchPolicies, PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
+import type {
+  BranchPolicies, Pipeline, RelevantPipelineStage
+} from '../../shared/types';
 
 const stageHasName = (stageName: string) => (
-  (stage: PipelineStageStats) => (
+  (stage: RelevantPipelineStage) => (
     stage.name.toLowerCase().includes(stageName.toLowerCase())
   )
 );
 
 export const pipelineHasStageNamed = (stageName: string) => (
-  (pipeline: ReleasePipelineStats) => pipeline.stages.some(stageHasName(stageName))
+  (pipeline: Pipeline) => pipeline.relevantStages.some(stageHasName(stageName))
 );
 
 export const pipelineUsesStageNamed = (stageName: string) => (
-  (pipeline: ReleasePipelineStats) => {
-    const matchingStages = pipeline.stages.filter(stageHasName(stageName));
+  (pipeline: Pipeline) => {
+    const matchingStages = pipeline.relevantStages.filter(stageHasName(stageName));
     if (!matchingStages.length) return false;
-    return matchingStages.some(stage => stage.successCount > 0);
+    return matchingStages.some(stage => stage.successful > 0);
   }
 );
 
 export const pipelineHasUnusedStageNamed = (stageName: string) => (
-  (pipeline: ReleasePipelineStats) => {
-    const matchingStages = pipeline.stages.filter(stageHasName(stageName));
+  (pipeline: Pipeline) => {
+    const matchingStages = pipeline.relevantStages.filter(stageHasName(stageName));
     if (!matchingStages.length) return false;
-    return matchingStages.every(stage => stage.successCount === 0);
+    return matchingStages.every(stage => stage.successful === 0);
   }
 );
 
-const getStageIndexFor = (pipeline: ReleasePipelineStats) => (stageName?: string) => (
-  stageName === undefined
-    ? -1
-    : pipeline.stages.reduce(
-      (acc, stage, index) => {
-        if (stageHasName(stageName)(stage)) return index;
-        return acc;
-      },
-      -1
-    )
-);
-
-export const mustIncludeBranch = (ignoreStagesBefore: string | undefined, pipeline: ReleasePipelineStats) => {
-  if (!ignoreStagesBefore) return always(true);
-
-  const getStageIndex = getStageIndexFor(pipeline);
-  const ignoredStageIndex = getStageIndex(ignoreStagesBefore);
-
-  if (ignoredStageIndex === -1) return always(true);
-
-  return (branch: ReleasePipelineStats['repos'][string][number]) => {
-    const stageIndex = pipeline.stages.findIndex(s => s.name === branch.branch);
-    return stageIndex > ignoredStageIndex;
-  };
-};
-
-export const pipelineDeploysExclusivelyFromMaster = (ignoreStagesBefore?: string) => (pipeline: ReleasePipelineStats) => {
-  const repoBranches = Object.values(pipeline.repos);
+export const pipelineDeploysExclusivelyFromMaster = (pipeline: Pipeline) => {
+  const repoBranches = [...new Set(Object.values(pipeline.repos).flatMap(r => r.branches))];
   if (!repoBranches.length) return false;
-  return repoBranches
-    .every(
-      branches => {
-        const consideredBranches = branches.filter(mustIncludeBranch(ignoreStagesBefore, pipeline));
-        return consideredBranches.length === 1 && consideredBranches[0].branch === 'refs/heads/master';
-      }
-    );
+  return repoBranches.length === 1 && repoBranches[0] === 'refs/heads/master';
 };
 
 export const normalizePolicy = (policies: BranchPolicies) => ({
@@ -130,12 +97,15 @@ export const fullPolicyStatus = (policy: NormalizedPolicies) => {
   return 'warn';
 };
 
-export const pipelineMeetsBranchPolicyRequirements = (ignoreStagesBefore?: string) => (pipeline: ReleasePipelineStats) => {
-  const repoBranches = Object.values(pipeline.repos);
-  if (!repoBranches.length) return false;
-  return repoBranches.every(branches => branches
-    .filter(mustIncludeBranch(ignoreStagesBefore, pipeline))
-    .every(
-      pipe(prop('policies'), normalizePolicy, fullPolicyStatus, equals('pass'))
-    ));
-};
+export const pipelineMeetsBranchPolicyRequirements = (
+  policyForBranch: (repoId: string, branch: string) => NormalizedPolicies
+) => (pipeline: Pipeline) => (
+  Object.entries(pipeline.repos)
+    .reduce<ReturnType<typeof fullPolicyStatus>[]>((acc, [repoId, { branches }]) => {
+      branches.forEach(branch => {
+        acc.push(fullPolicyStatus(policyForBranch(repoId, branch)));
+      });
+      return acc;
+    }, [])
+    .every(p => p === 'pass')
+);

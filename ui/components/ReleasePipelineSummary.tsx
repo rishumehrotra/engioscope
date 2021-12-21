@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react';
-import type { ReleasePipelineStats } from '../../shared/types';
+import type { Pipeline } from '../../shared/types';
 import { num } from '../helpers/utils';
+import type { NormalizedPolicies } from './pipeline-utils';
 import {
   pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from './pipeline-utils';
@@ -8,21 +9,22 @@ import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 
 type ReleasePipelineSummaryProps = {
-  pipelines: ReleasePipelineStats[];
+  pipelines: Pipeline[];
   stagesToHighlight?: string[];
+  policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
   ignoreStagesBefore?: string;
 };
 
 const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
-  pipelines, stagesToHighlight, ignoreStagesBefore
+  pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore
 }) => {
   const masterDeploysCount = pipelines.reduce(
-    (acc, pipeline) => acc + (pipelineDeploysExclusivelyFromMaster(ignoreStagesBefore)(pipeline) ? 1 : 0),
+    (acc, pipeline) => acc + (pipelineDeploysExclusivelyFromMaster(pipeline) ? 1 : 0),
     0
   );
 
   const policyPassCount = pipelines.reduce(
-    (acc, pipeline) => acc + (pipelineMeetsBranchPolicyRequirements(ignoreStagesBefore)(pipeline) ? 1 : 0),
+    (acc, pipeline) => acc + (pipelineMeetsBranchPolicyRequirements(policyForBranch)(pipeline) ? 1 : 0),
     0
   );
 
@@ -71,14 +73,18 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
           value: pipelines.length === 0 ? '0' : `${Math.round((masterDeploysCount * 100) / pipelines.length)}%`,
           tooltip: `${num(masterDeploysCount)} out of ${pipelines.length} release ${
             masterDeploysCount === 1 ? 'pipeline deploys' : 'pipelines deploy'
-          } exclusively from master.`
+          } exclusively from master.${
+            ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
+          }`
         }]}
       />
       <ProjectStat
         topStats={[{
           title: 'Conforms to branch policies',
           value: pipelines.length === 0 ? '0' : `${Math.round((policyPassCount * 100) / pipelines.length)}%`,
-          tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches tbat conform to the branch policy.`
+          tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches tbat conform to the branch policy.${
+            ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
+          }`
 
         }]}
       />

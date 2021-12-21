@@ -9,7 +9,7 @@ export type WorkItemAnalysis = {
 
 export type ProjectAnalysis = {
   repoAnalysis: RepoAnalysis[];
-  releaseAnalysis: ReleasePipelineStats[];
+  releaseAnalysis: ReleasePipelineStats;
   workItemAnalysis: WorkItemAnalysis;
   workItemLabel: string;
 };

@@ -41,7 +41,7 @@ const projectSummary = (
   name: [collectionName, projectConfig.name],
   lastUpdated: new Date().toISOString(),
   reposCount: projectAnalysis.repoAnalysis.length,
-  releasePipelineCount: projectAnalysis.releaseAnalysis.length,
+  releasePipelineCount: projectAnalysis.releaseAnalysis.pipelines.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,
   workItemLabel: [singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel]
 });
@@ -69,7 +69,7 @@ const writeReleaseAnalysisFile = async (
 ) => {
   const analysis: ProjectReleasePipelineAnalysis = {
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
-    pipelines: projectAnalysis.releaseAnalysis,
+    ...projectAnalysis.releaseAnalysis,
     stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight,
     ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore
   };

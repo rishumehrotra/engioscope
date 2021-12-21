@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { PipelineStageStats, ReleasePipelineStats } from '../../shared/types';
+import type {
+  Pipeline as TPipeline, RelevantPipelineStage
+} from '../../shared/types';
 import { num } from '../helpers/utils';
 import AlertMessage from './common/AlertMessage';
 import Card from './common/ExpandingCard';
@@ -9,8 +11,7 @@ import { ArrowRight, Branches } from './common/Icons';
 import Metric from './Metric';
 import type { NormalizedPolicies } from './pipeline-utils';
 import {
-  fullPolicyStatus,
-  normalizePolicy, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
+  fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
 } from './pipeline-utils';
 
 const policyColorClass = (policy: NormalizedPolicies, key: keyof NormalizedPolicies) => {
@@ -75,44 +76,85 @@ type StageNameProps = {
   count: string | number;
   onToggleSelect: () => void;
   isLast: boolean;
-  selectedStage: PipelineStageStats | null;
+  selectedStage: RelevantPipelineStage | null;
 };
 
-const Artefacts: React.FC<{pipeline: ReleasePipelineStats}> = ({ pipeline }) => (
+const Artefacts: React.FC<{
+  pipeline: TPipeline;
+  policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
+  ignoreStagesBefore?: string;
+}> = ({ pipeline, policyForBranch, ignoreStagesBefore }) => (
   <div className="my-4">
     <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts from repos</div>
     {Object.keys(pipeline.repos).length ? (
       <ol className="grid grid-flow-col justify-start">
-        {Object.entries(pipeline.repos).map(([repoName, branches]) => (
-          <Link
-            key={repoName}
-            to={`repos?search="${repoName}"`}
+        {Object.entries(pipeline.repos).map(([repoId, { name, branches, additionalBranches }]) => (
+          <div
             className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
           >
-            <div className="font-semibold flex items-center mb-1 text-blue-600 artifact-title">
-              {repoName}
-            </div>
-            <ol className="flex flex-wrap">
-              {branches.map(({ branch, policies }) => {
-                const aggregatedPolicy = normalizePolicy(policies);
-                const policyClassName = aggregatePolicyColorClass(aggregatedPolicy);
+            <Link
+              key={name}
+              to={`repos?search="${name}"`}
+              className="font-semibold flex items-center mb-1 text-blue-600 artifact-title"
+            >
+              {name}
+            </Link>
+            {branches.length ? (
+              <ol className="flex flex-wrap">
+                {branches.map(branch => {
+                  const policy = policyForBranch(repoId, branch);
+                  const policyClassName = aggregatePolicyColorClass(policy);
 
-                return (
-                  <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
-                    <Branches className="h-4 mr-1" />
-                    {branch.replace('refs/heads/', '')}
-                    <span
-                      className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
-                      data-tip={policyTooltip(aggregatedPolicy)}
-                      data-html
-                    >
-                      Policies
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </Link>
+                  return (
+                    <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
+                      <Branches className="h-4 mr-1" />
+                      {branch.replace('refs/heads/', '')}
+                      <span
+                        className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
+                        data-tip={policyTooltip(policy)}
+                        data-html
+                      >
+                        Policies
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <div className="text-sm mb-2">
+                {`No branches went beyond ${ignoreStagesBefore}.`}
+              </div>
+            )}
+            {additionalBranches?.length && (
+              <details>
+                <summary className="text-gray-500 text-xs pl-1 mt-1 cursor-pointer">
+                  {`${additionalBranches.length} additional ${
+                    additionalBranches.length === 1 ? 'branch' : 'branches'
+                  } that didn't go beyond ${ignoreStagesBefore}`}
+                </summary>
+                <ol className="flex flex-wrap mt-2">
+                  {additionalBranches.map(branch => {
+                    const policy = policyForBranch(repoId, branch);
+                    const policyClassName = aggregatePolicyColorClass(policy);
+
+                    return (
+                      <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
+                        <Branches className="h-4 mr-1" />
+                        {branch.replace('refs/heads/', '')}
+                        <span
+                          className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
+                          data-tip={policyTooltip(policy)}
+                          data-html
+                        >
+                          Policies
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </details>
+            )}
+          </div>
         ))}
       </ol>
     ) : (
@@ -161,18 +203,18 @@ const StageName: React.FC<StageNameProps> = ({
         <div role="region">
           {selectedStage && isSelected ? (
             <div className="grid grid-cols-5 mt-1 mb-3 rounded-lg bg-gray-100 w-full">
-              <Metric name="Releases" value={selectedStage.releaseCount} position="first" />
-              <Metric name="Successful" value={selectedStage.successCount} />
-              <Metric name="Failed" value={selectedStage.releaseCount - selectedStage.successCount} />
+              <Metric name="Releases" value={selectedStage.total} position="first" />
+              <Metric name="Successful" value={selectedStage.successful} />
+              <Metric name="Failed" value={selectedStage.total - selectedStage.successful} />
               <Metric
                 name="Per week"
-                value={selectedStage.successCount === 0 ? '0' : (selectedStage.releaseCount / 4).toFixed(2)}
+                value={selectedStage.successful === 0 ? '0' : (selectedStage.total / 4).toFixed(2)}
               />
               <Metric
                 name="Success rate"
-                value={(selectedStage.successCount === 0
+                value={(selectedStage.successful === 0
                   ? '0%'
-                  : `${((selectedStage.successCount * 100) / selectedStage.releaseCount).toFixed(2)}%`
+                  : `${((selectedStage.successful * 100) / selectedStage.total).toFixed(2)}%`
                 )}
                 position="last"
               />
@@ -185,8 +227,15 @@ const StageName: React.FC<StageNameProps> = ({
   );
 };
 
-const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: string[]}> = ({ pipeline, stagesToHighlight }) => {
-  const [selectedStage, setSelectedStage] = useState<PipelineStageStats | null>(null);
+const Pipeline: React.FC<{
+  pipeline: TPipeline;
+  stagesToHighlight?: string[];
+  ignoreStagesBefore?: string;
+  policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
+}> = ({
+  pipeline, stagesToHighlight, policyForBranch, ignoreStagesBefore
+}) => {
+  const [selectedStage, setSelectedStage] = useState<RelevantPipelineStage | null>(null);
 
   return (
     <Card
@@ -194,7 +243,7 @@ const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: s
       title={pipeline.name}
       titleUrl={pipeline.url}
       isExpanded={selectedStage !== null}
-      onCardClick={() => setSelectedStage(!selectedStage ? pipeline.stages[0] : null)}
+      onCardClick={() => setSelectedStage(!selectedStage ? pipeline.relevantStages[0] : null)}
       subtitle={(
         <>
           {stagesToHighlight?.map(stageToHighlight => {
@@ -214,17 +263,21 @@ const Pipeline: React.FC<{ pipeline: ReleasePipelineStats; stagesToHighlight?: s
       )}
     >
       <div className="px-6">
-        <Artefacts pipeline={pipeline} />
+        <Artefacts
+          pipeline={pipeline}
+          policyForBranch={policyForBranch}
+          ignoreStagesBefore={ignoreStagesBefore}
+        />
         <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">Successful releases per stage</div>
         <div className="flex flex-wrap">
-          {pipeline.stages.map((stage, index) => (
+          {pipeline.relevantStages.map((stage, index) => (
             <StageName
               key={stage.name}
-              count={stage.successCount}
+              count={stage.successful}
               label={stage.name}
               isSelected={selectedStage === stage}
               onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
-              isLast={index === pipeline.stages.length - 1}
+              isLast={index === pipeline.relevantStages.length - 1}
               selectedStage={selectedStage}
             />
           ))}

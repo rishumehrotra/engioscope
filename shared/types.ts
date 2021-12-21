@@ -1,3 +1,5 @@
+import type { ReleaseCondition } from '../backend/scraper/types-azure';
+
 export type ScrapedProject = {
   name: [collection: string, project: string];
   lastUpdated: string | null;
@@ -35,13 +37,32 @@ export type BranchPolicies = Partial<{
   requireMergeStrategy: { isOptional: boolean };
 }>;
 
-export type ReleasePipelineStats = {
+export type RelevantPipelineStage = {
+  name: string;
+  conditions: {
+    type: ReleaseCondition['conditionType'];
+    name: string;
+  }[];
+  rank: number;
+  successful: number;
+  total: number;
+};
+
+export type Pipeline = {
   id: number;
   name: string;
   url: string;
-  description: string | null;
-  stages: PipelineStageStats[];
-  repos: Record<string, { branch: string; policies: BranchPolicies; farthestStage?: string }[]>;
+  repos: Record<string, {
+    name: string;
+    branches: string[];
+    additionalBranches?: string[];
+  }>;
+  relevantStages: RelevantPipelineStage[];
+};
+
+export type ReleasePipelineStats = {
+  pipelines: Pipeline[];
+  policies: Record<string, Record<string, BranchPolicies>>;
 };
 
 export type UIBuildPipeline = {
@@ -259,8 +280,7 @@ export type UIProjectAnalysis = {
 
 export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
 
-export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & {
-  pipelines: ReleasePipelineStats[];
+export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & ReleasePipelineStats & {
   stagesToHighlight?: string[];
   ignoreStagesBefore?: string;
 };
