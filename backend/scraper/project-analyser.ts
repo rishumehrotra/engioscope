@@ -91,7 +91,7 @@ export default (config: ParsedConfig) => {
       };
     }));
 
-    const releaseAnalysis = aggregateReleases(releases, policyConfigurationByRepoBranch);
+    const releaseAnalysis = aggregateReleases(projectConfig, releases, policyConfigurationByRepoBranch);
 
     const analysisResults: ProjectAnalysis = {
       repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),

@@ -60,6 +60,6 @@ export default (policyConfigurations: PolicyConfiguration[]) => {
   );
 
   return (repoId: string, branch: string) => (
-    policyConfigByRepoAndBranch[repoId]?.[branch] || []
+    policyConfigByRepoAndBranch[repoId]?.[branch] || {}
   );
 };
