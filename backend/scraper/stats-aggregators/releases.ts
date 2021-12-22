@@ -149,16 +149,17 @@ const getReposAndBranches = (
       } else if (!acc.repos[repoId].branches.has(branchName)) {
         acc.repos[repoId].additionalBranches.add(branchName);
       }
-
-      attempt.progression.forEach(stage => {
-        const stageInfo = acc.stageInfo.get(stage.rank) || { successful: 0, total: 0 };
-
-        stageInfo.total += 1;
-        if (stage.state === 'succeeded') stageInfo.successful += 1;
-
-        acc.stageInfo.set(stage.rank, stageInfo);
-      });
     });
+
+    attempt.progression.forEach(stage => {
+      const stageInfo = acc.stageInfo.get(stage.rank) || { successful: 0, total: 0 };
+
+      stageInfo.total += 1;
+      if (stage.state === 'succeeded') stageInfo.successful += 1;
+
+      acc.stageInfo.set(stage.rank, stageInfo);
+    });
+
     return acc;
   }, { repos: {}, stageInfo: new Map() });
 

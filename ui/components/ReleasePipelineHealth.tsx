@@ -91,9 +91,9 @@ const Artefacts: React.FC<{
         {Object.entries(pipeline.repos).map(([repoId, { name, branches, additionalBranches }]) => (
           <div
             className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
+            key={repoId}
           >
             <Link
-              key={name}
               to={`repos?search="${name}"`}
               className="font-semibold flex items-center mb-1 text-blue-600 artifact-title"
             >
@@ -268,7 +268,9 @@ const Pipeline: React.FC<{
           policyForBranch={policyForBranch}
           ignoreStagesBefore={ignoreStagesBefore}
         />
-        <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">Successful releases per stage</div>
+        <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
+          Relevant stages
+        </div>
         <div className="flex flex-wrap">
           {pipeline.relevantStages.map((stage, index) => (
             <StageName
