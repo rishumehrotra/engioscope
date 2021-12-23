@@ -13,6 +13,7 @@ import type { NormalizedPolicies } from './pipeline-utils';
 import {
   fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
 } from './pipeline-utils';
+import PipelineDiagram from './PipelineDiagram';
 
 const policyColorClass = (policy: NormalizedPolicies, key: keyof NormalizedPolicies) => {
   const status = policyStatus(policy, key);
@@ -283,6 +284,9 @@ const Pipeline: React.FC<{
               selectedStage={selectedStage}
             />
           ))}
+        </div>
+        <div className="mt-6">
+          <PipelineDiagram stages={pipeline.relevantStages} />
         </div>
       </div>
     </Card>

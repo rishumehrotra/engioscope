@@ -63,9 +63,9 @@ export const policyStatus = (aggregatedPolicy: NormalizedPolicies, key: keyof No
   if (key === 'minimumNumberOfReviewers') {
     if (aggregatedPolicy.minimumNumberOfReviewers.count === 0) return 'fail';
     if (aggregatedPolicy.minimumNumberOfReviewers.isOptional
-      || aggregatedPolicy.minimumNumberOfReviewers.count < 2
+      || aggregatedPolicy.minimumNumberOfReviewers.count < 1
     ) {
-      return 'warn';
+      return 'fail';
     }
     if (
       aggregatedPolicy.minimumNumberOfReviewers.count >= 2
