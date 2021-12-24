@@ -1,6 +1,6 @@
 import Router from 'express-promise-router';
 import { join } from 'path';
-import { promises as fs, createWriteStream } from 'fs';
+import { promises as fs, createWriteStream, createReadStream } from 'fs';
 import uaParser from 'ua-parser-js';
 import { doesFileExist } from '../utils';
 import type { ParsedConfig } from '../scraper/parse-config';
@@ -77,6 +77,12 @@ export default (config: ParsedConfig) => {
     res.status(200);
     res.setHeader('Content-type', 'application/json');
     res.send(await fs.readFile(filePath, { encoding: 'utf-8' }));
+  });
+
+  router.get('/cache', async (req, res) => {
+    const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
+    res.setHeader('Content-type', 'application/gzip');
+    createReadStream(filePath).pipe(res);
   });
 
   return router;
