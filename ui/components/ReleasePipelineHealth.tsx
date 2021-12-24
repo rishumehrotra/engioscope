@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type {
-  Pipeline as TPipeline, RelevantPipelineStage
+  Pipeline as TPipeline, PipelineStage, RelevantPipelineStage
 } from '../../shared/types';
 import { num } from '../helpers/utils';
 import AlertMessage from './common/AlertMessage';
@@ -233,10 +233,26 @@ const Pipeline: React.FC<{
   stagesToHighlight?: string[];
   ignoreStagesBefore?: string;
   policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
+  releaseDefinition: PipelineStage[] | 'loading' | undefined;
+  loadReleaseDefinition: () => void;
 }> = ({
-  pipeline, stagesToHighlight, policyForBranch, ignoreStagesBefore
+  pipeline, stagesToHighlight, policyForBranch, ignoreStagesBefore,
+  releaseDefinition, loadReleaseDefinition
 }) => {
   const [selectedStage, setSelectedStage] = useState<RelevantPipelineStage | null>(null);
+  const formattedReleaseDefinition = useMemo(() => {
+    if (!releaseDefinition || releaseDefinition === 'loading') return releaseDefinition;
+
+    return releaseDefinition.map(stage => {
+      const matchingExistingStage = pipeline.relevantStages.find(s => s.rank === stage.rank);
+
+      return {
+        ...stage,
+        successful: matchingExistingStage?.successful ?? 0,
+        total: matchingExistingStage?.total ?? 0
+      };
+    });
+  }, [pipeline.relevantStages, releaseDefinition]);
 
   const { search } = useLocation();
   const query = useMemo(() => new URLSearchParams(search), [search]);
@@ -274,7 +290,27 @@ const Pipeline: React.FC<{
           ignoreStagesBefore={ignoreStagesBefore}
         />
         <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
-          Relevant stages
+          {formattedReleaseDefinition && formattedReleaseDefinition !== 'loading' ? (
+            'All stages'
+          ) : (
+            <>
+              Relevant stages
+              {
+                formattedReleaseDefinition === 'loading' ? (
+                  <span className="text-xs text-gray-500 ml-2 normal-case font-normal tracking-normal">
+                    Loading...
+                  </span>
+                ) : (
+                  <button
+                    className="ml-2 text-xs text-blue-600 hover:text-blue-700 focus:text-blue-700"
+                    onClick={loadReleaseDefinition}
+                  >
+                    Show all stages
+                  </button>
+                )
+              }
+            </>
+          )}
         </div>
         {isDebug && (
           <div className="flex flex-wrap">
@@ -292,7 +328,13 @@ const Pipeline: React.FC<{
           </div>
         )}
         <div className="mt-6">
-          <PipelineDiagram stages={pipeline.relevantStages} />
+          <PipelineDiagram
+            stages={
+              !formattedReleaseDefinition || formattedReleaseDefinition === 'loading'
+                ? pipeline.relevantStages
+                : formattedReleaseDefinition
+            }
+          />
         </div>
       </div>
     </Card>

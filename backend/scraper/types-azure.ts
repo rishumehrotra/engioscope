@@ -366,6 +366,7 @@ export type ReleaseDefinitionEnvironment = {
   };
   environmentTriggers: [];
   badgeUrl: string;
+  conditions: ReleaseCondition[];
 };
 
 export type ReleaseDefinition = {

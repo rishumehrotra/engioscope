@@ -8,9 +8,10 @@ import azure from '../scraper/network/azure';
 import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision';
 import type { UIWorkItemRevision } from '../../shared/types';
 import analytics from './analytics';
+import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases';
 
 export default (config: ParsedConfig) => {
-  const { getWorkItemRevisions } = azure(config);
+  const { getWorkItemRevisions, getReleaseDefinition } = azure(config);
   const router = Router();
 
   const analyticsStream = createWriteStream(join(process.cwd(), 'analytics.csv'), {
@@ -68,6 +69,15 @@ export default (config: ParsedConfig) => {
     )).reduce<Record<number, UIWorkItemRevision[]>>((acc, curr) => Object.assign(acc, curr), {});
 
     res.status(200).send(revisions);
+  });
+
+  router.get('/api/:collectionName/:projectName/release-definition/:definitionId', async (req, res) => {
+    const { collectionName, projectName, definitionId } = req.params;
+    res.status(200).send(
+      formatReleaseDefinition(
+        await getReleaseDefinition(collectionName, projectName, Number(definitionId))
+      )
+    );
   });
 
   router.get('/api/*', async (req, res) => {

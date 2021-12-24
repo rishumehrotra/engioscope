@@ -37,13 +37,16 @@ export type BranchPolicies = Partial<{
   requireMergeStrategy: { isOptional: boolean };
 }>;
 
-export type RelevantPipelineStage = {
+export type PipelineStage = {
   name: string;
   conditions: {
     type: ReleaseCondition['conditionType'];
     name: string;
   }[];
   rank: number;
+};
+
+export type RelevantPipelineStage = PipelineStage & {
   successful: number;
   total: number;
 };

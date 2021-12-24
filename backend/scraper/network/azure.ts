@@ -132,6 +132,18 @@ export default (config: ParsedConfig) => {
       })
     ),
 
+    getReleaseDefinition: (collectionName: string, projectName: string, definitionId: number) => (
+      usingDiskCache<ReleaseDefinition>(
+        [collectionName, projectName, 'release_definitions', definitionId.toString()],
+        () => fetch(
+          url(collectionName, projectName, `/release/definitions/${definitionId}?${qs.stringify({
+            'api-version': '5.1-preview'
+          })}`),
+          { headers: authHeader }
+        )
+      ).then(res => res.data)
+    ),
+
     getReleases: (collectionName: string, projectName: string) => {
       // Taking back the querying time by a month due to #55.
       const queryFrom = new Date(config.azure.queryFrom);

@@ -1,11 +1,12 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { not, pipe } from 'rambda';
-import type { Pipeline as TPipeline } from '../../shared/types';
+import { useParams } from 'react-router-dom';
+import type { Pipeline as TPipeline, PipelineStage } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
-import { pipelineMetrics } from '../network';
+import { pipelineMetrics, releaseDefinition } from '../network';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
@@ -32,6 +33,29 @@ const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string)
   pipelineMeetsBranchPolicyRequirements(policyForBranch), not
 );
 
+const useReleaseDefinition = () => {
+  const [releaseDefinitionCache, setReleaseDefinitionCache] = useState<Record<number, PipelineStage[] | 'loading' | undefined>>({});
+  const { collection, project } = useParams<{ collection: string; project: string }>();
+  const loadReleaseDefinition = useCallback(
+    (definitionId: number) => {
+      if (releaseDefinitionCache[definitionId]) { return; }
+      setReleaseDefinitionCache({ ...releaseDefinitionCache, [definitionId]: 'loading' });
+      releaseDefinition(collection, project, definitionId)
+        .then(
+          def => setReleaseDefinitionCache(defs => ({ ...defs, [definitionId]: def }))
+        )
+        .catch(
+          () => setReleaseDefinitionCache(defs => ({ ...defs, [definitionId]: undefined }))
+        );
+    },
+    [collection, project, releaseDefinitionCache]
+  );
+
+  const getDefinition = (definitionId: number) => releaseDefinitionCache[definitionId];
+
+  return { loadReleaseDefinition, getDefinition };
+};
+
 const ReleasePipelines: React.FC = () => {
   const releaseAnalysis = useFetchForProject(pipelineMetrics);
   const [search] = useQueryParam<string>('search');
@@ -42,6 +66,8 @@ const ReleasePipelines: React.FC = () => {
   const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
   const [page, loadMore] = usePagination();
   useRemoveSort();
+
+  const { getDefinition, loadReleaseDefinition } = useReleaseDefinition();
 
   const policyForBranch = useCallback((repoId: string, branch: string): NormalizedPolicies => {
     if (releaseAnalysis === 'loading') return normalizePolicy({});
@@ -87,6 +113,8 @@ const ReleasePipelines: React.FC = () => {
           stagesToHighlight={releaseAnalysis.stagesToHighlight}
           policyForBranch={policyForBranch}
           ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+          releaseDefinition={getDefinition(pipeline.id)}
+          loadReleaseDefinition={() => loadReleaseDefinition(pipeline.id)}
         />
       )) : null}
 
@@ -102,6 +130,8 @@ const ReleasePipelines: React.FC = () => {
           stagesToHighlight={releaseAnalysis.stagesToHighlight}
           policyForBranch={policyForBranch}
           ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+          releaseDefinition={getDefinition(pipeline.id)}
+          loadReleaseDefinition={() => loadReleaseDefinition(pipeline.id)}
         />
       )) : null}
     </>
@@ -109,4 +139,3 @@ const ReleasePipelines: React.FC = () => {
 };
 
 export default ReleasePipelines;
-

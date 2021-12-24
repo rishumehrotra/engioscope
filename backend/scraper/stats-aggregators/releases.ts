@@ -1,9 +1,9 @@
 import { always, last } from 'rambda';
-import type { BranchPolicies, ReleasePipelineStats } from '../../../shared/types';
+import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types';
 import { exists } from '../../utils';
 import type { ParsedProjectConfig } from '../parse-config';
 import type {
-  Release, ReleaseCondition, EnvironmentStatus
+  Release, ReleaseCondition, EnvironmentStatus, ReleaseDefinition
 } from '../types-azure';
 
 const createCondition = (condition: ReleaseCondition) => ({
@@ -213,3 +213,13 @@ export default (
 
   return { pipelines, policies };
 };
+
+export const formatReleaseDefinition = (releaseDefinition: ReleaseDefinition): PipelineStage[] => (
+  releaseDefinition.environments
+    .sort((a, b) => a.rank - b.rank)
+    .map(env => ({
+      name: env.name,
+      rank: env.rank,
+      conditions: env.conditions.map(createCondition)
+    }))
+);
