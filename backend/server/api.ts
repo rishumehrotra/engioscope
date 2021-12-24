@@ -45,6 +45,12 @@ export default (config: ParsedConfig) => {
     analytics().pipe(res);
   });
 
+  router.get('/api/cache', async (req, res) => {
+    const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
+    res.setHeader('Content-type', 'application/gzip');
+    createReadStream(filePath).pipe(res);
+  });
+
   router.get('/api/:collectionName/work-item-revisions', async (req, res) => {
     const { collectionName } = req.params;
     const { ids } = req.query;
@@ -77,12 +83,6 @@ export default (config: ParsedConfig) => {
     res.status(200);
     res.setHeader('Content-type', 'application/json');
     res.send(await fs.readFile(filePath, { encoding: 'utf-8' }));
-  });
-
-  router.get('/cache', async (req, res) => {
-    const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
-    res.setHeader('Content-type', 'application/gzip');
-    createReadStream(filePath).pipe(res);
   });
 
   return router;

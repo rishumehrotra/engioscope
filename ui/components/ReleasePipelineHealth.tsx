@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import type {
   Pipeline as TPipeline, RelevantPipelineStage
 } from '../../shared/types';
@@ -238,6 +238,10 @@ const Pipeline: React.FC<{
 }) => {
   const [selectedStage, setSelectedStage] = useState<RelevantPipelineStage | null>(null);
 
+  const { search } = useLocation();
+  const query = useMemo(() => new URLSearchParams(search), [search]);
+  const isDebug = query.has('debug');
+
   return (
     <Card
       key={pipeline.name}
@@ -272,19 +276,21 @@ const Pipeline: React.FC<{
         <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
           Relevant stages
         </div>
-        <div className="flex flex-wrap">
-          {pipeline.relevantStages.map((stage, index) => (
-            <StageName
-              key={stage.name}
-              count={stage.successful}
-              label={stage.name}
-              isSelected={selectedStage === stage}
-              onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
-              isLast={index === pipeline.relevantStages.length - 1}
-              selectedStage={selectedStage}
-            />
-          ))}
-        </div>
+        {isDebug && (
+          <div className="flex flex-wrap">
+            {pipeline.relevantStages.map((stage, index) => (
+              <StageName
+                key={stage.name}
+                count={stage.successful}
+                label={stage.name}
+                isSelected={selectedStage === stage}
+                onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
+                isLast={index === pipeline.relevantStages.length - 1}
+                selectedStage={selectedStage}
+              />
+            ))}
+          </div>
+        )}
         <div className="mt-6">
           <PipelineDiagram stages={pipeline.relevantStages} />
         </div>

@@ -1,5 +1,6 @@
 import { add, range } from 'rambda';
 import React, { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { RelevantPipelineStage } from '../../shared/types';
 import { exists } from '../helpers/utils';
 
@@ -106,6 +107,10 @@ const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
   const grid = useMemo(() => stagesGrid(stages), [stages]);
   const getParentLocations = useMemo(() => getParentLocationsUsing(grid), [grid]);
 
+  const { search } = useLocation();
+  const query = useMemo(() => new URLSearchParams(search), [search]);
+  const isDebug = query.has('debug');
+
   return (
     <div className="overflow-y-auto w-full">
       <svg
@@ -142,7 +147,7 @@ const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
                         {stage.successful}
                       </span>
                       <span className="text-gray-600">
-                        {`/${stage.total} succeeded`}
+                        {` / ${stage.total} succeeded`}
                       </span>
                     </div>
                   </div>
@@ -175,9 +180,14 @@ const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
           })
         ))}
       </svg>
-      <button onClick={() => console.log({ stages, grid })}>
-        Dump log
-      </button>
+      {isDebug && (
+        <button
+          className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md mt-2 border-gray-300 border-2"
+          onClick={() => console.log({ stagesFromServer: stages, processedGrid: grid })}
+        >
+          Dump log
+        </button>
+      )}
     </div>
   );
 };
