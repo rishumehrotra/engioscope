@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type {
   AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
 } from '../../shared/types';
@@ -63,8 +63,8 @@ const WorkItem: React.FC<WorkItemProps> = ({
   workItemId, workItemsById, workItemsIdTree, workItemType,
   colorForStage, revisions, getRevisions
 }) => {
-  const workItemRevisions = revisions[workItemId];
-  const workItem = workItemsById[workItemId];
+  const workItemRevisions = useMemo(() => revisions[workItemId], [revisions, workItemId]);
+  const workItem = useMemo(() => workItemsById[workItemId], [workItemsById, workItemId]);
 
   const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
     const coordsGetter = workItemRevisions === 'loading'
@@ -73,7 +73,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
     return coordsGetter(time);
   }, [workItemRevisions]);
 
-  const barWidth = barWidthUsing(timeToXCoord);
+  const barWidth = useMemo(() => barWidthUsing(timeToXCoord), [timeToXCoord]);
 
   return (
     <div

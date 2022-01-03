@@ -84,7 +84,7 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
 
   useEffect(() => {
     getRevisions(renderedWorkItems.map(({ id }) => id));
-  }, [filteredWorkItems, getRevisions, renderedWorkItems, workItemAnalysis]);
+  }, [getRevisions, renderedWorkItems]);
 
   const workItemType = useCallback((workItem: UIWorkItem) => (
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -101,7 +101,7 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
         items={filteredWorkItems}
         itemKey={({ id }) => id}
         onRenderItems={setRenderedWorkItems}
-        itemRenderer={({ item: workItem }) => (
+        itemRenderer={workItem => (
           <WorkItem
             workItemId={workItem.id}
             workItemsById={workItems.byId}

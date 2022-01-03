@@ -77,7 +77,7 @@ const Repos: React.FC = () => {
       <InfiniteScrollList
         items={repos}
         itemKey={repo => repo.id}
-        itemRenderer={({ item: repo, index }) => (
+        itemRenderer={(repo, index) => (
           <RepoHealth
             repo={repo}
             aggregatedDevs={aggregatedDevs}

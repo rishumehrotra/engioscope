@@ -104,7 +104,7 @@ const ReleasePipelines: React.FC = () => {
       <InfiniteScrollList
         items={pipelines}
         itemKey={pipeline => pipeline.id}
-        itemRenderer={({ item: pipeline }) => (
+        itemRenderer={pipeline => (
           <Pipeline
             pipeline={pipeline}
             stagesToHighlight={releaseAnalysis.stagesToHighlight}

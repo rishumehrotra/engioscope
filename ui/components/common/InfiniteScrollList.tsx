@@ -3,14 +3,14 @@ import { useInView } from 'react-intersection-observer';
 
 type InfiniteScrollListProps<T> = {
   items: T[];
-  itemRenderer: React.FC<{ item: T; index: number }>;
+  itemRenderer: (item: T, index: number) => React.ReactNode;
   itemKey: (item: T) => React.Key;
   onRenderItems?: (items: T[]) => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const InfiniteScrollList = <T extends {}>({
-  items, itemRenderer: ItemComponent, itemKey, onRenderItems
+  items, itemRenderer, itemKey, onRenderItems
 }: InfiniteScrollListProps<T>) => {
   const [slicedItems, setSlicedItems] = useState(items.slice(0, 10));
   const lastTriggerTime = useRef(Date.now());
@@ -38,7 +38,7 @@ const InfiniteScrollList = <T extends {}>({
           key={itemKey(item)}
           {...(index === slicedItems.length - 1 ? { ref } : {})}
         >
-          <ItemComponent item={item} index={index} />
+          {itemRenderer(item, index)}
         </li>
       ))}
     </ul>
