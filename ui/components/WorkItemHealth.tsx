@@ -76,7 +76,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
   const barWidth = barWidthUsing(timeToXCoord);
 
   return (
-    <li
+    <div
       className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out
       rounded-lg shadow relative workitem-body"
       style={{ contain: 'content' }}
@@ -134,7 +134,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
           getRevisions={getRevisions}
         />
       </div>
-    </li>
+    </div>
   );
 };
 

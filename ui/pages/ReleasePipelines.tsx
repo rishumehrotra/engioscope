@@ -12,14 +12,13 @@ import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
 import Loading from '../components/Loading';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
-import usePagination, { bottomItems, topItems } from '../hooks/pagination';
-import LoadMore from '../components/LoadMore';
 import type { NormalizedPolicies } from '../components/pipeline-utils';
 import {
   normalizePolicy,
   pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed,
   pipelineMeetsBranchPolicyRequirements
 } from '../components/pipeline-utils';
+import InfiniteScrollList from '../components/common/InfiniteScrollList';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
@@ -64,7 +63,6 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExists] = useQueryParam<string>('stageNameExists');
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
-  const [page, loadMore] = usePagination();
   useRemoveSort();
 
   const { getDefinition, loadReleaseDefinition } = useReleaseDefinition();
@@ -89,9 +87,6 @@ const ReleasePipelines: React.FC = () => {
     policyForBranch, releaseAnalysis, search, stageNameExists, stageNameExistsNotUsed
   ]);
 
-  const topPipelines = useMemo(() => topItems(page, pipelines), [page, pipelines]);
-  const bottomPipelines = useMemo(() => bottomItems(pipelines), [pipelines]);
-
   if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
@@ -106,34 +101,20 @@ const ReleasePipelines: React.FC = () => {
           ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
         />
       </div>
-      {topPipelines.length ? topPipelines.map(pipeline => (
-        <Pipeline
-          key={pipeline.id}
-          pipeline={pipeline}
-          stagesToHighlight={releaseAnalysis.stagesToHighlight}
-          policyForBranch={policyForBranch}
-          ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
-          releaseDefinition={getDefinition(pipeline.id)}
-          loadReleaseDefinition={() => loadReleaseDefinition(pipeline.id)}
-        />
-      )) : null}
-
-      <LoadMore
-        loadMore={loadMore}
-        hiddenItemsCount={pipelines.length - topPipelines.length - bottomPipelines.length}
+      <InfiniteScrollList
+        items={pipelines}
+        itemKey={pipeline => pipeline.id}
+        itemRenderer={({ item: pipeline }) => (
+          <Pipeline
+            pipeline={pipeline}
+            stagesToHighlight={releaseAnalysis.stagesToHighlight}
+            policyForBranch={policyForBranch}
+            ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+            releaseDefinition={getDefinition(pipeline.id)}
+            loadReleaseDefinition={() => loadReleaseDefinition(pipeline.id)}
+          />
+        )}
       />
-
-      {bottomPipelines.length ? bottomPipelines.map(pipeline => (
-        <Pipeline
-          key={pipeline.id}
-          pipeline={pipeline}
-          stagesToHighlight={releaseAnalysis.stagesToHighlight}
-          policyForBranch={policyForBranch}
-          ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
-          releaseDefinition={getDefinition(pipeline.id)}
-          loadReleaseDefinition={() => loadReleaseDefinition(pipeline.id)}
-        />
-      )) : null}
     </>
   );
 };

@@ -11,9 +11,8 @@ import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import Loading from '../components/Loading';
 import { aggregateDevs } from '../helpers/aggregate-devs';
-import usePagination, { bottomItems, topItems } from '../hooks/pagination';
-import LoadMore from '../components/LoadMore';
 import RepoSummary from '../components/RepoSummary';
+import InfiniteScrollList from '../components/common/InfiniteScrollList';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -49,7 +48,6 @@ const Repos: React.FC = () => {
   const [buildsGreaterThanZero] = useQueryParam<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
   const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
-  const [page, loadMore] = usePagination();
 
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
@@ -68,9 +66,6 @@ const Repos: React.FC = () => {
       .sort(sorter);
   }, [buildsGreaterThanZero, commitsGreaterThanZero, projectAnalysis, search, sorter, techDebtMoreThanDays, withFailingLastBuilds]);
 
-  const topRepos = useMemo(() => topItems(page, repos), [page, repos]);
-  const bottomRepos = useMemo(() => bottomItems(repos), [repos]);
-
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
   return repos.length ? (
@@ -79,29 +74,17 @@ const Repos: React.FC = () => {
         <AppliedFilters type="repos" count={repos.length} />
         <RepoSummary repos={repos} />
       </div>
-      {topRepos.length
-        ? topRepos.map((repo, index) => (
+      <InfiniteScrollList
+        items={repos}
+        itemKey={repo => repo.id}
+        itemRenderer={({ item: repo, index }) => (
           <RepoHealth
             repo={repo}
-            key={repo.name}
             aggregatedDevs={aggregatedDevs}
             isFirst={index === 0}
           />
-        ))
-        : null}
-      <LoadMore
-        loadMore={loadMore}
-        hiddenItemsCount={repos.length - topRepos.length - bottomRepos.length}
+        )}
       />
-      {bottomRepos.length
-        ? bottomRepos.map(repo => (
-          <RepoHealth
-            repo={repo}
-            key={repo.name}
-            aggregatedDevs={aggregatedDevs}
-          />
-        ))
-        : null}
     </>
   ) : <AlertMessage message="No repos found" />;
 };

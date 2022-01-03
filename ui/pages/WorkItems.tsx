@@ -12,8 +12,7 @@ import type { SortMap } from '../hooks/sort-hooks';
 import { useSort } from '../hooks/sort-hooks';
 import AppliedFilters from '../components/AppliedFilters';
 import Loading from '../components/Loading';
-import usePagination, { bottomItems, topItems } from '../hooks/pagination';
-import LoadMore from '../components/LoadMore';
+import InfiniteScrollList from '../components/common/InfiniteScrollList';
 
 const colorForStage = createPalette([
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -54,7 +53,7 @@ const useRevisionsForCollection = () => {
 const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({ workItemAnalysis }) => {
   const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam<string>('search');
-  const [page, loadMore] = usePagination();
+  const [renderedWorkItems, setRenderedWorkItems] = useState<UIWorkItem[]>([]);
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const workItems = workItemAnalysis.workItems!;
@@ -83,14 +82,9 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
       .sort(sorter);
   }, [search, sorter, workItemAnalysis, workItemById]);
 
-  const [topWorkItems, bottomWorkItems] = useMemo(() => (
-    [topItems(page, filteredWorkItems), bottomItems(filteredWorkItems)]
-  ), [filteredWorkItems, page]);
-
   useEffect(() => {
-    const ids = [...topItems(page, filteredWorkItems).map(({ id }) => id), ...bottomItems(filteredWorkItems).map(({ id }) => id)];
-    getRevisions(ids);
-  }, [filteredWorkItems, getRevisions, page, workItemAnalysis]);
+    getRevisions(renderedWorkItems.map(({ id }) => id));
+  }, [filteredWorkItems, getRevisions, renderedWorkItems, workItemAnalysis]);
 
   const workItemType = useCallback((workItem: UIWorkItem) => (
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -103,10 +97,12 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
       </div>
 
-      <ul>
-        {topWorkItems.map(workItem => (
+      <InfiniteScrollList
+        items={filteredWorkItems}
+        itemKey={({ id }) => id}
+        onRenderItems={setRenderedWorkItems}
+        itemRenderer={({ item: workItem }) => (
           <WorkItem
-            key={workItem.id}
             workItemId={workItem.id}
             workItemsById={workItems.byId}
             workItemsIdTree={workItems.ids}
@@ -115,24 +111,8 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
             revisions={revisions}
             getRevisions={getRevisions}
           />
-        ))}
-        <LoadMore
-          loadMore={loadMore}
-          hiddenItemsCount={filteredWorkItems.length - topWorkItems.length - bottomWorkItems.length}
-        />
-        {bottomWorkItems.map(workItem => (
-          <WorkItem
-            key={workItem.id}
-            workItemId={workItem.id}
-            workItemsById={workItems.byId}
-            workItemsIdTree={workItems.ids}
-            workItemType={workItemType}
-            colorForStage={colorForStage}
-            revisions={revisions}
-            getRevisions={getRevisions}
-          />
-        ))}
-      </ul>
+        )}
+      />
     </>
   );
 };
