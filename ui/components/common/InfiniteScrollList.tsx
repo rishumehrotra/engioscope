@@ -12,13 +12,17 @@ type InfiniteScrollListProps<T> = {
 const InfiniteScrollList = <T extends {}>({
   items, itemRenderer, itemKey, onRenderItems
 }: InfiniteScrollListProps<T>) => {
-  const [slicedItems, setSlicedItems] = useState(items.slice(0, 10));
+  const [slicedItems, setSlicedItems] = useState<T[]>([]);
   const lastTriggerTime = useRef(Date.now());
   const [ref, inView] = useInView({
     threshold: 0,
     triggerOnce: true,
     rootMargin: '300px'
   });
+
+  useEffect(() => {
+    setSlicedItems(items.slice(0, 10));
+  }, [items]);
 
   useEffect(() => {
     onRenderItems?.(slicedItems);
