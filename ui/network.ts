@@ -1,6 +1,7 @@
 import type {
-  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
-  ScrapedProject, ProjectWorkItemAnalysis, UIWorkItemRevision, ProjectOverviewAnalysis, AnalyticsItem, PipelineStage
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, ScrapedProject,
+  ProjectWorkItemAnalysis, UIWorkItemRevision, ProjectOverviewAnalysis,
+  AnalyticsItem, PipelineDefinitions
 } from '../shared/types';
 
 const json = (res: Response) => res.json();
@@ -33,6 +34,6 @@ export const overview = (collection: string, project: string): Promise<ProjectOv
   fetch(`/api/${collection}/${project}/overview.json`).then(json)
 );
 
-export const releaseDefinition = (collection: string, project: string, definitionId: number): Promise<PipelineStage[]> => (
-  fetch(`/api/${collection}/${project}/release-definition/${definitionId}`).then(json)
+export const releaseDefinitions = (collection: string, project: string, definitionIds: number[]): Promise<PipelineDefinitions> => (
+  fetch(`/api/${collection}/${project}/release-definitions?ids=${definitionIds.join(',')}`).then(json)
 );

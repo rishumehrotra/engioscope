@@ -46,9 +46,12 @@ export type PipelineStage = {
   rank: number;
 };
 
-export type RelevantPipelineStage = PipelineStage & {
-  successful: number;
+export type PipelineDefinitions = Record<number, PipelineStage[]>;
+
+export type PipelineCount = {
   total: number;
+  successful: number;
+  name: string;
 };
 
 export type Pipeline = {
@@ -60,7 +63,7 @@ export type Pipeline = {
     branches: string[];
     additionalBranches?: string[];
   }>;
-  relevantStages: RelevantPipelineStage[];
+  stageCounts: PipelineCount[];
 };
 
 export type ReleasePipelineStats = {

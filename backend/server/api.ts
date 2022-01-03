@@ -6,7 +6,7 @@ import { doesFileExist } from '../utils';
 import type { ParsedConfig } from '../scraper/parse-config';
 import azure from '../scraper/network/azure';
 import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision';
-import type { UIWorkItemRevision } from '../../shared/types';
+import type { PipelineDefinitions, UIWorkItemRevision } from '../../shared/types';
 import analytics from './analytics';
 import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases';
 
@@ -71,13 +71,23 @@ export default (config: ParsedConfig) => {
     res.status(200).send(revisions);
   });
 
-  router.get('/api/:collectionName/:projectName/release-definition/:definitionId', async (req, res) => {
-    const { collectionName, projectName, definitionId } = req.params;
-    res.status(200).send(
-      formatReleaseDefinition(
-        await getReleaseDefinition(collectionName, projectName, Number(definitionId))
-      )
-    );
+  router.get('/api/:collectionName/:projectName/release-definitions', async (req, res) => {
+    const { collectionName, projectName } = req.params;
+    const { ids } = req.query;
+
+    if (!ids || typeof ids !== 'string') {
+      return res.status(400).send('Missing id');
+    }
+
+    const releases = (await Promise.all(
+      ids
+        .split(',')
+        .map(async id => ({
+          [id]: formatReleaseDefinition(await getReleaseDefinition(collectionName, projectName, Number(id)))
+        }))
+    )).reduce<PipelineDefinitions>((acc, curr) => ({ ...acc, ...curr }), {});
+
+    res.status(200).send(releases);
   });
 
   router.get('/api/*', async (req, res) => {

@@ -1,7 +1,7 @@
 import { add, range } from 'rambda';
 import React, { useMemo } from 'react';
-import type { RelevantPipelineStage } from '../../shared/types';
 import { exists } from '../helpers/utils';
+import type { PipelineStageWithCounts } from './pipeline-utils';
 
 const cellWidth = 200;
 const cellHeight = 58;
@@ -18,7 +18,7 @@ const getRowHeightUsing = (nodes: Record<number, number[]>) => {
   return getRowHeight;
 };
 
-const stagesTree = (stages: RelevantPipelineStage[]) => (
+const stagesTree = (stages: PipelineStageWithCounts[]) => (
   stages.reduce<{ nodes: Record<number, number[]>; root: number[] }>(
     (acc, stage) => {
       stage.conditions.forEach(condition => {
@@ -45,9 +45,9 @@ const getDepthUsing = (nodes: Record<number, number[]>) => {
   return getDepth;
 };
 
-const stagesGrid = (stages: RelevantPipelineStage[]) => {
+const stagesGrid = (stages: PipelineStageWithCounts[]) => {
   const tree = stagesTree(stages);
-  const stagesByRank = stages.reduce<Record<number, RelevantPipelineStage>>(
+  const stagesByRank = stages.reduce<Record<number, PipelineStageWithCounts>>(
     (acc, stage) => {
       acc[stage.rank] = stage;
       return acc;
@@ -59,7 +59,7 @@ const stagesGrid = (stages: RelevantPipelineStage[]) => {
   const maxDepth = Math.max(...tree.root.map(getDepth));
   const totalHeight = tree.root.map(getHeight).reduce(add, 0);
 
-  const grid: (RelevantPipelineStage | undefined)[][] = range(0, totalHeight)
+  const grid: (PipelineStageWithCounts | undefined)[][] = range(0, totalHeight)
     .map(() => range(0, maxDepth).map(() => undefined));
 
   const gridContains = (rank: number) => (
@@ -84,8 +84,8 @@ const stagesGrid = (stages: RelevantPipelineStage[]) => {
   return grid.filter(row => row.some(exists));
 };
 
-const getParentLocationsUsing = (grid: (RelevantPipelineStage | undefined)[][]) => (
-  (stage: RelevantPipelineStage) => (
+const getParentLocationsUsing = (grid: (PipelineStageWithCounts | undefined)[][]) => (
+  (stage: PipelineStageWithCounts) => (
     stage.conditions
       .filter(c => c.type === 'environmentState')
       .map(condition => {
@@ -99,7 +99,7 @@ const getParentLocationsUsing = (grid: (RelevantPipelineStage | undefined)[][]) 
 );
 
 type PipelineDiagramProps = {
-  stages: RelevantPipelineStage[];
+  stages: PipelineStageWithCounts[];
 };
 
 const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {

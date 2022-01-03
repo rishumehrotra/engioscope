@@ -1,20 +1,34 @@
 import type {
-  BranchPolicies, Pipeline, RelevantPipelineStage
+  BranchPolicies, Pipeline, PipelineCount, PipelineStage
 } from '../../shared/types';
 
+export type PipelineStageWithCounts = PipelineStage & PipelineCount;
+
+export const mergeStagesAndCounts = (stageCounts: PipelineCount[]) => (
+  (stage: PipelineStage): PipelineStageWithCounts => {
+    const matchingExistingStage = stageCounts.find(s => s.name === stage.name);
+
+    return {
+      ...stage,
+      successful: matchingExistingStage?.successful ?? 0,
+      total: matchingExistingStage?.total ?? 0
+    };
+  }
+);
+
 const stageHasName = (stageName: string) => (
-  (stage: RelevantPipelineStage) => (
+  (stage: PipelineStage | PipelineCount) => (
     stage.name.toLowerCase().includes(stageName.toLowerCase())
   )
 );
 
 export const pipelineHasStageNamed = (stageName: string) => (
-  (pipeline: Pipeline) => pipeline.relevantStages.some(stageHasName(stageName))
+  (pipeline: Pipeline) => pipeline.stageCounts.some(stageHasName(stageName))
 );
 
 export const pipelineUsesStageNamed = (stageName: string) => (
   (pipeline: Pipeline) => {
-    const matchingStages = pipeline.relevantStages.filter(stageHasName(stageName));
+    const matchingStages = pipeline.stageCounts.filter(stageHasName(stageName));
     if (!matchingStages.length) return false;
     return matchingStages.some(stage => stage.successful > 0);
   }
@@ -22,7 +36,7 @@ export const pipelineUsesStageNamed = (stageName: string) => (
 
 export const pipelineHasUnusedStageNamed = (stageName: string) => (
   (pipeline: Pipeline) => {
-    const matchingStages = pipeline.relevantStages.filter(stageHasName(stageName));
+    const matchingStages = pipeline.stageCounts.filter(stageHasName(stageName));
     if (!matchingStages.length) return false;
     return matchingStages.every(stage => stage.successful === 0);
   }

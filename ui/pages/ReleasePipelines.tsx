@@ -1,4 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState
+} from 'react';
 import { useQueryParam } from 'use-query-params';
 import { not, pipe } from 'rambda';
 import { useParams } from 'react-router-dom';
@@ -6,7 +8,7 @@ import type { Pipeline as TPipeline, PipelineStage } from '../../shared/types';
 import AlertMessage from '../components/common/AlertMessage';
 import AppliedFilters from '../components/AppliedFilters';
 import Pipeline from '../components/ReleasePipelineHealth';
-import { pipelineMetrics, releaseDefinition } from '../network';
+import { pipelineMetrics, releaseDefinitions } from '../network';
 import useFetchForProject from '../hooks/use-fetch-for-project';
 import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
@@ -32,27 +34,30 @@ const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string)
   pipelineMeetsBranchPolicyRequirements(policyForBranch), not
 );
 
-const useReleaseDefinition = () => {
+const useReleaseDefinitions = () => {
   const [releaseDefinitionCache, setReleaseDefinitionCache] = useState<Record<number, PipelineStage[] | 'loading' | undefined>>({});
   const { collection, project } = useParams<{ collection: string; project: string }>();
-  const loadReleaseDefinition = useCallback(
-    (definitionId: number) => {
-      if (releaseDefinitionCache[definitionId]) { return; }
-      setReleaseDefinitionCache({ ...releaseDefinitionCache, [definitionId]: 'loading' });
-      releaseDefinition(collection, project, definitionId)
-        .then(
-          def => setReleaseDefinitionCache(defs => ({ ...defs, [definitionId]: def }))
-        )
-        .catch(
-          () => setReleaseDefinitionCache(defs => ({ ...defs, [definitionId]: undefined }))
-        );
-    },
-    [collection, project, releaseDefinitionCache]
-  );
 
-  const getDefinition = (definitionId: number) => releaseDefinitionCache[definitionId];
+  const getReleaseDefinitions = useCallback((definitionIds: number[]) => {
+    const needToFetch = definitionIds.filter(id => !releaseDefinitionCache[id]);
 
-  return { loadReleaseDefinition, getDefinition };
+    setReleaseDefinitionCache(defns => needToFetch.reduce((d, id) => ({ ...d, [id]: 'loading' }), defns));
+
+    if (!needToFetch.length) return;
+
+    releaseDefinitions(collection, project, [...new Set(needToFetch)])
+      .then(revisions => {
+        setReleaseDefinitionCache(cache => ({ ...cache, ...revisions }));
+      })
+      .catch(() => {
+        setReleaseDefinitionCache(cache => ({
+          ...cache,
+          ...needToFetch.reduce((d, id) => ({ ...d, [id]: cache[id] === 'loading' ? undefined : cache[id] }), {})
+        }));
+      });
+  }, [collection, project, releaseDefinitionCache]);
+
+  return [releaseDefinitionCache, getReleaseDefinitions] as const;
 };
 
 const ReleasePipelines: React.FC = () => {
@@ -63,9 +68,9 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExists] = useQueryParam<string>('stageNameExists');
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
+  const [releaseDefinitions, getReleaseDefinitions] = useReleaseDefinitions();
+  const [renderedPipelines, setRenderedPipelines] = useState<TPipeline[]>([]);
   useRemoveSort();
-
-  const { getDefinition, loadReleaseDefinition } = useReleaseDefinition();
 
   const policyForBranch = useCallback((repoId: string, branch: string): NormalizedPolicies => {
     if (releaseAnalysis === 'loading') return normalizePolicy({});
@@ -87,6 +92,10 @@ const ReleasePipelines: React.FC = () => {
     policyForBranch, releaseAnalysis, search, stageNameExists, stageNameExistsNotUsed
   ]);
 
+  useEffect(() => {
+    getReleaseDefinitions(renderedPipelines.map(p => p.id));
+  }, [getReleaseDefinitions, renderedPipelines]);
+
   if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
@@ -104,14 +113,14 @@ const ReleasePipelines: React.FC = () => {
       <InfiniteScrollList
         items={pipelines}
         itemKey={pipeline => pipeline.id}
+        onRenderItems={setRenderedPipelines}
         itemRenderer={pipeline => (
           <Pipeline
             pipeline={pipeline}
             stagesToHighlight={releaseAnalysis.stagesToHighlight}
             policyForBranch={policyForBranch}
             ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
-            releaseDefinition={getDefinition(pipeline.id)}
-            loadReleaseDefinition={() => loadReleaseDefinition(pipeline.id)}
+            releaseDefinition={releaseDefinitions[pipeline.id]}
           />
         )}
       />

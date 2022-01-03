@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type {
-  Pipeline as TPipeline, PipelineStage, RelevantPipelineStage
+  Pipeline as TPipeline, PipelineStage
 } from '../../shared/types';
 import AlertMessage from './common/AlertMessage';
 import Card from './common/ExpandingCard';
@@ -9,6 +9,7 @@ import Flair from './common/Flair';
 import { Branches } from './common/Icons';
 import type { NormalizedPolicies } from './pipeline-utils';
 import {
+  mergeStagesAndCounts,
   fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
 } from './pipeline-utils';
 import PipelineDiagram from './PipelineDiagram';
@@ -164,33 +165,21 @@ const Pipeline: React.FC<{
   ignoreStagesBefore?: string;
   policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
   releaseDefinition: PipelineStage[] | 'loading' | undefined;
-  loadReleaseDefinition: () => void;
 }> = ({
-  pipeline, stagesToHighlight, policyForBranch, ignoreStagesBefore,
-  releaseDefinition, loadReleaseDefinition
+  pipeline, stagesToHighlight, policyForBranch, ignoreStagesBefore, releaseDefinition
 }) => {
-  const [selectedStage, setSelectedStage] = useState<RelevantPipelineStage | null>(null);
   const formattedReleaseDefinition = useMemo(() => {
     if (!releaseDefinition || releaseDefinition === 'loading') return releaseDefinition;
 
-    return releaseDefinition.map(stage => {
-      const matchingExistingStage = pipeline.relevantStages.find(s => s.rank === stage.rank);
-
-      return {
-        ...stage,
-        successful: matchingExistingStage?.successful ?? 0,
-        total: matchingExistingStage?.total ?? 0
-      };
-    });
-  }, [pipeline.relevantStages, releaseDefinition]);
+    return releaseDefinition.map(mergeStagesAndCounts(pipeline.stageCounts));
+  }, [pipeline.stageCounts, releaseDefinition]);
 
   return (
     <Card
       key={pipeline.name}
       title={pipeline.name}
       titleUrl={pipeline.url}
-      isExpanded={selectedStage !== null}
-      onCardClick={() => setSelectedStage(!selectedStage ? pipeline.relevantStages[0] : null)}
+      isExpanded={false}
       subtitle={(
         <>
           {stagesToHighlight?.map(stageToHighlight => {
@@ -216,36 +205,19 @@ const Pipeline: React.FC<{
           ignoreStagesBefore={ignoreStagesBefore}
         />
         <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
-          {formattedReleaseDefinition && formattedReleaseDefinition !== 'loading' ? (
-            'All stages'
-          ) : (
-            <>
-              Relevant stages
-              {
-                formattedReleaseDefinition === 'loading' ? (
-                  <span className="text-xs text-gray-500 ml-2 normal-case font-normal tracking-normal">
-                    Loading...
-                  </span>
-                ) : (
-                  <button
-                    className="ml-2 text-xs text-blue-600 hover:text-blue-700 focus:text-blue-700"
-                    onClick={loadReleaseDefinition}
-                  >
-                    Show all stages
-                  </button>
-                )
-              }
-            </>
-          )}
+          Stages
         </div>
         <div className="mt-6">
-          <PipelineDiagram
-            stages={
-              !formattedReleaseDefinition || formattedReleaseDefinition === 'loading'
-                ? pipeline.relevantStages
-                : formattedReleaseDefinition
-            }
-          />
+          {formattedReleaseDefinition && (
+            formattedReleaseDefinition === 'loading'
+              ? (
+                <div className="text-gray-500 text-sm mb-10">
+                  Loading...
+                </div>
+              ) : (
+                <PipelineDiagram stages={formattedReleaseDefinition} />
+              )
+          )}
         </div>
       </div>
     </Card>

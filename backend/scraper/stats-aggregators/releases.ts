@@ -175,11 +175,11 @@ const getReposAndBranches = (
       },
       {}
     ),
-    relevantStages: pipeline.envs
+    stageCounts: pipeline.envs
       .filter(({ rank }) => stageInfo.has(rank))
       .sort((a, b) => a.rank - b.rank)
       .map(stage => ({
-        ...stage,
+        name: stage.name,
         successful: stageInfo.get(stage.rank)?.successful || 0,
         total: stageInfo.get(stage.rank)?.total || 0
       }))
