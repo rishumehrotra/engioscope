@@ -1,14 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type {
   Pipeline as TPipeline, PipelineStage, RelevantPipelineStage
 } from '../../shared/types';
-import { num } from '../helpers/utils';
 import AlertMessage from './common/AlertMessage';
 import Card from './common/ExpandingCard';
 import Flair from './common/Flair';
-import { ArrowRight, Branches } from './common/Icons';
-import Metric from './Metric';
+import { Branches } from './common/Icons';
 import type { NormalizedPolicies } from './pipeline-utils';
 import {
   fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
@@ -69,15 +67,6 @@ const policyTooltip = (policy: NormalizedPolicies) => {
       </li>
     </ul>
   `;
-};
-
-type StageNameProps = {
-  isSelected: boolean;
-  label: string;
-  count: string | number;
-  onToggleSelect: () => void;
-  isLast: boolean;
-  selectedStage: RelevantPipelineStage | null;
 };
 
 const Artefacts: React.FC<{
@@ -169,65 +158,6 @@ const Artefacts: React.FC<{
   </div>
 );
 
-const StageName: React.FC<StageNameProps> = ({
-  isSelected, onToggleSelect, count, label, selectedStage, isLast
-}) => {
-  const onClick = useCallback(e => {
-    e.stopPropagation();
-    onToggleSelect();
-  }, [onToggleSelect]);
-
-  return (
-    <div className={`flex items-center mt-4 ${isSelected ? 'w-full' : ''}`}>
-      <div className={`py-1 px-4 mr-2 transition-width duration-300 ease-in-out
-        ${isSelected ? 'bg-gray-100 border-transparent w-full' : 'border rounded hover:bg-gray-100'}`}
-      >
-        <button
-          className={`text-gray-900 break-words rounded-t-lg flex
-            hover:text-gray-900 focus:text-gray-900 cursor-pointer
-            ${isSelected ? 'items-baseline' : 'items-center'}
-            ${isSelected ? 'mt-1' : ''}
-            `}
-          onClick={onClick}
-        >
-          <div className={`mr-2  font-semibold ${isSelected ? 'text-black text-2xl' : 'text-gray-600 text-lg'} `}>
-            {typeof count === 'number' ? num(count) : count}
-          </div>
-          <div className={`uppercase text-xs ${
-            isSelected ? 'font-bold text-base text-black tracking-wide' : 'text-gray-600 tracking-wider'
-          }`}
-          >
-            {label}
-          </div>
-        </button>
-
-        <div role="region">
-          {selectedStage && isSelected ? (
-            <div className="grid grid-cols-5 mt-1 mb-3 rounded-lg bg-gray-100 w-full">
-              <Metric name="Releases" value={selectedStage.total} position="first" />
-              <Metric name="Successful" value={selectedStage.successful} />
-              <Metric name="Failed" value={selectedStage.total - selectedStage.successful} />
-              <Metric
-                name="Per week"
-                value={selectedStage.successful === 0 ? '0' : (selectedStage.total / 4).toFixed(2)}
-              />
-              <Metric
-                name="Success rate"
-                value={(selectedStage.successful === 0
-                  ? '0%'
-                  : `${((selectedStage.successful * 100) / selectedStage.total).toFixed(2)}%`
-                )}
-                position="last"
-              />
-            </div>
-          ) : null}
-        </div>
-      </div>
-      {!isLast ? <ArrowRight className="h-4 mr-2 text-gray-600 " /> : null}
-    </div>
-  );
-};
-
 const Pipeline: React.FC<{
   pipeline: TPipeline;
   stagesToHighlight?: string[];
@@ -253,10 +183,6 @@ const Pipeline: React.FC<{
       };
     });
   }, [pipeline.relevantStages, releaseDefinition]);
-
-  const { search } = useLocation();
-  const query = useMemo(() => new URLSearchParams(search), [search]);
-  const isDebug = query.has('debug');
 
   return (
     <Card
@@ -312,21 +238,6 @@ const Pipeline: React.FC<{
             </>
           )}
         </div>
-        {isDebug && (
-          <div className="flex flex-wrap">
-            {pipeline.relevantStages.map((stage, index) => (
-              <StageName
-                key={stage.name}
-                count={stage.successful}
-                label={stage.name}
-                isSelected={selectedStage === stage}
-                onToggleSelect={() => setSelectedStage(selectedStage === stage ? null : stage)}
-                isLast={index === pipeline.relevantStages.length - 1}
-                selectedStage={selectedStage}
-              />
-            ))}
-          </div>
-        )}
         <div className="mt-6">
           <PipelineDiagram
             stages={
