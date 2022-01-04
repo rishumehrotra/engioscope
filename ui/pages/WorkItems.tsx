@@ -1,5 +1,5 @@
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useMemo, useState
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
@@ -53,8 +53,6 @@ const useRevisionsForCollection = () => {
 const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({ workItemAnalysis }) => {
   const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam<string>('search');
-  const [renderedWorkItems, setRenderedWorkItems] = useState<UIWorkItem[]>([]);
-
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const workItems = workItemAnalysis.workItems!;
 
@@ -82,14 +80,14 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
       .sort(sorter);
   }, [search, sorter, workItemAnalysis, workItemById]);
 
-  useEffect(() => {
-    getRevisions(renderedWorkItems.map(({ id }) => id));
-  }, [getRevisions, renderedWorkItems]);
-
   const workItemType = useCallback((workItem: UIWorkItem) => (
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     workItemAnalysis.workItems!.types[workItem.typeId]
   ), [workItemAnalysis]);
+
+  const setRenderedWorkItems = useCallback((workItems: UIWorkItem[]) => {
+    getRevisions(workItems.map(({ id }) => id));
+  }, [getRevisions]);
 
   return (
     <>

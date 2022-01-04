@@ -1,5 +1,5 @@
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useMemo, useState
 } from 'react';
 import { useQueryParam } from 'use-query-params';
 import { not, pipe } from 'rambda';
@@ -41,9 +41,9 @@ const useReleaseDefinitions = () => {
   const getReleaseDefinitions = useCallback((definitionIds: number[]) => {
     const needToFetch = definitionIds.filter(id => !releaseDefinitionCache[id]);
 
-    setReleaseDefinitionCache(defns => needToFetch.reduce((d, id) => ({ ...d, [id]: 'loading' }), defns));
-
     if (!needToFetch.length) return;
+
+    setReleaseDefinitionCache(cache => needToFetch.reduce((d, id) => ({ ...d, [id]: 'loading' }), cache));
 
     releaseDefinitions(collection, project, [...new Set(needToFetch)])
       .then(revisions => {
@@ -69,7 +69,6 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
   const [releaseDefinitions, getReleaseDefinitions] = useReleaseDefinitions();
-  const [renderedPipelines, setRenderedPipelines] = useState<TPipeline[]>([]);
   useRemoveSort();
 
   const policyForBranch = useCallback((repoId: string, branch: string): NormalizedPolicies => {
@@ -92,9 +91,9 @@ const ReleasePipelines: React.FC = () => {
     policyForBranch, releaseAnalysis, search, stageNameExists, stageNameExistsNotUsed
   ]);
 
-  useEffect(() => {
+  const setRenderedPipelines = useCallback((renderedPipelines: TPipeline[]) => {
     getReleaseDefinitions(renderedPipelines.map(p => p.id));
-  }, [getReleaseDefinitions, renderedPipelines]);
+  }, [getReleaseDefinitions]);
 
   if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
