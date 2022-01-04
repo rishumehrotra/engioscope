@@ -169,7 +169,7 @@ const constructTree = (
               return {
                 ...workItemNode,
                 expandedState: (childIdsOf(workItem.id) || []).length === 0 ? 'no-children' : 'collapsed',
-                children: buildForAncestor([...ancestors, workItemNode])
+                children: [] // TODO: buildForAncestor([...ancestors, workItemNode])
               };
             });
 
