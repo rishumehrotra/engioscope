@@ -2,6 +2,9 @@
 import chalk from 'chalk';
 import debug from 'debug';
 import { zip } from 'rambda';
+import tar from 'tar';
+import fs from 'fs/promises';
+import { join } from 'path';
 import aggregationWriter from './aggregation-writer';
 import azure from './network/azure';
 import type { ParsedConfig } from './parse-config';
@@ -11,7 +14,10 @@ import workItemsForCollection from './stats-aggregators/work-items-for-collectio
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
 
-export default async (config: ParsedConfig) => {
+const logStep = debug('step');
+
+const scrape = async (config: ParsedConfig) => {
+  logStep('Starting scrape...');
   const { getCollectionWorkItemFields } = azure(config);
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
@@ -61,5 +67,38 @@ export default async (config: ParsedConfig) => {
   }
   console.log('\n');
 
-  debug('done')(`in ${(Date.now() - now) / 1000}s.`);
+  logStep(`Scraping completed in ${(Date.now() - now) / 1000}s.`);
+};
+
+const createTarGz = async () => {
+  logStep('Creating data/cache.tar.gz...');
+  const startTime = Date.now();
+  await tar.create({
+    gzip: true,
+    file: 'data/cache.tar.gz'
+  }, ['cache']);
+  logStep(`Created data/cache.tar.gz in ${(Date.now() - startTime) / 1000}s`);
+};
+
+const saveToArchive = async () => {
+  logStep('Saving to archive...');
+  const startTime = Date.now();
+
+  await fs.mkdir(join(process.cwd(), 'archive'), { recursive: true });
+  const fileName = `cache-${new Date().toISOString().split('T')[0]}.tar.gz`;
+  await fs.copyFile(
+    join(process.cwd(), 'data', 'cache.tar.gz'),
+    join(process.cwd(), 'archive', fileName)
+  );
+
+  logStep(`Saved to archive/${fileName} in ${(Date.now() - startTime) / 1000}s`);
+};
+
+export default (config: ParsedConfig) => {
+  const startTime = Date.now();
+
+  return scrape(config)
+    .then(createTarGz)
+    .then(saveToArchive)
+    .then(() => debug('done')(`in ${(Date.now() - startTime) / 1000}s.`));
 };

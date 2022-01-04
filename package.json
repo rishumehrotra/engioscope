@@ -49,6 +49,7 @@
     "qs": "^6.7.0",
     "rambda": "^6.8.2",
     "split2": "^4.1.0",
+    "tar": "^6.1.11",
     "ua-parser-js": "^0.7.28",
     "yaml": "^1.10.2",
     "yargs": "^17.0.1"
@@ -91,6 +92,7 @@
     "@types/react-modal": "^3.12.1",
     "@types/react-router-dom": "^5.1.5",
     "@types/split2": "^3.2.1",
+    "@types/tar": "^6.1.1",
     "@types/ua-parser-js": "^0.7.36",
     "@types/yaml": "^1.9.7",
     "@types/yargs": "^17.0.2",
