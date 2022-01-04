@@ -92,11 +92,37 @@ const getParentLocationsUsing = (grid: (PipelineStageWithCounts | undefined)[][]
         const rowIndex = grid.findIndex(row => row.some(s => s?.name === condition.name));
         if (rowIndex === -1) return;
         const colIndex = grid[rowIndex].findIndex(s => s?.name === condition.name);
-        return [rowIndex, colIndex] as const;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return [rowIndex, colIndex, grid[rowIndex][colIndex]!] as const;
       })
       .filter(exists)
   )
 );
+
+const linePathUsing = (colIndex: number, rowIndex: number) => {
+  const endingX = colIndex * (cellWidth + cellHorizontalSpacing);
+  const endingY = rowIndex * (cellHeight + cellVerticalSpacing) + (cellHeight / 2);
+
+  return (fromColIndex: number, fromRowIndex: number) => {
+    const startingX = fromColIndex * (cellWidth + cellHorizontalSpacing) + cellWidth;
+    const startingY = fromRowIndex * (cellHeight + cellVerticalSpacing) + (cellHeight / 2);
+    const isFarAway = endingX - startingX > cellHorizontalSpacing;
+
+    const path = [
+      `M${startingX},${startingY}`,
+      isFarAway ? `H${endingX - 50}` : '',
+      `C${isFarAway ? endingX : startingX + 50},${startingY} ${endingX - 50},${endingY}`,
+      `${endingX} ${endingY}`
+    ].join(' ');
+    return path;
+  };
+};
+
+const stageLabelColor = (stage: PipelineStageWithCounts) => {
+  if (stage.total === 0) return 'text-gray-700';
+  if (stage.successful !== stage.total) return 'text-yellow-600';
+  return 'text-green-800';
+};
 
 type PipelineDiagramProps = {
   stages: PipelineStageWithCounts[];
@@ -115,6 +141,9 @@ const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
         {grid.map((row, rowIndex) => (
           row.map((stage, colIndex) => {
             if (!stage) return null;
+
+            const linePath = linePathUsing(colIndex, rowIndex);
+
             return (
               <g key={stage.rank}>
                 <rect
@@ -131,45 +160,31 @@ const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
                   height={cellHeight}
                 >
                   <div
-                    className="border-gray-300 rounded-md overflow-hidden text-sm"
+                    className={`border-gray-300 rounded-md overflow-hidden text-sm ${stage.total === 0 ? 'opacity-40' : ''}`}
                     style={{ height: `${cellHeight}px`, borderWidth: '1px' }}
                   >
                     <div className="text-gray-600 truncate px-2 py-1 bg-gray-100 font-semibold">
                       {stage.name}
                     </div>
-                    <div className="px-2 py-1">
+                    <div className={`px-2 py-1 ${stageLabelColor(stage)}`}>
                       <span className="font-semibold">
                         {stage.successful}
                       </span>
-                      <span className="text-gray-600">
+                      <span className="opacity-70">
                         {` / ${stage.total} succeeded`}
                       </span>
                     </div>
                   </div>
                 </foreignObject>
-                {getParentLocations(stage).map(([fromRowIndex, fromColIndex]) => {
-                  const startingX = fromColIndex * (cellWidth + cellHorizontalSpacing) + cellWidth;
-                  const startingY = fromRowIndex * (cellHeight + cellVerticalSpacing) + (cellHeight / 2);
-                  const endingX = colIndex * (cellWidth + cellHorizontalSpacing);
-                  const endingY = rowIndex * (cellHeight + cellVerticalSpacing) + (cellHeight / 2);
-                  const isFarAway = endingX - startingX > cellHorizontalSpacing;
-                  const path = [
-                    `M${startingX},${startingY}`,
-                    isFarAway ? `H${endingX - 50}` : '',
-                    `C${isFarAway ? endingX : startingX + 50},${startingY} ${endingX - 50},${endingY}`,
-                    `${endingX} ${endingY}`
-                  ].join(' ');
-
-                  return (
-                    <path
-                      key={`${stage.rank}-${fromRowIndex}-${fromColIndex}`}
-                      d={path}
-                      stroke="#ddd"
-                      strokeWidth={2}
-                      fill="none"
-                    />
-                  );
-                })}
+                {getParentLocations(stage).map(([fromRowIndex, fromColIndex, parentStage]) => (
+                  <path
+                    key={`${stage.rank}-${fromRowIndex}-${fromColIndex}`}
+                    d={linePath(fromColIndex, fromRowIndex)}
+                    stroke={(parentStage.total === 0 || stage.total === 0) ? '#eee' : '#ddd'}
+                    strokeWidth={2}
+                    fill="none"
+                  />
+                ))}
               </g>
             );
           })
