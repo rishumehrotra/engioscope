@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import debug from 'debug';
 import { zip } from 'rambda';
 import tar from 'tar';
-import fs from 'fs/promises';
+import { promises as fs } from 'fs';
 import { join } from 'path';
 import aggregationWriter from './aggregation-writer';
 import azure from './network/azure';
