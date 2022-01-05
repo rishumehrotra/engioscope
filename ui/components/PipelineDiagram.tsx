@@ -3,6 +3,8 @@ import React, { useMemo } from 'react';
 import { exists } from '../helpers/utils';
 import type { PipelineStageWithCounts } from './pipeline-utils';
 
+type Grid = (PipelineStageWithCounts | undefined)[][];
+
 const cellWidth = 200;
 const cellHeight = 58;
 const cellHorizontalSpacing = 50;
@@ -45,7 +47,7 @@ const getDepthUsing = (nodes: Record<number, number[]>) => {
   return getDepth;
 };
 
-const stagesGrid = (stages: PipelineStageWithCounts[]) => {
+const stagesGrid = (stages: PipelineStageWithCounts[]): Grid => {
   const tree = stagesTree(stages);
   const stagesByRank = stages.reduce<Record<number, PipelineStageWithCounts>>(
     (acc, stage) => {
@@ -59,7 +61,7 @@ const stagesGrid = (stages: PipelineStageWithCounts[]) => {
   const maxDepth = Math.max(...tree.root.map(getDepth));
   const totalHeight = tree.root.map(getHeight).reduce(add, 0);
 
-  const grid: (PipelineStageWithCounts | undefined)[][] = range(0, totalHeight)
+  const grid: Grid = range(0, totalHeight)
     .map(() => range(0, maxDepth).map(() => undefined));
 
   const gridContains = (rank: number) => (
@@ -84,7 +86,7 @@ const stagesGrid = (stages: PipelineStageWithCounts[]) => {
   return grid.filter(row => row.some(exists));
 };
 
-const getParentLocationsUsing = (grid: (PipelineStageWithCounts | undefined)[][]) => (
+const getParentLocationsUsing = (grid: Grid) => (
   (stage: PipelineStageWithCounts) => (
     stage.conditions
       .filter(c => c.type === 'environmentState')
@@ -130,13 +132,22 @@ type PipelineDiagramProps = {
 
 const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
   const grid = useMemo(() => stagesGrid(stages), [stages]);
+
+  const gridWidth = useMemo(() => (
+    grid[0].length * (cellWidth + cellHorizontalSpacing) - cellHorizontalSpacing
+  ), [grid]);
+
+  const gridHeight = useMemo(() => (
+    grid.length * (cellHeight + cellVerticalSpacing) - cellVerticalSpacing
+  ), [grid]);
+
   const getParentLocations = useMemo(() => getParentLocationsUsing(grid), [grid]);
 
   return (
     <div className="overflow-y-auto w-full">
       <svg
-        width={grid[0].length * (cellWidth + cellHorizontalSpacing) - cellHorizontalSpacing}
-        height={grid.length * (cellHeight + cellVerticalSpacing) - cellVerticalSpacing}
+        width={gridWidth}
+        height={gridHeight}
       >
         {grid.map((row, rowIndex) => (
           row.map((stage, colIndex) => {

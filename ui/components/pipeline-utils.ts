@@ -82,7 +82,7 @@ export const policyStatus = (aggregatedPolicy: NormalizedPolicies, key: keyof No
       return 'fail';
     }
     if (
-      aggregatedPolicy.minimumNumberOfReviewers.count >= 2
+      aggregatedPolicy.minimumNumberOfReviewers.count >= 1
       && !aggregatedPolicy.minimumNumberOfReviewers.isOptional
     ) {
       return 'pass';
@@ -99,9 +99,11 @@ export const policyStatus = (aggregatedPolicy: NormalizedPolicies, key: keyof No
 };
 
 export const fullPolicyStatus = (policy: NormalizedPolicies) => {
-  const states = Object.keys(policy).map(
-    key => policyStatus(policy, key as keyof NormalizedPolicies)
-  );
+  const states = Object.keys(policy)
+    .filter(key => key as keyof NormalizedPolicies !== 'requireMergeStrategy')
+    .map(
+      key => policyStatus(policy, key as keyof NormalizedPolicies)
+    );
   if (states.every(c => c === 'pass')) {
     return 'pass';
   }
