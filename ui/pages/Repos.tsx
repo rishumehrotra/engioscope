@@ -13,11 +13,13 @@ import Loading from '../components/Loading';
 import { aggregateDevs } from '../helpers/aggregate-devs';
 import RepoSummary from '../components/RepoSummary';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
+import { combinedQualityGateStatus } from '../components/code-quality-utils';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
-  if (codeQuality.quality.gate === 'pass') return 3;
-  if (codeQuality.quality.gate === 'warn') return 2;
+  const status = combinedQualityGateStatus(codeQuality);
+  if (status === 'pass') return 3;
+  if (status === 'warn') return 2;
   return 1;
 };
 
@@ -28,7 +30,9 @@ const byFailingLastBuilds = (repo: RepoAnalysis) => (
   repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded')
 );
 const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) => (
-  (repo.codeQuality?.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
+  repo.codeQuality?.some(
+    q => (q.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
+  )
 );
 
 const sorters: SortMap<RepoAnalysis> = {

@@ -52,6 +52,21 @@ const formatLoc = (loc?: string): AggregagedCodeQuality['languages'] => {
     });
 };
 
+const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof formatLoc> => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const filtered = locs.filter(Boolean).map(x => x!).flat();
+  const combinedSet = new Map<string, number>();
+  filtered.forEach(({ lang, loc }) => {
+    if (!combinedSet.has(lang)) {
+      combinedSet.set(lang, loc);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      combinedSet.set(lang, combinedSet.get(lang)! + loc);
+    }
+  });
+  return Array.from(combinedSet.entries()).map(([lang, loc]) => ({ lang, loc }));
+};
+
 const qualityGateStatus = (gateLabel?: string): QualityGateDetails['status'] => {
   switch (gateLabel) {
     case 'OK':
@@ -65,9 +80,8 @@ const qualityGateStatus = (gateLabel?: string): QualityGateDetails['status'] => 
   }
 };
 
-export default (sonarAnalysis: SonarAnalysisByRepo): AggregagedCodeQuality => {
-  if (!sonarAnalysis) return { codeQuality: null };
-  const { measures, url } = sonarAnalysis;
+const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[number]) => {
+  const { measures, url, lastAnalysisDate } = sonarAnalysis;
 
   const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
   const measureAsNumber = (name: string) => {
@@ -90,52 +104,75 @@ export default (sonarAnalysis: SonarAnalysisByRepo): AggregagedCodeQuality => {
   };
 
   return {
-    languages: formatLoc(measures.find(isMeasureName('ncloc_language_distribution'))?.value),
-    codeQuality: {
-      url,
-      lastAnalysisDate: sonarAnalysis.lastAnalysisDate,
-      files: measureAsNumber('files'),
-      complexity: {
-        cyclomatic: measureAsNumber('complexity'),
-        cognitive: measureAsNumber('cognitive_complexity')
-      },
-      quality: {
-        gate: qualityGateStatus(qualityGateDetails.level),
-        securityRating: qualityGateMetric('security_rating'),
-        coverage: qualityGateMetric('coverage'),
-        duplicatedLinesDensity: qualityGateMetric('duplicated_lines_density'),
-        blockerViolations: qualityGateMetric('blocker_violations'),
-        codeSmells: qualityGateMetric('code_smells'),
-        criticalViolations: qualityGateMetric('critical_violations')
-      },
-      coverage: {
-        byTests: measureAsNumber('coverage'),
-        line: measureAsNumber('line_coverage'),
-        linesToCover: measureAsNumber('lines_to_cover'),
-        uncoveredLines: measureAsNumber('uncovered_lines'),
-        branch: measureAsNumber('branch_coverage'),
-        conditionsToCover: measureAsNumber('conditions_to_cover'),
-        uncoveredConditions: measureAsNumber('uncovered_conditions')
-      },
-      reliability: {
-        rating: measureAsNumber('reliability_rating'),
-        bugs: measureAsNumber('bugs')
-      },
-      security: {
-        rating: measureAsNumber('security_rating'),
-        vulnerabilities: measureAsNumber('vulnerabilities')
-      },
-      duplication: {
-        blocks: measureAsNumber('duplicated_blocks'),
-        files: measureAsNumber('duplicated_files'),
-        lines: measureAsNumber('duplicated_lines'),
-        linesDensity: measureAsNumber('duplicated_lines_density')
-      },
-      maintainability: {
-        rating: measureAsNumber('sqale_rating'),
-        techDebt: measureAsNumber('sqale_index'),
-        codeSmells: measureAsNumber('code_smells')
-      }
-    }
+    url,
+    lastAnalysisDate,
+    measureAsNumber,
+    qualityGateMetric,
+    qualityGateStatus: qualityGateStatus(qualityGateDetails.level)
+  };
+};
+
+export default (sonarAnalyses: SonarAnalysisByRepo): AggregagedCodeQuality => {
+  if (!sonarAnalyses) return { codeQuality: null };
+
+  return {
+    languages: combineLoc(
+      sonarAnalyses
+        .map(
+          sonarAnalysis => formatLoc(sonarAnalysis.measures.find(isMeasureName('ncloc_language_distribution'))?.value)
+        )
+    ),
+    codeQuality: sonarAnalyses.map(sonarAnalysis => {
+      const {
+        url, lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus
+      } = sonarAnalysisGetter(sonarAnalysis);
+
+      return {
+        url,
+        lastAnalysisDate,
+        files: measureAsNumber('files'),
+        complexity: {
+          cyclomatic: measureAsNumber('complexity'),
+          cognitive: measureAsNumber('cognitive_complexity')
+        },
+        quality: {
+          gate: qualityGateStatus,
+          securityRating: qualityGateMetric('security_rating'),
+          coverage: qualityGateMetric('coverage'),
+          duplicatedLinesDensity: qualityGateMetric('duplicated_lines_density'),
+          blockerViolations: qualityGateMetric('blocker_violations'),
+          codeSmells: qualityGateMetric('code_smells'),
+          criticalViolations: qualityGateMetric('critical_violations')
+        },
+        coverage: {
+          byTests: measureAsNumber('coverage'),
+          line: measureAsNumber('line_coverage'),
+          linesToCover: measureAsNumber('lines_to_cover'),
+          uncoveredLines: measureAsNumber('uncovered_lines'),
+          branch: measureAsNumber('branch_coverage'),
+          conditionsToCover: measureAsNumber('conditions_to_cover'),
+          uncoveredConditions: measureAsNumber('uncovered_conditions')
+        },
+        reliability: {
+          rating: measureAsNumber('reliability_rating'),
+          bugs: measureAsNumber('bugs')
+        },
+        security: {
+          rating: measureAsNumber('security_rating'),
+          vulnerabilities: measureAsNumber('vulnerabilities')
+        },
+        duplication: {
+          blocks: measureAsNumber('duplicated_blocks'),
+          files: measureAsNumber('duplicated_files'),
+          lines: measureAsNumber('duplicated_lines'),
+          linesDensity: measureAsNumber('duplicated_lines_density')
+        },
+        maintainability: {
+          rating: measureAsNumber('sqale_rating'),
+          techDebt: measureAsNumber('sqale_index'),
+          codeSmells: measureAsNumber('code_smells')
+        }
+      };
+    })
   };
 };

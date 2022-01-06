@@ -1,6 +1,7 @@
 import React from 'react';
 import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
+import { combinedQualityGateStatus } from './code-quality-utils';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 
@@ -23,13 +24,17 @@ const buildSuccessRate = (repos: RepoAnalysis[]) => {
 
 const sonarStats = (repos: RepoAnalysis[]) => (
   repos.reduce(
-    (acc, r) => ({
-      ...acc,
-      configured: acc.configured + (r.codeQuality ? 1 : 0),
-      ok: acc.ok + (r.codeQuality?.quality.gate === 'pass' ? 1 : 0),
-      warn: acc.warn + (r.codeQuality?.quality.gate === 'warn' ? 1 : 0),
-      error: acc.error + (r.codeQuality?.quality.gate === 'fail' ? 1 : 0)
-    }),
+    (acc, r) => {
+      const status = combinedQualityGateStatus(r.codeQuality);
+
+      return ({
+        ...acc,
+        configured: acc.configured + (r.codeQuality ? 1 : 0),
+        ok: acc.ok + (status === 'pass' ? 1 : 0),
+        warn: acc.warn + (status === 'warn' ? 1 : 0),
+        error: acc.error + (status === 'fail' ? 1 : 0)
+      });
+    },
     {
       configured: 0, ok: 0, warn: 0, error: 0
     }

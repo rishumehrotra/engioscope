@@ -178,7 +178,7 @@ export type UICodeQuality = null | {
     lines?: number;
     linesDensity?: number;
   };
-};
+}[];
 
 export type AggregatedCommitsByDev = {
   name: string;

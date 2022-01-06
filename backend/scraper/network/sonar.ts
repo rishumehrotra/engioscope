@@ -1,8 +1,6 @@
 import qs from 'qs';
-import { pipe, sort } from 'rambda';
 import fetch from './fetch-with-timeout';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
-import { filter, getFirst } from '../../utils';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
 import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
@@ -33,14 +31,21 @@ const normaliseRepoName = (name: string) => (
   name.replace(/-/g, '_').toLowerCase()
 );
 
-const getCurrentRepo = (repoName: string) => pipe(
-  filter<SonarRepo>(repo => (
-    normaliseRepoName(repo.name) === normaliseRepoName(repoName)
+const attemptExactMatchFind = (repoName: string, sonarRepos: SonarRepo[]) => {
+  const matchingRepos = sonarRepos
+    .filter(repo => (
+      normaliseRepoName(repo.name) === normaliseRepoName(repoName)
       && Boolean(repo.lastAnalysisDate)
-  )),
-  sort(sortByLastAnalysedDate),
-  getFirst
-);
+    ))
+    .sort(sortByLastAnalysedDate);
+
+  return matchingRepos.length > 0 ? [matchingRepos[0]] : null;
+};
+
+const getCurrentRepo = (repoName: string) => (sonarRepos: SonarRepo[]) => {
+  const exactMatch = attemptExactMatchFind(repoName, sonarRepos);
+  return exactMatch;
+};
 
 type SonarSearchResponse = { paging: SonarPaging; components: SonarRepo[] };
 
@@ -66,23 +71,25 @@ export default (config: ParsedConfig) => {
     .then(list => list.flat());
 
   return async (repoName: string): Promise<SonarAnalysisByRepo> => {
-    const currentSonarRepo = getCurrentRepo(repoName)(await sonarRepos);
-    if (!currentSonarRepo) return null;
+    const matchingSonarRepos = getCurrentRepo(repoName)(await sonarRepos);
+    if (!matchingSonarRepos) return null;
 
-    return usingDiskCache<{ component?: { measures: Measure[] }}>(
-      ['sonar', repoName],
-      () => fetch(`${currentSonarRepo.url}/api/measures/component?${qs.stringify({
-        component: currentSonarRepo.key,
-        metricKeys: requiredMetrics.join(',')
-      })}`, {
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${currentSonarRepo.token}:`).toString('base64')}`
-        }
-      })
-    ).then(res => ({
-      url: `${currentSonarRepo.url}/dashboard?id=${currentSonarRepo.name}`,
-      measures: res.data.component?.measures || [],
-      lastAnalysisDate: currentSonarRepo.lastAnalysisDate
-    }));
+    return Promise.all(matchingSonarRepos.map(async sonarRepo => (
+      usingDiskCache<{ component?: { measures: Measure[] }}>(
+        ['sonar', repoName],
+        () => fetch(`${sonarRepo.url}/api/measures/component?${qs.stringify({
+          component: sonarRepo.key,
+          metricKeys: requiredMetrics.join(',')
+        })}`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${sonarRepo.token}:`).toString('base64')}`
+          }
+        })
+      ).then(res => ({
+        url: `${sonarRepo.url}/dashboard?id=${sonarRepo.name}`,
+        measures: res.data.component?.measures || [],
+        lastAnalysisDate: sonarRepo.lastAnalysisDate
+      }))
+    )));
   };
 };
