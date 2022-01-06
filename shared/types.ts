@@ -134,6 +134,7 @@ export type QualityGateDetails = {
 };
 
 export type UICodeQuality = null | {
+  name: string;
   url: string;
   lastAnalysisDate: Date;
   files?: number;

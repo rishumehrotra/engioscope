@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { pipe } from 'rambda';
 import type { RepoAnalysis, UICodeQuality } from '../../../shared/types';
 import { formatDebt, num, shortDate } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
+import { combinedQualityGateStatus } from '../code-quality-utils';
 
 // https://docs.sonarqube.org/latest/user-guide/metric-definitions/
 
@@ -415,15 +416,111 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
   </>
 );
 
+const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ codeQuality }) => {
+  const [expandedRows, setExpandedRows] = useState<NonNullable<UICodeQuality>>([]);
+
+  return (
+    <table className="table-auto text-center divide-y divide-gray-200 w-full">
+      <thead>
+        <tr>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider"> </th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Quality gate</th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Maintainability</th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Reliability</th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Security</th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Coverage</th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Duplications</th>
+        </tr>
+      </thead>
+      <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+        {codeQuality.map(codeQualityItem => (
+          <>
+            <tr
+              key={codeQualityItem.url}
+              className="group cursor-pointer"
+              onClick={() => {
+                if (expandedRows.includes(codeQualityItem)) {
+                  setExpandedRows(expandedRows.filter(item => item !== codeQualityItem));
+                } else {
+                  setExpandedRows([...expandedRows, codeQualityItem]);
+                }
+              }}
+            >
+              <td className="pl-6 py-4 whitespace-nowrap text-left text-blue-600 group-hover:underline">
+                {codeQualityItem.name}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
+                  ${gateClassName(codeQualityItem.quality.gate)}`}
+                >
+                  {codeQualityItem.quality.gate.toUpperCase()}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
+                  ${ratingClassName(rating(codeQualityItem.maintainability.rating))}`}
+                >
+                  {rating(codeQualityItem.maintainability.rating)}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
+                  ${ratingClassName(rating(codeQualityItem.reliability.rating))}`}
+                >
+                  {rating(codeQualityItem.reliability.rating)}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
+                  ${ratingClassName(rating(codeQualityItem.security.rating))}`}
+                >
+                  {rating(codeQualityItem.security.rating)}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold"
+                >
+                  {codeQualityItem.coverage.byTests !== undefined ? percent(codeQualityItem.coverage.byTests) : 'unknown'}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold"
+                >
+                  {codeQualityItem.duplication.linesDensity !== undefined ? percent(codeQualityItem.duplication.linesDensity) : 'unknown'}
+                </span>
+              </td>
+            </tr>
+            {expandedRows.includes(codeQualityItem) && (
+              <tr>
+                <td colSpan={8} className="px-6 py-4 whitespace-nowrap text-left bg-gray-100 ml-2">
+                  <SingleAnalysis codeQuality={codeQualityItem} />
+                </td>
+              </tr>
+            )}
+          </>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
 export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   title: 'Code quality',
-  count: codeQuality?.[0].quality.gate || 'unknown',
+  count: combinedQualityGateStatus(codeQuality),
   content: () => (
     codeQuality ? (
       <TabContents gridCols={1}>
-        {codeQuality.map(codeQualityItem => (
-          <SingleAnalysis codeQuality={codeQualityItem} key={codeQualityItem.url} />
-        ))}
+        {codeQuality.length === 1 ? (
+          <SingleAnalysis codeQuality={codeQuality[0]} key={codeQuality[0].url} />
+        ) : (
+          <AnalysisTable codeQuality={codeQuality} />
+        )}
       </TabContents>
     ) : (
       <TabContents gridCols={0}>

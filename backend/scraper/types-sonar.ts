@@ -14,6 +14,7 @@ export type CodeQuality = {
 
 export type SonarAnalysisByRepo = null | {
   url: string;
+  name: string;
   measures: Measure[];
   lastAnalysisDate: Date;
 }[];

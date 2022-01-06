@@ -42,9 +42,20 @@ const attemptExactMatchFind = (repoName: string, sonarRepos: SonarRepo[]) => {
   return matchingRepos.length > 0 ? [matchingRepos[0]] : null;
 };
 
-const getCurrentRepo = (repoName: string) => (sonarRepos: SonarRepo[]) => {
+const attemptStartsWithFind = (repoName: string, sonarRepos: SonarRepo[]) => {
+  const matchingRepos = sonarRepos
+    .filter(repo => (
+      normaliseRepoName(repo.name).startsWith(normaliseRepoName(repoName))
+      && Boolean(repo.lastAnalysisDate)
+    ))
+    .sort(sortByLastAnalysedDate);
+
+  return matchingRepos.length > 0 ? matchingRepos : null;
+};
+
+const getCurrentRepo = (repoName: string, sonarRepos: SonarRepo[]) => {
   const exactMatch = attemptExactMatchFind(repoName, sonarRepos);
-  return exactMatch;
+  return exactMatch || attemptStartsWithFind(repoName, sonarRepos);
 };
 
 type SonarSearchResponse = { paging: SonarPaging; components: SonarRepo[] };
@@ -71,12 +82,12 @@ export default (config: ParsedConfig) => {
     .then(list => list.flat());
 
   return async (repoName: string): Promise<SonarAnalysisByRepo> => {
-    const matchingSonarRepos = getCurrentRepo(repoName)(await sonarRepos);
+    const matchingSonarRepos = getCurrentRepo(repoName, await sonarRepos);
     if (!matchingSonarRepos) return null;
 
     return Promise.all(matchingSonarRepos.map(async sonarRepo => (
       usingDiskCache<{ component?: { measures: Measure[] }}>(
-        ['sonar', repoName],
+        ['sonar', sonarRepo.key],
         () => fetch(`${sonarRepo.url}/api/measures/component?${qs.stringify({
           component: sonarRepo.key,
           metricKeys: requiredMetrics.join(',')
@@ -86,6 +97,7 @@ export default (config: ParsedConfig) => {
           }
         })
       ).then(res => ({
+        name: sonarRepo.name,
         url: `${sonarRepo.url}/dashboard?id=${sonarRepo.name}`,
         measures: res.data.component?.measures || [],
         lastAnalysisDate: sonarRepo.lastAnalysisDate

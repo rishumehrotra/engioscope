@@ -81,7 +81,9 @@ const qualityGateStatus = (gateLabel?: string): QualityGateDetails['status'] => 
 };
 
 const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[number]) => {
-  const { measures, url, lastAnalysisDate } = sonarAnalysis;
+  const {
+    measures, url, lastAnalysisDate, name
+  } = sonarAnalysis;
 
   const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
   const measureAsNumber = (name: string) => {
@@ -105,6 +107,7 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
 
   return {
     url,
+    name,
     lastAnalysisDate,
     measureAsNumber,
     qualityGateMetric,
@@ -124,11 +127,12 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregagedCodeQuality => {
     ),
     codeQuality: sonarAnalyses.map(sonarAnalysis => {
       const {
-        url, lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus
+        name, url, lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus
       } = sonarAnalysisGetter(sonarAnalysis);
 
       return {
         url,
+        name,
         lastAnalysisDate,
         files: measureAsNumber('files'),
         complexity: {
