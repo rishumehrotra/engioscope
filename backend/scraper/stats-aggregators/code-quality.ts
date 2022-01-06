@@ -118,8 +118,11 @@ export default (sonarAnalysis: SonarAnalysisByRepo): AggregagedCodeQuality => {
         uncoveredConditions: measureAsNumber('uncovered_conditions')
       },
       reliability: {
-        bugs: measureAsNumber('bugs'),
         rating: measureAsNumber('reliability_rating'),
+        bugs: measureAsNumber('bugs')
+      },
+      security: {
+        rating: measureAsNumber('security_rating'),
         vulnerabilities: measureAsNumber('vulnerabilities')
       },
       duplication: {

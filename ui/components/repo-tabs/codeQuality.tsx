@@ -68,7 +68,9 @@ const fieldDefinitions = {
       key: 'bugs',
       label: 'Bugs',
       formatter: num
-    },
+    }
+  ],
+  security: [
     {
       key: 'vulnerabilities',
       label: 'Vulnerabilities',
@@ -226,46 +228,68 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
               Some quality gates are not shown.
             </div>
           </SubCard>
-          <SubCard
-            heading="Maintainability"
-            rating={rating(codeQuality.maintainability.rating) === 'unknown' ? undefined : rating(codeQuality.maintainability.rating)}
-            ratingClassName={ratingClassName(rating(codeQuality.maintainability.rating))}
-          >
-            <table className="w-full">
-              {fieldDefinitions.maintainability
-                .filter(({ key }) => codeQuality.maintainability[key] !== undefined)
-                .map(({ key, label, formatter }) => {
-                  const match = codeQuality.maintainability[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-            </table>
-          </SubCard>
-          <SubCard
-            heading="Reliability"
-            rating={rating(codeQuality.reliability.rating)}
-            ratingClassName={ratingClassName(rating(codeQuality.reliability.rating))}
-          >
-            <table className="w-full">
-              {fieldDefinitions.reliability
-                .filter(({ key }) => codeQuality.reliability[key] !== undefined)
-                .map(({ key, label, formatter }) => {
-                  const match = codeQuality.reliability[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-            </table>
-          </SubCard>
+          <div className="col-span-2 grid grid-cols-3 gap-4">
+            <SubCard
+              heading="Maintainability"
+              rating={rating(codeQuality.maintainability.rating) === 'unknown' ? undefined : rating(codeQuality.maintainability.rating)}
+              ratingClassName={ratingClassName(rating(codeQuality.maintainability.rating))}
+            >
+              <table className="w-full">
+                {fieldDefinitions.maintainability
+                  .filter(({ key }) => codeQuality.maintainability[key] !== undefined)
+                  .map(({ key, label, formatter }) => {
+                    const match = codeQuality.maintainability[key];
+                    if (match === undefined) return null;
+                    return (
+                      <tr key={key}>
+                        <td className="p-1">{label}</td>
+                        <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      </tr>
+                    );
+                  })}
+              </table>
+            </SubCard>
+            <SubCard
+              heading="Reliability"
+              rating={rating(codeQuality.reliability.rating)}
+              ratingClassName={ratingClassName(rating(codeQuality.reliability.rating))}
+            >
+              <table className="w-full">
+                {fieldDefinitions.reliability
+                  .filter(({ key }) => codeQuality.reliability[key] !== undefined)
+                  .map(({ key, label, formatter }) => {
+                    const match = codeQuality.reliability[key];
+                    if (match === undefined) return null;
+                    return (
+                      <tr key={key}>
+                        <td className="p-1">{label}</td>
+                        <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      </tr>
+                    );
+                  })}
+              </table>
+            </SubCard>
+            <SubCard
+              heading="Security"
+              rating={rating(codeQuality.security.rating)}
+              ratingClassName={ratingClassName(rating(codeQuality.security.rating))}
+            >
+              <table className="w-full">
+                {fieldDefinitions.security
+                  .filter(({ key }) => codeQuality.security[key] !== undefined)
+                  .map(({ key, label, formatter }) => {
+                    const match = codeQuality.security[key];
+                    if (match === undefined) return null;
+                    return (
+                      <tr key={key}>
+                        <td className="p-1">{label}</td>
+                        <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      </tr>
+                    );
+                  })}
+              </table>
+            </SubCard>
+          </div>
           <div className="col-span-2 grid grid-cols-3 gap-4">
             <SubCard
               heading="Coverage"

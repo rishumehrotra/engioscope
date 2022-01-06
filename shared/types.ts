@@ -165,7 +165,10 @@ export type UICodeQuality = null | {
     uncoveredConditions?: number;
   };
   reliability: {
+    rating?: number;
     bugs?: number;
+  };
+  security: {
     rating?: number;
     vulnerabilities?: number;
   };
