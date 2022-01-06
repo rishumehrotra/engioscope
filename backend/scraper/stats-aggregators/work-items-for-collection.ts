@@ -152,6 +152,7 @@ const uiWorkItemCreator = (
       typeId: workItemTypeId(workItemType),
       state: workItem.fields['System.State'],
       project: workItem.fields['System.TeamProject'],
+      iterationPath: workItem.fields['System.IterationPath'],
       created: {
         on: workItem.fields['System.CreatedDate'].toISOString()
       },

@@ -213,6 +213,7 @@ export type UIWorkItem = {
   project: string;
   typeId: string;
   state: string;
+  iterationPath: string;
   created: {
     // name: string;
     on: string;
