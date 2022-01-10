@@ -81,7 +81,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         childStats={[
           { title: 'Ok', value: String(sonar.ok), tooltip: 'Number of matching repos with SonarQube \'Ok\' quality gate' },
           { title: 'Warn', value: String(sonar.warn), tooltip: 'Number of matching repos with SonarQube \'Warn\' quality gate' },
-          { title: 'Error', value: String(sonar.error), tooltip: 'Number of matching repos with SonarQube \'Error\' quality gate' }
+          { title: 'Fail', value: String(sonar.error), tooltip: 'Number of matching repos with SonarQube \'Error\' quality gate' }
         ]}
       />
     </ProjectStats>

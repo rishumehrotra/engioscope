@@ -82,7 +82,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
         topStats={[{
           title: 'Conforms to branch policies',
           value: pipelines.length === 0 ? '0' : `${Math.round((policyPassCount * 100) / pipelines.length)}%`,
-          tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches tbat conform to the branch policy.${
+          tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches that conform to the branch policy.${
             ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
           }`
 
