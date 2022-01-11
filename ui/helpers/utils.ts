@@ -30,8 +30,11 @@ export const dontFilter = (x: unknown) => Boolean(x);
 const isWrappedAroundQuotes = (search: string) => search.startsWith('"') && search.endsWith('"');
 export const getSearchTerm = (search: string) => search.split('"')[1];
 
-export const filterBySearch = (search: string, item: string) => (isWrappedAroundQuotes(search)
-  ? (item === getSearchTerm(search)) : item.toLowerCase().includes(search.toLowerCase()));
+export const filterBySearch = (search: string, item: string) => (
+  isWrappedAroundQuotes(search)
+    ? (item === getSearchTerm(search))
+    : item.toLowerCase().includes(search.toLowerCase())
+);
 
 export const exists = <T>(x: T | undefined | null): x is T => (
   x !== null && x !== undefined

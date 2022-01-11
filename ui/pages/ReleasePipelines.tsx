@@ -26,8 +26,11 @@ const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
   Object.entries(pipeline.repos).some(([repoName]) => repoName === getSearchTerm(search))
 );
-const bySearch = (search: string) => (pipeline: TPipeline) => (search.startsWith('repo:')
-  ? filterPipelinesByRepo(search, pipeline) : filterBySearch(search, pipeline.name));
+const bySearch = (search: string) => (pipeline: TPipeline) => (
+  search.startsWith('repo:')
+    ? filterPipelinesByRepo(search, pipeline)
+    : filterBySearch(search, pipeline.name) || Object.values(pipeline.repos).some(r => filterBySearch(search, r.name))
+);
 const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, not);
 const byNotStartsWithArtifact = (pipeline: TPipeline) => Object.keys(pipeline.repos).length === 0;
 const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => pipe(
