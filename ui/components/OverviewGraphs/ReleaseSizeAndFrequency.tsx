@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import { add } from 'rambda';
+import React, { Fragment, useMemo } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
 import { prettyMS } from '../../helpers/utils';
 import useQueryParams from '../../hooks/use-query-params';
@@ -11,12 +12,16 @@ type ReleaseSizeAndFrequencyProps = {
 };
 
 const ReleaseSizeAndFrequency: React.FC<ReleaseSizeAndFrequencyProps> = ({ workItems, accessors }) => {
-  const { isWorkItemClosed, workItemTimes, cycleTime } = accessors;
+  const {
+    isWorkItemClosed, workItemTimes, cycleTime, workItemType, workItemRelations
+  } = accessors;
   const queryParams = useQueryParams();
 
   const preFilteredWorkItems = useMemo(
-    () => workItems.filter(isWorkItemClosed),
-    [isWorkItemClosed, workItems]
+    () => workItems
+      .filter(isWorkItemClosed)
+      .filter(wi => workItemType(wi.typeId).name[0] === 'Feature'),
+    [isWorkItemClosed, workItemType, workItems]
   );
 
   const groupByIterationPath = useMemo(
@@ -31,36 +36,37 @@ const ReleaseSizeAndFrequency: React.FC<ReleaseSizeAndFrequencyProps> = ({ workI
   if (!queryParams['release-size-and-frequency']) return null;
 
   return (
-    <table>
+    <table className="w-auto">
       <thead>
         <tr>
           <th>Iteration Path</th>
-          <th>Number of work items</th>
-          <th>Max closed date</th>
+          <th>Number of features</th>
           <th>Min closed date</th>
+          <th>Max closed date</th>
           <th>Min cycle time</th>
           <th>Max cycle time</th>
-          <th>Work items</th>
+          <th>Number of bugs</th>
+          <th>Features</th>
         </tr>
       </thead>
       <tbody>
-        {Object.entries(groupByIterationPath).map(([iterationPath, workItems]) => (
-          <tr key={iterationPath}>
+        {Object.entries(groupByIterationPath).map(([iterationPath, workItems], index) => (
+          <tr key={iterationPath} className={`${index % 2 ? 'bg-gray-200' : ''}`}>
             <td>{iterationPath}</td>
             <td>{workItems.length}</td>
-            <td>
-              {workItems.reduce<Date>((acc, wi) => {
-                const closeDate = new Date(workItemTimes(wi).end!);
-                if (closeDate > acc) return closeDate;
-                return acc;
-              }, new Date(0)).toISOString().split('T')[0]}
-            </td>
             <td>
               {workItems.reduce<Date>((acc, wi) => {
                 const closeDate = new Date(workItemTimes(wi).end!);
                 if (closeDate < acc) return closeDate;
                 return acc;
               }, new Date()).toISOString().split('T')[0]}
+            </td>
+            <td>
+              {workItems.reduce<Date>((acc, wi) => {
+                const closeDate = new Date(workItemTimes(wi).end!);
+                if (closeDate > acc) return closeDate;
+                return acc;
+              }, new Date(0)).toISOString().split('T')[0]}
             </td>
             <td>
               {prettyMS(workItems.reduce<number>((acc, wi) => {
@@ -77,10 +83,16 @@ const ReleaseSizeAndFrequency: React.FC<ReleaseSizeAndFrequencyProps> = ({ workI
               }, 0))}
             </td>
             <td>
+              {
+                workItems
+                  .map(wi => workItemRelations(wi).length)
+                  .reduce(add)
+              }
+            </td>
+            <td>
               {workItems.map(wi => (
-                <>
+                <Fragment key={wi.id}>
                   <a
-                    key={wi.id}
                     href={wi.url}
                     target="_blank"
                     rel="noreferrer"
@@ -89,7 +101,7 @@ const ReleaseSizeAndFrequency: React.FC<ReleaseSizeAndFrequencyProps> = ({ workI
                     {wi.id}
                   </a>
                   {', '}
-                </>
+                </Fragment>
               ))}
             </td>
           </tr>

@@ -278,6 +278,7 @@ export type Overview = {
       end?: string;
     }[];
   }>;
+  relations: Record<number, number[]>;
 };
 
 export type UIProjectAnalysis = {

@@ -28,7 +28,8 @@ export const getOverviewData = (
   workItemsForProject: WorkItem[],
   byId: Record<number, UIWorkItem>,
   types: Record<string, UIWorkItemType>,
-  getWorkItemType: (workItem: WorkItem) => WorkItemType
+  getWorkItemType: (workItem: WorkItem) => WorkItemType,
+  relations: Record<number, number[]>
 ): Overview => {
   const groupCache = new Map<string, { id: string; witId: string; name: string }>();
   let groupIndex = 0;
@@ -38,6 +39,7 @@ export const getOverviewData = (
     types: Record<string, UIWorkItemType>;
     groups: Overview['groups'];
     times: Overview['times'];
+    relations: Record<number, number[]>;
   }>((acc, workItem) => {
     const wit = getWorkItemType(workItem);
 
@@ -84,15 +86,23 @@ export const getOverviewData = (
       acc.reducedIds[workItem.id].groupId = id;
     }
 
+    if (wit.name === 'Feature' && relations[workItem.id]) {
+      acc.relations[workItem.id] = relations[workItem.id].filter(
+        id => byId[id]?.typeId
+          && types[byId[id]?.typeId].name[0].toLowerCase().includes('bug')
+      );
+    }
+
     return acc;
   }, {
-    reducedIds: {}, types: {}, groups: {}, times: {}
+    reducedIds: {}, types: {}, groups: {}, times: {}, relations: {}
   });
 
   return {
     byId: results.reducedIds,
     types: results.types,
     groups: results.groups,
-    times: results.times
+    times: results.times,
+    relations: results.relations
   };
 };

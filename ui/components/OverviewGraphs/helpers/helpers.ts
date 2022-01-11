@@ -94,7 +94,8 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     ),
     groupLabel: ({ witId, groupName }: GroupLabel) => (
       workItemType(witId).name[1] + (groupName === noGroup ? '' : ` - ${groupName}`)
-    )
+    ),
+    workItemRelations: (wi: UIWorkItem) => overview.relations?.[wi.id] || []
   };
 };
 

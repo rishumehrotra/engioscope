@@ -297,7 +297,7 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
         byId, ids, types
       },
       overview: getOverviewData(
-        config, collection, workItemsForProject, byId, types, getWorkItemType
+        config, collection, workItemsForProject, byId, types, getWorkItemType, ids
       )
     };
   };
