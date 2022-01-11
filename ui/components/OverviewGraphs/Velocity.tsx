@@ -10,6 +10,7 @@ import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
+  stringifyDateField,
   useSidebarCheckboxState,
   lineColor, getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
 } from './helpers/helpers';
@@ -37,7 +38,7 @@ type VelocityGraphProps = {
 const VelocityGraph: React.FC<VelocityGraphProps> = ({
   workItems, accessors, openModal
 }) => {
-  const { isWorkItemClosed, organizeByWorkItemType } = accessors;
+  const { isWorkItemClosed, organizeByWorkItemType, workItemType } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
@@ -169,6 +170,15 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
             <PriorityFilter workItems={preFilteredWorkItems} setFilter={setPriorityFilter} />
           </div>
           <LineGraph<WorkItemLine, WorkItemPoint> {...lineGraphProps} />
+          <ul className="text-sm text-gray-600 pl-8 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
+            {Object.keys(workItemsToDisplay).map(witId => (
+              <li key={witId}>
+                {`Closed date for ${workItemType(witId).name[1].toLowerCase()} is the `}
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                {`${stringifyDateField(workItemType(witId).endDateFields!)}.`}
+              </li>
+            ))}
+          </ul>
         </>
       )}
       right={<LegendSidebar {...legendSidebarProps} />}
