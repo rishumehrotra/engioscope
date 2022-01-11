@@ -285,7 +285,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
           </div>
           <ScatterLineGraph {...statterLineGraphProps} />
           <details className="text-sm text-gray-600 pl-4 mt-4 bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
-            <summary>How is this computed?</summary>
+            <summary className="cursor-pointer">How is this computed?</summary>
             <ul className="list-disc pl-8">
               {workItemType.workCenters.flatMap((wc, index, wcs) => ([
                 index !== 0 ? (
