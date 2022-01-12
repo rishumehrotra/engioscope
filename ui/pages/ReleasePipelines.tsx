@@ -24,7 +24,7 @@ import InfiniteScrollList from '../components/common/InfiniteScrollList';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
-  Object.entries(pipeline.repos).some(([repoName]) => repoName === getSearchTerm(search))
+  Object.values(pipeline.repos).some((r => r.name === getSearchTerm(search)))
 );
 const bySearch = (search: string) => (pipeline: TPipeline) => (
   search.startsWith('repo:')
