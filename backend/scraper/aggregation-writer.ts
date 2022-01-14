@@ -3,12 +3,13 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
 import { singular } from 'pluralize';
+import { map } from 'rambda';
 import type {
   ProjectOverviewAnalysis,
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
-import { doesFileExist, map } from '../utils';
+import { doesFileExist } from '../utils';
 import type { ProjectAnalysis } from './types';
 import type { ParsedConfig, ParsedProjectConfig } from './parse-config';
 
