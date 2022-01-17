@@ -7,6 +7,7 @@ import aggregateReleases from './stats-aggregators/releases';
 import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
 import aggregatePolicyConfigurations from './stats-aggregators/policy-configurations';
+import aggregateTestCases from './stats-aggregators/test-cases';
 import sonar from './network/sonar';
 import type { ProjectAnalysis, WorkItemAnalysis } from './types';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
@@ -28,7 +29,8 @@ const analyserLog = debug('analyser');
 export default (config: ParsedConfig) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations
+    getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
+    getProjectWorkItemIdsForQuery
   } = azure(config);
   const codeQualityByRepoName = sonar(config);
 
@@ -48,14 +50,16 @@ export default (config: ParsedConfig) => {
       releases,
       prByRepoId,
       policyConfigurationByRepoBranch,
-      workItemAnalysis
+      workItemAnalysis,
+      testCasesAnalysis
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds).then(aggregateBuilds),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
-      getWorkItems(projectConfig, workItemFieldsPromise)
+      getWorkItems(projectConfig, workItemFieldsPromise),
+      aggregateTestCases(forProject(getProjectWorkItemIdsForQuery))
     ]);
 
     const getTestsByRepoId = aggregateTestRuns(
@@ -97,7 +101,8 @@ export default (config: ParsedConfig) => {
       repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),
       releaseAnalysis,
       workItemAnalysis,
-      workItemLabel: projectConfig.workitems.label
+      workItemLabel: projectConfig.workitems.label,
+      testCasesAnalysis
     };
 
     analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collection.name}/${projectConfig.name}.`);

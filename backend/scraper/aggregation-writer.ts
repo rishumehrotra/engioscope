@@ -7,6 +7,7 @@ import { map } from 'rambda';
 import type {
   ProjectOverviewAnalysis,
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
+  ProjectTestCasesAnalysis,
   ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist } from '../utils';
@@ -86,6 +87,22 @@ const writeWorkItemAnalysisFile = async (
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
+  const analysis: ProjectTestCasesAnalysis = {
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    testCases: projectAnalysis.testCasesAnalysis
+  };
+  return writeFile(
+    [collectionName, projectConfig.name],
+    'test-cases.json',
+    JSON.stringify(analysis)
+  );
+};
+
+const writeTestCasesFile = async (
+  collectionName: string,
+  projectConfig: ParsedProjectConfig,
+  projectAnalysis: ProjectAnalysis
+) => {
   const analysis: ProjectWorkItemAnalysis = {
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
     workItems: projectAnalysis.workItemAnalysis.analysedWorkItems,
@@ -161,6 +178,7 @@ export default (config: ParsedConfig) => (collectionName: string, projectConfig:
     writeReleaseAnalysisFile(collectionName, projectConfig, analysis),
     writeWorkItemAnalysisFile(collectionName, projectConfig, analysis),
     writeOverviewFile(collectionName, projectConfig, analysis),
+    writeTestCasesFile(collectionName, projectConfig, analysis),
     updateOverallSummary(config)({ name: [collectionName, projectConfig.name] })
   ])
 );

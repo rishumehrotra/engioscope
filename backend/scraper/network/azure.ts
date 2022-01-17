@@ -201,6 +201,24 @@ export default (config: ParsedConfig) => {
       ).then(res => res.data.value)
     ),
 
+    getProjectWorkItemIdsForQuery: (collectionName: string, projectName: string) => (
+      <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(
+        query: string
+      ) => (
+        usingDiskCache<T>(
+          [collectionName, projectName, 'work-items', 'queries', `query_${md5(query)}`],
+          () => fetch(
+            url(collectionName, projectName, `/wit/wiql?${qs.stringify(apiVersion)}`),
+            {
+              headers: { ...authHeader, 'Content-Type': 'application/json' },
+              method: 'post',
+              body: JSON.stringify({ query })
+            }
+          )
+        ).then(res => res.data)
+      )
+    ),
+
     getCollectionWorkItemIdsForQuery:
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(
         collectionName: string, query: string

@@ -290,6 +290,15 @@ export type UIProjectAnalysis = {
   workItemLabel: [singular: string, plural: string];
 };
 
+export type TestCasesAnalysis = {
+  automated: {
+    total: number;
+  };
+  notAutomated: {
+    total: number;
+  };
+};
+
 export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
 
 export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & ReleasePipelineStats & {
@@ -304,4 +313,8 @@ export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
 
 export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   overview: Overview;
+};
+
+export type ProjectTestCasesAnalysis = UIProjectAnalysis & {
+  testCases: TestCasesAnalysis;
 };

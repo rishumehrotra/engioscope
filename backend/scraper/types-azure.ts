@@ -405,7 +405,7 @@ export type WorkItemTypeCategory = {
 
 export type WorkItemQueryFlatResult = {
   queryType: 'flat';
-  workitems: {
+  workItems: {
     id: number;
     url: string;
   }[];
