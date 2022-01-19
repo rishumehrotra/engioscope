@@ -193,7 +193,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
         ratingClassName={`${gateClassName(codeQuality.quality.gate)}`}
         className="row-span-2"
       >
-        <div className="-mt-7 mb-4 pl-1 text-xs text-gray-600">
+        <div className="-mt-7 mb-5 pl-1 text-xs text-gray-600">
           {'Using '}
           <strong className="font-semibold">{codeQuality.qualityGateName}</strong>
         </div>
