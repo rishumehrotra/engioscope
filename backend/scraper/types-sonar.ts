@@ -17,6 +17,7 @@ export type SonarAnalysisByRepo = null | {
   name: string;
   measures: Measure[];
   lastAnalysisDate: Date;
+  qualityGateName: string;
 }[];
 
 export type SonarQualityGateDetails = {

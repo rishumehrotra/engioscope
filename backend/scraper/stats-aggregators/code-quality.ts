@@ -134,6 +134,7 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregagedCodeQuality => {
         url,
         name,
         lastAnalysisDate,
+        qualityGateName: sonarAnalysis.qualityGateName,
         files: measureAsNumber('files'),
         complexity: {
           cyclomatic: measureAsNumber('complexity'),

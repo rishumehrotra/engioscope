@@ -74,8 +74,43 @@ const reposAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGette
     .then(repos => repos.flat())
 );
 
-export default (config: ParsedConfig) => {
+const getMeasures = (config: ParsedConfig) => (sonarRepo: SonarRepo) => {
   const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
+
+  return usingDiskCache<{ component?: { measures: Measure[] } }>(
+    ['sonar', 'measures', sonarRepo.key],
+    () => fetch(`${sonarRepo.url}/api/measures/component?${qs.stringify({
+      component: sonarRepo.key,
+      metricKeys: requiredMetrics.join(',')
+    })}`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${sonarRepo.token}:`).toString('base64')}`
+      }
+    })
+  ).then(res => ({
+    name: sonarRepo.name,
+    url: `${sonarRepo.url}/dashboard?id=${sonarRepo.name}`,
+    measures: res.data.component?.measures || [],
+    lastAnalysisDate: sonarRepo.lastAnalysisDate
+  }));
+};
+
+const getQualityGateName = (config: ParsedConfig) => (sonarRepo: SonarRepo) => {
+  const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
+
+  return usingDiskCache<{ qualityGate: { name: string } }>(
+    ['sonar', 'quality-gates', sonarRepo.key],
+    () => fetch(`${sonarRepo.url}/api/qualitygates/get_by_project?${qs.stringify({
+      project: sonarRepo.key
+    })}`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${sonarRepo.token}:`).toString('base64')}`
+      }
+    })
+  ).then(res => res.data.qualityGate.name);
+};
+
+export default (config: ParsedConfig) => {
   const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
 
   const sonarRepos = Promise.all((config.sonar || []).map(reposAtSonarServer(paginatedGet)))
@@ -85,22 +120,13 @@ export default (config: ParsedConfig) => {
     const matchingSonarRepos = getCurrentRepo(repoName, await sonarRepos);
     if (!matchingSonarRepos) return null;
 
-    return Promise.all(matchingSonarRepos.map(async sonarRepo => (
-      usingDiskCache<{ component?: { measures: Measure[] }}>(
-        ['sonar', sonarRepo.key],
-        () => fetch(`${sonarRepo.url}/api/measures/component?${qs.stringify({
-          component: sonarRepo.key,
-          metricKeys: requiredMetrics.join(',')
-        })}`, {
-          headers: {
-            Authorization: `Basic ${Buffer.from(`${sonarRepo.token}:`).toString('base64')}`
-          }
-        })
-      ).then(res => ({
-        name: sonarRepo.name,
-        url: `${sonarRepo.url}/dashboard?id=${sonarRepo.name}`,
-        measures: res.data.component?.measures || [],
-        lastAnalysisDate: sonarRepo.lastAnalysisDate
+    return Promise.all(matchingSonarRepos.map(sonarRepo => (
+      Promise.all([
+        getMeasures(config)(sonarRepo),
+        getQualityGateName(config)(sonarRepo)
+      ]).then(([measures, qualityGateName]) => ({
+        ...measures,
+        qualityGateName
       }))
     )));
   };
