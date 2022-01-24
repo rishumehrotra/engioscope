@@ -15,7 +15,7 @@ import aggregateTestRuns from './stats-aggregators/test-runs';
 import languageColors from './language-colors';
 import type { RepoAnalysis } from '../../shared/types';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
-import type { WorkItemField } from './types-azure';
+import type { GitBranchStats, WorkItemField } from './types-azure';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -67,14 +67,23 @@ export default (config: ParsedConfig) => {
     );
 
     const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {
+      const branchStats = r.size === 0
+        ? Promise.resolve([])
+        : forProject(getBranchesStats)(r.id)
+          .catch(e => {
+            if (!(e instanceof Error)) throw e;
+            if (!e.message.startsWith('HTTP error')) throw e;
+            if (e.message.includes('400')) return [] as GitBranchStats[];
+            throw e;
+          });
+
       const [
         branches,
         tests,
         { languages, codeQuality },
         commits
       ] = await Promise.all([
-        (r.size === 0 ? Promise.resolve([]) : forProject(getBranchesStats)(r.id))
-          .then(aggregateBranches(r.webUrl, r.defaultBranch)),
+        branchStats.then(aggregateBranches(r.webUrl, r.defaultBranch)),
         getTestsByRepoId(r.id),
         codeQualityByRepoName(r.name).then(aggregateCodeQuality),
         forProject(getCommits)(r.id).then(aggregateCommits)
