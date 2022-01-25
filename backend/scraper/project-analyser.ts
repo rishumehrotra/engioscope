@@ -59,7 +59,7 @@ export default (config: ParsedConfig) => {
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
       getWorkItems(projectConfig, workItemFieldsPromise),
-      aggregateTestCases(forProject(getProjectWorkItemIdsForQuery))
+      aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name)
     ]);
 
     const getTestsByRepoId = aggregateTestRuns(

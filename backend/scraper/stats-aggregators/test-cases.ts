@@ -3,35 +3,42 @@ import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azur
 const priorities = ['1', '2', '3', '4', '5'] as const;
 
 const queries = {
-  automatedTestCases: `
+  automatedTestCases: (projectName: string) => `
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
       AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
+      AND [System.TeamProject] = '${projectName}'
   `,
-  notAutomatedTestCases: `
+  notAutomatedTestCases: (projectName: string) => `
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
       AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
+      AND [System.TeamProject] = '${projectName}'
   `,
-  automatedTestCasesOfPriority: (priority: (typeof priorities)[number]) => `
+  automatedTestCasesOfPriority: (projectName: string, priority: (typeof priorities)[number]) => `
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
       AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
       AND [Microsoft.VSTS.Common.Priority] = ${priority}
+      AND [System.TeamProject] = '${projectName}'
   `,
-  notAutomatedTestCasesOfPriority: (priority: (typeof priorities)[number]) => `
+  notAutomatedTestCasesOfPriority: (projectName: string, priority: (typeof priorities)[number]) => `
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
       AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
       AND [Microsoft.VSTS.Common.Priority] = ${priority}
+      AND [System.TeamProject] = '${projectName}'
   `
 };
 
-export default async (getIds: (query: string) => Promise<WorkItemQueryResult<WorkItemQueryFlatResult>>) => {
+export default async (
+  getIds: (query: string) => Promise<WorkItemQueryResult<WorkItemQueryFlatResult>>,
+  projectName: string
+) => {
   const getCount = (query: string) => getIds(query).then(r => r.workItems.length);
 
   const [
@@ -48,8 +55,8 @@ export default async (getIds: (query: string) => Promise<WorkItemQueryResult<Wor
     // notAutomatedTestCasesP4,
     // notAutomatedTestCasesP5
   ] = await Promise.all([
-    getCount(queries.automatedTestCases),
-    getCount(queries.notAutomatedTestCases)
+    getCount(queries.automatedTestCases(projectName)),
+    getCount(queries.notAutomatedTestCases(projectName))
     // ...priorities.map(priority => getCount(queries.automatedTestCasesOfPriority(priority))),
     // ...priorities.map(priority => getCount(queries.notAutomatedTestCasesOfPriority(priority)))
   ]);
