@@ -314,8 +314,5 @@ export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
 
 export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   overview: Overview;
-};
-
-export type ProjectTestCasesAnalysis = UIProjectAnalysis & {
   testCases: TestCasesAnalysis;
 };

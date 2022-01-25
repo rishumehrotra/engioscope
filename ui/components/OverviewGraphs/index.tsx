@@ -14,6 +14,9 @@ import WIPTrendGraph from './WIPTrend';
 import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
 import { ChangeLeadTimeGraph } from './ChangeLeadTime';
 import ReleaseSizeAndFrequency from './ReleaseSizeAndFrequency';
+import ProjectStats from '../ProjectStats';
+import { num } from '../../helpers/utils';
+import ProjectStat from '../ProjectStat';
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const rootNode = useRef<HTMLDivElement>(null);
@@ -38,9 +41,30 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     }, 1000);
   }, []);
 
+  const totalTestCases = projectAnalysis.testCases.automated.total + projectAnalysis.testCases.notAutomated.total;
+
   return (
     <div style={{ marginBottom: '100vh' }} ref={rootNode}>
       <Modal {...modalProps} />
+
+      <ProjectStats>
+        <ProjectStat
+          topStats={[{
+            title: 'Test cases',
+            value: num(totalTestCases),
+            tooltip: 'Total number of test cases in Test Plans'
+          }]}
+          childStats={[{
+            title: 'Automated',
+            value: totalTestCases === 0
+              ? '0%'
+              : `${((projectAnalysis.testCases.automated.total * 100) / totalTestCases).toFixed(0)}%`,
+            tooltip: `${num(projectAnalysis.testCases.automated.total)} automated test cases`
+          }]}
+        />
+      </ProjectStats>
+
+      <div className="mb-4" />
 
       <OverviewFilters filters={filters} selectedFilters={selectedFilters} onChange={setSelectedFilters} />
 
