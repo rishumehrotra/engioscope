@@ -7,21 +7,21 @@ const queries = {
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
-      AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
+      AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
       AND [System.TeamProject] = '${projectName}'
   `,
   notAutomatedTestCases: (projectName: string) => `
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
-      AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
+      AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
       AND [System.TeamProject] = '${projectName}'
   `,
   automatedTestCasesOfPriority: (projectName: string, priority: (typeof priorities)[number]) => `
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
-      AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
+      AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
       AND [Microsoft.VSTS.Common.Priority] = ${priority}
       AND [System.TeamProject] = '${projectName}'
   `,
@@ -29,7 +29,7 @@ const queries = {
     SELECT [System.Id] FROM workitems
     WHERE
       [System.WorkItemType] = 'Test Case'
-      AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated')
+      AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
       AND [Microsoft.VSTS.Common.Priority] = ${priority}
       AND [System.TeamProject] = '${projectName}'
   `
