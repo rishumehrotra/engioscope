@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 
 const yAxisLabelWidth = 0;
-const xAxisHeight = 50;
 const barThickness = 30;
 const barSpacing = 10;
 // const graphWidth = 500;
@@ -34,7 +33,7 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
           x1={yAxisLabelWidth}
           y1={0}
           x2={yAxisLabelWidth}
-          y2={height - xAxisHeight}
+          y2={height}
           stroke="#ddd"
           strokeWidth="1"
         />

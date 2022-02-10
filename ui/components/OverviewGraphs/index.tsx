@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
-import type { ProjectOverviewAnalysis } from '../../../shared/types';
+import type { ProjectOverviewAnalysis, TestCaseAggregateStats } from '../../../shared/types';
 import OverviewFilters from './helpers/OverviewFilters';
 import { useRemoveSort } from '../../hooks/sort-hooks';
 import useGlobalFilters from './helpers/use-global-filters';
@@ -15,8 +15,42 @@ import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
 import { ChangeLeadTimeGraph } from './ChangeLeadTime';
 import ReleaseSizeAndFrequency from './ReleaseSizeAndFrequency';
 import ProjectStats from '../ProjectStats';
-import { num } from '../../helpers/utils';
+import { createPalette, num } from '../../helpers/utils';
 import ProjectStat from '../ProjectStat';
+import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
+
+const palette = createPalette([
+  '#9A6324', '#e6194B', '#3cb44b', '#ffe119', '#000075'
+]);
+
+type TestCaseStatsByPriority = Omit<TestCaseAggregateStats, 'total'>;
+type TestPriority = keyof TestCaseStatsByPriority;
+
+const TestCaseStats: React.FC<{
+  className?: string;
+  title: string;
+  testCasesByPriority: TestCaseStatsByPriority;
+}> = ({
+  className = '',
+  title,
+  testCasesByPriority
+}) => (
+  (
+    <div className={`mt-2 ${className}`}>
+      <HorizontalBarGraph
+        className="mb-4"
+        width={200}
+        graphData={Object.keys(testCasesByPriority).map(priority => ({
+          label: priority.toUpperCase(),
+          value: testCasesByPriority[priority as TestPriority],
+          color: palette(priority)
+        }))}
+        formatValue={value => num(value)}
+      />
+      <div className="text-xs text-center">{title}</div>
+    </div>
+  )
+);
 
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
   const rootNode = useRef<HTMLDivElement>(null);
@@ -41,7 +75,49 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     }, 1000);
   }, []);
 
-  const totalTestCases = projectAnalysis.testCases.automated.total + projectAnalysis.testCases.notAutomated.total;
+  const { testCases: { automated: automatedTestCases, notAutomated: notAutomatedTestCases } } = projectAnalysis;
+  const { total: totalAutomated, ...allAutomatedTestCases } = automatedTestCases;
+  const { total: totalNotAutomated, ...allNotAutomatedTestCases } = notAutomatedTestCases;
+  const allTestCasesByPriority = useMemo(() => {
+    const t = {} as typeof allAutomatedTestCases;
+
+    Object.keys(allAutomatedTestCases).forEach(priority => {
+      const p = priority as TestPriority;
+      if (allAutomatedTestCases[p] + allNotAutomatedTestCases[p]) {
+        t[p] = allAutomatedTestCases[p] + allNotAutomatedTestCases[p];
+      }
+    });
+
+    return t;
+  }, [allAutomatedTestCases, allNotAutomatedTestCases]);
+
+  const filteredAutomatedTestCases = useMemo(() => {
+    const t = {} as typeof allAutomatedTestCases;
+
+    Object.keys(allTestCasesByPriority).forEach(priority => {
+      const p = priority as TestPriority;
+      t[p] = allAutomatedTestCases[p];
+    });
+
+    return t;
+  }, [allAutomatedTestCases, allTestCasesByPriority]);
+
+  const totalTestCases = totalAutomated + totalNotAutomated;
+
+  const popup = useMemo(() => () => (
+    <>
+      <TestCaseStats
+        testCasesByPriority={allTestCasesByPriority}
+        title="Total"
+        className="pr-2 border-dashed border-r-2"
+      />
+      <TestCaseStats
+        testCasesByPriority={filteredAutomatedTestCases}
+        title="Automated"
+        className="pl-2"
+      />
+    </>
+  ), [allTestCasesByPriority, filteredAutomatedTestCases]);
 
   return (
     <div style={{ marginBottom: '100vh' }} ref={rootNode}>
@@ -58,9 +134,10 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             title: 'Automated',
             value: totalTestCases === 0
               ? '0%'
-              : `${((projectAnalysis.testCases.automated.total * 100) / totalTestCases).toFixed(0)}%`,
+              : `${((totalAutomated * 100) / totalTestCases).toFixed(0)}%`,
             tooltip: `${num(projectAnalysis.testCases.automated.total)} automated test cases`
           }]}
+          {...(totalTestCases ? { popupContents: popup } : null)}
         />
       </ProjectStats>
 

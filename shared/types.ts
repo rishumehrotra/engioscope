@@ -299,13 +299,18 @@ export type UIProjectAnalysis = {
   workItemLabel: [singular: string, plural: string];
 };
 
+export type TestCaseAggregateStats = {
+  total: number;
+  p1: number;
+  p2: number;
+  p3: number;
+  p4: number;
+  p5: number;
+};
+
 export type TestCasesAnalysis = {
-  automated: {
-    total: number;
-  };
-  notAutomated: {
-    total: number;
-  };
+  automated: TestCaseAggregateStats;
+  notAutomated: TestCaseAggregateStats;
 };
 
 export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
