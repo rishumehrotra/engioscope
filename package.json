@@ -44,6 +44,7 @@
     "morgan": "^1.10.0",
     "ms": "^2.1.2",
     "node-fetch": "^2.6.7",
+    "node-html-parser": "^5.2.0",
     "pluralize": "^8.0.0",
     "pretty-ms": "^7.0.1",
     "qs": "^6.7.0",

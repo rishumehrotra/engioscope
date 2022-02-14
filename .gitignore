@@ -24,6 +24,7 @@ cache
 config.json
 backend/scratch.ts
 data
+/build-reports
 
 dist
 language-colors.ts

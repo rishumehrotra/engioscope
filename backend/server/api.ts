@@ -2,6 +2,7 @@ import Router from 'express-promise-router';
 import { join } from 'path';
 import { promises as fs, createWriteStream, createReadStream } from 'fs';
 import uaParser from 'ua-parser-js';
+import { parse as parseHtml, type HTMLElement } from 'node-html-parser';
 import { doesFileExist } from '../utils';
 import type { ParsedConfig } from '../scraper/parse-config';
 import azure from '../scraper/network/azure';
@@ -9,6 +10,27 @@ import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision';
 import type { PipelineDefinitions, UIWorkItemRevision } from '../../shared/types';
 import analytics from './analytics';
 import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases';
+
+const readAzureVarFromHtml = (root: HTMLElement) => (key: string): string => root.querySelector(`#${key}`)?.innerText as string;
+
+const getReportOutputPath = (html: string) => {
+  const root = parseHtml(html);
+  const readAzureVar = readAzureVarFromHtml(root);
+  const collectionUri = readAzureVar('SYSTEM_COLLECTIONURI');
+  const collectionUriParts = collectionUri.split('/');
+  const collectionName = collectionUriParts[
+    collectionUri.endsWith('/') ? (collectionUriParts.length - 2) : collectionUriParts.length - 1];
+
+  const project = readAzureVar('SYSTEM_TEAMPROJECT');
+  const repo = readAzureVar('BUILD_REPOSITORY_NAME');
+  const pipelineId = readAzureVar('SYSTEM_DEFINITIONID');
+  const branch = readAzureVar('BUILD_SOURCEBRANCHNAME');
+
+  return [
+    [process.cwd(), 'build-reports', collectionName, project, repo, pipelineId],
+    branch
+  ];
+};
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions, getReleaseDefinition } = azure(config);
@@ -40,6 +62,22 @@ export default (config: ParsedConfig) => {
     }
 
     res.status(200).send('all your base are belong to us');
+  });
+
+  router.post('/api/azure-build-report', async (req, res) => {
+    try {
+      const { html } = req.body;
+      const [directory, fileName] = getReportOutputPath(html);
+
+      await fs.mkdir(join(...directory), { recursive: true });
+      await fs.writeFile(join(...directory, `${fileName}.html`), html, 'utf8');
+
+      res.sendStatus(200);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Error saving build report html', e);
+      res.status(500).send(e);
+    }
   });
 
   router.get('/api/an', async (req, res) => {
