@@ -24,7 +24,7 @@ jobs:
       - run: npm run test:ci
       - run: npm run build
       - uses: JS-DevTools/npm-publish@v1
-        if: steps.extract_branch.outputs.branch == 'main'
+        if: github.ref == '/refs/heads/main'
         with:
           check-version: true
           token: ${{ secrets.NPM_TOKEN }}
