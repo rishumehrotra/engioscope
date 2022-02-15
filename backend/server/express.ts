@@ -11,6 +11,7 @@ const uiFolder = path.join(__dirname, '..', '..', 'ui');
 const app = express();
 
 app.use(express.json());
+app.use(express.text({ type: 'text/html' }));
 
 app.use(cookieParser());
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {

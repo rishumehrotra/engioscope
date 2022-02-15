@@ -32,7 +32,7 @@ const getReportOutputPath = (html: string) => {
 
 export default async (req: expresss.Request, res: expresss.Response) => {
   try {
-    const { html } = req.body;
+    const html = req.body;
     const [directory, fileName] = getReportOutputPath(html);
 
     await fs.mkdir(join(...directory), { recursive: true });
