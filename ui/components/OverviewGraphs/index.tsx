@@ -17,37 +17,73 @@ import ReleaseSizeAndFrequency from './ReleaseSizeAndFrequency';
 import ProjectStats from '../ProjectStats';
 import { createPalette, num } from '../../helpers/utils';
 import ProjectStat from '../ProjectStat';
-import HorizontalBarGraph from '../graphs/HorizontalBarGraph';
 
 const palette = createPalette([
   '#9A6324', '#e6194B', '#3cb44b', '#ffe119', '#000075'
 ]);
 
-type TestCaseStatsByPriority = Omit<TestCaseAggregateStats, 'total'>;
+type TestCaseStatsByPriority = Record<keyof Omit<TestCaseAggregateStats, 'total'>, { total: number; automated: number }>;
 type TestPriority = keyof TestCaseStatsByPriority;
 
 const TestCaseStats: React.FC<{
-  className?: string;
   title: string;
   testCasesByPriority: TestCaseStatsByPriority;
 }> = ({
-  className = '',
   title,
   testCasesByPriority
 }) => (
   (
-    <div className={`mt-2 ${className}`}>
-      <HorizontalBarGraph
-        className="mb-4"
-        width={200}
-        graphData={Object.keys(testCasesByPriority).map(priority => ({
-          label: priority.toUpperCase(),
-          value: testCasesByPriority[priority as TestPriority],
-          color: palette(priority)
-        }))}
-        formatValue={value => num(value)}
-      />
-      <div className="text-xs text-center">{title}</div>
+    <div className="w-72">
+      <div className="mt-2 flex">
+        <div className="flex-1">
+          {
+            Object.keys(testCasesByPriority).map((priority, index) => {
+              const { automated, total } = testCasesByPriority[priority as TestPriority];
+
+              return (
+                <div className={`flex ${index !== 0 ? '' : ''}`} key={priority}>
+                  <span
+                    className="w-20 text-sm self-center text-right text-gray-800"
+                  >
+                    {`Priority ${priority.substring(1)}`}
+
+                  </span>
+                  <div
+                    className="ml-2 flex flex-1 items-center"
+                    style={{
+                      // borderLeftWidth: 1
+                    }}
+                  >
+                    <div
+                      className="rounded-r"
+                      style={{
+                        height: '50%',
+                        backgroundColor: palette(priority),
+                        marginLeft: 1,
+                        width: `${Math.max(1, (automated / total) * 100)}%`
+                      }}
+                    />
+                    <div className="ml-2 py-2 whitespace-nowrap">
+                      <div className="text-sm text-gray-800 font-bold">
+                        {((automated * 100) / total).toFixed(0)}
+                        %
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {num(automated)}
+                        {' '}
+                        /
+                        {' '}
+                        {num(total)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+      <div className="text-xs text-center mt-4">{title}</div>
     </div>
   )
 );
@@ -77,47 +113,31 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
   const { testCases: { automated: automatedTestCases, notAutomated: notAutomatedTestCases } } = projectAnalysis;
   const { total: totalAutomated, ...allAutomatedTestCases } = automatedTestCases;
-  const { total: totalNotAutomated, ...allNotAutomatedTestCases } = notAutomatedTestCases;
-  const allTestCasesByPriority = useMemo(() => {
-    const t = {} as typeof allAutomatedTestCases;
+  const { total: totalNotAutomated, ...allNonAutomatedTestCases } = notAutomatedTestCases;
+  const testCasesByPriority = useMemo(() => {
+    const t = {} as TestCaseStatsByPriority;
 
     Object.keys(allAutomatedTestCases).forEach(priority => {
       const p = priority as TestPriority;
-      if (allAutomatedTestCases[p] + allNotAutomatedTestCases[p]) {
-        t[p] = allAutomatedTestCases[p] + allNotAutomatedTestCases[p];
+      if (allAutomatedTestCases[p] + allNonAutomatedTestCases[p]) {
+        t[p] = {
+          total: allAutomatedTestCases[p] + allNonAutomatedTestCases[p],
+          automated: allAutomatedTestCases[p]
+        };
       }
     });
 
     return t;
-  }, [allAutomatedTestCases, allNotAutomatedTestCases]);
-
-  const filteredAutomatedTestCases = useMemo(() => {
-    const t = {} as typeof allAutomatedTestCases;
-
-    Object.keys(allTestCasesByPriority).forEach(priority => {
-      const p = priority as TestPriority;
-      t[p] = allAutomatedTestCases[p];
-    });
-
-    return t;
-  }, [allAutomatedTestCases, allTestCasesByPriority]);
+  }, [allAutomatedTestCases, allNonAutomatedTestCases]);
 
   const totalTestCases = totalAutomated + totalNotAutomated;
 
   const popup = useMemo(() => () => (
-    <>
-      <TestCaseStats
-        testCasesByPriority={allTestCasesByPriority}
-        title="Total"
-        className="pr-2 border-dashed border-r-2"
-      />
-      <TestCaseStats
-        testCasesByPriority={filteredAutomatedTestCases}
-        title="Automated"
-        className="pl-2"
-      />
-    </>
-  ), [allTestCasesByPriority, filteredAutomatedTestCases]);
+    <TestCaseStats
+      testCasesByPriority={testCasesByPriority}
+      title="Percentage of automated test cases"
+    />
+  ), [testCasesByPriority]);
 
   return (
     <div style={{ marginBottom: '100vh' }} ref={rootNode}>
