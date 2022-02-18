@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
@@ -14,6 +14,7 @@ import { aggregateDevs } from '../helpers/aggregate-devs';
 import RepoSummary from '../components/RepoSummary';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
 import { combinedQualityGateStatus } from '../components/code-quality-utils';
+import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -34,6 +35,9 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
     q => (q.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
   )
 );
+const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
+  groupNames.some(groupName => groups[groupName].includes(repo.name))
+);
 
 const sorters: SortMap<RepoAnalysis> = {
   'Builds': (a, b) => (a.builds?.count || 0) - (b.builds?.count || 0),
@@ -52,6 +56,7 @@ const Repos: React.FC = () => {
   const [buildsGreaterThanZero] = useQueryParam<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
   const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
+  const [selectedGroupLabel, setSelectedGroupLabel] = useState<string[]>([]);
 
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
@@ -67,13 +72,36 @@ const Repos: React.FC = () => {
       .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
       .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
       .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
+      .filter(
+        selectedGroupLabel.length === 0
+          ? dontFilter
+          : bySelectedGroups(selectedGroupLabel, projectAnalysis.groups!.groups)
+      )
       .sort(sorter);
-  }, [buildsGreaterThanZero, commitsGreaterThanZero, projectAnalysis, search, sorter, techDebtMoreThanDays, withFailingLastBuilds]);
+  }, [
+    buildsGreaterThanZero, commitsGreaterThanZero, projectAnalysis, search,
+    selectedGroupLabel, sorter, techDebtMoreThanDays, withFailingLastBuilds
+  ]);
 
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
   return repos.length ? (
     <>
+      {projectAnalysis.groups
+        ? (
+          <div>
+            <MultiSelectDropdownWithLabel
+              label={projectAnalysis.groups.label}
+              options={
+                Object.keys(projectAnalysis.groups.groups)
+                  .map(groupName => ({ value: groupName, label: groupName }))
+              }
+              value={selectedGroupLabel}
+              onChange={setSelectedGroupLabel}
+            />
+          </div>
+        )
+        : null}
       <div className="flex justify-between items-center my-3 w-full -mt-5">
         <AppliedFilters type="repos" count={repos.length} />
         <RepoSummary repos={repos} />
