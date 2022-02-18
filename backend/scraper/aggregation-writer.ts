@@ -54,7 +54,8 @@ const writeRepoAnalysisFile = async (
 ) => {
   const analysis: ProjectRepoAnalysis = {
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
-    repos: projectAnalysis.repoAnalysis
+    repos: projectAnalysis.repoAnalysis,
+    groups: projectConfig.groupRepos
   };
   return writeFile(
     [collectionName, projectConfig.name],

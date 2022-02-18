@@ -313,7 +313,13 @@ export type TestCasesAnalysis = {
   notAutomated: TestCaseAggregateStats;
 };
 
-export type ProjectRepoAnalysis = UIProjectAnalysis & { repos: RepoAnalysis[] };
+export type ProjectRepoAnalysis = UIProjectAnalysis & {
+  repos: RepoAnalysis[];
+  groups?: {
+    label: string;
+    groups: Record<string, string[]>;
+  };
+};
 
 export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & ReleasePipelineStats & {
   stagesToHighlight?: string[];

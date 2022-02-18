@@ -46,6 +46,10 @@ type ProjectConfig = {
   name: string;
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
+  groupRepos?: {
+    label: string;
+    groups: Record<string, string[]>;
+  };
 };
 
 type AzureConfig = {
@@ -113,6 +117,10 @@ export type ParsedProjectConfig = Readonly<{
   workitems: {
     groupUnder: string[];
     label: string;
+  };
+  groupRepos?: {
+    label: string;
+    groups: Record<string, string[]>;
   };
 }>;
 
@@ -200,7 +208,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
         workitems: {
           groupUnder: project.workitems?.groupUnder ?? workitems.groupUnder,
           label: project.workitems?.label ?? workitems.label
-        }
+        },
+        groupRepos: project.groupRepos
       };
     })
   };
