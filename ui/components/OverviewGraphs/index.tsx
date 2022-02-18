@@ -19,7 +19,7 @@ import { createPalette, num } from '../../helpers/utils';
 import ProjectStat from '../ProjectStat';
 
 const palette = createPalette([
-  '#9A6324', '#e6194B', '#3cb44b', '#ffe119', '#000075'
+  '#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9'
 ]);
 
 type TestCaseStatsByPriority = Record<keyof Omit<TestCaseAggregateStats, 'total'>, { total: number; automated: number }>;
