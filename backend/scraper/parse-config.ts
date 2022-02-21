@@ -59,6 +59,10 @@ type AzureConfig = {
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
   collections: CollectionConfig[];
+  summaryPageGroups?: ({
+    collection: string;
+    project: string;
+  } & Record<string, string>)[];
 } & Omit<ProjectConfig, 'name'>;
 
 export type SonarConfig = {
@@ -138,6 +142,10 @@ export type ParsedConfig = Readonly<{
     token: string;
     queryFrom: Date;
     collections: ParsedCollection[];
+    summaryPageGroups?: ({
+      collection: string;
+      project: string;
+    } & Record<string, string>)[];
   };
   sonar?: SonarConfig[];
 }>;
@@ -222,7 +230,8 @@ export default (config: Config): ParsedConfig => ({
     host: config.azure.host,
     token: config.azure.token,
     queryFrom: pastDate(config.azure.lookAtPast),
-    collections: config.azure.collections.map(parseCollection(config))
+    collections: config.azure.collections.map(parseCollection(config)),
+    summaryPageGroups: config.azure.summaryPageGroups
   },
   // eslint-disable-next-line no-nested-ternary
   sonar: Array.isArray(config.sonar)

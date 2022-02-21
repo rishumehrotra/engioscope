@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import chalk from 'chalk';
 import debug from 'debug';
-import { zip } from 'rambda';
+import { tap, zip } from 'rambda';
 import tar from 'tar';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -10,6 +10,8 @@ import azure from './network/azure';
 import type { ParsedConfig } from './parse-config';
 import projectAnalyser from './project-analyser';
 import workItemsForCollection from './stats-aggregators/work-items-for-collection';
+import type { ProjectAnalysis } from './types';
+import summariseResults from './summarise-results';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -40,7 +42,9 @@ const scrape = async (config: ParsedConfig) => {
   const results = zip(
     projects,
     await Promise.allSettled(
-      projects.map(args => analyseProject(...args).then(writeToFile(args[0].name, args[1])))
+      projects.map(
+        args => analyseProject(...args).then(tap(writeToFile(args[0].name, args[1])))
+      )
     )
   );
 
@@ -68,6 +72,17 @@ const scrape = async (config: ParsedConfig) => {
   console.log('\n');
 
   logStep(`Scraping completed in ${(Date.now() - now) / 1000}s.`);
+
+  const summarised = summariseResults(
+    config,
+    results
+      .map(r => ({
+        collectionConfig: r[0][0],
+        projectConfig: r[0][1],
+        analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
+      }))
+  );
+  console.log(summarised);
 };
 
 const createTarGz = async () => {
