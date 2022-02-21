@@ -1,4 +1,7 @@
-import type { UIWorkItem } from '../../shared/types';
+import {
+  add, map, pipe, reduce, sum
+} from 'rambda';
+import type { Overview, UIWorkItem } from '../../shared/types';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 
@@ -11,9 +14,12 @@ const monthAgo = (() => {
 const isWithinLastMonth = (date: Date) => date > monthAgo;
 
 const average = (nums: number[]) => (
-  nums.length === 0
-    ? 0
-    : nums.reduce((acc, num) => acc + num, 0) / nums.length
+  nums.length === 0 ? 0 : Math.round(sum(nums) / nums.length)
+);
+
+const timeDiff = (end: string | undefined, start: string | undefined) => (
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  new Date(end!).getTime() - new Date(start!).getTime()
 );
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
@@ -70,57 +76,68 @@ const hasWorkItemCompleted = (result: Result) => {
   };
 };
 
-const velocity = (group: Group, result: Result) => (
+const completedWorkItems = (group: Group, result: Result) => (
   workItemsForGroup(group, result)
     .filter(hasWorkItemCompleted(result))
-    .reduce<Record<string, number>>((acc, workItem) => {
-      acc[workItem.typeId] = (acc[workItem.typeId] || 0) + 1;
+);
+
+// const isWorkItemWIP = (result: Result) => compose(not, hasWorkItemCompleted(result));
+
+// #region work item type utilities
+
+const groupByWorkItemType = (workItems: UIWorkItem[]) => (
+  workItems
+    .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => {
+      acc[workItem.typeId] = [
+        ...(acc[workItem.typeId] || []),
+        workItem
+      ];
       return acc;
     }, {})
 );
 
-const cycleTime = (group: Group, result: Result) => (
-  Object.fromEntries(
-    Object.entries(
-      workItemsForGroup(group, result)
-        .filter(hasWorkItemCompleted(result))
-        .reduce<Record<string, number[]>>((acc, workItem) => {
-          const { end, start } = workItemTimes(result)(workItem);
-          acc[workItem.typeId] = [
-            ...(acc[workItem.typeId] || []),
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            new Date(end!).getTime() - new Date(start!).getTime()
-          ];
-          return acc;
-        }, {})
+const processItemsInGroup = <T, U>(transformList: (items: U[]) => T) => (
+  (workItemGroups: Record<string, U[]>) => (
+    Object.fromEntries(
+      Object.entries(workItemGroups)
+        .map(([typeId, workItems]) => ([typeId, transformList(workItems)]))
     )
-      .map(([typeId, times]) => ([
-        typeId,
-        Math.round(average(times))
-      ]))
   )
 );
 
-const changeLeadTime = (group: Group, result: Result) => (
-  Object.fromEntries(
-    Object.entries(
-      workItemsForGroup(group, result)
-        .filter(hasWorkItemCompleted(result))
-        .reduce<Record<string, number[]>>((acc, workItem) => {
-          const { end, devComplete } = workItemTimes(result)(workItem);
-          acc[workItem.typeId] = [
-            ...(acc[workItem.typeId] || []),
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            new Date(end!).getTime() - new Date(devComplete!).getTime()
-          ];
-          return acc;
-        }, {})
-    )
-      .map(([typeId, times]) => ([
-        typeId,
-        Math.round(average(times))
-      ]))
-  )
+const mapWorkItemGroups = <T>(mapFn: (wi: UIWorkItem) => T) => (
+  processItemsInGroup(map(mapFn))
+);
+
+const reduceGroups = <T, U>(reducer: (acc: T, i: U) => T, initial: T) => (
+  processItemsInGroup(reduce<U, T>(reducer, initial))
+);
+
+const averageGroup = processItemsInGroup(average);
+
+// #endregion
+
+const velocity = pipe(
+  groupByWorkItemType,
+  reduceGroups(add(1), 0)
+);
+
+const cycleTime = (workItemTimes: (w: UIWorkItem) => Overview['times'][number]) => pipe(
+  groupByWorkItemType,
+  mapWorkItemGroups(workItem => {
+    const { end, start } = workItemTimes(workItem);
+    return timeDiff(end, start);
+  }),
+  averageGroup
+);
+
+const changeLeadTime = (workItemTimes: (w: UIWorkItem) => Overview['times'][number]) => pipe(
+  groupByWorkItemType,
+  mapWorkItemGroups(workItem => {
+    const { end, devComplete } = workItemTimes(workItem);
+    return timeDiff(end, devComplete);
+  }),
+  averageGroup
 );
 
 export default (config: ParsedConfig, results: Result[]) => {
@@ -132,12 +149,15 @@ export default (config: ParsedConfig, results: Result[]) => {
 
     if (!match) return null;
 
+    const completedWis = completedWorkItems(group, match);
+    const wiTimes = workItemTimes(match);
+
     return {
       ...group,
       groupName: groupName(group),
-      velocity: velocity(group, match),
-      cycleTime: cycleTime(group, match),
-      changeLeadTime: changeLeadTime(group, match),
+      velocity: velocity(completedWis),
+      cycleTime: cycleTime(wiTimes)(completedWis),
+      changeLeadTime: changeLeadTime(wiTimes)(completedWis),
       workItemTypes: match.analysisResult.workItemAnalysis.overview.types
     };
   });
