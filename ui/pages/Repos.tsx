@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useQueryParam } from 'use-query-params';
 import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
@@ -35,8 +35,8 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
     q => (q.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
   )
 );
-const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
-  groupNames.some(groupName => groups[groupName].includes(repo.name))
+const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
+  groupNames.split(',').some(groupName => groups[groupName].includes(repo.name))
 );
 
 const sorters: SortMap<RepoAnalysis> = {
@@ -56,7 +56,7 @@ const Repos: React.FC = () => {
   const [buildsGreaterThanZero] = useQueryParam<boolean>('buildsGreaterThanZero');
   const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
   const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
-  const [selectedGroupLabel, setSelectedGroupLabel] = useState<string[]>([]);
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam<string[] | undefined>('group');
 
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
@@ -73,14 +73,15 @@ const Repos: React.FC = () => {
       .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
       .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
       .filter(
-        selectedGroupLabel.length === 0
+        !selectedGroupLabels || selectedGroupLabels?.length === 0
           ? dontFilter
-          : bySelectedGroups(selectedGroupLabel, projectAnalysis.groups!.groups)
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          : bySelectedGroups(selectedGroupLabels as unknown as string, projectAnalysis.groups!.groups)
       )
       .sort(sorter);
   }, [
     buildsGreaterThanZero, commitsGreaterThanZero, projectAnalysis, search,
-    selectedGroupLabel, sorter, techDebtMoreThanDays, withFailingLastBuilds
+    selectedGroupLabels, sorter, techDebtMoreThanDays, withFailingLastBuilds
   ]);
 
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
@@ -89,15 +90,17 @@ const Repos: React.FC = () => {
     <>
       {projectAnalysis.groups
         ? (
-          <div>
+          <div className="mb-6">
             <MultiSelectDropdownWithLabel
               label={projectAnalysis.groups.label}
               options={
                 Object.keys(projectAnalysis.groups.groups)
                   .map(groupName => ({ value: groupName, label: groupName }))
               }
-              value={selectedGroupLabel}
-              onChange={setSelectedGroupLabel}
+              value={selectedGroupLabels || []}
+              onChange={x => {
+                setSelectedGroupLabels(x.length === 0 ? undefined : x);
+              }}
             />
           </div>
         )

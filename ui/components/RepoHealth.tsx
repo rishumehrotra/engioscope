@@ -42,7 +42,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?:
       {
         defaultBranch
           ? (
-            <span className="italic text-sm text-gray-500" style={{ lineHeight: 'inherit' }}>
+            <span className="italic text-sm text-gray-400" style={{ lineHeight: 'inherit' }}>
               Default branch
               {' '}
               <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">

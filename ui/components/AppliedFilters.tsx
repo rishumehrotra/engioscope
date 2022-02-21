@@ -21,6 +21,7 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
   const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
   const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
   const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam<number | undefined>('techDebtGreaterThan');
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam<string[] | undefined>('group');
 
   const [nonMasterReleases, setNonMasterReleases] = useQueryParam<boolean | undefined>('nonMasterReleases');
   const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
@@ -29,8 +30,8 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
   const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam<boolean | undefined>('nonPolicyConforming');
 
   const isFilterApplied = search || commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds
-  || (techDebtGreaterThan !== undefined) || nonMasterReleases || notStartsWithArtifact || stageNameExists
-  || stageNameExistsNotUsed || nonPolicyConforming;
+  || (techDebtGreaterThan !== undefined) || selectedGroupLabels || nonMasterReleases || notStartsWithArtifact
+  || stageNameExists || stageNameExistsNotUsed || nonPolicyConforming;
   if (!isFilterApplied) return <div />;
 
   return (
@@ -59,6 +60,11 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
       {
         techDebtGreaterThan ? (
           <FilterTag label={`Tech debt > ${techDebtGreaterThan}`} onClose={() => setTechDebtGreaterThan(undefined, 'replaceIn')} />
+        ) : null
+      }
+      {
+        selectedGroupLabels ? (
+          <FilterTag label={`Group: ${selectedGroupLabels}`} onClose={() => setSelectedGroupLabels(undefined, 'replaceIn')} />
         ) : null
       }
 
