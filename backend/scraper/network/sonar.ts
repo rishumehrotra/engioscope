@@ -1,5 +1,6 @@
 import qs from 'qs';
 import { join } from 'path';
+import { promisify } from 'util';
 import glob from 'glob';
 import { parse as parseHtml } from 'node-html-parser';
 import { promises as fs } from 'fs';
@@ -10,6 +11,8 @@ import createPaginatedGetter from './create-paginated-getter';
 import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
 import type { ParsedConfig, SonarConfig } from '../parse-config';
 import { exists, normalizeBranchName, unique } from '../../utils';
+
+const globAsync = promisify(glob);
 
 export type SonarProject = {
   organization: string;
@@ -144,7 +147,7 @@ const attemptMatchFromBuildReports = async (
   if (!defaultBranch) return null;
 
   const buildReportDir = join(process.cwd(), 'build-reports', collectionName, projectName, repoName);
-  const matchingBuildReportFiles = glob.sync(join(buildReportDir, '**', `${normalizeBranchName(defaultBranch)}.html`));
+  const matchingBuildReportFiles = await globAsync(join(buildReportDir, '**', `${normalizeBranchName(defaultBranch)}.html`));
 
   const sonarConfigs = (await Promise.all(matchingBuildReportFiles.map(parseSonarConfigFromHtmlFile))).filter(exists);
   const projectKeys = unique(sonarConfigs.map(({ sonarProjectKey }) => sonarProjectKey));
