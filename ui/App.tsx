@@ -12,6 +12,7 @@ import { ProjectDetailsProvider } from './hooks/project-details-hooks';
 import { SortContextProvider } from './hooks/sort-hooks';
 import RecordAnalytics from './components/RecordAnalytics';
 import Analytics from './pages/Analytics';
+import Summary from './pages/Summary';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -33,6 +34,9 @@ const App: React.FC = () => {
               <Switch>
                 <Route path="/analytics">
                   <Analytics />
+                </Route>
+                <Route path="/summary">
+                  <Summary />
                 </Route>
                 <Route path="/:collection/:project">
                   <Project />

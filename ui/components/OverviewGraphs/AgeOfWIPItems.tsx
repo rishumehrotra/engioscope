@@ -55,8 +55,9 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
   );
 
   const ageOfWorkItem = useCallback(
-    (workItem: UIWorkItem) => lastUpdated.getTime() - new Date(workItem.created.on).getTime(),
-    [lastUpdated]
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    (workItem: UIWorkItem) => lastUpdated.getTime() - new Date(workItemTimes(workItem).start!).getTime(),
+    [lastUpdated, workItemTimes]
   );
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {

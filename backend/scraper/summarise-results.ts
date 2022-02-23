@@ -1,6 +1,5 @@
 import {
-  anyPass,
-  applySpec, compose, filter, length, map, not, pipe, sum
+  anyPass, applySpec, filter, length, map, pipe
 } from 'rambda';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../shared/types';
 import { exists } from '../utils';
@@ -17,11 +16,7 @@ const monthAgo = (() => {
 
 const isWithinLastMonth = (date: Date) => date > monthAgo;
 
-const average = (nums: number[]) => (
-  nums.length === 0 ? 0 : Math.round(sum(nums) / nums.length)
-);
-
-const timeDiff = (end: string | undefined, start: string | undefined) => (
+const timeDiff = (end: string | Date | undefined, start: string | Date | undefined) => (
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   new Date(end!).getTime() - new Date(start!).getTime()
 );
@@ -146,24 +141,12 @@ const mapObjectValues = <T, U>(mapFn: (v: T) => U) => (obj: Record<string, T>) =
 
 const processItemsInGroup = pipe(mapObjectValues, mapObjectValues);
 
-// const mapWorkItemGroups = <T>(mapFn: (wi: UIWorkItemWithGroup) => T) => (
-//   processItemsInGroup(map(mapFn))
-// );
-
-// const reduceGroups = <T, U>(reducer: (acc: T, i: U) => T, initial: T) => (
-//   processItemsInGroup(reduce<U, T>(reducer, initial))
-// );
-
-// const averageGroup = processItemsInGroup(average);
-
-// const velocity = reduceGroups(add(1), 0);
-
 const computeTimeDifference = (workItemTimes: Overview['times']) => (
   (start: keyof Omit<Overview['times'][number], 'workCenters'>, end?: keyof Omit<Overview['times'][number], 'workCenters'>) => (
     (workItem: UIWorkItemWithGroup) => {
       const wits = workItemTimes[workItem.id];
       const { [start]: startTime } = wits;
-      const endTime = end ? wits[end] : new Date().toISOString();
+      const endTime = end ? wits[end] : new Date();
       return timeDiff(endTime, startTime);
     }
   )
@@ -174,10 +157,10 @@ type Summary = {
   summary: Record<string, Record<string, {
     count: number;
     velocity: number;
-    cycleTime: number;
-    changeLeadTime: number;
+    cycleTime: number[];
+    changeLeadTime: number[];
     wipCount: number;
-    wipAge: number;
+    wipAge: number[];
   }>>;
   collection: string;
   project: string;
@@ -186,7 +169,13 @@ type Summary = {
 
 const summariseResults = (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
-  if (!summaryPageGroups) return [];
+  if (!summaryPageGroups) {
+    return {
+      groups: [] as Summary[],
+      workItemTypes: {} as Record<string, UIWorkItemType>,
+      lastUpdateDate: new Date().toISOString()
+    };
+  }
 
   return summaryPageGroups
     .map(group => {
@@ -199,7 +188,10 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       const computeTimeDifferenceBetween = computeTimeDifference(mergedResults.workItemTimes);
 
       const completedWorkItems = hasWorkItemCompleted(mergedResults.workItemTimes);
-      const wipWorkItems = compose(not, completedWorkItems);
+      const wipWorkItems = (workItem: UIWorkItemWithGroup) => {
+        const { start, end } = mergedResults.workItemTimes[workItem.id];
+        return Boolean(start) && !end;
+      };
       const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
         mergedResults.workItemTypes[workItem.typeId].name[0] === type
       );
@@ -213,19 +205,16 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             velocity: wis => pipe(filter(completedWorkItems), length)(wis),
             cycleTime: wis => pipe(
               filter(completedWorkItems),
-              map(computeTimeDifferenceBetween('start', 'end')),
-              average
+              map(computeTimeDifferenceBetween('start', 'end'))
             )(wis),
             changeLeadTime: wis => pipe(
               filter(completedWorkItems),
-              map(computeTimeDifferenceBetween('devComplete', 'end')),
-              average
+              map(computeTimeDifferenceBetween('devComplete', 'end'))
             )(wis),
             wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
             wipAge: wis => pipe(
               filter(wipWorkItems),
-              map(computeTimeDifferenceBetween('start')),
-              average
+              map(computeTimeDifferenceBetween('start'))
             )(wis)
           })
         )
@@ -239,7 +228,11 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       };
     })
     .filter(exists)
-    .reduce<{ groups: Summary[]; workItemTypes: Record<string, UIWorkItemType> }>(
+    .reduce<{
+      groups: Summary[];
+      workItemTypes: Record<string, UIWorkItemType>;
+      lastUpdateDate: string;
+    }>(
       (acc, { workItemTypes, ...rest }) => {
         acc.groups.push(rest);
         acc.workItemTypes = {
@@ -257,7 +250,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         };
         return acc;
       },
-      { groups: [], workItemTypes: {} }
+      { groups: [], workItemTypes: {}, lastUpdateDate: new Date().toISOString() }
     );
 };
 

@@ -6,4 +6,4 @@ import config from '../../config.json';
 import type { Config } from '../scraper/parse-config';
 import parseConfig from '../scraper/parse-config';
 
-scrape(parseConfig(config as Config));
+scrape(parseConfig(config as unknown as Config));
