@@ -5,7 +5,7 @@ import { tap, zip } from 'rambda';
 import tar from 'tar';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import aggregationWriter from './aggregation-writer';
+import aggregationWriter, { writeSummaryMetricsFile } from './aggregation-writer';
 import azure from './network/azure';
 import type { ParsedConfig } from './parse-config';
 import projectAnalyser from './project-analyser';
@@ -73,7 +73,7 @@ const scrape = async (config: ParsedConfig) => {
 
   logStep(`Scraping completed in ${(Date.now() - now) / 1000}s.`);
 
-  const summarised = summariseResults(
+  await writeSummaryMetricsFile(summariseResults(
     config,
     results
       .map(r => ({
@@ -81,8 +81,7 @@ const scrape = async (config: ParsedConfig) => {
         projectConfig: r[0][1],
         analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
       }))
-  );
-  console.log(summarised);
+  ));
 };
 
 const createTarGz = async () => {

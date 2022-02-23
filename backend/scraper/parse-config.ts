@@ -62,6 +62,7 @@ type AzureConfig = {
   summaryPageGroups?: ({
     collection: string;
     project: string;
+    portfolioProject: string;
   } & Record<string, string>)[];
 } & Omit<ProjectConfig, 'name'>;
 
@@ -145,6 +146,7 @@ export type ParsedConfig = Readonly<{
     summaryPageGroups?: ({
       collection: string;
       project: string;
+      portfolioProject: string;
     } & Record<string, string>)[];
   };
   sonar?: SonarConfig[];

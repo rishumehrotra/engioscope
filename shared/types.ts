@@ -1,3 +1,4 @@
+import type { SummaryMetricsType } from '../backend/scraper/summarise-results';
 import type { ReleaseCondition } from '../backend/scraper/types-azure';
 
 export type ScrapedProject = {
@@ -335,3 +336,5 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   overview: Overview;
   testCases: TestCasesAnalysis;
 };
+
+export type SummaryMetrics = SummaryMetricsType;

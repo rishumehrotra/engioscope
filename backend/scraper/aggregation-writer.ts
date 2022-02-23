@@ -7,7 +7,7 @@ import { map } from 'rambda';
 import type {
   ProjectOverviewAnalysis,
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
-  ProjectWorkItemAnalysis, ScrapedProject, UIProjectAnalysis
+  ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist } from '../utils';
 import type { ProjectAnalysis } from './types';
@@ -165,4 +165,8 @@ export default (config: ParsedConfig) => (collectionName: string, projectConfig:
     writeOverviewFile(collectionName, projectConfig, analysis),
     updateOverallSummary(config)({ name: [collectionName, projectConfig.name] })
   ])
+);
+
+export const writeSummaryMetricsFile = (summary: SummaryMetrics) => (
+  writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
 );

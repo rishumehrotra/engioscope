@@ -1,9 +1,13 @@
 import {
-  add, map, pipe, reduce, sum
+  anyPass,
+  applySpec, compose, filter, length, map, not, pipe, sum
 } from 'rambda';
-import type { Overview, UIWorkItem } from '../../shared/types';
+import type { Overview, UIWorkItem, UIWorkItemType } from '../../shared/types';
+import { exists } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
+
+const noGroup = 'no-group';
 
 const monthAgo = (() => {
   const now = Date.now();
@@ -23,18 +27,20 @@ const timeDiff = (end: string | undefined, start: string | undefined) => (
 );
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
+type RelevantResults = {
+  collection: string;
+  project: string;
+  workItems: UIWorkItem[];
+  workItemTypes: Record<string, UIWorkItemType>;
+  groups: Overview['groups'];
+  workItemTimes: Overview['times'];
+};
+
 type Result = {
   collectionConfig: ParsedCollection;
   projectConfig: ParsedProjectConfig;
   analysisResult: ProjectAnalysis;
 };
-
-const matchingResult = (group: Group, results: Result[]) => (
-  results.find(result => (
-    result.collectionConfig.name === group.collection
-      && result.projectConfig.name === group.project
-  ))
-);
 
 const groupType = (group: Group): [string, string] | 'project' => {
   const remainingKey = Object.entries(group)
@@ -43,122 +49,217 @@ const groupType = (group: Group): [string, string] | 'project' => {
   return remainingKey || 'project';
 };
 
-const groupName = (group: Group) => {
-  const g = groupType(group);
-  return g === 'project' ? group.project : g[1];
+const matchingResults = (group: Group, results: Result[]) => {
+  const gt = groupType(group);
+
+  return (
+    results.reduce<RelevantResults[]>((acc, result) => {
+      if (result.collectionConfig.name !== group.collection) return acc;
+      if (
+        result.projectConfig.name === group.project
+        || result.projectConfig.name === group.portfolioProject
+      ) {
+        acc.push({
+          collection: result.collectionConfig.name,
+          project: result.projectConfig.name,
+          workItems: Object.values(result.analysisResult.workItemAnalysis.overview.byId)
+            .filter(workItem => workItem.filterBy?.some(
+              filter => filter.label === gt[0] && filter.tags.includes(gt[1])
+            )),
+          workItemTypes: result.analysisResult.workItemAnalysis.overview.types,
+          groups: result.analysisResult.workItemAnalysis.overview.groups,
+          workItemTimes: result.analysisResult.workItemAnalysis.overview.times
+        });
+      }
+
+      return acc;
+    }, [])
+  );
 };
 
-const workItemsForGroup = (group: Group, result: Result) => {
-  const { overview } = result.analysisResult.workItemAnalysis;
-  const g = groupType(group);
-
-  if (g === 'project') return Object.values(overview.byId);
-
-  return Object.values(overview.byId)
-    .filter(workItem => (
-      workItem.filterBy?.some(
-        filter => filter.label === g[0] && filter.tags.includes(g[1])
-      )
-    ));
+type UIWorkItemWithGroup = Omit<UIWorkItem, 'groupId'> & {
+  group?: Overview['groups'][string];
 };
 
-const workItemTimes = (result: Result) => {
-  const { overview } = result.analysisResult.workItemAnalysis;
-  return (workItem: UIWorkItem) => overview.times[workItem.id];
-};
+const addGroupToWorkItem = (workItem: UIWorkItem, groups: Overview['groups']): UIWorkItemWithGroup => {
+  const group = workItem.groupId ? groups[workItem.groupId] : undefined;
 
-const hasWorkItemCompleted = (result: Result) => {
-  const times = workItemTimes(result);
-
-  return (workItem: UIWorkItem) => {
-    const { end } = times(workItem);
-    return end && isWithinLastMonth(new Date(end));
+  return {
+    ...workItem,
+    group
   };
 };
 
-const completedWorkItems = (group: Group, result: Result) => (
-  workItemsForGroup(group, result)
-    .filter(hasWorkItemCompleted(result))
+const mergeResults = (results: RelevantResults[]) => (
+  results.reduce<{
+    workItems: UIWorkItemWithGroup[];
+    workItemTypes: Record<string, UIWorkItemType>;
+    workItemTimes: Overview['times'];
+  }>((acc, result) => {
+    acc.workItems = acc.workItems.concat(
+      result.workItems.map(workItem => addGroupToWorkItem(workItem, result.groups))
+    );
+    acc.workItemTypes = {
+      ...acc.workItemTypes,
+      ...result.workItemTypes
+    };
+    acc.workItemTimes = {
+      ...acc.workItemTimes,
+      ...result.workItemTimes
+    };
+
+    return acc;
+  }, { workItems: [], workItemTypes: {}, workItemTimes: {} })
 );
 
-// const isWorkItemWIP = (result: Result) => compose(not, hasWorkItemCompleted(result));
+const groupKey = (group?: Overview['groups'][string]) => {
+  if (!group) return noGroup;
+  return group.name;
+};
 
-// #region work item type utilities
+const hasWorkItemCompleted = (times: Overview['times']) => (
+  (workItem: UIWorkItemWithGroup) => {
+    const { end } = times[workItem.id];
+    return Boolean(end && isWithinLastMonth(new Date(end)));
+  }
+);
 
-const groupByWorkItemType = (workItems: UIWorkItem[]) => (
+const organiseWorkItemsIntoGroups = (workItems: UIWorkItemWithGroup[]) => (
   workItems
-    .reduce<Record<string, UIWorkItem[]>>((acc, workItem) => {
-      acc[workItem.typeId] = [
-        ...(acc[workItem.typeId] || []),
-        workItem
-      ];
+    .reduce<Record<string, Record<string, UIWorkItemWithGroup[]>>>((acc, workItem) => {
+      acc[workItem.typeId] = acc[workItem.typeId] || {};
+      acc[workItem.typeId][groupKey(workItem.group)] = (
+        acc[workItem.typeId][groupKey(workItem.group)] || []
+      );
+
+      acc[workItem.typeId][groupKey(workItem.group)].push(workItem);
       return acc;
     }, {})
 );
 
-const processItemsInGroup = <T, U>(transformList: (items: U[]) => T) => (
-  (workItemGroups: Record<string, U[]>) => (
-    Object.fromEntries(
-      Object.entries(workItemGroups)
-        .map(([typeId, workItems]) => ([typeId, transformList(workItems)]))
-    )
+const mapObjectValues = <T, U>(mapFn: (v: T) => U) => (obj: Record<string, T>) => (
+  Object.entries(obj).reduce<Record<string, U>>((acc, [key, value]) => {
+    acc[key] = mapFn(value);
+    return acc;
+  }, {})
+);
+
+const processItemsInGroup = pipe(mapObjectValues, mapObjectValues);
+
+// const mapWorkItemGroups = <T>(mapFn: (wi: UIWorkItemWithGroup) => T) => (
+//   processItemsInGroup(map(mapFn))
+// );
+
+// const reduceGroups = <T, U>(reducer: (acc: T, i: U) => T, initial: T) => (
+//   processItemsInGroup(reduce<U, T>(reducer, initial))
+// );
+
+// const averageGroup = processItemsInGroup(average);
+
+// const velocity = reduceGroups(add(1), 0);
+
+const computeTimeDifference = (workItemTimes: Overview['times']) => (
+  (start: keyof Omit<Overview['times'][number], 'workCenters'>, end?: keyof Omit<Overview['times'][number], 'workCenters'>) => (
+    (workItem: UIWorkItemWithGroup) => {
+      const wits = workItemTimes[workItem.id];
+      const { [start]: startTime } = wits;
+      const endTime = end ? wits[end] : new Date().toISOString();
+      return timeDiff(endTime, startTime);
+    }
   )
 );
 
-const mapWorkItemGroups = <T>(mapFn: (wi: UIWorkItem) => T) => (
-  processItemsInGroup(map(mapFn))
-);
+type Summary = {
+  groupName: string;
+  summary: Record<string, Record<string, {
+    count: number;
+    velocity: number;
+    cycleTime: number;
+    changeLeadTime: number;
+    wipCount: number;
+    wipAge: number;
+  }>>;
+  collection: string;
+  project: string;
+  portfolioProject: string;
+};
 
-const reduceGroups = <T, U>(reducer: (acc: T, i: U) => T, initial: T) => (
-  processItemsInGroup(reduce<U, T>(reducer, initial))
-);
-
-const averageGroup = processItemsInGroup(average);
-
-// #endregion
-
-const velocity = pipe(
-  groupByWorkItemType,
-  reduceGroups(add(1), 0)
-);
-
-const cycleTime = (workItemTimes: (w: UIWorkItem) => Overview['times'][number]) => pipe(
-  groupByWorkItemType,
-  mapWorkItemGroups(workItem => {
-    const { end, start } = workItemTimes(workItem);
-    return timeDiff(end, start);
-  }),
-  averageGroup
-);
-
-const changeLeadTime = (workItemTimes: (w: UIWorkItem) => Overview['times'][number]) => pipe(
-  groupByWorkItemType,
-  mapWorkItemGroups(workItem => {
-    const { end, devComplete } = workItemTimes(workItem);
-    return timeDiff(end, devComplete);
-  }),
-  averageGroup
-);
-
-export default (config: ParsedConfig, results: Result[]) => {
+const summariseResults = (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
   if (!summaryPageGroups) return [];
 
-  return summaryPageGroups.map(group => {
-    const match = matchingResult(group, results);
+  return summaryPageGroups
+    .map(group => {
+      const match = matchingResults(group, results);
 
-    if (!match) return null;
+      if (!match.length) return null;
 
-    const completedWis = completedWorkItems(group, match);
-    const wiTimes = workItemTimes(match);
+      const mergedResults = mergeResults(match);
 
-    return {
-      ...group,
-      groupName: groupName(group),
-      velocity: velocity(completedWis),
-      cycleTime: cycleTime(wiTimes)(completedWis),
-      changeLeadTime: changeLeadTime(wiTimes)(completedWis),
-      workItemTypes: match.analysisResult.workItemAnalysis.overview.types
-    };
-  });
+      const computeTimeDifferenceBetween = computeTimeDifference(mergedResults.workItemTimes);
+
+      const completedWorkItems = hasWorkItemCompleted(mergedResults.workItemTimes);
+      const wipWorkItems = compose(not, completedWorkItems);
+      const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
+        mergedResults.workItemTypes[workItem.typeId].name[0] === type
+      );
+
+      const summary = pipe(
+        filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
+        organiseWorkItemsIntoGroups,
+        processItemsInGroup(
+          applySpec({
+            count: length,
+            velocity: wis => pipe(filter(completedWorkItems), length)(wis),
+            cycleTime: wis => pipe(
+              filter(completedWorkItems),
+              map(computeTimeDifferenceBetween('start', 'end')),
+              average
+            )(wis),
+            changeLeadTime: wis => pipe(
+              filter(completedWorkItems),
+              map(computeTimeDifferenceBetween('devComplete', 'end')),
+              average
+            )(wis),
+            wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
+            wipAge: wis => pipe(
+              filter(wipWorkItems),
+              map(computeTimeDifferenceBetween('start')),
+              average
+            )(wis)
+          })
+        )
+      )(mergedResults.workItems);
+
+      return {
+        ...group,
+        groupName: groupType(group)[1],
+        summary,
+        workItemTypes: mergedResults.workItemTypes
+      };
+    })
+    .filter(exists)
+    .reduce<{ groups: Summary[]; workItemTypes: Record<string, UIWorkItemType> }>(
+      (acc, { workItemTypes, ...rest }) => {
+        acc.groups.push(rest);
+        acc.workItemTypes = {
+          ...acc.workItemTypes,
+          ...Object.entries(workItemTypes).reduce<Record<string, UIWorkItemType>>((acc, [key, value]) => {
+            if (
+              value.name[0] === 'User Story'
+              || value.name[0] === 'Feature'
+              || value.name[0] === 'Bug'
+            ) {
+              acc[key] = value;
+            }
+            return acc;
+          }, {})
+        };
+        return acc;
+      },
+      { groups: [], workItemTypes: {} }
+    );
 };
+
+export default summariseResults;
+export type SummaryMetricsType = ReturnType<typeof summariseResults>;
