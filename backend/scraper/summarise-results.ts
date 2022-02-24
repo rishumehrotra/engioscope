@@ -180,7 +180,6 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
   return summaryPageGroups
     .map(group => {
       const match = matchingResults(group, results);
-
       if (!match.length) return null;
 
       const mergedResults = mergeResults(match);
@@ -199,7 +198,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         isOfType('Bug')(workItem) && isWithinLastMonth(new Date(workItem.created.on))
       );
 
-      const summary = pipe(
+      const workItemAnalysis = pipe(
         filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
         organiseWorkItemsIntoGroups,
         processItemsInGroup(
@@ -227,10 +226,57 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         )
       )(mergedResults.workItems);
 
+      const getRepoNames = () => (
+        config.azure.collections.find(c => c.name === group.collection)
+          ?.projects.find(p => p.name === group.project)
+          ?.groupRepos?.groups[groupType(group)[1]] || []
+      );
+
+      const matchingRepos = (repoNames: string[]) => {
+        const allRepos = results.find(r => (
+          r.collectionConfig.name === group.collection
+          && r.projectConfig.name === group.project
+        ))?.analysisResult.repoAnalysis || [];
+
+        return repoNames.length === 0
+          ? allRepos
+          : allRepos.filter(r => repoNames.includes(r.name));
+      };
+
+      const repoStats = () => {
+        const matches = matchingRepos(getRepoNames());
+
+        return {
+          repos: matches.length,
+          tests: matches.reduce((acc, repo) => acc + (repo.tests?.total || 0), 0),
+          builds: {
+            total: matches.reduce((acc, repo) => acc + (repo.builds?.count || 0), 0),
+            successful: matches.reduce(
+              (acc, repo) => (
+                acc + (repo.builds?.pipelines.reduce((acc, p) => acc + p.success, 0) || 0)
+              ),
+              0
+            )
+          },
+          codeQuality: {
+            pass: matches.reduce((acc, repo) => acc + (
+              repo.codeQuality?.reduce((acc, q) => acc + (q.quality.gate === 'pass' ? 1 : 0), 0) || 0
+            ), 0),
+            warn: matches.reduce((acc, repo) => acc + (
+              repo.codeQuality?.reduce((acc, q) => acc + (q.quality.gate === 'warn' ? 1 : 0), 0) || 0
+            ), 0),
+            fail: matches.reduce((acc, repo) => acc + (
+              repo.codeQuality?.reduce((acc, q) => acc + (q.quality.gate === 'fail' ? 1 : 0), 0) || 0
+            ), 0)
+          }
+        };
+      };
+
       return {
         ...group,
         groupName: groupType(group)[1],
-        summary,
+        summary: workItemAnalysis,
+        repoStats: repoStats(),
         workItemTypes: mergedResults.workItemTypes
       };
     })
