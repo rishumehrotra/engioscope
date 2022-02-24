@@ -21,6 +21,7 @@ import {
   pipelineMeetsBranchPolicyRequirements
 } from '../components/pipeline-utils';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
+import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
@@ -35,6 +36,12 @@ const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, not);
 const byNotStartsWithArtifact = (pipeline: TPipeline) => Object.keys(pipeline.repos).length === 0;
 const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => pipe(
   pipelineMeetsBranchPolicyRequirements(policyForBranch), not
+);
+const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (pipeline: TPipeline) => (
+  groupNames.split(',').some(groupName => {
+    const repos = groups[groupName];
+    return Object.values(pipeline.repos).some(repo => repos.includes(repo.name));
+  })
 );
 
 const useReleaseDefinitions = () => {
@@ -72,6 +79,7 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
   const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
   const [releaseDefinitions, getReleaseDefinitions] = useReleaseDefinitions();
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam<string[] | undefined>('group');
   useRemoveSort();
 
   const policyForBranch = useCallback((repoId: string, branch: string): NormalizedPolicies => {
@@ -88,10 +96,16 @@ const ReleasePipelines: React.FC = () => {
       .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
       .filter(stageNameExists === undefined ? dontFilter : pipelineHasStageNamed(stageNameExists))
       .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed))
-      .filter(nonPolicyConforming === undefined ? dontFilter : byNonPolicyConforming(policyForBranch));
+      .filter(nonPolicyConforming === undefined ? dontFilter : byNonPolicyConforming(policyForBranch))
+      .filter(
+        !selectedGroupLabels || selectedGroupLabels?.length === 0
+          ? dontFilter
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          : bySelectedGroups(selectedGroupLabels as unknown as string, releaseAnalysis.groups!.groups)
+      );
   }, [
-    nonMasterReleases, nonPolicyConforming, notStartsWithArtifact,
-    policyForBranch, releaseAnalysis, search, stageNameExists, stageNameExistsNotUsed
+    nonMasterReleases, nonPolicyConforming, notStartsWithArtifact, policyForBranch,
+    releaseAnalysis, search, selectedGroupLabels, stageNameExists, stageNameExistsNotUsed
   ]);
 
   const setRenderedPipelines = useCallback((renderedPipelines: TPipeline[]) => {
@@ -103,6 +117,21 @@ const ReleasePipelines: React.FC = () => {
 
   return (
     <>
+      {releaseAnalysis.groups
+        ? (
+          <div className="mb-6">
+            <MultiSelectDropdownWithLabel
+              label={releaseAnalysis.groups.label}
+              options={
+                Object.keys(releaseAnalysis.groups.groups)
+                  .map(group => ({ label: group, value: group }))
+              }
+              value={selectedGroupLabels || []}
+              onChange={x => setSelectedGroupLabels(x.length === 0 ? undefined : x)}
+            />
+          </div>
+        )
+        : null}
       <div className="flex justify-between items-center my-3 w-full -mt-5">
         <AppliedFilters type="release-pipelines" count={pipelines.length} />
         <ReleasePipelineSummary
