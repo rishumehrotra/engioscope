@@ -195,6 +195,9 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
         mergedResults.workItemTypes[workItem.typeId].name[0] === type
       );
+      const bugsLeaked = (workItem: UIWorkItemWithGroup) => (
+        isOfType('Bug')(workItem) && isWithinLastMonth(new Date(workItem.created.on))
+      );
 
       const summary = pipe(
         filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
@@ -215,6 +218,10 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             wipAge: wis => pipe(
               filter(wipWorkItems),
               map(computeTimeDifferenceBetween('start'))
+            )(wis),
+            leakage: wis => pipe(
+              filter(bugsLeaked),
+              length
             )(wis)
           })
         )
