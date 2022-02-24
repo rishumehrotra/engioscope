@@ -73,7 +73,8 @@ const writeReleaseAnalysisFile = async (
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
     ...projectAnalysis.releaseAnalysis,
     stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight,
-    ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore
+    ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore,
+    groups: projectConfig.groupRepos
   };
   return writeFile(
     [collectionName, projectConfig.name],

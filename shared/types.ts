@@ -325,6 +325,10 @@ export type ProjectRepoAnalysis = UIProjectAnalysis & {
 export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & ReleasePipelineStats & {
   stagesToHighlight?: string[];
   ignoreStagesBefore?: string;
+  groups?: {
+    label: string;
+    groups: Record<string, string[]>;
+  };
 };
 
 export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
