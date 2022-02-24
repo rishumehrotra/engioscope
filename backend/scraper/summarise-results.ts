@@ -1,7 +1,9 @@
 import {
   anyPass, applySpec, filter, length, map, pipe
 } from 'rambda';
-import type { Overview, UIWorkItem, UIWorkItemType } from '../../shared/types';
+import type {
+  Overview, QualityGateDetails, UIWorkItem, UIWorkItemType
+} from '../../shared/types';
 import { exists } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
@@ -226,6 +228,11 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         )
       )(mergedResults.workItems);
 
+      const resultsForThisProject = results.find(r => (
+        r.collectionConfig.name === group.collection
+        && r.projectConfig.name === group.project
+      ));
+
       const getRepoNames = () => (
         config.azure.collections.find(c => c.name === group.collection)
           ?.projects.find(p => p.name === group.project)
@@ -233,10 +240,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       );
 
       const matchingRepos = (repoNames: string[]) => {
-        const allRepos = results.find(r => (
-          r.collectionConfig.name === group.collection
-          && r.projectConfig.name === group.project
-        ))?.analysisResult.repoAnalysis || [];
+        const allRepos = resultsForThisProject?.analysisResult.repoAnalysis || [];
 
         return repoNames.length === 0
           ? allRepos
@@ -245,6 +249,12 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
 
       const repoStats = () => {
         const matches = matchingRepos(getRepoNames());
+
+        const codeQualityByType = (gate: QualityGateDetails['status']) => matches.reduce((acc, repo) => acc + (
+          repo.codeQuality?.reduce(
+            (acc, q) => acc + (q.quality.gate === gate ? 1 : 0), 0
+          ) || 0
+        ), 0);
 
         return {
           repos: matches.length,
@@ -259,16 +269,65 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             )
           },
           codeQuality: {
-            pass: matches.reduce((acc, repo) => acc + (
-              repo.codeQuality?.reduce((acc, q) => acc + (q.quality.gate === 'pass' ? 1 : 0), 0) || 0
-            ), 0),
-            warn: matches.reduce((acc, repo) => acc + (
-              repo.codeQuality?.reduce((acc, q) => acc + (q.quality.gate === 'warn' ? 1 : 0), 0) || 0
-            ), 0),
-            fail: matches.reduce((acc, repo) => acc + (
-              repo.codeQuality?.reduce((acc, q) => acc + (q.quality.gate === 'fail' ? 1 : 0), 0) || 0
-            ), 0)
+            pass: codeQualityByType('pass'),
+            warn: codeQualityByType('warn'),
+            fail: codeQualityByType('fail')
           }
+        };
+      };
+
+      const matchingPipelines = (repoNames: string[]) => {
+        const allPipelines = resultsForThisProject?.analysisResult.releaseAnalysis.pipelines || [];
+
+        return repoNames.length === 0
+          ? allPipelines
+          : allPipelines.filter(p => Object.values(p.repos).some(r => repoNames.includes(r.name)));
+      };
+
+      const pipelineStats = () => {
+        const matches = matchingPipelines(getRepoNames());
+
+        return {
+          pipelines: matches.length,
+          stages: config.azure.collections[0].projects[0].releasePipelines.stagesToHighlight.map(stage => ({
+            name: stage,
+            exists: matches.reduce((acc, p) => acc + (
+              p.stageCounts.map(s => s.name)
+                .some(s => s.toLowerCase().includes(stage.toLowerCase())) ? 1 : 0
+            ), 0),
+            used: matches.reduce((acc, p) => acc + (
+              p.stageCounts
+                .filter(s => s.name.toLowerCase().includes(stage.toLowerCase()))
+                .reduce((acc, s) => acc + (s.successful ? 1 : 0), 0)
+            ), 0)
+          })),
+          masterOnlyPipelines: matches.reduce((acc, p) => {
+            const repoBranches = [...new Set(Object.values(p.repos).flatMap(r => r.branches))];
+
+            return acc + (
+              repoBranches.length === 1 && repoBranches[0] === 'refs/heads/master'
+                ? 1 : 0
+            );
+          }, 0),
+          conformsToBranchPolicies: matches.reduce((acc, p) => (
+            acc + (
+              Object.keys(p.repos).every(repoId => {
+                const policies = resultsForThisProject?.analysisResult.releaseAnalysis.policies;
+                if (!policies) return false;
+                const policy = policies[repoId];
+                if (!policy) return false;
+
+                return p.repos[repoId].branches.every(branch => {
+                  const policyForBranch = policy[branch];
+                  if (!policyForBranch) return false;
+                  return !policyForBranch.minimumNumberOfReviewers?.isOptional
+                    && (policyForBranch.minimumNumberOfReviewers?.count || 0) > 0
+                    && !policyForBranch.commentRequirements?.isOptional
+                    && !policyForBranch.builds?.isOptional
+                    && !policyForBranch.workItemLinking?.isOptional;
+                });
+              }) ? 1 : 0)
+          ), 0)
         };
       };
 
@@ -277,6 +336,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         groupName: groupType(group)[1],
         summary: workItemAnalysis,
         repoStats: repoStats(),
+        pipelineStats: pipelineStats(),
         workItemTypes: mergedResults.workItemTypes
       };
     })
