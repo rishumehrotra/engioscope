@@ -161,6 +161,7 @@ type Summary = {
     changeLeadTime: number[];
     wipCount: number;
     wipAge: number[];
+    leakage: number;
   }>>;
   collection: string;
   project: string;
