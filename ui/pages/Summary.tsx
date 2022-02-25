@@ -1,10 +1,14 @@
 import { sum } from 'rambda';
 import React, { Fragment, useEffect, useState } from 'react';
+import { useQueryParam } from 'use-query-params';
 import type { SummaryMetrics } from '../../shared/types';
 import { ExternalLink } from '../components/common/Icons';
+import SearchInput from '../components/common/SearchInput';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
-import { num, prettyMS } from '../helpers/utils';
+import {
+  dontFilter, filterBySearch, num, prettyMS
+} from '../helpers/utils';
 import { metricsSummary } from '../network';
 
 type SummaryGroups = SummaryMetrics['groups'][number]['summary'][string];
@@ -314,9 +318,12 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
   );
 };
 
+const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) => filterBySearch(search, group.groupName);
+
 const Summary: React.FC = () => {
   const [metrics, setMetrics] = useState<SummaryMetrics | undefined>();
   useEffect(() => { metricsSummary().then(setMetrics); }, []);
+  const [search] = useQueryParam<string>('search');
 
   return (
     <>
@@ -325,17 +332,25 @@ const Summary: React.FC = () => {
         lastUpdated={metrics ? new Date(metrics.lastUpdateDate) : null}
       />
 
+      <div className="mx-32 px-8 mt-8 flex justify-end">
+        <div className="w-64">
+          <SearchInput />
+        </div>
+      </div>
+
       <ul className="mx-32 bg-gray-50 p-8 rounded-lg">
         {metrics
           ? (
-            metrics.groups.map(group => (
-              <li key={group.groupName} className="mb-16">
-                <SummaryItem
-                  group={group}
-                  workItemTypes={metrics.workItemTypes}
-                />
-              </li>
-            ))
+            metrics.groups
+              .filter(search ? bySearch(search) : dontFilter)
+              .map(group => (
+                <li key={group.groupName} className="mb-16">
+                  <SummaryItem
+                    group={group}
+                    workItemTypes={metrics.workItemTypes}
+                  />
+                </li>
+              ))
           )
           : <Loading />}
       </ul>
