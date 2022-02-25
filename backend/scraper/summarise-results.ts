@@ -165,6 +165,29 @@ type Summary = {
     wipAge: number[];
     leakage: number;
   }>>;
+  repoStats: {
+    repos: number;
+    tests: number;
+    builds: {
+      total: number;
+      successful: number;
+    };
+    codeQuality: {
+      pass: number;
+      warn: number;
+      fail: number;
+    };
+  };
+  pipelineStats: {
+    pipelines: number;
+    stages: {
+      name: string;
+      exists: number;
+      used: number;
+    }[];
+    masterOnlyPipelines: number;
+    conformsToBranchPolicies: number;
+  };
   collection: string;
   project: string;
   portfolioProject: string;

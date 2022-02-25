@@ -1,10 +1,10 @@
 import { sum } from 'rambda';
-import React, { useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import type { SummaryMetrics } from '../../shared/types';
 import { ExternalLink } from '../components/common/Icons';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
-import { prettyMS } from '../helpers/utils';
+import { num, prettyMS } from '../helpers/utils';
 import { metricsSummary } from '../network';
 
 type SummaryGroups = SummaryMetrics['groups'][number]['summary'][string];
@@ -97,13 +97,17 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
   const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
   const bugs = bugsDefinitionId ? group.summary[bugsDefinitionId] : null;
   const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+  const baseProjectLink = `/${group.collection}/${group.project}`;
   const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
+  const { repoStats, pipelineStats } = group;
+  const { codeQuality } = repoStats;
+  const codeQualityNumConfigured = sum(Object.values(codeQuality));
 
   return (
     <>
       <div className="text-2xl font-bold">{group.groupName}</div>
-      <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-4 auto-rows-fr mt-4">
+      <div className="grid grid-flow-row gap-4 grid-col-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 auto-rows-fr mt-4">
         {
           Object.entries(group.summary)
             .filter(([key]) => workItemTypes[key].name[0] !== 'Bug')
@@ -115,7 +119,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
               const renderGroupItemWithLink = renderGroupItem(isUserStory ? projectLink : portfolioProjectLink);
 
               return (
-                <div className="flex flex-col justify-center p-6 bg-white border border-gray-100 rounded-lg h-full shadow">
+                <div key={typeId} className="flex flex-col justify-center p-6 bg-white border border-gray-100 rounded-lg h-full shadow">
                   <h1 className="text-lg font-semibold mb-5 flex items-center">
                     <img src={icon} alt={typeId} className="w-4 h-4 mr-2" />
                     <span>{workItemType.name[1]}</span>
@@ -149,9 +153,126 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
               );
             })
         }
+        <div className="flex flex-col p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow group">
+          <a
+            href={`${baseProjectLink}/repos${filterQS}`}
+            className="text-blue-500 flex"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <h1 className="text-lg font-semibold mb-5 flex items-center">
+              <span className="text-black">Repos</span>
+              <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 ml-1" />
+            </h1>
+          </a>
+          <div className="grid grid-cols-4 gap-y-4">
+            <div className="flex flex-col">
+              <h3 className="text-xs font-medium">Tests</h3>
+              <div className="font-semibold text-xl">{num(repoStats.tests)}</div>
+            </div>
+            <div />
+            <div className="flex flex-col">
+              <h3 className="text-xs font-medium">Builds</h3>
+              <div className="font-semibold text-xl">{num(repoStats.builds.total)}</div>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="text-xs font-medium">Success</h3>
+              <div className="font-semibold text-xl">
+                {((repoStats.builds.successful / repoStats.builds.total) * 100).toFixed(0)}
+                %
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-end">
+              <h3 className="text-xs font-medium">Sonar</h3>
+              <div className="font-semibold text-xl text-black">
+                {((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}
+                %
+              </div>
+            </div>
+            <div className="flex flex-col justify-end">
+              <h3 className="text-xs font-medium">Ok</h3>
+              <div className="font-semibold text-xl text-black">
+                {((codeQuality.pass / codeQualityNumConfigured) * 100).toFixed(0)}
+                %
+              </div>
+            </div>
+            <div className="flex flex-col justify-end">
+              <h3 className="text-xs font-medium">Warn</h3>
+              <div className="font-semibold text-xl text-black">
+                {((codeQuality.warn / codeQualityNumConfigured) * 100).toFixed(0)}
+                %
+              </div>
+            </div>
+            <div className="flex flex-col justify-end">
+              <h3 className="text-xs font-medium">Fail</h3>
+              <div className="font-semibold text-xl text-black">
+                {((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}
+                %
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow group">
+          <a
+            href={`${baseProjectLink}/release-pipelines${filterQS}`}
+            className="text-blue-500 flex"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <h1 className="text-lg font-semibold mb-5 flex items-center">
+              <span className="text-black">Release pipelines</span>
+              <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 ml-1" />
+            </h1>
+          </a>
+          <div className="grid grid-cols-2 gap-y-4">
+            {
+              pipelineStats.stages.map(stage => (
+                <Fragment key={stage.name}>
+                  <div className="flex flex-col justify-end">
+                    <h3 className="text-xs font-medium">
+                      {stage.name}
+                      : Exists
+                    </h3>
+                    <div className="font-semibold text-xl">
+                      {pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`}
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-end">
+                    <h3 className="text-xs font-medium">
+                      {stage.name}
+                      : Used
+                    </h3>
+                    <div className="font-semibold text-xl">
+                      {pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`}
+                    </div>
+                  </div>
+                </Fragment>
+              ))
+            }
+            <div className="flex flex-col justify-end">
+              <h3 className="text-xs font-medium">
+                Master-only pipelines
+              </h3>
+              <div className="font-semibold text-xl">
+                {pipelineStats.pipelines === 0 ? '0'
+                  : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`}
+              </div>
+            </div>
+            <div className="flex flex-col justify-end">
+              <h3 className="text-xs font-medium">
+                Conforms to branch policies
+              </h3>
+              <div className="font-semibold text-xl">
+                {pipelineStats.pipelines === 0 ? '0'
+                  : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       {bugs ? (
-        <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-4 auto-rows-fr mt-4 mb-8">
+        <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 auto-rows-fr mt-4 mb-8">
           {
             Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
               const bugInfo = processSummary(envBasedBugInfo);
@@ -159,7 +280,10 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
               const icon = bugsDefinitionId ? workItemTypes[bugsDefinitionId].icon : null;
 
               return (
-                <div className="flex flex-col justify-center p-6 bg-white border border-gray-100 rounded-lg h-full shadow">
+                <div
+                  key={environment}
+                  className="flex flex-col justify-center p-6 bg-white border border-gray-100 rounded-lg h-full shadow"
+                >
                   <h1 className="text-lg font-semibold mb-5 flex items-center">
                     { icon ? <img src={icon} alt="Bugs" className="w-4 h-4 mr-2" /> : null }
                     <span>{`Bugs-${environment}`}</span>
