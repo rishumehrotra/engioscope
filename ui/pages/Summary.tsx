@@ -110,8 +110,9 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
             .map(([typeId, summaryGroups]) => {
               const workItemType = workItemTypes[typeId];
               const { icon } = workItemType;
+              const isUserStory = workItemType.name[0] === 'User Story';
               const summary = flattenSummaryGroups(summaryGroups);
-              const renderGroupItemWithLink = renderGroupItem(workItemType.name[0] === 'User Story' ? projectLink : portfolioProjectLink);
+              const renderGroupItemWithLink = renderGroupItem(isUserStory ? projectLink : portfolioProjectLink);
 
               return (
                 <div className="flex flex-col justify-center p-6 bg-white border border-gray-100 rounded-lg h-full shadow">
@@ -134,7 +135,10 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
                     </div>
                     <div>
                       <div className="text-xs font-medium">WIP count</div>
-                      {renderGroupItemWithLink(`${summary.wipCount}`, '#age-of-work-in-progress-user-stories-by-state')}
+                      {renderGroupItemWithLink(
+                        `${summary.wipCount}`,
+                        isUserStory ? '#age-of-work-in-progress-user-stories-by-state' : '#age-of-work-in-progress-features-by-state'
+                      )}
                     </div>
                     <div>
                       <div className="text-xs font-medium">WIP age</div>
@@ -172,7 +176,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
                     <div className="text-xs font-medium">WIP count</div>
                     <div className="text-xs font-medium">WIP age</div>
                     <div className="text-xs font-medium">Leakage</div>
-                    {renderGroupItemWithLink(`${bugInfo.wipCount}`, '#age-of-work-in-progress-bugs-by-state')}
+                    {renderGroupItemWithLink(`${bugInfo.wipCount}`, '#work-in-progress-trend')}
                     {renderGroupItemWithLink(bugInfo.wipAge ? prettyMS(bugInfo.wipAge) : '-', '#age-of-work-in-progress-items')}
                     {renderGroupItemWithLink(`${bugInfo.leakage}`, '#bug-leakage-with-root-cause')}
                   </div>
