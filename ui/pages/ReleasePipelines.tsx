@@ -98,7 +98,7 @@ const ReleasePipelines: React.FC = () => {
       .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed))
       .filter(nonPolicyConforming === undefined ? dontFilter : byNonPolicyConforming(policyForBranch))
       .filter(
-        !selectedGroupLabels || selectedGroupLabels?.length === 0
+        !selectedGroupLabels || selectedGroupLabels?.length === 0 || !releaseAnalysis.groups?.groups
           ? dontFilter
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           : bySelectedGroups(selectedGroupLabels as unknown as string, releaseAnalysis.groups!.groups)
