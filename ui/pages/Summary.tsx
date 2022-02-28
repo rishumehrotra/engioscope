@@ -273,9 +273,9 @@ const HealthMetrics: React.FC<{
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
       <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
         <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
-        <div className="grid grid-cols-4 gap-y-4">
+        <div className="grid grid-cols-4 gap-y-4 gap-x-2">
           <div className="text-xs font-semibold">Tests</div>
-          <div />
+          <div className="text-xs font-semibold">Coverage</div>
           {
             pipelineStats.stages.map(stage => (
               <Fragment key={stage.name}>
@@ -290,7 +290,11 @@ const HealthMetrics: React.FC<{
           }
 
           <div className="font-semibold text-xl">{reposMetric(num(repoStats.tests))}</div>
-          <div />
+          <div className="text-xs uppercase">
+            Coming
+            <br />
+            soon
+          </div>
           {
             pipelineStats.stages.map(stage => (
               <Fragment key={stage.name}>
@@ -392,7 +396,7 @@ const HealthMetrics: React.FC<{
       <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
         <div className="text-lg font-semibold mb-5 flex items-center">
           Contract driven development
-          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-full px-2 py-1">coming soon</span>
+          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
         </div>
         <div className="grid grid-cols-3 gap-y-4 gap-x-2">
           <div className="text-xs font-semibold">Contract Tests</div>
@@ -407,7 +411,7 @@ const HealthMetrics: React.FC<{
       <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
         <div className="text-lg font-semibold mb-5 flex items-center">
           Infrastructure
-          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-full px-2 py-1">coming soon</span>
+          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
         </div>
         <div className="grid grid-cols-3 gap-y-4 gap-x-2">
           <div className="text-xs font-semibold">Pipelines creating containers</div>
@@ -422,7 +426,7 @@ const HealthMetrics: React.FC<{
       <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
         <div className="text-lg font-semibold mb-5 flex items-center">
           Feature toggles
-          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-full px-2 py-1">coming soon</span>
+          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
         </div>
         <div className="grid grid-cols-3 gap-y-4 gap-x-2">
           <div className="text-xs font-semibold">Independent deployments</div>

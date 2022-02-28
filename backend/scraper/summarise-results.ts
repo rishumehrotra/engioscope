@@ -4,19 +4,13 @@ import {
 import type {
   Overview, QualityGateDetails, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
-import { exists } from '../utils';
+import { exists, isWithin } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 
 const noGroup = 'no-group';
 
-const monthAgo = (() => {
-  const now = Date.now();
-  const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-  return monthAgo;
-})();
-
-const isWithinLastMonth = (date: Date) => date > monthAgo;
+const isWithinLastMonth = isWithin('30 days');
 
 const timeDiff = (end: string | Date | undefined, start: string | Date | undefined) => (
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -275,9 +269,9 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         const matches = matchingRepos(getRepoNames());
 
         const codeQualityByType = (gate: QualityGateDetails['status']) => matches.reduce((acc, repo) => acc + (
-          repo.codeQuality?.reduce(
-            (acc, q) => acc + (q.quality.gate === gate ? 1 : 0), 0
-          ) || 0
+          (gate === 'pass' && repo.codeQuality?.every(q => q.quality.gate === 'pass'))
+          || (gate !== 'pass' && repo.codeQuality?.some(q => q.quality.gate === gate))
+            ? 1 : 0
         ), 0);
 
         return {
@@ -322,7 +316,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             used: matches.reduce((acc, p) => acc + (
               p.stageCounts
                 .filter(s => s.name.toLowerCase().includes(stage.toLowerCase()))
-                .reduce((acc, s) => acc + (s.successful ? 1 : 0), 0)
+                .some(s => s.successful > 0)
+                ? 1 : 0
             ), 0)
           })),
           masterOnlyPipelines: matches.reduce((acc, p) => {
