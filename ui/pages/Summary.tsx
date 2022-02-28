@@ -271,7 +271,7 @@ const HealthMetrics: React.FC<{
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-      <div className="p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow">
+      <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
         <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
         <div className="grid grid-cols-4 gap-y-4">
           <div className="text-xs font-semibold">Tests</div>
@@ -312,7 +312,7 @@ const HealthMetrics: React.FC<{
         </div>
       </div>
 
-      <div className="p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow">
+      <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
         <div className="text-lg font-semibold mb-5 flex items-center">Code Quality</div>
         <div className="grid grid-cols-6 gap-x-1">
           <div className="col-span-6 grid grid-cols-6 gap-y-4">
@@ -363,7 +363,7 @@ const HealthMetrics: React.FC<{
         </div>
       </div>
 
-      <div className="p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow">
+      <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
         <div className="text-lg font-semibold mb-5 flex items-center">CI-CD</div>
         <div className="grid grid-cols-4 gap-y-4">
           <div className="text-xs font-semibold">Builds</div>
@@ -386,6 +386,52 @@ const HealthMetrics: React.FC<{
               )
             }
           </div>
+        </div>
+      </div>
+
+      <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+        <div className="text-lg font-semibold mb-5 flex items-center">
+          Contract driven development
+          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-full px-2 py-1">coming soon</span>
+        </div>
+        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+          <div className="text-xs font-semibold">Contract Tests</div>
+          <div className="text-xs font-semibold">Contracts used for service virtualisation</div>
+          <div className="text-xs font-semibold">Orphaned contracts</div>
+
+          <div className="font-semibold text-xl">xx</div>
+          <div className="font-semibold text-xl">xx</div>
+          <div className="font-semibold text-xl">xx</div>
+        </div>
+      </div>
+      <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+        <div className="text-lg font-semibold mb-5 flex items-center">
+          Infrastructure
+          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-full px-2 py-1">coming soon</span>
+        </div>
+        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+          <div className="text-xs font-semibold">Pipelines creating containers</div>
+          <div className="text-xs font-semibold">Pipelines publishing config files</div>
+          <div className="text-xs font-semibold">Pipelines without manual steps</div>
+
+          <div className="font-semibold text-xl">xx%</div>
+          <div className="font-semibold text-xl">xx%</div>
+          <div className="font-semibold text-xl">xx%</div>
+        </div>
+      </div>
+      <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+        <div className="text-lg font-semibold mb-5 flex items-center">
+          Feature toggles
+          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-full px-2 py-1">coming soon</span>
+        </div>
+        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+          <div className="text-xs font-semibold">Independent deployments</div>
+          <div className="text-xs font-semibold">Toggled ON (Avg. age)</div>
+          <div className="text-xs font-semibold">Toggled OFF (Avg. age)</div>
+
+          <div className="font-semibold text-xl">xx</div>
+          <div className="font-semibold text-xl">xx</div>
+          <div className="font-semibold text-xl">xx</div>
         </div>
       </div>
     </div>
