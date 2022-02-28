@@ -39,7 +39,7 @@ const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string)
 );
 const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (pipeline: TPipeline) => (
   groupNames.split(',').some(groupName => {
-    const repos = groups[groupName];
+    const repos = groups[groupName] || [];
     return Object.values(pipeline.repos).some(repo => repos.includes(repo.name));
   })
 );
