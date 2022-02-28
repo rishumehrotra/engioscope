@@ -36,7 +36,7 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
   )
 );
 const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
-  groupNames.split(',').some(groupName => groups[groupName].includes(repo.name))
+  groupNames.split(',').some(groupName => (groups[groupName] || []).includes(repo.name))
 );
 
 const sorters: SortMap<RepoAnalysis> = {
@@ -73,7 +73,7 @@ const Repos: React.FC = () => {
       .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
       .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
       .filter(
-        !selectedGroupLabels || selectedGroupLabels?.length === 0
+        (!selectedGroupLabels || selectedGroupLabels?.length === 0 || !projectAnalysis.groups?.groups)
           ? dontFilter
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           : bySelectedGroups(selectedGroupLabels as unknown as string, projectAnalysis.groups!.groups)
@@ -88,7 +88,7 @@ const Repos: React.FC = () => {
 
   return repos.length ? (
     <>
-      {projectAnalysis.groups
+      {projectAnalysis.groups?.groups
         ? (
           <div className="mb-6">
             <MultiSelectDropdownWithLabel
