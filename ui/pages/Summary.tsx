@@ -221,10 +221,10 @@ const ReliabilityMetrics: React.FC<{
             <div />
             <div className="text-xs font-semibold">New bugs</div>
             <div className="text-xs font-semibold">Bugs fixed</div>
-            <div className="text-xs font-semibold">Bugs Cycle Time</div>
+            <div className="text-xs font-semibold">Bugs cycle time</div>
             <div className="text-xs font-semibold">Bugs CLT</div>
             <div className="text-xs font-semibold">WIP</div>
-            <div className="text-xs font-semibold">WIP Age</div>
+            <div className="text-xs font-semibold">WIP age</div>
 
             {
               Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
@@ -264,13 +264,13 @@ const HealthMetrics: React.FC<{
   const { codeQuality } = repoStats;
   const codeQualityNumConfigured = sum(Object.values(codeQuality));
   const [filterKey] = allExceptExpectedKeys(group);
-  const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+  const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
   const baseProjectLink = `/${group.collection}/${group.project}`;
   const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
   const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
   return (
-    <div className="grid grid-cols-3 gap-4 mt-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
       <div className="p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow">
         <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
         <div className="grid grid-cols-4 gap-y-4">
@@ -280,12 +280,10 @@ const HealthMetrics: React.FC<{
             pipelineStats.stages.map(stage => (
               <Fragment key={stage.name}>
                 <div className="text-xs font-semibold">
-                  {stage.name}
-                  : Exists in pipelines
+                  {`Pipelines having ${stage.name}`}
                 </div>
                 <div className="text-xs font-semibold">
-                  {stage.name}
-                  : Used in pipelines
+                  {`Pipelines using ${stage.name}`}
                 </div>
               </Fragment>
             ))
@@ -317,11 +315,13 @@ const HealthMetrics: React.FC<{
       <div className="p-6 h-full bg-blue-50 border border-blue-300 rounded-lg shadow">
         <div className="text-lg font-semibold mb-5 flex items-center">Code Quality</div>
         <div className="grid grid-cols-6 gap-x-1">
-          <div className="col-span-4 grid grid-cols-4 gap-y-4">
+          <div className="col-span-6 grid grid-cols-6 gap-y-4">
             <div className="text-xs font-semibold">Sonar</div>
             <div className="text-xs font-semibold">Ok</div>
             <div className="text-xs font-semibold">Warn</div>
             <div className="text-xs font-semibold">Fail</div>
+            <div />
+            <div className="text-xs font-semibold">Branch policy met</div>
 
             <div
               className="font-semibold text-xl"
@@ -348,9 +348,8 @@ const HealthMetrics: React.FC<{
             >
               {codeQualityNumConfigured ? `${((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
             </div>
-          </div>
-          <div className="col-span-2">
-            <div className="text-xs font-semibold mb-4">Branch policy met</div>
+
+            <div />
             <div className="font-semibold text-xl">
               {
                 pipelinesMetric(
@@ -425,6 +424,7 @@ const Summary: React.FC = () => {
             metrics?.groups
               ? (
                 <>
+                  <div className="mr-4 font-semibold uppercase">Quick Nav</div>
                   {metrics.groups.map(group => (
                     <div className="mb-1" key={group.groupName}>
                       <a className="link-text" href={`#${group.groupName}`}>{group.groupName}</a>
