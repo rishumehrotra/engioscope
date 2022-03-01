@@ -201,7 +201,7 @@ const FlowMetrics: React.FC<{
   );
 };
 
-const ReliabilityMetrics: React.FC<{
+const QualityMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
 }> = ({ group, workItemTypes }) => {
@@ -216,7 +216,7 @@ const ReliabilityMetrics: React.FC<{
     bugs
       ? (
         <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
-          <h1 className="text-xl font-semibold mb-5 flex items-center">Reliability Metrics</h1>
+          <h1 className="text-xl font-semibold mb-5 flex items-center">Quality Metrics</h1>
           <div className="grid grid-cols-7 gap-y-4">
             <div />
             <div className="text-xs font-semibold">New bugs</div>
@@ -270,175 +270,182 @@ const HealthMetrics: React.FC<{
   const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-      <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
-        <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
-        <div className="grid grid-cols-4 gap-y-4 gap-x-2">
-          <div className="text-xs font-semibold">Tests</div>
-          <div className="text-xs font-semibold">Coverage</div>
-          {
-            pipelineStats.stages.map(stage => (
-              <Fragment key={stage.name}>
-                <div className="text-xs font-semibold">
-                  {`Pipelines having ${stage.name}`}
-                </div>
-                <div className="text-xs font-semibold">
-                  {`Pipelines using ${stage.name}`}
-                </div>
-              </Fragment>
-            ))
-          }
+    <>
+      <h2 className="text-xs uppercase mt-8 ml-1 text-gray-600 font-semibold">
+        Health metrics
+      </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+        <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
+          <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
+          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+            <div className="text-xs font-semibold">Tests</div>
+            <div className="text-xs font-semibold">Coverage</div>
+            {
+              pipelineStats.stages.map(stage => (
+                <Fragment key={stage.name}>
+                  <div className="text-xs font-semibold">
+                    {`Pipelines having ${stage.name}`}
+                  </div>
+                  <div className="text-xs font-semibold">
+                    {`Pipelines using ${stage.name}`}
+                  </div>
+                </Fragment>
+              ))
+            }
 
-          <div className="font-semibold text-xl">{reposMetric(num(repoStats.tests))}</div>
-          <div className="text-xs uppercase">
-            Coming
-            <br />
-            soon
+            <div className="font-semibold text-xl">{reposMetric(num(repoStats.tests))}</div>
+            <div className="text-xs uppercase">
+              Coming
+              <br />
+              soon
+            </div>
+            {
+              pipelineStats.stages.map(stage => (
+                <Fragment key={stage.name}>
+                  <div className="font-semibold text-xl">
+                    {pipelinesMetric(
+                      pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
+                    )}
+                  </div>
+                  <div className="font-semibold text-xl">
+                    {
+                      pipelinesMetric(
+                        pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
+                      )
+                    }
+                  </div>
+                </Fragment>
+              ))
+            }
           </div>
-          {
-            pipelineStats.stages.map(stage => (
-              <Fragment key={stage.name}>
-                <div className="font-semibold text-xl">
-                  {pipelinesMetric(
-                    pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
-                  )}
-                </div>
-                <div className="font-semibold text-xl">
-                  {
-                    pipelinesMetric(
-                      pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
-                    )
-                  }
-                </div>
-              </Fragment>
-            ))
-          }
         </div>
-      </div>
 
-      <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
-        <div className="text-lg font-semibold mb-5 flex items-center">Code Quality</div>
-        <div className="grid grid-cols-6 gap-x-1">
-          <div className="col-span-6 grid grid-cols-6 gap-y-4">
-            <div className="text-xs font-semibold">Sonar</div>
-            <div className="text-xs font-semibold">Ok</div>
-            <div className="text-xs font-semibold">Warn</div>
-            <div className="text-xs font-semibold">Fail</div>
+        <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
+          <div className="text-lg font-semibold mb-5 flex items-center">Code Quality</div>
+          <div className="grid grid-cols-6 gap-x-1">
+            <div className="col-span-6 grid grid-cols-6 gap-y-4">
+              <div className="text-xs font-semibold">Sonar</div>
+              <div className="text-xs font-semibold">Ok</div>
+              <div className="text-xs font-semibold">Warn</div>
+              <div className="text-xs font-semibold">Fail</div>
+              <div />
+              <div className="text-xs font-semibold">Branch policy met</div>
+
+              <div
+                className="font-semibold text-xl"
+                data-tip={`${codeQualityNumConfigured} of ${repoStats.repos} repos have SonarQube configured`}
+              >
+                {((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}
+                %
+              </div>
+              <div
+                className="font-semibold text-md"
+                data-tip={`${codeQuality.pass} of ${codeQualityNumConfigured} repos with 'Ok' quality gate`}
+              >
+                {codeQualityNumConfigured ? `${((codeQuality.pass / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+              </div>
+              <div
+                className="font-semibold text-md"
+                data-tip={`${codeQuality.warn} of ${codeQualityNumConfigured} repos with 'Warn' quality gate`}
+              >
+                {codeQualityNumConfigured ? `${((codeQuality.warn / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+              </div>
+              <div
+                className="font-semibold text-md"
+                data-tip={`${codeQuality.fail} of ${codeQualityNumConfigured} repos with 'Error' quality gate`}
+              >
+                {codeQualityNumConfigured ? `${((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+              </div>
+
+              <div />
+              <div className="font-semibold text-xl">
+                {
+                  pipelinesMetric(
+                    pipelineStats.pipelines === 0 ? '0'
+                      : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
+                  )
+                }
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
+          <div className="text-lg font-semibold mb-5 flex items-center">CI-CD</div>
+          <div className="grid grid-cols-4 gap-y-4">
+            <div className="text-xs font-semibold">Builds</div>
+            <div className="text-xs font-semibold">Success</div>
             <div />
-            <div className="text-xs font-semibold">Branch policy met</div>
+            <div className="text-xs font-semibold">Master only pipelines</div>
 
-            <div
-              className="font-semibold text-xl"
-              data-tip={`${codeQualityNumConfigured} of ${repoStats.repos} repos have SonarQube configured`}
-            >
-              {((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}
-              %
+            <div className="font-semibold text-xl">{reposMetric(num(repoStats.builds.total))}</div>
+            <div className="font-semibold text-xl">
+              {reposMetric(
+                `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%`
+              )}
             </div>
-            <div
-              className="font-semibold text-md"
-              data-tip={`${codeQuality.pass} of ${codeQualityNumConfigured} repos with 'Ok' quality gate`}
-            >
-              {codeQualityNumConfigured ? `${((codeQuality.pass / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
-            </div>
-            <div
-              className="font-semibold text-md"
-              data-tip={`${codeQuality.warn} of ${codeQualityNumConfigured} repos with 'Warn' quality gate`}
-            >
-              {codeQualityNumConfigured ? `${((codeQuality.warn / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
-            </div>
-            <div
-              className="font-semibold text-md"
-              data-tip={`${codeQuality.fail} of ${codeQualityNumConfigured} repos with 'Error' quality gate`}
-            >
-              {codeQualityNumConfigured ? `${((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
-            </div>
-
             <div />
             <div className="font-semibold text-xl">
               {
                 pipelinesMetric(
                   pipelineStats.pipelines === 0 ? '0'
-                    : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
+                    : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
                 )
               }
             </div>
           </div>
-
         </div>
-      </div>
 
-      <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
-        <div className="text-lg font-semibold mb-5 flex items-center">CI-CD</div>
-        <div className="grid grid-cols-4 gap-y-4">
-          <div className="text-xs font-semibold">Builds</div>
-          <div className="text-xs font-semibold">Success</div>
-          <div />
-          <div className="text-xs font-semibold">Master only pipelines</div>
-
-          <div className="font-semibold text-xl">{reposMetric(num(repoStats.builds.total))}</div>
-          <div className="font-semibold text-xl">
-            {reposMetric(
-              `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%`
-            )}
+        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+          <div className="text-lg font-semibold mb-5 flex items-center">
+            Contract driven development
+            <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
           </div>
-          <div />
-          <div className="font-semibold text-xl">
-            {
-              pipelinesMetric(
-                pipelineStats.pipelines === 0 ? '0'
-                  : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
-              )
-            }
+          <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+            <div className="text-xs font-semibold">Contract Tests</div>
+            <div className="text-xs font-semibold">Contracts used for service virtualisation</div>
+            <div className="text-xs font-semibold">Orphaned contracts</div>
+
+            <div className="font-semibold text-xl">xx</div>
+            <div className="font-semibold text-xl">xx</div>
+            <div className="font-semibold text-xl">xx</div>
           </div>
         </div>
-      </div>
 
-      <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
-        <div className="text-lg font-semibold mb-5 flex items-center">
-          Contract driven development
-          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
-        </div>
-        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
-          <div className="text-xs font-semibold">Contract Tests</div>
-          <div className="text-xs font-semibold">Contracts used for service virtualisation</div>
-          <div className="text-xs font-semibold">Orphaned contracts</div>
+        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+          <div className="text-lg font-semibold mb-5 flex items-center">
+            Infrastructure
+            <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
+          </div>
+          <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+            <div className="text-xs font-semibold">Pipelines creating containers</div>
+            <div className="text-xs font-semibold">Pipelines publishing config files</div>
+            <div className="text-xs font-semibold">Pipelines without manual steps</div>
 
-          <div className="font-semibold text-xl">xx</div>
-          <div className="font-semibold text-xl">xx</div>
-          <div className="font-semibold text-xl">xx</div>
+            <div className="font-semibold text-xl">xx%</div>
+            <div className="font-semibold text-xl">xx%</div>
+            <div className="font-semibold text-xl">xx%</div>
+          </div>
         </div>
-      </div>
-      <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
-        <div className="text-lg font-semibold mb-5 flex items-center">
-          Infrastructure
-          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
-        </div>
-        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
-          <div className="text-xs font-semibold">Pipelines creating containers</div>
-          <div className="text-xs font-semibold">Pipelines publishing config files</div>
-          <div className="text-xs font-semibold">Pipelines without manual steps</div>
 
-          <div className="font-semibold text-xl">xx%</div>
-          <div className="font-semibold text-xl">xx%</div>
-          <div className="font-semibold text-xl">xx%</div>
-        </div>
-      </div>
-      <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
-        <div className="text-lg font-semibold mb-5 flex items-center">
-          Feature toggles
-          <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
-        </div>
-        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
-          <div className="text-xs font-semibold">Independent deployments</div>
-          <div className="text-xs font-semibold">Toggled ON (Avg. age)</div>
-          <div className="text-xs font-semibold">Toggled OFF (Avg. age)</div>
+        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+          <div className="text-lg font-semibold mb-5 flex items-center">
+            Feature toggles
+            <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
+          </div>
+          <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+            <div className="text-xs font-semibold">Independent deployments</div>
+            <div className="text-xs font-semibold">Toggled ON (Avg. age)</div>
+            <div className="text-xs font-semibold">Toggled OFF (Avg. age)</div>
 
-          <div className="font-semibold text-xl">xx</div>
-          <div className="font-semibold text-xl">xx</div>
-          <div className="font-semibold text-xl">xx</div>
+            <div className="font-semibold text-xl">xx</div>
+            <div className="font-semibold text-xl">xx</div>
+            <div className="font-semibold text-xl">xx</div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -449,7 +456,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => (
       <span className="opacity-0 ml-2 group-hover:opacity-20">#</span>
     </div>
     <FlowMetrics group={group} workItemTypes={workItemTypes} />
-    <ReliabilityMetrics group={group} workItemTypes={workItemTypes} />
+    <QualityMetrics group={group} workItemTypes={workItemTypes} />
     <HealthMetrics group={group} />
   </>
 );
