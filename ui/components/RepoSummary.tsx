@@ -75,23 +75,23 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Sonar',
-          value: `${((sonar.configured / repos.length) * 100).toFixed(0)}%`,
+          value: repos.length ? `${((sonar.configured / repos.length) * 100).toFixed(0)}%` : '-',
           tooltip: `${sonar.configured} of ${repos.length} repos have SonarQube configured`
         }]}
         childStats={[
           {
             title: 'Ok',
-            value: `${((sonar.ok / sonar.configured) * 100).toFixed(0)}%`,
+            value: sonar.configured ? `${((sonar.ok / sonar.configured) * 100).toFixed(0)}%` : '-',
             tooltip: `${sonar.ok} of ${sonar.configured} repos with 'Ok' quality gate`
           },
           {
             title: 'Warn',
-            value: `${((sonar.warn / sonar.configured) * 100).toFixed(0)}%`,
+            value: sonar.configured ? `${((sonar.warn / sonar.configured) * 100).toFixed(0)}%` : '-',
             tooltip: `${sonar.warn} of ${sonar.configured} repos with 'Warn' quality gate`
           },
           {
             title: 'Fail',
-            value: `${((sonar.error / sonar.configured) * 100).toFixed(0)}%`,
+            value: sonar.error ? `${((sonar.error / sonar.configured) * 100).toFixed(0)}%` : '-',
             tooltip: `${sonar.error} of ${sonar.configured} repos with 'Error' quality gate`
           }
         ]}
