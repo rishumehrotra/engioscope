@@ -42,14 +42,15 @@ const sonarStats = (repos: RepoAnalysis[]) => (
 );
 
 const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
-  const sonar = sonarStats(repos);
+  const reposWithExclusions = repos.filter(r => !r.name.toLowerCase().endsWith('_exp'));
+  const sonar = sonarStats(reposWithExclusions);
 
   return (
     <ProjectStats>
       <ProjectStat
         topStats={[{
           title: 'Tests',
-          value: num(repos.reduce(
+          value: num(reposWithExclusions.reduce(
             (acc, r) => acc + (r.tests?.total || 0),
             0
           )),
@@ -59,7 +60,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Builds',
-          value: num(repos.reduce(
+          value: num(reposWithExclusions.reduce(
             (acc, r) => acc + (r.builds?.count || 0),
             0
           )),
@@ -68,15 +69,15 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         }]}
         childStats={[{
           title: 'Success',
-          value: buildSuccessRate(repos),
+          value: buildSuccessRate(reposWithExclusions),
           tooltip: 'Success rate across all matching repos'
         }]}
       />
       <ProjectStat
         topStats={[{
           title: 'Sonar',
-          value: repos.length ? `${((sonar.configured / repos.length) * 100).toFixed(0)}%` : '-',
-          tooltip: `${sonar.configured} of ${repos.length} repos have SonarQube configured`
+          value: reposWithExclusions.length ? `${((sonar.configured / reposWithExclusions.length) * 100).toFixed(0)}%` : '-',
+          tooltip: `${sonar.configured} of ${reposWithExclusions.length} repos have SonarQube configured`
         }]}
         childStats={[
           {
