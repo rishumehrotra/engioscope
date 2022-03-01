@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
-import type { UIWorkItem, UIWorkItemType } from '../../shared/types';
 import usePopover from '../hooks/use-popover';
 
 type Stat = {
@@ -14,9 +13,6 @@ export type ChartType = 'feature' | 'bug' | 'bugLeakage' | 'bugsClosed' | undefi
 export type ProjectStatProps = {
   topStats: Stat[];
   childStats?: Stat[];
-  chartType?: ChartType;
-  isOpen?: boolean;
-  workItemType?: (workItem: UIWorkItem) => UIWorkItemType;
   popupContents?: (x: { topStats: Stat[]; childStats?: Stat[] }) => ReactNode;
 };
 
