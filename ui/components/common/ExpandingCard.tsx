@@ -36,8 +36,6 @@ export type CardProps = {
   title: string;
   titleUrl?: string;
   subtitle?: React.ReactNode | undefined;
-  // TODO: Remove this prop
-  preTabs?: React.ReactNode;
   onCardClick?: () => void;
   isExpanded: boolean;
   className?: string;
