@@ -245,7 +245,12 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         body: (
           <WorkItemFlatList
             workItemType={workItemType}
-            workItems={statesToRender[key].map(prop('wi'))}
+            workItems={statesToRender[key].map(prop('wi')).sort((a, b) => (
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              new Date(accessors.workItemTimes(a).start!).getTime()
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              - new Date(accessors.workItemTimes(b).start!).getTime()
+            ))}
             tooltip={workItemTooltip}
             flairs={workItem => [
               prettyMS(Date.now()
@@ -259,7 +264,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         setCheckboxStatesForSidebar(state => ({ ...state, [key]: !state[key] }))
       )
     }),
-    [checkboxStatesForSidebar, openModal, statesToRender, totalWorkItems, workItemTooltip, workItemType]
+    [accessors, checkboxStatesForSidebar, openModal, statesToRender, totalWorkItems, workItemTooltip, workItemType]
   );
 
   return (
