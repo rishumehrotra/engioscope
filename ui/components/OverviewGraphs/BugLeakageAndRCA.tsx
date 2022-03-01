@@ -278,6 +278,11 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
 
   const [toggle, isChecked] = useSidebarCheckboxState(organized);
 
+  const isRCAMissing = useMemo(
+    () => workItems.every(wi => !wi.rca),
+    [workItems]
+  );
+
   const organizedByRCA = useMemo(
     () => organizeWorkItemsByRCA(workItems.filter(
       x => filter(x) && isChecked(witId + (x.groupId ? workItemGroup(x.groupId).name : noGroup))
@@ -341,13 +346,21 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
             <SizeFilter workItems={workItems} setFilter={setSizeFilter} />
             <PriorityFilter workItems={workItems} setFilter={setPriorityFilter} />
           </div>
-          <BugLeakageGraphBars
-            witId={witId}
-            accessors={accessors}
-            graphData={graphData}
-            openModal={openModal}
-            workItemTooltip={workItemTooltip}
-          />
+          {isRCAMissing
+            ? (
+              <div className="text-gray-500 italic">
+                {`${workItemType(witId).name[1]} don't have RCAs.`}
+              </div>
+            )
+            : (
+              <BugLeakageGraphBars
+                witId={witId}
+                accessors={accessors}
+                graphData={graphData}
+                openModal={openModal}
+                workItemTooltip={workItemTooltip}
+              />
+            )}
         </>
       )}
       right={<LegendSidebar {...legendSidebarProps} />}
