@@ -42,7 +42,15 @@ const sonarStats = (repos: RepoAnalysis[]) => (
 );
 
 const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
-  const reposWithExclusions = repos.filter(r => !r.name.toLowerCase().endsWith('_exp'));
+  const reposWithExclusions = repos.filter(
+    r => !(
+      (
+        r.name.toLowerCase().endsWith('_exp')
+        || r.name.toLowerCase().endsWith('_deprecated')
+      )
+      && ((r.builds?.count || 0) === 0)
+      && (r.commits.count === 0))
+  );
   const sonar = sonarStats(reposWithExclusions);
 
   return (

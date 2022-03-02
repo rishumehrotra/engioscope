@@ -161,6 +161,7 @@ type Summary = {
   }>>;
   repoStats: {
     repos: number;
+    excluded: number;
     tests: number;
     builds: {
       total: number;
@@ -266,21 +267,30 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       };
 
       const repoStats = () => {
-        const matches = matchingRepos(getRepoNames())
-          .filter(r => !r.name.toLowerCase().endsWith('_exp'));
+        const matches = matchingRepos(getRepoNames());
+        const matchesExcludingDeprecated = matches.filter(
+          r => !(
+            (
+              r.name.toLowerCase().endsWith('_exp')
+              || r.name.toLowerCase().endsWith('_deprecated')
+            )
+            && ((r.builds?.count || 0) === 0)
+            && (r.commits.count === 0))
+        );
 
-        const codeQualityByType = (gate: QualityGateDetails['status']) => matches.reduce((acc, repo) => acc + (
+        const codeQualityByType = (gate: QualityGateDetails['status']) => matchesExcludingDeprecated.reduce((acc, repo) => acc + (
           (gate === 'pass' && repo.codeQuality?.every(q => q.quality.gate === 'pass'))
           || (gate !== 'pass' && repo.codeQuality?.some(q => q.quality.gate === gate))
             ? 1 : 0
         ), 0);
 
         return {
-          repos: matches.length,
-          tests: matches.reduce((acc, repo) => acc + (repo.tests?.total || 0), 0),
+          repos: matchesExcludingDeprecated.length,
+          excluded: matches.length - matchesExcludingDeprecated.length,
+          tests: matchesExcludingDeprecated.reduce((acc, repo) => acc + (repo.tests?.total || 0), 0),
           builds: {
-            total: matches.reduce((acc, repo) => acc + (repo.builds?.count || 0), 0),
-            successful: matches.reduce(
+            total: matchesExcludingDeprecated.reduce((acc, repo) => acc + (repo.builds?.count || 0), 0),
+            successful: matchesExcludingDeprecated.reduce(
               (acc, repo) => (
                 acc + (repo.builds?.pipelines.reduce((acc, p) => acc + p.success, 0) || 0)
               ),

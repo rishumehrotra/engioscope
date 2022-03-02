@@ -237,9 +237,15 @@ const HealthMetrics: React.FC<{
 
   return (
     <>
-      <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
-        Health metrics
-      </h2>
+      <div className="grid grid-cols-2 justify-between">
+        <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
+          Health metrics
+        </h2>
+        <p className="justify-self-end mt-8 mr-1 text-xs">
+          {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+          {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+        </p>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
         <div className="p-6 h-full bg-white rounded-lg shadow">
           <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>

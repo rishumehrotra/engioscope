@@ -293,6 +293,10 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
             <tr className="hover:bg-gray-50">
               <td className="px-6 py-3 font-semibold">
                 {group.groupName}
+                <p className="justify-self-end text-xs text-gray-500">
+                  {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                  {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                </p>
               </td>
               <td className="px-6 py-3">
                 {reposMetric(num(repoStats.tests))}
@@ -385,9 +389,13 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
             <tr className="hover:bg-gray-50">
               <td className="px-6 py-3 font-semibold">
                 {group.groupName}
+                <p className="justify-self-end text-xs text-gray-500">
+                  {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                  {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                </p>
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">
-                {repoStats.repos ? reposMetric(((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)) : '-'}
+                {repoStats.repos ? reposMetric(`${((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">
                 {codeQualityNumConfigured ? `${((codeQuality.pass / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
@@ -460,6 +468,10 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
             <tr className="hover:bg-gray-50">
               <td className="px-6 py-3 font-semibold">
                 {group.groupName}
+                <p className="justify-self-end text-xs text-gray-500">
+                  {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                  {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                </p>
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">
                 {reposMetric(num(repoStats.builds.total))}
