@@ -1,9 +1,9 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import type { SummaryMetrics } from '../../shared/types';
-import SearchInput from '../components/common/SearchInput';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
+import SummaryByMetric from '../components/summary-page/SummaryByMetric';
 import SummaryByTeam from '../components/summary-page/SummaryByTeam';
 import { dontFilter, filterBySearch } from '../helpers/utils';
 import { metricsSummary } from '../network';
@@ -24,56 +24,54 @@ const Summary: React.FC = () => {
       />
 
       {metrics ? (
-        <div className="mx-32  px-8 mt-8 bg-gray-50 grid grid-cols-2 justify-between">
+        <div className="mx-32 mt-8 bg-gray-50 text-right">
           <div>
-            {show ? (
-              <>
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label>
-                  <input type="radio" checked={!show} onClick={() => setShow(undefined, 'replaceIn')} />
-                  By team
-                </label>
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label>
-                  <input type="radio" checked={!!show} onClick={() => setShow('by-metric', 'replaceIn')} />
-                  By metric
-                </label>
-              </>
-            ) : null}
-          </div>
-          <div style={{ height: 40 }} className="ml-2 w-60 justify-self-end">
-            <SearchInput />
+            <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
+            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+            <label
+              className={`rounded-l-2xl ${show ? 'bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
+            >
+              <input
+                type="radio"
+                checked={!show}
+                onChange={() => setShow(undefined, 'replaceIn')}
+                className="opacity-0 w-0"
+              />
+              Teams
+            </label>
+            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+            <label
+              className={`rounded-r-2xl ${!show ? 'bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
+            >
+              <input
+                type="radio"
+                checked={!!show}
+                onChange={() => setShow('by-metric', 'replaceIn')}
+                className="opacity-0 w-0"
+              />
+              Metrics
+            </label>
           </div>
         </div>
       ) : null}
 
-      <div className="mx-32 px-8 mt-8 flex justify-between">
-        <div className="flex-1 flex flex-wrap">
-          {
-            metrics?.groups
-              ? (
-                <>
-                  <div className="mr-4 font-semibold">Jump to:</div>
-                  {metrics.groups.map(group => (
-                    <div className="mb-1" key={group.groupName}>
-                      <a className="link-text" href={`#${group.groupName}`}>{group.groupName}</a>
-                      <span className="mx-2 text-blue-600">·</span>
-                    </div>
-                  ))}
-                </>
-              )
-              : null
-          }
-        </div>
-      </div>
-
       <div className="mx-32">
         {metrics
           ? (
-            <SummaryByTeam
-              groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-              workItemTypes={metrics.workItemTypes}
-            />
+            <div>
+              {show
+                ? (
+                  <SummaryByMetric
+                    groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
+                    workItemTypes={metrics.workItemTypes}
+                  />
+                ) : (
+                  <SummaryByTeam
+                    groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
+                    workItemTypes={metrics.workItemTypes}
+                  />
+                )}
+            </div>
           )
           : <Loading />}
       </div>

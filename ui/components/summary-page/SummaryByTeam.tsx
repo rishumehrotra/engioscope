@@ -149,79 +149,78 @@ const QualityMetrics: React.FC<{
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
   const renderBugMetric = renderGroupItem(portfolioProjectLink);
 
+  if (!bugs) return null;
+
   return (
-    bugs
-      ? (
-        <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
-          <h1 className="text-xl font-semibold mb-5 flex items-center">Quality Metrics</h1>
-          <div className="grid grid-cols-7 gap-y-4">
-            <div />
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of bugs opened in the last 30 days"
-            >
-              New bugs
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of bugs closed in the last 30 days"
-            >
-              Bugs fixed
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Average time taken to close a bug"
-            >
-              Bugs cycle time
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Average time taken to close a bug once development is complete"
-            >
-              Bugs CLT
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of work-in-progress bugs"
-            >
-              WIP
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Average age of work-in-progress bugs"
-            >
-              WIP age
-            </div>
-
-            {
-              Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
-                const bugInfo = processSummary(envBasedBugInfo);
-
-                return (
-                  <Fragment key={environment}>
-                    <div className="font-semibold text-sm">{environment}</div>
-                    <div className="font-semibold text-xl">{renderBugMetric(`${bugInfo.leakage}`, '#bug-leakage-with-root-cause')}</div>
-                    <div className="font-semibold text-xl">{renderBugMetric(`${bugInfo.velocity}`, '#velocity')}</div>
-                    <div className="font-semibold text-xl">
-                      {renderBugMetric(bugInfo.cycleTime ? prettyMS(bugInfo.cycleTime) : '-', '#cycle-time')}
-                    </div>
-                    <div className="font-semibold text-xl">
-                      {renderBugMetric(bugInfo.changeLeadTime ? prettyMS(bugInfo.changeLeadTime) : '-', '#change-lead-time')}
-                    </div>
-                    <div className="font-semibold text-xl">
-                      {renderBugMetric(`${bugInfo.wipCount}`, '#work-in-progress-trend')}
-                    </div>
-                    <div className="font-semibold text-xl">
-                      {renderBugMetric(bugInfo.wipAge ? prettyMS(bugInfo.wipAge) : '-', '#age-of-work-in-progress-items')}
-                    </div>
-                  </Fragment>
-                );
-              })
-            }
-          </div>
+    <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
+      <h1 className="text-xl font-semibold mb-5 flex items-center">Quality Metrics</h1>
+      <div className="grid grid-cols-7 gap-y-4">
+        <div />
+        <div
+          className="text-xs font-semibold"
+          data-tip="Number of bugs opened in the last 30 days"
+        >
+          New bugs
         </div>
-      )
-      : null);
+        <div
+          className="text-xs font-semibold"
+          data-tip="Number of bugs closed in the last 30 days"
+        >
+          Bugs fixed
+        </div>
+        <div
+          className="text-xs font-semibold"
+          data-tip="Average time taken to close a bug"
+        >
+          Bugs cycle time
+        </div>
+        <div
+          className="text-xs font-semibold"
+          data-tip="Average time taken to close a bug once development is complete"
+        >
+          Bugs CLT
+        </div>
+        <div
+          className="text-xs font-semibold"
+          data-tip="Number of work-in-progress bugs"
+        >
+          WIP
+        </div>
+        <div
+          className="text-xs font-semibold"
+          data-tip="Average age of work-in-progress bugs"
+        >
+          WIP age
+        </div>
+
+        {
+          Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
+            const bugInfo = processSummary(envBasedBugInfo);
+
+            return (
+              <Fragment key={environment}>
+                <div className="font-semibold text-sm">{environment}</div>
+                <div className="font-semibold text-xl">{renderBugMetric(`${bugInfo.leakage}`, '#bug-leakage-with-root-cause')}</div>
+                <div className="font-semibold text-xl">{renderBugMetric(`${bugInfo.velocity}`, '#velocity')}</div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(bugInfo.cycleTime ? prettyMS(bugInfo.cycleTime) : '-', '#cycle-time')}
+                </div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(bugInfo.changeLeadTime ? prettyMS(bugInfo.changeLeadTime) : '-', '#change-lead-time')}
+                </div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(`${bugInfo.wipCount}`, '#work-in-progress-trend')}
+                </div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(bugInfo.wipAge ? prettyMS(bugInfo.wipAge) : '-', '#age-of-work-in-progress-items')}
+                </div>
+              </Fragment>
+            );
+          })
+        }
+      </div>
+    </div>
+  );
 };
 
 const HealthMetrics: React.FC<{
@@ -552,13 +551,15 @@ const HealthMetrics: React.FC<{
 
 const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => (
   <>
-    <div className="text-2xl font-bold group" id={`${group.groupName}`}>
-      <span>{group.groupName}</span>
-      <span className="opacity-0 ml-2 group-hover:opacity-20">#</span>
-    </div>
-    <FlowMetrics group={group} workItemTypes={workItemTypes} />
-    <QualityMetrics group={group} workItemTypes={workItemTypes} />
-    <HealthMetrics group={group} />
+    <details>
+      <summary className="text-2xl font-bold group cursor-pointer" id={`${group.groupName}`}>
+        <span>{group.groupName}</span>
+        {/* <span className="opacity-0 ml-2 group-hover:opacity-20">#</span> */}
+      </summary>
+      <FlowMetrics group={group} workItemTypes={workItemTypes} />
+      <QualityMetrics group={group} workItemTypes={workItemTypes} />
+      <HealthMetrics group={group} />
+    </details>
   </>
 );
 
@@ -570,7 +571,7 @@ const SummaryByTeam: React.FC<{
     {
       groups
         .map(group => (
-          <li key={group.groupName} className="mb-16">
+          <li key={group.groupName} className="mb-8">
             <SummaryItem
               group={group}
               workItemTypes={workItemTypes}
