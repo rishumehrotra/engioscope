@@ -237,11 +237,11 @@ const HealthMetrics: React.FC<{
 
   return (
     <>
-      <h2 className="text-xs uppercase mt-8 ml-1 text-gray-600 font-semibold">
+      <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
         Health metrics
       </h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-        <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
+        <div className="p-6 h-full bg-white rounded-lg shadow">
           <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
           <div className="grid grid-cols-4 gap-y-4 gap-x-2">
             <div
@@ -302,7 +302,7 @@ const HealthMetrics: React.FC<{
           </div>
         </div>
 
-        <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
+        <div className="p-6 h-full bg-white rounded-lg shadow">
           <div className="text-lg font-semibold mb-5 flex items-center">Code Quality</div>
           <div className="grid grid-cols-6 gap-x-1">
             <div className="col-span-6 grid grid-cols-6 gap-y-4">
@@ -342,8 +342,7 @@ const HealthMetrics: React.FC<{
                 className="font-semibold text-xl"
                 data-tip={`${codeQualityNumConfigured} of ${repoStats.repos} repos have SonarQube configured`}
               >
-                {((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}
-                %
+                {repoStats.repos ? reposMetric(`${((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
               </div>
               <div
                 className="font-semibold text-md"
@@ -363,24 +362,21 @@ const HealthMetrics: React.FC<{
               >
                 {codeQualityNumConfigured ? `${((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
               </div>
-
               <div />
               <div className="font-semibold text-xl">
-                {
-                  pipelinesMetric(
-                    pipelineStats.pipelines === 0 ? '0'
-                      : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
-                  )
-                }
+                {pipelinesMetric(
+                  pipelineStats.pipelines === 0 ? '0'
+                    : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
+                )}
               </div>
             </div>
 
           </div>
         </div>
 
-        <div className="p-6 h-full bg-blue-50 border border-blue-200 rounded-lg shadow">
+        <div className="p-6 h-full bg-white rounded-lg shadow">
           <div className="text-lg font-semibold mb-5 flex items-center">CI-CD</div>
-          <div className="grid grid-cols-4 gap-y-4">
+          <div className="grid grid-cols-5 gap-y-4">
             <div
               className="text-xs font-semibold"
               data-tip="Number of CI builds run in the last 30 days"
@@ -393,6 +389,12 @@ const HealthMetrics: React.FC<{
             >
               Success
             </div>
+            <div
+              className="text-xs font-semibold"
+              data-tip="Average time taken to fix a build failure"
+            >
+              MTTR build failure
+            </div>
             <div />
             <div
               className="text-xs font-semibold"
@@ -404,22 +406,25 @@ const HealthMetrics: React.FC<{
             <div className="font-semibold text-xl">{reposMetric(num(repoStats.builds.total))}</div>
             <div className="font-semibold text-xl">
               {reposMetric(
-                `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%`
+                `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
               )}
+            </div>
+            <div className="text-xs uppercase">
+              Coming
+              <br />
+              soon
             </div>
             <div />
             <div className="font-semibold text-xl">
-              {
-                pipelinesMetric(
-                  pipelineStats.pipelines === 0 ? '0'
-                    : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
-                )
-              }
+              {pipelinesMetric(
+                pipelineStats.pipelines === 0 ? '0'
+                  : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
+              )}
             </div>
           </div>
         </div>
 
-        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+        <div className="p-6 bg-white rounded-lg h-full shadow opacity-50">
           <div className="text-lg font-semibold mb-5 flex items-center">
             Contract driven development
             <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
@@ -457,7 +462,7 @@ const HealthMetrics: React.FC<{
           </div>
         </div>
 
-        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+        <div className="p-6 bg-white rounded-lg h-full shadow opacity-50">
           <div className="text-lg font-semibold mb-5 flex items-center">
             Infrastructure
             <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
@@ -499,7 +504,7 @@ const HealthMetrics: React.FC<{
           </div>
         </div>
 
-        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg h-full shadow opacity-50">
+        <div className="p-6 bg-white rounded-lg h-full shadow opacity-50">
           <div className="text-lg font-semibold mb-5 flex items-center">
             Feature toggles
             <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
@@ -556,6 +561,10 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => (
         <span>{group.groupName}</span>
         {/* <span className="opacity-0 ml-2 group-hover:opacity-20">#</span> */}
       </summary>
+
+      <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
+        Value metrics
+      </h2>
       <FlowMetrics group={group} workItemTypes={workItemTypes} />
       <QualityMetrics group={group} workItemTypes={workItemTypes} />
       <HealthMetrics group={group} />

@@ -266,7 +266,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       };
 
       const repoStats = () => {
-        const matches = matchingRepos(getRepoNames());
+        const matches = matchingRepos(getRepoNames())
+          .filter(r => !r.name.toLowerCase().endsWith('_exp'));
 
         const codeQualityByType = (gate: QualityGateDetails['status']) => matches.reduce((acc, repo) => acc + (
           (gate === 'pass' && repo.codeQuality?.every(q => q.quality.gate === 'pass'))

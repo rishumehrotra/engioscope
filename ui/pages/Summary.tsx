@@ -29,7 +29,7 @@ const Summary: React.FC = () => {
             <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
             <label
-              className={`rounded-l-2xl ${show ? 'bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
+              className={`rounded-l-md ${show ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
             >
               <input
                 type="radio"
@@ -41,7 +41,7 @@ const Summary: React.FC = () => {
             </label>
             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
             <label
-              className={`rounded-r-2xl ${!show ? 'bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
+              className={`rounded-r-md ${!show ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
             >
               <input
                 type="radio"
@@ -73,7 +73,11 @@ const Summary: React.FC = () => {
                 )}
             </div>
           )
-          : <Loading />}
+          : (
+            <div className="my-4">
+              <Loading />
+            </div>
+          )}
       </div>
     </>
   );
