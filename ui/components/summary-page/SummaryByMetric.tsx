@@ -1,4 +1,3 @@
-import { sum } from 'rambda';
 import React, { Fragment } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
 import { num, prettyMS } from '../../helpers/utils';
@@ -378,7 +377,6 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
         {groups.map(group => {
           const { repoStats, pipelineStats } = group;
           const { codeQuality } = repoStats;
-          const codeQualityNumConfigured = sum(Object.values(codeQuality));
           const [filterKey] = allExceptExpectedKeys(group);
           const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
           const baseProjectLink = `/${group.collection}/${group.project}`;
@@ -394,17 +392,35 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
                 </p>
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {repoStats.repos ? reposMetric(`${((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
+              <td
+                data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
+                className="px-6 py-3 font-medium text-lg text-black"
+              >
+                {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {codeQualityNumConfigured ? `${((codeQuality.pass / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+              <td
+                data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
+                className="px-6 py-3 font-medium text-lg text-black"
+              >
+                {codeQuality.sonarProjects
+                  ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
+                  : '-'}
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {codeQualityNumConfigured ? `${((codeQuality.warn / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+              <td
+                data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
+                className="px-6 py-3 font-medium text-lg text-black"
+              >
+                {codeQuality.sonarProjects
+                  ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
+                  : '-'}
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {codeQualityNumConfigured ? `${((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+              <td
+                data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
+                className="px-6 py-3 font-medium text-lg text-black"
+              >
+                {codeQuality.sonarProjects
+                  ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
+                  : '-'}
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black" />
               <td className="px-6 py-3 font-medium text-lg text-black">
