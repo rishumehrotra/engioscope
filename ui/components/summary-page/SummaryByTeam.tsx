@@ -1,4 +1,3 @@
-import { sum } from 'rambda';
 import React, { Fragment } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
 import { num, prettyMS } from '../../helpers/utils';
@@ -228,7 +227,6 @@ const HealthMetrics: React.FC<{
 }> = ({ group }) => {
   const { repoStats, pipelineStats } = group;
   const { codeQuality } = repoStats;
-  const codeQualityNumConfigured = sum(Object.values(codeQuality));
   const [filterKey] = allExceptExpectedKeys(group);
   const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
   const baseProjectLink = `/${group.collection}/${group.project}`;
@@ -346,27 +344,33 @@ const HealthMetrics: React.FC<{
 
               <div
                 className="font-semibold text-xl"
-                data-tip={`${codeQualityNumConfigured} of ${repoStats.repos} repos have SonarQube configured`}
+                data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
               >
-                {repoStats.repos ? reposMetric(`${((codeQualityNumConfigured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
+                {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
               </div>
               <div
                 className="font-semibold text-md"
-                data-tip={`${codeQuality.pass} of ${codeQualityNumConfigured} repos with 'Ok' quality gate`}
+                data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
               >
-                {codeQualityNumConfigured ? `${((codeQuality.pass / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+                {codeQuality.sonarProjects
+                  ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
+                  : '-'}
               </div>
               <div
                 className="font-semibold text-md"
-                data-tip={`${codeQuality.warn} of ${codeQualityNumConfigured} repos with 'Warn' quality gate`}
+                data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
               >
-                {codeQualityNumConfigured ? `${((codeQuality.warn / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+                {codeQuality.sonarProjects
+                  ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
+                  : '-'}
               </div>
               <div
                 className="font-semibold text-md"
-                data-tip={`${codeQuality.fail} of ${codeQualityNumConfigured} repos with 'Error' quality gate`}
+                data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
               >
-                {codeQualityNumConfigured ? `${((codeQuality.fail / codeQualityNumConfigured) * 100).toFixed(0)}%` : '-'}
+                {codeQuality.sonarProjects
+                  ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
+                  : '-'}
               </div>
               <div />
               <div className="font-semibold text-xl">

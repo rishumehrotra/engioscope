@@ -3,7 +3,7 @@ import {
 } from 'rambda';
 import { isDeprecated } from '../../shared/repo-utils';
 import type {
-  Overview, QualityGateDetails, UIWorkItem, UIWorkItemType
+  Overview, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
 import { exists, isWithin } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
@@ -169,6 +169,8 @@ type Summary = {
       successful: number;
     };
     codeQuality: {
+      configured: number;
+      sonarProjects: number;
       pass: number;
       warn: number;
       fail: number;
@@ -271,11 +273,21 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         const matches = matchingRepos(getRepoNames());
         const matchesExcludingDeprecated = matches.filter(compose(not, isDeprecated));
 
-        const codeQualityByType = (gate: QualityGateDetails['status']) => matchesExcludingDeprecated.reduce((acc, repo) => acc + (
-          (gate === 'pass' && repo.codeQuality?.every(q => q.quality.gate === 'pass'))
-          || (gate !== 'pass' && repo.codeQuality?.some(q => q.quality.gate === gate))
-            ? 1 : 0
-        ), 0);
+        const codeQuality = () => (
+          matchesExcludingDeprecated
+            .reduce((acc, repo) => ({
+              ...(repo.codeQuality || []).reduce((acc, q) => ({
+                ...acc,
+                pass: acc.pass + (q.quality.gate === 'pass' ? 1 : 0),
+                warn: acc.warn + (q.quality.gate === 'warn' ? 1 : 0),
+                fail: acc.fail + (q.quality.gate === 'fail' ? 1 : 0),
+                sonarProjects: acc.sonarProjects + 1
+              }), acc),
+              configured: acc.configured + (repo.codeQuality ? 1 : 0)
+            }), {
+              pass: 0, warn: 0, fail: 0, configured: 0, sonarProjects: 0
+            })
+        );
 
         return {
           repos: matchesExcludingDeprecated.length,
@@ -290,11 +302,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
               0
             )
           },
-          codeQuality: {
-            pass: codeQualityByType('pass'),
-            warn: codeQualityByType('warn'),
-            fail: codeQualityByType('fail')
-          }
+          codeQuality: codeQuality()
         };
       };
 

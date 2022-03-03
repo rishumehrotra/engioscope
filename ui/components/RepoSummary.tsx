@@ -3,7 +3,6 @@ import React from 'react';
 import { isDeprecated } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
-import { combinedQualityGateStatus } from './code-quality-utils';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 
@@ -26,17 +25,13 @@ const buildSuccessRate = (repos: RepoAnalysis[]) => {
 
 const sonarStats = (repos: RepoAnalysis[]) => (
   repos.reduce(
-    (acc, r) => {
-      const status = combinedQualityGateStatus(r.codeQuality);
-
-      return ({
-        ...acc,
-        configured: acc.configured + (r.codeQuality ? 1 : 0),
-        ok: acc.ok + (status === 'pass' ? 1 : 0),
-        warn: acc.warn + (status === 'warn' ? 1 : 0),
-        error: acc.error + (status === 'fail' ? 1 : 0)
-      });
-    },
+    (acc, r) => ({
+      ...acc,
+      configured: acc.configured + ((r.codeQuality || []).length),
+      ok: acc.ok + (r.codeQuality || []).filter(q => q.quality.gate === 'pass').length,
+      warn: acc.warn + (r.codeQuality || []).filter(q => q.quality.gate === 'warn').length,
+      error: acc.error + (r.codeQuality || []).filter(q => q.quality.gate === 'fail').length
+    }),
     {
       configured: 0, ok: 0, warn: 0, error: 0
     }
@@ -83,24 +78,28 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Sonar',
-          value: reposWithExclusions.length ? `${((sonar.configured / reposWithExclusions.length) * 100).toFixed(0)}%` : '-',
-          tooltip: `${sonar.configured} of ${reposWithExclusions.length} repos have SonarQube configured`
+          value: reposWithExclusions.length
+            ? `${Math.round((reposWithExclusions.filter(r => !!r.codeQuality).length / reposWithExclusions.length) * 100)}%`
+            : '-',
+          tooltip: `${
+            reposWithExclusions.filter(r => !!r.codeQuality).length
+          } of ${reposWithExclusions.length} repos have SonarQube configured`
         }]}
         childStats={[
           {
             title: 'Ok',
             value: sonar.configured ? `${((sonar.ok / sonar.configured) * 100).toFixed(0)}%` : '-',
-            tooltip: `${sonar.ok} of ${sonar.configured} repos with 'Ok' quality gate`
+            tooltip: `${sonar.ok} of ${sonar.configured} sonar projects have 'pass' quality gate`
           },
           {
             title: 'Warn',
             value: sonar.configured ? `${((sonar.warn / sonar.configured) * 100).toFixed(0)}%` : '-',
-            tooltip: `${sonar.warn} of ${sonar.configured} repos with 'Warn' quality gate`
+            tooltip: `${sonar.warn} of ${sonar.configured} sonar projects have 'warn' quality gate`
           },
           {
             title: 'Fail',
             value: sonar.error ? `${((sonar.error / sonar.configured) * 100).toFixed(0)}%` : '-',
-            tooltip: `${sonar.error} of ${sonar.configured} repos with 'Error' quality gate`
+            tooltip: `${sonar.error} of ${sonar.configured} sonar projects have 'fail' quality gate`
           }
         ]}
       />

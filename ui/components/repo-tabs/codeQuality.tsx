@@ -514,9 +514,20 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ c
   );
 };
 
+const tabLabel = (codeQuality: RepoAnalysis['codeQuality']) => {
+  const state = combinedQualityGateStatus(codeQuality);
+  if (state !== 'fail') return state;
+  if (codeQuality?.length === 1) return state;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const warnCount = codeQuality!.filter(q => q.quality.gate === 'fail').length;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return `${Math.round((warnCount * 100) / codeQuality!.length)}% fail`;
+};
+
 export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   title: 'Code quality',
-  count: combinedQualityGateStatus(codeQuality),
+  count: tabLabel(codeQuality),
   content: () => (
     codeQuality ? (
       <TabContents gridCols={1}>
