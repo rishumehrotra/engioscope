@@ -1,5 +1,9 @@
 {
   "extends": "../tsconfig-base.json",
+  "include": [
+    "./**/*.ts",
+    "../shared/**/*.ts"
+  ],
   "compilerOptions": {
     "target": "ES2018",
     "lib": [

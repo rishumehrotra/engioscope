@@ -17,6 +17,7 @@ import { TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
 import usePageName from '../hooks/use-page-name';
 import type { Dev } from '../types';
+import { isDeprecated } from '../../shared/repo-utils';
 
 const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?: RepoAnalysis['defaultBranch']) => {
   if (!languages.length && !defaultBranch) return;
@@ -97,6 +98,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }
       subtitle={repoSubtitle(repo.languages, repo.defaultBranch)}
       onCardClick={onCardClick}
       isExpanded={selectedTab !== null || isFirst || false}
+      className={isDeprecated(repo) ? 'opacity-60' : ''}
     >
       {repo.pipelineCount ? (
         <div className="mx-6 flex flex-wrap items-baseline">

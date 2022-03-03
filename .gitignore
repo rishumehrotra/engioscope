@@ -19,6 +19,7 @@ npm-debug.log*
 *.code-workspace
 
 .eslintcache
+tsconfig.tsbuildinfo
 ui/tailwind.output.css
 cache
 config.json

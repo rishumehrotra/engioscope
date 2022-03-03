@@ -1,9 +1,7 @@
 {
   "extends": "../tsconfig-base.json",
   "include": [
-    "./**/*.ts",
-    "./**/*.tsx",
-    "../shared/**/*.ts"
+    "./**/*.ts"
   ],
   "compilerOptions": {
     "lib": [
@@ -11,10 +9,6 @@
       "dom.iterable",
       "esnext"
     ],
-    "types": [
-      "vite/client",
-      "jest"
-    ],
-    "module": "esnext",
+    "module": "esnext"
   }
 }

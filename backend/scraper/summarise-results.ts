@@ -1,6 +1,7 @@
 import {
-  anyPass, applySpec, filter, length, map, pipe
+  anyPass, applySpec, compose, filter, length, map, not, pipe
 } from 'rambda';
+import { isDeprecated } from '../../shared/repo-utils';
 import type {
   Overview, QualityGateDetails, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
@@ -268,15 +269,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
 
       const repoStats = () => {
         const matches = matchingRepos(getRepoNames());
-        const matchesExcludingDeprecated = matches.filter(
-          r => !(
-            (
-              r.name.toLowerCase().endsWith('_exp')
-              || r.name.toLowerCase().endsWith('_deprecated')
-            )
-            && ((r.builds?.count || 0) === 0)
-            && (r.commits.count === 0))
-        );
+        const matchesExcludingDeprecated = matches.filter(compose(not, isDeprecated));
 
         const codeQualityByType = (gate: QualityGateDetails['status']) => matchesExcludingDeprecated.reduce((acc, repo) => acc + (
           (gate === 'pass' && repo.codeQuality?.every(q => q.quality.gate === 'pass'))
