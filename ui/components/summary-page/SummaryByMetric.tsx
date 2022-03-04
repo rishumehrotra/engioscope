@@ -518,7 +518,7 @@ const SummaryByMetric: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
 }> = ({ groups, workItemTypes }) => (
-  <div>
+  <div className="mt-8">
     <h2 className="text-2xl font-bold">Flow metrics</h2>
 
     <FlowMetricsByWorkItemType
