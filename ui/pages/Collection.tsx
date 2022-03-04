@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { ScrapedProject } from '../../shared/types';
+import type { AnalysedProjects } from '../../shared/types';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
@@ -24,37 +24,42 @@ const Project: React.FC<{
 );
 
 const Collection: React.FC = () => {
-  const [collections, setCollections] = useState<ScrapedProject[] | undefined>();
+  const [analysedProjects, setAnalysedProjects] = useState<AnalysedProjects | undefined>();
   const setProjectDetails = useSetProjectDetails();
 
-  useEffect(() => { fetchCollections().then(setCollections); }, []);
+  useEffect(() => { fetchCollections().then(setAnalysedProjects); }, []);
   useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
 
   return (
-    <div>
-      <div>
-        <Header
-          lastUpdated={collections?.[0]?.lastUpdated ? new Date(collections[0].lastUpdated) : null}
-          title="Projects"
-        />
-        <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-          <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-            {
-              collections
-                ? collections.map(collection => (
-                  <Project
-                    key={collection.name[1]}
-                    projectName={collection.name[1]}
-                    route={`/${collection.name.join('/')}/`}
-                    collectionName={collection.name[0]}
-                  />
-                ))
-                : <Loading />
-            }
-          </div>
+    <>
+      <Header
+        lastUpdated={analysedProjects?.lastUpdated ? new Date(analysedProjects.lastUpdated) : null}
+        title="Projects"
+        subtitle={() => (analysedProjects?.hasSummary
+          ? (
+            <Link to="/summary" className="text-white mt-4 inline-block text-sm hover:underline">
+              View metrics summary &raquo;
+            </Link>
+          )
+          : undefined)}
+      />
+      <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
+        <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+          {
+            analysedProjects
+              ? analysedProjects.projects.map(collection => (
+                <Project
+                  key={collection.name[1]}
+                  projectName={collection.name[1]}
+                  route={`/${collection.name.join('/')}/`}
+                  collectionName={collection.name[0]}
+                />
+              ))
+              : <Loading />
+          }
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

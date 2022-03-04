@@ -3,8 +3,8 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
 import { singular } from 'pluralize';
-import { map } from 'rambda';
 import type {
+  AnalysedProjects,
   ProjectOverviewAnalysis,
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics, UIProjectAnalysis
@@ -122,38 +122,44 @@ const matchingProject = (projectSpec: readonly [string, string | ParsedProjectCo
     && scrapedProject.name[1] === projectName(projectSpec[1])
 );
 
-const readOverallSummaryFile = async (): Promise<ScrapedProject[]> => {
+const readOverallSummaryFile = async (): Promise<AnalysedProjects> => {
   await createDataFolder;
   return (await doesFileExist(overallSummaryFilePath))
     ? JSON.parse(await fs.readFile(overallSummaryFilePath, 'utf-8'))
-    : [];
+    : { projects: [], lastUpdated: null, hasSummary: false };
 };
 
-const populateWithEmptyValuesIfNeeded = (config: ParsedConfig) => (scrapedProjects: ScrapedProject[]) => {
+const populateWithEmptyValuesIfNeeded = (config: ParsedConfig) => (projectAnalysis: AnalysedProjects): AnalysedProjects => {
   const projects = config.azure.collections.flatMap(collection => (
     collection.projects.map(project => [collection.name, projectName(project)] as ScrapedProject['name'])
   ));
 
-  return projects.map(configProjectSpec => {
-    const matchingExistingProject = scrapedProjects.find(matchingProject(configProjectSpec));
-    if (matchingExistingProject) return matchingExistingProject;
-    return { name: configProjectSpec, lastUpdated: null, rating: null } as ScrapedProject;
-  });
+  return {
+    ...projectAnalysis,
+    projects: projects.map(configProjectSpec => {
+      const matchingExistingProject = projectAnalysis.projects.find(matchingProject(configProjectSpec));
+      if (matchingExistingProject) return matchingExistingProject;
+      return { name: configProjectSpec, rating: null } as ScrapedProject;
+    })
+  };
 };
 
-const writeOverallSummaryFile = (scrapedProjects: ScrapedProject[]) => (
-  writeFile(['./'], 'index.json', JSON.stringify(scrapedProjects))
+const writeOverallSummaryFile = (analysedProjects: AnalysedProjects) => (
+  writeFile(['./'], 'index.json', JSON.stringify(analysedProjects))
 );
 
-const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: Omit<ScrapedProject, 'lastUpdated'>) => (
+const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: ScrapedProject) => (
   acquireLock()
     .then(readOverallSummaryFile)
     .then(populateWithEmptyValuesIfNeeded(config))
-    .then(map(p => (
-      matchingProject(p.name)(scrapedProject)
-        ? { ...scrapedProject, lastUpdated: new Date().toISOString() }
-        : p
-    )))
+    .then(analysedProjects => ({
+      ...analysedProjects,
+      hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
+      lastUpdated: new Date().toISOString(),
+      projects: analysedProjects.projects.map(p => (
+        matchingProject(p.name)(scrapedProject) ? scrapedProject : p
+      ))
+    }))
     .then(writeOverallSummaryFile)
     .finally(releaseLock)
 );

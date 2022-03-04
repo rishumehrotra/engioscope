@@ -3,7 +3,12 @@ import type { ReleaseCondition } from '../backend/scraper/types-azure';
 
 export type ScrapedProject = {
   name: [collection: string, project: string];
-  lastUpdated: string | null;
+};
+
+export type AnalysedProjects = {
+  projects: ScrapedProject[];
+  lastUpdated: string;
+  hasSummary: boolean;
 };
 
 export type AnalyticsItem = {

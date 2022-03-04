@@ -1,12 +1,12 @@
 import type {
-  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis, ScrapedProject,
+  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, UIWorkItemRevision, ProjectOverviewAnalysis,
-  AnalyticsItem, PipelineDefinitions, SummaryMetrics
+  AnalyticsItem, PipelineDefinitions, SummaryMetrics, AnalysedProjects
 } from '../shared/types';
 
 const json = (res: Response) => res.json();
 
-export const fetchCollections = (): Promise<ScrapedProject[]> => (
+export const fetchCollections = (): Promise<AnalysedProjects> => (
   fetch('/api/index.json').then(json)
 );
 
