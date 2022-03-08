@@ -1,5 +1,9 @@
-import ms from 'ms';
+// Not sure with the /// <referennce ... /> is needed, but tsc fails without it
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference path="../node_modules/@types/node/fs.d.ts" />
+
 import { promises as fs } from 'fs';
+import ms from 'ms';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
