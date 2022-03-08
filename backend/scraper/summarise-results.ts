@@ -104,10 +104,7 @@ const mergeResults = (results: RelevantResults[]) => (
   }, { workItems: [], workItemTypes: {}, workItemTimes: {} })
 );
 
-const groupKey = (group?: Overview['groups'][string]) => {
-  if (!group) return noGroup;
-  return group.name;
-};
+const groupKey = (group?: Overview['groups'][string]) => (group ? group.name : noGroup);
 
 const hasWorkItemCompleted = (times: Overview['times']) => (
   (workItem: UIWorkItemWithGroup) => {
@@ -322,8 +319,10 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           stages: config.azure.collections[0].projects[0].releasePipelines.stagesToHighlight.map(stage => ({
             name: stage,
             exists: matches.reduce((acc, p) => acc + (
-              p.stageCounts.map(s => s.name)
-                .some(s => s.toLowerCase().includes(stage.toLowerCase())) ? 1 : 0
+              p.stageCounts
+                .map(s => s.name)
+                .some(s => s.toLowerCase().includes(stage.toLowerCase()))
+                ? 1 : 0
             ), 0),
             used: matches.reduce((acc, p) => acc + (
               p.stageCounts

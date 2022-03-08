@@ -183,7 +183,7 @@ const QualityMetrics: React.FC<{
           className="text-xs font-semibold"
           data-tip="Number of work-in-progress bugs"
         >
-          WIP
+          WIP count
         </div>
         <div
           className="text-xs font-semibold"
@@ -589,6 +589,7 @@ const SummaryByTeam: React.FC<{
   <ul className="bg-gray-50 p-8 rounded-lg">
     {
       groups
+        .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
         .map(group => (
           <li key={group.groupName} className="mb-8">
             <SummaryItem

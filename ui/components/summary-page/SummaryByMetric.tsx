@@ -79,37 +79,39 @@ const FlowMetricsByWorkItemType: React.FC<{
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-100">
-          {groups.map(group => {
-            const wiDefinitionId = getMetricCategoryDefinitionId(workItemTypes, workItemTypeName);
-            const stats = wiDefinitionId ? group.summary[wiDefinitionId] : null;
-            const summary = stats ? flattenSummaryGroups(stats) : null;
-            const [filterKey] = allExceptExpectedKeys(group);
-            const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
-            const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
+          {groups
+            .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+            .map(group => {
+              const wiDefinitionId = getMetricCategoryDefinitionId(workItemTypes, workItemTypeName);
+              const stats = wiDefinitionId ? group.summary[wiDefinitionId] : null;
+              const summary = stats ? flattenSummaryGroups(stats) : null;
+              const [filterKey] = allExceptExpectedKeys(group);
+              const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+              const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
-            const renderMetric = renderGroupItem(portfolioProjectLink);
+              const renderMetric = renderGroupItem(portfolioProjectLink);
 
-            if (!summary) return null;
+              if (!summary) return null;
 
-            return (
-              <tr key={group.groupName} className="hover:bg-gray-50">
-                <td className="px-6 py-3 font-semibold">
-                  {group.groupName}
-                </td>
-                <td className="px-6 py-3">{renderMetric(`${summary.velocity}`, '#velocity')}</td>
-                <td className="px-6 py-3">{renderMetric(summary.cycleTime ? prettyMS(summary.cycleTime) : '-', '#cycle-time')}</td>
-                <td className="px-6 py-3">
-                  {renderMetric(summary.changeLeadTime ? prettyMS(summary.changeLeadTime) : '-', '#change-lead-time')}
-                </td>
-                <td className="px-6 py-3">
-                  {renderMetric(`${summary.wipCount}`, '#age-of-work-in-progress-features-by-state')}
-                </td>
-                <td className="px-6 py-3">
-                  {renderMetric(summary.wipAge ? prettyMS(summary.wipAge) : '-', '#age-of-work-in-progress-items')}
-                </td>
-              </tr>
-            );
-          })}
+              return (
+                <tr key={group.groupName} className="hover:bg-gray-50">
+                  <td className="px-6 py-3 font-semibold">
+                    {group.groupName}
+                  </td>
+                  <td className="px-6 py-3">{renderMetric(`${summary.velocity}`, '#velocity')}</td>
+                  <td className="px-6 py-3">{renderMetric(summary.cycleTime ? prettyMS(summary.cycleTime) : '-', '#cycle-time')}</td>
+                  <td className="px-6 py-3">
+                    {renderMetric(summary.changeLeadTime ? prettyMS(summary.changeLeadTime) : '-', '#change-lead-time')}
+                  </td>
+                  <td className="px-6 py-3">
+                    {renderMetric(`${summary.wipCount}`, '#age-of-work-in-progress-features-by-state')}
+                  </td>
+                  <td className="px-6 py-3">
+                    {renderMetric(summary.wipAge ? prettyMS(summary.wipAge) : '-', '#age-of-work-in-progress-items')}
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
     </div>
@@ -189,46 +191,48 @@ const QualityMetrics: React.FC<{
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {groups.map(group => {
-                    const bugs = group.summary[bugsDefinitionId] || {};
-                    const summaryBugsForEnv = (
-                      equivalientEnvironments.includes(env)
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  && bugs[equivalientEnvironments.find(e => bugs[e])!]
-                    ) || bugs[env];
+                  {groups
+                    .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+                    .map(group => {
+                      const bugs = group.summary[bugsDefinitionId] || {};
+                      const summaryBugsForEnv = (
+                        equivalientEnvironments.includes(env)
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        && bugs[equivalientEnvironments.find(e => bugs[e])!]
+                      ) || bugs[env];
 
-                    const bugsForEnv = summaryBugsForEnv ? processSummary(summaryBugsForEnv) : null;
+                      const bugsForEnv = summaryBugsForEnv ? processSummary(summaryBugsForEnv) : null;
 
-                    const [filterKey] = allExceptExpectedKeys(group);
-                    const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
-                    const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
+                      const [filterKey] = allExceptExpectedKeys(group);
+                      const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+                      const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
-                    const renderBugMetric = renderGroupItem(portfolioProjectLink);
+                      const renderBugMetric = renderGroupItem(portfolioProjectLink);
 
-                    return (
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-semibold">{group.groupName}</td>
-                        <td className="px-6 py-3">
-                          {renderBugMetric(bugsForEnv ? `${bugsForEnv.leakage}` : '-', '#bugs')}
-                        </td>
-                        <td className="px-6 py-3">
-                          {renderBugMetric(bugsForEnv ? `${bugsForEnv.velocity}` : '-', '#velocity')}
-                        </td>
-                        <td className="px-6 py-3">
-                          {renderBugMetric(bugsForEnv?.cycleTime ? prettyMS(bugsForEnv.cycleTime) : '-', '#cycle-time')}
-                        </td>
-                        <td className="px-6 py-3">
-                          {renderBugMetric(bugsForEnv?.changeLeadTime ? prettyMS(bugsForEnv.changeLeadTime) : '-', '#change-lead-time')}
-                        </td>
-                        <td className="px-6 py-3">
-                          {renderBugMetric(bugsForEnv ? `${bugsForEnv.wipCount}` : '-', '#work-in-progress-trend')}
-                        </td>
-                        <td className="px-6 py-3">
-                          {renderBugMetric(bugsForEnv?.wipAge ? prettyMS(bugsForEnv.wipAge) : '-', '#age-of-work-in-progress-items')}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr className="hover:bg-gray-50">
+                          <td className="px-6 py-3 font-semibold">{group.groupName}</td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(bugsForEnv ? `${bugsForEnv.leakage}` : '-', '#bugs')}
+                          </td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(bugsForEnv ? `${bugsForEnv.velocity}` : '-', '#velocity')}
+                          </td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(bugsForEnv?.cycleTime ? prettyMS(bugsForEnv.cycleTime) : '-', '#cycle-time')}
+                          </td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(bugsForEnv?.changeLeadTime ? prettyMS(bugsForEnv.changeLeadTime) : '-', '#change-lead-time')}
+                          </td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(bugsForEnv ? `${bugsForEnv.wipCount}` : '-', '#work-in-progress-trend')}
+                          </td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(bugsForEnv?.wipAge ? prettyMS(bugsForEnv.wipAge) : '-', '#age-of-work-in-progress-items')}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
@@ -280,50 +284,52 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
         </tr>
       </thead>
       <tbody>
-        {groups.map(group => {
-          const { repoStats, pipelineStats } = group;
-          const [filterKey] = allExceptExpectedKeys(group);
-          const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-          const baseProjectLink = `/${group.collection}/${group.project}`;
-          const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-          const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
+        {groups
+          .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+          .map(group => {
+            const { repoStats, pipelineStats } = group;
+            const [filterKey] = allExceptExpectedKeys(group);
+            const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
+            const baseProjectLink = `/${group.collection}/${group.project}`;
+            const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
+            const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
-          return (
-            <tr className="hover:bg-gray-50">
-              <td className="px-6 py-3 font-semibold">
-                {group.groupName}
-                <p className="justify-self-end text-xs text-gray-500">
-                  {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                  {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
-                </p>
-              </td>
-              <td className="px-6 py-3">
-                {reposMetric(num(repoStats.tests))}
-              </td>
-              <td className="px-6 py-3">
-                <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
-              </td>
-              {
-                pipelineStats.stages.map(stage => (
-                  <Fragment key={stage.name}>
-                    <td className="px-6 py-3">
-                      {pipelinesMetric(
-                        pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
-                      )}
-                    </td>
-                    <td className="px-6 py-3">
-                      {
-                        pipelinesMetric(
-                          pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
-                        )
-                      }
-                    </td>
-                  </Fragment>
-                ))
-              }
-            </tr>
-          );
-        })}
+            return (
+              <tr className="hover:bg-gray-50">
+                <td className="px-6 py-3 font-semibold">
+                  {group.groupName}
+                  <p className="justify-self-end text-xs text-gray-500">
+                    {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                    {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                  </p>
+                </td>
+                <td className="px-6 py-3">
+                  {reposMetric(num(repoStats.tests))}
+                </td>
+                <td className="px-6 py-3">
+                  <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
+                </td>
+                {
+                  pipelineStats.stages.map(stage => (
+                    <Fragment key={stage.name}>
+                      <td className="px-6 py-3">
+                        {pipelinesMetric(
+                          pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
+                        )}
+                      </td>
+                      <td className="px-6 py-3">
+                        {
+                          pipelinesMetric(
+                            pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
+                          )
+                        }
+                      </td>
+                    </Fragment>
+                  ))
+                }
+              </tr>
+            );
+          })}
       </tbody>
     </table>
   </div>
@@ -374,64 +380,66 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
       </thead>
       <tbody>
         {' '}
-        {groups.map(group => {
-          const { repoStats, pipelineStats } = group;
-          const { codeQuality } = repoStats;
-          const [filterKey] = allExceptExpectedKeys(group);
-          const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-          const baseProjectLink = `/${group.collection}/${group.project}`;
-          const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-          const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
+        {groups
+          .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+          .map(group => {
+            const { repoStats, pipelineStats } = group;
+            const { codeQuality } = repoStats;
+            const [filterKey] = allExceptExpectedKeys(group);
+            const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
+            const baseProjectLink = `/${group.collection}/${group.project}`;
+            const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
+            const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
-          return (
-            <tr className="hover:bg-gray-50">
-              <td className="px-6 py-3 font-semibold">
-                {group.groupName}
-                <p className="justify-self-end text-xs text-gray-500">
-                  {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                  {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
-                </p>
-              </td>
-              <td
-                data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
-                className="px-6 py-3 font-medium text-lg text-black"
-              >
-                {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
-              </td>
-              <td
-                data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
-                className="px-6 py-3 font-medium text-lg text-black"
-              >
-                {codeQuality.sonarProjects
-                  ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
-                  : '-'}
-              </td>
-              <td
-                data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
-                className="px-6 py-3 font-medium text-lg text-black"
-              >
-                {codeQuality.sonarProjects
-                  ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
-                  : '-'}
-              </td>
-              <td
-                data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
-                className="px-6 py-3 font-medium text-lg text-black"
-              >
-                {codeQuality.sonarProjects
-                  ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
-                  : '-'}
-              </td>
-              <td className="px-6 py-3 font-medium text-lg text-black" />
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {pipelinesMetric(
-                  pipelineStats.pipelines === 0 ? '0'
-                    : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
-                )}
-              </td>
-            </tr>
-          );
-        })}
+            return (
+              <tr className="hover:bg-gray-50">
+                <td className="px-6 py-3 font-semibold">
+                  {group.groupName}
+                  <p className="justify-self-end text-xs text-gray-500">
+                    {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                    {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                  </p>
+                </td>
+                <td
+                  data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
+                  className="px-6 py-3 font-medium text-lg text-black"
+                >
+                  {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
+                </td>
+                <td
+                  data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
+                  className="px-6 py-3 font-medium text-lg text-black"
+                >
+                  {codeQuality.sonarProjects
+                    ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
+                    : '-'}
+                </td>
+                <td
+                  data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
+                  className="px-6 py-3 font-medium text-lg text-black"
+                >
+                  {codeQuality.sonarProjects
+                    ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
+                    : '-'}
+                </td>
+                <td
+                  data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
+                  className="px-6 py-3 font-medium text-lg text-black"
+                >
+                  {codeQuality.sonarProjects
+                    ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
+                    : '-'}
+                </td>
+                <td className="px-6 py-3 font-medium text-lg text-black" />
+                <td className="px-6 py-3 font-medium text-lg text-black">
+                  {pipelinesMetric(
+                    pipelineStats.pipelines === 0 ? '0'
+                      : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
+                  )}
+                </td>
+              </tr>
+            );
+          })}
       </tbody>
     </table>
   </div>
@@ -472,43 +480,45 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
       </thead>
       <tbody>
         {' '}
-        {groups.map(group => {
-          const { repoStats, pipelineStats } = group;
-          const [filterKey] = allExceptExpectedKeys(group);
-          const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-          const baseProjectLink = `/${group.collection}/${group.project}`;
-          const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-          const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
+        {groups
+          .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+          .map(group => {
+            const { repoStats, pipelineStats } = group;
+            const [filterKey] = allExceptExpectedKeys(group);
+            const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
+            const baseProjectLink = `/${group.collection}/${group.project}`;
+            const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
+            const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
-          return (
-            <tr className="hover:bg-gray-50">
-              <td className="px-6 py-3 font-semibold">
-                {group.groupName}
-                <p className="justify-self-end text-xs text-gray-500">
-                  {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                  {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
-                </p>
-              </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {reposMetric(num(repoStats.builds.total))}
-              </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {reposMetric(
-                  `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
-                )}
-              </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
-              </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
-                {pipelinesMetric(
-                  pipelineStats.pipelines === 0 ? '0'
-                    : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
-                )}
-              </td>
-            </tr>
-          );
-        })}
+            return (
+              <tr className="hover:bg-gray-50">
+                <td className="px-6 py-3 font-semibold">
+                  {group.groupName}
+                  <p className="justify-self-end text-xs text-gray-500">
+                    {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                    {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                  </p>
+                </td>
+                <td className="px-6 py-3 font-medium text-lg text-black">
+                  {reposMetric(num(repoStats.builds.total))}
+                </td>
+                <td className="px-6 py-3 font-medium text-lg text-black">
+                  {reposMetric(
+                    `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
+                  )}
+                </td>
+                <td className="px-6 py-3 font-medium text-lg text-black">
+                  <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
+                </td>
+                <td className="px-6 py-3 font-medium text-lg text-black">
+                  {pipelinesMetric(
+                    pipelineStats.pipelines === 0 ? '0'
+                      : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
+                  )}
+                </td>
+              </tr>
+            );
+          })}
       </tbody>
     </table>
   </div>
