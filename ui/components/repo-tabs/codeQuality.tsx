@@ -428,12 +428,12 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ c
       <thead>
         <tr>
           <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider"> </th>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Quality gate</th>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Maintainability</th>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Reliability</th>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Security</th>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Coverage</th>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">Duplications</th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Quality gate</th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Maintainability</th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Reliability</th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Security</th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Coverage</th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Duplications</th>
         </tr>
       </thead>
       <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
@@ -451,7 +451,9 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ c
               }}
             >
               <td className="pl-6 py-4 whitespace-nowrap text-left text-blue-600 group-hover:underline">
-                {codeQualityItem.name}
+                <span className="truncate w-full block">
+                  {codeQualityItem.name}
+                </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span
