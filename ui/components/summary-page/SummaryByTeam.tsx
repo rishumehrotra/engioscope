@@ -1,8 +1,13 @@
-import React, { Fragment } from 'react';
+import React, {
+  Fragment, useRef, useState
+} from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
 import { num, prettyMS } from '../../helpers/utils';
+import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
+  decreaseIsBetter,
+  increaseIsBetter,
   getMetricCategoryDefinitionId, flattenSummaryGroups, allExceptExpectedKeys,
   renderGroupItem, processSummary
 } from './utils';
@@ -33,6 +38,11 @@ const FlowMetrics: React.FC<{
         <div />
         <div
           className="text-xs font-semibold"
+        >
+          New
+        </div>
+        <div
+          className="text-xs font-semibold"
           data-tip="Number of work items completed in the last 30 days"
         >
           Velocity
@@ -53,7 +63,7 @@ const FlowMetrics: React.FC<{
           className="text-xs font-semibold"
           data-tip="Number of work items in progress"
         >
-          WIP count
+          WIP increase
         </div>
         <div
           className="text-xs font-semibold"
@@ -61,8 +71,6 @@ const FlowMetrics: React.FC<{
         >
           WIP age
         </div>
-        <div />
-
         {
           featuresSummary ? (
             <>
@@ -78,21 +86,75 @@ const FlowMetrics: React.FC<{
                 <span>Features</span>
               </div>
               <div className="font-semibold text-xl">
-                {renderFeatureMetric(`${featuresSummary.velocity}`, '#velocity')}
+                {renderFeatureMetric(
+                  `${featuresSummary.wipAddedThisMonth}`,
+                  <Sparkline
+                    data={featuresSummary.wipAddedByWeek}
+                    lineColor={increaseIsBetter(featuresSummary.wipAddedByWeek)}
+                  />,
+                  '#age-of-work-in-progress-features-by-state'
+                )}
               </div>
               <div className="font-semibold text-xl">
-                {renderFeatureMetric(featuresSummary.cycleTime ? prettyMS(featuresSummary.cycleTime) : '-', '#cycle-time')}
+                {renderFeatureMetric(
+                  `${featuresSummary.velocity}`,
+                  <Sparkline
+                    data={featuresSummary.velocityByWeek}
+                    lineColor={increaseIsBetter(featuresSummary.velocityByWeek)}
+                  />,
+                  '#velocity'
+                )}
               </div>
               <div className="font-semibold text-xl">
-                {renderFeatureMetric(featuresSummary.changeLeadTime ? prettyMS(featuresSummary.changeLeadTime) : '-', '#change-lead-time')}
+                {renderFeatureMetric(
+                  featuresSummary.cycleTime
+                    ? prettyMS(featuresSummary.cycleTime)
+                    : '-',
+                  <Sparkline
+                    data={featuresSummary.cycleTimeByWeek}
+                    lineColor={decreaseIsBetter(featuresSummary.cycleTimeByWeek)}
+                  />,
+                  '#cycle-time'
+                )}
               </div>
               <div className="font-semibold text-xl">
-                {renderFeatureMetric(`${featuresSummary.wipCount}`, '#age-of-work-in-progress-features-by-state')}
+                {renderFeatureMetric(
+                  featuresSummary.changeLeadTime
+                    ? prettyMS(featuresSummary.changeLeadTime)
+                    : '-',
+                  <Sparkline
+                    data={featuresSummary.changeLeadTimeByWeek}
+                    lineColor={decreaseIsBetter(featuresSummary.changeLeadTimeByWeek)}
+                  />,
+                  '#change-lead-time'
+                )}
               </div>
               <div className="font-semibold text-xl">
-                {renderFeatureMetric(featuresSummary.wipAge ? prettyMS(featuresSummary.wipAge) : '-', '#age-of-work-in-progress-items')}
+                {renderFeatureMetric(
+                  <>
+                    {featuresSummary.wipAddedThisMonth}
+                    <span className="text-lg text-gray-500 inline-block ml-2">
+                      <span className="font-normal text-sm">of</span>
+                      {' '}
+                      {featuresSummary.wipCount}
+                    </span>
+                  </>,
+                  <Sparkline
+                    data={featuresSummary.wipAddedByWeek}
+                    lineColor={decreaseIsBetter(featuresSummary.wipAddedByWeek)}
+                  />,
+                  '#age-of-work-in-progress-features-by-state'
+                )}
               </div>
-              <div />
+              <div className="font-semibold text-xl">
+                {renderFeatureMetric(
+                  featuresSummary.wipAge
+                    ? prettyMS(featuresSummary.wipAge)
+                    : '-',
+                  null,
+                  '#age-of-work-in-progress-items'
+                )}
+              </div>
             </>
           ) : null
         }
@@ -111,24 +173,75 @@ const FlowMetrics: React.FC<{
                 <span>User Stories</span>
               </div>
               <div className="font-semibold text-xl">
-                {renderUserStoryMetric(`${userStoriesSummary.velocity}`, '#velocity')}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(userStoriesSummary.cycleTime ? prettyMS(userStoriesSummary.cycleTime) : '-', '#cycle-time')}
-              </div>
-              <div className="font-semibold text-xl">
                 {renderUserStoryMetric(
-                  userStoriesSummary.changeLeadTime ? prettyMS(userStoriesSummary.changeLeadTime) : '-', '#change-lead-time'
+                  `${userStoriesSummary.wipAddedThisMonth}`,
+                  <Sparkline
+                    data={userStoriesSummary.wipAddedByWeek}
+                    lineColor={increaseIsBetter(userStoriesSummary.wipAddedByWeek)}
+                  />,
+                  '#work-in-progress-trend'
                 )}
               </div>
               <div className="font-semibold text-xl">
-                {renderUserStoryMetric(`${userStoriesSummary.wipCount}`, '#age-of-work-in-progress-user-stories-by-state')}
+                {renderUserStoryMetric(
+                  `${userStoriesSummary.velocity}`,
+                  <Sparkline
+                    data={userStoriesSummary.velocityByWeek}
+                    lineColor={increaseIsBetter(userStoriesSummary.velocityByWeek)}
+                  />,
+                  '#velocity'
+                )}
               </div>
               <div className="font-semibold text-xl">
-                {renderUserStoryMetric(userStoriesSummary.wipAge
-                  ? prettyMS(userStoriesSummary.wipAge) : '-', '#age-of-work-in-progress-items')}
+                {renderUserStoryMetric(
+                  userStoriesSummary.cycleTime
+                    ? prettyMS(userStoriesSummary.cycleTime)
+                    : '-',
+                  <Sparkline
+                    data={userStoriesSummary.cycleTimeByWeek}
+                    lineColor={decreaseIsBetter(userStoriesSummary.cycleTimeByWeek)}
+                  />,
+                  '#cycle-time'
+                )}
               </div>
-              <div />
+              <div className="font-semibold text-xl">
+                {renderUserStoryMetric(
+                  userStoriesSummary.changeLeadTime
+                    ? prettyMS(userStoriesSummary.changeLeadTime)
+                    : '-',
+                  <Sparkline
+                    data={userStoriesSummary.changeLeadTimeByWeek}
+                    lineColor={decreaseIsBetter(userStoriesSummary.changeLeadTimeByWeek)}
+                  />,
+                  '#change-lead-time'
+                )}
+              </div>
+              <div className="font-semibold text-xl">
+                {renderUserStoryMetric(
+                  <>
+                    {userStoriesSummary.wipAddedThisMonth}
+                    <span className="text-lg text-gray-500 inline-block ml-2">
+                      <span className="font-normal text-sm">of</span>
+                      {' '}
+                      {userStoriesSummary.wipCount}
+                    </span>
+                  </>,
+                  <Sparkline
+                    data={userStoriesSummary.wipAddedByWeek}
+                    lineColor={decreaseIsBetter(userStoriesSummary.wipAddedByWeek)}
+                  />,
+                  '#work-in-progress-trend'
+                )}
+              </div>
+              <div className="font-semibold text-xl">
+                {renderUserStoryMetric(
+                  userStoriesSummary.wipAge
+                    ? prettyMS(userStoriesSummary.wipAge)
+                    : '-',
+                  null,
+                  '#age-of-work-in-progress-items'
+                )}
+              </div>
             </>
           ) : null
         }
@@ -159,31 +272,31 @@ const QualityMetrics: React.FC<{
           className="text-xs font-semibold"
           data-tip="Number of bugs opened in the last 30 days"
         >
-          New bugs
+          New
         </div>
         <div
           className="text-xs font-semibold"
           data-tip="Number of bugs closed in the last 30 days"
         >
-          Bugs fixed
+          Fixed
         </div>
         <div
           className="text-xs font-semibold"
           data-tip="Average time taken to close a bug"
         >
-          Bugs cycle time
+          Cycle time
         </div>
         <div
           className="text-xs font-semibold"
           data-tip="Average time taken to close a bug once development is complete"
         >
-          Bugs CLT
+          CLT
         </div>
         <div
           className="text-xs font-semibold"
           data-tip="Number of work-in-progress bugs"
         >
-          WIP count
+          WIP increase
         </div>
         <div
           className="text-xs font-semibold"
@@ -191,27 +304,92 @@ const QualityMetrics: React.FC<{
         >
           WIP age
         </div>
-
         {
           Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
             const bugInfo = processSummary(envBasedBugInfo);
 
             return (
               <Fragment key={environment}>
-                <div className="font-semibold text-sm">{environment}</div>
-                <div className="font-semibold text-xl">{renderBugMetric(`${bugInfo.leakage}`, '#bug-leakage-with-root-cause')}</div>
-                <div className="font-semibold text-xl">{renderBugMetric(`${bugInfo.velocity}`, '#velocity')}</div>
-                <div className="font-semibold text-xl">
-                  {renderBugMetric(bugInfo.cycleTime ? prettyMS(bugInfo.cycleTime) : '-', '#cycle-time')}
+                <div className="font-semibold text-sm flex items-center">
+                  { bugsDefinitionId ? (
+                    <img
+                      src={workItemTypes[bugsDefinitionId].icon}
+                      alt="Features"
+                      className="w-4 h-4 mr-2"
+                    />
+                  )
+                    : null}
+                  {environment}
                 </div>
                 <div className="font-semibold text-xl">
-                  {renderBugMetric(bugInfo.changeLeadTime ? prettyMS(bugInfo.changeLeadTime) : '-', '#change-lead-time')}
+                  {renderBugMetric(
+                    `${bugInfo.leakage}`,
+                    <Sparkline
+                      data={bugInfo.leakageByWeek}
+                      lineColor={decreaseIsBetter(bugInfo.leakageByWeek)}
+                    />,
+                    '#bug-leakage-with-root-cause'
+                  )}
                 </div>
                 <div className="font-semibold text-xl">
-                  {renderBugMetric(`${bugInfo.wipCount}`, '#work-in-progress-trend')}
+                  {renderBugMetric(
+                    `${bugInfo.velocity}`,
+                    <Sparkline
+                      data={bugInfo.velocityByWeek}
+                      lineColor={increaseIsBetter(bugInfo.velocityByWeek)}
+                    />,
+                    '#velocity'
+                  )}
                 </div>
                 <div className="font-semibold text-xl">
-                  {renderBugMetric(bugInfo.wipAge ? prettyMS(bugInfo.wipAge) : '-', '#age-of-work-in-progress-items')}
+                  {renderBugMetric(
+                    bugInfo.cycleTime
+                      ? prettyMS(bugInfo.cycleTime)
+                      : '-',
+                    <Sparkline
+                      data={bugInfo.cycleTimeByWeek}
+                      lineColor={increaseIsBetter(bugInfo.cycleTimeByWeek)}
+                    />,
+                    '#cycle-time'
+                  )}
+                </div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(
+                    bugInfo.changeLeadTime
+                      ? prettyMS(bugInfo.changeLeadTime)
+                      : '-',
+                    <Sparkline
+                      data={bugInfo.changeLeadTimeByWeek}
+                      lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
+                    />,
+                    '#change-lead-time'
+                  )}
+                </div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(
+                    <>
+                      {bugInfo.wipAddedThisMonth}
+                      <span className="text-lg text-gray-500 inline-block ml-2">
+                        <span className="font-normal text-sm">of</span>
+                        {' '}
+                        {bugInfo.wipCount}
+                      </span>
+                    </>,
+                    <Sparkline
+                      data={bugInfo.wipAddedByWeek}
+                      lineColor={decreaseIsBetter(bugInfo.wipAddedByWeek)}
+                    />,
+                    '#work-in-progress-trend'
+                  )}
+                </div>
+                <div className="font-semibold text-xl">
+                  {renderBugMetric(
+                    bugInfo.wipAge
+                      ? prettyMS(bugInfo.wipAge)
+                      : '-',
+                    null,
+                    '#age-of-work-in-progress-items'
+                  )}
                 </div>
               </Fragment>
             );
@@ -279,7 +457,7 @@ const HealthMetrics: React.FC<{
               ))
             }
 
-            <div className="font-semibold text-xl">{reposMetric(num(repoStats.tests))}</div>
+            <div className="font-semibold text-xl">{reposMetric(num(repoStats.tests), null)}</div>
             <div className="text-xs uppercase">
               Coming
               <br />
@@ -314,7 +492,7 @@ const HealthMetrics: React.FC<{
                 className="text-xs font-semibold"
                 data-tip="Percentage of repos with Sonar configured"
               >
-                Sonar
+                Sonar enabled
               </div>
               <div
                 className="text-xs font-semibold"
@@ -564,23 +742,41 @@ const HealthMetrics: React.FC<{
   );
 };
 
-const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => (
-  <>
-    <details>
-      <summary className="text-2xl font-bold group cursor-pointer" id={`${group.groupName}`}>
-        <span>{group.groupName}</span>
-        {/* <span className="opacity-0 ml-2 group-hover:opacity-20">#</span> */}
-      </summary>
+const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const summaryRef = useRef<HTMLElement>(null);
 
-      <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
-        Value metrics
-      </h2>
-      <FlowMetrics group={group} workItemTypes={workItemTypes} />
-      <QualityMetrics group={group} workItemTypes={workItemTypes} />
-      <HealthMetrics group={group} />
-    </details>
-  </>
-);
+  return (
+    <>
+      <details>
+        <summary
+          className="text-2xl font-bold group cursor-pointer"
+          id={`${group.groupName}`}
+          ref={summaryRef}
+          onClick={evt => {
+            if (summaryRef.current?.contains(evt.currentTarget)) {
+              setIsOpen(!isOpen);
+            }
+          }}
+        >
+          <span>{group.groupName}</span>
+          {/* <span className="opacity-0 ml-2 group-hover:opacity-20">#</span> */}
+        </summary>
+
+        {isOpen && (
+          <>
+            <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
+              Value metrics
+            </h2>
+            <FlowMetrics group={group} workItemTypes={workItemTypes} />
+            <QualityMetrics group={group} workItemTypes={workItemTypes} />
+            <HealthMetrics group={group} />
+          </>
+        )}
+      </details>
+    </>
+  );
+};
 
 const SummaryByTeam: React.FC<{
   groups: SummaryMetrics['groups'];

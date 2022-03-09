@@ -1,4 +1,5 @@
 import {
+  allPass,
   anyPass, applySpec, compose, filter, length, map, not, pipe
 } from 'rambda';
 import { isDeprecated } from '../../shared/repo-utils';
@@ -106,10 +107,10 @@ const mergeResults = (results: RelevantResults[]) => (
 
 const groupKey = (group?: Overview['groups'][string]) => (group ? group.name : noGroup);
 
-const hasWorkItemCompleted = (times: Overview['times']) => (
+const hasWorkItemCompleted = (times: Overview['times'], isMatchingDate: (d: Date) => boolean) => (
   (workItem: UIWorkItemWithGroup) => {
     const { end } = times[workItem.id];
-    return Boolean(end && isWithinLastMonth(new Date(end)));
+    return Boolean(end && isMatchingDate(new Date(end)));
   }
 );
 
@@ -151,11 +152,17 @@ type Summary = {
   summary: Record<string, Record<string, {
     count: number;
     velocity: number;
+    velocityByWeek: number[];
     cycleTime: number[];
+    cycleTimeByWeek: number[][];
     changeLeadTime: number[];
+    changeLeadTimeByWeek: number[][];
     wipCount: number;
+    wipAddedThisMonth: number;
+    wipAddedByWeek: number[];
     wipAge: number[];
     leakage: number;
+    leakageByWeek: number[];
   }>>;
   repoStats: {
     repos: number;
@@ -188,6 +195,12 @@ type Summary = {
   portfolioProject: string;
 };
 
+const isWithinWeeks = [4, 3, 2, 1]
+  .map(weekIndex => allPass([
+    isWithin(`${weekIndex * 7} days`),
+    compose(not, isWithin(`${(weekIndex - 1) * 7} days`))
+  ]));
+
 const summariseResults = (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
   if (!summaryPageGroups) {
@@ -207,10 +220,14 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
 
       const computeTimeDifferenceBetween = computeTimeDifference(mergedResults.workItemTimes);
 
-      const completedWorkItems = hasWorkItemCompleted(mergedResults.workItemTimes);
-      const wipWorkItems = (workItem: UIWorkItemWithGroup) => {
+      const completedWorkItems = hasWorkItemCompleted(
+        mergedResults.workItemTimes,
+        isWithinLastMonth
+      );
+
+      const wipWorkItems = (startCondition: (s: string | undefined) => boolean) => (workItem: UIWorkItemWithGroup) => {
         const { start, end } = mergedResults.workItemTimes[workItem.id];
-        return Boolean(start) && !end;
+        return startCondition(start) && !end;
       };
       const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
         mergedResults.workItemTypes[workItem.typeId].name[0] === type
@@ -226,23 +243,64 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           applySpec({
             count: length,
             velocity: wis => pipe(filter(completedWorkItems), length)(wis),
+            velocityByWeek: wis => (
+              isWithinWeeks
+                .map(isWithinWeek => wis.filter(
+                  hasWorkItemCompleted(
+                    mergedResults.workItemTimes, isWithinWeek
+                  )
+                ).length)
+            ),
             cycleTime: wis => pipe(
               filter(completedWorkItems),
               map(computeTimeDifferenceBetween('start', 'end'))
             )(wis),
+            cycleTimeByWeek: wis => (
+              isWithinWeeks
+                .map(isWithinWeek => wis.filter(
+                  hasWorkItemCompleted(
+                    mergedResults.workItemTimes, isWithinWeek
+                  )
+                ).map(computeTimeDifferenceBetween('start', 'end')))
+            ),
             changeLeadTime: wis => pipe(
               filter(completedWorkItems),
               map(computeTimeDifferenceBetween('devComplete', 'end'))
             )(wis),
-            wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
+            changeLeadTimeByWeek: wis => (
+              isWithinWeeks
+                .map(isWithinWeek => wis.filter(
+                  hasWorkItemCompleted(
+                    mergedResults.workItemTimes, isWithinWeek
+                  )
+                ).map(computeTimeDifferenceBetween('devComplete', 'end')))
+            ),
+            wipCount: wis => pipe(filter(wipWorkItems(Boolean)), length)(wis),
+            wipAddedThisMonth: wis => pipe(filter(wipWorkItems(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              s => Boolean(s) && isWithin('30 days')(new Date(s!))
+            )), length)(wis),
+            wipAddedByWeek: wis => (
+              isWithinWeeks
+                .map(isWithinWeek => wis.filter(
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  wipWorkItems(s => Boolean(s) && isWithinWeek(new Date(s!)))
+                ).length)
+            ),
             wipAge: wis => pipe(
-              filter(wipWorkItems),
+              filter(wipWorkItems(Boolean)),
               map(computeTimeDifferenceBetween('start'))
             )(wis),
             leakage: wis => pipe(
               filter(bugsLeaked),
               length
-            )(wis)
+            )(wis),
+            leakageByWeek: wis => (
+              isWithinWeeks
+                .map(isWithinWeek => wis.filter(
+                  (workItem: UIWorkItem) => isOfType('Bug')(workItem) && isWithinWeek(new Date(workItem.created.on))
+                ).length)
+            )
           })
         )
       )(mergedResults.workItems);

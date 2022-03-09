@@ -1,18 +1,22 @@
+import type { ReactNode } from 'react';
 import React, { Fragment } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
 import { num, prettyMS } from '../../helpers/utils';
 import { ExternalLink } from '../common/Icons';
+import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
 import {
+  decreaseIsBetter,
+  increaseIsBetter,
   processSummary,
   flattenSummaryGroups, getMetricCategoryDefinitionId, allExceptExpectedKeys
 } from './utils';
 
-const renderGroupItem = (link: string) => (label: string, anchor = '') => (
-  <span className="group flex items-center">
+const renderGroupItem = (link: string) => (label: ReactNode, anchor = '') => (
+  <span className="group">
     <a
       href={`${link}${anchor}`}
-      className="text-blue-500 flex"
+      className="text-blue-500"
       target="_blank"
       rel="noreferrer"
     >
@@ -98,10 +102,49 @@ const FlowMetricsByWorkItemType: React.FC<{
                   <td className="px-6 py-3 font-semibold">
                     {group.groupName}
                   </td>
-                  <td className="px-6 py-3">{renderMetric(`${summary.velocity}`, '#velocity')}</td>
-                  <td className="px-6 py-3">{renderMetric(summary.cycleTime ? prettyMS(summary.cycleTime) : '-', '#cycle-time')}</td>
                   <td className="px-6 py-3">
-                    {renderMetric(summary.changeLeadTime ? prettyMS(summary.changeLeadTime) : '-', '#change-lead-time')}
+                    {renderMetric(
+                      <>
+                        {summary.velocity}
+                        <Sparkline
+                          data={summary.velocityByWeek}
+                          lineColor={increaseIsBetter(summary.velocityByWeek)}
+                          className="ml-2"
+                        />
+                      </>,
+                      '#velocity'
+                    )}
+                  </td>
+                  <td className="px-6 py-3">
+                    {renderMetric(
+                      summary.cycleTime
+                        ? (
+                          <>
+                            {prettyMS(summary.cycleTime)}
+                            <Sparkline
+                              data={summary.cycleTimeByWeek}
+                              lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
+                              className="ml-2"
+                            />
+                          </>
+                        ) : '-',
+                      '#cycle-time'
+                    )}
+                  </td>
+                  <td className="px-6 py-3">
+                    {renderMetric(summary.changeLeadTime
+                      ? (
+                        <>
+                          {prettyMS(summary.changeLeadTime)}
+                          <Sparkline
+                            data={summary.changeLeadTimeByWeek}
+                            lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
+                            className="ml-2"
+                          />
+                        </>
+                      )
+                      : '-',
+                    '#change-lead-time')}
                   </td>
                   <td className="px-6 py-3">
                     {renderMetric(`${summary.wipCount}`, '#age-of-work-in-progress-features-by-state')}
@@ -143,7 +186,15 @@ const QualityMetrics: React.FC<{
         return (
           <details key={envDisplayName}>
             <summary className="font-semibold text-xl my-2 cursor-pointer">
-              {envDisplayName}
+              <span className="inline-flex align-middle">
+                <img
+                  src={workItemTypes[bugsDefinitionId].icon}
+                  alt={`Icon for ${envDisplayName} ${workItemTypes[bugsDefinitionId].name[0]}`}
+                  className="inline-block mr-1"
+                  width="18"
+                />
+                {envDisplayName}
+              </span>
             </summary>
 
             <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
