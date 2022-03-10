@@ -93,7 +93,7 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
 
   const qualityGateDetails = JSON.parse(findMeasure('quality_gate_details') || '{}') as SonarQualityGateDetails;
   const qualityGateMetric = (metricName: string) => {
-    const metric = qualityGateDetails.conditions.find(({ metric }) => metric === metricName);
+    const metric = qualityGateDetails.conditions?.find(({ metric }) => metric === metricName);
 
     if (!metric) return undefined;
 

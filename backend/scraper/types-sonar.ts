@@ -22,7 +22,7 @@ export type SonarAnalysisByRepo = null | {
 
 export type SonarQualityGateDetails = {
   level: 'OK' | 'ERROR' | 'WARN';
-  conditions: {
+  conditions?: {
     metric: string;
     op: 'LT' | 'GT';
     error: string;
