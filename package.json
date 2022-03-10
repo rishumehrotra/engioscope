@@ -1,6 +1,6 @@
 {
   "name": "engioscope",
-  "version": "0.1.87",
+  "version": "0.1.88",
   "scripts": {
     "watch:tailwind": "tailwind build -i ui/tailwind.css -o ui/tailwind.output.css --watch",
     "start:vite": "vite --open",
