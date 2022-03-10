@@ -1,7 +1,10 @@
 import {
   allPass, anyPass, applySpec, compose, filter, length, map, not, pipe
 } from 'rambda';
-import { normalizePolicy, pipelineMeetsBranchPolicyRequirements } from '../../shared/pipeline-utils';
+import {
+  normalizePolicy, pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed,
+  pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
+} from '../../shared/pipeline-utils';
 import { isDeprecated } from '../../shared/repo-utils';
 import type {
   Overview, UIWorkItem, UIWorkItemType
@@ -396,26 +399,15 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           stages: config.azure.collections[0].projects[0].releasePipelines.stagesToHighlight.map(stage => ({
             name: stage,
             exists: matches.reduce((acc, p) => acc + (
-              p.stageCounts
-                .map(s => s.name)
-                .some(s => s.toLowerCase().includes(stage.toLowerCase()))
-                ? 1 : 0
+              pipelineHasStageNamed(stage)(p) ? 1 : 0
             ), 0),
             used: matches.reduce((acc, p) => acc + (
-              p.stageCounts
-                .filter(s => s.name.toLowerCase().includes(stage.toLowerCase()))
-                .some(s => s.successful > 0)
-                ? 1 : 0
+              pipelineUsesStageNamed(stage)(p) ? 1 : 0
             ), 0)
           })),
-          masterOnlyPipelines: matches.reduce((acc, p) => {
-            const repoBranches = [...new Set(Object.values(p.repos).flatMap(r => r.branches))];
-
-            return acc + (
-              repoBranches.length === 1 && repoBranches[0] === 'refs/heads/master'
-                ? 1 : 0
-            );
-          }, 0),
+          masterOnlyPipelines: matches.reduce((acc, p) => (
+            acc + (pipelineDeploysExclusivelyFromMaster(p) ? 1 : 0)
+          ), 0),
           conformsToBranchPolicies: matches.reduce((acc, p) => (
             acc + (pipelineMeetsBranchPolicyRequirements(
               (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
