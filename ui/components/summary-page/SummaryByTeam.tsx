@@ -38,6 +38,7 @@ const FlowMetrics: React.FC<{
         <div />
         <div
           className="text-xs font-semibold"
+          data-tip="Number of new work items added in the last 30 days"
         >
           New
         </div>
@@ -61,7 +62,7 @@ const FlowMetrics: React.FC<{
         </div>
         <div
           className="text-xs font-semibold"
-          data-tip="Number of work items in progress"
+          data-tip="Increase in the number of WIP items over the last 30 days"
         >
           WIP increase
         </div>
@@ -87,12 +88,12 @@ const FlowMetrics: React.FC<{
               </div>
               <div className="font-semibold text-xl">
                 {renderFeatureMetric(
-                  `${featuresSummary.wipAddedThisMonth}`,
+                  `${featuresSummary.leakage}`,
                   <Sparkline
-                    data={featuresSummary.wipAddedByWeek}
-                    lineColor={increaseIsBetter(featuresSummary.wipAddedByWeek)}
+                    data={featuresSummary.leakageByWeek}
+                    lineColor={increaseIsBetter(featuresSummary.leakageByWeek)}
                   />,
-                  '#age-of-work-in-progress-features-by-state'
+                  '#work-in-progress-trend'
                 )}
               </div>
               <div className="font-semibold text-xl">
@@ -132,7 +133,7 @@ const FlowMetrics: React.FC<{
               <div className="font-semibold text-xl">
                 {renderFeatureMetric(
                   <>
-                    {featuresSummary.wipAddedThisMonth}
+                    {featuresSummary.wipIncrease}
                     <span className="text-lg text-gray-500 inline-block ml-2">
                       <span className="font-normal text-sm">of</span>
                       {' '}
@@ -140,10 +141,10 @@ const FlowMetrics: React.FC<{
                     </span>
                   </>,
                   <Sparkline
-                    data={featuresSummary.wipAddedByWeek}
-                    lineColor={decreaseIsBetter(featuresSummary.wipAddedByWeek)}
+                    data={featuresSummary.wipIncreaseByWeek}
+                    lineColor={decreaseIsBetter(featuresSummary.wipIncreaseByWeek)}
                   />,
-                  '#age-of-work-in-progress-features-by-state'
+                  '#work-in-progress-trend'
                 )}
               </div>
               <div className="font-semibold text-xl">
@@ -174,10 +175,10 @@ const FlowMetrics: React.FC<{
               </div>
               <div className="font-semibold text-xl">
                 {renderUserStoryMetric(
-                  `${userStoriesSummary.wipAddedThisMonth}`,
+                  `${userStoriesSummary.leakage}`,
                   <Sparkline
-                    data={userStoriesSummary.wipAddedByWeek}
-                    lineColor={increaseIsBetter(userStoriesSummary.wipAddedByWeek)}
+                    data={userStoriesSummary.leakageByWeek}
+                    lineColor={increaseIsBetter(userStoriesSummary.leakageByWeek)}
                   />,
                   '#work-in-progress-trend'
                 )}
@@ -219,7 +220,7 @@ const FlowMetrics: React.FC<{
               <div className="font-semibold text-xl">
                 {renderUserStoryMetric(
                   <>
-                    {userStoriesSummary.wipAddedThisMonth}
+                    {userStoriesSummary.wipIncrease}
                     <span className="text-lg text-gray-500 inline-block ml-2">
                       <span className="font-normal text-sm">of</span>
                       {' '}
@@ -227,8 +228,8 @@ const FlowMetrics: React.FC<{
                     </span>
                   </>,
                   <Sparkline
-                    data={userStoriesSummary.wipAddedByWeek}
-                    lineColor={decreaseIsBetter(userStoriesSummary.wipAddedByWeek)}
+                    data={userStoriesSummary.wipIncreaseByWeek}
+                    lineColor={decreaseIsBetter(userStoriesSummary.wipIncreaseByWeek)}
                   />,
                   '#work-in-progress-trend'
                 )}
@@ -348,7 +349,7 @@ const QualityMetrics: React.FC<{
                       : '-',
                     <Sparkline
                       data={bugInfo.cycleTimeByWeek}
-                      lineColor={increaseIsBetter(bugInfo.cycleTimeByWeek)}
+                      lineColor={decreaseIsBetter(bugInfo.cycleTimeByWeek)}
                     />,
                     '#cycle-time'
                   )}
@@ -368,7 +369,7 @@ const QualityMetrics: React.FC<{
                 <div className="font-semibold text-xl">
                   {renderBugMetric(
                     <>
-                      {bugInfo.wipAddedThisMonth}
+                      {bugInfo.wipIncrease}
                       <span className="text-lg text-gray-500 inline-block ml-2">
                         <span className="font-normal text-sm">of</span>
                         {' '}
@@ -376,8 +377,8 @@ const QualityMetrics: React.FC<{
                       </span>
                     </>,
                     <Sparkline
-                      data={bugInfo.wipAddedByWeek}
-                      lineColor={decreaseIsBetter(bugInfo.wipAddedByWeek)}
+                      data={bugInfo.wipIncreaseByWeek}
+                      lineColor={decreaseIsBetter(bugInfo.wipIncreaseByWeek)}
                     />,
                     '#work-in-progress-trend'
                   )}

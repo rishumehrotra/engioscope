@@ -1,18 +1,17 @@
 import {
-  allPass,
-  anyPass, applySpec, compose, filter, length, map, not, pipe
+  allPass, anyPass, applySpec, compose, filter, length, map, not, pipe
 } from 'rambda';
 import { isDeprecated } from '../../shared/repo-utils';
 import type {
   Overview, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
-import { exists, isWithin } from '../utils';
+import { exists, isAfter } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 
 const noGroup = 'no-group';
 
-const isWithinLastMonth = isWithin('30 days');
+const isWithinLastMonth = isAfter('30 days');
 
 const timeDiff = (end: string | Date | undefined, start: string | Date | undefined) => (
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -158,8 +157,8 @@ type Summary = {
     changeLeadTime: number[];
     changeLeadTimeByWeek: number[][];
     wipCount: number;
-    wipAddedThisMonth: number;
-    wipAddedByWeek: number[];
+    wipIncrease: number;
+    wipIncreaseByWeek: number[];
     wipAge: number[];
     leakage: number;
     leakageByWeek: number[];
@@ -197,9 +196,22 @@ type Summary = {
 
 const isWithinWeeks = [4, 3, 2, 1]
   .map(weekIndex => allPass([
-    isWithin(`${weekIndex * 7} days`),
-    compose(not, isWithin(`${(weekIndex - 1) * 7} days`))
+    isAfter(`${weekIndex * 7} days`),
+    compose(not, isAfter(`${(weekIndex - 1) * 7} days`))
   ]));
+
+const isWIPInTimeRange = (workItemTimes: Overview['times']) => (
+  (isWithinTimeRange: (d: Date) => boolean) => (
+    (wi: UIWorkItem) => {
+      const { start, end } = workItemTimes[wi.id];
+      if (!start) return false;
+      if (!isWithinTimeRange(new Date(start))) return false;
+      if (!end) return true;
+      if (isWithinTimeRange(new Date(end))) return false;
+      return true;
+    }
+  )
+);
 
 const summariseResults = (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
@@ -225,15 +237,21 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         isWithinLastMonth
       );
 
-      const wipWorkItems = (startCondition: (s: string | undefined) => boolean) => (workItem: UIWorkItemWithGroup) => {
+      const wipWorkItems = (workItem: UIWorkItemWithGroup) => {
         const { start, end } = mergedResults.workItemTimes[workItem.id];
-        return startCondition(start) && !end;
+        return Boolean(start) && !end;
       };
       const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
         mergedResults.workItemTypes[workItem.typeId].name[0] === type
       );
-      const bugsLeaked = (workItem: UIWorkItemWithGroup) => (
-        isOfType('Bug')(workItem) && isWithinLastMonth(new Date(workItem.created.on))
+      const leakage = (isInDateRange: (d: Date) => boolean) => (workItem: UIWorkItemWithGroup) => (
+        isOfType('Bug')(workItem)
+          ? isInDateRange(new Date(workItem.created.on))
+          : (
+            Boolean(mergedResults.workItemTimes[workItem.id].start)
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              && isInDateRange(new Date(mergedResults.workItemTimes[workItem.id].start!))
+          )
       );
 
       const workItemAnalysis = pipe(
@@ -275,31 +293,31 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
                   )
                 ).map(computeTimeDifferenceBetween('devComplete', 'end')))
             ),
-            wipCount: wis => pipe(filter(wipWorkItems(Boolean)), length)(wis),
-            wipAddedThisMonth: wis => pipe(filter(wipWorkItems(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              s => Boolean(s) && isWithin('30 days')(new Date(s!))
-            )), length)(wis),
-            wipAddedByWeek: wis => (
+            wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
+            wipIncrease: wis => pipe(filter((wi: UIWorkItem) => {
+              const { start, end } = mergedResults.workItemTimes[wi.id];
+              if (!start) return false;
+              if (!isWithinLastMonth(new Date(start))) return false;
+              if (!end) return true;
+              if (isWithinLastMonth(new Date(end))) return false;
+              return true;
+            }), length)(wis),
+            wipIncreaseByWeek: wis => (
               isWithinWeeks
-                .map(isWithinWeek => wis.filter(
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  wipWorkItems(s => Boolean(s) && isWithinWeek(new Date(s!)))
-                ).length)
+                .map(isWIPInTimeRange(mergedResults.workItemTimes))
+                .map(filter => wis.filter(filter).length)
             ),
             wipAge: wis => pipe(
-              filter(wipWorkItems(Boolean)),
+              filter(wipWorkItems),
               map(computeTimeDifferenceBetween('start'))
             )(wis),
             leakage: wis => pipe(
-              filter(bugsLeaked),
+              filter(leakage(isWithinLastMonth)),
               length
             )(wis),
             leakageByWeek: wis => (
               isWithinWeeks
-                .map(isWithinWeek => wis.filter(
-                  (workItem: UIWorkItem) => isOfType('Bug')(workItem) && isWithinWeek(new Date(workItem.created.on))
-                ).length)
+                .map(isWithinWeek => wis.filter(leakage(isWithinWeek)).length)
             )
           })
         )

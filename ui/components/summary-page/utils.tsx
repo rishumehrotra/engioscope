@@ -16,8 +16,8 @@ type ProcessedSummary = {
   changeLeadTimeByWeek: number[];
   wipCount: number;
   wipAge: number;
-  wipAddedThisMonth: number;
-  wipAddedByWeek: number[];
+  wipIncrease: number;
+  wipIncreaseByWeek: number[];
   leakage: number;
   leakageByWeek: number[];
 };
@@ -36,8 +36,8 @@ export const processSummary = (summary: SummaryGroups[string]): ProcessedSummary
   ),
   wipCount: summary.wipCount,
   wipAge: sum(summary.wipAge) / summary.wipCount,
-  wipAddedThisMonth: summary.wipAddedThisMonth,
-  wipAddedByWeek: summary.wipAddedByWeek,
+  wipIncrease: summary.wipIncrease,
+  wipIncreaseByWeek: summary.wipIncreaseByWeek,
   leakage: summary.leakage,
   leakageByWeek: summary.leakageByWeek
 });
@@ -52,8 +52,8 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     changeLeadTime: number[];
     changeLeadTimeByWeek: number[][];
     wipCount: number;
-    wipAddedThisMonth: number;
-    wipAddedByWeek: number[];
+    wipIncrease: number;
+    wipIncreaseByWeek: number[];
     wipAge: number[];
     leakage: number;
     leakageByWeek: number[];
@@ -85,14 +85,14 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
       acc.cycleTimeByWeek
     ),
     wipCount: acc.wipCount + group.wipCount,
-    wipAddedByWeek: group.wipAddedByWeek.reduce<number[]>(
+    wipIncreaseByWeek: group.wipIncreaseByWeek.reduce<number[]>(
       (acc, wipAdded, index) => {
         acc[index] = wipAdded + (acc[index] || 0);
         return acc;
       },
-      acc.wipAddedByWeek
+      acc.wipIncreaseByWeek
     ),
-    wipAddedThisMonth: acc.wipAddedThisMonth + group.wipAddedThisMonth,
+    wipIncrease: acc.wipIncrease + group.wipIncrease,
     wipAge: [...acc.wipAge, ...group.wipAge],
     count: acc.count + group.count,
     leakage: acc.leakage + group.leakage,
@@ -112,8 +112,8 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     changeLeadTime: [],
     changeLeadTimeByWeek: [],
     wipCount: 0,
-    wipAddedByWeek: [],
-    wipAddedThisMonth: 0,
+    wipIncreaseByWeek: [],
+    wipIncrease: 0,
     wipAge: [],
     leakage: 0,
     leakageByWeek: []

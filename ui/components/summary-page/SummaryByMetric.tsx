@@ -52,6 +52,12 @@ const FlowMetricsByWorkItemType: React.FC<{
             <th />
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+              data-tip="Number of new work items added in the last 30 days"
+            >
+              New
+            </th>
+            <th
+              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
               data-tip="Number of work items completed in the last 30 days"
             >
               Velocity
@@ -70,9 +76,9 @@ const FlowMetricsByWorkItemType: React.FC<{
             </th>
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Number of work items in progress"
+              data-tip="Increase in the number of WIP items over the last 30 days"
             >
-              WIP count
+              WIP increase
             </th>
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
@@ -101,6 +107,19 @@ const FlowMetricsByWorkItemType: React.FC<{
                 <tr key={group.groupName} className="hover:bg-gray-50">
                   <td className="px-6 py-3 font-semibold">
                     {group.groupName}
+                  </td>
+                  <td className="px-6 py-3">
+                    {renderMetric(
+                      <>
+                        {summary.leakage}
+                        <Sparkline
+                          data={summary.leakageByWeek}
+                          lineColor={increaseIsBetter(summary.leakageByWeek)}
+                          className="ml-2"
+                        />
+                      </>,
+                      '#work-in-progress-trend'
+                    )}
                   </td>
                   <td className="px-6 py-3">
                     {renderMetric(
@@ -147,7 +166,26 @@ const FlowMetricsByWorkItemType: React.FC<{
                     '#change-lead-time')}
                   </td>
                   <td className="px-6 py-3">
-                    {renderMetric(`${summary.wipCount}`, '#age-of-work-in-progress-features-by-state')}
+                    {renderMetric(
+                      summary.wipCount
+                        ? (
+                          <>
+                            {summary.wipIncrease}
+                            <span className="text-lg text-gray-500 inline-block ml-2">
+                              <span className="font-normal text-sm">of</span>
+                              {' '}
+                              {summary.wipCount}
+                              <Sparkline
+                                data={summary.wipIncreaseByWeek}
+                                lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
+                                className="ml-2"
+                              />
+                            </span>
+                          </>
+                        )
+                        : '0',
+                      '#age-of-work-in-progress-features-by-state'
+                    )}
                   </td>
                   <td className="px-6 py-3">
                     {renderMetric(summary.wipAge ? prettyMS(summary.wipAge) : '-', '#age-of-work-in-progress-items')}
@@ -229,9 +267,9 @@ const QualityMetrics: React.FC<{
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Number of work-in-progress bugs"
+                      data-tip="Increase in the number of WIP bugs over the last 30 days"
                     >
-                      WIP
+                      WIP increase
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
@@ -261,22 +299,97 @@ const QualityMetrics: React.FC<{
                       const renderBugMetric = renderGroupItem(portfolioProjectLink);
 
                       return (
-                        <tr className="hover:bg-gray-50">
+                        <tr className="hover:bg-gray-50" key={group.groupName}>
                           <td className="px-6 py-3 font-semibold">{group.groupName}</td>
                           <td className="px-6 py-3">
-                            {renderBugMetric(bugsForEnv ? `${bugsForEnv.leakage}` : '-', '#bugs')}
+                            {renderBugMetric(
+                              bugsForEnv
+                                ? (
+                                  <>
+                                    {bugsForEnv.leakage}
+                                    <Sparkline
+                                      data={bugsForEnv.leakageByWeek}
+                                      lineColor={decreaseIsBetter(bugsForEnv.leakageByWeek)}
+                                      className="ml-2"
+                                    />
+                                  </>
+                                )
+                                : '-',
+                              '#bugs'
+                            )}
                           </td>
                           <td className="px-6 py-3">
-                            {renderBugMetric(bugsForEnv ? `${bugsForEnv.velocity}` : '-', '#velocity')}
+                            {renderBugMetric(
+                              bugsForEnv
+                                ? (
+                                  <>
+                                    {bugsForEnv.velocity}
+                                    <Sparkline
+                                      data={bugsForEnv.velocityByWeek}
+                                      lineColor={increaseIsBetter(bugsForEnv.velocityByWeek)}
+                                      className="ml-2"
+                                    />
+                                  </>
+                                )
+                                : '-',
+                              '#velocity'
+                            )}
                           </td>
                           <td className="px-6 py-3">
-                            {renderBugMetric(bugsForEnv?.cycleTime ? prettyMS(bugsForEnv.cycleTime) : '-', '#cycle-time')}
+                            {renderBugMetric(
+                              bugsForEnv?.cycleTime
+                                ? (
+                                  <>
+                                    {prettyMS(bugsForEnv.cycleTime)}
+                                    <Sparkline
+                                      data={bugsForEnv.cycleTimeByWeek}
+                                      lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
+                                      className="ml-2"
+                                    />
+                                  </>
+                                )
+                                : '-',
+                              '#cycle-time'
+                            )}
                           </td>
                           <td className="px-6 py-3">
-                            {renderBugMetric(bugsForEnv?.changeLeadTime ? prettyMS(bugsForEnv.changeLeadTime) : '-', '#change-lead-time')}
+                            {renderBugMetric(
+                              bugsForEnv?.changeLeadTime
+                                ? (
+                                  <>
+                                    {prettyMS(bugsForEnv.changeLeadTime)}
+                                    <Sparkline
+                                      data={bugsForEnv.changeLeadTimeByWeek}
+                                      lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
+                                      className="ml-2"
+                                    />
+                                  </>
+                                )
+                                : '-',
+                              '#change-lead-time'
+                            )}
                           </td>
                           <td className="px-6 py-3">
-                            {renderBugMetric(bugsForEnv ? `${bugsForEnv.wipCount}` : '-', '#work-in-progress-trend')}
+                            {renderBugMetric(
+                              bugsForEnv
+                                ? (
+                                  <>
+                                    {bugsForEnv.wipIncrease}
+                                    <span className="text-lg text-gray-500 inline-block ml-2">
+                                      <span className="font-normal text-sm">of</span>
+                                      {' '}
+                                      {bugsForEnv.wipCount}
+                                    </span>
+                                    <Sparkline
+                                      data={bugsForEnv.wipIncreaseByWeek}
+                                      lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
+                                      className="ml-2"
+                                    />
+                                  </>
+                                )
+                                : '-',
+                              '#work-in-progress-trend'
+                            )}
                           </td>
                           <td className="px-6 py-3">
                             {renderBugMetric(bugsForEnv?.wipAge ? prettyMS(bugsForEnv.wipAge) : '-', '#age-of-work-in-progress-items')}
@@ -346,7 +459,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
             const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
             return (
-              <tr className="hover:bg-gray-50">
+              <tr className="hover:bg-gray-50" key={group.groupName}>
                 <td className="px-6 py-3 font-semibold">
                   {group.groupName}
                   <p className="justify-self-end text-xs text-gray-500">
@@ -430,7 +543,6 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
         </tr>
       </thead>
       <tbody>
-        {' '}
         {groups
           .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
           .map(group => {
@@ -443,7 +555,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
             const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
             return (
-              <tr className="hover:bg-gray-50">
+              <tr className="hover:bg-gray-50" key={group.groupName}>
                 <td className="px-6 py-3 font-semibold">
                   {group.groupName}
                   <p className="justify-self-end text-xs text-gray-500">
@@ -530,7 +642,6 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
         </tr>
       </thead>
       <tbody>
-        {' '}
         {groups
           .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
           .map(group => {
@@ -542,7 +653,7 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
             const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
             return (
-              <tr className="hover:bg-gray-50">
+              <tr className="hover:bg-gray-50" key={group.groupName}>
                 <td className="px-6 py-3 font-semibold">
                   {group.groupName}
                   <p className="justify-self-end text-xs text-gray-500">
