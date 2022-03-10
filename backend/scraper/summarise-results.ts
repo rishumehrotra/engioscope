@@ -1,6 +1,7 @@
 import {
   allPass, anyPass, applySpec, compose, filter, length, map, not, pipe
 } from 'rambda';
+import { normalizePolicy, pipelineMeetsBranchPolicyRequirements } from '../../shared/pipeline-utils';
 import { isDeprecated } from '../../shared/repo-utils';
 import type {
   Overview, UIWorkItem, UIWorkItemType
@@ -416,23 +417,9 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             );
           }, 0),
           conformsToBranchPolicies: matches.reduce((acc, p) => (
-            acc + (
-              Object.keys(p.repos).every(repoId => {
-                const policies = resultsForThisProject?.analysisResult.releaseAnalysis.policies;
-                if (!policies) return false;
-                const policy = policies[repoId];
-                if (!policy) return false;
-
-                return p.repos[repoId].branches.every(branch => {
-                  const policyForBranch = policy[branch];
-                  if (!policyForBranch) return false;
-                  return !policyForBranch.minimumNumberOfReviewers?.isOptional
-                    && (policyForBranch.minimumNumberOfReviewers?.count || 0) > 0
-                    && !policyForBranch.commentRequirements?.isOptional
-                    && !policyForBranch.builds?.isOptional
-                    && !policyForBranch.workItemLinking?.isOptional;
-                });
-              }) ? 1 : 0)
+            acc + (pipelineMeetsBranchPolicyRequirements(
+              (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
+            )(p) ? 1 : 0)
           ), 0)
         };
       };

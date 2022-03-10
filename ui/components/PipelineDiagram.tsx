@@ -1,7 +1,7 @@
 import { add, range } from 'rambda';
 import React, { useMemo } from 'react';
 import { exists } from '../helpers/utils';
-import type { PipelineStageWithCounts } from './pipeline-utils';
+import type { PipelineStageWithCounts } from '../../shared/pipeline-utils';
 
 type Grid = (PipelineStageWithCounts | undefined)[][];
 

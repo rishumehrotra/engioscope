@@ -1,6 +1,6 @@
 import type {
   BranchPolicies, Pipeline, PipelineCount, PipelineStage
-} from '../../shared/types';
+} from './types';
 
 export type PipelineStageWithCounts = PipelineStage & PipelineCount;
 

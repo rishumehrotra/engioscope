@@ -1,10 +1,10 @@
 import React, { Fragment } from 'react';
 import type { Pipeline } from '../../shared/types';
 import { num } from '../helpers/utils';
-import type { NormalizedPolicies } from './pipeline-utils';
+import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
   pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
-} from './pipeline-utils';
+} from '../../shared/pipeline-utils';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 

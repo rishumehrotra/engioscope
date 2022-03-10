@@ -7,11 +7,11 @@ import AlertMessage from './common/AlertMessage';
 import Card from './common/ExpandingCard';
 import Flair from './common/Flair';
 import { Branches } from './common/Icons';
-import type { NormalizedPolicies } from './pipeline-utils';
+import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
   mergeStagesAndCounts,
   fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
-} from './pipeline-utils';
+} from '../../shared/pipeline-utils';
 import PipelineDiagram from './PipelineDiagram';
 
 const policyColorClass = (policy: NormalizedPolicies, key: keyof NormalizedPolicies) => {

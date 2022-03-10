@@ -14,12 +14,12 @@ import { useRemoveSort } from '../hooks/sort-hooks';
 import { filterBySearch, getSearchTerm } from '../helpers/utils';
 import Loading from '../components/Loading';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
-import type { NormalizedPolicies } from '../components/pipeline-utils';
+import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
   normalizePolicy,
   pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed,
   pipelineMeetsBranchPolicyRequirements
-} from '../components/pipeline-utils';
+} from '../../shared/pipeline-utils';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
 
