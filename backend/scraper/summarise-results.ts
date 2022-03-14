@@ -1,6 +1,7 @@
 import {
   allPass, anyPass, applySpec, compose, filter, length, map, not, pipe
 } from 'rambda';
+import { incrementBy, incrementIf } from '../../shared/functional-utils';
 import {
   normalizePolicy, pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
@@ -369,15 +370,14 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         return {
           repos: matchesExcludingDeprecated.length,
           excluded: matches.length - matchesExcludingDeprecated.length,
-          tests: matchesExcludingDeprecated.reduce((acc, repo) => acc + (repo.tests?.total || 0), 0),
+          tests: matchesExcludingDeprecated.reduce(
+            incrementBy(repo => repo.tests?.total || 0), 0
+          ),
           builds: {
-            total: matchesExcludingDeprecated.reduce((acc, repo) => acc + (repo.builds?.count || 0), 0),
-            successful: matchesExcludingDeprecated.reduce(
-              (acc, repo) => (
-                acc + (repo.builds?.pipelines.reduce((acc, p) => acc + p.success, 0) || 0)
-              ),
-              0
-            )
+            total: matchesExcludingDeprecated.reduce(incrementBy(repo => repo.builds?.count || 0), 0),
+            successful: matchesExcludingDeprecated.reduce(incrementBy(
+              repo => repo.builds?.pipelines.reduce(incrementBy(p => p.success), 0) || 0
+            ), 0)
           },
           codeQuality: codeQuality()
         };
@@ -398,21 +398,13 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           pipelines: matches.length,
           stages: config.azure.collections[0].projects[0].releasePipelines.stagesToHighlight.map(stage => ({
             name: stage,
-            exists: matches.reduce((acc, p) => acc + (
-              pipelineHasStageNamed(stage)(p) ? 1 : 0
-            ), 0),
-            used: matches.reduce((acc, p) => acc + (
-              pipelineUsesStageNamed(stage)(p) ? 1 : 0
-            ), 0)
+            exists: matches.reduce(incrementIf(pipelineHasStageNamed(stage)), 0),
+            used: matches.reduce(incrementIf(pipelineUsesStageNamed(stage)), 0)
           })),
-          masterOnlyPipelines: matches.reduce((acc, p) => (
-            acc + (pipelineDeploysExclusivelyFromMaster(p) ? 1 : 0)
-          ), 0),
-          conformsToBranchPolicies: matches.reduce((acc, p) => (
-            acc + (pipelineMeetsBranchPolicyRequirements(
-              (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
-            )(p) ? 1 : 0)
-          ), 0)
+          masterOnlyPipelines: matches.reduce(incrementIf(pipelineDeploysExclusivelyFromMaster), 0),
+          conformsToBranchPolicies: matches.reduce(incrementIf(pipelineMeetsBranchPolicyRequirements(
+            (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
+          )), 0)
         };
       };
 
