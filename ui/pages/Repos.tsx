@@ -15,6 +15,7 @@ import RepoSummary from '../components/RepoSummary';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
 import { combinedQualityGateStatus } from '../components/code-quality-utils';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
+import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -26,7 +27,7 @@ const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
 
 const bySearch = (search: string) => (repo: RepoAnalysis) => filterBySearch(search, repo.name);
 const byCommitsGreaterThanZero = (repo: RepoAnalysis) => repo.commits.count;
-const byBuildsGreaterThanZero = (repo: RepoAnalysis) => (repo.builds?.count || 0) > 0;
+const byBuildsGreaterThanZero = (repo: RepoAnalysis) => numberOfBuilds(repo) > 0;
 const byFailingLastBuilds = (repo: RepoAnalysis) => (
   repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded')
 );
@@ -40,11 +41,11 @@ const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) 
 );
 
 const sorters: SortMap<RepoAnalysis> = {
-  'Builds': (a, b) => (a.builds?.count || 0) - (b.builds?.count || 0),
+  'Builds': (a, b) => numberOfBuilds(a) - numberOfBuilds(b),
   'Branches': (a, b) => a.branches.total.count - b.branches.total.count,
   'Commits': (a, b) => a.commits.count - b.commits.count,
   'Pull requests': (a, b) => a.prs.total - b.prs.total,
-  'Tests': (a, b) => (a.tests?.total || 0) - (b.tests?.total || 0),
+  'Tests': (a, b) => numberOfTests(a) - numberOfTests(b),
   'Code quality': (a, b) => qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality)
 };
 

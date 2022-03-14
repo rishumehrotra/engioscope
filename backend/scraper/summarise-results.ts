@@ -1,14 +1,16 @@
 import {
-  allPass, anyPass, applySpec, compose, filter, length, map, not, pipe
+  allPass, anyPass, applySpec, compose, filter, length, map, not, pipe, prop
 } from 'rambda';
-import { incrementBy, incrementIf } from '../../shared/functional-utils';
+import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
   normalizePolicy, pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
-import { isDeprecated } from '../../shared/repo-utils';
+import {
+  isDeprecated, totalBuilds, totalTests
+} from '../../shared/repo-utils';
 import type {
-  Overview, UIWorkItem, UIWorkItemType
+  Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
 import { exists, isAfter } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
@@ -370,14 +372,12 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         return {
           repos: matchesExcludingDeprecated.length,
           excluded: matches.length - matchesExcludingDeprecated.length,
-          tests: matchesExcludingDeprecated.reduce(
-            incrementBy(repo => repo.tests?.total || 0), 0
-          ),
+          tests: totalTests(matchesExcludingDeprecated),
           builds: {
-            total: matchesExcludingDeprecated.reduce(incrementBy(repo => repo.builds?.count || 0), 0),
-            successful: matchesExcludingDeprecated.reduce(incrementBy(
-              repo => repo.builds?.pipelines.reduce(incrementBy(p => p.success), 0) || 0
-            ), 0)
+            total: totalBuilds(matchesExcludingDeprecated),
+            successful: count<RepoAnalysis>(incrementBy(
+              repo => count<UIBuildPipeline>(incrementBy(prop('success')))(repo.builds?.pipelines || [])
+            ))(matchesExcludingDeprecated)
           },
           codeQuality: codeQuality()
         };
@@ -398,8 +398,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           pipelines: matches.length,
           stages: config.azure.collections[0].projects[0].releasePipelines.stagesToHighlight.map(stage => ({
             name: stage,
-            exists: matches.reduce(incrementIf(pipelineHasStageNamed(stage)), 0),
-            used: matches.reduce(incrementIf(pipelineUsesStageNamed(stage)), 0)
+            exists: count(incrementIf(pipelineHasStageNamed(stage)))(matches),
+            used: count(incrementIf(pipelineUsesStageNamed(stage)))(matches)
           })),
           masterOnlyPipelines: matches.reduce(incrementIf(pipelineDeploysExclusivelyFromMaster), 0),
           conformsToBranchPolicies: matches.reduce(incrementIf(pipelineMeetsBranchPolicyRequirements(

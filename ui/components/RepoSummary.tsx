@@ -1,6 +1,6 @@
 import { compose, not } from 'rambda';
 import React from 'react';
-import { isDeprecated } from '../../shared/repo-utils';
+import { isDeprecated, totalBuilds, totalTests } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import ProjectStat from './ProjectStat';
@@ -52,22 +52,15 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Tests',
-          value: num(reposWithExclusions.reduce(
-            (acc, r) => acc + (r.tests?.total || 0),
-            0
-          )),
+          value: num(totalTests(reposWithExclusions)),
           tooltip: 'Total number of tests across all matching repos'
         }]}
       />
       <ProjectStat
         topStats={[{
           title: 'Builds',
-          value: num(reposWithExclusions.reduce(
-            (acc, r) => acc + (r.builds?.count || 0),
-            0
-          )),
+          value: num(totalBuilds(reposWithExclusions)),
           tooltip: 'Total number of builds across all matching repos'
-
         }]}
         childStats={[{
           title: 'Success',
