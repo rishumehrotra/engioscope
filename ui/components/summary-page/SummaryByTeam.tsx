@@ -527,7 +527,7 @@ const HealthMetrics: React.FC<{
             <div className="font-semibold text-xl">
               {pipelinesMetric(
                 pipelineStats.pipelines === 0 ? '0'
-                  : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
+                  : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
               )}
             </div>
           </div>
