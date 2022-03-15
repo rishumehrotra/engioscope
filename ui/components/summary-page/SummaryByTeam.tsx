@@ -12,241 +12,156 @@ import {
   renderGroupItem, processSummary
 } from './utils';
 
-const FlowMetrics: React.FC<{
+const FLowMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
 }> = ({ group, workItemTypes }) => {
-  const userStoryDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'User Story');
-  const featuresDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Feature');
-  const userStories = userStoryDefinitionId ? group.summary[userStoryDefinitionId] : null;
-  const userStoriesSummary = userStories ? flattenSummaryGroups(userStories) : null;
-  const features = featuresDefinitionId ? group.summary[featuresDefinitionId] : null;
-  const featuresSummary = features ? flattenSummaryGroups(features) : null;
   const [filterKey] = allExceptExpectedKeys(group);
   const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
   const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
-  const renderUserStoryMetric = renderGroupItem(projectLink);
-  const renderFeatureMetric = renderGroupItem(portfolioProjectLink);
-
   return (
     <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
       <h1 className="text-xl font-semibold mb-5 flex items-center">Flow Metrics</h1>
 
-      <div className="grid grid-cols-7 gap-y-4">
-        <div />
-        <div
-          className="text-xs font-semibold"
-          data-tip="Number of new work items added in the last 30 days"
-        >
-          New
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Number of work items completed in the last 30 days"
-        >
-          Velocity
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Average time taken to complete a work item over the last 30 days"
-        >
-          Cycle time
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Average time taken to take a work item to production after development is complete"
-        >
-          CLT
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Increase in the number of WIP items over the last 30 days"
-        >
-          WIP increase
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Average age of work items in progress"
-        >
-          WIP age
-        </div>
-        {
-          featuresSummary ? (
-            <>
-              <div className="font-semibold text-sm flex items-center">
-                { featuresDefinitionId ? (
+      <table className="w-full">
+        <thead>
+          <tr>
+            {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+            <th className="w-1/12" />
+            <th
+              className="text-xs font-semibold py-3 w-1/12"
+              data-tip="Number of new work items added in the last 30 days"
+            >
+              New
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Number of work items completed in the last 30 days"
+            >
+              Velocity
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Average time taken to complete a work item over the last 30 days"
+            >
+              Cycle time
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Average time taken to take a work item to production after development is complete"
+            >
+              CLT
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Increase in the number of WIP items over the last 30 days"
+            >
+              WIP increase
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Average age of work items in progress"
+            >
+              WIP age
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {['Feature', 'User Story'].map(typeName => {
+            const definitionId = getMetricCategoryDefinitionId(workItemTypes, typeName);
+            if (!definitionId) return null;
+
+            const workItems = group.summary[definitionId];
+            const workItemsSummary = flattenSummaryGroups(workItems);
+            const renderMetric = renderGroupItem(typeName === 'Feature' ? portfolioProjectLink : projectLink);
+
+            return (
+              <tr key={typeName}>
+                <td className="font-semibold text-sm flex items-center py-3">
                   <img
-                    src={workItemTypes[featuresDefinitionId].icon}
+                    src={workItemTypes[definitionId].icon}
                     alt="Features"
                     className="w-4 h-4 mr-2"
                   />
-                )
-                  : null}
-                <span>Features</span>
-              </div>
-              <div className="font-semibold text-xl">
-                {renderFeatureMetric(
-                  `${featuresSummary.leakage}`,
-                  <Sparkline
-                    data={featuresSummary.leakageByWeek}
-                    lineColor={increaseIsBetter(featuresSummary.leakageByWeek)}
-                  />,
-                  '#work-in-progress-trend'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderFeatureMetric(
-                  `${featuresSummary.velocity}`,
-                  <Sparkline
-                    data={featuresSummary.velocityByWeek}
-                    lineColor={increaseIsBetter(featuresSummary.velocityByWeek)}
-                  />,
-                  '#velocity'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderFeatureMetric(
-                  featuresSummary.cycleTime
-                    ? prettyMS(featuresSummary.cycleTime)
-                    : '-',
-                  <Sparkline
-                    data={featuresSummary.cycleTimeByWeek}
-                    lineColor={decreaseIsBetter(featuresSummary.cycleTimeByWeek)}
-                  />,
-                  '#cycle-time'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderFeatureMetric(
-                  featuresSummary.changeLeadTime
-                    ? prettyMS(featuresSummary.changeLeadTime)
-                    : '-',
-                  <Sparkline
-                    data={featuresSummary.changeLeadTimeByWeek}
-                    lineColor={decreaseIsBetter(featuresSummary.changeLeadTimeByWeek)}
-                  />,
-                  '#change-lead-time'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderFeatureMetric(
-                  <>
-                    {featuresSummary.wipIncrease}
-                    <span className="text-lg text-gray-500 inline-block ml-2">
-                      <span className="font-normal text-sm">of</span>
-                      {' '}
-                      {featuresSummary.wipCount}
-                    </span>
-                  </>,
-                  <Sparkline
-                    data={featuresSummary.wipIncreaseByWeek}
-                    lineColor={decreaseIsBetter(featuresSummary.wipIncreaseByWeek)}
-                  />,
-                  '#work-in-progress-trend'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderFeatureMetric(
-                  featuresSummary.wipAge
-                    ? prettyMS(featuresSummary.wipAge)
-                    : '-',
-                  null,
-                  '#age-of-work-in-progress-items'
-                )}
-              </div>
-            </>
-          ) : null
-        }
-        {
-          userStoriesSummary ? (
-            <>
-              <div className="font-semibold text-sm flex items-center">
-                { userStoryDefinitionId ? (
-                  <img
-                    src={workItemTypes[userStoryDefinitionId].icon}
-                    alt="User Stories"
-                    className="w-4 h-4 mr-2"
-                  />
-                )
-                  : null}
-                <span>User Stories</span>
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(
-                  `${userStoriesSummary.leakage}`,
-                  <Sparkline
-                    data={userStoriesSummary.leakageByWeek}
-                    lineColor={increaseIsBetter(userStoriesSummary.leakageByWeek)}
-                  />,
-                  '#work-in-progress-trend'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(
-                  `${userStoriesSummary.velocity}`,
-                  <Sparkline
-                    data={userStoriesSummary.velocityByWeek}
-                    lineColor={increaseIsBetter(userStoriesSummary.velocityByWeek)}
-                  />,
-                  '#velocity'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(
-                  userStoriesSummary.cycleTime
-                    ? prettyMS(userStoriesSummary.cycleTime)
-                    : '-',
-                  <Sparkline
-                    data={userStoriesSummary.cycleTimeByWeek}
-                    lineColor={decreaseIsBetter(userStoriesSummary.cycleTimeByWeek)}
-                  />,
-                  '#cycle-time'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(
-                  userStoriesSummary.changeLeadTime
-                    ? prettyMS(userStoriesSummary.changeLeadTime)
-                    : '-',
-                  <Sparkline
-                    data={userStoriesSummary.changeLeadTimeByWeek}
-                    lineColor={decreaseIsBetter(userStoriesSummary.changeLeadTimeByWeek)}
-                  />,
-                  '#change-lead-time'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(
-                  <>
-                    {userStoriesSummary.wipIncrease}
-                    <span className="text-lg text-gray-500 inline-block ml-2">
-                      <span className="font-normal text-sm">of</span>
-                      {' '}
-                      {userStoriesSummary.wipCount}
-                    </span>
-                  </>,
-                  <Sparkline
-                    data={userStoriesSummary.wipIncreaseByWeek}
-                    lineColor={decreaseIsBetter(userStoriesSummary.wipIncreaseByWeek)}
-                  />,
-                  '#work-in-progress-trend'
-                )}
-              </div>
-              <div className="font-semibold text-xl">
-                {renderUserStoryMetric(
-                  userStoriesSummary.wipAge
-                    ? prettyMS(userStoriesSummary.wipAge)
-                    : '-',
-                  null,
-                  '#age-of-work-in-progress-items'
-                )}
-              </div>
-            </>
-          ) : null
-        }
-      </div>
+                  <span>{workItemTypes[definitionId].name[1]}</span>
+                </td>
+                <td>
+                  {renderMetric(
+                    `${workItemsSummary.leakage}`,
+                    <Sparkline
+                      data={workItemsSummary.leakageByWeek}
+                      lineColor={increaseIsBetter(workItemsSummary.leakageByWeek)}
+                    />,
+                    '#work-in-progress-trend'
+                  )}
+                </td>
+                <td>
+                  {renderMetric(
+                    `${workItemsSummary.velocity}`,
+                    <Sparkline
+                      data={workItemsSummary.velocityByWeek}
+                      lineColor={increaseIsBetter(workItemsSummary.velocityByWeek)}
+                    />,
+                    '#velocity'
+                  )}
+                </td>
+                <td>
+                  {renderMetric(
+                    workItemsSummary.cycleTime
+                      ? prettyMS(workItemsSummary.cycleTime)
+                      : '-',
+                    <Sparkline
+                      data={workItemsSummary.cycleTimeByWeek}
+                      lineColor={decreaseIsBetter(workItemsSummary.cycleTimeByWeek)}
+                    />,
+                    '#cycle-time'
+                  )}
+                </td>
+                <td>
+                  {renderMetric(
+                    workItemsSummary.changeLeadTime
+                      ? prettyMS(workItemsSummary.changeLeadTime)
+                      : '-',
+                    <Sparkline
+                      data={workItemsSummary.changeLeadTimeByWeek}
+                      lineColor={decreaseIsBetter(workItemsSummary.changeLeadTimeByWeek)}
+                    />,
+                    '#change-lead-time'
+                  )}
+                </td>
+                <td>
+                  {renderMetric(
+                    <>
+                      {workItemsSummary.wipIncrease}
+                      <span className="text-lg text-gray-500 inline-block ml-2">
+                        <span className="font-normal text-sm">of</span>
+                        {' '}
+                        {workItemsSummary.wipCount}
+                      </span>
+                    </>,
+                    <Sparkline
+                      data={workItemsSummary.wipIncreaseByWeek}
+                      lineColor={decreaseIsBetter(workItemsSummary.wipIncreaseByWeek)}
+                    />,
+                    '#work-in-progress-trend'
+                  )}
+                </td>
+                <td>
+                  {renderMetric(
+                    workItemsSummary.wipAge
+                      ? prettyMS(workItemsSummary.wipAge)
+                      : '-',
+                    null,
+                    '#age-of-work-in-progress-items'
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -267,51 +182,56 @@ const QualityMetrics: React.FC<{
   return (
     <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
       <h1 className="text-xl font-semibold mb-5 flex items-center">Quality Metrics</h1>
-      <div className="grid grid-cols-7 gap-y-4">
-        <div />
-        <div
-          className="text-xs font-semibold"
-          data-tip="Number of bugs opened in the last 30 days"
-        >
-          New
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Number of bugs closed in the last 30 days"
-        >
-          Fixed
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Average time taken to close a bug"
-        >
-          Cycle time
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Average time taken to close a bug once development is complete"
-        >
-          CLT
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Number of work-in-progress bugs"
-        >
-          WIP increase
-        </div>
-        <div
-          className="text-xs font-semibold"
-          data-tip="Average age of work-in-progress bugs"
-        >
-          WIP age
-        </div>
-        {
-          Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
+      <table className="w-full">
+        <thead>
+          <tr>
+            {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+            <th className="w-1/12" />
+            <th
+              className="text-xs font-semibold py-3 w-1/12"
+              data-tip="Number of bugs opened in the last 30 days"
+            >
+              New
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Number of bugs closed in the last 30 days"
+            >
+              Fixed
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Average time taken to close a bug"
+            >
+              Cycle time
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Average time taken to close a bug once development is complete"
+            >
+              CLT
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Number of work-in-progress bugs"
+            >
+              WIP increase
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Average age of work-in-progress bugs"
+            >
+              WIP age
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
             const bugInfo = processSummary(envBasedBugInfo);
 
             return (
-              <Fragment key={environment}>
-                <div className="font-semibold text-sm flex items-center">
+              <tr key={environment}>
+                <td className="font-semibold text-sm flex items-center py-3">
                   { bugsDefinitionId ? (
                     <img
                       src={workItemTypes[bugsDefinitionId].icon}
@@ -321,8 +241,8 @@ const QualityMetrics: React.FC<{
                   )
                     : null}
                   {environment}
-                </div>
-                <div className="font-semibold text-xl">
+                </td>
+                <td className="font-semibold text-xl">
                   {renderBugMetric(
                     `${bugInfo.leakage}`,
                     <Sparkline
@@ -331,8 +251,8 @@ const QualityMetrics: React.FC<{
                     />,
                     '#bug-leakage-with-root-cause'
                   )}
-                </div>
-                <div className="font-semibold text-xl">
+                </td>
+                <td className="font-semibold text-xl">
                   {renderBugMetric(
                     `${bugInfo.velocity}`,
                     <Sparkline
@@ -341,8 +261,8 @@ const QualityMetrics: React.FC<{
                     />,
                     '#velocity'
                   )}
-                </div>
-                <div className="font-semibold text-xl">
+                </td>
+                <td className="font-semibold text-xl">
                   {renderBugMetric(
                     bugInfo.cycleTime
                       ? prettyMS(bugInfo.cycleTime)
@@ -353,8 +273,8 @@ const QualityMetrics: React.FC<{
                     />,
                     '#cycle-time'
                   )}
-                </div>
-                <div className="font-semibold text-xl">
+                </td>
+                <td className="font-semibold text-xl">
                   {renderBugMetric(
                     bugInfo.changeLeadTime
                       ? prettyMS(bugInfo.changeLeadTime)
@@ -365,8 +285,8 @@ const QualityMetrics: React.FC<{
                     />,
                     '#change-lead-time'
                   )}
-                </div>
-                <div className="font-semibold text-xl">
+                </td>
+                <td className="font-semibold text-xl">
                   {renderBugMetric(
                     <>
                       {bugInfo.wipIncrease}
@@ -382,8 +302,8 @@ const QualityMetrics: React.FC<{
                     />,
                     '#work-in-progress-trend'
                   )}
-                </div>
-                <div className="font-semibold text-xl">
+                </td>
+                <td className="font-semibold text-xl">
                   {renderBugMetric(
                     bugInfo.wipAge
                       ? prettyMS(bugInfo.wipAge)
@@ -391,12 +311,12 @@ const QualityMetrics: React.FC<{
                     null,
                     '#age-of-work-in-progress-items'
                   )}
-                </div>
-              </Fragment>
+                </td>
+              </tr>
             );
-          })
-        }
-      </div>
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -607,7 +527,7 @@ const HealthMetrics: React.FC<{
             <div className="font-semibold text-xl">
               {pipelinesMetric(
                 pipelineStats.pipelines === 0 ? '0'
-                  : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
+                  : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
               )}
             </div>
           </div>
@@ -748,34 +668,32 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
   const summaryRef = useRef<HTMLElement>(null);
 
   return (
-    <>
-      <details>
-        <summary
-          className="text-2xl font-bold group cursor-pointer"
-          id={`${group.groupName}`}
-          ref={summaryRef}
-          onClick={evt => {
-            if (summaryRef.current?.contains(evt.currentTarget)) {
-              setIsOpen(!isOpen);
-            }
-          }}
-        >
-          <span>{group.groupName}</span>
-          {/* <span className="opacity-0 ml-2 group-hover:opacity-20">#</span> */}
-        </summary>
+    <details>
+      <summary
+        className="text-2xl font-bold group cursor-pointer"
+        id={`${group.groupName}`}
+        ref={summaryRef}
+        onClick={evt => {
+          if (summaryRef.current?.contains(evt.currentTarget)) {
+            setIsOpen(!isOpen);
+          }
+        }}
+      >
+        <span>{group.groupName}</span>
+        {/* <span className="opacity-0 ml-2 group-hover:opacity-20">#</span> */}
+      </summary>
 
-        {isOpen && (
-          <>
-            <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
-              Value metrics
-            </h2>
-            <FlowMetrics group={group} workItemTypes={workItemTypes} />
-            <QualityMetrics group={group} workItemTypes={workItemTypes} />
-            <HealthMetrics group={group} />
-          </>
-        )}
-      </details>
-    </>
+      {isOpen && (
+        <>
+          <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
+            Value metrics
+          </h2>
+          <FLowMetrics group={group} workItemTypes={workItemTypes} />
+          <QualityMetrics group={group} workItemTypes={workItemTypes} />
+          <HealthMetrics group={group} />
+        </>
+      )}
+    </details>
   );
 };
 
@@ -784,19 +702,16 @@ const SummaryByTeam: React.FC<{
   workItemTypes: SummaryMetrics['workItemTypes'];
 }> = ({ groups, workItemTypes }) => (
   <ul className="bg-gray-50 p-8 rounded-lg">
-    {
-      groups
-        .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
-        .map(group => (
-          <li key={group.groupName} className="mb-8">
-            <SummaryItem
-              group={group}
-              workItemTypes={workItemTypes}
-            />
-          </li>
-        ))
-
-    }
+    {groups
+      .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+      .map(group => (
+        <li key={group.groupName} className="mb-8">
+          <SummaryItem
+            group={group}
+            workItemTypes={workItemTypes}
+          />
+        </li>
+      ))}
   </ul>
 );
 

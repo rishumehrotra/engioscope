@@ -3,7 +3,7 @@ import {
 } from 'rambda';
 import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
-  normalizePolicy, pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed,
+  masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
 import {
@@ -193,7 +193,10 @@ type Summary = {
       exists: number;
       used: number;
     }[];
-    masterOnlyPipelines: number;
+    masterOnlyPipelines: {
+      count: number;
+      total: number;
+    };
     conformsToBranchPolicies: number;
   };
   collection: string;
@@ -401,7 +404,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             exists: count(incrementIf(pipelineHasStageNamed(stage)))(matches),
             used: count(incrementIf(pipelineUsesStageNamed(stage)))(matches)
           })),
-          masterOnlyPipelines: matches.reduce(incrementIf(pipelineDeploysExclusivelyFromMaster), 0),
+          masterOnlyPipelines: masterDeploysCount(matches),
           conformsToBranchPolicies: matches.reduce(incrementIf(pipelineMeetsBranchPolicyRequirements(
             (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
           )), 0)
