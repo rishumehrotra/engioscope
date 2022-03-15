@@ -16,6 +16,7 @@ import { ChangeLeadTimeGraph } from './ChangeLeadTime';
 import ProjectStats from '../ProjectStats';
 import { createPalette, num } from '../../helpers/utils';
 import ProjectStat from '../ProjectStat';
+import NewGraph from './New';
 
 const palette = createPalette([
   '#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9'
@@ -35,51 +36,48 @@ const TestCaseStats: React.FC<{
     <div className="w-72">
       <div className="mt-2 flex">
         <div className="flex-1">
-          {
-            Object.keys(testCasesByPriority).map((priority, index) => {
-              const { automated, total } = testCasesByPriority[priority as TestPriority];
+          {Object.keys(testCasesByPriority).map((priority, index) => {
+            const { automated, total } = testCasesByPriority[priority as TestPriority];
 
-              return (
-                <div className={`flex ${index !== 0 ? '' : ''}`} key={priority}>
-                  <span
-                    className="w-20 text-sm self-center text-right text-gray-800"
-                  >
-                    {`Priority ${priority.substring(1)}`}
-
-                  </span>
+            return (
+              <div className={`flex ${index !== 0 ? '' : ''}`} key={priority}>
+                <span
+                  className="w-20 text-sm self-center text-right text-gray-800"
+                >
+                  {`Priority ${priority.substring(1)}`}
+                </span>
+                <div
+                  className="ml-2 flex flex-1 items-center"
+                  style={{
+                    // borderLeftWidth: 1
+                  }}
+                >
                   <div
-                    className="ml-2 flex flex-1 items-center"
+                    className="rounded-r"
                     style={{
-                      // borderLeftWidth: 1
+                      height: '50%',
+                      backgroundColor: palette(priority),
+                      marginLeft: 1,
+                      width: `${Math.max(1, (automated / total) * 100)}%`
                     }}
-                  >
-                    <div
-                      className="rounded-r"
-                      style={{
-                        height: '50%',
-                        backgroundColor: palette(priority),
-                        marginLeft: 1,
-                        width: `${Math.max(1, (automated / total) * 100)}%`
-                      }}
-                    />
-                    <div className="ml-2 py-2 whitespace-nowrap">
-                      <div className="text-sm text-gray-800 font-bold">
-                        {((automated * 100) / total).toFixed(0)}
-                        %
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        {num(automated)}
-                        {' '}
-                        /
-                        {' '}
-                        {num(total)}
-                      </div>
+                  />
+                  <div className="ml-2 py-2 whitespace-nowrap">
+                    <div className="text-sm text-gray-800 font-bold">
+                      {((automated * 100) / total).toFixed(0)}
+                      %
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {num(automated)}
+                      {' '}
+                      /
+                      {' '}
+                      {num(total)}
                     </div>
                   </div>
                 </div>
-              );
-            })
-          }
+              </div>
+            );
+          })}
         </div>
       </div>
       <div className="text-xs text-center mt-4">{title}</div>
@@ -165,7 +163,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       <OverviewFilters filters={filters} selectedFilters={selectedFilters} onChange={setSelectedFilters} />
 
       {[
-        VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
+        NewGraph, VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
         FlowEfficiencyGraph, BugLeakageAndRCAGraph,
         AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
       ].map((Graph, index) => (

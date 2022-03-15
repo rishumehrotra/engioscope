@@ -45,6 +45,8 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
   const workItemGroup = (groupId: string) => overview.groups[groupId];
   const workItemType = (wit: string) => overview.types[wit];
 
+  const isBug = (witId: string) => workItemType(witId).name[0].toLowerCase().includes('bug');
+
   const allWorkItems = Object.values(overview.byId);
 
   const startOfQueryPeriod = oneMonthAgo(projectAnalysis.lastUpdated);
@@ -61,6 +63,7 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     workItemTimes,
     workItemGroup,
     cycleTime,
+    isBug,
     totalCycleTime: (workItems: UIWorkItem[]) => (
       workItems.reduce((acc, wi) => acc + (cycleTime(wi) || 0), 0)
     ),
@@ -81,6 +84,14 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
       // state change date might not be the end date, depending on config.json.
       // So, we need to filter out items that have an end date older than the last month.
       return new Date(wiTimes.end) > startOfQueryPeriod;
+    },
+    wasWorkItemOpenedThisMonth: (wi: UIWorkItem) => {
+      if (isBug(wi.typeId)) return new Date(wi.created.on) > startOfQueryPeriod;
+
+      const wiTimes = workItemTimes(wi);
+      if (!wiTimes.start) return false;
+
+      return new Date(wiTimes.start) > startOfQueryPeriod;
     },
     organizeByWorkItemType: (workItems: UIWorkItem[], filter: (wi: UIWorkItem) => boolean) => (
       workItems.reduce<OrganizedWorkItems>((acc, wi) => {

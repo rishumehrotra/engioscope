@@ -12,7 +12,7 @@ import {
   renderGroupItem, processSummary
 } from './utils';
 
-const FLowMetrics: React.FC<{
+const FlowMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
 }> = ({ group, workItemTypes }) => {
@@ -94,7 +94,7 @@ const FLowMetrics: React.FC<{
                       data={workItemsSummary.leakageByWeek}
                       lineColor={increaseIsBetter(workItemsSummary.leakageByWeek)}
                     />,
-                    '#work-in-progress-trend'
+                    '#new-work-items'
                   )}
                 </td>
                 <td>
@@ -688,7 +688,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
           <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
             Value metrics
           </h2>
-          <FLowMetrics group={group} workItemTypes={workItemTypes} />
+          <FlowMetrics group={group} workItemTypes={workItemTypes} />
           <QualityMetrics group={group} workItemTypes={workItemTypes} />
           <HealthMetrics group={group} />
         </>

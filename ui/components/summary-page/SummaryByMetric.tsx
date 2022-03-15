@@ -116,7 +116,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                           className="ml-2"
                         />
                       </>,
-                      '#work-in-progress-trend'
+                      '#new-work-items'
                     )}
                   </td>
                   <td className="px-6 py-3">
@@ -313,7 +313,7 @@ const QualityMetrics: React.FC<{
                                   </>
                                 )
                                 : '-',
-                              '#bugs'
+                              '#bug-leakage-with-root-cause'
                             )}
                           </td>
                           <td className="px-6 py-3">
