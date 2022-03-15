@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import type { SummaryMetrics } from '../../shared/types';
 import Header from '../components/Header';

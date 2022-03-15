@@ -6,9 +6,7 @@ import { ExternalLink } from '../common/Icons';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
 import {
-  decreaseIsBetter,
-  increaseIsBetter,
-  processSummary,
+  decreaseIsBetter, increaseIsBetter, processSummary,
   flattenSummaryGroups, getMetricCategoryDefinitionId, allExceptExpectedKeys
 } from './utils';
 
@@ -675,7 +673,7 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
                 <td className="px-6 py-3 font-medium text-lg text-black">
                   {pipelinesMetric(
                     pipelineStats.pipelines === 0 ? '0'
-                      : `${Math.round((pipelineStats.masterOnlyPipelines * 100) / pipelineStats.pipelines)}%`
+                      : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
                   )}
                 </td>
               </tr>

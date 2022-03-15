@@ -3,7 +3,8 @@ import type { Pipeline } from '../../shared/types';
 import { num } from '../helpers/utils';
 import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
-  pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
+  masterDeploysCount, pipelineHasStageNamed,
+  pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
@@ -18,10 +19,7 @@ type ReleasePipelineSummaryProps = {
 const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
   pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore
 }) => {
-  const masterDeploysCount = pipelines.reduce(
-    (acc, pipeline) => acc + (pipelineDeploysExclusivelyFromMaster(pipeline) ? 1 : 0),
-    0
-  );
+  const masterDeploys = masterDeploysCount(pipelines);
 
   const policyPassCount = pipelines.reduce(
     (acc, pipeline) => acc + (pipelineMeetsBranchPolicyRequirements(policyForBranch)(pipeline) ? 1 : 0),
@@ -70,9 +68,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Master-only pipelines',
-          value: pipelines.length === 0 ? '0' : `${Math.round((masterDeploysCount * 100) / pipelines.length)}%`,
-          tooltip: `${num(masterDeploysCount)} out of ${pipelines.length} release ${
-            masterDeploysCount === 1 ? 'pipeline deploys' : 'pipelines deploy'
+          value: pipelines.length === 0 ? '0' : `${Math.round((masterDeploys.count * 100) / masterDeploys.total)}%`,
+          tooltip: `${num(masterDeploys.count)} out of ${masterDeploys.total} release ${
+            masterDeploys.count === 1 ? 'pipeline deploys' : 'pipelines deploy'
           } exclusively from master.${
             ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
           }`

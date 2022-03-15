@@ -42,10 +42,14 @@ export const pipelineHasUnusedStageNamed = (stageName: string) => (
   }
 );
 
+const repoBranches = (pipeline: Pipeline) => (
+  [...new Set(Object.values(pipeline.repos).flatMap(r => r.branches))]
+);
+
 export const pipelineDeploysExclusivelyFromMaster = (pipeline: Pipeline) => {
-  const repoBranches = [...new Set(Object.values(pipeline.repos).flatMap(r => r.branches))];
-  if (!repoBranches.length) return false;
-  return repoBranches.length === 1 && repoBranches[0] === 'refs/heads/master';
+  const branches = repoBranches(pipeline);
+  if (!branches.length) return false;
+  return branches.length === 1 && branches[0] === 'refs/heads/master';
 };
 
 export const normalizePolicy = (policies: BranchPolicies) => ({
@@ -125,3 +129,11 @@ export const pipelineMeetsBranchPolicyRequirements = (
     }, [])
     .every(p => p === 'pass')
 );
+
+export const masterDeploysCount = (pipelines: Pipeline[]) => {
+  const pipelinesWithBranches = pipelines.filter(p => repoBranches(p).length > 0);
+  return {
+    count: pipelinesWithBranches.filter(pipelineDeploysExclusivelyFromMaster).length,
+    total: pipelinesWithBranches.length
+  };
+};
