@@ -13,7 +13,6 @@ import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
 import WIPTrendGraph from './WIPTrend';
 import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
 import { ChangeLeadTimeGraph } from './ChangeLeadTime';
-import ReleaseSizeAndFrequency from './ReleaseSizeAndFrequency';
 import ProjectStats from '../ProjectStats';
 import { createPalette, num } from '../../helpers/utils';
 import ProjectStat from '../ProjectStat';
@@ -166,7 +165,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       <OverviewFilters filters={filters} selectedFilters={selectedFilters} onChange={setSelectedFilters} />
 
       {[
-        ReleaseSizeAndFrequency, VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
+        VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
         FlowEfficiencyGraph, BugLeakageAndRCAGraph,
         AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
       ].map((Graph, index) => (
