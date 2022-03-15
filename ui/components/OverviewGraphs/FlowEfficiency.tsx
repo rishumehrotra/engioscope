@@ -1,6 +1,7 @@
 import { pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
+import { flowEfficiency } from '../../../shared/work-item-utils';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
@@ -27,7 +28,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
 }) => {
   const {
     isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes,
-    totalWorkCenterTime, totalCycleTime, cycleTime, workCenterTime
+    totalWorkCenterTime, cycleTime, workCenterTime
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -42,11 +43,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     [priorityFilter, sizeFilter]
   );
 
-  const efficiency = useCallback((workItems: UIWorkItem[]) => {
-    const totalTime = totalCycleTime(workItems);
-    if (totalTime === 0) return 0;
-    return (totalWorkCenterTime(workItems) * 100) / totalTime;
-  }, [totalCycleTime, totalWorkCenterTime]);
+  const efficiency = useMemo(() => flowEfficiency(workItemTimes), [workItemTimes]);
 
   const workItemsToDisplay = useMemo(
     () => Object.fromEntries(

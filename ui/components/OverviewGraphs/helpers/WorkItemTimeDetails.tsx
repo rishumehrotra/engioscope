@@ -3,7 +3,7 @@ import { prop } from 'rambda';
 import React from 'react';
 import type { Overview, UIWorkItem } from '../../../../shared/types';
 import { last } from '../../../helpers/utils';
-import { timeDifference } from './helpers';
+import { timeDifference } from '../../../../shared/work-item-utils';
 
 type WorkItemTimeDetailsProps = {
   workItem: UIWorkItem;

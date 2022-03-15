@@ -2,6 +2,9 @@ import { useState } from 'react';
 import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../../shared/types';
 import { createPalette } from '../../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
+import {
+  cycleTime, totalCycleTime, totalWorkCenterTime, workCenterTime
+} from '../../../../shared/work-item-utils';
 
 export type GroupLabel = { witId: string; groupName: string };
 export type OrganizedWorkItems = Record<string, Record<string, UIWorkItem[]>>;
@@ -26,51 +29,30 @@ const oneMonthAgo = (lastUpdated: string) => {
   queryPeriod.setHours(0, 0, 0, 0);
   return queryPeriod;
 };
-export const timeDifference = ({ start, end }: { start: string; end?: string }) => (
-  (end ? new Date(end) : new Date()).getTime() - new Date(start).getTime()
-);
 
 export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
   const { overview } = projectAnalysis;
 
   const workItemTimes = (wi: UIWorkItem) => overview.times[wi.id];
 
-  const cycleTime = (wi: UIWorkItem) => {
-    const wit = overview.times[wi.id];
-    if (!wit.start || !wit.end) return;
-
-    return new Date(wit.end).getTime() - new Date(wit.start).getTime();
-  };
-
   const workItemGroup = (groupId: string) => overview.groups[groupId];
   const workItemType = (wit: string) => overview.types[wit];
 
   const isBug = (witId: string) => workItemType(witId).name[0].toLowerCase().includes('bug');
 
-  const allWorkItems = Object.values(overview.byId);
-
   const startOfQueryPeriod = oneMonthAgo(projectAnalysis.lastUpdated);
 
-  const workCenterTime = (wi: UIWorkItem) => (
-    // If a wc doesn't have an end date, we should disregard it
-    workItemTimes(wi).workCenters.reduce((a, wc) => a + (wc.end ? timeDifference(wc) : 0), 0)
-  );
-
   return {
-    allWorkItems,
+    allWorkItems: Object.values(overview.byId),
     lastUpdated: new Date(projectAnalysis.lastUpdated),
     workItemType,
     workItemTimes,
     workItemGroup,
-    cycleTime,
+    cycleTime: cycleTime(workItemTimes),
     isBug,
-    totalCycleTime: (workItems: UIWorkItem[]) => (
-      workItems.reduce((acc, wi) => acc + (cycleTime(wi) || 0), 0)
-    ),
-    workCenterTime,
-    totalWorkCenterTime: (workItems: UIWorkItem[]) => (
-      workItems.reduce((acc, wi) => acc + workCenterTime(wi), 0)
-    ),
+    totalCycleTime: totalCycleTime(workItemTimes),
+    workCenterTime: workCenterTime(workItemTimes),
+    totalWorkCenterTime: totalWorkCenterTime(workItemTimes),
     isWorkItemClosed: (wi: UIWorkItem) => {
       const wiTimes = workItemTimes(wi);
       if (!wiTimes.end) return false;

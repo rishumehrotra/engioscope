@@ -7,9 +7,9 @@ import type { WorkItemAccessors } from './helpers/helpers';
 import {
   listFormat, stringifyDateField,
   lineColor, noGroup,
-  getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey,
-  timeDifference
+  getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey
 } from './helpers/helpers';
+import { timeDifference } from '../../../shared/work-item-utils';
 import type { LegendSidebarProps } from './helpers/LegendSidebar';
 import { LegendSidebar } from './helpers/LegendSidebar';
 import type { ModalArgs } from './helpers/modal-helpers';

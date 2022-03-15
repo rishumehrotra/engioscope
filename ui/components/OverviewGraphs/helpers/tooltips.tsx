@@ -1,7 +1,7 @@
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../../shared/types';
 import { prettyMS } from '../../../helpers/utils';
 import type { WorkItemAccessors } from './helpers';
-import { timeDifference } from './helpers';
+import { timeDifference } from '../../../../shared/work-item-utils';
 
 const addSection = (label: string, value: string | number) => `
   <div class="pt-1">
