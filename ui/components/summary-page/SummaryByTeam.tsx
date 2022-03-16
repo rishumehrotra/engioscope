@@ -6,8 +6,8 @@ import { num, prettyMS } from '../../helpers/utils';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
-  decreaseIsBetter,
-  increaseIsBetter,
+  flowEfficiency,
+  decreaseIsBetter, increaseIsBetter,
   getMetricCategoryDefinitionId, flattenSummaryGroups, allExceptExpectedKeys,
   renderGroupItem, processSummary
 } from './utils';
@@ -53,6 +53,12 @@ const FlowMetrics: React.FC<{
               data-tip="Average time taken to take a work item to production after development is complete"
             >
               CLT
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
+              data-tip="Fraction of overall time that work items spend in work centers on average"
+            >
+              Flow efficiency
             </th>
             <th
               className="text-xs font-semibold w-1/12"
@@ -129,6 +135,18 @@ const FlowMetrics: React.FC<{
                       lineColor={decreaseIsBetter(workItemsSummary.changeLeadTimeByWeek)}
                     />,
                     '#change-lead-time'
+                  )}
+                </td>
+                <td>
+                  {renderMetric(
+                    workItemsSummary.flowEfficiency
+                      ? `${Math.round(flowEfficiency(workItemsSummary.flowEfficiency))}%`
+                      : '-',
+                    <Sparkline
+                      data={workItemsSummary.flowEfficiencyByWeek.map(flowEfficiency)}
+                      lineColor={increaseIsBetter(workItemsSummary.flowEfficiencyByWeek.map(flowEfficiency))}
+                    />,
+                    '#flow-efficiency'
                   )}
                 </td>
                 <td>
@@ -213,6 +231,12 @@ const QualityMetrics: React.FC<{
             </th>
             <th
               className="text-xs font-semibold w-1/12"
+              data-tip="Fraction of overall time that work items spend in work centers on average"
+            >
+              Flow efficiency
+            </th>
+            <th
+              className="text-xs font-semibold w-1/12"
               data-tip="Number of work-in-progress bugs"
             >
               WIP increase
@@ -284,6 +308,18 @@ const QualityMetrics: React.FC<{
                       lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
                     />,
                     '#change-lead-time'
+                  )}
+                </td>
+                <td>
+                  {renderBugMetric(
+                    bugInfo.flowEfficiency
+                      ? `${Math.round(flowEfficiency(bugInfo.flowEfficiency))}%`
+                      : '-',
+                    <Sparkline
+                      data={bugInfo.flowEfficiencyByWeek.map(flowEfficiency)}
+                      lineColor={increaseIsBetter(bugInfo.flowEfficiencyByWeek.map(flowEfficiency))}
+                    />,
+                    '#flow-efficiency'
                   )}
                 </td>
                 <td className="font-semibold text-xl">

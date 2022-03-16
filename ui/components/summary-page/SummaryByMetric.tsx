@@ -6,6 +6,7 @@ import { ExternalLink } from '../common/Icons';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
 import {
+  flowEfficiency,
   decreaseIsBetter, increaseIsBetter, processSummary,
   flattenSummaryGroups, getMetricCategoryDefinitionId, allExceptExpectedKeys
 } from './utils';
@@ -74,6 +75,12 @@ const FlowMetricsByWorkItemType: React.FC<{
             </th>
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+              data-tip="Fraction of overall time that work items spend in work centers on average"
+            >
+              Flow efficiency
+            </th>
+            <th
+              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
               data-tip="Increase in the number of WIP items over the last 30 days"
             >
               WIP increase
@@ -95,9 +102,14 @@ const FlowMetricsByWorkItemType: React.FC<{
               const summary = stats ? flattenSummaryGroups(stats) : null;
               const [filterKey] = allExceptExpectedKeys(group);
               const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+              const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
               const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
-              const renderMetric = renderGroupItem(portfolioProjectLink);
+              const renderMetric = renderGroupItem(
+                workItemTypes[wiDefinitionId || '']?.name[0] === 'Feature'
+                  ? portfolioProjectLink
+                  : projectLink
+              );
 
               if (!summary) return null;
 
@@ -162,6 +174,23 @@ const FlowMetricsByWorkItemType: React.FC<{
                       )
                       : '-',
                     '#change-lead-time')}
+                  </td>
+                  <td className="px-6 py-3">
+                    {renderMetric(
+                      summary.flowEfficiency
+                        ? (
+                          <>
+                            {`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
+                            <Sparkline
+                              data={summary.flowEfficiencyByWeek.map(flowEfficiency)}
+                              lineColor={increaseIsBetter(summary.flowEfficiencyByWeek.map(flowEfficiency))}
+                              className="ml-2"
+                            />
+                          </>
+                        )
+                        : '-',
+                      '#flow-efficiency'
+                    )}
                   </td>
                   <td className="px-6 py-3">
                     {renderMetric(
@@ -262,6 +291,12 @@ const QualityMetrics: React.FC<{
                       data-tip="Average time taken to close a bug once development is complete"
                     >
                       Bugs CLT
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      data-tip="Fraction of overall time that work items spend in work centers on average"
+                    >
+                      Flow efficiency
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
@@ -365,6 +400,23 @@ const QualityMetrics: React.FC<{
                                 )
                                 : '-',
                               '#change-lead-time'
+                            )}
+                          </td>
+                          <td className="px-6 py-3">
+                            {renderBugMetric(
+                              bugsForEnv?.flowEfficiency
+                                ? (
+                                  <>
+                                    {`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
+                                    <Sparkline
+                                      data={bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency)}
+                                      lineColor={increaseIsBetter(bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency))}
+                                      className="ml-2"
+                                    />
+                                  </>
+                                )
+                                : '-',
+                              '#flow-efficiency'
                             )}
                           </td>
                           <td className="px-6 py-3">

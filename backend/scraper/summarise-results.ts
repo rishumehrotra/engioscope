@@ -15,6 +15,7 @@ import type {
 import { exists, isAfter } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
+import { totalCycleTime, totalWorkCenterTime } from '../../shared/work-item-utils';
 
 const noGroup = 'no-group';
 
@@ -163,6 +164,8 @@ type Summary = {
     cycleTimeByWeek: number[][];
     changeLeadTime: number[];
     changeLeadTimeByWeek: number[][];
+    flowEfficiency: { total: number; wcTime: number };
+    flowEfficiencyByWeek: { total: number; wcTime: number }[];
     wipCount: number;
     wipIncrease: number;
     wipIncreaseByWeek: number[];
@@ -239,6 +242,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       if (!match.length) return null;
 
       const mergedResults = mergeResults(match);
+      const workItemTimes = (wi: UIWorkItem) => mergedResults.workItemTimes[wi.id];
 
       const computeTimeDifferenceBetween = computeTimeDifference(mergedResults.workItemTimes);
 
@@ -263,6 +267,11 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
               && isInDateRange(new Date(mergedResults.workItemTimes[workItem.id].start!))
           )
       );
+      const flowEfficiency = (wis: UIWorkItem[]) => {
+        const tct = totalCycleTime(workItemTimes)(wis);
+        if (tct === 0) return { total: 0, wcTime: 0 };
+        return { total: tct, wcTime: totalWorkCenterTime(workItemTimes)(wis) };
+      };
 
       const workItemAnalysis = pipe(
         filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
@@ -302,6 +311,16 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
                     mergedResults.workItemTimes, isWithinWeek
                   )
                 ).map(computeTimeDifferenceBetween('devComplete', 'end')))
+            ),
+            flowEfficiency: wis => pipe(
+              filter(completedWorkItems),
+              flowEfficiency
+            )(wis),
+            flowEfficiencyByWeek: wis => (
+              isWithinWeeks
+                .map(isWithinWeek => flowEfficiency(wis.filter(
+                  hasWorkItemCompleted(mergedResults.workItemTimes, isWithinWeek)
+                )))
             ),
             wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
             wipIncrease: wis => pipe(filter((wi: UIWorkItem) => {

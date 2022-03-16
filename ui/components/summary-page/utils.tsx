@@ -14,6 +14,8 @@ type ProcessedSummary = {
   cycleTimeByWeek: number[];
   changeLeadTime: number;
   changeLeadTimeByWeek: number[];
+  flowEfficiency: { total: number; wcTime: number };
+  flowEfficiencyByWeek: { total: number; wcTime: number }[];
   wipCount: number;
   wipAge: number;
   wipIncrease: number;
@@ -34,6 +36,8 @@ export const processSummary = (summary: SummaryGroups[string]): ProcessedSummary
   changeLeadTimeByWeek: summary.changeLeadTimeByWeek.map(
     changeLeadTimeByWeek => (changeLeadTimeByWeek.length === 0 ? 0 : (sum(changeLeadTimeByWeek) / changeLeadTimeByWeek.length))
   ),
+  flowEfficiency: summary.flowEfficiency,
+  flowEfficiencyByWeek: summary.flowEfficiencyByWeek,
   wipCount: summary.wipCount,
   wipAge: sum(summary.wipAge) / summary.wipCount,
   wipIncrease: summary.wipIncrease,
@@ -51,6 +55,8 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     cycleTimeByWeek: number[][];
     changeLeadTime: number[];
     changeLeadTimeByWeek: number[][];
+    flowEfficiency: { total: number; wcTime: number };
+    flowEfficiencyByWeek: { total: number; wcTime: number }[];
     wipCount: number;
     wipIncrease: number;
     wipIncreaseByWeek: number[];
@@ -61,7 +67,7 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
 
   const merged = Object.values(summaryGroups).reduce<IntermediateFlattenedGroups>((acc, group) => ({
     velocity: acc.velocity + group.velocity,
-    velocityByWeek: group.velocityByWeek.reduce<number[]>(
+    velocityByWeek: group.velocityByWeek.reduce(
       (acc, velocity, index) => {
         acc[index] = velocity + (acc[index] || 0);
         return acc;
@@ -69,7 +75,7 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
       acc.velocityByWeek
     ),
     changeLeadTime: [...acc.changeLeadTime, ...group.changeLeadTime],
-    changeLeadTimeByWeek: group.changeLeadTimeByWeek.reduce<number[][]>(
+    changeLeadTimeByWeek: group.changeLeadTimeByWeek.reduce(
       (acc, changeLeadTimes, index) => {
         acc[index] = (acc[index] || []).concat(changeLeadTimes);
         return acc;
@@ -77,12 +83,26 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
       acc.changeLeadTimeByWeek
     ),
     cycleTime: [...acc.cycleTime, ...group.cycleTime],
-    cycleTimeByWeek: group.cycleTimeByWeek.reduce<number[][]>(
+    cycleTimeByWeek: group.cycleTimeByWeek.reduce(
       (acc, cycleTimes, index) => {
         acc[index] = (acc[index] || []).concat(cycleTimes);
         return acc;
       },
       acc.cycleTimeByWeek
+    ),
+    flowEfficiency: {
+      total: acc.flowEfficiency.total + group.flowEfficiency.total,
+      wcTime: acc.flowEfficiency.wcTime + group.flowEfficiency.wcTime
+    },
+    flowEfficiencyByWeek: group.flowEfficiencyByWeek.reduce(
+      (acc, flowEfficiency, index) => {
+        acc[index] = {
+          total: flowEfficiency.total + (acc[index]?.total || 0),
+          wcTime: flowEfficiency.wcTime + (acc[index]?.wcTime || 0)
+        };
+        return acc;
+      },
+      acc.flowEfficiencyByWeek
     ),
     wipCount: acc.wipCount + group.wipCount,
     wipIncreaseByWeek: group.wipIncreaseByWeek.reduce<number[]>(
@@ -111,6 +131,8 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     cycleTimeByWeek: [],
     changeLeadTime: [],
     changeLeadTimeByWeek: [],
+    flowEfficiency: { total: 0, wcTime: 0 },
+    flowEfficiencyByWeek: [],
     wipCount: 0,
     wipIncreaseByWeek: [],
     wipIncrease: 0,
@@ -185,3 +207,7 @@ export const decreaseIsBetter = (data: number[]) => {
         : 'red'
   );
 };
+
+export const flowEfficiency = (fe: { total: number; wcTime: number }) => (
+  fe.total === 0 ? 0 : ((fe.wcTime * 100) / fe.total)
+);
