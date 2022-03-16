@@ -8,6 +8,7 @@ import {
 } from '../../shared/pipeline-utils';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
+import { count, incrementIf } from '../../shared/reducer-utils';
 
 type ReleasePipelineSummaryProps = {
   pipelines: Pipeline[];
@@ -21,26 +22,15 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
 }) => {
   const masterDeploys = masterDeploysCount(pipelines);
 
-  const policyPassCount = pipelines.reduce(
-    (acc, pipeline) => acc + (pipelineMeetsBranchPolicyRequirements(policyForBranch)(pipeline) ? 1 : 0),
-    0
-  );
+  const policyPassCount = count(
+    incrementIf(pipelineMeetsBranchPolicyRequirements(policyForBranch))
+  )(pipelines);
 
   return (
     <ProjectStats>
       {(stagesToHighlight || []).map(stageName => {
-        const hasStage = pipelineHasStageNamed(stageName);
-        const usesStage = pipelineUsesStageNamed(stageName);
-
-        const stageExistsCount = pipelines.reduce(
-          (acc, pipeline) => acc + (hasStage(pipeline) ? 1 : 0),
-          0
-        );
-
-        const stageExistsAndUsedCount = pipelines.reduce(
-          (acc, pipeline) => acc + (usesStage(pipeline) ? 1 : 0),
-          0
-        );
+        const stageExistsCount = count(incrementIf(pipelineHasStageNamed(stageName)))(pipelines);
+        const stageExistsAndUsedCount = count(incrementIf(pipelineUsesStageNamed(stageName)))(pipelines);
 
         return (
           <Fragment key={stageName}>

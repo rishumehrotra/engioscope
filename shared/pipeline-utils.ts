@@ -137,3 +137,11 @@ export const masterDeploysCount = (pipelines: Pipeline[]) => {
     total: pipelinesWithBranches.length
   };
 };
+
+export const isPipelineInGroup = (groupName: string, repos: string[]) => (
+  (pipeline: Pipeline) => (
+    pipeline.name.toLowerCase().startsWith(groupName.toLowerCase())
+      ? true
+      : Object.values(pipeline.repos).some(r => repos.includes(r.name))
+  )
+);

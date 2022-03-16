@@ -16,6 +16,7 @@ import Loading from '../components/Loading';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
 import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
+  isPipelineInGroup,
   normalizePolicy,
   pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed,
   pipelineMeetsBranchPolicyRequirements
@@ -38,10 +39,9 @@ const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string)
   pipelineMeetsBranchPolicyRequirements(policyForBranch), not
 );
 const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (pipeline: TPipeline) => (
-  groupNames.split(',').some(groupName => {
-    const repos = groups[groupName] || [];
-    return Object.values(pipeline.repos).some(repo => repos.includes(repo.name));
-  })
+  groupNames.split(',').some(groupName => (
+    isPipelineInGroup(groupName, groups[groupName] || [])(pipeline)
+  ))
 );
 
 const useReleaseDefinitions = () => {

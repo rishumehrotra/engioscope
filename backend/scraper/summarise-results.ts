@@ -3,6 +3,7 @@ import {
 } from 'rambda';
 import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
+  isPipelineInGroup,
   masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
@@ -15,16 +16,11 @@ import type {
 import { exists, isAfter } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
-import { totalCycleTime, totalWorkCenterTime } from '../../shared/work-item-utils';
+import { timeDifference, totalCycleTime, totalWorkCenterTime } from '../../shared/work-item-utils';
 
 const noGroup = 'no-group';
 
 const isWithinLastMonth = isAfter('30 days');
-
-const timeDiff = (end: string | Date | undefined, start: string | Date | undefined) => (
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  new Date(end!).getTime() - new Date(start!).getTime()
-);
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
 type RelevantResults = {
@@ -148,8 +144,9 @@ const computeTimeDifference = (workItemTimes: Overview['times']) => (
     (workItem: UIWorkItemWithGroup) => {
       const wits = workItemTimes[workItem.id];
       const { [start]: startTime } = wits;
-      const endTime = end ? wits[end] : new Date();
-      return timeDiff(endTime, startTime);
+      const endTime = end ? wits[end] : undefined;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return timeDifference({ start: startTime!, end: endTime });
     }
   )
 );
@@ -283,9 +280,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             velocityByWeek: wis => (
               isWithinWeeks
                 .map(isWithinWeek => wis.filter(
-                  hasWorkItemCompleted(
-                    mergedResults.workItemTimes, isWithinWeek
-                  )
+                  hasWorkItemCompleted(mergedResults.workItemTimes, isWithinWeek)
                 ).length)
             ),
             cycleTime: wis => pipe(
@@ -295,9 +290,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             cycleTimeByWeek: wis => (
               isWithinWeeks
                 .map(isWithinWeek => wis.filter(
-                  hasWorkItemCompleted(
-                    mergedResults.workItemTimes, isWithinWeek
-                  )
+                  hasWorkItemCompleted(mergedResults.workItemTimes, isWithinWeek)
                 ).map(computeTimeDifferenceBetween('start', 'end')))
             ),
             changeLeadTime: wis => pipe(
@@ -405,16 +398,17 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         };
       };
 
-      const matchingPipelines = (repoNames: string[]) => {
+      const matchingPipelines = () => {
+        const repoNames = getRepoNames();
         const allPipelines = resultsForThisProject?.analysisResult.releaseAnalysis.pipelines || [];
 
         return repoNames.length === 0
           ? allPipelines
-          : allPipelines.filter(p => Object.values(p.repos).some(r => repoNames.includes(r.name)));
+          : allPipelines.filter(isPipelineInGroup(groupType(group)[1], repoNames));
       };
 
       const pipelineStats = () => {
-        const matches = matchingPipelines(getRepoNames());
+        const matches = matchingPipelines();
 
         return {
           pipelines: matches.length,
