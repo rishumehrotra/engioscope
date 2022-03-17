@@ -1,10 +1,9 @@
 import {
-  allPass, anyPass, applySpec, compose, filter, length, map, not, pipe, prop
+  allPass, anyPass, applySpec, compose, filter, length, map, not, pipe, prop, subtract
 } from 'rambda';
 import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
-  isPipelineInGroup,
-  masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
+  isPipelineInGroup, masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
 import {
@@ -368,25 +367,23 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         const matches = matchingRepos(getRepoNames());
         const matchesExcludingDeprecated = matches.filter(compose(not, isDeprecated));
 
-        const codeQuality = () => (
-          matchesExcludingDeprecated
-            .reduce((acc, repo) => ({
-              ...(repo.codeQuality || []).reduce((acc, q) => ({
-                ...acc,
-                pass: acc.pass + (q.quality.gate === 'pass' ? 1 : 0),
-                warn: acc.warn + (q.quality.gate === 'warn' ? 1 : 0),
-                fail: acc.fail + (q.quality.gate === 'fail' ? 1 : 0),
-                sonarProjects: acc.sonarProjects + 1
-              }), acc),
-              configured: acc.configured + (repo.codeQuality ? 1 : 0)
-            }), {
-              pass: 0, warn: 0, fail: 0, configured: 0, sonarProjects: 0
-            })
-        );
+        const codeQuality = (repos: RepoAnalysis[]) => repos
+          .reduce((acc, repo) => ({
+            ...(repo.codeQuality || []).reduce((acc, q) => ({
+              ...acc,
+              pass: acc.pass + (q.quality.gate === 'pass' ? 1 : 0),
+              warn: acc.warn + (q.quality.gate === 'warn' ? 1 : 0),
+              fail: acc.fail + (q.quality.gate === 'fail' ? 1 : 0),
+              sonarProjects: acc.sonarProjects + 1
+            }), acc),
+            configured: acc.configured + (repo.codeQuality ? 1 : 0)
+          }), {
+            pass: 0, warn: 0, fail: 0, configured: 0, sonarProjects: 0
+          });
 
         return {
-          repos: matchesExcludingDeprecated.length,
-          excluded: matches.length - matchesExcludingDeprecated.length,
+          repos: length(matchesExcludingDeprecated),
+          excluded: pipe(length, subtract(length(matches)))(matchesExcludingDeprecated),
           tests: totalTests(matchesExcludingDeprecated),
           builds: {
             total: totalBuilds(matchesExcludingDeprecated),
@@ -394,7 +391,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
               repo => count<UIBuildPipeline>(incrementBy(prop('success')))(repo.builds?.pipelines || [])
             ))(matchesExcludingDeprecated)
           },
-          codeQuality: codeQuality()
+          codeQuality: codeQuality(matchesExcludingDeprecated)
         };
       };
 
