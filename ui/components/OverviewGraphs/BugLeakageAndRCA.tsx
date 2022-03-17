@@ -1,8 +1,10 @@
 import { length, not, pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
+import { count, incrementBy } from '../../../shared/reducer-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import { DownChevron, UpChevron } from '../common/Icons';
+import ExpandableBarGraph from '../graphs/ExpandableBarGraph';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
@@ -192,65 +194,48 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
     [workItems]
   );
 
-  const maxInCategory = useMemo(
-    () => Object.values(organized).reduce((acc, wis) => Math.max(acc, wis.length), 0),
-    [organized]
-  );
-
   const totalOfCategories = useMemo(
-    () => Object.values(organized).reduce((acc, wis) => acc + wis.length, 0),
+    () => count(incrementBy(length))(Object.values(organized)),
     [organized]
   );
 
-  return (
-    <>
-      {Object.entries(organized)
-        .sort(([, a], [, b]) => b.length - a.length)
-        .map(([rcaCategory, wisInCategory]) => (
-          <details key={rcaCategory} className="mb-2">
-            <summary className="cursor-pointer">
-              <div
-                style={{ width: 'calc(100% - 20px)' }}
-                className="inline-block relative"
-              >
-                <div
-                  style={{
-                    width: `${(wisInCategory.length / maxInCategory) * 100}%`,
-                    backgroundColor: `${lineColor({ witId, groupName })}99`
-                  }}
-                  className="absolute top-0 left-0 h-full rounded-md"
-                />
-                <h3
-                  className="z-10 relative text-lg pl-2 py-1"
-                >
-                  {`${rcaCategory} - `}
-                  <strong>
-                    {`${wisInCategory.length}`}
-                  </strong>
-                  {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
-                </h3>
-              </div>
-            </summary>
-            <div className="pl-6">
-              <ul className="pl-6">
-                {wisInCategory
-                  .sort((a, b) => (a.priority || 5) - (b.priority || 5))
-                  .map(wi => (
-                    <li key={wi.id} className="py-2">
-                      <WorkItemLinkForModal
-                        workItem={wi}
-                        workItemType={workItemType}
-                        tooltip={tooltip(wi)}
-                        flairs={[`Priority ${wi.priority || 'unknown'}`]}
-                      />
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          </details>
-        ))}
-    </>
+  const barGraphData = useMemo(
+    () => Object.entries(organized)
+      .sort(([, a], [, b]) => b.length - a.length)
+      .map(([rcaCategory, wisInCategory]) => ({
+        key: rcaCategory,
+        heading: (
+          <>
+            {`${rcaCategory} - `}
+            <strong>
+              {`${wisInCategory.length}`}
+            </strong>
+            {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
+          </>
+        ),
+        value: wisInCategory.length,
+        barColor: `${lineColor({ witId, groupName })}99`,
+        children: (
+          <ul>
+            {wisInCategory
+              .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+              .map(wi => (
+                <li key={wi.id} className="py-2">
+                  <WorkItemLinkForModal
+                    workItem={wi}
+                    workItemType={workItemType}
+                    tooltip={tooltip(wi)}
+                    flairs={[`Priority ${wi.priority || 'unknown'}`]}
+                  />
+                </li>
+              ))}
+          </ul>
+        )
+      })),
+    [groupName, organized, tooltip, totalOfCategories, witId, workItemType]
   );
+
+  return <ExpandableBarGraph data={barGraphData} />;
 };
 
 type BugLeakageByWitProps = {
