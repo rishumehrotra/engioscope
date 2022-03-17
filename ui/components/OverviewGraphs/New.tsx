@@ -21,7 +21,7 @@ import { WorkItemsNested, workItemSubheading } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
-const isOpenedToday = (workItem: UIWorkItem, dayStart: Date, accessors: WorkItemAccessors) => {
+const isOpenedToday = (dayStart: Date, accessors: WorkItemAccessors) => (workItem: UIWorkItem) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const openedOn = new Date(accessors.workItemTimes(workItem).start!);
   const dateEnd = new Date(dayStart);

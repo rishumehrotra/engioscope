@@ -279,20 +279,22 @@ export type AnalysedWorkItems = {
   types: Record<string, UIWorkItemType>;
 };
 
+export type WorkItemTimes = {
+  start?: string;
+  end?: string;
+  devComplete?: string;
+  workCenters: {
+    label: string;
+    start: string;
+    end?: string;
+  }[];
+};
+
 export type Overview = {
   byId: Record<number, UIWorkItem>;
   types: Record<string, UIWorkItemType>;
   groups: Record<string, { witId: string; name: string }>;
-  times: Record<number, {
-    start?: string;
-    end?: string;
-    devComplete?: string;
-    workCenters: {
-      label: string;
-      start: string;
-      end?: string;
-    }[];
-  }>;
+  times: Record<number, WorkItemTimes>;
   relations: Record<number, number[]>;
 };
 
@@ -344,6 +346,7 @@ export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
 export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   overview: Overview;
   testCases: TestCasesAnalysis;
+  ignoreForWIP: string[];
 };
 
 export type SummaryMetrics = SummaryMetricsType;

@@ -1,9 +1,8 @@
-import { pipe, prop } from 'rambda';
+import { pipe, prop, T } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
-import type { Overview, UIWorkItem } from './types';
+import type { UIWorkItem, WorkItemTimes } from './types';
 
-type WorkItemTimes = Overview['times'][number];
-type WorkItemTimesGetter = (wi: UIWorkItem) => WorkItemTimes;
+export type WorkItemTimesGetter = (wi: UIWorkItem) => WorkItemTimes;
 
 export const timeDifference = ({ start, end }: { start: string; end?: string }) => (
   (end ? new Date(end) : new Date()).getTime() - new Date(start).getTime()
@@ -41,3 +40,25 @@ export const flowEfficiency = (workItemTimes: WorkItemTimesGetter) => {
     return (twct(workItems) * 100) / totalTime;
   };
 };
+
+export const isWIPInTimeRange = (
+  workItemTimes: WorkItemTimesGetter,
+  statesToIgnore: string[]
+) => (
+  (isWithinTimeRange: (d: Date) => boolean) => (
+    (wi: UIWorkItem) => {
+      if (statesToIgnore?.includes(wi.state)) return false;
+
+      const { start, end } = workItemTimes(wi);
+      if (!start) return false;
+      if (!isWithinTimeRange(new Date(start))) return false;
+      if (!end) return true;
+      if (isWithinTimeRange(new Date(end))) return false;
+      return true;
+    }
+  )
+);
+
+export const isWIP = (workItemTimes: WorkItemTimesGetter, statesToIgnore: string[]) => (
+  isWIPInTimeRange(workItemTimes, statesToIgnore)(T)
+);

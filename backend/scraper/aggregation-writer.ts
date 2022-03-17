@@ -108,7 +108,8 @@ const writeOverviewFile = async (
   const analysis: ProjectOverviewAnalysis = {
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
     overview: projectAnalysis.workItemAnalysis?.overview,
-    testCases: projectAnalysis.testCasesAnalysis
+    testCases: projectAnalysis.testCasesAnalysis,
+    ignoreForWIP: projectConfig.workitems.ignoreForWIP
   };
   return writeFile(
     [collectionName, projectConfig.name],

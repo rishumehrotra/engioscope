@@ -1,5 +1,6 @@
 import {
-  last, length, pipe, prop
+  always,
+  last, length, pipe, prop, T
 } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
@@ -24,20 +25,13 @@ import { WorkItemFlatList, WorkItemsNested, workItemSubheading } from './helpers
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
-const isWIPToday = (workItem: UIWorkItem, dayStart: Date, accessors: WorkItemAccessors) => {
-  const times = accessors.workItemTimes(workItem);
+const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => {
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayStart.getDate() + 1);
 
-  const start = times.start ? new Date(times.start) : undefined;
-  const end = times.end ? new Date(times.end) : undefined;
+  const today = (d: Date) => d >= dayStart && d < dayEnd;
 
-  if (!start) return false; // Not yet started
-  if (start > dayEnd) return false; // Started after today
-
-  // Started today or before today
-  if (!end) return true; // Started today or before, but hasn't finished at all
-  return end > dayEnd; // Started today or before, not finished today
+  return accessors.isWIPInTimeRange(today);
 };
 
 type WIPTrendGraphProps = {
@@ -50,12 +44,15 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
   workItems, accessors, openModal
 }) => {
   const { organizeByWorkItemType, workItemType } = accessors;
-  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
+  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(always(T));
+  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(always(T));
 
   const hasData = useMemo(
-    () => splitByDateForLineGraph(accessors, organizeByWorkItemType(workItems, () => true), isWIPToday)
-      .reduce((acc, line) => acc + length(line.workItemPoints.flatMap(p => p.workItems)), 0) > 0,
+    () => splitByDateForLineGraph(
+      accessors,
+      organizeByWorkItemType(workItems, T),
+      isWIPToday
+    ).reduce((acc, line) => acc + length(line.workItemPoints.flatMap(p => p.workItems)), 0) > 0,
     [accessors, organizeByWorkItemType, workItems]
   );
 

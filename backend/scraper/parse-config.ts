@@ -14,6 +14,7 @@ type CollectionWorkItemConfig = {
   environmentField?: string;
   ignoredWorkItemsForFlowAnalysis?: string[];
   ignoreStates?: string[];
+  ignoreForWIP?: string[];
   filterBy?: {
     label: string;
     field: string | string[];
@@ -122,6 +123,7 @@ export type ParsedProjectConfig = Readonly<{
   workitems: {
     groupUnder: string[];
     label: string;
+    ignoreForWIP: string[];
   };
   groupRepos?: {
     label: string;
@@ -204,7 +206,10 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
             ?? { stagesToHighlight: [] },
           workitems: {
             groupUnder: workitems.groupUnder,
-            label: workitems.label
+            label: workitems.label,
+            ignoreForWIP: collection.workitems?.ignoreForWIP
+              ?? config.azure.workitems?.ignoreForWIP
+              ?? []
           }
         };
       }
@@ -217,7 +222,11 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
           ?? { stagesToHighlight: [] },
         workitems: {
           groupUnder: project.workitems?.groupUnder ?? workitems.groupUnder,
-          label: project.workitems?.label ?? workitems.label
+          label: project.workitems?.label ?? workitems.label,
+          ignoreForWIP: project.workitems?.ignoreForWIP
+            ?? collection.workitems?.ignoreForWIP
+            ?? config.azure.workitems?.ignoreForWIP
+            ?? []
         },
         groupRepos: project.groupRepos
       };

@@ -37,7 +37,7 @@ export const getMatchingAtIndex = (
 export const splitByDateForLineGraph = (
   accessors: WorkItemAccessors,
   organizedWorkItems: OrganizedWorkItems,
-  filterWorkItems: (workItem: UIWorkItem, date: Date, accessors: WorkItemAccessors) => boolean
+  filterWorkItems: (date: Date, accessors: WorkItemAccessors) => (workItem: UIWorkItem) => boolean
 ): WorkItemLine[] => {
   const separator = ':';
   const key = (witId: string, groupName: string) => `${witId}${separator}${groupName}`;
@@ -48,14 +48,14 @@ export const splitByDateForLineGraph = (
       date.setDate(date.getDate() - day);
       date.setHours(0, 0, 0, 0);
 
+      const filter = filterWorkItems(date, accessors);
+
       Object.entries(organizedWorkItems).forEach(([witId, groups]) => {
         Object.entries(groups).forEach(([groupName, workItems]) => {
           acc[key(witId, groupName)] = (acc[key(witId, groupName)] || [])
             .concat({
               date,
-              workItems: workItems.filter(
-                wi => filterWorkItems(wi, date, accessors)
-              )
+              workItems: workItems.filter(filter)
             });
         });
       });

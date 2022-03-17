@@ -21,7 +21,7 @@ import { WorkItemsNested, workItemSubheading } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createCompletedWorkItemTooltip } from './helpers/tooltips';
 
-const isClosedToday = (workItem: UIWorkItem, dayStart: Date, accessors: WorkItemAccessors) => {
+const isClosedToday = (dayStart: Date, accessors: WorkItemAccessors) => (workItem: UIWorkItem) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const closedAt = new Date(accessors.workItemTimes(workItem).end!);
   const dateEnd = new Date(dayStart);

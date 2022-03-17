@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { T } from 'rambda';
 import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../../shared/types';
 import { createPalette } from '../../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
 import {
-  cycleTime, totalCycleTime, totalWorkCenterTime, workCenterTime
+  cycleTime, isWIPInTimeRange, totalCycleTime, totalWorkCenterTime, workCenterTime
 } from '../../../../shared/work-item-utils';
 
 export type GroupLabel = { witId: string; groupName: string };
@@ -42,6 +43,8 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
   const startOfQueryPeriod = oneMonthAgo(projectAnalysis.lastUpdated);
 
+  const isWIPIn = isWIPInTimeRange(workItemTimes, projectAnalysis.ignoreForWIP);
+
   return {
     allWorkItems: Object.values(overview.byId),
     lastUpdated: new Date(projectAnalysis.lastUpdated),
@@ -53,6 +56,8 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     totalCycleTime: totalCycleTime(workItemTimes),
     workCenterTime: workCenterTime(workItemTimes),
     totalWorkCenterTime: totalWorkCenterTime(workItemTimes),
+    isWIPInTimeRange: isWIPIn,
+    isWIP: isWIPIn(T),
     isWorkItemClosed: (wi: UIWorkItem) => {
       const wiTimes = workItemTimes(wi);
       if (!wiTimes.end) return false;

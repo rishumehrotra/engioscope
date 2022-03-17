@@ -24,23 +24,19 @@ type AgeOfWIPItemsGraphProps = {
 
 export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
-    organizeByWorkItemType, workItemType, lastUpdated, workItemTimes
+    organizeByWorkItemType, workItemType, lastUpdated, workItemTimes, isWIP
   } = accessors;
 
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
   const preFilteredWorkItems = useMemo(
-    () => workItems.filter(workItem => (
-      Boolean(workItemTimes(workItem).start) && !workItemTimes(workItem).end)),
-    [workItemTimes, workItems]
+    () => workItems.filter(isWIP),
+    [isWIP, workItems]
   );
 
   const filter = useCallback(
-    (workItem: UIWorkItem) => (
-      priorityFilter(workItem)
-      && sizeFilter(workItem)
-    ),
+    (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
 
