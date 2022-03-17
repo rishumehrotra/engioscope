@@ -25,13 +25,20 @@ import { WorkItemFlatList, WorkItemsNested, workItemSubheading } from './helpers
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
-const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => {
+const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => (workItem: UIWorkItem) => {
+  const times = accessors.workItemTimes(workItem);
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayStart.getDate() + 1);
 
-  const today = (d: Date) => d >= dayStart && d < dayEnd;
+  const start = times.start ? new Date(times.start) : undefined;
+  const end = times.end ? new Date(times.end) : undefined;
 
-  return accessors.isWIPInTimeRange(today);
+  if (!start) return false; // Not yet started
+  if (start > dayEnd) return false; // Started after today
+
+  // Started today or before today
+  if (!end) return true; // Started today or before, but hasn't finished at all
+  return end > dayEnd; // Started today or before, not finished today
 };
 
 type WIPTrendGraphProps = {
