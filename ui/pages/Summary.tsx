@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQueryParam } from 'use-query-params';
 import type { SummaryMetrics } from '../../shared/types';
+import Switcher from '../components/common/Switcher';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
 import SummaryByMetric from '../components/summary-page/SummaryByMetric';
@@ -37,33 +38,17 @@ const Summary: React.FC = () => {
             </strong>
             {` From ${shortDate(monthAgo(metrics.lastUpdateDate))} to ${shortDate(new Date(metrics.lastUpdateDate))}.`}
           </div>
-          <div className="text-right">
-            <div>
+          <div className="text-right justify-self-end">
+            <div className="flex items-center">
               <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
-              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-              <label
-                className={`rounded-l-md ${show ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
-              >
-                <input
-                  type="radio"
-                  checked={!show}
-                  onChange={() => setShow(undefined, 'replaceIn')}
-                  className="opacity-0 w-0"
-                />
-                Teams
-              </label>
-              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-              <label
-                className={`rounded-r-md ${!show ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-yellow-500'} px-5 py-1`}
-              >
-                <input
-                  type="radio"
-                  checked={!!show}
-                  onChange={() => setShow('by-metric', 'replaceIn')}
-                  className="opacity-0 w-0"
-                />
-                Metrics
-              </label>
+              <Switcher
+                options={[
+                  { label: 'Teams', value: 'teams' },
+                  { label: 'Metric', value: 'metric' }
+                ]}
+                onChange={value => setShow(value === 'teams' ? undefined : value, 'replaceIn')}
+                value={show === undefined ? 'teams' : show}
+              />
             </div>
           </div>
         </div>
