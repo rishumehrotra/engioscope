@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
+import useDownloadLinkProps from '../../../hooks/use-download-link-props';
 import { sidebarWidth } from './LegendSidebar';
 
 type GraphCardProps = {
@@ -10,15 +11,31 @@ type GraphCardProps = {
   left: ReactNode;
   right: ReactNode;
   renderLazily?: boolean;
+  downloadContents?: (string | number)[][];
 };
 
 const titleToUrlFragment = (title: string) => (
   title.toLowerCase().replace(/\s/g, '-')
 );
 
+const convertToCSV = (data: (string | number)[][]) => (
+  data.map(
+    row => row
+      .map(cell => (
+        typeof cell === 'string'
+          ? `"${cell.replace(/"/g, '""')}"`
+          : cell
+      ))
+      .join(',')
+  ).join('\n')
+);
+
 const GraphCard: React.FC<GraphCardProps> = ({
-  title, subtitle, left, right, hasData, renderLazily = true
+  title, subtitle, left, right, hasData, renderLazily = true, downloadContents
 }) => {
+  const csv = useMemo(() => (downloadContents ? convertToCSV(downloadContents) : null), [downloadContents]);
+  const downloadLinkAttributes = useDownloadLinkProps(csv || '', 'text/plain', `${title} - ${new Date().toISOString().split('T')[0]}.csv`);
+
   const [ref, inView] = useInView({
     threshold: 0,
     triggerOnce: true,
@@ -37,20 +54,34 @@ const GraphCard: React.FC<GraphCardProps> = ({
       ref={ref}
       id={titleToUrlFragment(title)}
     >
-      <h1 className="text-2xl font-semibold group">
-        {title}
-        {' '}
-        <a
-          href={`#${titleToUrlFragment(title)}`}
-          className="opacity-0 group-hover:opacity-100 text-gray-400"
-          title="Link to this graph"
-        >
-          #
-        </a>
-      </h1>
-      <p className="text-base text-gray-600 mb-4">
-        {subtitle}
-      </p>
+      <div className="flex justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold group">
+            {title}
+            {' '}
+            <a
+              href={`#${titleToUrlFragment(title)}`}
+              className="opacity-0 group-hover:opacity-100 text-gray-400"
+              title="Link to this graph"
+            >
+              #
+            </a>
+          </h1>
+          <p className="text-base text-gray-600 mb-4">
+            {subtitle}
+          </p>
+        </div>
+        <div className="pt-2">
+          {csv && (
+            <a
+              {...downloadLinkAttributes}
+              className="opacity-60 text-xs hover:opacity-100 hover:text-blue-700 hover:underline uppercase"
+            >
+              CSV
+            </a>
+          )}
+        </div>
+      </div>
 
       {hasData
         ? mustRender && (

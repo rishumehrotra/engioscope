@@ -16,6 +16,7 @@ import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
+import { closedWorkItemsCsv } from './helpers/create-csv-content';
 
 type CycleTimeGraphProps = {
   workItems: UIWorkItem[];
@@ -47,6 +48,10 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
+
+  const csvData = useMemo(() => (
+    closedWorkItemsCsv(preFilteredWorkItems.filter(filter), accessors)
+  ), [preFilteredWorkItems, filter, accessors]);
 
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(accessors),
@@ -138,6 +143,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
       title="Cycle time"
       subtitle="Time taken to complete a work item"
       hasData={preFilteredWorkItems.length > 0}
+      downloadContents={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

@@ -16,6 +16,7 @@ import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
+import { closedWorkItemsCsv } from './helpers/create-csv-content';
 
 type ChangeLeadTimeGraphProps = {
   workItems: UIWorkItem[];
@@ -40,6 +41,10 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
+
+  const csvData = useMemo(() => (
+    closedWorkItemsCsv(preFilteredWorkItems.filter(filter), accessors)
+  ), [preFilteredWorkItems, filter, accessors]);
 
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(accessors),
@@ -140,6 +145,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
       title="Change lead time"
       subtitle="Time taken to take a work item to production after development is complete"
       hasData={preFilteredWorkItems.length > 0}
+      downloadContents={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

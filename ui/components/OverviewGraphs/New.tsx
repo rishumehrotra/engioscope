@@ -29,6 +29,21 @@ const isOpenedToday = (dayStart: Date, accessors: WorkItemAccessors) => (workIte
   return openedOn >= dayStart && openedOn < dateEnd;
 };
 
+const createCSVArray = (workItems: UIWorkItem[], accessors: WorkItemAccessors): (string | number)[][] => ([
+  ['ID', 'Type', 'Group', 'Title', 'Created on', 'Started on', 'Priority', 'URL'],
+  ...workItems.map(wi => [
+    wi.id,
+    accessors.workItemType(wi.typeId).name[0],
+    wi.groupId ? accessors.workItemGroup(wi.groupId).name : '-',
+    wi.title,
+    wi.created.on.split('T')[0],
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    accessors.workItemTimes(wi).start ? accessors.workItemTimes(wi).start!.split('T')[0] : '-',
+    wi.priority || 'unknown',
+    wi.url
+  ])
+]);
+
 type NewGraphProps = {
   workItems: UIWorkItem[];
   accessors: WorkItemAccessors;
@@ -54,6 +69,10 @@ const NewGraph: React.FC<NewGraphProps> = ({
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
+
+  const csvData = useMemo(() => (
+    createCSVArray(preFilteredWorkItems.filter(filter), accessors)
+  ), [preFilteredWorkItems, filter, accessors]);
 
   const workItemsToDisplay = useMemo(
     () => organizeByWorkItemType(preFilteredWorkItems, filter),
@@ -178,6 +197,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
       subtitle="Work items on which work started this month"
       hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
+      downloadContents={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
