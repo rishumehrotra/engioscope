@@ -252,7 +252,7 @@ export type UIWorkItem = {
   groupId?: string;
   priority?: number;
   severity?: string;
-  rca?: string;
+  rca: string[];
   filterBy?: { label: string; tags: string[] }[];
 };
 
@@ -271,6 +271,7 @@ export type UIWorkItemType = {
   startDateFields?: string[];
   endDateFields?: string[];
   devCompleteFields?: string[];
+  rootCauseFields?: string[];
 };
 
 export type AnalysedWorkItems = {

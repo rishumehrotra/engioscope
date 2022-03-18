@@ -1,6 +1,7 @@
 import pluralize from 'pluralize';
 import { reduce } from 'rambda';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { noRCAValue } from '../../../shared/work-item-utils';
 import { exists, unique } from '../../utils';
 import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
@@ -103,13 +104,8 @@ const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName
 );
 
 const rca = (collectionConfig: ParsedCollection, workItem: WorkItem, workItemType: WorkItemType) => {
-  if (workItemType.name !== 'Bug') return;
   const match = collectionConfig.workitems.types?.find(({ type }) => type === workItemType.name);
-  if (!match?.rootCause) return;
-
-  const rootCause = workItem.fields[match.rootCause];
-  if (!rootCause) return;
-  return { rca: rootCause };
+  return { rca: (match?.rootCause || []).map(field => workItem.fields[field] || noRCAValue) };
 };
 
 const filterTags = (collectionConfig: ParsedCollection, workItem: WorkItem) => {
@@ -277,7 +273,8 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
             startDateField: wc.startDate.map(getFieldName).filter(exists),
             endDateField: wc.endDate.map(getFieldName).filter(exists)
           })),
-          groupLabel: matchingWit?.groupLabel
+          groupLabel: matchingWit?.groupLabel,
+          rootCauseFields: matchingWit?.rootCause.map(getFieldName).filter(exists)
         };
       }
 

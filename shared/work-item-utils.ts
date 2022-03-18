@@ -62,3 +62,5 @@ export const isWIPInTimeRange = (
 export const isWIP = (workItemTimes: WorkItemTimesGetter, statesToIgnore: string[]) => (
   isWIPInTimeRange(workItemTimes, statesToIgnore)(T)
 );
+
+export const noRCAValue = '(empty)';

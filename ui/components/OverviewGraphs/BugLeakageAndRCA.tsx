@@ -8,9 +8,7 @@ import ExpandableBarGraph from '../graphs/ExpandableBarGraph';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
-  noGroup,
-  useSidebarCheckboxState,
-  lineColor,
+  listFormat, noGroup, useSidebarCheckboxState, lineColor,
   getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
 } from './helpers/helpers';
 import type { LegendSidebarProps } from './helpers/LegendSidebar';
@@ -85,8 +83,7 @@ const bugsLeakedInLastMonth = (lastUpdated: Date) => {
 
 const organizeWorkItemsByRCA = (workItems: UIWorkItem[]) => (
   workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
-    const categoryName = wi.rca || 'No RCA provided';
-    acc[categoryName] = (acc[categoryName] || []).concat(wi);
+    acc[wi.rca.join(' / ')] = (acc[wi.rca.join(' / ')] || []).concat(wi);
     return acc;
   }, {})
 );
@@ -338,13 +335,24 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
               </div>
             )
             : (
-              <BugLeakageGraphBars
-                witId={witId}
-                accessors={accessors}
-                graphData={graphData}
-                openModal={openModal}
-                workItemTooltip={workItemTooltip}
-              />
+              <>
+                <BugLeakageGraphBars
+                  witId={witId}
+                  accessors={accessors}
+                  graphData={graphData}
+                  openModal={openModal}
+                  workItemTooltip={workItemTooltip}
+                />
+                <div className="text-sm text-gray-600 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
+                  {`The root cause for a ${workItemType(witId).name[0].toLowerCase()} is determined from the`}
+                  {' '}
+                  {listFormat(
+                    (workItemType(witId).rootCauseFields || []).map(x => `'${x}'`)
+                  )}
+                  {' '}
+                  {(workItemType(witId).rootCauseFields || []).length === 1 ? 'field.' : 'fields.'}
+                </div>
+              </>
             )}
         </>
       )}

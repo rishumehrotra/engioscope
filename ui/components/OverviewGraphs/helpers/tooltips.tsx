@@ -15,7 +15,7 @@ const workItemBasicDetails = (workItem: UIWorkItem, workItemType: UIWorkItemType
   ${workItemGroupName ? addSection(workItemType.groupLabel || 'Group', workItemGroupName) : ''}
   ${workItem.priority ? addSection('Priority', workItem.priority) : ''}
   ${workItem.severity ? addSection('Severity', workItem.severity) : ''}
-  ${workItem.rca ? addSection('RCA', workItem.rca) : ''}
+  ${workItem.rca.length ? addSection('RCA', workItem.rca.join(' / ')) : ''}
 `;
 
 const computeTimes = (workCenters: Overview['times'][number]['workCenters']) => (
