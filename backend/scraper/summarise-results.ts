@@ -1,5 +1,6 @@
 import {
-  allPass, anyPass, applySpec, compose, filter, length, map, not, pipe, prop, subtract
+  allPass, always, anyPass, applySpec, compose, filter, length, map, not,
+  pipe, prop, subtract, T
 } from 'rambda';
 import type {
   Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
@@ -8,6 +9,10 @@ import { exists, isAfter } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils';
+import {
+  noGroup, isNewInTimeRange, isWIP, isWIPInTimeRange, timeDifference,
+  totalCycleTime, totalWorkCenterTime
+} from '../../shared/work-item-utils';
 import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
   isPipelineInGroup, masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
@@ -16,13 +21,8 @@ import {
 import {
   isDeprecated, totalBuilds, totalTests
 } from '../../shared/repo-utils';
-import {
-  isWIP, isWIPInTimeRange, timeDifference, totalCycleTime, totalWorkCenterTime
-} from '../../shared/work-item-utils';
 
-const noGroup = 'no-group';
-
-const isWithinLastMonth = isAfter('30 days');
+const lastMonth = isAfter('30 days');
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
 type RelevantResults = {
@@ -141,10 +141,10 @@ const mapObjectValues = <T, U>(mapFn: (v: T) => U) => (obj: Record<string, T>) =
 
 const processItemsInGroup = pipe(mapObjectValues, mapObjectValues);
 
-const computeTimeDifference = (workItemTimes: Overview['times']) => (
+const computeTimeDifference = (workItemTimes: WorkItemTimesGetter) => (
   (start: keyof Omit<Overview['times'][number], 'workCenters'>, end?: keyof Omit<Overview['times'][number], 'workCenters'>) => (
     (workItem: UIWorkItemWithGroup) => {
-      const wits = workItemTimes[workItem.id];
+      const wits = workItemTimes(workItem);
       const { [start]: startTime } = wits;
       const endTime = end ? wits[end] : undefined;
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -212,6 +212,100 @@ const weeks = [4, 3, 2, 1]
     compose(not, isAfter(`${(weekIndex - 1) * 7} days`))
   ]));
 
+const analyseWorkItems = (
+  results: { workItems: UIWorkItemWithGroup[]; workItemTypes: Record<string, UIWorkItemType>; workItemTimes: Overview['times'] },
+  projectConfig?: ParsedProjectConfig
+) => {
+  const workItemTimes = (wi: UIWorkItem) => results.workItemTimes[wi.id];
+  const workItemType = (witId: string) => results.workItemTypes[witId];
+
+  const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
+  const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
+  const wasWorkItemCompletedInLastMonth = wasWorkItemCompletedIn(lastMonth);
+
+  const wipWorkItems = isWIP(workItemTimes, projectConfig?.workitems.ignoreForWIP || []);
+  const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
+    results.workItemTypes[workItem.typeId].name[0] === type
+  );
+  const leakage = isNewInTimeRange(workItemType, workItemTimes);
+  const flowEfficiency = (wis: UIWorkItem[]) => {
+    const tct = totalCycleTime(workItemTimes)(wis);
+    if (tct === 0) { return { total: 0, wcTime: 0 }; }
+    return { total: tct, wcTime: totalWorkCenterTime(workItemTimes)(wis) };
+  };
+
+  return pipe(
+    filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
+    organiseWorkItemsIntoGroups,
+    processItemsInGroup(
+      applySpec({
+        count: length,
+        velocity: wis => pipe(filter(wasWorkItemCompletedInLastMonth), length)(wis),
+        velocityByWeek: wis => (
+          weeks.map(
+            week => wis.filter(wasWorkItemCompletedIn(week)).length
+          )
+        ),
+        cycleTime: wis => pipe(
+          filter(wasWorkItemCompletedInLastMonth),
+          map(computeTimeDifferenceBetween('start', 'end'))
+        )(wis),
+        cycleTimeByWeek: wis => (
+          weeks.map(week => (
+            wis
+              .filter(wasWorkItemCompletedIn(week))
+              .map(computeTimeDifferenceBetween('start', 'end'))
+          ))
+        ),
+        changeLeadTime: wis => pipe(
+          filter(wasWorkItemCompletedInLastMonth),
+          map(computeTimeDifferenceBetween('devComplete', 'end'))
+        )(wis),
+        changeLeadTimeByWeek: wis => (
+          weeks.map(week => (
+            wis
+              .filter(wasWorkItemCompletedIn(week))
+              .map(computeTimeDifferenceBetween('devComplete', 'end'))
+          ))
+        ),
+        flowEfficiency: wis => pipe(
+          filter(wasWorkItemCompletedInLastMonth),
+          flowEfficiency
+        )(wis),
+        flowEfficiencyByWeek: wis => (
+          weeks.map(week => flowEfficiency(
+            wis.filter(wasWorkItemCompletedIn(week))
+          ))
+        ),
+        wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
+        wipIncrease: wis => pipe(
+          filter(isWIPInTimeRange(
+            workItemTimes,
+            projectConfig?.workitems.ignoreForWIP || []
+          )(lastMonth)),
+          length
+        )(wis),
+        wipIncreaseByWeek: wis => (
+          weeks
+            .map(isWIPInTimeRange(workItemTimes, projectConfig?.workitems.ignoreForWIP || []))
+            .map(filter => wis.filter(filter).length)
+        ),
+        wipAge: wis => pipe(
+          filter(wipWorkItems),
+          map(computeTimeDifferenceBetween('start'))
+        )(wis),
+        leakage: wis => pipe(
+          filter(leakage(lastMonth)),
+          length
+        )(wis),
+        leakageByWeek: wis => (
+          weeks.map(week => wis.filter(leakage(week)).length)
+        )
+      })
+    )
+  )(results.workItems);
+};
+
 const summariseResults = (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
   if (!summaryPageGroups) {
@@ -232,102 +326,6 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       if (!match.length) return null;
 
       const mergedResults = mergeResults(match);
-
-      const workItemTimes = (wi: UIWorkItem) => mergedResults.workItemTimes[wi.id];
-
-      const computeTimeDifferenceBetween = computeTimeDifference(mergedResults.workItemTimes);
-      const workItemCompetion = hasWorkItemCompleted(workItemTimes);
-      const completedWorkItems = workItemCompetion(isWithinLastMonth);
-
-      const wipWorkItems = isWIP(workItemTimes, projectConfig?.workitems.ignoreForWIP || []);
-      const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
-        mergedResults.workItemTypes[workItem.typeId].name[0] === type
-      );
-      const leakage = (isInDateRange: (d: Date) => boolean) => (workItem: UIWorkItemWithGroup) => (
-        isOfType('Bug')(workItem)
-          ? isInDateRange(new Date(workItem.created.on))
-          : (
-            Boolean(mergedResults.workItemTimes[workItem.id].start)
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              && isInDateRange(new Date(mergedResults.workItemTimes[workItem.id].start!))
-          )
-      );
-      const flowEfficiency = (wis: UIWorkItem[]) => {
-        const tct = totalCycleTime(workItemTimes)(wis);
-        if (tct === 0) return { total: 0, wcTime: 0 };
-        return { total: tct, wcTime: totalWorkCenterTime(workItemTimes)(wis) };
-      };
-
-      const workItemAnalysis = pipe(
-        filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
-        organiseWorkItemsIntoGroups,
-        processItemsInGroup(
-          applySpec({
-            count: length,
-            velocity: wis => pipe(filter(completedWorkItems), length)(wis),
-            velocityByWeek: wis => (
-              weeks.map(
-                isWithinWeek => wis.filter(workItemCompetion(isWithinWeek)).length
-              )
-            ),
-            cycleTime: wis => pipe(
-              filter(completedWorkItems),
-              map(computeTimeDifferenceBetween('start', 'end'))
-            )(wis),
-            cycleTimeByWeek: wis => (
-              weeks.map(isWithinWeek => (
-                wis
-                  .filter(workItemCompetion(isWithinWeek))
-                  .map(computeTimeDifferenceBetween('start', 'end'))
-              ))
-            ),
-            changeLeadTime: wis => pipe(
-              filter(completedWorkItems),
-              map(computeTimeDifferenceBetween('devComplete', 'end'))
-            )(wis),
-            changeLeadTimeByWeek: wis => (
-              weeks.map(isWithinWeek => (
-                wis
-                  .filter(workItemCompetion(isWithinWeek))
-                  .map(computeTimeDifferenceBetween('devComplete', 'end'))
-              ))
-            ),
-            flowEfficiency: wis => pipe(
-              filter(completedWorkItems),
-              flowEfficiency
-            )(wis),
-            flowEfficiencyByWeek: wis => (
-              weeks.map(isWithinWeek => flowEfficiency(
-                wis.filter(workItemCompetion(isWithinWeek))
-              ))
-            ),
-            wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
-            wipIncrease: wis => pipe(
-              filter(isWIPInTimeRange(
-                workItemTimes,
-                projectConfig?.workitems.ignoreForWIP || []
-              )(isWithinLastMonth)),
-              length
-            )(wis),
-            wipIncreaseByWeek: wis => (
-              weeks
-                .map(isWIPInTimeRange(workItemTimes, projectConfig?.workitems.ignoreForWIP || []))
-                .map(filter => wis.filter(filter).length)
-            ),
-            wipAge: wis => pipe(
-              filter(wipWorkItems),
-              map(computeTimeDifferenceBetween('start'))
-            )(wis),
-            leakage: wis => pipe(
-              filter(leakage(isWithinLastMonth)),
-              length
-            )(wis),
-            leakageByWeek: wis => (
-              weeks.map(isWithinWeek => wis.filter(leakage(isWithinWeek)).length)
-            )
-          })
-        )
-      )(mergedResults.workItems);
 
       const resultsForThisProject = results.find(r => (
         r.collectionConfig.name === group.collection
@@ -376,35 +374,30 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         };
       };
 
-      const matchingPipelines = () => {
-        const allPipelines = resultsForThisProject?.analysisResult.releaseAnalysis.pipelines || [];
-
-        return repoNames.length === 0
-          ? allPipelines
-          : allPipelines.filter(isPipelineInGroup(groupType(group)[1], repoNames));
-      };
-
       const pipelineStats = () => {
-        const matches = matchingPipelines();
+        const matchingPipelines = (resultsForThisProject?.analysisResult.releaseAnalysis.pipelines || [])
+          .filter(
+            repoNames.length === 0 ? T : isPipelineInGroup(groupType(group)[1], repoNames)
+          );
 
         return {
-          pipelines: matches.length,
-          stages: config.azure.collections[0].projects[0].releasePipelines.stagesToHighlight.map(stage => ({
-            name: stage,
-            exists: count(incrementIf(pipelineHasStageNamed(stage)))(matches),
-            used: count(incrementIf(pipelineUsesStageNamed(stage)))(matches)
-          })),
-          masterOnlyPipelines: masterDeploysCount(matches),
+          pipelines: length(matchingPipelines),
+          stages: (projectConfig?.releasePipelines.stagesToHighlight || []).map(stage => applySpec({
+            name: always(stage),
+            exists: count(incrementIf(pipelineHasStageNamed(stage))),
+            used: count(incrementIf(pipelineUsesStageNamed(stage)))
+          })(matchingPipelines)),
+          masterOnlyPipelines: masterDeploysCount(matchingPipelines),
           conformsToBranchPolicies: count(incrementIf(pipelineMeetsBranchPolicyRequirements(
             (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
-          )))(matches)
+          )))(matchingPipelines)
         };
       };
 
       return {
         ...group,
         groupName: groupType(group)[1],
-        summary: workItemAnalysis,
+        summary: analyseWorkItems(mergedResults, projectConfig),
         repoStats: repoStats(),
         pipelineStats: pipelineStats(),
         workItemTypes: mergedResults.workItemTypes

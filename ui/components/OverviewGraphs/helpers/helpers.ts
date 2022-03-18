@@ -4,7 +4,7 @@ import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../../shared/typ
 import { createPalette } from '../../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
 import {
-  cycleTime, isWIPInTimeRange, totalCycleTime, totalWorkCenterTime, workCenterTime
+  cycleTime, isNewInTimeRange, isWIPInTimeRange, totalCycleTime, totalWorkCenterTime, workCenterTime
 } from '../../../../shared/work-item-utils';
 
 export type GroupLabel = { witId: string; groupName: string };
@@ -24,7 +24,7 @@ export const lineColor = (() => {
   );
 })();
 
-const oneMonthAgo = (lastUpdated: string) => {
+const oneMonthAgoFrom = (lastUpdated: string) => {
   const queryPeriod = new Date(lastUpdated);
   queryPeriod.setDate(queryPeriod.getDate() - 30);
   queryPeriod.setHours(0, 0, 0, 0);
@@ -41,7 +41,7 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
   const isBug = (witId: string) => workItemType(witId).name[0].toLowerCase().includes('bug');
 
-  const startOfQueryPeriod = oneMonthAgo(projectAnalysis.lastUpdated);
+  const startOfQueryPeriod = oneMonthAgoFrom(projectAnalysis.lastUpdated);
 
   const isWIPIn = isWIPInTimeRange(workItemTimes, projectAnalysis.ignoreForWIP);
 
@@ -73,14 +73,9 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
       // So, we need to filter out items that have an end date older than the last month.
       return new Date(wiTimes.end) > startOfQueryPeriod;
     },
-    wasWorkItemOpenedThisMonth: (wi: UIWorkItem) => {
-      if (isBug(wi.typeId)) return new Date(wi.created.on) > startOfQueryPeriod;
-
-      const wiTimes = workItemTimes(wi);
-      if (!wiTimes.start) return false;
-
-      return new Date(wiTimes.start) > startOfQueryPeriod;
-    },
+    wasWorkItemOpenedThisMonth: isNewInTimeRange(workItemType, workItemTimes)(
+      d => d > startOfQueryPeriod
+    ),
     organizeByWorkItemType: (workItems: UIWorkItem[], filter: (wi: UIWorkItem) => boolean) => (
       workItems.reduce<OrganizedWorkItems>((acc, wi) => {
         acc[wi.typeId] = acc[wi.typeId] || {};

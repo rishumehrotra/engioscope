@@ -1,6 +1,9 @@
 import { pipe, prop, T } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
-import type { UIWorkItem, WorkItemTimes } from './types';
+import type { UIWorkItem, UIWorkItemType, WorkItemTimes } from './types';
+
+export const noRCAValue = '(empty)';
+export const noGroup = 'no-group';
 
 export type WorkItemTimesGetter = (wi: UIWorkItem) => WorkItemTimes;
 
@@ -63,4 +66,20 @@ export const isWIP = (workItemTimes: WorkItemTimesGetter, statesToIgnore: string
   isWIPInTimeRange(workItemTimes, statesToIgnore)(T)
 );
 
-export const noRCAValue = '(empty)';
+export const isBug = (workItemType: UIWorkItemType) => (
+  workItemType.name[0].toLowerCase().includes('bug')
+);
+
+export const isNewInTimeRange = (
+  workItemType: (wit: string) => UIWorkItemType,
+  workItemTimes: WorkItemTimesGetter
+) => (
+  (isWithinTimeRange: (d: Date) => boolean) => (
+    (wi: UIWorkItem) => (
+      isBug(workItemType(wi.typeId))
+        ? isWithinTimeRange(new Date(wi.created.on))
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        : Boolean(workItemTimes(wi).start) && isWithinTimeRange(new Date(workItemTimes(wi).start!))
+    )
+  )
+);
