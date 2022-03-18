@@ -171,6 +171,7 @@ export const getSidebarStatByKey = (key: string, organizedWorkItems: OrganizedWo
 };
 
 export const listFormat = (list: string[], joiner = 'and') => {
+  if (list.length === 0) return '';
   if (list.length === 1) return list[0];
 
   const l = [...list];

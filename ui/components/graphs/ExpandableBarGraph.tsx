@@ -22,11 +22,11 @@ const ExpandableBarGraph: React.FC<ExpandableBarGraphProps> = ({ data }) => {
         heading, value, children, barColor, key
       }) => (
         <li key={key}>
-          <details className="mb-2">
+          <details className="mb-2" open={data.length === 1}>
             <summary>
               <div
                 style={{ width: 'calc(100% - 20px)' }}
-                className="inline-block relative"
+                className="inline-block relative cursor-pointer"
               >
                 <div
                   style={{
