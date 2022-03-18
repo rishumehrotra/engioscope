@@ -45,15 +45,15 @@ export const isWIPInTimeRange = (
   workItemTimes: WorkItemTimesGetter,
   statesToIgnore: string[]
 ) => (
-  (isWithinTimeRange: (d: Date) => boolean) => (
+  (isWithinTimeRange: (d: Date, limit: 'start' | 'end') => boolean) => (
     (wi: UIWorkItem) => {
       if (statesToIgnore?.includes(wi.state)) return false;
 
       const { start, end } = workItemTimes(wi);
       if (!start) return false;
-      if (!isWithinTimeRange(new Date(start))) return false;
+      if (!isWithinTimeRange(new Date(start), 'start')) return false;
       if (!end) return true;
-      if (isWithinTimeRange(new Date(end))) return false;
+      if (isWithinTimeRange(new Date(end), 'end')) return false;
       return true;
     }
   )

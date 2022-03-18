@@ -48,6 +48,7 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
   return {
     allWorkItems: Object.values(overview.byId),
     lastUpdated: new Date(projectAnalysis.lastUpdated),
+    ignoreForWIP: projectAnalysis.ignoreForWIP,
     workItemType,
     workItemTimes,
     workItemGroup,

@@ -1,6 +1,5 @@
 import {
-  always,
-  last, length, pipe, prop, T
+  always, last, length, pipe, prop, T
 } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
@@ -13,9 +12,7 @@ import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
-  stringifyDateField,
-  noGroup,
-  useSidebarCheckboxState,
+  stringifyDateField, noGroup, useSidebarCheckboxState,
   lineColor, getSidebarStatByKey, getSidebarHeadlineStats
 } from './helpers/helpers';
 import type { LegendSidebarProps } from './helpers/LegendSidebar';
@@ -25,20 +22,14 @@ import { WorkItemFlatList, WorkItemsNested, workItemSubheading } from './helpers
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
-const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => (workItem: UIWorkItem) => {
-  const times = accessors.workItemTimes(workItem);
+const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => {
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayStart.getDate() + 1);
 
-  const start = times.start ? new Date(times.start) : undefined;
-  const end = times.end ? new Date(times.end) : undefined;
-
-  if (!start) return false; // Not yet started
-  if (start > dayEnd) return false; // Started after today
-
-  // Started today or before today
-  if (!end) return true; // Started today or before, but hasn't finished at all
-  return end > dayEnd; // Started today or before, not finished today
+  return accessors.isWIPInTimeRange((d, limit) => {
+    if (limit === 'start') return d <= dayEnd; // started on or before today
+    return d < dayEnd; // ended before today day end
+  });
 };
 
 type WIPTrendGraphProps = {
