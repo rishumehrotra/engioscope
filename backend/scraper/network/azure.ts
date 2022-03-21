@@ -73,7 +73,7 @@ export default (config: ParsedConfig) => {
         url: url(collectionName, projectName, '/build/builds'),
         qsParams: {
           minTime: config.azure.queryFrom.toISOString(),
-          resultFilter: 'succeeded,failed',
+          resultFilter: 'succeeded,failed,partiallySucceeded',
           $top: '5000'
         },
         cacheFile: [collectionName, projectName, 'builds']

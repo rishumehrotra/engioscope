@@ -73,9 +73,9 @@ export default (builds: Build[]) => {
               url: build.definition.url
                 .replace('_apis/build/Definitions/', '_build/definition?definitionId=')
                 .replace(/\?revision=.*/, ''),
-              success: build.result === 'succeeded' ? 1 : 0,
+              success: build.result !== 'failed' ? 1 : 0,
               duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())],
-              status: build.result === 'succeeded'
+              status: build.result !== 'failed'
                 ? { type: 'succeeded', latest: build.finishTime }
                 : { type: 'failed', since: build.finishTime }
             }, acc.buildStats[rId]?.[build.definition.id] || undefined)
