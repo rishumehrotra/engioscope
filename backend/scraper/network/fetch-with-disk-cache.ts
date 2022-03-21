@@ -15,6 +15,9 @@ const logDisk = logFetch.extend('disk-io');
 
 const streamPipeline = promisify(pipeline);
 
+let networkHits = 0;
+let cacheHits = 0;
+
 type FileLocation = [dirName: string, fileName: string];
 type Fetcher = () => Promise<Response>;
 
@@ -88,19 +91,27 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   logDisk(`Wrote ${fileNameForLogs(filePath)}`);
 };
 
+export const fetchCounters = () => ({ networkHits, cacheHits });
+
 export default (diskCacheTimeMs: number) => ({
   usingDiskCache: async <T>(pathParts: string[], fetcher: Fetcher): Promise<FetchResponse<T>> => (
     retry(async () => {
       const fileLocation = cachePath(pathParts);
       const filePath = join(...fileLocation);
-      let fromCache = false;
+      let fromCache = true;
 
       if (!await doesFileExist(filePath)) {
         await streamToDisk(fileLocation, fetcher);
-        fromCache = true;
+        fromCache = false;
       } else if (Date.now() - (await getFrontMatter(filePath)).date > diskCacheTimeMs) {
-        fromCache = true;
+        fromCache = false;
         await streamToDisk(fileLocation, fetcher);
+      }
+
+      if (fromCache) {
+        cacheHits += 1;
+      } else {
+        networkHits += 1;
       }
 
       logDisk(`Reading ${fileNameForLogs(filePath)}`);

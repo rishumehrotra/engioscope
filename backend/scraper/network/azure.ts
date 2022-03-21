@@ -234,7 +234,7 @@ export default (config: ParsedConfig) => {
             }
           )
         ).then(async res => {
-          if (res.fromCache) {
+          if (!res.fromCache) {
             await clearDiskCache([collectionName, 'work-items', 'by-id']);
           }
           return res.data as T;

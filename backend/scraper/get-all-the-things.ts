@@ -12,6 +12,7 @@ import projectAnalyser from './project-analyser';
 import workItemsForCollection from './stats-aggregators/work-items-for-collection';
 import type { ProjectAnalysis } from './types';
 import summariseResults from './summarise-results';
+import { fetchCounters } from './network/fetch-with-disk-cache';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -84,6 +85,11 @@ const scrape = async (config: ParsedConfig) => {
   ));
 };
 
+const printFetchCounters = () => {
+  const counts = fetchCounters();
+  debug('fetch-counters')('Made %d HTTP requests, had %d cache hits', counts.networkHits, counts.cacheHits);
+};
+
 const createTarGz = async () => {
   logStep('Creating data/cache.tar.gz...');
   const startTime = Date.now();
@@ -112,6 +118,7 @@ export default (config: ParsedConfig) => {
   const startTime = Date.now();
 
   return scrape(config)
+    .then(tap(printFetchCounters))
     .then(createTarGz)
     .then(saveToArchive)
     .then(() => debug('done')(`in ${(Date.now() - startTime) / 1000}s.`));
