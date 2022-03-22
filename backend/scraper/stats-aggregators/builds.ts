@@ -54,10 +54,10 @@ const combineStats = (
 export default (builds: Build[]) => {
   type AggregatedBuilds = {
     buildStats: Record<string, Record<number, BuildStats>>;
-    latestMasterBuilds: Record<string, Record<number, Build | undefined>>;
+    allMasterBuilds: Record<string, Record<number, Build[] | undefined>>;
   };
 
-  const { buildStats, latestMasterBuilds } = [...builds]
+  const { buildStats, allMasterBuilds } = [...builds]
     .sort((a, b) => b.finishTime.getTime() - a.finishTime.getTime())
     .reduce<AggregatedBuilds>((acc, build) => {
       const rId = repoId(build);
@@ -81,19 +81,19 @@ export default (builds: Build[]) => {
             }, acc.buildStats[rId]?.[build.definition.id] || undefined)
           }
         },
-        latestMasterBuilds: {
-          ...acc.latestMasterBuilds,
+        allMasterBuilds: {
+          ...acc.allMasterBuilds,
           [rId]: {
-            ...acc.latestMasterBuilds[rId],
-            [build.definition.id]:
-              // eslint-disable-next-line no-nested-ternary
-              acc.latestMasterBuilds[rId]?.[build.definition.id]
-                ? acc.latestMasterBuilds[rId][build.definition.id]
-                : isMaster(build.sourceBranch) ? build : undefined
+            ...acc.allMasterBuilds[rId],
+            ...(
+              isMaster(build.sourceBranch)
+                ? { [build.definition.id]: [...(acc.allMasterBuilds[rId]?.[build.definition.id] || []), build] }
+                : {}
+            )
           }
         }
       };
-    }, { buildStats: {}, latestMasterBuilds: {} });
+    }, { buildStats: {}, allMasterBuilds: {} });
 
   return {
     buildsByRepoId: (id?: string): UIBuilds => {
@@ -125,11 +125,10 @@ export default (builds: Build[]) => {
         pipelines
       };
     },
-    latestMasterBuilds: (repoId?: string) => (
+    allMasterBuilds: (repoId?: string) => (
       repoId
-        ? Object.values(latestMasterBuilds[repoId] || {})
+        ? Object.values(allMasterBuilds[repoId] || {})
         : []
-    )
-      .filter(exists)
+    ).filter(exists)
   };
 };

@@ -1,9 +1,10 @@
-// Not sure with the /// <referennce ... /> is needed, but tsc fails without it
+// Not sure why the /// <referennce ... /> is needed, but tsc fails without it
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../node_modules/@types/node/fs.d.ts" />
 
 import { promises as fs } from 'fs';
 import ms from 'ms';
+import { allPass, compose, not } from 'rambda';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
@@ -52,3 +53,9 @@ export const chunkArray = <T>(array: T[], chunkSize: number) => (
 );
 
 export const unique = <T>(xs: T[]) => [...new Set(xs)];
+
+export const weeks = [4, 3, 2, 1]
+  .map(weekIndex => allPass([
+    isAfter(`${weekIndex * 7} days`),
+    compose(not, isAfter(`${(weekIndex - 1) * 7} days`))
+  ]));

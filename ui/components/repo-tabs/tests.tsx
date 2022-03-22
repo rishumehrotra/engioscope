@@ -4,6 +4,8 @@ import { num } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
+import Sparkline from '../graphs/Sparkline';
+import { increaseIsBetter } from '../summary-page/utils';
 
 export default (tests: RepoAnalysis['tests']): Tab => ({
   title: 'Tests',
@@ -41,6 +43,11 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
                     >
                       <span className="truncate w-full block">
                         {pipeline.name}
+                        <Sparkline
+                          data={pipeline.testsByWeek}
+                          className="inline-block ml-2"
+                          lineColor={increaseIsBetter(pipeline.testsByWeek)}
+                        />
                       </span>
                     </a>
                   </td>

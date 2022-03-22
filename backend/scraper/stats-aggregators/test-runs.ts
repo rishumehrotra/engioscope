@@ -1,7 +1,10 @@
 import prettyMs from 'pretty-ms';
-import { prop, sum } from 'rambda';
+import {
+  last, prop, sum, T
+} from 'rambda';
+import { count, incrementBy } from '../../../shared/reducer-utils';
 import type { UITests } from '../../../shared/types';
-import { unique } from '../../utils';
+import { unique, weeks } from '../../utils';
 import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
@@ -51,26 +54,82 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
   };
 };
 
+const latestMasterBuilds = (allMasterBuilds: Record<number, Build[]>, inTimeRange: (d: Date) => boolean = T) => (
+  Object.values(allMasterBuilds).reduce((acc, builds) => {
+    const latestBuild = [...builds]
+      .filter(b => inTimeRange(b.startTime))
+      .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())[0];
+    if (latestBuild) acc.push(latestBuild);
+    return acc;
+  }, [])
+);
+
+const extrapolateIfNeeded = (testRunsByWeek: number[]) => (
+  testRunsByWeek.reduce<number[]>((acc, runCount, index) => {
+    if (runCount !== 0) {
+      acc.push(runCount);
+      return acc;
+    }
+
+    // runCount is 0
+
+    if (index === 0) {
+      // No past data to extrapolate from
+      acc.push(0);
+      return acc;
+    }
+
+    // Extrapolate from previous week
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    acc.push(last(acc)!);
+    return acc;
+  }, [])
+);
+
 export default (
   testRunsByBuild: (build: Build) => Promise<TestRun[]>,
   testCoverageByBuildId: (t: number) => Promise<CodeCoverageSummary>,
-  latestMasterBuilds: (repoId?: string) => Build[]
+  allMasterBuilds: (repoId?: string) => Record<number, Build[]>
 ) => async (repoId?: string): Promise<UITests> => {
-  const matchingBuilds = latestMasterBuilds(repoId);
+  const matchingBuilds = latestMasterBuilds(allMasterBuilds(repoId));
 
   if (matchingBuilds.length === 0) return null;
 
-  const testStats = (await Promise.all(matchingBuilds.map(async build => {
-    const [runs, coverage] = await Promise.all([
-      testRunsByBuild(build), testCoverageByBuildId(build.id)
-    ]);
+  const latestBuildsInEachWeek = weeks.map(
+    isWithinWeek => latestMasterBuilds(allMasterBuilds(repoId), isWithinWeek)
+  );
+
+  const interestingBuilds = [...new Set([...matchingBuilds, ...latestBuildsInEachWeek.flat()])];
+
+  const testRunsByBuildIds = Object.fromEntries(
+    await Promise.all(
+      interestingBuilds.map(async b => [b.id, await testRunsByBuild(b)] as const)
+    )
+  );
+
+  const testCoverageByBuildIds = Object.fromEntries(
+    await Promise.all(
+      matchingBuilds.map(async b => [b.id, await testCoverageByBuildId(b.id)] as const)
+    )
+  );
+
+  const testStats = matchingBuilds.map(build => {
+    const runs = testRunsByBuildIds[build.id];
+    const coverage = testCoverageByBuildIds[build.id];
+
     return {
       buildName: build.definition.name,
       url: `${build.url.replace('_apis/build/Builds/', '_build/results?buildId=')}&view=ms.vss-test-web.build-test-results-tab`,
       ...aggregateRuns(runs),
+      testsByWeek: latestBuildsInEachWeek.map(
+        builds => builds.flat()
+          .filter(b => b.definition.id === build.definition.id)
+          .map(b => testRunsByBuildIds[b.id])
+          .reduce(incrementBy(count(incrementBy(prop('totalTests')))), 0)
+      ),
       coverage: coverageFrom(coverage.coverageData)
     };
-  })));
+  });
 
   if (testStats.length === 0) return null;
 
@@ -82,6 +141,7 @@ export default (
       successful: stat.success,
       failed: stat.failure,
       executionTime: prettyMs(stat.executionTime),
+      testsByWeek: extrapolateIfNeeded(stat.testsByWeek),
       coverage: `${stat.coverage}%`
     }))
   };

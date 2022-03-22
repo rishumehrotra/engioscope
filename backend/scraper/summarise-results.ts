@@ -1,11 +1,11 @@
 import {
-  allPass, always, anyPass, applySpec, compose, filter, length, map, not,
+  always, anyPass, applySpec, compose, filter, length, map, not,
   pipe, prop, subtract, T
 } from 'rambda';
 import type {
   Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
-import { exists, isAfter } from '../utils';
+import { exists, isAfter, weeks } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils';
@@ -205,12 +205,6 @@ type Summary = {
   project: string;
   portfolioProject: string;
 };
-
-const weeks = [4, 3, 2, 1]
-  .map(weekIndex => allPass([
-    isAfter(`${weekIndex * 7} days`),
-    compose(not, isAfter(`${(weekIndex - 1) * 7} days`))
-  ]));
 
 const analyseWorkItems = (
   results: { workItems: UIWorkItemWithGroup[]; workItemTypes: Record<string, UIWorkItemType>; workItemTimes: Overview['times'] },

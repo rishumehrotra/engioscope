@@ -45,7 +45,7 @@ export default (config: ParsedConfig) => {
     analyserLog(`Starting analysis for ${collection.name}/${projectConfig.name}`);
     const [
       repos,
-      { buildsByRepoId, latestMasterBuilds },
+      { buildsByRepoId, allMasterBuilds },
       releases,
       prByRepoId,
       policyConfigurationByRepoBranch,
@@ -62,7 +62,7 @@ export default (config: ParsedConfig) => {
     ]);
 
     const getTestsByRepoId = aggregateTestRuns(
-      forProject(getTestRuns), forProject(getTestCoverage), latestMasterBuilds
+      forProject(getTestRuns), forProject(getTestCoverage), allMasterBuilds
     );
 
     const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {
