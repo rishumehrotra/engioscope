@@ -300,6 +300,19 @@ const analyseWorkItems = (
   )(results.workItems);
 };
 
+const testsByWeek = (repos: RepoAnalysis[]) => (
+  repos.reduce((acc, repo) => {
+    if (!repo.tests) return acc;
+
+    return repo.tests.pipelines.reduce((acc, pipeline) => (
+      pipeline.testsByWeek.reduce((acc, testCount, index) => {
+        acc[index] = (acc[index] || 0) + testCount;
+        return acc;
+      }, acc)
+    ), acc);
+  }, [0, 0, 0, 0])
+);
+
 const summariseResults = (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
   if (!summaryPageGroups) {
@@ -358,6 +371,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           repos: length(matchesExcludingDeprecated),
           excluded: pipe(length, subtract(length(matches)))(matchesExcludingDeprecated),
           tests: totalTests(matchesExcludingDeprecated),
+          testsByWeek: testsByWeek(matchesExcludingDeprecated),
           builds: {
             total: totalBuilds(matchesExcludingDeprecated),
             successful: count<RepoAnalysis>(incrementBy(

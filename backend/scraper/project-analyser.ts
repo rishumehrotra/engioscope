@@ -8,6 +8,7 @@ import aggregateCodeQuality from './stats-aggregators/code-quality';
 import aggregateCommits from './stats-aggregators/commits';
 import aggregatePolicyConfigurations from './stats-aggregators/policy-configurations';
 import aggregateTestCases from './stats-aggregators/test-cases';
+import aggregateBuildDefinitions from './stats-aggregators/build-definitions';
 import sonar from './network/sonar';
 import type { ProjectAnalysis, WorkItemAnalysis } from './types';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
@@ -30,7 +31,7 @@ export default (config: ParsedConfig) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
-    getProjectWorkItemIdsForQuery
+    getProjectWorkItemIdsForQuery, getBuildDefinitions
   } = azure(config);
   const codeQualityByRepo = sonar(config);
   return async (
@@ -45,7 +46,8 @@ export default (config: ParsedConfig) => {
     analyserLog(`Starting analysis for ${collection.name}/${projectConfig.name}`);
     const [
       repos,
-      { buildsByRepoId, allMasterBuilds },
+      builds,
+      buildDefinitionsByRepoId,
       releases,
       prByRepoId,
       policyConfigurationByRepoBranch,
@@ -53,13 +55,18 @@ export default (config: ParsedConfig) => {
       testCasesAnalysis
     ] = await Promise.all([
       forProject(getRepositories),
-      forProject(getBuilds).then(aggregateBuilds),
+      forProject(getBuilds),
+      forProject(getBuildDefinitions).then(aggregateBuildDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
       getWorkItems(projectConfig, workItemFieldsPromise),
       aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name)
     ]);
+
+    const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
+      projectConfig.name, builds, buildDefinitionsByRepoId
+    );
 
     const getTestsByRepoId = aggregateTestRuns(
       forProject(getTestRuns), forProject(getTestCoverage), allMasterBuilds

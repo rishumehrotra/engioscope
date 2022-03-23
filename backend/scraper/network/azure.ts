@@ -4,7 +4,7 @@ import { filter } from 'rambda';
 import fetch from './fetch-with-timeout';
 import { chunkArray } from '../../utils';
 import type {
-  Build, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
+  Build, BuildDefinitionReference, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestRun,
   WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
   WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
@@ -77,6 +77,17 @@ export default (config: ParsedConfig) => {
           $top: '5000'
         },
         cacheFile: [collectionName, projectName, 'builds']
+      })
+    ),
+
+    getBuildDefinitions: (collectionName: string, projectName: string) => (
+      list<BuildDefinitionReference>({
+        url: url(collectionName, projectName, '/build/definitions'),
+        qsParams: {
+          includeLatestBuilds: 'true',
+          $top: '5000'
+        },
+        cacheFile: [collectionName, projectName, 'build-definitions']
       })
     ),
 

@@ -1,6 +1,6 @@
 import prettyMilliseconds from 'pretty-ms';
-import { add } from 'rambda';
-import type { Build } from '../types-azure';
+import { add, pipe, replace } from 'rambda';
+import type { Build, BuildDefinitionReference } from '../types-azure';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types';
 import { exists, isMaster } from '../../utils';
 
@@ -51,11 +51,30 @@ const combineStats = (
   status: status(incoming, existing)
 });
 
-export default (builds: Build[]) => {
+const buildDefinitionWebUrl = pipe(
+  replace('_apis/build/Definitions/', '_build/definition?definitionId='),
+  replace(/\?revision=.*/, '')
+);
+
+export default (
+  projectName: string,
+  builds: Build[],
+  buildDefinitionsByRepoId: (repoId: string) => BuildDefinitionReference[]
+) => {
   type AggregatedBuilds = {
     buildStats: Record<string, Record<number, BuildStats>>;
     allMasterBuilds: Record<string, Record<number, Build[] | undefined>>;
   };
+
+  // const buildDefinitionIds = builds.map(b => b.definition.id);
+  // const missingDefinitions = buildDefinitions.filter(bd => !buildDefinitionIds.includes(bd.id));
+
+  // console.log([
+  //   `${projectName}:`,
+  //   `Total ${buildDefinitions.length} build definitions.`,
+  //   `Missing ${missingDefinitions.length} build definitions.`,
+  //   `${missingDefinitions.filter(d => d.latestBuild?.sourceBranch).length} have a latestCompletedBuild.`
+  // ].join(' '));
 
   const { buildStats, allMasterBuilds } = [...builds]
     .sort((a, b) => b.finishTime.getTime() - a.finishTime.getTime())
@@ -70,9 +89,7 @@ export default (builds: Build[]) => {
             [build.definition.id]: combineStats({
               count: 1,
               name: build.definition.name,
-              url: build.definition.url
-                .replace('_apis/build/Definitions/', '_build/definition?definitionId=')
-                .replace(/\?revision=.*/, ''),
+              url: buildDefinitionWebUrl(build.definition.url),
               success: build.result !== 'failed' ? 1 : 0,
               duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())],
               status: build.result !== 'failed'
@@ -120,9 +137,26 @@ export default (builds: Build[]) => {
 
         }));
 
+      const pipelinesWithUnused = buildDefinitionsByRepoId(id)
+        ? pipelines.concat(
+          buildDefinitionsByRepoId(id)
+            .filter(d => !pipelines.find(p => p.definitionId === d.id.toString()))
+            .map<UIBuildPipeline>(d => ({
+              count: 0,
+              name: d.name,
+              url: buildDefinitionWebUrl(d.url),
+              success: 0,
+              definitionId: d.id.toString(),
+              duration: { average: '0', min: '0', max: '0' },
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              status: { type: 'unused', since: d.latestBuild!.startTime! }
+            }))
+        )
+        : pipelines;
+
       return {
-        count: pipelines.reduce((acc, p) => acc + p.count, 0),
-        pipelines
+        count: pipelinesWithUnused.reduce((acc, p) => acc + p.count, 0),
+        pipelines: pipelinesWithUnused
       };
     },
     allMasterBuilds: (repoId?: string) => (

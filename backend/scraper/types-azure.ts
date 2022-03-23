@@ -88,6 +88,11 @@ export type BuildRepository = {
   checkoutSubmodules: boolean;
 };
 
+export type BuildDefinitionReference = DefinitionReference & {
+  latestBuild?: Build;
+  latestCompletedBuild?: Build;
+};
+
 export type Build = {
   plans: { planId: string }[];
   id: number;

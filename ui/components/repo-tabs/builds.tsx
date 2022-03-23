@@ -26,7 +26,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
               </thead>
               <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
                 {builds.pipelines.map(pipeline => (
-                  <tr key={pipeline.name}>
+                  <tr key={pipeline.name} className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}>
                     <td className="pl-6 py-4 whitespace-nowrap text-left">
                       <a
                         href={pipeline.url}
@@ -40,20 +40,27 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                         </span>
                       </a>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{pipeline.success}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.count)}</td>
-                    <td className="pl-6 pr-0 py-4 whitespace-nowrap">{`${Math.round((pipeline.success * 100) / pipeline.count)}%`}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{pipeline.status.type === 'unused' ? '-' : pipeline.success}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>
+                    <td className="pl-6 pr-0 py-4 whitespace-nowrap">
+                      {pipeline.status.type === 'unused' ? '-' : `${Math.round((pipeline.success * 100) / pipeline.count)}%`}
+                    </td>
                     <td className="pr-6 pl-0 py-4 whitespace-nowrap text-right">
-                      <span>{pipeline.duration.average}</span>
-                      <div className="text-gray-400 text-sm">
-                        (
-                        {`${pipeline.duration.min} - ${pipeline.duration.max}`}
-                        )
-                      </div>
-
+                      {pipeline.status.type === 'unused'
+                        ? '-'
+                        : (
+                          <>
+                            <span>{pipeline.duration.average}</span>
+                            <div className="text-gray-400 text-sm">
+                              (
+                              {`${pipeline.duration.min} - ${pipeline.duration.max}`}
+                              )
+                            </div>
+                          </>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-left">
-                      {pipeline.status.type !== 'failed' && (
+                      {pipeline.status.type !== 'failed' && pipeline.status.type !== 'unused' && (
                         <>
                           <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
                           <span className="capitalize">{pipeline.status.type}</span>
@@ -64,6 +71,17 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                           <>
                             <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
                             <span>{`Failing since ${shortDate(new Date(pipeline.status.since))}`}</span>
+                          </>
+                        ) : undefined}
+                      {pipeline.status.type === 'unused'
+                        ? (
+                          <>
+                            <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                            <span>
+                              {`Last used ${
+                                `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`
+                              }`}
+                            </span>
                           </>
                         ) : undefined}
                     </td>
