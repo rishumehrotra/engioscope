@@ -4,7 +4,7 @@ import {
 } from 'rambda';
 import { count, incrementBy } from '../../../shared/reducer-utils';
 import type { UITests } from '../../../shared/types';
-import { unique, weeks } from '../../utils';
+import { exists, unique, weeks } from '../../utils';
 import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
@@ -64,85 +64,133 @@ const latestMasterBuilds = (allMasterBuilds: Record<number, Build[]>, inTimeRang
   }, [])
 );
 
-const extrapolateIfNeeded = (testRunsByWeek: number[]) => (
-  testRunsByWeek.reduce<number[]>((acc, runCount, index) => {
-    if (runCount !== 0) {
-      acc.push(runCount);
+const extrapolateIfNeeded = async (testRunsByWeek: number[], historicalCount: () => Promise<number>) => {
+  const historical = await (testRunsByWeek[0] === 0 ? historicalCount() : 0);
+  return (
+    testRunsByWeek.reduce<number[]>((acc, runCount, index) => {
+      if (runCount !== 0) {
+        acc.push(runCount);
+        return acc;
+      }
+
+      // runCount is 0
+      if (index === 0) {
+        // No past data to extrapolate from
+        acc.push(historical);
+        return acc;
+      }
+
+      // Extrapolate from previous week
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      acc.push(last(acc)!);
       return acc;
-    }
+    }, [])
+  );
+};
 
-    // runCount is 0
-
-    if (index === 0) {
-      // No past data to extrapolate from
-      acc.push(0);
-      return acc;
-    }
-
-    // Extrapolate from previous week
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    acc.push(last(acc)!);
-    return acc;
-  }, [])
+const getMasterBuilds = (allMasterBuilds: Record<string, Record<number, Build[] | undefined>>) => (
+  (repoId?: string) => (
+    (repoId ? Object.values(allMasterBuilds[repoId] || {}) : []).filter(exists)
+  )
 );
+
+const historicalTestCount = (
+  allMasterBuilds: Record<string, Record<number, Build[] | undefined>>,
+  getOneBuildBeforeQueryPeriod: (buildDefinitionIds: number[]) => Promise<Build[]>,
+  testRunsByBuild: (build: Build) => Promise<TestRun[]>
+) => {
+  const masterBuilds = getMasterBuilds(allMasterBuilds);
+  const definitionIdsWithoutBuildsInFirstWeek = unique(
+    Object.keys(allMasterBuilds)
+      .filter(repoId => latestMasterBuilds(masterBuilds(repoId)).length !== 0)
+      .map(repoId => {
+        const buildsByDefinitionId = masterBuilds(repoId);
+        const definitionIdsMissingBuildsInFirstWeek = Object.entries(buildsByDefinitionId)
+          .filter(([, builds]) => builds.filter(b => weeks[0](b.startTime)).length)
+          .map(([definitionId]) => Number(definitionId));
+        return definitionIdsMissingBuildsInFirstWeek;
+      })
+      .flat()
+  );
+
+  const pRunsByDefinitionIdBeforeQueryPeriod = getOneBuildBeforeQueryPeriod(definitionIdsWithoutBuildsInFirstWeek)
+    .then(builds => Promise.all(builds.map(async b => [b.definition.id, await testRunsByBuild(b)] as const)))
+    .then(x => Object.fromEntries(x));
+
+  return async (buildDefinitionId: number) => {
+    const runs = (await pRunsByDefinitionIdBeforeQueryPeriod)[buildDefinitionId];
+    return runs ? count<TestRun>(incrementBy(prop('totalTests')))(runs) : 0;
+  };
+};
 
 export default (
   testRunsByBuild: (build: Build) => Promise<TestRun[]>,
   testCoverageByBuildId: (t: number) => Promise<CodeCoverageSummary>,
-  allMasterBuilds: (repoId?: string) => Record<number, Build[]>
-) => async (repoId?: string): Promise<UITests> => {
-  const matchingBuilds = latestMasterBuilds(allMasterBuilds(repoId));
-
-  if (matchingBuilds.length === 0) return null;
-
-  const latestBuildsInEachWeek = weeks.map(
-    isWithinWeek => latestMasterBuilds(allMasterBuilds(repoId), isWithinWeek)
+  getOneBuildBeforeQueryPeriod: (buildDefinitionIds: number[]) => Promise<Build[]>,
+  allMasterBuilds: Record<string, Record<number, Build[] | undefined>>
+) => {
+  const masterBuilds = getMasterBuilds(allMasterBuilds);
+  const historicalTestCountByBuildId = historicalTestCount(
+    allMasterBuilds,
+    getOneBuildBeforeQueryPeriod,
+    testRunsByBuild
   );
 
-  const interestingBuilds = [...new Set([...matchingBuilds, ...latestBuildsInEachWeek.flat()])];
+  return async (repoId?: string): Promise<UITests> => {
+    const matchingBuilds = latestMasterBuilds(masterBuilds(repoId));
 
-  const testRunsByBuildIds = Object.fromEntries(
-    await Promise.all(
-      interestingBuilds.map(async b => [b.id, await testRunsByBuild(b)] as const)
-    )
-  );
+    if (matchingBuilds.length === 0) return null;
 
-  const testCoverageByBuildIds = Object.fromEntries(
-    await Promise.all(
-      matchingBuilds.map(async b => [b.id, await testCoverageByBuildId(b.id)] as const)
-    )
-  );
+    const latestBuildsInEachWeek = weeks.map(
+      isWithinWeek => latestMasterBuilds(masterBuilds(repoId), isWithinWeek)
+    );
 
-  const testStats = matchingBuilds.map(build => {
-    const runs = testRunsByBuildIds[build.id];
-    const coverage = testCoverageByBuildIds[build.id];
+    const interestingBuilds = [...new Set([...matchingBuilds, ...latestBuildsInEachWeek.flat()])];
+
+    const testRunsByBuildIds = Object.fromEntries(
+      await Promise.all(
+        interestingBuilds.map(async b => [b.id, await testRunsByBuild(b)] as const)
+      )
+    );
+
+    const testCoverageByBuildIds = Object.fromEntries(
+      await Promise.all(
+        matchingBuilds.map(async b => [b.id, await testCoverageByBuildId(b.id)] as const)
+      )
+    );
+
+    const testStats = matchingBuilds.map(build => {
+      const runs = testRunsByBuildIds[build.id];
+      const coverage = testCoverageByBuildIds[build.id];
+
+      return {
+        buildName: build.definition.name,
+        buildDefinitionId: build.definition.id,
+        url: `${build.url.replace('_apis/build/Builds/', '_build/results?buildId=')}&view=ms.vss-test-web.build-test-results-tab`,
+        ...aggregateRuns(runs),
+        testsByWeek: latestBuildsInEachWeek.map(
+          builds => builds.flat()
+            .filter(b => b.definition.id === build.definition.id)
+            .map(b => testRunsByBuildIds[b.id])
+            .reduce(incrementBy(count(incrementBy(prop('totalTests')))), 0)
+        ),
+        coverage: coverageFrom(coverage.coverageData)
+      };
+    });
+
+    if (testStats.length === 0) return null;
 
     return {
-      buildName: build.definition.name,
-      url: `${build.url.replace('_apis/build/Builds/', '_build/results?buildId=')}&view=ms.vss-test-web.build-test-results-tab`,
-      ...aggregateRuns(runs),
-      testsByWeek: latestBuildsInEachWeek.map(
-        builds => builds.flat()
-          .filter(b => b.definition.id === build.definition.id)
-          .map(b => testRunsByBuildIds[b.id])
-          .reduce(incrementBy(count(incrementBy(prop('totalTests')))), 0)
-      ),
-      coverage: coverageFrom(coverage.coverageData)
+      total: sum(unique(testStats.map(prop('total')))),
+      pipelines: await Promise.all(testStats.map(async stat => ({
+        name: stat.buildName,
+        url: stat.url,
+        successful: stat.success,
+        failed: stat.failure,
+        executionTime: prettyMs(stat.executionTime),
+        testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
+        coverage: `${stat.coverage}%`
+      })))
     };
-  });
-
-  if (testStats.length === 0) return null;
-
-  return {
-    total: sum(unique(testStats.map(prop('total')))),
-    pipelines: testStats.map(stat => ({
-      name: stat.buildName,
-      url: stat.url,
-      successful: stat.success,
-      failed: stat.failure,
-      executionTime: prettyMs(stat.executionTime),
-      testsByWeek: extrapolateIfNeeded(stat.testsByWeek),
-      coverage: `${stat.coverage}%`
-    }))
   };
 };

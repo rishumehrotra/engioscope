@@ -31,7 +31,8 @@ export default (config: ParsedConfig) => {
   const {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
-    getProjectWorkItemIdsForQuery, getBuildDefinitions
+    getProjectWorkItemIdsForQuery, getBuildDefinitions,
+    getOneBuildBeforeQueryPeriod
   } = azure(config);
   const codeQualityByRepo = sonar(config);
   return async (
@@ -65,11 +66,12 @@ export default (config: ParsedConfig) => {
     ]);
 
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
-      projectConfig.name, builds, buildDefinitionsByRepoId
+      builds, buildDefinitionsByRepoId
     );
 
     const getTestsByRepoId = aggregateTestRuns(
-      forProject(getTestRuns), forProject(getTestCoverage), allMasterBuilds
+      forProject(getTestRuns), forProject(getTestCoverage),
+      forProject(getOneBuildBeforeQueryPeriod), allMasterBuilds
     );
 
     const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {

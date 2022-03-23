@@ -80,6 +80,23 @@ export default (config: ParsedConfig) => {
       })
     ),
 
+    getOneBuildBeforeQueryPeriod: (collectionName: string, projectName: string) => (
+      (buildDefinitionIds: number[]) => (
+        list<Build>({
+          url: url(collectionName, projectName, '/build/builds'),
+          qsParams: {
+            maxTime: config.azure.queryFrom.toISOString(),
+            resultFilter: 'succeeded,failed,partiallySucceeded',
+            $top: '5000',
+            maxBuildsPerDefinition: '1',
+            definitions: buildDefinitionIds.join(','),
+            branchName: 'master'
+          },
+          cacheFile: [collectionName, projectName, 'older-builds']
+        })
+      )
+    ),
+
     getBuildDefinitions: (collectionName: string, projectName: string) => (
       list<BuildDefinitionReference>({
         url: url(collectionName, projectName, '/build/definitions'),

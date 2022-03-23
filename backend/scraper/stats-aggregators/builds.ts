@@ -2,7 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { add, pipe, replace } from 'rambda';
 import type { Build, BuildDefinitionReference } from '../types-azure';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types';
-import { exists, isMaster } from '../../utils';
+import { isMaster } from '../../utils';
 
 type BuildStats = {
   count: number;
@@ -57,7 +57,6 @@ const buildDefinitionWebUrl = pipe(
 );
 
 export default (
-  projectName: string,
   builds: Build[],
   buildDefinitionsByRepoId: (repoId: string) => BuildDefinitionReference[]
 ) => {
@@ -65,16 +64,6 @@ export default (
     buildStats: Record<string, Record<number, BuildStats>>;
     allMasterBuilds: Record<string, Record<number, Build[] | undefined>>;
   };
-
-  // const buildDefinitionIds = builds.map(b => b.definition.id);
-  // const missingDefinitions = buildDefinitions.filter(bd => !buildDefinitionIds.includes(bd.id));
-
-  // console.log([
-  //   `${projectName}:`,
-  //   `Total ${buildDefinitions.length} build definitions.`,
-  //   `Missing ${missingDefinitions.length} build definitions.`,
-  //   `${missingDefinitions.filter(d => d.latestBuild?.sourceBranch).length} have a latestCompletedBuild.`
-  // ].join(' '));
 
   const { buildStats, allMasterBuilds } = [...builds]
     .sort((a, b) => b.finishTime.getTime() - a.finishTime.getTime())
@@ -159,10 +148,6 @@ export default (
         pipelines: pipelinesWithUnused
       };
     },
-    allMasterBuilds: (repoId?: string) => (
-      repoId
-        ? Object.values(allMasterBuilds[repoId] || {})
-        : []
-    ).filter(exists)
+    allMasterBuilds
   };
 };
