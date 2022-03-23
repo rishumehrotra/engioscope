@@ -4,7 +4,7 @@ import usePopover from '../hooks/use-popover';
 
 type Stat = {
   title: string;
-  value: string;
+  value: ReactNode;
   tooltip?: string;
 };
 

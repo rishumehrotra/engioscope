@@ -15,3 +15,16 @@ export const numberOfBuilds = (repo: RepoAnalysis) => repo.builds?.count || 0;
 
 export const totalTests = count(incrementBy(numberOfTests));
 export const totalBuilds = count(incrementBy(numberOfBuilds));
+
+export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
+  repos.reduce((acc, repo) => {
+    if (!repo.tests) return acc;
+
+    return repo.tests.pipelines.reduce((acc, pipeline) => (
+      pipeline.testsByWeek.reduce((acc, testCount, index) => {
+        acc[index] = (acc[index] || 0) + testCount;
+        return acc;
+      }, acc)
+    ), acc);
+  }, [0, 0, 0, 0])
+);

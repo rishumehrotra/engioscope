@@ -1,10 +1,14 @@
 import { compose, not } from 'rambda';
 import React from 'react';
-import { isDeprecated, totalBuilds, totalTests } from '../../shared/repo-utils';
+import {
+  isDeprecated, totalBuilds, totalTests, totalTestsByWeek
+} from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
+import Sparkline from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
+import { increaseIsBetter } from './summary-page/utils';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos
@@ -52,7 +56,16 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Tests',
-          value: num(totalTests(reposWithExclusions)),
+          value: (
+            <>
+              {num(totalTests(reposWithExclusions))}
+              <Sparkline
+                data={totalTestsByWeek(reposWithExclusions)}
+                lineColor={increaseIsBetter(totalTestsByWeek(reposWithExclusions))}
+                className="ml-2"
+              />
+            </>
+          ),
           tooltip: 'Total number of tests across all matching repos'
         }]}
       />

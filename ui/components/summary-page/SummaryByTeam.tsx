@@ -80,7 +80,7 @@ const FlowMetrics: React.FC<{
             if (!definitionId) return null;
 
             const workItems = group.summary[definitionId];
-            const workItemsSummary = flattenSummaryGroups(workItems);
+            const workItemsSummary = flattenSummaryGroups(workItems || {});
             const renderMetric = renderGroupItem(typeName === 'Feature' ? portfolioProjectLink : projectLink);
 
             return (
@@ -388,6 +388,11 @@ const HealthMetrics: React.FC<{
               data-tip="Number of unit / components tests running in build pipelines"
             >
               Tests
+              <Sparkline
+                data={repoStats.testsByWeek}
+                lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                className="ml-2"
+              />
             </div>
             <div
               className="text-xs font-semibold"
@@ -414,7 +419,9 @@ const HealthMetrics: React.FC<{
               ))
             }
 
-            <div className="font-semibold text-xl">{reposMetric(num(repoStats.tests), null)}</div>
+            <div className="font-semibold text-xl">
+              {reposMetric(num(repoStats.tests), null)}
+            </div>
             <div className="text-xs uppercase">
               Coming
               <br />

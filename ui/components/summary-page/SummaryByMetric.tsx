@@ -519,6 +519,11 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                 </td>
                 <td className="px-6 py-3">
                   {reposMetric(num(repoStats.tests))}
+                  <Sparkline
+                    data={repoStats.testsByWeek}
+                    lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                    className="ml-2"
+                  />
                 </td>
                 <td className="px-6 py-3">
                   <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
