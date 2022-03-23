@@ -4,7 +4,7 @@ import {
 } from 'rambda';
 import { count, incrementBy } from '../../../shared/reducer-utils';
 import type { UITests } from '../../../shared/types';
-import { exists, unique, weeks } from '../../utils';
+import { unique, weeks } from '../../utils';
 import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure';
@@ -54,9 +54,9 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
   };
 };
 
-const latestMasterBuilds = (allMasterBuilds: Record<number, Build[]>, inTimeRange: (d: Date) => boolean = T) => (
-  Object.values(allMasterBuilds).reduce((acc, builds) => {
-    const latestBuild = [...builds]
+const latestMasterBuilds = (allMasterBuilds: Record<number, Build[] | undefined>, inTimeRange: (d: Date) => boolean = T) => (
+  Object.values(allMasterBuilds).reduce<Build[]>((acc, builds) => {
+    const latestBuild = [...(builds || [])]
       .filter(b => inTimeRange(b.startTime))
       .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())[0];
     if (latestBuild) acc.push(latestBuild);
@@ -80,6 +80,7 @@ const extrapolateIfNeeded = async (testRunsByWeek: number[], historicalCount: ()
         return acc;
       }
 
+      // runCount is 0
       // Extrapolate from previous week
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       acc.push(last(acc)!);
@@ -90,7 +91,7 @@ const extrapolateIfNeeded = async (testRunsByWeek: number[], historicalCount: ()
 
 const getMasterBuilds = (allMasterBuilds: Record<string, Record<number, Build[] | undefined>>) => (
   (repoId?: string) => (
-    (repoId ? Object.values(allMasterBuilds[repoId] || {}) : []).filter(exists)
+    (repoId ? (allMasterBuilds[repoId] || {}) : [])
   )
 );
 
@@ -102,13 +103,19 @@ const historicalTestCount = (
   const masterBuilds = getMasterBuilds(allMasterBuilds);
   const definitionIdsWithoutBuildsInFirstWeek = unique(
     Object.keys(allMasterBuilds)
-      .filter(repoId => latestMasterBuilds(masterBuilds(repoId)).length !== 0)
+      .filter(repoId => {
+        const mb = masterBuilds(repoId);
+        return latestMasterBuilds(mb).length !== 0;
+      })
       .map(repoId => {
-        const buildsByDefinitionId = masterBuilds(repoId);
-        const definitionIdsMissingBuildsInFirstWeek = Object.entries(buildsByDefinitionId)
-          .filter(([, builds]) => builds.filter(b => weeks[0](b.startTime)).length)
-          .map(([definitionId]) => Number(definitionId));
-        return definitionIdsMissingBuildsInFirstWeek;
+        const mb = masterBuilds(repoId);
+
+        const withoutBuilds = Object.entries(mb)
+          .filter(([, builds]) => (builds || []).filter(b => weeks[0](b.startTime)).length === 0);
+        return (
+          withoutBuilds
+            .map(([definitionId]) => Number(definitionId))
+        );
       })
       .flat()
   );
@@ -118,7 +125,8 @@ const historicalTestCount = (
     .then(x => Object.fromEntries(x));
 
   return async (buildDefinitionId: number) => {
-    const runs = (await pRunsByDefinitionIdBeforeQueryPeriod)[buildDefinitionId];
+    const runsByDefinitionId = await pRunsByDefinitionIdBeforeQueryPeriod;
+    const runs = runsByDefinitionId[buildDefinitionId];
     return runs ? count<TestRun>(incrementBy(prop('totalTests')))(runs) : 0;
   };
 };
@@ -145,7 +153,10 @@ export default (
       isWithinWeek => latestMasterBuilds(masterBuilds(repoId), isWithinWeek)
     );
 
-    const interestingBuilds = [...new Set([...matchingBuilds, ...latestBuildsInEachWeek.flat()])];
+    const interestingBuilds = [...new Set([
+      ...matchingBuilds,
+      ...latestBuildsInEachWeek.flat()
+    ])];
 
     const testRunsByBuildIds = Object.fromEntries(
       await Promise.all(
@@ -182,15 +193,19 @@ export default (
 
     return {
       total: sum(unique(testStats.map(prop('total')))),
-      pipelines: await Promise.all(testStats.map(async stat => ({
-        name: stat.buildName,
-        url: stat.url,
-        successful: stat.success,
-        failed: stat.failure,
-        executionTime: prettyMs(stat.executionTime),
-        testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
-        coverage: `${stat.coverage}%`
-      })))
+      pipelines: await Promise.all(
+        testStats
+          .filter(stat => stat.success + stat.failure !== 0)
+          .map(async stat => ({
+            name: stat.buildName,
+            url: stat.url,
+            successful: stat.success,
+            failed: stat.failure,
+            executionTime: prettyMs(stat.executionTime),
+            testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
+            coverage: `${stat.coverage}%`
+          }))
+      )
     };
   };
 };
