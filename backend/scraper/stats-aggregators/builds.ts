@@ -130,6 +130,7 @@ export default (
         ? pipelines.concat(
           buildDefinitionsByRepoId(id)
             .filter(d => !pipelines.find(p => p.definitionId === d.id.toString()))
+            .sort((a, b) => (a.latestBuild?.startTime?.getTime() || 0) - (b.latestBuild?.startTime?.getTime() || 0))
             .map<UIBuildPipeline>(d => ({
               count: 0,
               name: d.name,
@@ -138,7 +139,7 @@ export default (
               definitionId: d.id.toString(),
               duration: { average: '0', min: '0', max: '0' },
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              status: { type: 'unused', since: d.latestBuild!.startTime! }
+              status: { type: 'unused', since: d.latestBuild!.startTime }
             }))
         )
         : pipelines;

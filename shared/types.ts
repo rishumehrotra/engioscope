@@ -88,7 +88,7 @@ export type UIBuildPipeline = {
   | { type: 'unknown' }
   | { type: 'succeeded' }
   | { type: 'failed'; since: Date }
-  | { type: 'unused'; since: Date };
+  | { type: 'unused'; since: Date | undefined };
 };
 
 export type UIBuilds = null | {

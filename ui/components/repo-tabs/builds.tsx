@@ -79,7 +79,9 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                             <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
                             <span>
                               {`Last used ${
-                                `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`
+                                pipeline.status.since
+                                  ? `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`
+                                  : 'unknown'
                               }`}
                             </span>
                           </>
