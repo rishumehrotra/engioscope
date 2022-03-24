@@ -163,7 +163,8 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
                   </span>
                 </div>
                 <span className="justify-self-end">
-                  {`${wis.length} (${Math.round((wis.length * 100) / total)}%)`}
+                  <b>{`${Math.round((wis.length * 100) / total)}%`}</b>
+                  <span className="text-sm text-gray-500">{` (${wis.length})`}</span>
                 </span>
                 <div className="bg-gray-100 rounded-md overflow-hidden">
                   <div
@@ -381,9 +382,23 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
       hasData={workItems.length > 0}
       left={(
         <>
-          <div className="flex justify-end mb-8 gap-2">
-            <SizeFilter workItems={workItems} setFilter={setSizeFilter} />
-            <PriorityFilter workItems={workItems} setFilter={setPriorityFilter} />
+          <div className="grid grid-cols-2 justify-between">
+            <div className="mt-6">
+              {isRCAMissing ? null : (
+                <Switcher<number>
+                  options={(workItemType(witId).rootCauseFields || []).map((rca, index) => ({
+                    label: rca,
+                    value: index
+                  }))}
+                  value={selectedSwitcherIndex}
+                  onChange={setSelectedSwitcherIndex}
+                />
+              )}
+            </div>
+            <div className="flex justify-end mb-8 gap-2">
+              <SizeFilter workItems={workItems} setFilter={setSizeFilter} />
+              <PriorityFilter workItems={workItems} setFilter={setPriorityFilter} />
+            </div>
           </div>
           {isRCAMissing
             ? (
@@ -393,16 +408,6 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
             )
             : (
               <>
-                <div className="text-right">
-                  <Switcher<number>
-                    options={(workItemType(witId).rootCauseFields || []).map((rca, index) => ({
-                      label: rca,
-                      value: index
-                    }))}
-                    value={selectedSwitcherIndex}
-                    onChange={setSelectedSwitcherIndex}
-                  />
-                </div>
                 <BugLeakageGraphBars
                   witId={witId}
                   accessors={accessors}

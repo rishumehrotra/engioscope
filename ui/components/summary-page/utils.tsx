@@ -155,7 +155,7 @@ export const getMetricCategoryDefinitionId = (
 ) => Object.entries(workItemTypes).find(([, { name }]) => name[0] === field)?.[0];
 
 export const renderGroupItem = (link: string) => (label: ReactNode, children?: React.ReactNode, anchor = '') => (
-  <div className="group flex items-center">
+  <div className="group inline-flex items-center">
     <a
       href={`${link}${anchor}`}
       className="text-blue-500 flex items-center"

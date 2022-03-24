@@ -2,15 +2,28 @@ import React, {
   Fragment, useRef, useState
 } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
-import { num, prettyMS } from '../../helpers/utils';
+import { num, prettyMS, testsTrendLine } from '../../helpers/utils';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
-  flowEfficiency,
-  decreaseIsBetter, increaseIsBetter,
+  flowEfficiency, decreaseIsBetter, increaseIsBetter,
   getMetricCategoryDefinitionId, flattenSummaryGroups, allExceptExpectedKeys,
   renderGroupItem, processSummary
 } from './utils';
+
+const Card: React.FC<{ title: React.ReactNode; type: 'small' | 'large'; comingSoon?: boolean }> = ({
+  title, children, type, comingSoon = false
+}) => (
+  <div className={`p-6 h-full bg-white rounded-lg shadow ${type === 'large' ? 'mt-4' : ''} ${comingSoon ? 'opacity-50' : ''}`}>
+    <h2 className={`${type === 'large' ? 'text-xl' : 'text-lg'} mb-5 font-semibold flex items-center`}>
+      {title}
+      {comingSoon && (
+        <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
+      )}
+    </h2>
+    {children}
+  </div>
+);
 
 const FlowMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
@@ -22,9 +35,7 @@ const FlowMetrics: React.FC<{
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
   return (
-    <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
-      <h1 className="text-xl font-semibold mb-5 flex items-center">Flow Metrics</h1>
-
+    <Card title="Flow Metrics" type="large">
       <table className="w-full">
         <thead>
           <tr>
@@ -180,7 +191,7 @@ const FlowMetrics: React.FC<{
           })}
         </tbody>
       </table>
-    </div>
+    </Card>
   );
 };
 
@@ -198,8 +209,7 @@ const QualityMetrics: React.FC<{
   if (!bugs) return null;
 
   return (
-    <div className="p-6 bg-white border border-gray-100 rounded-lg h-full shadow mt-4">
-      <h1 className="text-xl font-semibold mb-5 flex items-center">Quality Metrics</h1>
+    <Card type="large" title="Quality metrics">
       <table className="w-full">
         <thead>
           <tr>
@@ -353,7 +363,7 @@ const QualityMetrics: React.FC<{
           })}
         </tbody>
       </table>
-    </div>
+    </Card>
   );
 };
 
@@ -375,30 +385,51 @@ const HealthMetrics: React.FC<{
           Health metrics
         </h2>
         <p className="justify-self-end mt-8 mr-1 text-xs">
-          {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-          {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+          {'Analysed '}
+          <b>{repoStats.repos}</b>
+          {repoStats.repos === 1 ? ' repo' : ' repos'}
+          {repoStats.excluded
+            ? (
+              <>
+                {', excluded '}
+                <b>{repoStats.excluded}</b>
+                {repoStats.excluded === 1 ? ' repo' : ' repos'}
+              </>
+            )
+            : null}
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-        <div className="p-6 h-full bg-white rounded-lg shadow">
-          <div className="text-lg font-semibold mb-5 flex items-center">Test Automation</div>
-          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+        <Card title="Test automation" type="small">
+          <div className="grid grid-cols-2 gap-4">
             <div
-              className="text-xs font-semibold"
+              className="text-xs font-semibold mb-2"
               data-tip="Number of unit / components tests running in build pipelines"
             >
               Tests
-              <Sparkline
-                data={repoStats.testsByWeek}
-                lineColor={increaseIsBetter(repoStats.testsByWeek)}
-                className="ml-2"
-              />
+              <div className="font-semibold text-xl">
+                {reposMetric(
+                  num(repoStats.tests),
+                  (
+                    <Sparkline
+                      data={testsTrendLine(repoStats.testsByWeek)}
+                      lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                      className="ml-1 -mb-1"
+                    />
+                  )
+                )}
+              </div>
             </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Percentage of code covered by tests"
-            >
-              Coverage
+            <div>
+              <div
+                className="text-xs font-semibold mb-2"
+                data-tip="Percentage of code covered by tests"
+              >
+                Coverage
+                <div className="text-xs pt-2 uppercase font-light">
+                  Coming soon
+                </div>
+              </div>
             </div>
             {
               pipelineStats.stages.map(stage => (
@@ -408,113 +439,105 @@ const HealthMetrics: React.FC<{
                     data-tip={`Percentage of pipelines having ${stage.name}`}
                   >
                     {`Pipelines having ${stage.name}`}
+                    <div className="font-semibold text-xl">
+                      {pipelinesMetric(
+                        pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
+                      )}
+                    </div>
                   </div>
                   <div
                     className="text-xs font-semibold"
                     data-tip={`Percentage of pipelines using ${stage.name}`}
                   >
                     {`Pipelines using ${stage.name}`}
-                  </div>
-                </Fragment>
-              ))
-            }
-
-            <div className="font-semibold text-xl">
-              {reposMetric(num(repoStats.tests), null)}
-            </div>
-            <div className="text-xs uppercase">
-              Coming
-              <br />
-              soon
-            </div>
-            {
-              pipelineStats.stages.map(stage => (
-                <Fragment key={stage.name}>
-                  <div className="font-semibold text-xl">
-                    {pipelinesMetric(
-                      pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
-                    )}
-                  </div>
-                  <div className="font-semibold text-xl">
-                    {
-                      pipelinesMetric(
+                    <div className="font-semibold text-xl">
+                      {pipelinesMetric(
                         pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
-                      )
-                    }
+                      )}
+                    </div>
                   </div>
                 </Fragment>
               ))
             }
           </div>
-        </div>
+        </Card>
 
-        <div className="p-6 h-full bg-white rounded-lg shadow">
-          <div className="text-lg font-semibold mb-5 flex items-center">Code Quality</div>
-          <div className="grid grid-cols-6 gap-x-1">
-            <div className="col-span-6 grid grid-cols-6 gap-y-4">
-              <div
-                className="text-xs font-semibold"
-                data-tip="Percentage of repos with Sonar configured"
-              >
-                Sonar enabled
+        <Card title="Code quality" type="small">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2 grid grid-flow-row gap-4 bg-slate-100 rounded-lg p-3 pl-3 -ml-3 -mt-3 -mb-3">
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Percentage of repos with Sonar configured"
+                >
+                  Sonar enabled
+                </div>
+                <div
+                  className="font-semibold text-xl mb-2"
+                  data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
+                >
+                  {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
+                </div>
               </div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Percentage of pipelines with sonar configured that pass quality checks"
-              >
-                Ok
+
+              <div className="grid grid-cols-3">
+                <div>
+                  <div
+                    className="text-xs font-semibold"
+                    data-tip="Percentage of pipelines with sonar configured that pass quality checks"
+                  >
+                    Ok
+                  </div>
+                  <div
+                    className="font-semibold text-md"
+                    data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
+                  >
+                    {codeQuality.sonarProjects
+                      ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-xs font-semibold"
+                    data-tip="Percentage of pipelines with sonar configured that have a warning for quality checks"
+                  >
+                    Warn
+                  </div>
+                  <div
+                    className="font-semibold text-md"
+                    data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
+                  >
+                    {codeQuality.sonarProjects
+                      ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-xs font-semibold"
+                    data-tip="Percentage of pipelines with sonar configured that fail quality checks"
+                  >
+                    Fail
+                  </div>
+                  <div
+                    className="font-semibold text-md"
+                    data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
+                  >
+                    {codeQuality.sonarProjects
+                      ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
+                      : '-'}
+                  </div>
+                </div>
               </div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Percentage of pipelines with sonar configured that have a warning for quality checks"
-              >
-                Warn
-              </div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Percentage of pipelines with sonar configured that fail quality checks"
-              >
-                Fail
-              </div>
-              <div />
+            </div>
+            <div>
               <div
                 className="text-xs font-semibold"
                 data-tip="Percentage of pipelines conforming to branch policies"
               >
                 Branch policy met
               </div>
-
-              <div
-                className="font-semibold text-xl"
-                data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
-              >
-                {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
-              </div>
-              <div
-                className="font-semibold text-md"
-                data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
-              >
-                {codeQuality.sonarProjects
-                  ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
-                  : '-'}
-              </div>
-              <div
-                className="font-semibold text-md"
-                data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
-              >
-                {codeQuality.sonarProjects
-                  ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
-                  : '-'}
-              </div>
-              <div
-                className="font-semibold text-md"
-                data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
-              >
-                {codeQuality.sonarProjects
-                  ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
-                  : '-'}
-              </div>
-              <div />
               <div className="font-semibold text-xl">
                 {pipelinesMetric(
                   pipelineStats.pipelines === 0 ? '0'
@@ -522,186 +545,202 @@ const HealthMetrics: React.FC<{
                 )}
               </div>
             </div>
-
           </div>
-        </div>
+        </Card>
 
-        <div className="p-6 h-full bg-white rounded-lg shadow">
-          <div className="text-lg font-semibold mb-5 flex items-center">CI-CD</div>
-          <div className="grid grid-cols-5 gap-y-4">
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of CI builds run in the last 30 days"
-            >
-              Builds
+        <Card title="CI / CD" type="small">
+          <div className="grid grid-cols-3">
+            <div className="col-span-2 grid grid-flow-row gap-4 bg-slate-100 rounded-lg p-3 pl-3 -ml-3 -mt-3 -mb-3 mr-4">
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Number of CI builds run in the last 30 days"
+                >
+                  Builds
+                  <div className="font-semibold text-xl mb-2">
+                    {reposMetric(num(repoStats.builds.total))}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3">
+                <div>
+                  <div
+                    className="text-xs font-semibold"
+                    data-tip="Percentage of successful builds"
+                  >
+                    Success
+                  </div>
+                  <div className="font-semibold text-md">
+                    {`${repoStats.builds.total
+                      ? `${Math.round((repoStats.builds.successful * 100) / repoStats.builds.total)}%`
+                      : '-'}`}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <div
+                    className="text-xs font-semibold"
+                    data-tip="Average time taken to fix a build failure"
+                  >
+                    MTTR build failure
+                  </div>
+                  <div className="text-xs pt-2 uppercase font-light">
+                    Coming soon
+                  </div>
+                </div>
+              </div>
             </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Percentage of successful builds"
-            >
-              Success
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Average time taken to fix a build failure"
-            >
-              MTTR build failure
-            </div>
-            <div />
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of release pipelines that only release from the master branch"
-            >
-              Master only pipelines
-            </div>
-
-            <div className="font-semibold text-xl">{reposMetric(num(repoStats.builds.total))}</div>
-            <div className="font-semibold text-xl">
-              {reposMetric(
-                `${repoStats.builds.total ? `${Math.round((repoStats.builds.successful * 100) / repoStats.builds.total)}%` : '-'}`
-              )}
-            </div>
-            <div className="text-xs uppercase">
-              Coming
-              <br />
-              soon
-            </div>
-            <div />
-            <div className="font-semibold text-xl">
-              {pipelinesMetric(
-                pipelineStats.masterOnlyPipelines.total === 0
-                  ? '-'
-                  : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
-              )}
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of release pipelines that only release from the master branch"
+              >
+                Master only pipelines
+              </div>
+              <div className="font-semibold text-xl">
+                {pipelinesMetric(
+                  pipelineStats.masterOnlyPipelines.total === 0
+                    ? '-'
+                    : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="p-6 bg-white rounded-lg h-full shadow opacity-50">
-          <div className="text-lg font-semibold mb-5 flex items-center">
-            Contract driven development
-            <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
+        <Card title="Contract driven development" type="small" comingSoon>
+          <div className="grid grid-cols-2 gap-y-4">
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of contracts tests"
+              >
+                Contract Tests
+              </div>
+              <div className="font-semibold text-xl">xx</div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of contract tests used for service virtualisation"
+              >
+                Contracts used as stubs
+              </div>
+              <div className="font-semibold text-xl">xx</div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of unused contract tests"
+              >
+                Orphaned contracts
+              </div>
+              <div className="font-semibold text-xl">xx</div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Percentage of APIs covered by contract tests"
+              >
+                Coverage
+              </div>
+              <div className="font-semibold text-xl">xx%</div>
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of contracts tests"
-            >
-              Contract Tests
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of contract tests used for service virtualisation"
-            >
-              Contracts used as stubs
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of unused contract tests"
-            >
-              Orphaned contracts
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Percentage of APIs covered by contract tests"
-            >
-              Coverage
-            </div>
+        </Card>
 
-            <div className="font-semibold text-xl">xx</div>
-            <div className="font-semibold text-xl">xx</div>
-            <div className="font-semibold text-xl">xx</div>
-            <div className="font-semibold text-xl">xx%</div>
+        <Card title="Infrastructure" type="small" comingSoon>
+          <div className="grid grid-cols-2 gap-y-4">
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Total planned downtime (in mins) due to deployments"
+              >
+                Deployment Downtime
+              </div>
+              <div className="font-semibold text-xl">
+                xx
+                {' '}
+                <span className="text-sm">mins</span>
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Percentage of pipelines where EAT infrastructure is provisioned on-demand via Azure Pipelines"
+              >
+                Ephemeral EAT
+              </div>
+              <div className="font-semibold text-xl">xx%</div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Percentage of components that are containerized"
+              >
+                Containers
+              </div>
+              <div className="font-semibold text-xl">xx%</div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Percentage of release pipelines deploying EAT artifact to public cloud"
+              >
+                Infra on public cloud
+              </div>
+              <div className="font-semibold text-xl">xx%</div>
+            </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="p-6 bg-white rounded-lg h-full shadow opacity-50">
-          <div className="text-lg font-semibold mb-5 flex items-center">
-            Infrastructure
-            <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
+        <Card title="Feature toggles" type="small" comingSoon>
+          <div className="grid grid-cols-2 gap-y-4">
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of independent deployments enabled by feature toggles"
+              >
+                Independent deployments
+              </div>
+              <div className="font-semibold text-xl">xx</div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Average age of a feature toggle once toggled on"
+              >
+                Toggled ON (Avg. age)
+              </div>
+              <div className="font-semibold text-xl">
+                xx
+                {' '}
+                <span className="text-sm">days</span>
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Average age that a feature toggle has been toggled off"
+              >
+                Toggled OFF (Avg. age)
+              </div>
+              <div className="font-semibold text-xl">
+                xx
+                {' '}
+                <span className="text-sm">days</span>
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of bugs raised where the RCA is due to feature toggles"
+              >
+                Bugs due to toggles
+              </div>
+              <div className="font-semibold text-xl">xx</div>
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
-            <div
-              className="text-xs font-semibold"
-              data-tip="Total planned downtime (in mins) due to deployments"
-            >
-              Deployment Downtime
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Percentage of pipelines where EAT infrastructure is provisioned on-demand via Azure Pipelines"
-            >
-              Ephemeral EAT
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Percentage of components that are containerized"
-            >
-              Containers
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Percentage of release pipelines deploying EAT artifact to public cloud"
-            >
-              Infra on public cloud
-            </div>
-
-            <div className="font-semibold text-xl">
-              xx
-              {' '}
-              <span className="text-sm">mins</span>
-            </div>
-            <div className="font-semibold text-xl">xx%</div>
-            <div className="font-semibold text-xl">xx%</div>
-            <div className="font-semibold text-xl">xx%</div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white rounded-lg h-full shadow opacity-50">
-          <div className="text-lg font-semibold mb-5 flex items-center">
-            Feature toggles
-            <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
-          </div>
-          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of independent deployments enabled by feature toggles"
-            >
-              Independent deployments
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Average age of a feature toggle once toggled on"
-            >
-              Toggled ON (Avg. age)
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Average age that a feature toggle has been toggled off"
-            >
-              Toggled OFF (Avg. age)
-            </div>
-            <div
-              className="text-xs font-semibold"
-              data-tip="Number of bugs raised where the RCA is due to feature toggles"
-            >
-              Bugs due to toggles
-            </div>
-
-            <div className="font-semibold text-xl">xx</div>
-            <div className="font-semibold text-xl">
-              xx
-              {' '}
-              <span className="text-sm">days</span>
-            </div>
-            <div className="font-semibold text-xl">
-              xx
-              {' '}
-              <span className="text-sm">days</span>
-            </div>
-            <div className="font-semibold text-xl">xx</div>
-          </div>
-        </div>
+        </Card>
       </div>
     </>
   );

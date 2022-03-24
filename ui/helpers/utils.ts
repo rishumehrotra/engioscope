@@ -79,3 +79,11 @@ export const prettyMS = (ms: number) => (
 );
 
 export const last = <T>(arr: T[]) => (arr.length ? arr[arr.length - 1] : undefined);
+
+export const testsTrendLine = (tests: number[]) => {
+  const min = Math.min(...tests);
+  const max = Math.max(...tests);
+  const diff = max - min;
+
+  return tests.map(val => val - (max - diff) + (diff * 1));
+};

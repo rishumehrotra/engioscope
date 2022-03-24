@@ -4,7 +4,7 @@ import {
   isDeprecated, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
-import { num } from '../helpers/utils';
+import { num, testsTrendLine } from '../helpers/utils';
 import Sparkline from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
@@ -60,9 +60,9 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             <>
               {num(totalTests(reposWithExclusions))}
               <Sparkline
-                data={totalTestsByWeek(reposWithExclusions)}
+                data={testsTrendLine(totalTestsByWeek(reposWithExclusions))}
                 lineColor={increaseIsBetter(totalTestsByWeek(reposWithExclusions))}
-                className="ml-2"
+                className="ml-2 -mb-1"
               />
             </>
           ),

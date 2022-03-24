@@ -1,6 +1,6 @@
 import React from 'react';
 import type { RepoAnalysis } from '../../../shared/types';
-import { num } from '../../helpers/utils';
+import { num, testsTrendLine } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
@@ -44,8 +44,8 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
                       <span className="truncate w-full block">
                         {pipeline.name}
                         <Sparkline
-                          data={pipeline.testsByWeek}
-                          className="inline-block ml-2"
+                          data={testsTrendLine(pipeline.testsByWeek)}
+                          className="inline-block ml-2 -mb-1"
                           lineColor={increaseIsBetter(pipeline.testsByWeek)}
                         />
                       </span>

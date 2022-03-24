@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { Fragment } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
-import { num, prettyMS } from '../../helpers/utils';
+import { num, prettyMS, testsTrendLine } from '../../helpers/utils';
 import { ExternalLink } from '../common/Icons';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
@@ -518,12 +518,16 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                   </p>
                 </td>
                 <td className="px-6 py-3">
-                  {reposMetric(num(repoStats.tests))}
-                  <Sparkline
-                    data={repoStats.testsByWeek}
-                    lineColor={increaseIsBetter(repoStats.testsByWeek)}
-                    className="ml-2"
-                  />
+                  {reposMetric((
+                    <>
+                      {num(repoStats.tests)}
+                      <Sparkline
+                        data={testsTrendLine(repoStats.testsByWeek)}
+                        lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                        className="ml-2 -mb-1"
+                      />
+                    </>
+                  ))}
                 </td>
                 <td className="px-6 py-3">
                   <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
@@ -776,7 +780,7 @@ const SummaryByMetric: React.FC<{
     </details>
 
     <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">CI-CD</summary>
+      <summary className="font-semibold text-xl my-2 cursor-pointer">CI / CD</summary>
       <CICDMetrics groups={groups} />
     </details>
   </div>
