@@ -13,14 +13,12 @@ const Switcher: <T extends string | number>(props: SwitcherProps<T>) => React.Re
   if (options.length === 0) return null;
 
   return (
-    <ul className="switcher bg-gray-200 inline-block rounded-lg overflow-hidden">
-      {options.map((option, index, options) => (
-        <li key={option.value} className="inline-block">
-          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+    <ul className="group p-1 bg-gray-100 hover:bg-gray-200 rounded-lg inline-flex">
+      {options.map(option => (
+        <li key={option.value}>
           <label className={
-            `py-1 px-5 inline-block relative
-            ${index === options.length - 1 ? '' : 'border-r border-gray-300'}
-            ${option.value === value ? 'bg-yellow-500 shadow-inner' : 'bg-gray-200 hover:bg-gray-300'}`
+            `py-1 px-5 relative rounded-md items-center text-base font-medium inline-block
+            ${option.value === value ? 'bg-white group-hover:shadow-sm' : 'group-hover:bg-gray-200'}`
           }
           >
             <input
@@ -29,7 +27,7 @@ const Switcher: <T extends string | number>(props: SwitcherProps<T>) => React.Re
               value={option.value}
               checked={value === option.value}
               onChange={() => onChange(option.value)}
-              className="opacity-0 absolute left-0 w-full h-full top-0 cursor-pointer"
+              className={`opacity-0 absolute left-0 w-full h-full top-0 ${option.value === value ? '' : 'cursor-pointer'}`}
             />
             {option.label}
           </label>

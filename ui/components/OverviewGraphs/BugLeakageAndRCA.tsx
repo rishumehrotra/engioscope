@@ -383,7 +383,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
       left={(
         <>
           <div className="grid grid-cols-2 justify-between">
-            <div className="mt-6">
+            <div className="pt-5">
               {isRCAMissing ? null : (
                 <Switcher<number>
                   options={(workItemType(witId).rootCauseFields || []).map((rca, index) => ({

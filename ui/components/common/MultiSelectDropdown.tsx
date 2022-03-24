@@ -37,7 +37,6 @@ export const MultiSelectDropdownWithLabel: React.FC<
 > = ({
   label, className, ...rest
 }) => (
-  // eslint-disable-next-line jsx-a11y/label-has-associated-control
   <label key={label} className={`block ${className || 'w-72 text-sm'}`}>
     <span className="text-gray-600 font-semibold">
       {label}
