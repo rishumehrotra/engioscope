@@ -432,13 +432,13 @@ const HealthMetrics: React.FC<{
                 <Fragment key={stage.name}>
                   <div className="font-semibold text-xl">
                     {pipelinesMetric(
-                      pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
+                      pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
                     )}
                   </div>
                   <div className="font-semibold text-xl">
                     {
                       pipelinesMetric(
-                        pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
+                        pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
                       )
                     }
                   </div>
@@ -558,7 +558,7 @@ const HealthMetrics: React.FC<{
             <div className="font-semibold text-xl">{reposMetric(num(repoStats.builds.total))}</div>
             <div className="font-semibold text-xl">
               {reposMetric(
-                `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
+                `${repoStats.builds.total ? `${Math.round((repoStats.builds.successful * 100) / repoStats.builds.total)}%` : '-'}`
               )}
             </div>
             <div className="text-xs uppercase">
@@ -569,7 +569,8 @@ const HealthMetrics: React.FC<{
             <div />
             <div className="font-semibold text-xl">
               {pipelinesMetric(
-                pipelineStats.pipelines === 0 ? '0'
+                pipelineStats.masterOnlyPipelines.total === 0
+                  ? '-'
                   : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
               )}
             </div>

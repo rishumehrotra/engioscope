@@ -58,7 +58,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Master-only pipelines',
-          value: pipelines.length === 0 ? '0' : `${Math.round((masterDeploys.count * 100) / masterDeploys.total)}%`,
+          value: masterDeploys.total === 0 ? '-' : `${Math.round((masterDeploys.count * 100) / masterDeploys.total)}%`,
           tooltip: `${num(masterDeploys.count)} out of ${masterDeploys.total} release ${
             masterDeploys.count === 1 ? 'pipeline deploys' : 'pipelines deploy'
           } exclusively from master.${
@@ -69,7 +69,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Conforms to branch policies',
-          value: pipelines.length === 0 ? '0' : `${Math.round((policyPassCount * 100) / pipelines.length)}%`,
+          value: pipelines.length === 0 ? '-' : `${Math.round((policyPassCount * 100) / pipelines.length)}%`,
           tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches that conform to the branch policy.${
             ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
           }`

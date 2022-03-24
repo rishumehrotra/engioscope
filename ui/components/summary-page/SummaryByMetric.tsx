@@ -729,7 +729,8 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
                 </td>
                 <td className="px-6 py-3 font-medium text-lg text-black">
                   {pipelinesMetric(
-                    pipelineStats.pipelines === 0 ? '0'
+                    pipelineStats.masterOnlyPipelines.total === 0
+                      ? '-'
                       : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
                   )}
                 </td>
