@@ -1,18 +1,12 @@
 import qs from 'qs';
-import { join } from 'path';
-import { promisify } from 'util';
-import glob from 'glob';
-import { parse as parseHtml } from 'node-html-parser';
-import { promises as fs } from 'fs';
 import fetch from './fetch-with-timeout';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
 import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
 import type { ParsedConfig, SonarConfig } from '../parse-config';
-import { exists, normalizeBranchName, unique } from '../../utils';
-
-const globAsync = promisify(glob);
+import { unique } from '../../utils';
+import parseBuildReports from '../parse-build-reports';
 
 export type SonarProject = {
   organization: string;
@@ -26,56 +20,31 @@ export type SonarProject = {
   token: string;
 };
 
+// #region Network calls
 type SonarPaging = {
   pageIndex: number;
   pageSize: number;
 };
 
-const sortByLastAnalysedDate = (a: SonarProject, b: SonarProject) => (
-  new Date(b.lastAnalysisDate).getTime() - new Date(a.lastAnalysisDate).getTime()
-);
-
-const normliseNameForMatching = (name: string) => (
-  name.replace(/-/g, '_').toLowerCase()
-);
-
-const attemptExactMatchFind = (repoName: string, sonarProjects: SonarProject[]) => {
-  const matchingProjects = sonarProjects
-    .filter(project => (
-      normliseNameForMatching(project.name) === normliseNameForMatching(repoName)
-      && Boolean(project.lastAnalysisDate)
-    ))
-    .sort(sortByLastAnalysedDate);
-
-  return matchingProjects.length > 0 ? [matchingProjects[0]] : null;
-};
-
-const attemptStartsWithFind = (repoName: string, sonarProjects: SonarProject[]) => {
-  const matchingProjects = sonarProjects
-    .filter(project => (
-      normliseNameForMatching(project.name).startsWith(normliseNameForMatching(repoName))
-      && Boolean(project.lastAnalysisDate)
-    ))
-    .sort(sortByLastAnalysedDate);
-
-  return matchingProjects.length > 0 ? matchingProjects : null;
-};
-
 type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
 
-const projectsAtSonarServer = (paginatedGet: ReturnType<typeof createPaginatedGetter>) => (sonarServer: SonarConfig) => (
-  paginatedGet<SonarSearchResponse>({
-    url: `${sonarServer.url}/api/projects/search`,
-    cacheFile: pageIndex => ['sonar', 'projects', `${sonarServer.url.split('://')[1].replace(/\./g, '-')}-${pageIndex}`],
-    headers: () => ({ Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
-    hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize === previousResponse.data.components.length,
-    qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() })
-  })
-    .then(responses => responses.map(response => response.data.components.map(c => ({
-      ...c, url: sonarServer.url, token: sonarServer.token
-    }))))
-    .then(projects => projects.flat())
-);
+const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfig) => {
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+
+  return (
+    paginatedGet<SonarSearchResponse>({
+      url: `${sonarServer.url}/api/projects/search`,
+      cacheFile: pageIndex => ['sonar', 'projects', `${sonarServer.url.split('://')[1].replace(/\./g, '-')}-${pageIndex}`],
+      headers: () => ({ Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}` }),
+      hasAnotherPage: previousResponse => previousResponse.data.paging.pageSize === previousResponse.data.components.length,
+      qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() })
+    })
+      .then(responses => responses.map(response => response.data.components.map(c => ({
+        ...c, url: sonarServer.url, token: sonarServer.token
+      }))))
+      .then(projects => projects.flat())
+  );
+};
 
 const getMeasures = (config: ParsedConfig) => (sonarProject: SonarProject) => {
   const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
@@ -113,74 +82,85 @@ const getQualityGateName = (config: ParsedConfig) => (sonarProject: SonarProject
   ).then(res => res.data.qualityGate.name);
 };
 
-const parseSonarConfigFromHtmlFile = async (fileName: string) => {
-  let htmlContent: string;
+// #endregion
 
-  try {
-    htmlContent = await fs.readFile(fileName, 'utf-8');
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('error parsing Sonar config from file', e);
-    return null;
-  }
+const sortByLastAnalysedDate = (a: SonarProject, b: SonarProject) => (
+  new Date(b.lastAnalysisDate).getTime() - new Date(a.lastAnalysisDate).getTime()
+);
 
-  const root = parseHtml(htmlContent);
-  const sonarHost = root.querySelector('#sonarHost')?.innerText;
-  const sonarProjectKey = root.querySelector('#sonarProjectKey')?.innerText;
+const normliseNameForMatching = (name: string) => (
+  name.replace(/-/g, '_').toLowerCase()
+);
 
-  if (sonarHost && sonarProjectKey) {
-    return {
-      sonarHost,
-      sonarProjectKey
-    };
-  }
+// #region Attempt to find a sonar project
+const attemptExactMatchFind = (repoName: string, sonarProjects: SonarProject[]) => {
+  const matchingProjects = sonarProjects
+    .filter(project => (
+      normliseNameForMatching(project.name) === normliseNameForMatching(repoName)
+      && Boolean(project.lastAnalysisDate)
+    ))
+    .sort(sortByLastAnalysedDate);
 
-  return null;
+  return matchingProjects.length > 0 ? [matchingProjects[0]] : null;
+};
+
+const attemptStartsWithFind = (repoName: string, sonarProjects: SonarProject[]) => {
+  const matchingProjects = sonarProjects
+    .filter(project => (
+      normliseNameForMatching(project.name).startsWith(normliseNameForMatching(repoName))
+      && Boolean(project.lastAnalysisDate)
+    ))
+    .sort(sortByLastAnalysedDate);
+
+  return matchingProjects.length > 0 ? matchingProjects : null;
 };
 
 const attemptMatchFromBuildReports = async (
-  {
-    collectionName, projectName, repoName, defaultBranch
-  }: { collectionName: string; projectName: string; repoName: string; defaultBranch?: string},
-  sonarProjects: SonarProject[]
+  repoName: string,
+  defaultBranch: string | undefined,
+  sonarProjects: SonarProject[],
+  parseReports: ReturnType<typeof parseBuildReports>
 ) => {
   if (!defaultBranch) return null;
 
-  const buildReportDir = join(process.cwd(), 'build-reports', collectionName, projectName, repoName);
-  const matchingBuildReportFiles = await globAsync(join(buildReportDir, '**', `${normalizeBranchName(defaultBranch)}.html`));
+  const sonarConfigs = await parseReports(repoName, defaultBranch);
 
-  const sonarConfigs = (await Promise.all(matchingBuildReportFiles.map(parseSonarConfigFromHtmlFile))).filter(exists);
   const projectKeys = unique(sonarConfigs.map(({ sonarProjectKey }) => sonarProjectKey));
   const matchingSonarProjects = sonarProjects.filter(({ key }) => projectKeys.includes(key));
 
   return matchingSonarProjects.length ? matchingSonarProjects : null;
 };
 
-const attemptMatchByRepoName = (repoName: string, sonarProjects: SonarProject[]) => {
-  const exactMatch = attemptExactMatchFind(repoName, sonarProjects);
-  return exactMatch || attemptStartsWithFind(repoName, sonarProjects);
-};
+const attemptMatchByRepoName = (repoName: string, sonarProjects: SonarProject[]) => (
+  attemptExactMatchFind(repoName, sonarProjects)
+  || attemptStartsWithFind(repoName, sonarProjects)
+);
 
 const getMatchingSonarProjects = async (
-  repo: { collectionName: string; projectName: string; repoName: string; defaultBranch?: string },
-  sonarProjects: SonarProject[]
+  repoName: string,
+  defaultBranch: string | undefined,
+  sonarProjects: SonarProject[],
+  parseReports: ReturnType<typeof parseBuildReports>
 ) => {
-  const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(repo, sonarProjects);
-  return sonarProjectsFromBuildReports || attemptMatchByRepoName(repo.repoName, sonarProjects);
+  const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
+    repoName, defaultBranch, sonarProjects, parseReports
+  );
+  return sonarProjectsFromBuildReports || attemptMatchByRepoName(repoName, sonarProjects);
 };
 
-export default (config: ParsedConfig) => {
-  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+// #endregion
 
-  const sonarProjects = Promise.all((config.sonar || []).map(projectsAtSonarServer(paginatedGet)))
+export default (config: ParsedConfig) => {
+  const sonarProjects = Promise.all((config.sonar || []).map(projectsAtSonarServer(config)))
     .then(list => list.flat());
 
   return (
     collectionName: string, projectName: string
   ) => async (repoName: string, defaultBranch?: string): Promise<SonarAnalysisByRepo> => {
-    const matchingSonarProjects = await getMatchingSonarProjects({
-      collectionName, projectName, repoName, defaultBranch
-    }, await sonarProjects);
+    const matchingSonarProjects = await getMatchingSonarProjects(
+      repoName, defaultBranch, await sonarProjects,
+      parseBuildReports(collectionName, projectName)
+    );
 
     if (!matchingSonarProjects) return null;
 

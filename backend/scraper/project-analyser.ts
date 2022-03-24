@@ -34,7 +34,6 @@ export default (config: ParsedConfig) => {
     getProjectWorkItemIdsForQuery, getBuildDefinitions,
     getOneBuildBeforeQueryPeriod
   } = azure(config);
-  const codeQualityByRepo = sonar(config);
   return async (
     collection: ParsedCollection,
     projectConfig: ParsedProjectConfig,
@@ -43,6 +42,8 @@ export default (config: ParsedConfig) => {
   ): Promise<ProjectAnalysis> => {
     const startTime = Date.now();
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collection.name, projectConfig.name);
+
+    const codeQualityByRepo = forProject(sonar(config));
 
     analyserLog(`Starting analysis for ${collection.name}/${projectConfig.name}`);
     const [
@@ -93,7 +94,7 @@ export default (config: ParsedConfig) => {
       ] = await Promise.all([
         branchStats.then(aggregateBranches(r.webUrl, r.defaultBranch)),
         getTestsByRepoId(r.id),
-        forProject(codeQualityByRepo)(r.name, r.defaultBranch).then(aggregateCodeQuality),
+        codeQualityByRepo(r.name, r.defaultBranch).then(aggregateCodeQuality),
         forProject(getCommits)(r.id).then(aggregateCommits)
       ]);
 
