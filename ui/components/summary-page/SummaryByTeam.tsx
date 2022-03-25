@@ -2,7 +2,7 @@ import React, {
   Fragment, useRef, useState
 } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
-import { num, prettyMS, testsTrendLine } from '../../helpers/utils';
+import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
@@ -412,7 +412,7 @@ const HealthMetrics: React.FC<{
                   num(repoStats.tests),
                   (
                     <Sparkline
-                      data={testsTrendLine(repoStats.testsByWeek)}
+                      data={exaggerateTrendLine(repoStats.testsByWeek)}
                       lineColor={increaseIsBetter(repoStats.testsByWeek)}
                       className="ml-1 -mb-1"
                     />

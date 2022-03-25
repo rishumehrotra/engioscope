@@ -4,7 +4,7 @@ import {
   isDeprecated, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
-import { num, testsTrendLine } from '../helpers/utils';
+import { num, exaggerateTrendLine } from '../helpers/utils';
 import Sparkline from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
@@ -60,7 +60,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             <>
               {num(totalTests(reposWithExclusions))}
               <Sparkline
-                data={testsTrendLine(totalTestsByWeek(reposWithExclusions))}
+                data={exaggerateTrendLine(totalTestsByWeek(reposWithExclusions))}
                 lineColor={increaseIsBetter(totalTestsByWeek(reposWithExclusions))}
                 className="ml-2 -mb-1"
               />
@@ -84,9 +84,20 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Sonar',
-          value: reposWithExclusions.length
-            ? `${Math.round((reposWithExclusions.filter(r => !!r.codeQuality).length / reposWithExclusions.length) * 100)}%`
-            : '-',
+          value: (
+            reposWithExclusions.length
+              ? (
+                <>
+                  {`${Math.round((reposWithExclusions.filter(r => !!r.codeQuality).length / reposWithExclusions.length) * 100)}%`}
+                  <Sparkline
+                    data={exaggerateTrendLine(totalTestsByWeek(reposWithExclusions))}
+                    lineColor={increaseIsBetter(totalTestsByWeek(reposWithExclusions))}
+                    className="ml-2 -mb-1"
+                  />
+                </>
+              )
+              : '-'
+          ),
           tooltip: `${
             reposWithExclusions.filter(r => !!r.codeQuality).length
           } of ${reposWithExclusions.length} repos have SonarQube configured`

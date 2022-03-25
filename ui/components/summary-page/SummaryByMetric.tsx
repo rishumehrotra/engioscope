@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { Fragment } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
-import { num, prettyMS, testsTrendLine } from '../../helpers/utils';
+import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
 import { ExternalLink } from '../common/Icons';
 import Sparkline from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
@@ -522,7 +522,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                     <>
                       {num(repoStats.tests)}
                       <Sparkline
-                        data={testsTrendLine(repoStats.testsByWeek)}
+                        data={exaggerateTrendLine(repoStats.testsByWeek)}
                         lineColor={increaseIsBetter(repoStats.testsByWeek)}
                         className="ml-2 -mb-1"
                       />
