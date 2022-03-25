@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import React from 'react';
 
-const ProjectStats: React.FC<{ note?: string }> = ({ children, note }) => (
+const ProjectStats: React.FC<{ note?: ReactNode }> = ({ children, note }) => (
   <div className="justify-end grid grid-flow-row">
     <div className="flex items-center">
       <ul className="flex flex-nowrap justify-items-center">

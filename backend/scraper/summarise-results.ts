@@ -19,7 +19,7 @@ import {
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
 import {
-  isDeprecated, totalBuilds, totalTests, totalTestsByWeek
+  isDeprecated, newSonarSetupsByWeek, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 
 const lastMonth = isAfter('30 days');
@@ -188,6 +188,7 @@ type Summary = {
       warn: number;
       fail: number;
     };
+    newSonarSetupsByWeek: number[];
   };
   pipelineStats: {
     pipelines: number;
@@ -366,7 +367,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
               repo => count<UIBuildPipeline>(incrementBy(prop('success')))(repo.builds?.pipelines || [])
             ))(matchesExcludingDeprecated)
           },
-          codeQuality: codeQuality(matchesExcludingDeprecated)
+          codeQuality: codeQuality(matchesExcludingDeprecated),
+          newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated)
         };
       };
 

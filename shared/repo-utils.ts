@@ -28,3 +28,24 @@ export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
     ), acc);
   }, [0, 0, 0, 0])
 );
+
+const isBeforeEndOfWeekFilters = [4, 3, 2, 1]
+  .map(weekIndex => {
+    const date = new Date();
+    date.setDate(date.getDate() - ((weekIndex - 1) * 7));
+    return (d: string) => new Date(d) < date;
+  });
+
+export const newSonarSetupsByWeek = (repos: RepoAnalysis[]) => (
+  repos
+    .flatMap(r => r.codeQuality)
+    .filter(q => q?.oldestFoundSample)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    .map(q => isBeforeEndOfWeekFilters.map(f => f(q!.oldestFoundSample!)))
+    .reduce<number[]>((acc, row) => {
+      row.forEach((val, index) => {
+        acc[index] = (acc[index] || 0) + (val ? 1 : 0);
+      });
+      return acc;
+    }, [])
+);

@@ -476,7 +476,20 @@ const HealthMetrics: React.FC<{
                   className="font-semibold text-xl mb-2"
                   data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
                 >
-                  {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
+                  {repoStats.repos
+                    ? (
+                      <>
+                        {reposMetric(
+                          `${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`,
+                          <Sparkline
+                            data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
+                            lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
+                            className="ml-1 -mb-1"
+                          />
+                        )}
+                      </>
+                    )
+                    : '-'}
                 </div>
               </div>
 

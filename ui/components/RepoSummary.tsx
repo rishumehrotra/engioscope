@@ -1,7 +1,7 @@
 import { compose, not } from 'rambda';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
-  isDeprecated, totalBuilds, totalTests, totalTestsByWeek
+  isDeprecated, newSonarSetupsByWeek, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num, exaggerateTrendLine } from '../helpers/utils';
@@ -43,6 +43,8 @@ const sonarStats = (repos: RepoAnalysis[]) => (
 );
 
 const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
+  const newSonarByWeek = useMemo(() => newSonarSetupsByWeek(repos), [repos]);
+
   const reposWithExclusions = repos.filter(compose(not, isDeprecated));
   const sonar = sonarStats(reposWithExclusions);
 
@@ -50,7 +52,13 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
     <ProjectStats note={
       repos.length - reposWithExclusions.length === 0
         ? undefined
-        : `Excluded ${repos.length - reposWithExclusions.length} deprecated repositories from analysis`
+        : (
+          <>
+            {'Excluded '}
+            <b>{repos.length - reposWithExclusions.length}</b>
+            {' deprecated repositories from analysis'}
+          </>
+        )
     }
     >
       <ProjectStat
@@ -90,8 +98,8 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                 <>
                   {`${Math.round((reposWithExclusions.filter(r => !!r.codeQuality).length / reposWithExclusions.length) * 100)}%`}
                   <Sparkline
-                    data={exaggerateTrendLine(totalTestsByWeek(reposWithExclusions))}
-                    lineColor={increaseIsBetter(totalTestsByWeek(reposWithExclusions))}
+                    data={exaggerateTrendLine(newSonarByWeek)}
+                    lineColor={increaseIsBetter(newSonarByWeek)}
                     className="ml-2 -mb-1"
                   />
                 </>

@@ -626,7 +626,18 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
                   className="px-6 py-3 font-medium text-lg text-black"
                 >
-                  {repoStats.repos ? reposMetric(`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`) : '-'}
+                  {repoStats.repos
+                    ? reposMetric(
+                      <>
+                        {`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
+                        <Sparkline
+                          data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
+                          lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
+                          className="ml-2 -mb-1"
+                        />
+                      </>
+                    )
+                    : '-'}
                 </td>
                 <td
                   data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
