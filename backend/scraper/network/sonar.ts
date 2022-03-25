@@ -105,7 +105,7 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
         p: (pageIndex + 1).toString(),
         component: sonarProject.key,
         metrics: 'alert_status',
-        from: pastDate('182 days').toISOString()
+        from: pastDate('182 days').toISOString().split('T')[0]
       })
     })
       .then(responses => responses.map(response => response.data.measures.map(m => m.history).flat()))
