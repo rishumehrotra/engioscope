@@ -12,21 +12,24 @@ export type CodeQuality = {
   measures: Measure[];
 };
 
+export type SonarQualityGate = 'OK' | 'ERROR' | 'WARN';
+
 export type SonarAnalysisByRepo = null | {
   url: string;
   name: string;
   measures: Measure[];
   lastAnalysisDate: Date;
   qualityGateName: string;
+  qualityGateHistory: { date: Date; value: SonarQualityGate }[];
 }[];
 
 export type SonarQualityGateDetails = {
-  level: 'OK' | 'ERROR' | 'WARN';
+  level: SonarQualityGate;
   conditions?: {
     metric: string;
     op: 'LT' | 'GT';
     error: string;
     actual: string;
-    level: 'OK' | 'ERROR' | 'WARN';
+    level: SonarQualityGate;
   }[];
 };

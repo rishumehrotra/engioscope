@@ -196,6 +196,8 @@ export type UICodeQuality = null | {
     lines?: number;
     linesDensity?: number;
   };
+  oldestFoundSample: string | undefined;
+  qualityGateByWeek: (QualityGateDetails['status'] | null)[];
 }[];
 
 export type AggregatedCommitsByDev = {

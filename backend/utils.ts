@@ -15,6 +15,7 @@ export const pastDate = (past?: string) => {
 };
 
 export const isAfter = (time: string) => (date: Date) => date > pastDate(time);
+export const isBefore = (time: string) => (date: Date) => date < pastDate(time);
 export const isWithinFortnight = isAfter('15 days');
 
 export const isNewerThan = (date1: Date) => (date2: Date) => (

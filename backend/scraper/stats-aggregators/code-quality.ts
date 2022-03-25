@@ -1,5 +1,7 @@
+import { head } from 'rambda';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGateDetails } from '../types-sonar';
 import type { QualityGateDetails, UICodeQuality } from '../../../shared/types';
+import { weeks } from '../../utils';
 
 // Get list of available metrics at <sonar-host>/api/metrics/search
 export const requiredMetrics = [
@@ -67,7 +69,7 @@ const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof for
   return Array.from(combinedSet.entries()).map(([lang, loc]) => ({ lang, loc }));
 };
 
-const qualityGateStatus = (gateLabel?: string): QualityGateDetails['status'] => {
+const parseQualityGateStatus = (gateLabel?: string): QualityGateDetails['status'] => {
   switch (gateLabel) {
     case 'OK':
       return 'pass';
@@ -101,7 +103,7 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
       value: metric?.actual ? Number(metric.actual) : undefined,
       op: metric?.op ? metric.op.toLowerCase() as 'gt' | 'lt' : undefined,
       level: metric?.error ? Number(metric.error) : undefined,
-      status: qualityGateStatus(metric.level)
+      status: parseQualityGateStatus(metric.level)
     };
   };
 
@@ -111,7 +113,7 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
     lastAnalysisDate,
     measureAsNumber,
     qualityGateMetric,
-    qualityGateStatus: qualityGateStatus(qualityGateDetails.level)
+    qualityGateStatus: parseQualityGateStatus(qualityGateDetails.level)
   };
 };
 
@@ -176,7 +178,18 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
           rating: measureAsNumber('sqale_rating'),
           techDebt: measureAsNumber('sqale_index'),
           codeSmells: measureAsNumber('code_smells')
-        }
+        },
+        oldestFoundSample: head(sonarAnalysis.qualityGateHistory
+          .sort((a, b) => b.date.getTime() - a.date.getTime()))?.date.toISOString(),
+        qualityGateByWeek: weeks.map(isInWeek => {
+          const latestInWeek = head(
+            sonarAnalysis.qualityGateHistory
+              .filter(({ date }) => isInWeek(date))
+              .sort((a, b) => b.date.getTime() - a.date.getTime())
+          );
+
+          return latestInWeek ? parseQualityGateStatus(latestInWeek.value) : null;
+        })
       };
     })
   };

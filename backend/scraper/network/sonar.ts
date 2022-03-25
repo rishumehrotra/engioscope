@@ -3,9 +3,9 @@ import fetch from './fetch-with-timeout';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
-import type { Measure, SonarAnalysisByRepo } from '../types-sonar';
+import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-sonar';
 import type { ParsedConfig, SonarConfig } from '../parse-config';
-import { unique } from '../../utils';
+import { pastDate, unique } from '../../utils';
 import parseBuildReports from '../parse-build-reports';
 
 export type SonarProject = {
@@ -24,12 +24,12 @@ export type SonarProject = {
 type SonarPaging = {
   pageIndex: number;
   pageSize: number;
+  total: number;
 };
-
-type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
 
 const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfig) => {
   const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+  type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
 
   return (
     paginatedGet<SonarSearchResponse>({
@@ -80,6 +80,38 @@ const getQualityGateName = (config: ParsedConfig) => (sonarProject: SonarProject
       }
     })
   ).then(res => res.data.qualityGate.name);
+};
+
+const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProject) => {
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+
+  type SonarMeasureHistoryResponse<T extends string> = {
+    paging: SonarPaging;
+    measures: { metric: T; history: { date: Date; value: string }[] }[];
+  };
+
+  return (
+    paginatedGet<SonarMeasureHistoryResponse<'alert_status'>>({
+      url: `${sonarProject.url}/api/measures/search_history`,
+      cacheFile: pageIndex => [
+        'sonar', 'alert-status-history', `${sonarProject.url.split('://')[1].replace(/\./g, '-')}`, `${sonarProject.key}-${pageIndex}`
+      ],
+      headers: () => ({ Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString('base64')}` }),
+      hasAnotherPage: previousResponse => (
+        previousResponse.data.paging.total > (previousResponse.data.paging.pageSize * previousResponse.data.paging.pageIndex)
+      ),
+      qsParams: pageIndex => ({
+        ps: '500',
+        p: (pageIndex + 1).toString(),
+        component: sonarProject.key,
+        metrics: 'alert_status',
+        from: pastDate('6 months').toISOString()
+      })
+    })
+      .then(responses => responses.map(response => response.data.measures.map(m => m.history).flat()))
+      .then(history => history.flat())
+      .then(history => history.map(item => ({ ...item, date: new Date(item.date) })))
+  );
 };
 
 // #endregion
@@ -167,10 +199,12 @@ export default (config: ParsedConfig) => {
     return Promise.all(matchingSonarProjects.map(sonarProject => (
       Promise.all([
         getMeasures(config)(sonarProject),
-        getQualityGateName(config)(sonarProject)
-      ]).then(([measures, qualityGateName]) => ({
+        getQualityGateName(config)(sonarProject),
+        getQualityGateHistory(config)(sonarProject)
+      ]).then(([measures, qualityGateName, history]) => ({
         ...measures,
-        qualityGateName
+        qualityGateName,
+        qualityGateHistory: history as { date: Date; value: SonarQualityGate }[]
       }))
     )));
   };
