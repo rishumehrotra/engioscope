@@ -506,7 +506,16 @@ const HealthMetrics: React.FC<{
                     data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
                   >
                     {codeQuality.sonarProjects
-                      ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
+                      ? (
+                        <>
+                          {`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
+                          <Sparkline
+                            data={exaggerateTrendLine(repoStats.sonarCountsByWeek.pass)}
+                            lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                            className="ml-1 -mb-1"
+                          />
+                        </>
+                      )
                       : '-'}
                   </div>
                 </div>
@@ -522,7 +531,16 @@ const HealthMetrics: React.FC<{
                     data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
                   >
                     {codeQuality.sonarProjects
-                      ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
+                      ? (
+                        <>
+                          {`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
+                          <Sparkline
+                            data={exaggerateTrendLine(repoStats.sonarCountsByWeek.warn)}
+                            lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                            className="ml-1 -mb-1"
+                          />
+                        </>
+                      )
                       : '-'}
                   </div>
                 </div>
@@ -538,7 +556,16 @@ const HealthMetrics: React.FC<{
                     data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
                   >
                     {codeQuality.sonarProjects
-                      ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
+                      ? (
+                        <>
+                          {`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
+                          <Sparkline
+                            data={exaggerateTrendLine(repoStats.sonarCountsByWeek.fail)}
+                            lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                            className="ml-1 -mb-1"
+                          />
+                        </>
+                      )
                       : '-'}
                   </div>
                 </div>

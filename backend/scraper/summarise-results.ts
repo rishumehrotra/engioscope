@@ -19,7 +19,7 @@ import {
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
 import {
-  isDeprecated, newSonarSetupsByWeek, totalBuilds, totalTests, totalTestsByWeek
+  isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 
 const lastMonth = isAfter('30 days');
@@ -189,6 +189,7 @@ type Summary = {
       fail: number;
     };
     newSonarSetupsByWeek: number[];
+    sonarCountsByWeek: ReturnType<typeof sonarCountsByWeek>;
   };
   pipelineStats: {
     pipelines: number;
@@ -368,7 +369,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             ))(matchesExcludingDeprecated)
           },
           codeQuality: codeQuality(matchesExcludingDeprecated),
-          newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated)
+          newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),
+          sonarCountsByWeek: sonarCountsByWeek(matchesExcludingDeprecated)
         };
       };
 

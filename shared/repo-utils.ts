@@ -1,5 +1,6 @@
+import { applySpec } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
-import type { RepoAnalysis } from './types';
+import type { QualityGateDetails, RepoAnalysis } from './types';
 
 export const isDeprecated = (repo: RepoAnalysis) => (
   (
@@ -49,3 +50,28 @@ export const newSonarSetupsByWeek = (repos: RepoAnalysis[]) => (
       return acc;
     }, [])
 );
+
+export const sonarCountByWeek = (value: QualityGateDetails['status']) => (repos: RepoAnalysis[]) => (
+  repos
+    .flatMap(r => r.codeQuality)
+    .map(q => q?.qualityGateByWeek)
+    .reduce<{ count: number; total: number }[]>((acc, row) => {
+      row?.forEach((val, index) => {
+        acc[index] = (acc[index] || { count: 0, total: 0 });
+        if (val === value) {
+          acc[index].count += 1;
+        } else if (val === null && index > 0 && row[index - 1] === value) {
+          acc[index].count += 1;
+        }
+        acc[index].total += val !== null ? 1 : 0;
+      });
+      return acc;
+    }, [])
+    .map(({ count, total }) => (total === 0 ? 0 : Math.round((count * 100) / total)))
+);
+
+export const sonarCountsByWeek = applySpec({
+  pass: sonarCountByWeek('pass'),
+  fail: sonarCountByWeek('fail'),
+  warn: sonarCountByWeek('warn')
+});

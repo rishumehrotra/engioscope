@@ -644,7 +644,16 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   className="px-6 py-3 font-medium text-lg text-black"
                 >
                   {codeQuality.sonarProjects
-                    ? `${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`
+                    ? (
+                      <>
+                        {`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
+                        <Sparkline
+                          data={exaggerateTrendLine(repoStats.sonarCountsByWeek.pass)}
+                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                          className="ml-2 -mb-1"
+                        />
+                      </>
+                    )
                     : '-'}
                 </td>
                 <td
@@ -652,7 +661,16 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   className="px-6 py-3 font-medium text-lg text-black"
                 >
                   {codeQuality.sonarProjects
-                    ? `${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`
+                    ? (
+                      <>
+                        {`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
+                        <Sparkline
+                          data={exaggerateTrendLine(repoStats.sonarCountsByWeek.warn)}
+                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                          className="ml-2 -mb-1"
+                        />
+                      </>
+                    )
                     : '-'}
                 </td>
                 <td
@@ -660,7 +678,17 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   className="px-6 py-3 font-medium text-lg text-black"
                 >
                   {codeQuality.sonarProjects
-                    ? `${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`
+                    ? (
+                      <>
+                        {`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
+                        <Sparkline
+                          data={exaggerateTrendLine(repoStats.sonarCountsByWeek.fail)}
+                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                          className="ml-2 -mb-1"
+                        />
+                      </>
+                    )
+
                     : '-'}
                 </td>
                 <td className="px-6 py-3 font-medium text-lg text-black" />

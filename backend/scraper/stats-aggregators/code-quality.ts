@@ -1,7 +1,7 @@
 import { head } from 'rambda';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGateDetails } from '../types-sonar';
 import type { QualityGateDetails, UICodeQuality } from '../../../shared/types';
-import { weeks } from '../../utils';
+import { pastDate } from '../../utils';
 
 // Get list of available metrics at <sonar-host>/api/metrics/search
 export const requiredMetrics = [
@@ -117,6 +117,12 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
   };
 };
 
+const uptillWeeks = [4, 3, 2, 1]
+  .map(weekIndex => {
+    const weekEnd = pastDate(`${(weekIndex - 1) * 7} days`);
+    return (d: Date) => d <= weekEnd;
+  });
+
 export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
   if (!sonarAnalyses) return { codeQuality: null };
 
@@ -181,10 +187,10 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
         },
         oldestFoundSample: head(sonarAnalysis.qualityGateHistory
           .sort((a, b) => b.date.getTime() - a.date.getTime()))?.date.toISOString(),
-        qualityGateByWeek: weeks.map(isInWeek => {
+        qualityGateByWeek: uptillWeeks.map(isUptillWeek => {
           const latestInWeek = head(
             sonarAnalysis.qualityGateHistory
-              .filter(({ date }) => isInWeek(date))
+              .filter(({ date }) => isUptillWeek(date))
               .sort((a, b) => b.date.getTime() - a.date.getTime())
           );
 
