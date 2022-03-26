@@ -1,14 +1,14 @@
 import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
-  isDeprecated, newSonarSetupsByWeek, totalBuilds, totalTests, totalTestsByWeek
+  isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num, exaggerateTrendLine } from '../helpers/utils';
 import Sparkline from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
-import { increaseIsBetter } from './summary-page/utils';
+import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos
@@ -44,6 +44,7 @@ const sonarStats = (repos: RepoAnalysis[]) => (
 
 const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
   const newSonarByWeek = useMemo(() => newSonarSetupsByWeek(repos), [repos]);
+  const sonarCounts = useMemo(() => sonarCountsByWeek(repos), [repos]);
 
   const reposWithExclusions = repos.filter(compose(not, isDeprecated));
   const sonar = sonarStats(reposWithExclusions);
@@ -113,17 +114,50 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         childStats={[
           {
             title: 'Ok',
-            value: sonar.configured ? `${((sonar.ok / sonar.configured) * 100).toFixed(0)}%` : '-',
+            value: sonar.configured
+              ? (
+                <>
+                  {`${((sonar.ok / sonar.configured) * 100).toFixed(0)}%`}
+                  <Sparkline
+                    data={exaggerateTrendLine(sonarCounts.pass)}
+                    lineColor={increaseIsBetter(sonarCounts.pass)}
+                    className="ml-2 -mb-1"
+                  />
+                </>
+              )
+              : '-',
             tooltip: `${sonar.ok} of ${sonar.configured} sonar projects have 'pass' quality gate`
           },
           {
             title: 'Warn',
-            value: sonar.configured ? `${((sonar.warn / sonar.configured) * 100).toFixed(0)}%` : '-',
+            value: sonar.configured
+              ? (
+                <>
+                  {`${((sonar.warn / sonar.configured) * 100).toFixed(0)}%`}
+                  <Sparkline
+                    data={exaggerateTrendLine(sonarCounts.warn)}
+                    lineColor={decreaseIsBetter(sonarCounts.warn)}
+                    className="ml-2 -mb-1"
+                  />
+                </>
+              )
+              : '-',
             tooltip: `${sonar.warn} of ${sonar.configured} sonar projects have 'warn' quality gate`
           },
           {
             title: 'Fail',
-            value: sonar.error ? `${((sonar.error / sonar.configured) * 100).toFixed(0)}%` : '-',
+            value: sonar.configured
+              ? (
+                <>
+                  {`${((sonar.error / sonar.configured) * 100).toFixed(0)}%`}
+                  <Sparkline
+                    data={exaggerateTrendLine(sonarCounts.fail)}
+                    lineColor={decreaseIsBetter(sonarCounts.fail)}
+                    className="ml-2 -mb-1"
+                  />
+                </>
+              )
+              : '-',
             tooltip: `${sonar.error} of ${sonar.configured} sonar projects have 'fail' quality gate`
           }
         ]}

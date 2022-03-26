@@ -8,8 +8,6 @@ type Stat = {
   tooltip?: string;
 };
 
-export type ChartType = 'feature' | 'bug' | 'bugLeakage' | 'bugsClosed' | undefined;
-
 export type ProjectStatProps = {
   topStats: Stat[];
   childStats?: Stat[];
@@ -30,12 +28,13 @@ const ProjectStat: React.FC<ProjectStatProps> = ({
   );
 
   return (
-    <li className="relative" ref={ref}>
+    <>
       <button
         className={`p-2 border border-gray-200 bg-white shadow-sm ml-1 rounded flex text-left
           ${isOpen ? 'border-gray-300 transform -translate-y-1' : ''}
           ${popupContents ? 'cursor-pointer' : 'cursor-default'}`}
         onClick={onButtonClick}
+        ref={ref}
       >
         {topStats ? topStats.map(({ title, value, tooltip }) => (
           <div
@@ -73,7 +72,7 @@ const ProjectStat: React.FC<ProjectStatProps> = ({
           {popupContents({ topStats, childStats })}
         </div>
       )}
-    </li>
+    </>
   );
 };
 

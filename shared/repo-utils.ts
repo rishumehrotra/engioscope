@@ -51,7 +51,7 @@ export const newSonarSetupsByWeek = (repos: RepoAnalysis[]) => (
     }, [])
 );
 
-export const sonarCountByWeek = (value: QualityGateDetails['status']) => (repos: RepoAnalysis[]) => (
+const sonarCountByWeek = (value: QualityGateDetails['status']) => (repos: RepoAnalysis[]) => (
   repos
     .flatMap(r => r.codeQuality)
     .map(q => q?.qualityGateByWeek)
