@@ -8,8 +8,8 @@ type ReleasePipelineConfig = {
 
 type CollectionWorkItemConfig = {
   label?: string;
-  getWorkItems: string[];
-  groupUnder: string[];
+  getWorkItems?: string[];
+  groupUnder?: string[];
   skipChildren?: string[];
   environmentField?: string;
   ignoredWorkItemsForFlowAnalysis?: string[];
@@ -25,7 +25,7 @@ type CollectionWorkItemConfig = {
     groupByField?: string;
     groupLabel?: string;
     rootCause?: string | string[];
-    startDate: string | string[];
+    startDate?: string | string[];
     endDate?: string | string[];
     devCompletionDate?: string | string[];
     workCenters?: ({ label: string } & (
