@@ -1,6 +1,6 @@
 import { always, last } from 'rambda';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types';
-import { exists } from '../../utils';
+import { exists } from '../../../shared/utils';
 import type { ParsedProjectConfig } from '../parse-config';
 import type {
   Release, ReleaseCondition, EnvironmentStatus, ReleaseDefinition

@@ -33,10 +33,6 @@ export const isMaster = (branchName: string) => [
 
 export const normalizeBranchName = (branchName: string) => branchName.replace('refs/heads/', '');
 
-export const exists = <T>(x: T | undefined | null): x is T => (
-  x !== null && x !== undefined
-);
-
 export const doesFileExist = async (filePath: string) => {
   try {
     await fs.access(filePath);

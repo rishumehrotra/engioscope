@@ -5,7 +5,7 @@ import {
 import type {
   Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
-import { exists, isAfter, weeks } from '../utils';
+import { isAfter, weeks } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils';
@@ -21,6 +21,7 @@ import {
 import {
   isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
+import { exists } from '../../shared/utils';
 
 const lastMonth = isAfter('30 days');
 

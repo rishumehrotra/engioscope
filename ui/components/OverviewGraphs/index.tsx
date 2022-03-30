@@ -154,7 +154,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               : `${((totalAutomated * 100) / totalTestCases).toFixed(0)}%`,
             tooltip: `${num(projectAnalysis.testCases.automated.total)} automated test cases`
           }]}
-          {...(totalTestCases ? { popupContents: popup } : null)}
+          {...(totalTestCases ? { popupContents: popup, popupDirection: 'right' } : null)}
         />
       </ProjectStats>
 

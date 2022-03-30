@@ -4,7 +4,8 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
 import { glob } from 'glob';
-import { exists, normalizeBranchName } from '../utils';
+import { normalizeBranchName } from '../utils';
+import { exists } from '../../shared/utils';
 
 const globAsync = promisify(glob);
 

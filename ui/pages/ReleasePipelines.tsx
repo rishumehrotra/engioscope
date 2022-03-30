@@ -139,6 +139,7 @@ const ReleasePipelines: React.FC = () => {
           stagesToHighlight={releaseAnalysis.stagesToHighlight}
           policyForBranch={policyForBranch}
           ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+          environments={releaseAnalysis.environments}
         />
       </div>
       <InfiniteScrollList

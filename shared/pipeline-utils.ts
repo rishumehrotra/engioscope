@@ -1,6 +1,8 @@
+import { head } from 'rambda';
 import type {
   BranchPolicies, Pipeline, PipelineCount, PipelineStage
 } from './types';
+import { exists } from './utils';
 
 export type PipelineStageWithCounts = PipelineStage & PipelineCount;
 
@@ -143,5 +145,45 @@ export const isPipelineInGroup = (groupName: string, repos: string[]) => (
     pipeline.name.toLowerCase().startsWith(groupName.toLowerCase())
       ? true
       : Object.values(pipeline.repos).some(r => repos.includes(r.name))
+  )
+);
+
+export const usageByEnvironment = (environments?: string[]) => (pipeline: Pipeline) => {
+  if (!environments) return undefined;
+
+  return environments.reduce<Record<string, { successful: number; total: number}>>((acc, env) => {
+    const matchingStage = head(pipeline.stageCounts
+      .filter(stageHasName(env))
+      .sort((a, b) => b.total - a.total));
+
+    if (!matchingStage) return acc;
+
+    acc[env] = { successful: matchingStage.successful, total: matchingStage.total };
+    return acc;
+  }, {});
+};
+
+export const totalUsageByEnvironment = (environments?: string[]) => (pipelines: Pipeline[]) => (
+  Object.fromEntries(
+    Object.entries(
+      pipelines
+        .map(usageByEnvironment(environments))
+        .filter(exists)
+        .reduce((acc, item) => {
+          Object.entries(item)
+            .forEach(([env, { successful, total }]) => {
+              acc[env] = {
+                successful: (acc[env]?.successful || 0) + successful,
+                total: (acc[env]?.total || 0) + total
+              };
+            });
+          return acc;
+        }, {})
+    )
+      .sort(([a], [b]) => {
+        const envs = environments?.map(e => e.toLowerCase());
+        if (!envs) { return 0; }
+        return envs.indexOf(a.toLowerCase()) - envs.indexOf(b.toLowerCase());
+      })
   )
 );

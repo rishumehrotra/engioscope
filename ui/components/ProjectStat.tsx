@@ -12,10 +12,11 @@ export type ProjectStatProps = {
   topStats: Stat[];
   childStats?: Stat[];
   popupContents?: (x: { topStats: Stat[]; childStats?: Stat[] }) => ReactNode;
+  popupDirection?: 'left' | 'right';
 };
 
 const ProjectStat: React.FC<ProjectStatProps> = ({
-  topStats, childStats, popupContents
+  topStats, childStats, popupContents, popupDirection
 }) => {
   const [ref, isOpen, setIsOpen] = usePopover();
 
@@ -67,7 +68,9 @@ const ProjectStat: React.FC<ProjectStatProps> = ({
       {popupContents && isOpen && (
         <div
           style={{ top: '70px' }}
-          className="flex absolute right-0 z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-md border border-gray-300"
+          className={`flex absolute ${
+            (popupDirection || 'left') === 'left' ? 'left-0' : 'right-0'
+          } z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-md border border-gray-300`}
         >
           {popupContents({ topStats, childStats })}
         </div>

@@ -1,8 +1,11 @@
 import React, { Fragment } from 'react';
+import { last } from 'rambda';
+import { useQueryParam } from 'use-query-params';
 import type { Pipeline } from '../../shared/types';
 import { num } from '../helpers/utils';
 import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
+  totalUsageByEnvironment,
   masterDeploysCount, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
@@ -10,24 +13,71 @@ import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 import { count, incrementIf } from '../../shared/reducer-utils';
 
+const UsageByEnv: React.FC<{ perEnvUsage: Record<string, { successful: number; total: number }>}> = ({
+  perEnvUsage
+}) => {
+  const max = Math.max(...Object.values(perEnvUsage).map(({ total }) => total));
+  return (
+    <div className="grid grid-cols-4 w-96 gap-3">
+      {Object.entries(perEnvUsage).map(([env, { successful, total }]) => (
+        <Fragment key={env}>
+          <div className="text-gray-600 text-right">{env}</div>
+          <div className="relative w-full col-span-3">
+            <div
+              className="absolute top-0 left-0 h-full bg-gray-300 rounded-r-md"
+              style={{ width: `${(total * 100) / max}%` }}
+            />
+            <div
+              className="absolute top-0 left-0 h-full bg-lime-400 rounded-r-md shadow-md"
+              style={{ width: `${(successful * 100) / max}%` }}
+            />
+            <div className="absolute top-0 left-0 h-full w-full text-sm pt-0.5 pl-2">
+              {`${total} deployments, ${successful} successful`}
+            </div>
+          </div>
+        </Fragment>
+      ))}
+    </div>
+  );
+};
+
 type ReleasePipelineSummaryProps = {
   pipelines: Pipeline[];
   stagesToHighlight?: string[];
   policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
   ignoreStagesBefore?: string;
+  environments?: string[];
 };
 
 const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
-  pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore
+  pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore, environments
 }) => {
+  const [showDeployments] = useQueryParam<boolean>('show_deployments');
+
   const masterDeploys = masterDeploysCount(pipelines);
 
   const policyPassCount = count(
     incrementIf(pipelineMeetsBranchPolicyRequirements(policyForBranch))
   )(pipelines);
 
+  const perEnvUsage = totalUsageByEnvironment(environments)(pipelines);
+  const lastStage = last(Object.entries(perEnvUsage));
+
   return (
     <ProjectStats>
+      {environments && lastStage && showDeployments && (
+        <ProjectStat
+          topStats={[{
+            title: `${lastStage[0]} deployments`,
+            value: num(lastStage[1].total)
+          }]}
+          childStats={[{
+            title: 'Success',
+            value: `${Math.round((lastStage[1].successful / lastStage[1].total) * 100)}%`
+          }]}
+          popupContents={() => <UsageByEnv perEnvUsage={perEnvUsage} />}
+        />
+      )}
       {(stagesToHighlight || []).map(stageName => {
         const stageExistsCount = count(incrementIf(pipelineHasStageNamed(stageName)))(pipelines);
         const stageExistsAndUsedCount = count(incrementIf(pipelineUsesStageNamed(stageName)))(pipelines);

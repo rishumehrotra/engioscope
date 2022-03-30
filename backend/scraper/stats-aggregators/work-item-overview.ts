@@ -1,5 +1,5 @@
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { exists } from '../../utils';
+import { exists } from '../../../shared/utils';
 import type { ParsedCollection, ParsedConfig } from '../parse-config';
 import type { WorkItem, WorkItemType } from '../types-azure';
 

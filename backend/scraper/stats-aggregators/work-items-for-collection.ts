@@ -1,8 +1,9 @@
 import pluralize from 'pluralize';
 import { reduce } from 'rambda';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { exists } from '../../../shared/utils';
 import { noRCAValue } from '../../../shared/work-item-utils';
-import { exists, unique } from '../../utils';
+import { unique } from '../../utils';
 import workItemIconSvgs from '../../work-item-icon-svgs';
 import azure from '../network/azure';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
