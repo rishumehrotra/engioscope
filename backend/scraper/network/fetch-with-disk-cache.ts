@@ -36,6 +36,7 @@ const cachePath = (pathParts: string[]): FileLocation => (
     ? [cacheLocation, `${pathParts[0]}.txt`]
     : [join(cacheLocation, ...pathParts.slice(0, -1)), `${pathParts[pathParts.length - 1]}.txt`]
 );
+
 const fileNameForLogs = (fileName: string) => fileName.replace(`${process.cwd()}/`, '');
 
 const getFirstLine = async (pathToFile: string) => {

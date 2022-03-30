@@ -341,6 +341,7 @@ export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & ReleasePipeline
     label: string;
     groups: Record<string, string[]>;
   };
+  environments?: string[];
 };
 
 export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
@@ -352,6 +353,7 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   overview: Overview;
   testCases: TestCasesAnalysis;
   ignoreForWIP: string[];
+  environments?: string[];
 };
 
 export type SummaryMetrics = SummaryMetricsType;

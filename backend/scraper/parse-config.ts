@@ -40,6 +40,7 @@ type CollectionConfig = {
   name: string;
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
+  environments?: string[];
   projects: (string | ProjectConfig)[];
 };
 
@@ -47,6 +48,7 @@ type ProjectConfig = {
   name: string;
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
+  environments?: string[];
   groupRepos?: {
     label: string;
     groups: Record<string, string[]>;
@@ -60,6 +62,7 @@ type AzureConfig = {
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
   collections: CollectionConfig[];
+  environments?: string[];
   summaryPageGroups?: ({
     collection: string;
     project: string;
@@ -129,6 +132,7 @@ export type ParsedProjectConfig = Readonly<{
     label: string;
     groups: Record<string, string[]>;
   };
+  environments?: string[];
 }>;
 
 export type ParsedCollection = Readonly<{
@@ -211,7 +215,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
             ignoreForWIP: collection.workitems?.ignoreForWIP
               ?? config.azure.workitems?.ignoreForWIP
               ?? []
-          }
+          },
+          environments: collection.environments ?? config.azure.environments
         };
       }
 
@@ -229,6 +234,7 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
             ?? config.azure.workitems?.ignoreForWIP
             ?? []
         },
+        environments: project.environments ?? collection.environments ?? config.azure.environments,
         groupRepos: project.groupRepos
       };
     })

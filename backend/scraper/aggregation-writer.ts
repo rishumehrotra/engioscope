@@ -74,7 +74,8 @@ const writeReleaseAnalysisFile = async (
     ...projectAnalysis.releaseAnalysis,
     stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight,
     ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore,
-    groups: projectConfig.groupRepos
+    groups: projectConfig.groupRepos,
+    environments: projectConfig.environments
   };
   return writeFile(
     [collectionName, projectConfig.name],
@@ -109,7 +110,8 @@ const writeOverviewFile = async (
     ...projectSummary(collectionName, projectConfig, projectAnalysis),
     overview: projectAnalysis.workItemAnalysis?.overview,
     testCases: projectAnalysis.testCasesAnalysis,
-    ignoreForWIP: projectConfig.workitems.ignoreForWIP
+    ignoreForWIP: projectConfig.workitems.ignoreForWIP,
+    environments: projectConfig.environments
   };
   return writeFile(
     [collectionName, projectConfig.name],
