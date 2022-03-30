@@ -145,7 +145,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
     const { workItemType } = accessors;
 
     const items = getSidebarItemStats(
-      workItemsToDisplay, workItemType, pipe(length, num), isChecked
+      workItemsToDisplay, accessors, pipe(length, num), isChecked
     );
     const headlineStats = getSidebarHeadlineStats(
       workItemsToDisplay, workItemType, pipe(length, num), 'total'

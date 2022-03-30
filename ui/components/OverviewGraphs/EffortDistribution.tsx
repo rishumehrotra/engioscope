@@ -145,7 +145,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     const { workItemType } = accessors;
 
     const items = getSidebarItemStats(
-      workItemsToDisplay, workItemType, effortDistributionStringifiedForGroup
+      workItemsToDisplay, accessors, effortDistributionStringifiedForGroup
     );
 
     const headlineStats = getSidebarHeadlineStats(

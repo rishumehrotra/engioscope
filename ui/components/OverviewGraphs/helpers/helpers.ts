@@ -59,6 +59,14 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     totalWorkCenterTime: totalWorkCenterTime(workItemTimes),
     isWIPInTimeRange: isWIPIn,
     isWIP: isWIPIn(T),
+    environments: projectAnalysis.environments,
+    sortByEnvironment: ((environments?: string[]) => {
+      const envs = environments?.map(e => e.toLowerCase());
+      return (a: string, b: string) => {
+        if (!envs) { return 0; }
+        return envs.indexOf(a.toLowerCase()) - envs.indexOf(b.toLowerCase());
+      };
+    })(projectAnalysis.environments),
     isWorkItemClosed: (wi: UIWorkItem) => {
       const wiTimes = workItemTimes(wi);
       if (!wiTimes.end) return false;
@@ -111,25 +119,27 @@ export const getSidebarHeadlineStats = (
 
 export const getSidebarItemStats = (
   organizedWorkIItems: OrganizedWorkItems,
-  workItemType: WorkItemAccessors['workItemType'],
+  { workItemType, sortByEnvironment }: WorkItemAccessors,
   aggregator: (workItems: UIWorkItem[], witId: string, groupName: string) => string,
   isChecked?: (key: string) => boolean,
   color = lineColor
 ) => (
   Object.entries(organizedWorkIItems)
     .reduce<LegendSidebarProps['items']>((acc, [witId, groups]) => {
-      Object.entries(groups).forEach(([groupName, workItems]) => {
-        const wit = workItemType(witId);
-        const label = groupName === noGroup ? wit.name[1] : groupName;
-        acc.push({
-          label,
-          value: aggregator(workItems, witId, groupName),
-          iconUrl: wit.icon,
-          key: witId + groupName,
-          color: color({ witId, groupName }),
-          isChecked: isChecked?.(witId + groupName)
+      Object.entries(groups)
+        .sort(([a], [b]) => sortByEnvironment(a, b))
+        .forEach(([groupName, workItems]) => {
+          const wit = workItemType(witId);
+          const label = groupName === noGroup ? wit.name[1] : groupName;
+          acc.push({
+            label,
+            value: aggregator(workItems, witId, groupName),
+            iconUrl: wit.icon,
+            key: witId + groupName,
+            color: color({ witId, groupName }),
+            isChecked: isChecked?.(witId + groupName)
+          });
         });
-      });
       return acc;
     }, [])
 );

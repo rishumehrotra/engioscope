@@ -26,7 +26,8 @@ type ChangeLeadTimeGraphProps = {
 
 export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes
+    isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes,
+    sortByEnvironment
   } = accessors;
 
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -79,7 +80,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
     const aggregator = (workItems: UIWorkItem[]) => (
       workItems.length ? prettyMS(totalClt(workItems) / workItems.length) : '-'
     );
-    const items = getSidebarItemStats(workItemsToDisplay, workItemType, aggregator);
+    const items = getSidebarItemStats(workItemsToDisplay, accessors, aggregator);
     const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
 
     return {
@@ -125,7 +126,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
         key: witId,
         graphData: [{
           label: workItemType(witId).name[1],
-          data: group,
+          data: Object.fromEntries(Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))),
           yAxisPoint: clt,
           tooltip: wi => workItemTooltip(wi)
         }],
@@ -135,7 +136,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
         className: 'w-full'
       })
     ),
-    [clt, workItemTooltip, workItemType, workItemsToDisplay]
+    [clt, sortByEnvironment, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
   if (preFilteredWorkItems.length === 0) return null;

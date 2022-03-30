@@ -28,7 +28,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
 }) => {
   const {
     isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes,
-    totalWorkCenterTime, cycleTime, workCenterTime
+    totalWorkCenterTime, cycleTime, workCenterTime, sortByEnvironment
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -70,7 +70,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const items = getSidebarItemStats(
-      workItemsToDisplay, workItemType, pipe(efficiency, stringifyEfficiency)
+      workItemsToDisplay, accessors, pipe(efficiency, stringifyEfficiency)
     );
 
     const headlineStats = getSidebarHeadlineStats(
@@ -112,8 +112,8 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
       }
     };
   }, [
-    cycleTime, efficiency, openModal, stringifyEfficiency, workCenterTime,
-    workItemTimes, workItemTooltip, workItemType, workItemsToDisplay
+    accessors, cycleTime, efficiency, openModal, stringifyEfficiency,
+    workCenterTime, workItemTimes, workItemTooltip, workItemType, workItemsToDisplay
   ]);
 
   return (
@@ -129,37 +129,39 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
           </div>
           <ul className="pb-4">
             {Object.entries(workItemsToDisplay).flatMap(([witId, group]) => (
-              Object.entries(group).map(([groupName, workItemIds]) => {
-                const eff = efficiency(workItemIds);
+              Object.entries(group)
+                .sort(([a], [b]) => sortByEnvironment(a, b))
+                .map(([groupName, workItemIds]) => {
+                  const eff = efficiency(workItemIds);
 
-                return (
-                  <li
-                    key={witId + groupName}
-                    className="grid gap-4 my-4 items-center"
-                    style={{ gridTemplateColumns: '25% 3ch 1fr' }}
-                  >
-                    <div className="flex items-center justify-end">
-                      <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
-                      <span className="truncate">
-                        {groupName === noGroup ? workItemType(witId).name[1] : groupName}
+                  return (
+                    <li
+                      key={witId + groupName}
+                      className="grid gap-4 my-4 items-center"
+                      style={{ gridTemplateColumns: '25% 3ch 1fr' }}
+                    >
+                      <div className="flex items-center justify-end">
+                        <img src={workItemType(witId).icon} alt={workItemType(witId).name[0]} className="h-4 w-4 inline-block mr-1" />
+                        <span className="truncate">
+                          {groupName === noGroup ? workItemType(witId).name[1] : groupName}
+                        </span>
+                      </div>
+                      <span className="justify-self-end">
+                        {stringifyEfficiency(eff)}
                       </span>
-                    </div>
-                    <span className="justify-self-end">
-                      {stringifyEfficiency(eff)}
-                    </span>
-                    <div className="bg-gray-100 rounded-md overflow-hidden">
-                      <div
-                        className="rounded-md"
-                        style={{
-                          width: `${eff}%`,
-                          backgroundColor: lineColor({ witId, groupName }),
-                          height: '30px'
-                        }}
-                      />
-                    </div>
-                  </li>
-                );
-              })
+                      <div className="bg-gray-100 rounded-md overflow-hidden">
+                        <div
+                          className="rounded-md"
+                          style={{
+                            width: `${eff}%`,
+                            backgroundColor: lineColor({ witId, groupName }),
+                            height: '30px'
+                          }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })
             ))}
           </ul>
           <ul className="text-sm text-gray-600 pl-4 mt-4 bg-gray-50 p-2 border-gray-200 border-2 rounded-md">

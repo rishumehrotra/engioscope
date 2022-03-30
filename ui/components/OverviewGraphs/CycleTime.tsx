@@ -26,7 +26,8 @@ type CycleTimeGraphProps = {
 
 export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, cycleTime: cTime
+    isWorkItemClosed, organizeByWorkItemType, workItemType, cycleTime: cTime,
+    sortByEnvironment
   } = accessors;
 
   const cycleTime = useCallback(
@@ -71,7 +72,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     const aggregator = (workItems: UIWorkItem[]) => (
       workItems.length ? prettyMS(totalCycleTime(workItems) / workItems.length) : '-'
     );
-    const items = getSidebarItemStats(workItemsToDisplay, workItemType, aggregator);
+    const items = getSidebarItemStats(workItemsToDisplay, accessors, aggregator);
     const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
 
     return {
@@ -106,36 +107,37 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
 
   const graphBlocks = useMemo(
     () => (
-      Object.entries(workItemsToDisplay).reduce<{
-        width: number;
-        witId: string;
-        scatterLineGraphProps: ScatterLineGraphProps<UIWorkItem>;
-      }[][]>(
-        (acc, [witId, group], index) => {
-          const rowIndex = Math.floor(index / 2);
-          if (!acc[rowIndex]) acc[rowIndex] = [];
-          acc[rowIndex].push({
-            width: Object.values(group).length,
-            witId,
-            scatterLineGraphProps: {
-              graphData: [{
-                label: workItemType(witId).name[1],
-                data: group,
-                yAxisPoint: cycleTime,
-                tooltip: wi => workItemTooltip(wi)
-              }],
-              pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
-              height: 420,
-              linkForItem: prop('url'),
-              className: 'w-full'
-            }
-          });
+      Object.entries(workItemsToDisplay)
+        .reduce<{
+          width: number;
+          witId: string;
+          scatterLineGraphProps: ScatterLineGraphProps<UIWorkItem>;
+        }[][]>(
+          (acc, [witId, group], index) => {
+            const rowIndex = Math.floor(index / 2);
+            if (!acc[rowIndex]) acc[rowIndex] = [];
+            acc[rowIndex].push({
+              width: Object.values(group).length,
+              witId,
+              scatterLineGraphProps: {
+                graphData: [{
+                  label: workItemType(witId).name[1],
+                  data: Object.fromEntries(Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))),
+                  yAxisPoint: cycleTime,
+                  tooltip: wi => workItemTooltip(wi)
+                }],
+                pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
+                height: 420,
+                linkForItem: prop('url'),
+                className: 'w-full'
+              }
+            });
 
-          return acc;
-        }, []
-      )
+            return acc;
+          }, []
+        )
     ),
-    [cycleTime, workItemTooltip, workItemType, workItemsToDisplay]
+    [cycleTime, sortByEnvironment, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
   return (

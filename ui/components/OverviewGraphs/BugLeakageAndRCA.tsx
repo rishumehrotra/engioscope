@@ -344,7 +344,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const items = getSidebarItemStats(
-      organized, workItemType, pipe(length, num), isChecked
+      organized, accessors, pipe(length, num), isChecked
     );
 
     const headlineStats = getSidebarHeadlineStats(
@@ -373,7 +373,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
         });
       }
     };
-  }, [isChecked, openModal, organized, toggle, workItemTooltip, workItemType]);
+  }, [accessors, isChecked, openModal, organized, toggle, workItemTooltip, workItemType]);
 
   return (
     <GraphCard

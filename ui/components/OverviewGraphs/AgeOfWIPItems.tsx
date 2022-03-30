@@ -24,7 +24,8 @@ type AgeOfWIPItemsGraphProps = {
 
 export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
-    organizeByWorkItemType, workItemType, lastUpdated, workItemTimes, isWIP
+    organizeByWorkItemType, workItemType, lastUpdated, workItemTimes, isWIP,
+    sortByEnvironment
   } = accessors;
 
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -68,7 +69,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
       workItems.length ? prettyMS(totalAgeOfWorkItems(workItems) / workItems.length) : '-'
     );
 
-    const items = getSidebarItemStats(workItemsToDisplay, workItemType, aggregator);
+    const items = getSidebarItemStats(workItemsToDisplay, accessors, aggregator);
     const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
 
     return {
@@ -111,7 +112,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
             scatterLineGraphProps: {
               graphData: [{
                 label: workItemType(witId).name[1],
-                data: group,
+                data: Object.fromEntries(Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))),
                 yAxisPoint: ageOfWorkItem,
                 tooltip: wi => workItemTooltip(wi)
               }],
@@ -126,7 +127,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
         }, []
       )
     ),
-    [ageOfWorkItem, workItemTooltip, workItemType, workItemsToDisplay]
+    [ageOfWorkItem, sortByEnvironment, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
   return (
