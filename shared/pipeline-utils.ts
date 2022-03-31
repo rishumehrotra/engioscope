@@ -44,6 +44,10 @@ export const pipelineHasUnusedStageNamed = (stageName: string) => (
   }
 );
 
+export const pipelineHasStartingArtifact = (pipeline: Pipeline) => (
+  Object.entries(pipeline.repos).length > 0
+);
+
 const repoBranches = (pipeline: Pipeline) => (
   [...new Set(Object.values(pipeline.repos).flatMap(r => r.branches))]
 );

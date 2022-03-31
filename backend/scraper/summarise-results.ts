@@ -16,7 +16,8 @@ import {
 import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
   isPipelineInGroup, masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
-  pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
+  pipelineHasStartingArtifact,
+  pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed, totalUsageByEnvironment
 } from '../../shared/pipeline-utils';
 import {
   isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalTests, totalTestsByWeek
@@ -204,6 +205,8 @@ type Summary = {
       total: number;
     };
     conformsToBranchPolicies: number;
+    startsWithArtifact: number;
+    usageByEnvironment: Record<string, { total: number; successful: number }>;
   };
   collection: string;
   project: string;
@@ -389,9 +392,11 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             used: count(incrementIf(pipelineUsesStageNamed(stage)))
           })(matchingPipelines)),
           masterOnlyPipelines: masterDeploysCount(matchingPipelines),
+          startsWithArtifact: count(incrementIf(pipelineHasStartingArtifact))(matchingPipelines),
           conformsToBranchPolicies: count(incrementIf(pipelineMeetsBranchPolicyRequirements(
             (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
-          )))(matchingPipelines)
+          )))(matchingPipelines),
+          usageByEnvironment: totalUsageByEnvironment(projectConfig?.environments)(matchingPipelines)
         };
       };
 
