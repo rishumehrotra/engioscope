@@ -791,7 +791,9 @@ const HealthMetrics: React.FC<{
               </div>
               <div className="font-semibold text-xl">
                 {pipelinesMetric(
-                  `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
+                  pipelineStats.pipelines
+                    ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
+                    : '-'
                 )}
               </div>
             </div>
