@@ -70,7 +70,7 @@ const ProjectStat: React.FC<ProjectStatProps> = ({
           style={{ top: '70px' }}
           className={`flex absolute ${
             (popupDirection || 'left') === 'left' ? 'left-0' : 'right-0'
-          } z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-md border border-gray-300`}
+          } z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-sm border border-gray-200`}
         >
           {popupContents({ topStats, childStats })}
         </div>

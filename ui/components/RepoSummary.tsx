@@ -1,7 +1,7 @@
 import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
-  isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalTests, totalTestsByWeek
+  isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num, exaggerateTrendLine } from '../helpers/utils';
@@ -76,6 +76,16 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             </>
           ),
           tooltip: 'Total number of tests across all matching repos'
+        }]}
+      />
+      <ProjectStat
+        topStats={[{
+          title: 'Coverage',
+          value: (({ total, covered }: { total: number; covered: number }) => (
+            total === 0
+              ? '-'
+              : `${Math.round((covered * 100) / total)}%`
+          ))(totalCoverage(reposWithExclusions))
         }]}
       />
       <ProjectStat

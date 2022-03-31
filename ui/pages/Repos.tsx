@@ -106,10 +106,8 @@ const Repos: React.FC = () => {
           </div>
         )
         : null}
-      <div className="flex justify-between items-center my-3 w-full -mt-5">
-        <AppliedFilters type="repos" count={repos.length} />
-        <RepoSummary repos={repos} />
-      </div>
+      <AppliedFilters type="repos" count={repos.length} />
+      <RepoSummary repos={repos} />
       <InfiniteScrollList
         items={repos}
         itemKey={repo => repo.id}

@@ -530,7 +530,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                   ))}
                 </td>
                 <td className="px-6 py-3">
-                  <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
+                  {reposMetric(repoStats.coverage)}
                 </td>
                 {
                   pipelineStats.stages.map(stage => (
@@ -706,7 +706,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
   </div>
 );
 
-const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
+const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
   <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
     <table className="w-full">
       <thead className="bg-gray-800 text-white">
@@ -731,24 +731,17 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
           >
             MTTR build failure
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of release pipelines that only release from the master branch"
-          >
-            Master only pipelines
-          </th>
         </tr>
       </thead>
       <tbody>
         {groups
           .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
           .map(group => {
-            const { repoStats, pipelineStats } = group;
+            const { repoStats } = group;
             const [filterKey] = allExceptExpectedKeys(group);
             const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
             const baseProjectLink = `/${group.collection}/${group.project}`;
             const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-            const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
             return (
               <tr className="hover:bg-gray-50" key={group.groupName}>
@@ -770,16 +763,71 @@ const CICDMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups })
                 <td className="px-6 py-3 font-medium text-lg text-black">
                   <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
                 </td>
-                <td className="px-6 py-3 font-medium text-lg text-black">
-                  {pipelinesMetric(
-                    pipelineStats.masterOnlyPipelines.total === 0
-                      ? '-'
-                      : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
-                  )}
-                </td>
               </tr>
             );
           })}
+      </tbody>
+    </table>
+  </div>
+);
+
+const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
+  <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
+    <table className="w-full">
+      <thead className="bg-gray-800 text-white">
+        <tr>
+          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+          <th />
+          <th
+            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+            data-tip="Number of release pipelines that only release from the master branch"
+          >
+            Master only pipelines
+          </th>
+          <th
+            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+            data-tip="Number of release pipelines that start with an artifact"
+          >
+            Starts with artifact
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {groups.map(group => {
+          const { pipelineStats } = group;
+          const [filterKey] = allExceptExpectedKeys(group);
+          const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
+          const baseProjectLink = `/${group.collection}/${group.project}`;
+          const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
+
+          return (
+            <tr className="hover:bg-gray-50" key={group.groupName}>
+              <td className="px-6 py-3 font-semibold">
+                {group.groupName}
+                <p className="justify-self-end text-xs text-gray-500">
+                  {`Analysed ${group.repoStats.repos} ${group.repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                  {group.repoStats.excluded
+                    ? `, excluded ${group.repoStats.excluded} ${group.repoStats.excluded === 1 ? 'repo' : 'repos'}`
+                    : ''}
+                </p>
+              </td>
+              <td className="px-6 py-3 font-medium text-lg text-black">
+                {pipelinesMetric(
+                  pipelineStats.masterOnlyPipelines.total === 0
+                    ? '-'
+                    : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
+                )}
+              </td>
+              <td className="px-6 py-3 font-medium text-lg text-black">
+                {pipelinesMetric(
+                  pipelineStats.pipelines
+                    ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
+                    : '-'
+                )}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   </div>
@@ -819,8 +867,13 @@ const SummaryByMetric: React.FC<{
     </details>
 
     <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">CI / CD</summary>
-      <CICDMetrics groups={groups} />
+      <summary className="font-semibold text-xl my-2 cursor-pointer">Build pipelines</summary>
+      <BuildPipelines groups={groups} />
+    </details>
+
+    <details>
+      <summary className="font-semibold text-xl my-2 cursor-pointer">Release pipelines</summary>
+      <ReleasePipelines groups={groups} />
     </details>
   </div>
 );

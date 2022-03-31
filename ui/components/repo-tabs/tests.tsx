@@ -12,7 +12,7 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
   count: tests?.total || 0,
   content: () => (
     <TabContents gridCols={1}>
-      {tests ? (
+      {tests?.pipelines.length ? (
         <>
           <table className="table-auto text-center divide-y divide-gray-200 w-full">
             <thead>
@@ -54,7 +54,9 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
                   <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.successful)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.failed)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{pipeline.executionTime}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.coverage}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {pipeline.coverage ? `${Math.round((pipeline.coverage.covered * 100) / pipeline.coverage.total)}%` : '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>

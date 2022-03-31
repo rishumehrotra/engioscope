@@ -12,47 +12,13 @@ import {
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 import { count, incrementIf } from '../../shared/reducer-utils';
+import UsageByEnv from './UsageByEnv';
 
-const envRowTooltip = (env: string, successful: number, total: number) => `
+export const envRowTooltip = (env: string, successful: number, total: number) => `
   <b>${env}</b><br />
   Successful deployments: <b>${num(successful)}</b><br />
   Total deployments: <b>${num(total)}</b>
 `;
-
-const UsageByEnv: React.FC<{ perEnvUsage: Record<string, { successful: number; total: number }>}> = ({
-  perEnvUsage
-}) => {
-  const max = Math.max(...Object.values(perEnvUsage).map(({ total }) => total));
-  return (
-    <div className="grid grid-cols-4 w-96 gap-3">
-      {Object.entries(perEnvUsage).map(([env, { successful, total }]) => (
-        <Fragment key={env}>
-          <div className="text-gray-600 text-right">{env}</div>
-          <div
-            className="relative w-full col-span-3"
-            data-tip={envRowTooltip(env, successful, total)}
-            data-html
-          >
-            <div
-              className="absolute top-0 left-0 h-full bg-gray-300 rounded-r-md"
-              style={{ width: `${(total * 100) / max}%` }}
-            />
-            <div
-              className="absolute top-0 left-0 h-full bg-lime-400 rounded-r-md shadow-md"
-              style={{ width: `${(successful * 100) / max}%` }}
-            />
-            <div className="absolute top-0 left-0 h-full w-full text-sm pt-0.5 pl-2">
-              <b>{`${num(Math.round(total / 30))}`}</b>
-              {' deploys/day, '}
-              <b>{`${Math.round((successful * 100) / total)}%`}</b>
-              {' success rate'}
-            </div>
-          </div>
-        </Fragment>
-      ))}
-    </div>
-  );
-};
 
 type ReleasePipelineSummaryProps = {
   pipelines: Pipeline[];
@@ -76,12 +42,6 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
 
   return (
     <ProjectStats>
-      <ProjectStat
-        topStats={[{
-          title: 'Starts with artifact',
-          value: `${Math.round((count(incrementIf(pipelineHasStartingArtifact))(pipelines) * 100) / pipelines.length)}%`
-        }]}
-      />
       {environments && lastStage && (
         <ProjectStat
           topStats={[{
@@ -97,9 +57,15 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
             title: 'Success',
             value: `${Math.round((lastStage[1].successful / lastStage[1].total) * 100)}%`
           }]}
-          popupContents={() => <UsageByEnv perEnvUsage={perEnvUsage} />}
+          popupContents={() => <div className="w-96"><UsageByEnv perEnvUsage={perEnvUsage} /></div>}
         />
       )}
+      <ProjectStat
+        topStats={[{
+          title: 'Starts with artifact',
+          value: `${Math.round((count(incrementIf(pipelineHasStartingArtifact))(pipelines) * 100) / pipelines.length)}%`
+        }]}
+      />
       {(stagesToHighlight || []).map(stageName => {
         const stageExistsCount = count(incrementIf(pipelineHasStageNamed(stageName)))(pipelines);
         const stageExistsAndUsedCount = count(incrementIf(pipelineUsesStageNamed(stageName)))(pipelines);
@@ -153,4 +119,3 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
 };
 
 export default ReleasePipelineSummary;
-

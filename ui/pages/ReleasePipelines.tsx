@@ -132,16 +132,14 @@ const ReleasePipelines: React.FC = () => {
           </div>
         )
         : null}
-      <div className="flex justify-between items-center my-3 w-full -mt-5">
-        <AppliedFilters type="release-pipelines" count={pipelines.length} />
-        <ReleasePipelineSummary
-          pipelines={pipelines}
-          stagesToHighlight={releaseAnalysis.stagesToHighlight}
-          policyForBranch={policyForBranch}
-          ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
-          environments={releaseAnalysis.environments}
-        />
-      </div>
+      <AppliedFilters type="release-pipelines" count={pipelines.length} />
+      <ReleasePipelineSummary
+        pipelines={pipelines}
+        stagesToHighlight={releaseAnalysis.stagesToHighlight}
+        policyForBranch={policyForBranch}
+        ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+        environments={releaseAnalysis.environments}
+      />
       <InfiniteScrollList
         items={pipelines}
         itemKey={pipeline => pipeline.id}

@@ -4,6 +4,7 @@ import React, {
 import type { SummaryMetrics } from '../../../shared/types';
 import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
 import Sparkline from '../graphs/Sparkline';
+import UsageByEnv from '../UsageByEnv';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
   flowEfficiency, decreaseIsBetter, increaseIsBetter,
@@ -427,7 +428,7 @@ const HealthMetrics: React.FC<{
               >
                 Coverage
                 <div className="text-xs pt-2 uppercase font-light">
-                  Coming soon
+                  {reposMetric(repoStats.coverage)}
                 </div>
               </div>
             </div>
@@ -588,62 +589,44 @@ const HealthMetrics: React.FC<{
           </div>
         </Card>
 
-        <Card title="CI / CD" type="small">
-          <div className="grid grid-cols-3">
-            <div className="col-span-2 grid grid-flow-row gap-4 bg-slate-100 rounded-lg p-3 pl-3 -ml-3 -mt-3 -mb-3 mr-4">
-              <div>
-                <div
-                  className="text-xs font-semibold"
-                  data-tip="Number of CI builds run in the last 30 days"
-                >
-                  Builds
-                  <div className="font-semibold text-xl mb-2">
-                    {reposMetric(num(repoStats.builds.total))}
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-3">
-                <div>
-                  <div
-                    className="text-xs font-semibold"
-                    data-tip="Percentage of successful builds"
-                  >
-                    Success
-                  </div>
-                  <div className="font-semibold text-md">
-                    {`${repoStats.builds.total
-                      ? `${Math.round((repoStats.builds.successful * 100) / repoStats.builds.total)}%`
-                      : '-'}`}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div
-                    className="text-xs font-semibold"
-                    data-tip="Average time taken to fix a build failure"
-                  >
-                    MTTR build failure
-                  </div>
-                  <div className="text-xs pt-2 uppercase font-light">
-                    Coming soon
-                  </div>
+        <Card title="Build pipelines" type="small">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of CI builds run in the last 30 days"
+              >
+                Builds
+                <div className="font-semibold text-xl mb-2">
+                  {reposMetric(num(repoStats.builds.total))}
                 </div>
               </div>
             </div>
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Number of release pipelines that only release from the master branch"
+                data-tip="Percentage of successful builds"
               >
-                Master only pipelines
+                Success
               </div>
-              <div className="font-semibold text-xl">
-                {pipelinesMetric(
-                  pipelineStats.masterOnlyPipelines.total === 0
-                    ? '-'
-                    : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
-                )}
+              <div className="font-semibold text-md">
+                {`${repoStats.builds.total
+                  ? `${Math.round((repoStats.builds.successful * 100) / repoStats.builds.total)}%`
+                  : '-'}`}
               </div>
             </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Average time taken to fix a build failure"
+              >
+                MTTR build failure
+              </div>
+              <div className="text-xs pt-2 uppercase font-light">
+                Coming soon
+              </div>
+            </div>
+            <div />
           </div>
         </Card>
 
@@ -778,6 +761,42 @@ const HealthMetrics: React.FC<{
                 Bugs due to toggles
               </div>
               <div className="font-semibold text-xl">xx</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Release pipelines" type="small">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of release pipelines that only release from the master branch"
+              >
+                Master only pipelines
+              </div>
+              <div className="font-semibold text-xl">
+                {pipelinesMetric(
+                  pipelineStats.masterOnlyPipelines.total === 0
+                    ? '-'
+                    : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
+                )}
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
+                data-tip="Number of release pipelines that have a starting artifact"
+              >
+                Starts with artifact
+              </div>
+              <div className="font-semibold text-xl">
+                {pipelinesMetric(
+                  `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
+                )}
+              </div>
+            </div>
+            <div className="col-span-2 w-full">
+              <UsageByEnv perEnvUsage={pipelineStats.usageByEnvironment} />
             </div>
           </div>
         </Card>

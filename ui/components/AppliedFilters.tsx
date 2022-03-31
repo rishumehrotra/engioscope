@@ -35,7 +35,7 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
   if (!isFilterApplied) return <div />;
 
   return (
-    <div className="w-auto flex flex-wrap items-center text-md text-gray-800">
+    <div className="w-auto flex flex-wrap items-center text-gray-800 mb-2">
       {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
       {
         search ? (

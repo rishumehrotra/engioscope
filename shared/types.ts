@@ -137,7 +137,7 @@ export type UITests = null | {
     successful: number;
     failed: number;
     executionTime: string;
-    coverage: string;
+    coverage: { covered: number; total: number } | null;
     testsByWeek: number[];
   }[];
 };

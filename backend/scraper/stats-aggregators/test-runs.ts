@@ -24,12 +24,12 @@ const getBranchStats = (coverageData: CodeCoverageData[]) => coverageData[0]
   .coverageStats.find(s => s.label === 'Branch');
 
 const coverageFrom = (coverageData?: CodeCoverageData[]) => {
-  if (!coverageData?.length) return 0;
+  if (!coverageData?.length) return null;
 
   const branchStats = getBranchStats(coverageData);
-  if (!branchStats) return 0;
-  if (branchStats.total === 0) return 0;
-  return Math.round((branchStats.covered * 100) / branchStats.total);
+  if (!branchStats) return null;
+  if (branchStats.total === 0) return null;
+  return { covered: branchStats.covered, total: branchStats.total };
 };
 
 const aggregateRuns = (runs: TestRun[]): TestStats => {
@@ -203,7 +203,7 @@ export default (
             failed: stat.failure,
             executionTime: prettyMs(stat.executionTime),
             testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
-            coverage: `${stat.coverage}%`
+            coverage: stat.coverage
           }))
       )
     };

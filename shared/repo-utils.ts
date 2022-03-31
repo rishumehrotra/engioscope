@@ -70,6 +70,27 @@ const sonarCountByWeek = (value: QualityGateDetails['status']) => (repos: RepoAn
     .map(({ count, total }) => (total === 0 ? 0 : Math.round((count * 100) / total)))
 );
 
+const coverage = (repo: RepoAnalysis) => (
+  repo.tests?.pipelines.reduce((acc, p) => {
+    if (!p.coverage?.covered) return acc;
+
+    acc.covered += p.coverage.covered;
+    acc.total += p.coverage.total;
+
+    return acc;
+  }, { total: 0, covered: 0 })
+);
+
+export const totalCoverage = (repos: RepoAnalysis[]) => (
+  repos.reduce((acc, repo) => {
+    const cov = coverage(repo);
+    if (!cov) return acc;
+    acc.covered += cov.covered;
+    acc.total += cov.total;
+    return acc;
+  }, { total: 0, covered: 0 })
+);
+
 export const sonarCountsByWeek = applySpec({
   pass: sonarCountByWeek('pass'),
   fail: sonarCountByWeek('fail'),
