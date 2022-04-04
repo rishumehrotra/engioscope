@@ -231,11 +231,16 @@ const analyseWorkItems = (
     results.workItemTypes[workItem.typeId].name[0] === type
   );
   const leakage = isNewInTimeRange(workItemType, workItemTimes);
-  const flowEfficiency = (wis: UIWorkItem[]) => {
-    const tct = totalCycleTime(workItemTimes)(wis);
-    if (tct === 0) { return { total: 0, wcTime: 0 }; }
-    return { total: tct, wcTime: totalWorkCenterTime(workItemTimes)(wis) };
-  };
+  const flowEfficiency = (() => {
+    const tct = totalCycleTime(workItemTimes);
+    const wct = totalWorkCenterTime(workItemTimes);
+
+    return (wis: UIWorkItem[]) => {
+      const total = tct(wis);
+      if (total === 0) { return { total: 0, wcTime: 0 }; }
+      return { total, wcTime: wct(wis) };
+    };
+  })();
 
   return pipe(
     filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
