@@ -13,7 +13,7 @@ const cellVerticalSpacing = 15;
 const getRowHeightUsing = (nodes: Record<number, number[]>) => {
   const getRowHeight = (rank: number): number => (
     nodes[rank]?.length
-      ? Math.max(...nodes[rank].map(getRowHeight), nodes[rank].length)
+      ? Math.max(...nodes[rank].map(getRowHeight), nodes[rank].length) + 1
       : 1
   );
 
