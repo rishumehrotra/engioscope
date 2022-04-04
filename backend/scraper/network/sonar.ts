@@ -110,7 +110,7 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
     })
       .then(responses => responses.map(response => response.data.measures.map(m => m.history).flat()))
       .then(history => history.flat())
-      .then(history => history.map(item => ({ ...item, date: new Date(item.date) })))
+      .then(history => history.map(item => ({ value: item.value as SonarQualityGate, date: new Date(item.date) })))
   );
 };
 
@@ -204,7 +204,7 @@ export default (config: ParsedConfig) => {
       ]).then(([measures, qualityGateName, history]) => ({
         ...measures,
         qualityGateName,
-        qualityGateHistory: history as { date: Date; value: SonarQualityGate }[]
+        qualityGateHistory: history
       }))
     )));
   };
