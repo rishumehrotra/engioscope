@@ -235,7 +235,11 @@ const QualityMetrics: React.FC<{
 }> = ({ groups, workItemTypes }) => {
   const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
   if (!bugsDefinitionId) return null;
-  const allEnvironments = [...new Set(groups.map(group => Object.keys(group.summary[bugsDefinitionId] || {})).flat())];
+  const allEnvironments = [...new Set(groups.map(group => Object.keys(group.summary[bugsDefinitionId] || {})).flat())]
+    .sort((a, b) => {
+      if (!groups[0].environments) return 0;
+      return groups[0].environments.indexOf(a) - groups[0].environments.indexOf(b);
+    });
 
   let encounteredEquivalentEnvironment = false;
 

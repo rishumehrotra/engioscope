@@ -212,6 +212,7 @@ type Summary = {
   collection: string;
   project: string;
   portfolioProject: string;
+  environments?: string[];
 };
 
 const analyseWorkItems = (
@@ -410,7 +411,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         summary: analyseWorkItems(mergedResults, projectConfig),
         repoStats: repoStats(),
         pipelineStats: pipelineStats(),
-        workItemTypes: mergedResults.workItemTypes
+        workItemTypes: mergedResults.workItemTypes,
+        environments: projectConfig?.environments
       };
     })
     .filter(exists)

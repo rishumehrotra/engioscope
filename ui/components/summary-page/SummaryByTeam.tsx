@@ -206,6 +206,7 @@ const QualityMetrics: React.FC<{
   const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
   const renderBugMetric = renderGroupItem(portfolioProjectLink);
+  const envs = group.environments?.map(e => e.toLowerCase());
 
   if (!bugs) return null;
 
@@ -261,107 +262,112 @@ const QualityMetrics: React.FC<{
           </tr>
         </thead>
         <tbody>
-          {Object.entries(bugs).map(([environment, envBasedBugInfo]) => {
-            const bugInfo = processSummary(envBasedBugInfo);
+          {Object.entries(bugs)
+            .sort(([a], [b]) => {
+              if (!envs) return 0;
+              return envs.indexOf(a.toLowerCase()) - envs.indexOf(b.toLowerCase());
+            })
+            .map(([environment, envBasedBugInfo]) => {
+              const bugInfo = processSummary(envBasedBugInfo);
 
-            return (
-              <tr key={environment}>
-                <td className="font-semibold text-sm flex items-center py-3">
-                  { bugsDefinitionId ? (
-                    <img
-                      src={workItemTypes[bugsDefinitionId].icon}
-                      alt="Features"
-                      className="w-4 h-4 mr-2"
-                    />
-                  )
-                    : null}
-                  {environment}
-                </td>
-                <td className="font-semibold text-xl">
-                  {renderBugMetric(
-                    `${bugInfo.leakage}`,
-                    <Sparkline
-                      data={bugInfo.leakageByWeek}
-                      lineColor={decreaseIsBetter(bugInfo.leakageByWeek)}
-                    />,
-                    '#bug-leakage-with-root-cause'
-                  )}
-                </td>
-                <td className="font-semibold text-xl">
-                  {renderBugMetric(
-                    `${bugInfo.velocity}`,
-                    <Sparkline
-                      data={bugInfo.velocityByWeek}
-                      lineColor={increaseIsBetter(bugInfo.velocityByWeek)}
-                    />,
-                    '#velocity'
-                  )}
-                </td>
-                <td className="font-semibold text-xl">
-                  {renderBugMetric(
-                    bugInfo.cycleTime
-                      ? prettyMS(bugInfo.cycleTime)
-                      : '-',
-                    <Sparkline
-                      data={bugInfo.cycleTimeByWeek}
-                      lineColor={decreaseIsBetter(bugInfo.cycleTimeByWeek)}
-                    />,
-                    '#cycle-time'
-                  )}
-                </td>
-                <td className="font-semibold text-xl">
-                  {renderBugMetric(
-                    bugInfo.changeLeadTime
-                      ? prettyMS(bugInfo.changeLeadTime)
-                      : '-',
-                    <Sparkline
-                      data={bugInfo.changeLeadTimeByWeek}
-                      lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
-                    />,
-                    '#change-lead-time'
-                  )}
-                </td>
-                <td>
-                  {renderBugMetric(
-                    bugInfo.flowEfficiency
-                      ? `${Math.round(flowEfficiency(bugInfo.flowEfficiency))}%`
-                      : '-',
-                    <Sparkline
-                      data={bugInfo.flowEfficiencyByWeek.map(flowEfficiency)}
-                      lineColor={increaseIsBetter(bugInfo.flowEfficiencyByWeek.map(flowEfficiency))}
-                    />,
-                    '#flow-efficiency'
-                  )}
-                </td>
-                <td className="font-semibold text-xl">
-                  {renderBugMetric(
-                    <>
-                      {bugInfo.wipIncrease}
-                      <span className="text-lg text-gray-500 inline-block ml-2">
-                        <span className="font-normal text-sm">of</span>
-                        {' '}
-                        {bugInfo.wipCount}
-                      </span>
-                    </>,
-                    <Sparkline
-                      data={bugInfo.wipIncreaseByWeek}
-                      lineColor={decreaseIsBetter(bugInfo.wipIncreaseByWeek)}
-                    />,
-                    '#work-in-progress-trend'
-                  )}
-                </td>
-                <td className="font-semibold text-xl">
-                  {renderBugMetric(
-                    bugInfo.wipAge
-                      ? prettyMS(bugInfo.wipAge)
-                      : '-',
-                    null,
-                    '#age-of-work-in-progress-items'
-                  )}
-                </td>
-              </tr>
-            );
-          })}
+              return (
+                <tr key={environment}>
+                  <td className="font-semibold text-sm flex items-center py-3">
+                    { bugsDefinitionId ? (
+                      <img
+                        src={workItemTypes[bugsDefinitionId].icon}
+                        alt="Features"
+                        className="w-4 h-4 mr-2"
+                      />
+                    )
+                      : null}
+                    {environment}
+                  </td>
+                  <td className="font-semibold text-xl">
+                    {renderBugMetric(
+                      `${bugInfo.leakage}`,
+                      <Sparkline
+                        data={bugInfo.leakageByWeek}
+                        lineColor={decreaseIsBetter(bugInfo.leakageByWeek)}
+                      />,
+                      '#bug-leakage-with-root-cause'
+                    )}
+                  </td>
+                  <td className="font-semibold text-xl">
+                    {renderBugMetric(
+                      `${bugInfo.velocity}`,
+                      <Sparkline
+                        data={bugInfo.velocityByWeek}
+                        lineColor={increaseIsBetter(bugInfo.velocityByWeek)}
+                      />,
+                      '#velocity'
+                    )}
+                  </td>
+                  <td className="font-semibold text-xl">
+                    {renderBugMetric(
+                      bugInfo.cycleTime
+                        ? prettyMS(bugInfo.cycleTime)
+                        : '-',
+                      <Sparkline
+                        data={bugInfo.cycleTimeByWeek}
+                        lineColor={decreaseIsBetter(bugInfo.cycleTimeByWeek)}
+                      />,
+                      '#cycle-time'
+                    )}
+                  </td>
+                  <td className="font-semibold text-xl">
+                    {renderBugMetric(
+                      bugInfo.changeLeadTime
+                        ? prettyMS(bugInfo.changeLeadTime)
+                        : '-',
+                      <Sparkline
+                        data={bugInfo.changeLeadTimeByWeek}
+                        lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
+                      />,
+                      '#change-lead-time'
+                    )}
+                  </td>
+                  <td>
+                    {renderBugMetric(
+                      bugInfo.flowEfficiency
+                        ? `${Math.round(flowEfficiency(bugInfo.flowEfficiency))}%`
+                        : '-',
+                      <Sparkline
+                        data={bugInfo.flowEfficiencyByWeek.map(flowEfficiency)}
+                        lineColor={increaseIsBetter(bugInfo.flowEfficiencyByWeek.map(flowEfficiency))}
+                      />,
+                      '#flow-efficiency'
+                    )}
+                  </td>
+                  <td className="font-semibold text-xl">
+                    {renderBugMetric(
+                      <>
+                        {bugInfo.wipIncrease}
+                        <span className="text-lg text-gray-500 inline-block ml-2">
+                          <span className="font-normal text-sm">of</span>
+                          {' '}
+                          {bugInfo.wipCount}
+                        </span>
+                      </>,
+                      <Sparkline
+                        data={bugInfo.wipIncreaseByWeek}
+                        lineColor={decreaseIsBetter(bugInfo.wipIncreaseByWeek)}
+                      />,
+                      '#work-in-progress-trend'
+                    )}
+                  </td>
+                  <td className="font-semibold text-xl">
+                    {renderBugMetric(
+                      bugInfo.wipAge
+                        ? prettyMS(bugInfo.wipAge)
+                        : '-',
+                      null,
+                      '#age-of-work-in-progress-items'
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
     </Card>
