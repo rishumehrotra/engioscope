@@ -804,7 +804,10 @@ const HealthMetrics: React.FC<{
               </div>
             </div>
             <div className="col-span-2 w-full">
-              <UsageByEnv perEnvUsage={pipelineStats.usageByEnvironment} />
+              <UsageByEnv
+                perEnvUsage={pipelineStats.usageByEnvironment}
+                pipelineCount={pipelineStats.pipelines}
+              />
             </div>
           </div>
         </Card>

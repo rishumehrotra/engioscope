@@ -14,10 +14,11 @@ import ProjectStats from './ProjectStats';
 import { count, incrementIf } from '../../shared/reducer-utils';
 import UsageByEnv from './UsageByEnv';
 
-export const envRowTooltip = (env: string, successful: number, total: number) => `
+export const envRowTooltip = (env: string, successful: number, total: number, pipelineCount: number) => `
   <b>${env}</b><br />
   Successful deployments: <b>${num(successful)}</b><br />
-  Total deployments: <b>${num(total)}</b>
+  Total deployments: <b>${num(total)}</b><br />
+  Total pipelines: <b>${num(pipelineCount)}</b>
 `;
 
 type ReleasePipelineSummaryProps = {
@@ -57,7 +58,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
             title: 'Success',
             value: `${Math.round((lastStage[1].successful / lastStage[1].total) * 100)}%`
           }]}
-          popupContents={() => <div className="w-96"><UsageByEnv perEnvUsage={perEnvUsage} /></div>}
+          popupContents={() => <div className="w-96"><UsageByEnv perEnvUsage={perEnvUsage} pipelineCount={pipelines.length} /></div>}
         />
       )}
       <ProjectStat

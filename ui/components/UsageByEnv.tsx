@@ -1,10 +1,20 @@
 import React, { Fragment } from 'react';
-import { num } from '../helpers/utils';
 import { envRowTooltip } from './ReleasePipelineSummary';
 
-const UsageByEnv: React.FC<{ perEnvUsage: Record<string, { successful: number; total: number }> }> = ({
-  perEnvUsage
-}) => {
+type UsageByEnvProps = {
+  perEnvUsage: Record<string, {
+    successful: number;
+    total: number;
+  }>;
+  pipelineCount: number;
+};
+
+const doesDeploysCountSeemInconsistent = (perEnvUsage: [string, { successful: number; total: number }][], index: number) => {
+  if (index === 0) return false;
+  return perEnvUsage[index - 1][1].successful < perEnvUsage[index][1].total;
+};
+
+const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount }) => {
   const max = Math.max(...Object.values(perEnvUsage).map(({ total }) => total));
   const allEnvs = Object.entries(perEnvUsage);
   return (
@@ -13,23 +23,27 @@ const UsageByEnv: React.FC<{ perEnvUsage: Record<string, { successful: number; t
         <Fragment key={env}>
           <div
             className="font-semibold text-sm flex items-center justify-end"
-            {...((index !== 0 && allEnvs[index - 1][1].total < total) ? ({
+            {...(doesDeploysCountSeemInconsistent(allEnvs, index) ? ({
               'data-tip': `
                   <b>${env} </b>
-                  has more deployments than
+                  has more deployments
+                  (<b>${total}</b>)
+                  than successful
                   <b> ${allEnvs[index - 1][0]}</b>
+                  deployments
+                  (<b>${allEnvs[index - 1][1].successful}</b>)
               `,
               'data-html': 'true'
             }) : {})}
           >
-            {index !== 0 && allEnvs[index - 1][1].total < total && (
+            {doesDeploysCountSeemInconsistent(allEnvs, index) && (
               <span className="bg-orange-600 w-2 h-2 rounded-full inline-block mr-1" />
             )}
             {env}
           </div>
           <div
             className="relative w-full col-span-3"
-            data-tip={envRowTooltip(env, successful, total)}
+            data-tip={envRowTooltip(env, successful, total, pipelineCount)}
             data-html
           >
             <div
@@ -41,7 +55,7 @@ const UsageByEnv: React.FC<{ perEnvUsage: Record<string, { successful: number; t
               style={{ width: `${(successful * 100) / max}%` }}
             />
             <div className="text-sm pl-2 py-0.5 z-20 relative">
-              <b>{`${num(Math.round(total / 30))}`}</b>
+              <b>{`${(total / 30).toFixed(2).replace('.00', '')}`}</b>
               <span className="text-xs">{' deploys/day, '}</span>
               <b>{`${Math.round((successful * 100) / total)}%`}</b>
               <span className="text-xs">{' success rate'}</span>
