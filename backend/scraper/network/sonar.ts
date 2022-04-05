@@ -61,7 +61,7 @@ const getMeasures = (config: ParsedConfig) => (sonarProject: SonarProject) => {
     })
   ).then(res => ({
     name: sonarProject.name,
-    url: `${sonarProject.url}/dashboard?id=${sonarProject.name}`,
+    url: `${sonarProject.url}/dashboard?id=${sonarProject.key}`,
     measures: res.data.component?.measures || [],
     lastAnalysisDate: sonarProject.lastAnalysisDate
   }));
