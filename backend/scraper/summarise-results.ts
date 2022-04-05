@@ -115,8 +115,8 @@ const groupKey = (group?: Overview['groups'][string]) => (group ? group.name : n
 const hasWorkItemCompleted = (workItemTimes: WorkItemTimesGetter) => (
   (isMatchingDate: (d: Date) => boolean) => (
     (workItem: UIWorkItemWithGroup) => {
-      const { end } = workItemTimes(workItem);
-      return Boolean(end && isMatchingDate(new Date(end)));
+      const { start, end } = workItemTimes(workItem);
+      return Boolean(start && end && isMatchingDate(new Date(end)));
     }
   )
 );
@@ -238,7 +238,8 @@ const analyseWorkItems = (
     return (wis: UIWorkItem[]) => {
       const total = tct(wis);
       if (total === 0) { return { total: 0, wcTime: 0 }; }
-      return { total, wcTime: wct(wis) };
+      const wcTime = wct(wis);
+      return { total, wcTime };
     };
   })();
 
