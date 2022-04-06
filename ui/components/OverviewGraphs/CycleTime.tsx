@@ -145,7 +145,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
       title="Cycle time"
       subtitle="Time taken to complete a work item"
       hasData={preFilteredWorkItems.length > 0}
-      downloadContents={csvData}
+      csvData={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

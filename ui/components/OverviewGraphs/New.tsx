@@ -197,7 +197,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
       subtitle="Work items on which work started this month"
       hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
-      downloadContents={csvData}
+      csvData={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

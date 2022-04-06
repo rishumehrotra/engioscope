@@ -11,7 +11,7 @@ type GraphCardProps = {
   left: ReactNode;
   right: ReactNode;
   renderLazily?: boolean;
-  downloadContents?: (string | number)[][];
+  csvData?: (string | number)[][];
 };
 
 const titleToUrlFragment = (title: string) => (
@@ -31,9 +31,9 @@ const convertToCSV = (data: (string | number)[][]) => (
 );
 
 const GraphCard: React.FC<GraphCardProps> = ({
-  title, subtitle, left, right, hasData, renderLazily = true, downloadContents
+  title, subtitle, left, right, hasData, renderLazily = true, csvData
 }) => {
-  const csv = useMemo(() => (downloadContents ? convertToCSV(downloadContents) : null), [downloadContents]);
+  const csv = useMemo(() => (csvData ? convertToCSV(csvData) : null), [csvData]);
   const downloadLinkAttributes = useDownloadLinkProps(csv || '', 'text/plain', `${title} - ${new Date().toISOString().split('T')[0]}.csv`);
 
   const [ref, inView] = useInView({

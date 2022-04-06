@@ -168,7 +168,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
       subtitle="Work items completed over the last 30 days"
       hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
-      downloadContents={csvData}
+      csvData={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

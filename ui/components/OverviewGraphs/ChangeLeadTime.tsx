@@ -146,7 +146,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
       title="Change lead time"
       subtitle="Time taken to take a work item to production after development is complete"
       hasData={preFilteredWorkItems.length > 0}
-      downloadContents={csvData}
+      csvData={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">
