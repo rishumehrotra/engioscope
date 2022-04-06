@@ -5,7 +5,7 @@ import { useRemoveSort } from '../../hooks/sort-hooks';
 import useGlobalFilters from './helpers/use-global-filters';
 import { CycleTimeGraph } from './CycleTime';
 import { workItemAccessors } from './helpers/helpers';
-import { useWorkItemModal } from './helpers/modal-helpers';
+import { useModalHelper } from './helpers/modal-helpers';
 import VelocityGraph from './Velocity';
 import FlowEfficiencyGraph from './FlowEfficiency';
 import BugLeakageAndRCAGraph from './BugLeakageAndRCA';
@@ -90,7 +90,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
   const accessors = useMemo(() => workItemAccessors(projectAnalysis), [projectAnalysis]);
   const [filteredWorkItems, filters, selectedFilters, setSelectedFilters] = useGlobalFilters(workItems);
-  const [Modal, modalProps, openModal] = useWorkItemModal();
+  const [Modal, modalProps, openModal] = useModalHelper();
   useRemoveSort();
 
   useLayoutEffect(() => {
@@ -154,7 +154,11 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
               : `${((totalAutomated * 100) / totalTestCases).toFixed(0)}%`,
             tooltip: `${num(projectAnalysis.testCases.automated.total)} automated test cases`
           }]}
-          {...(totalTestCases ? { popupContents: popup, popupDirection: 'right' } : null)}
+          onClick={totalTestCases ? {
+            open: 'popup',
+            direction: 'right',
+            contents: popup
+          } : undefined}
         />
       </ProjectStats>
 

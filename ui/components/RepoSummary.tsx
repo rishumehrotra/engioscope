@@ -4,8 +4,8 @@ import {
   buildPipelines,
   isDeprecated, isYmlPipeline, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
-import type { RepoAnalysis } from '../../shared/types';
-import { num, exaggerateTrendLine } from '../helpers/utils';
+import type { RepoAnalysis, UIBuildPipeline } from '../../shared/types';
+import { num, exaggerateTrendLine, shortDate } from '../helpers/utils';
 import Sparkline from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
@@ -43,6 +43,13 @@ const sonarStats = (repos: RepoAnalysis[]) => (
   )
 );
 
+const pipelineLastUsed = (pipeline: UIBuildPipeline) => {
+  if (pipeline.status.type === 'unknown') return 'Unknown';
+  if (pipeline.status.type === 'succeeded') return 'Within the last month';
+  if (!pipeline.status.since) return 'Unknown';
+  return `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`;
+};
+
 const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
   const newSonarByWeek = useMemo(() => newSonarSetupsByWeek(repos), [repos]);
   const sonarCounts = useMemo(() => sonarCountsByWeek(repos), [repos]);
@@ -51,7 +58,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
   const sonar = useMemo(() => sonarStats(reposWithExclusions), [reposWithExclusions]);
 
   const allBuildPipelines = useMemo(() => buildPipelines(reposWithExclusions), [reposWithExclusions]);
-  const nonYmlPipelines = useMemo(() => allBuildPipelines.filter(compose(not, isYmlPipeline)), [allBuildPipelines]);
+  const ymlPipelines = useMemo(() => allBuildPipelines.filter(isYmlPipeline), [allBuildPipelines]);
 
   return (
     <ProjectStats note={
@@ -178,11 +185,78 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       />
       <ProjectStat
         topStats={[{
-          title: 'YML pipelines',
+          title: 'YAML pipelines',
           value: allBuildPipelines.length === 0
             ? '-'
-            : `${Math.round(((allBuildPipelines.length - nonYmlPipelines.length) / allBuildPipelines.length) * 100)}%`
+            : `${Math.round((ymlPipelines.length * 100) / allBuildPipelines.length)}%`,
+          tooltip: `${ymlPipelines.length} of ${allBuildPipelines.length} pipelines use a YAML-based configuration`
         }]}
+        onClick={ymlPipelines.length === allBuildPipelines.length
+          ? undefined
+          : {
+            open: 'modal',
+            heading: 'Pipelines not using YAML-based configuration',
+            subheading: `(${allBuildPipelines.length - ymlPipelines.length})`,
+            body: (
+              <>
+                {reposWithExclusions
+                  .filter(r => (
+                    r.builds?.pipelines.length || 0) > 0
+                    && (r.builds?.pipelines.filter(compose(not, isYmlPipeline)) || []).length > 0)
+                  .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+                  .map((repo, index) => {
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    const pipelines = repo.builds!.pipelines.filter(compose(not, isYmlPipeline));
+
+                    return (
+                      <details className="mb-3" open={index === 0}>
+                        <summary className="font-semibold text-lg cursor-pointer">
+                          {`${repo.name} (${pipelines.length})`}
+                        </summary>
+
+                        <div className="bg-gray-100 pt-2 pb-4 px-4 rounded-lg mt-4">
+                          <table className="table-auto text-center divide-y divide-gray-200 w-full">
+                            <thead>
+                              <tr>
+                                {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+                                <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider" />
+                                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                                  Runs in the last 30 days
+                                </th>
+                                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Last used</th>
+                              </tr>
+                            </thead>
+                            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+                              {pipelines
+                                .map(pipeline => (
+                                  <tr>
+                                    <td className="pl-6 py-4 whitespace-nowrap text-left">
+                                      <a
+                                        href={pipeline.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="link-text"
+                                      >
+                                        {pipeline.name}
+                                      </a>
+                                    </td>
+                                    <td>
+                                      {pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      {pipelineLastUsed(pipeline)}
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    );
+                  }) }
+              </>
+            )
+          }}
       />
     </ProjectStats>
   );

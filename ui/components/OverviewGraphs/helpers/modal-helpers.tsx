@@ -12,7 +12,7 @@ export type ModalArgs = {
   body: ReactNode;
 };
 
-export const useWorkItemModal = () => {
+export const useModalHelper = () => {
   const [Modal, modalProps, open] = useModal();
   const [modalState, setModalState] = useState<ModalArgs>(
     { heading: null, subheading: null, body: null }

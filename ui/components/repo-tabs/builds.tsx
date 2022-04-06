@@ -45,7 +45,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                       {pipeline.type === 'yml'
                         ? (
                           <span className="uppercase text-xs px-1 border border-green-300 rounded-sm text-green-500">
-                            YML
+                            YAML
                           </span>
                         )
                         : (

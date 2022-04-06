@@ -58,7 +58,10 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
             title: 'Success',
             value: `${Math.round((lastStage[1].successful / lastStage[1].total) * 100)}%`
           }]}
-          popupContents={() => <div className="w-96"><UsageByEnv perEnvUsage={perEnvUsage} pipelineCount={pipelines.length} /></div>}
+          onClick={{
+            open: 'popup',
+            contents: () => <div className="w-96"><UsageByEnv perEnvUsage={perEnvUsage} pipelineCount={pipelines.length} /></div>
+          }}
         />
       )}
       <ProjectStat
