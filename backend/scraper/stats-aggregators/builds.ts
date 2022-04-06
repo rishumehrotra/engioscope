@@ -122,8 +122,10 @@ export default (
           },
           status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
             ? buildStats.status
-            : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status']
-
+            : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status'],
+          type: buildDefinitionsByRepoId(id)
+            .find(bd => bd.id === Number(definitionId))
+            ?.process.type === 1 ? 'ui' : 'yml'
         }));
 
       const pipelinesWithUnused = buildDefinitionsByRepoId(id)
@@ -139,7 +141,8 @@ export default (
               definitionId: d.id.toString(),
               duration: { average: '0', min: '0', max: '0' },
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              status: { type: 'unused', since: d.latestBuild!.startTime }
+              status: { type: 'unused', since: d.latestBuild!.startTime },
+              type: d.process.type === 1 ? 'ui' : 'yml'
             }))
         )
         : pipelines;

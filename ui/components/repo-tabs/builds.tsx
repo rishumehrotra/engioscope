@@ -17,6 +17,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
               <thead>
                 <tr>
                   <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider"> </th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Type</th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
                   <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
                   <th className="pl-6 pr-0 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
@@ -39,6 +40,19 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                           {pipeline.name}
                         </span>
                       </a>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {pipeline.type === 'yml'
+                        ? (
+                          <span className="uppercase text-xs px-1 border border-green-300 rounded-sm text-green-500">
+                            YML
+                          </span>
+                        )
+                        : (
+                          <span className="uppercase text-xs px-1 border border-red-300 rounded-sm text-red-500">
+                            UI
+                          </span>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">{pipeline.status.type === 'unused' ? '-' : pipeline.success}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>

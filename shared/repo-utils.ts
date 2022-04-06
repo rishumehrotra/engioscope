@@ -1,6 +1,7 @@
 import { applySpec } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
-import type { QualityGateDetails, RepoAnalysis } from './types';
+import type { QualityGateDetails, RepoAnalysis, UIBuildPipeline } from './types';
+import { exists } from './utils';
 
 export const isDeprecated = (repo: RepoAnalysis) => (
   (
@@ -96,3 +97,11 @@ export const sonarCountsByWeek = applySpec({
   fail: sonarCountByWeek('fail'),
   warn: sonarCountByWeek('warn')
 });
+
+export const buildPipelines = (repos: RepoAnalysis[]) => (
+  repos.flatMap(r => r.builds?.pipelines).filter(exists)
+);
+
+export const isYmlPipeline = (pipeline: UIBuildPipeline) => (
+  pipeline.type === 'yml'
+);

@@ -102,6 +102,7 @@ export default (config: ParsedConfig) => {
         url: url(collectionName, projectName, '/build/definitions'),
         qsParams: {
           includeLatestBuilds: 'true',
+          includeAllProperties: 'true',
           $top: '5000'
         },
         cacheFile: [collectionName, projectName, 'build-definitions']

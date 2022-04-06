@@ -1,7 +1,8 @@
 import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
-  isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
+  buildPipelines,
+  isDeprecated, isYmlPipeline, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis } from '../../shared/types';
 import { num, exaggerateTrendLine } from '../helpers/utils';
@@ -46,8 +47,11 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
   const newSonarByWeek = useMemo(() => newSonarSetupsByWeek(repos), [repos]);
   const sonarCounts = useMemo(() => sonarCountsByWeek(repos), [repos]);
 
-  const reposWithExclusions = repos.filter(compose(not, isDeprecated));
-  const sonar = sonarStats(reposWithExclusions);
+  const reposWithExclusions = useMemo(() => repos.filter(compose(not, isDeprecated)), [repos]);
+  const sonar = useMemo(() => sonarStats(reposWithExclusions), [reposWithExclusions]);
+
+  const allBuildPipelines = useMemo(() => buildPipelines(reposWithExclusions), [reposWithExclusions]);
+  const nonYmlPipelines = useMemo(() => allBuildPipelines.filter(compose(not, isYmlPipeline)), [allBuildPipelines]);
 
   return (
     <ProjectStats note={
@@ -171,6 +175,14 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             tooltip: `${sonar.error} of ${sonar.configured} sonar projects have 'fail' quality gate`
           }
         ]}
+      />
+      <ProjectStat
+        topStats={[{
+          title: 'YML pipelines',
+          value: allBuildPipelines.length === 0
+            ? '-'
+            : `${Math.round(((allBuildPipelines.length - nonYmlPipelines.length) / allBuildPipelines.length) * 100)}%`
+        }]}
       />
     </ProjectStats>
   );

@@ -91,6 +91,9 @@ export type BuildRepository = {
 export type BuildDefinitionReference = DefinitionReference & {
   latestBuild?: Build;
   latestCompletedBuild?: Build;
+  process: {
+    type: 1 | 2;
+  };
 };
 
 export type Build = {
