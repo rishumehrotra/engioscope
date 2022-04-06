@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { T } from 'rambda';
-import type { ProjectOverviewAnalysis, UIWorkItem } from '../../../../shared/types';
+import { last, T } from 'rambda';
+import type { ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType } from '../../../../shared/types';
 import { createPalette } from '../../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
 import {
@@ -186,4 +186,57 @@ export const listFormat = (list: string[], joiner = 'and') => {
 
 export const stringifyDateField = (fields: string[]) => (
   fields.length === 1 ? `'${fields[0]}'` : `${listFormat(fields.map(f => `'${f}'`), 'or')}, whichever is earlier`
+);
+
+export const workItemStateUsing = (
+  { workItemTimes }: WorkItemAccessors,
+  wit: UIWorkItemType
+) => (
+  (workItem: UIWorkItem) => {
+    const times = workItemTimes(workItem);
+
+    if (times.end) {
+      // It's closed
+      return {
+        state: 'Done',
+        since: new Date(times.end)
+      };
+    }
+
+    const lastState = last(times.workCenters);
+
+    if (!lastState) {
+      // Not entered first work center yet
+      return {
+        state: `Before ${wit.workCenters.length ? wit.workCenters[0].label : 'start'}`,
+        since: new Date(times.start || workItem.created.on)
+      };
+    }
+
+    if (lastState.end) {
+      // Completed the last state
+      // This either means it's done with all work centers, or it's in a waiting state
+
+      const stateIndex = wit.workCenters.findIndex(wc => wc.label === lastState.label);
+      if (stateIndex === wit.workCenters.length - 1) {
+        // It's done with workcenters
+        return {
+          state: `After ${lastState.label}`,
+          since: new Date(lastState.end)
+        };
+      }
+
+      // It's in a waiting state
+      return {
+        state: `Waiting for ${wit.workCenters[stateIndex + 1].label}`,
+        since: new Date(lastState.end)
+      };
+    }
+
+    // It's in a working state
+    return {
+      state: `In ${lastState.label}`,
+      since: new Date(lastState.start)
+    };
+  }
 );

@@ -7,6 +7,7 @@ import { num } from '../../helpers/utils';
 import { DownChevron, UpChevron } from '../common/Icons';
 import Switcher from '../common/Switcher';
 import ExpandableBarGraph from '../graphs/ExpandableBarGraph';
+import { bugLeakageCSV } from './helpers/create-csv-content';
 import GraphCard from './helpers/GraphCard';
 import type { WorkItemAccessors } from './helpers/helpers';
 import {
@@ -306,6 +307,8 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   );
   const [selectedSwitcherIndex, setSelectedSwitcherIndex] = useState((workItemType(witId).rootCauseFields || []).length - 1);
 
+  const csvData = useMemo(() => bugLeakageCSV(workItems, accessors), [accessors, workItems]);
+
   const organized = useMemo(
     () => organizeByWorkItemType(workItems, filter),
     [filter, organizeByWorkItemType, workItems]
@@ -380,6 +383,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
       title={`${workItemType(witId).name[0]} leakage with root cause`}
       subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days with their root cause`}
       hasData={workItems.length > 0}
+      csvData={csvData}
       left={(
         <>
           <div className="grid grid-cols-2 justify-between">

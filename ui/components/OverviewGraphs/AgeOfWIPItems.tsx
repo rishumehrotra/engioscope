@@ -15,6 +15,7 @@ import { createWIPWorkItemTooltip } from './helpers/tooltips';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
+import { wipWorkItemsCSV } from './helpers/create-csv-content';
 
 type AgeOfWIPItemsGraphProps = {
   workItems: UIWorkItem[];
@@ -45,6 +46,8 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
     () => createWIPWorkItemTooltip(accessors),
     [accessors]
   );
+
+  const csvData = useMemo(() => wipWorkItemsCSV(preFilteredWorkItems, accessors), [preFilteredWorkItems, accessors]);
 
   const workItemsToDisplay = useMemo(
     () => organizeByWorkItemType(preFilteredWorkItems, filter),
@@ -135,6 +138,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
       title="Age of work-in-progress items"
       subtitle="How old are the currently work-in-progress items"
       hasData={preFilteredWorkItems.length > 0}
+      csvData={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

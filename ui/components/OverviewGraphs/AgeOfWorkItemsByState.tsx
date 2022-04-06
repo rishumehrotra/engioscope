@@ -2,72 +2,21 @@ import { prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import {
-  last, num, prettyMS, priorityBasedColor
+  num, prettyMS, priorityBasedColor
 } from '../../helpers/utils';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
+import { wipWorkItemsCSV } from './helpers/create-csv-content';
 import GraphCard from './helpers/GraphCard';
 import type { OrganizedWorkItems, WorkItemAccessors } from './helpers/helpers';
+import { workItemStateUsing } from './helpers/helpers';
 import type { LegendSidebarProps } from './helpers/LegendSidebar';
 import { LegendSidebar } from './helpers/LegendSidebar';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
-
-const workItemStateUsing = (
-  { workItemTimes }: WorkItemAccessors,
-  wit: UIWorkItemType
-) => (
-  (workItem: UIWorkItem) => {
-    const times = workItemTimes(workItem);
-
-    if (times.end) {
-      // It's closed
-      return {
-        state: 'Done',
-        since: new Date(times.end)
-      };
-    }
-
-    const lastState = last(times.workCenters);
-
-    if (!lastState) {
-      // Not entered first work center yet
-      return {
-        state: `Before ${wit.workCenters.length ? wit.workCenters[0].label : 'start'}`,
-        since: new Date(times.start || workItem.created.on)
-      };
-    }
-
-    if (lastState.end) {
-      // Completed the last state
-      // This either means it's done with all work centers, or it's in a waiting state
-
-      const stateIndex = wit.workCenters.findIndex(wc => wc.label === lastState.label);
-      if (stateIndex === wit.workCenters.length - 1) {
-        // It's done with workcenters
-        return {
-          state: `After ${lastState.label}`,
-          since: new Date(lastState.end)
-        };
-      }
-
-      // It's in a waiting state
-      return {
-        state: `Waiting for ${wit.workCenters[stateIndex + 1].label}`,
-        since: new Date(lastState.end)
-      };
-    }
-
-    // It's in a working state
-    return {
-      state: `In ${lastState.label}`,
-      since: new Date(lastState.start)
-    };
-  }
-);
 
 const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => {
   if (stateLabel.startsWith('Before ')) return 0;
@@ -204,6 +153,13 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     0
   ), [statesToRender]);
 
+  const csvData = useMemo(() => (
+    wipWorkItemsCSV(
+      Object.values(statesToRender).flat().map(({ wi }) => wi),
+      accessors
+    )
+  ), [accessors, statesToRender]);
+
   const statterLineGraphProps = useMemo(
     (): ScatterLineGraphProps<{ wi: UIWorkItem; since: Date }> => ({
       className: 'max-w-full',
@@ -270,6 +226,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       title={`Age of work-in-progress ${workItemType.name[1].toLowerCase()} by state`}
       subtitle={`Where various ${workItemType.name[1].toLowerCase()} are located, and how long they've been there`}
       hasData={allWorkItems.length > 0 && hasData}
+      csvData={csvData}
       left={(
         <>
           <div className="mb-8 flex justify-end mr-4 gap-2">

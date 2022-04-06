@@ -4,7 +4,7 @@ import type { UIWorkItem } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import type { LineGraphProps } from '../graphs/LineGraph';
 import LineGraph from '../graphs/LineGraph';
-import { closedWorkItemsCsv } from './helpers/create-csv-content';
+import { closedWorkItemsCSV } from './helpers/create-csv-content';
 import { CrosshairBubble } from './helpers/CrosshairBubble';
 import type { WorkItemLine, WorkItemPoint } from './helpers/day-wise-line-graph-helpers';
 import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-line-graph-helpers';
@@ -54,7 +54,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
   );
 
   const csvData = useMemo(() => (
-    closedWorkItemsCsv(preFilteredWorkItems.filter(filter), accessors)
+    closedWorkItemsCSV(preFilteredWorkItems.filter(filter), accessors)
   ), [preFilteredWorkItems, filter, accessors]);
 
   const workItemsToDisplay = useMemo(

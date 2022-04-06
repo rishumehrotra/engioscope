@@ -16,7 +16,7 @@ import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
-import { closedWorkItemsCsv } from './helpers/create-csv-content';
+import { closedWorkItemsCSV } from './helpers/create-csv-content';
 
 type ChangeLeadTimeGraphProps = {
   workItems: UIWorkItem[];
@@ -44,7 +44,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
   );
 
   const csvData = useMemo(() => (
-    closedWorkItemsCsv(preFilteredWorkItems.filter(filter), accessors)
+    closedWorkItemsCSV(preFilteredWorkItems.filter(filter), accessors)
   ), [preFilteredWorkItems, filter, accessors]);
 
   const workItemTooltip = useMemo(
