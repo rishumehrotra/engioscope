@@ -6,6 +6,7 @@ import type { UIWorkItem } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import type { LineGraphProps } from '../graphs/LineGraph';
 import LineGraph from '../graphs/LineGraph';
+import { wipWorkItemsCSV } from './helpers/create-csv-content';
 import { CrosshairBubble } from './helpers/CrosshairBubble';
 import type { WorkItemLine, WorkItemPoint } from './helpers/day-wise-line-graph-helpers';
 import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-line-graph-helpers';
@@ -58,6 +59,8 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
+
+  const csvData = useMemo(() => wipWorkItemsCSV(workItems, accessors), [workItems, accessors]);
 
   const workItemsToDisplay = useMemo(
     () => organizeByWorkItemType(workItems, filter),
@@ -178,6 +181,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
       title="Work in progress trend"
       subtitle="Trend of work items in progress per day over the last 30 days"
       hasData={hasData}
+      csvData={csvData}
       left={(
         <>
           <div className="flex justify-end mb-8 gap-2">

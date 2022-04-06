@@ -85,6 +85,7 @@ export const wipWorkItemsCSV = (workItems: UIWorkItem[], accessors: WorkItemAcce
       'Azure state',
       'Engioscope state',
       'In Engioscope state since (days)',
+      'Priority',
       'URL'
     ],
     ...workItems.map(wi => {
@@ -105,6 +106,7 @@ export const wipWorkItemsCSV = (workItems: UIWorkItem[], accessors: WorkItemAcce
         wi.state,
         state.state,
         Math.round((new Date().getTime() - new Date(state.since).getTime()) / (1000 * 60 * 60 * 24)),
+        wi.priority || 'unknown',
         wi.url
       ];
     })
