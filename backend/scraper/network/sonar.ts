@@ -27,6 +27,24 @@ type SonarPaging = {
   total: number;
 };
 
+type MeasureDefinition = {
+  id: string;
+  key: string;
+  type:
+  | 'INT' | 'FLOAT' | 'PERCENT' | 'BOOL' | 'STRING'
+  | 'MILLISEC' | 'DATA' | 'LEVEL' | 'DISTRIB' | 'RATING' | 'WORK_DUR';
+  name: string;
+  description: string;
+  domain?:
+  | 'Maintainability' | 'Issues' | 'Reliability' | 'Management' | 'Size'
+  | 'Complexity' | 'Coverage' | 'SCM' | 'Duplications' | 'Security'
+  | 'General' | 'Documentation' | 'Releasability';
+  direction: -1 | 0 | 1;
+  qualitative: boolean;
+  hidden: boolean;
+  custom: boolean;
+};
+
 const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfig) => {
   const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
   type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
@@ -43,6 +61,22 @@ const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfi
         ...c, url: sonarServer.url, token: sonarServer.token
       }))))
       .then(projects => projects.flat())
+  );
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const getMeasureDefinitions = (config: ParsedConfig) => ({ url, token }: SonarConfig) => {
+  const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
+
+  return (
+    usingDiskCache<{ metrics: MeasureDefinition[] }>(
+      ['sonar', 'measures-definitions', url.split('://')[1].replace(/\./g, '-')],
+      () => fetch(`${url}/api/metrics/search?ps=200`, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${token}:`).toString('base64')}`
+        }
+      })
+    ).then(res => res.data.metrics)
   );
 };
 
@@ -186,6 +220,14 @@ export default (config: ParsedConfig) => {
   const sonarProjects = Promise.all((config.sonar || []).map(projectsAtSonarServer(config)))
     .then(list => list.flat());
 
+  // const measuresDefinition = Promise.all((config.sonar || []).map(getMeasureDefinitions(config)))
+  //   .then(zip(config.sonar || []))
+  //   .then(list => (
+  //     (serverConfig: SonarConfig) => (
+  //       list.find(server => server[0].url === serverConfig.url)?.[1] || []
+  //     )
+  //   ));
+
   return (
     collectionName: string, projectName: string
   ) => async (repoName: string, defaultBranch?: string): Promise<SonarAnalysisByRepo> => {
@@ -201,10 +243,12 @@ export default (config: ParsedConfig) => {
         getMeasures(config)(sonarProject),
         getQualityGateName(config)(sonarProject),
         getQualityGateHistory(config)(sonarProject)
-      ]).then(([measures, qualityGateName, history]) => ({
+        // measuresDefinition
+      ]).then(([measures, qualityGateName, history/* , measuresDefinition */]) => ({
         ...measures,
         qualityGateName,
         qualityGateHistory: history
+        // measuresDefinition: measuresDefinition(sonarProject)
       }))
     )));
   };
