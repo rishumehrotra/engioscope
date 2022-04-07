@@ -50,24 +50,39 @@ const pipelineLastUsed = (pipeline: UIBuildPipeline) => {
   return `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`;
 };
 
+const notDeprecated = compose(not, isDeprecated);
+const notYmlPipeline = compose(not, isYmlPipeline);
+
+const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
+  const repos = reposBeforeExclusions.filter(notDeprecated);
+  const allBuildPipelines = buildPipelines(repos);
+
+  return {
+    repos,
+    newSonarByWeek: newSonarSetupsByWeek(repos),
+    sonarCountsByWeek: sonarCountsByWeek(repos),
+    sonarStats: sonarStats(repos),
+    buildPipelines: allBuildPipelines,
+    ymlPipelines: allBuildPipelines.filter(isYmlPipeline),
+    reposWithNonYmlPipelines: repos
+      .filter(r => (
+        (r.builds?.pipelines.length || 0) > 0
+          && (r.builds?.pipelines.filter(notYmlPipeline) || []).length > 0
+      ))
+  };
+};
+
 const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
-  const newSonarByWeek = useMemo(() => newSonarSetupsByWeek(repos), [repos]);
-  const sonarCounts = useMemo(() => sonarCountsByWeek(repos), [repos]);
-
-  const reposWithExclusions = useMemo(() => repos.filter(compose(not, isDeprecated)), [repos]);
-  const sonar = useMemo(() => sonarStats(reposWithExclusions), [reposWithExclusions]);
-
-  const allBuildPipelines = useMemo(() => buildPipelines(reposWithExclusions), [reposWithExclusions]);
-  const ymlPipelines = useMemo(() => allBuildPipelines.filter(isYmlPipeline), [allBuildPipelines]);
+  const stats = useMemo(() => computeStats(repos), [repos]);
 
   return (
     <ProjectStats note={
-      repos.length - reposWithExclusions.length === 0
+      repos.length - stats.repos.length === 0
         ? undefined
         : (
           <>
             {'Excluded '}
-            <b>{repos.length - reposWithExclusions.length}</b>
+            <b>{repos.length - stats.repos.length}</b>
             {' deprecated repositories from analysis'}
           </>
         )
@@ -78,10 +93,10 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           title: 'Tests',
           value: (
             <>
-              {num(totalTests(reposWithExclusions))}
+              {num(totalTests(stats.repos))}
               <Sparkline
-                data={exaggerateTrendLine(totalTestsByWeek(reposWithExclusions))}
-                lineColor={increaseIsBetter(totalTestsByWeek(reposWithExclusions))}
+                data={exaggerateTrendLine(totalTestsByWeek(stats.repos))}
+                lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
                 className="ml-2 -mb-1"
               />
             </>
@@ -96,18 +111,18 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             total === 0
               ? '-'
               : `${Math.round((covered * 100) / total)}%`
-          ))(totalCoverage(reposWithExclusions))
+          ))(totalCoverage(stats.repos))
         }]}
       />
       <ProjectStat
         topStats={[{
           title: 'Builds',
-          value: num(totalBuilds(reposWithExclusions)),
+          value: num(totalBuilds(stats.repos)),
           tooltip: 'Total number of builds across all matching repos'
         }]}
         childStats={[{
           title: 'Success',
-          value: buildSuccessRate(reposWithExclusions),
+          value: buildSuccessRate(stats.repos),
           tooltip: 'Success rate across all matching repos'
         }]}
       />
@@ -115,13 +130,13 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         topStats={[{
           title: 'Sonar',
           value: (
-            reposWithExclusions.length
+            stats.repos.length
               ? (
                 <>
-                  {`${Math.round((reposWithExclusions.filter(r => !!r.codeQuality).length / reposWithExclusions.length) * 100)}%`}
+                  {`${Math.round((stats.repos.filter(r => !!r.codeQuality).length / stats.repos.length) * 100)}%`}
                   <Sparkline
-                    data={exaggerateTrendLine(newSonarByWeek)}
-                    lineColor={increaseIsBetter(newSonarByWeek)}
+                    data={exaggerateTrendLine(stats.newSonarByWeek)}
+                    lineColor={increaseIsBetter(stats.newSonarByWeek)}
                     className="ml-2 -mb-1"
                   />
                 </>
@@ -129,84 +144,80 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
               : '-'
           ),
           tooltip: `${
-            reposWithExclusions.filter(r => !!r.codeQuality).length
-          } of ${reposWithExclusions.length} repos have SonarQube configured`
+            stats.repos.filter(r => !!r.codeQuality).length
+          } of ${stats.repos.length} repos have SonarQube configured`
         }]}
         childStats={[
           {
             title: 'Ok',
-            value: sonar.configured
+            value: stats.sonarStats.configured
               ? (
                 <>
-                  {`${((sonar.ok / sonar.configured) * 100).toFixed(0)}%`}
+                  {`${((stats.sonarStats.ok / stats.sonarStats.configured) * 100).toFixed(0)}%`}
                   <Sparkline
-                    data={exaggerateTrendLine(sonarCounts.pass)}
-                    lineColor={increaseIsBetter(sonarCounts.pass)}
+                    data={exaggerateTrendLine(stats.sonarCountsByWeek.pass)}
+                    lineColor={increaseIsBetter(stats.sonarCountsByWeek.pass)}
                     className="ml-2 -mb-1"
                   />
                 </>
               )
               : '-',
-            tooltip: `${sonar.ok} of ${sonar.configured} sonar projects have 'pass' quality gate`
+            tooltip: `${stats.sonarStats.ok} of ${stats.sonarStats.configured} sonar projects have 'pass' quality gate`
           },
           {
             title: 'Warn',
-            value: sonar.configured
+            value: stats.sonarStats.configured
               ? (
                 <>
-                  {`${((sonar.warn / sonar.configured) * 100).toFixed(0)}%`}
+                  {`${((stats.sonarStats.warn / stats.sonarStats.configured) * 100).toFixed(0)}%`}
                   <Sparkline
-                    data={exaggerateTrendLine(sonarCounts.warn)}
-                    lineColor={decreaseIsBetter(sonarCounts.warn)}
+                    data={exaggerateTrendLine(stats.sonarCountsByWeek.warn)}
+                    lineColor={decreaseIsBetter(stats.sonarCountsByWeek.warn)}
                     className="ml-2 -mb-1"
                   />
                 </>
               )
               : '-',
-            tooltip: `${sonar.warn} of ${sonar.configured} sonar projects have 'warn' quality gate`
+            tooltip: `${stats.sonarStats.warn} of ${stats.sonarStats.configured} sonar projects have 'warn' quality gate`
           },
           {
             title: 'Fail',
-            value: sonar.configured
+            value: stats.sonarStats.configured
               ? (
                 <>
-                  {`${((sonar.error / sonar.configured) * 100).toFixed(0)}%`}
+                  {`${((stats.sonarStats.error / stats.sonarStats.configured) * 100).toFixed(0)}%`}
                   <Sparkline
-                    data={exaggerateTrendLine(sonarCounts.fail)}
-                    lineColor={decreaseIsBetter(sonarCounts.fail)}
+                    data={exaggerateTrendLine(stats.sonarCountsByWeek.fail)}
+                    lineColor={decreaseIsBetter(stats.sonarCountsByWeek.fail)}
                     className="ml-2 -mb-1"
                   />
                 </>
               )
               : '-',
-            tooltip: `${sonar.error} of ${sonar.configured} sonar projects have 'fail' quality gate`
+            tooltip: `${stats.sonarStats.error} of ${stats.sonarStats.configured} sonar projects have 'fail' quality gate`
           }
         ]}
       />
       <ProjectStat
         topStats={[{
           title: 'YAML pipelines',
-          value: allBuildPipelines.length === 0
+          value: stats.buildPipelines.length === 0
             ? '-'
-            : `${Math.round((ymlPipelines.length * 100) / allBuildPipelines.length)}%`,
-          tooltip: `${ymlPipelines.length} of ${allBuildPipelines.length} pipelines use a YAML-based configuration`
+            : `${Math.round((stats.ymlPipelines.length * 100) / stats.buildPipelines.length)}%`,
+          tooltip: `${stats.ymlPipelines.length} of ${stats.buildPipelines.length} pipelines use a YAML-based configuration`
         }]}
-        onClick={ymlPipelines.length === allBuildPipelines.length
+        onClick={stats.ymlPipelines.length === stats.buildPipelines.length
           ? undefined
           : {
             open: 'modal',
             heading: 'Pipelines not using YAML-based configuration',
-            subheading: `(${allBuildPipelines.length - ymlPipelines.length})`,
+            subheading: `(${stats.buildPipelines.length - stats.ymlPipelines.length})`,
             body: (
               <>
-                {reposWithExclusions
-                  .filter(r => (
-                    r.builds?.pipelines.length || 0) > 0
-                    && (r.builds?.pipelines.filter(compose(not, isYmlPipeline)) || []).length > 0)
-                  .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+                {stats.reposWithNonYmlPipelines
                   .map((repo, index) => {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    const pipelines = repo.builds!.pipelines.filter(compose(not, isYmlPipeline));
+                    const pipelines = repo.builds!.pipelines.filter(notYmlPipeline);
 
                     return (
                       <details className="mb-3" open={index === 0}>

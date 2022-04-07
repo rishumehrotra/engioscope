@@ -1,7 +1,7 @@
 import qs from 'qs';
 import md5 from 'md5';
 import { filter } from 'rambda';
-import fetch from './fetch-with-timeout';
+import fetch from './fetch-with-extras';
 import { chunkArray } from '../../utils';
 import type {
   Build, BuildDefinitionReference, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
@@ -35,7 +35,10 @@ export default (config: ParsedConfig) => {
   const authHeader = {
     Authorization: `Basic ${Buffer.from(`:${config.azure.token}`).toString('base64')}`
   };
-  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+  const otherFetchParams = {
+    verifySsl: config.azure.verifySsl
+  };
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, config.azure.verifySsl);
   const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
   const url = (collectionName: string, projectName: string | null, path: string) => (
     `${config.azure.host}${collectionName}/${projectName === null ? '' : `${projectName}/`}_apis${path}`
@@ -148,7 +151,7 @@ export default (config: ParsedConfig) => {
             'api-version': '5.1-preview',
             'buildId': buildId.toString()
           })}`),
-          { headers: authHeader }
+          { headers: authHeader, ...otherFetchParams }
         )
       ).then(res => res.data)
     ),
@@ -168,7 +171,7 @@ export default (config: ParsedConfig) => {
           url(collectionName, projectName, `/release/definitions/${definitionId}?${qs.stringify({
             'api-version': '5.1-preview'
           })}`),
-          { headers: authHeader }
+          { headers: authHeader, ...otherFetchParams }
         )
       ).then(res => res.data)
     ),
@@ -215,7 +218,7 @@ export default (config: ParsedConfig) => {
         [collectionName, projectName, 'work-items', 'types'],
         () => fetch(
           url(collectionName, projectName, `/wit/workitemtypes?${qs.stringify(apiVersion)}`),
-          { headers: authHeader }
+          { headers: authHeader, ...otherFetchParams }
         )
       ).then(res => res.data.value)
     ),
@@ -225,7 +228,7 @@ export default (config: ParsedConfig) => {
         [collectionName, projectName, 'work-items', 'type-categories'],
         () => fetch(
           url(collectionName, projectName, `/wit/workitemtypecategories?${qs.stringify(apiVersion)}`),
-          { headers: authHeader }
+          { headers: authHeader, ...otherFetchParams }
         )
       ).then(res => res.data.value)
     ),
@@ -241,7 +244,8 @@ export default (config: ParsedConfig) => {
             {
               headers: { ...authHeader, 'Content-Type': 'application/json' },
               method: 'post',
-              body: JSON.stringify({ query })
+              body: JSON.stringify({ query }),
+              ...otherFetchParams
             }
           )
         ).then(res => res.data)
@@ -259,7 +263,8 @@ export default (config: ParsedConfig) => {
             {
               headers: { ...authHeader, 'Content-Type': 'application/json' },
               method: 'post',
-              body: JSON.stringify({ query })
+              body: JSON.stringify({ query }),
+              ...otherFetchParams
             }
           )
         ).then(async res => {
@@ -280,7 +285,7 @@ export default (config: ParsedConfig) => {
                 ...apiVersion,
                 ids: chunk.join(',')
               })}`),
-              { headers: authHeader }
+              { headers: authHeader, ...otherFetchParams }
             )
           ).then(res => res.data.value.reduce<Record<number, WorkItem>>((acc, wi) => {
             acc[wi.id] = wi;
@@ -296,7 +301,7 @@ export default (config: ParsedConfig) => {
         [collectionName, 'work-items', 'fields'],
         () => fetch(
           url(collectionName, null, `/wit/fields?${qs.stringify(apiVersion)}`),
-          { headers: authHeader }
+          { headers: authHeader, ...otherFetchParams }
         )
       ).then(res => res.data.value)
     ),
@@ -306,7 +311,7 @@ export default (config: ParsedConfig) => {
         [collectionName, 'work-items', 'revisions', String(workItemId)],
         () => fetch(
           url(collectionName, null, `/wit/workitems/${workItemId}/revisions?${qs.stringify(apiVersion)}`),
-          { headers: authHeader }
+          { headers: authHeader, ...otherFetchParams }
         )
       ).then(x => x.data.value)
     ),

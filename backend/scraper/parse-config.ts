@@ -58,6 +58,7 @@ type ProjectConfig = {
 type AzureConfig = {
   host: string;
   token: string;
+  verifySsl?: boolean;
   lookAtPast: string;
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
@@ -147,6 +148,7 @@ export type ParsedConfig = Readonly<{
   azure: {
     host: string;
     token: string;
+    verifySsl: boolean;
     queryFrom: Date;
     collections: ParsedCollection[];
     summaryPageGroups?: ({
@@ -247,6 +249,7 @@ export default (config: Config): ParsedConfig => ({
   azure: {
     host: config.azure.host,
     token: config.azure.token,
+    verifySsl: config.azure.verifySsl ?? true,
     queryFrom: pastDate(config.azure.lookAtPast),
     collections: config.azure.collections.map(parseCollection(config)),
     summaryPageGroups: config.azure.summaryPageGroups

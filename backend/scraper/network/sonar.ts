@@ -1,5 +1,5 @@
 import qs from 'qs';
-import fetch from './fetch-with-timeout';
+import fetch from './fetch-with-extras';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import createPaginatedGetter from './create-paginated-getter';
@@ -46,7 +46,7 @@ type MeasureDefinition = {
 };
 
 const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfig) => {
-  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, false);
   type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
 
   return (
@@ -74,7 +74,8 @@ const getMeasureDefinitions = (config: ParsedConfig) => ({ url, token }: SonarCo
       () => fetch(`${url}/api/metrics/search?ps=200`, {
         headers: {
           Authorization: `Basic ${Buffer.from(`${token}:`).toString('base64')}`
-        }
+        },
+        verifySsl: false
       })
     ).then(res => res.data.metrics)
   );
@@ -91,7 +92,8 @@ const getMeasures = (config: ParsedConfig) => (sonarProject: SonarProject) => {
     })}`, {
       headers: {
         Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString('base64')}`
-      }
+      },
+      verifySsl: false
     })
   ).then(res => ({
     name: sonarProject.name,
@@ -111,13 +113,14 @@ const getQualityGateName = (config: ParsedConfig) => (sonarProject: SonarProject
     })}`, {
       headers: {
         Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString('base64')}`
-      }
+      },
+      verifySsl: false
     })
   ).then(res => res.data.qualityGate.name);
 };
 
 const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProject) => {
-  const paginatedGet = createPaginatedGetter(config.cacheTimeMs);
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, false);
 
   type SonarMeasureHistoryResponse<T extends string> = {
     paging: SonarPaging;
