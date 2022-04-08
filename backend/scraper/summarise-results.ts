@@ -20,7 +20,8 @@ import {
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed, totalUsageByEnvironment
 } from '../../shared/pipeline-utils';
 import {
-  isDeprecated, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
+  buildPipelines,
+  isDeprecated, isYmlPipeline, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import { exists } from '../../shared/utils';
 
@@ -193,6 +194,7 @@ type Summary = {
     newSonarSetupsByWeek: number[];
     sonarCountsByWeek: ReturnType<typeof sonarCountsByWeek>;
     coverage: string;
+    ymlPipelines: { count: number; total: number };
   };
   pipelineStats: {
     pipelines: number;
@@ -370,6 +372,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           });
 
         const coverage = totalCoverage(matchesExcludingDeprecated);
+        const pipelines = buildPipelines(matchesExcludingDeprecated);
 
         return {
           repos: length(matchesExcludingDeprecated),
@@ -385,7 +388,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           codeQuality: codeQuality(matchesExcludingDeprecated),
           newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),
           sonarCountsByWeek: sonarCountsByWeek(matchesExcludingDeprecated),
-          coverage: coverage.total ? `${Math.round((coverage.covered * 100) / coverage.total)}%` : '-'
+          coverage: coverage.total ? `${Math.round((coverage.covered * 100) / coverage.total)}%` : '-',
+          ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length }
         };
       };
 

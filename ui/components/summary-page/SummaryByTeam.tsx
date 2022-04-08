@@ -624,6 +624,21 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
+                data-tip="Number of pipelines configured using a YAML file"
+              >
+                YAML pipelines
+              </div>
+              <div className="text-xs pt-2 uppercase font-light">
+                {reposMetric(
+                  repoStats.ymlPipelines.total === 0
+                    ? '-'
+                    : `${Math.round((repoStats.ymlPipelines.count * 100) / repoStats.ymlPipelines.total)}%`
+                )}
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xs font-semibold"
                 data-tip="Average time taken to fix a build failure"
               >
                 MTTR build failure
@@ -632,7 +647,6 @@ const HealthMetrics: React.FC<{
                 Coming soon
               </div>
             </div>
-            <div />
           </div>
         </Card>
 

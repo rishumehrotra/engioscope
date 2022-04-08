@@ -731,6 +731,12 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
           </th>
           <th
             className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+            data-tip="Pipelines configured using a YAML file"
+          >
+            YAML pipelines
+          </th>
+          <th
+            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
             data-tip="Average time taken to fix a build failure"
           >
             MTTR build failure
@@ -762,6 +768,13 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
                 <td className="px-6 py-3 font-medium text-lg text-black">
                   {reposMetric(
                     `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
+                  )}
+                </td>
+                <td className="px-6 py-3 font-medium text-lg text-black">
+                  {reposMetric(
+                    repoStats.ymlPipelines.total === 0
+                      ? '-'
+                      : `${Math.round((repoStats.ymlPipelines.count * 100) / repoStats.ymlPipelines.total)}%`
                   )}
                 </td>
                 <td className="px-6 py-3 font-medium text-lg text-black">
