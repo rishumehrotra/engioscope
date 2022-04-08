@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import React from 'react';
 
 const ProjectStats: React.FC<{ note?: ReactNode }> = ({ children, note }) => (
-  <div className="justify-end grid grid-flow-row mb-2">
-    <div className="grid grid-flow-col relative">
+  <div className="justify-start grid grid-flow-row mb-3">
+    <div className="grid grid-flow-col relative gap-2">
       {children}
     </div>
     {note ? (

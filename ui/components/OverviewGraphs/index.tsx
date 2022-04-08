@@ -156,7 +156,6 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
           }]}
           onClick={totalTestCases ? {
             open: 'popup',
-            direction: 'right',
             contents: popup
           } : undefined}
         />
