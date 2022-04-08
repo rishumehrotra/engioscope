@@ -8,7 +8,7 @@ import type { ParsedConfig, SonarConfig } from '../parse-config';
 import { pastDate, unique } from '../../utils';
 import parseBuildReports from '../parse-build-reports';
 
-export type SonarProject = {
+export type SonarProject = SonarConfig & {
   organization: string;
   id: string;
   key: string;
@@ -16,8 +16,6 @@ export type SonarProject = {
   qualifier: string;
   visibility: string;
   lastAnalysisDate: Date;
-  url: string;
-  token: string;
 };
 
 // #region Network calls
@@ -46,7 +44,7 @@ type MeasureDefinition = {
 };
 
 const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfig) => {
-  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, false);
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, sonarServer.verifySsl ?? true);
   type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
 
   return (
@@ -65,7 +63,7 @@ const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfi
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getMeasureDefinitions = (config: ParsedConfig) => ({ url, token }: SonarConfig) => {
+const getMeasureDefinitions = (config: ParsedConfig) => ({ url, token, verifySsl }: SonarConfig) => {
   const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
 
   return (
@@ -75,7 +73,7 @@ const getMeasureDefinitions = (config: ParsedConfig) => ({ url, token }: SonarCo
         headers: {
           Authorization: `Basic ${Buffer.from(`${token}:`).toString('base64')}`
         },
-        verifySsl: false
+        verifySsl: verifySsl ?? true
       })
     ).then(res => res.data.metrics)
   );
@@ -93,7 +91,7 @@ const getMeasures = (config: ParsedConfig) => (sonarProject: SonarProject) => {
       headers: {
         Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString('base64')}`
       },
-      verifySsl: false
+      verifySsl: sonarProject.verifySsl ?? true
     })
   ).then(res => ({
     name: sonarProject.name,
@@ -114,13 +112,13 @@ const getQualityGateName = (config: ParsedConfig) => (sonarProject: SonarProject
       headers: {
         Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString('base64')}`
       },
-      verifySsl: false
+      verifySsl: sonarProject.verifySsl ?? true
     })
   ).then(res => res.data.qualityGate.name);
 };
 
 const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProject) => {
-  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, false);
+  const paginatedGet = createPaginatedGetter(config.cacheTimeMs, sonarProject.verifySsl ?? true);
 
   type SonarMeasureHistoryResponse<T extends string> = {
     paging: SonarPaging;

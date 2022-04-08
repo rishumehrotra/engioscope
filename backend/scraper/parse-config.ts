@@ -74,6 +74,7 @@ type AzureConfig = {
 export type SonarConfig = {
   url: string;
   token: string;
+  verifySsl?: boolean;
 };
 
 export type Config = Readonly<{
