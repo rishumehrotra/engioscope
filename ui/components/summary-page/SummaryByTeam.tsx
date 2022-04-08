@@ -595,14 +595,14 @@ const HealthMetrics: React.FC<{
           </div>
         </Card>
 
-        <Card title="Build pipelines" type="small">
+        <Card title="CI builds" type="small">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div
                 className="text-xs font-semibold"
                 data-tip="Number of CI builds run in the last 30 days"
               >
-                Builds
+                Runs
                 <div className="font-semibold text-xl mb-2">
                   {reposMetric(num(repoStats.builds.total))}
                 </div>
@@ -785,7 +785,7 @@ const HealthMetrics: React.FC<{
           </div>
         </Card>
 
-        <Card title="Release pipelines" type="small">
+        <Card title="Releases" type="small">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div

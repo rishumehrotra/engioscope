@@ -105,3 +105,11 @@ export const buildPipelines = (repos: RepoAnalysis[]) => (
 export const isYmlPipeline = (pipeline: UIBuildPipeline) => (
   pipeline.type === 'yml'
 );
+
+export const hasPipeline = (repos: RepoAnalysis) => (
+  (repos.pipelineCount || 0) > 0
+);
+
+export const reposWithPipelines = (repos: RepoAnalysis[]) => (
+  repos.filter(hasPipeline)
+);

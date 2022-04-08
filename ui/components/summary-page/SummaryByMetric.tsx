@@ -721,7 +721,7 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
             className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
             data-tip="Number of CI builds run in the last 30 days"
           >
-            Builds
+            Runs
           </th>
           <th
             className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
@@ -884,12 +884,12 @@ const SummaryByMetric: React.FC<{
     </details>
 
     <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">Build pipelines</summary>
+      <summary className="font-semibold text-xl my-2 cursor-pointer">CI builds</summary>
       <BuildPipelines groups={groups} />
     </details>
 
     <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">Release pipelines</summary>
+      <summary className="font-semibold text-xl my-2 cursor-pointer">Releases</summary>
       <ReleasePipelines groups={groups} />
     </details>
   </div>

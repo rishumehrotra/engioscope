@@ -1,8 +1,9 @@
 import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
-  buildPipelines,
-  isDeprecated, isYmlPipeline, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
+  buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek,
+  reposWithPipelines, sonarCountsByWeek, totalBuilds, totalCoverage,
+  totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis, UIBuildPipeline } from '../../shared/types';
 import { num, exaggerateTrendLine, shortDate } from '../helpers/utils';
@@ -64,6 +65,7 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     sonarStats: sonarStats(repos),
     buildPipelines: allBuildPipelines,
     ymlPipelines: allBuildPipelines.filter(isYmlPipeline),
+    reposWithPipelines: reposWithPipelines(repos),
     reposWithNonYmlPipelines: repos
       .filter(r => (
         (r.builds?.pipelines.length || 0) > 0
@@ -88,44 +90,6 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         )
     }
     >
-      <ProjectStat
-        topStats={[{
-          title: 'Tests',
-          value: (
-            <>
-              {num(totalTests(stats.repos))}
-              <Sparkline
-                data={exaggerateTrendLine(totalTestsByWeek(stats.repos))}
-                lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
-                className="ml-2 -mb-1"
-              />
-            </>
-          ),
-          tooltip: 'Total number of tests across all matching repos'
-        }]}
-      />
-      <ProjectStat
-        topStats={[{
-          title: 'Coverage',
-          value: (({ total, covered }: { total: number; covered: number }) => (
-            total === 0
-              ? '-'
-              : `${Math.round((covered * 100) / total)}%`
-          ))(totalCoverage(stats.repos))
-        }]}
-      />
-      <ProjectStat
-        topStats={[{
-          title: 'Builds',
-          value: num(totalBuilds(stats.repos)),
-          tooltip: 'Total number of builds across all matching repos'
-        }]}
-        childStats={[{
-          title: 'Success',
-          value: buildSuccessRate(stats.repos),
-          tooltip: 'Success rate across all matching repos'
-        }]}
-      />
       <ProjectStat
         topStats={[{
           title: 'Sonar',
@@ -200,6 +164,42 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       />
       <ProjectStat
         topStats={[{
+          title: 'Tests',
+          value: (
+            <>
+              {num(totalTests(stats.repos))}
+              <Sparkline
+                data={exaggerateTrendLine(totalTestsByWeek(stats.repos))}
+                lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
+                className="ml-2 -mb-1"
+              />
+            </>
+          ),
+          tooltip: 'Total number of tests across all matching repos'
+        }]}
+        childStats={[{
+          title: 'Coverage',
+          value: (({ total, covered }: { total: number; covered: number }) => (
+            total === 0
+              ? '-'
+              : `${Math.round((covered * 100) / total)}%`
+          ))(totalCoverage(stats.repos))
+        }]}
+      />
+      <ProjectStat
+        topStats={[{
+          title: 'Builds',
+          value: num(totalBuilds(stats.repos)),
+          tooltip: 'Total number of builds across all matching repos'
+        }]}
+        childStats={[{
+          title: 'Success',
+          value: buildSuccessRate(stats.repos),
+          tooltip: 'Success rate across all matching repos'
+        }]}
+      />
+      <ProjectStat
+        topStats={[{
           title: 'YAML pipelines',
           value: stats.buildPipelines.length === 0
             ? '-'
@@ -268,6 +268,15 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
               </>
             )
           }}
+      />
+      <ProjectStat
+        topStats={[{
+          title: 'Has releases',
+          tooltip: `${stats.reposWithPipelines.length} out of ${stats.repos.length} repos have made releases in the last 30 days`,
+          value: stats.repos.length === 0
+            ? '-'
+            : `${Math.round((stats.reposWithPipelines.length * 100) / stats.repos.length)}%`
+        }]}
       />
     </ProjectStats>
   );

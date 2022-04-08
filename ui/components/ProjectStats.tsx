@@ -7,7 +7,7 @@ const ProjectStats: React.FC<{ note?: ReactNode }> = ({ children, note }) => (
       {children}
     </div>
     {note ? (
-      <div className="text-xs text-gray-600 mt-1 text-right mr-2">{note}</div>
+      <div className="text-xs text-gray-600 mt-1 ml-3">{note}</div>
     ) : null}
   </div>
 );
