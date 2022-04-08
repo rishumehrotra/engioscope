@@ -12,7 +12,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
     <TabContents gridCols={1}>
       {builds
         ? (
-          <>
+          <div className="overflow-auto">
             <table className="table-auto text-center divide-y divide-gray-200 w-full">
               <thead>
                 <tr>
@@ -36,7 +36,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                         data-tip={pipeline.name}
                         className="link-text"
                       >
-                        <span className="truncate w-full block">
+                        <span className="truncate w-96 block">
                           {pipeline.name}
                         </span>
                       </a>
@@ -108,7 +108,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
             <div className="w-full text-right text-sm italic text-gray-500 mt-4">
               <span>* Data shown is for the last 30 days</span>
             </div>
-          </>
+          </div>
         )
         : (
           <TabContents gridCols={1}>
