@@ -67,7 +67,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Starts with artifact',
-          value: `${Math.round((count(incrementIf(pipelineHasStartingArtifact))(pipelines) * 100) / pipelines.length)}%`
+          value: pipelines.length === 0
+            ? '-'
+            : `${Math.round((count(incrementIf(pipelineHasStartingArtifact))(pipelines) * 100) / pipelines.length)}%`
         }]}
       />
       {(stagesToHighlight || []).map(stageName => {

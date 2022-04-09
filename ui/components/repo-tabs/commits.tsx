@@ -1,6 +1,7 @@
 import React from 'react';
 import { add } from 'rambda';
-import { Link, useLocation } from 'react-router-dom';
+import type { Location } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { RepoAnalysis } from '../../../shared/types';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
@@ -10,8 +11,7 @@ import { ProfilePic } from '../common/ProfilePic';
 import Changes from '../commits/Changes';
 import type { Dev } from '../../types';
 
-export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>): Tab => {
-  const location = useLocation();
+export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, location: Location): Tab => {
   const { commits } = repo;
   const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));
   const subtitle = (devName: string) => {

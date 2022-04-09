@@ -64,14 +64,16 @@ type RepoHealthProps = {
 
 const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }) => {
   const pageName = usePageName();
+  const location = useLocation();
+
   const tabs = useMemo(() => [
     builds(repo.builds),
     branches(repo.branches, repo.defaultBranch),
-    commits(repo, aggregatedDevs),
+    commits(repo, aggregatedDevs, location),
     prs(repo.prs),
     tests(repo.tests),
     codeQuality(repo.codeQuality)
-  ], [repo, aggregatedDevs]);
+  ], [repo, aggregatedDevs, location]);
 
   const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
@@ -88,7 +90,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }
     setSelectedTab(!selectedTab ? tabs[0] : null);
   }, [selectedTab, tabs]);
 
-  const location = useLocation();
   const pipelinesUrl = location.pathname.replace('/repos', `/release-pipelines?search=repo:"${repo.name}"`);
 
   return (

@@ -38,8 +38,8 @@ const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnal
     q => (q.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
   )
 );
-const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
-  groupNames.split(',').some(groupName => (groups[groupName] || []).includes(repo.name))
+const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
+  groupNames.some(groupName => (groups[groupName] || []).includes(repo.name))
 );
 
 const sorters: SortMap<RepoAnalysis> = {
@@ -79,7 +79,7 @@ const Repos: React.FC = () => {
         (!selectedGroupLabels || selectedGroupLabels?.length === 0 || !projectAnalysis.groups?.groups)
           ? dontFilter
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          : bySelectedGroups(selectedGroupLabels as unknown as string, projectAnalysis.groups!.groups)
+          : bySelectedGroups(selectedGroupLabels, projectAnalysis.groups!.groups)
       )
       .sort(sorter);
   }, [
