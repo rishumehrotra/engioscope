@@ -220,7 +220,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                     const pipelines = repo.builds!.pipelines.filter(notYmlPipeline);
 
                     return (
-                      <details className="mb-3" open={index === 0}>
+                      <details key={repo.id} className="mb-3" open={index === 0}>
                         <summary className="font-semibold text-lg cursor-pointer">
                           {`${repo.name} (${pipelines.length})`}
                         </summary>
@@ -240,7 +240,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
                               {pipelines
                                 .map(pipeline => (
-                                  <tr>
+                                  <tr key={pipeline.name}>
                                     <td className="pl-6 py-4 whitespace-nowrap text-left">
                                       <a
                                         href={pipeline.url}
