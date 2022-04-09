@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
 import { parse } from 'yaml';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import fetch from './network/fetch-wrapper';
 
 const run = async () => {
   const response = await fetch('https://raw.githubusercontent.com/github/linguist/master/lib/linguist/languages.yml');
