@@ -1,6 +1,6 @@
-import { useCallback, useEffect } from 'react';
-import { StringParam, useQueryParams, withDefault } from 'use-query-params';
+import { useCallback, useEffect, useMemo } from 'react';
 import createContextState from '../helpers/create-context-state';
+import useQueryParam, { asString } from './use-query-param';
 
 type SortContext = {
   sortKeys: string[];
@@ -17,18 +17,21 @@ export { SortContextProvider, useSortOptions };
 
 export const useSortParams = () => {
   const sortOptions = useSortOptions();
-  const [sortParams, setSortParams] = useQueryParams({
-    sort: withDefault(StringParam, 'desc'),
-    sortBy: StringParam
-  });
+  const [sort, setSort] = useQueryParam('sort', asString);
+  const [sortBy, setSortBy] = useQueryParam('sortBy', asString);
+
+  const sortParams = useMemo(() => ({
+    sort: sort === undefined ? 'desc' : 'asc',
+    sortBy
+  }), [sort, sortBy]);
 
   const toggleSortDirection = useCallback(() => {
-    setSortParams({ sort: sortParams.sort === 'asc' ? undefined : 'asc' }, 'replaceIn');
-  }, [setSortParams, sortParams.sort]);
+    setSort(sort === 'asc' ? undefined : 'asc', true);
+  }, [setSort, sort]);
 
   const onSortByChange = useCallback((sortBy: string) => {
-    setSortParams({ sortBy: sortBy === sortOptions?.defaultKey ? undefined : sortBy }, 'replaceIn');
-  }, [setSortParams, sortOptions?.defaultKey]);
+    setSortBy(sortBy === sortOptions?.defaultKey ? undefined : sortBy, true);
+  }, [setSortBy, sortOptions?.defaultKey]);
 
   return [sortParams, toggleSortDirection, onSortByChange] as const;
 };

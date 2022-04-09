@@ -1,7 +1,6 @@
 import React, {
   useCallback, useMemo, useState
 } from 'react';
-import { useQueryParam } from 'use-query-params';
 import { useParams } from 'react-router-dom';
 import type { ProjectWorkItemAnalysis, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
 import { workItemMetrics, workItemRevisions } from '../network';
@@ -13,6 +12,7 @@ import { useSort } from '../hooks/sort-hooks';
 import AppliedFilters from '../components/AppliedFilters';
 import Loading from '../components/Loading';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
+import useQueryParam, { asString } from '../hooks/use-query-param';
 
 const colorForStage = createPalette([
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
@@ -53,7 +53,7 @@ const useRevisionsForCollection = () => {
 
 const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({ workItemAnalysis }) => {
   const [revisions, getRevisions] = useRevisionsForCollection();
-  const [search] = useQueryParam<string>('search');
+  const [search] = useQueryParam('search', asString);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const workItems = workItemAnalysis.workItems!;
 

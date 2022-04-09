@@ -60,11 +60,11 @@ const Project: React.FC = () => {
         </div>
 
         <Routes>
-          <Route path="/:collection/:project/repos" element={<Repos />} />
-          <Route path="/:collection/:project/release-pipelines" element={<ReleasePipelines />} />
-          <Route path="/:collection/:project/devs" element={<Devs />} />
-          <Route path="/:collection/:project/workitems" element={<WorkItems />} />
-          <Route path="/:collection/:project/" element={<Overview />} />
+          <Route path="repos" element={<Repos />} />
+          <Route path="release-pipelines" element={<ReleasePipelines />} />
+          <Route path="devs" element={<Devs />} />
+          <Route path="workitems" element={<WorkItems />} />
+          <Route path="" element={<Overview />} />
         </Routes>
       </div>
     </div>

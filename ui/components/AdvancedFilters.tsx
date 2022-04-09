@@ -1,16 +1,16 @@
 import React from 'react';
-import { useQueryParam } from 'use-query-params';
 import { Filters } from './common/Icons';
 import Checkbox from './common/Checkbox';
 import TextCheckboxCombo from './common/TextCheckboxCombo';
 import { useTabs } from '../hooks/use-tabs';
 import usePopover from '../hooks/use-popover';
+import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param';
 
 const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam<number | undefined>('techDebtGreaterThan');
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam('commitsGreaterThanZero', asBoolean);
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam('buildsGreaterThanZero', asBoolean);
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam('withFailingLastBuilds', asBoolean);
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam('techDebtGreaterThan', asNumber);
 
   return isOpen ? (
     <span
@@ -21,23 +21,23 @@ const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
     >
       <Checkbox
         value={Boolean(commitsGreaterThanZero)}
-        onChange={value => setCommitsGreaterThanZero(value ? true : undefined, 'replaceIn')}
+        onChange={value => setCommitsGreaterThanZero(value ? true : undefined, true)}
         label={<span>Has commits</span>}
       />
       <Checkbox
         value={Boolean(buildsGreaterThanZero)}
-        onChange={value => setBuildsGreaterThanZero(value ? true : undefined, 'replaceIn')}
+        onChange={value => setBuildsGreaterThanZero(value ? true : undefined, true)}
         label={<span>Has builds</span>}
       />
       <Checkbox
         value={Boolean(withFailingLastBuilds)}
-        onChange={value => setWithFailingLastBuilds(value ? true : undefined, 'replaceIn')}
+        onChange={value => setWithFailingLastBuilds(value ? true : undefined, true)}
         label={<span>Has failing builds</span>}
       />
       <TextCheckboxCombo
         type="number"
         value={String(techDebtGreaterThan === undefined ? '' : techDebtGreaterThan)}
-        onChange={value => setTechDebtGreaterThan(value === undefined ? undefined : Number(value), 'replaceIn')}
+        onChange={value => setTechDebtGreaterThan(value === undefined ? undefined : Number(value), true)}
         textBoxPrefix="Tech debt &gt; "
         textBoxSuffix=" days"
       />
@@ -46,11 +46,11 @@ const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
 };
 
 const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
-  const [nonMasterReleases, setNonMasterReleases] = useQueryParam<boolean | undefined>('nonMasterReleases');
-  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
-  const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
-  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
-  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam<boolean | undefined>('nonPolicyConforming');
+  const [nonMasterReleases, setNonMasterReleases] = useQueryParam('nonMasterReleases', asBoolean);
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam('notStartsWithArtifact', asBoolean);
+  const [stageNameExists, setStageNameExists] = useQueryParam('stageNameExists', asString);
+  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
+  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
 
   return isOpen ? (
     <span
@@ -61,30 +61,30 @@ const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
     >
       <Checkbox
         value={Boolean(nonMasterReleases)}
-        onChange={value => setNonMasterReleases(value ? true : undefined, 'replaceIn')}
+        onChange={value => setNonMasterReleases(value ? true : undefined, true)}
         label={<span>Non master releases</span>}
       />
       <Checkbox
         value={Boolean(notStartsWithArtifact)}
-        onChange={value => setNotStartsWithArtifact(value ? true : undefined, 'replaceIn')}
+        onChange={value => setNotStartsWithArtifact(value ? true : undefined, true)}
         label={<span>Doesn't start with build artifact</span>}
       />
       <TextCheckboxCombo
         type="string"
         value={stageNameExists}
-        onChange={value => setStageNameExists(value || undefined, 'replaceIn')}
+        onChange={value => setStageNameExists(value || undefined, true)}
         textBoxPrefix="Stage names containing"
       />
       <TextCheckboxCombo
         type="string"
         value={stageNameExistsNotUsed}
-        onChange={value => setStageNameExistsNotUsed(value || undefined, 'replaceIn')}
+        onChange={value => setStageNameExistsNotUsed(value || undefined, true)}
         textBoxPrefix="Stage names containing"
         textBoxSuffix="exists, but not used"
       />
       <Checkbox
         value={Boolean(nonPolicyConforming)}
-        onChange={value => setNonPolicyConforming(value ? true : undefined, 'replaceIn')}
+        onChange={value => setNonPolicyConforming(value ? true : undefined, true)}
         label={<span>Doesn't conform to branch policies</span>}
       />
     </span>

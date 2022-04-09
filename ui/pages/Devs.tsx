@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useQueryParam } from 'use-query-params';
 import AppliedFilters from '../components/AppliedFilters';
 import Developer from '../components/Dev';
 import Loading from '../components/Loading';
@@ -10,6 +9,7 @@ import useFetchForProject from '../hooks/use-fetch-for-project';
 import { repoMetrics } from '../network';
 import type { Dev } from '../types';
 import { aggregateDevs } from '../helpers/aggregate-devs';
+import useQueryParam, { asString } from '../hooks/use-query-param';
 
 const sorters: SortMap<Dev> = {
   'Name': (a, b) => b.name.toLowerCase().replace(/["“”]/gi, '').localeCompare(
@@ -21,7 +21,7 @@ const bySearch = (search: string) => (d: Dev) => filterBySearch(search, d.name);
 
 const Devs: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
-  const [search] = useQueryParam<string>('search');
+  const [search] = useQueryParam('search', asString);
 
   const sorter = useSort(sorters, 'Name');
   const devs = useMemo(() => {

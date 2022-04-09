@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useQueryParam } from 'use-query-params';
 import type { SummaryMetrics } from '../../shared/types';
 import Switcher from '../components/common/Switcher';
 import Header from '../components/Header';
@@ -7,6 +6,7 @@ import Loading from '../components/Loading';
 import SummaryByMetric from '../components/summary-page/SummaryByMetric';
 import SummaryByTeam from '../components/summary-page/SummaryByTeam';
 import { dontFilter, filterBySearch, shortDate } from '../helpers/utils';
+import useQueryParam, { asString } from '../hooks/use-query-param';
 import { metricsSummary } from '../network';
 
 const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) => filterBySearch(search, group.groupName);
@@ -20,8 +20,8 @@ const monthAgo = (date: string) => {
 const Summary: React.FC = () => {
   const [metrics, setMetrics] = useState<SummaryMetrics | undefined>();
   useEffect(() => { metricsSummary().then(setMetrics); }, []);
-  const [search] = useQueryParam<string>('search');
-  const [show, setShow] = useQueryParam<string | undefined>('show');
+  const [search] = useQueryParam('search', asString);
+  const [show, setShow] = useQueryParam('show', asString);
 
   return (
     <>
@@ -46,7 +46,7 @@ const Summary: React.FC = () => {
                   { label: 'Teams', value: 'teams' },
                   { label: 'Metric', value: 'metric' }
                 ]}
-                onChange={value => setShow(value === 'teams' ? undefined : value, 'replaceIn')}
+                onChange={value => setShow(value === 'teams' ? undefined : value, true)}
                 value={show === undefined ? 'teams' : show}
               />
             </div>

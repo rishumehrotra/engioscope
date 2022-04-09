@@ -1,7 +1,6 @@
 import React, {
   useCallback, useMemo, useState
 } from 'react';
-import { useQueryParam } from 'use-query-params';
 import { not, pipe } from 'rambda';
 import { useParams } from 'react-router-dom';
 import type { Pipeline as TPipeline, PipelineStage } from '../../shared/types';
@@ -23,6 +22,7 @@ import {
 } from '../../shared/pipeline-utils';
 import InfiniteScrollList from '../components/common/InfiniteScrollList';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
+import useQueryParam, { asBoolean, asString, asStringArray } from '../hooks/use-query-param';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
@@ -73,14 +73,14 @@ const useReleaseDefinitions = () => {
 
 const ReleasePipelines: React.FC = () => {
   const releaseAnalysis = useFetchForProject(pipelineMetrics);
-  const [search] = useQueryParam<string>('search');
-  const [nonMasterReleases] = useQueryParam<boolean>('nonMasterReleases');
-  const [notStartsWithArtifact] = useQueryParam<boolean>('notStartsWithArtifact');
-  const [stageNameExists] = useQueryParam<string>('stageNameExists');
-  const [stageNameExistsNotUsed] = useQueryParam<string>('stageNameExistsNotUsed');
-  const [nonPolicyConforming] = useQueryParam<boolean>('nonPolicyConforming');
+  const [search] = useQueryParam('search', asString);
+  const [nonMasterReleases] = useQueryParam('nonMasterReleases', asBoolean);
+  const [notStartsWithArtifact] = useQueryParam('notStartsWithArtifact', asBoolean);
+  const [stageNameExists] = useQueryParam('stageNameExists', asString);
+  const [stageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
+  const [nonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
   const [releaseDefinitions, getReleaseDefinitions] = useReleaseDefinitions();
-  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam<string[] | undefined>('group');
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam('group', asStringArray);
   useRemoveSort();
 
   const policyForBranch = useCallback((repoId: string, branch: string): NormalizedPolicies => {

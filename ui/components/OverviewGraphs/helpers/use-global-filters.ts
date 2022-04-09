@@ -1,7 +1,7 @@
 import { allPass } from 'rambda';
 import { useCallback, useMemo } from 'react';
-import { useQueryParam } from 'use-query-params';
 import type { UIWorkItem } from '../../../../shared/types';
+import useQueryParam, { asString } from '../../../hooks/use-query-param';
 
 export type Filter = { label: string; tags: string[] };
 
@@ -63,7 +63,7 @@ const fromUrlFilter = (urlParam = '') => (
 );
 
 export default (workItems: UIWorkItem[]) => {
-  const [urlFilter, setUrlFilter] = useQueryParam<string | undefined>('filter');
+  const [urlFilter, setUrlFilter] = useQueryParam('filter', asString);
 
   const filters = useMemo(() => collectFilters(workItems), [workItems]);
 
@@ -73,7 +73,7 @@ export default (workItems: UIWorkItem[]) => {
   );
 
   const setSelectedFilters = useCallback((filters: Filter[]) => {
-    setUrlFilter(toUrlFilter(filters), 'replaceIn');
+    setUrlFilter(toUrlFilter(filters), true);
   }, [setUrlFilter]);
 
   const selectedFilters = useMemo(

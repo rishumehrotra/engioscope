@@ -1,12 +1,12 @@
 import type { ChangeEvent } from 'react';
 import React from 'react';
-import { useQueryParam } from 'use-query-params';
+import useQueryParam, { asString } from '../../hooks/use-query-param';
 import { useTabs } from '../../hooks/use-tabs';
 import { Search } from './Icons';
 
 const SearchInput: React.FC = () => {
   const [selectedTab] = useTabs();
-  const [search, setSearchTerm] = useQueryParam<string>('search');
+  const [search, setSearchTerm] = useQueryParam('search', asString);
 
   if (!selectedTab) return null;
 
@@ -24,7 +24,7 @@ const SearchInput: React.FC = () => {
         name="search"
         placeholder="Search"
         value={search || ''}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value, 'replaceIn')}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value, true)}
       />
     </div>
   );

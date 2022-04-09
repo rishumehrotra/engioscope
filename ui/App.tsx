@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { QueryParamProvider } from 'use-query-params';
 import ReactTooltip from 'react-tooltip';
 import Project from './pages/Project';
 import Collection from './pages/Collection';
@@ -25,15 +24,13 @@ const App: React.FC = () => {
         <SortContextProvider>
           <div className="mb-32 overflow-y-auto transition duration-500 ease-in-out">
             <ReactTooltip />
-            <QueryParamProvider ReactRouterRoute={Route}>
-              <RecordAnalytics />
-              <Routes>
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/summary" element={<Summary />} />
-                <Route path="/:collection/:project" element={<Project />} />
-                <Route path="/" element={<Collection />} />
-              </Routes>
-            </QueryParamProvider>
+            <RecordAnalytics />
+            <Routes>
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/summary" element={<Summary />} />
+              <Route path="/:collection/:project/*" element={<Project />} />
+              <Route path="/" element={<Collection />} />
+            </Routes>
           </div>
         </SortContextProvider>
       </ProjectDetailsProvider>

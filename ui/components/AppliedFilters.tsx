@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
-import { useQueryParam } from 'use-query-params';
 import usePageName from '../hooks/use-page-name';
+import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param';
 import type { Tab } from '../types';
 import { Close } from './common/Icons';
 
@@ -15,19 +15,19 @@ const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, on
 const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 'repos' }) => {
   const pageName = usePageName();
 
-  const [search, setSearch] = useQueryParam<string | undefined>('search');
+  const [search, setSearch] = useQueryParam('search', asString);
 
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam<boolean | undefined>('commitsGreaterThanZero');
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam<boolean | undefined>('buildsGreaterThanZero');
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam<boolean | undefined>('withFailingLastBuilds');
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam<number | undefined>('techDebtGreaterThan');
-  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam<string[] | undefined>('group');
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam('commitsGreaterThanZero', asBoolean);
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam('buildsGreaterThanZero', asBoolean);
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam('withFailingLastBuilds', asBoolean);
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam('techDebtGreaterThan', asNumber);
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam('group', asString);
 
-  const [nonMasterReleases, setNonMasterReleases] = useQueryParam<boolean | undefined>('nonMasterReleases');
-  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam<boolean | undefined>('notStartsWithArtifact');
-  const [stageNameExists, setStageNameExists] = useQueryParam<string | undefined>('stageNameExists');
-  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam<string | undefined>('stageNameExistsNotUsed');
-  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam<boolean | undefined>('nonPolicyConforming');
+  const [nonMasterReleases, setNonMasterReleases] = useQueryParam('nonMasterReleases', asBoolean);
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam('notStartsWithArtifact', asBoolean);
+  const [stageNameExists, setStageNameExists] = useQueryParam('stageNameExists', asString);
+  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
+  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
 
   const isFilterApplied = search || commitsGreaterThanZero || buildsGreaterThanZero || withFailingLastBuilds
   || (techDebtGreaterThan !== undefined) || selectedGroupLabels || nonMasterReleases || notStartsWithArtifact
@@ -39,58 +39,58 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({ count, type = 
       {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
       {
         search ? (
-          <FilterTag label={`Search: ${search}`} onClose={() => setSearch(undefined, 'replaceIn')} />
+          <FilterTag label={`Search: ${search}`} onClose={() => setSearch(undefined, true)} />
         ) : null
       }
       {
         commitsGreaterThanZero ? (
-          <FilterTag label="Has commits" onClose={() => setCommitsGreaterThanZero(undefined, 'replaceIn')} />
+          <FilterTag label="Has commits" onClose={() => setCommitsGreaterThanZero(undefined, true)} />
         ) : null
       }
       {
         buildsGreaterThanZero ? (
-          <FilterTag label="Has builds" onClose={() => setBuildsGreaterThanZero(undefined, 'replaceIn')} />
+          <FilterTag label="Has builds" onClose={() => setBuildsGreaterThanZero(undefined, true)} />
         ) : null
       }
       {
         withFailingLastBuilds ? (
-          <FilterTag label="Has failing builds" onClose={() => setWithFailingLastBuilds(undefined, 'replaceIn')} />
+          <FilterTag label="Has failing builds" onClose={() => setWithFailingLastBuilds(undefined, true)} />
         ) : null
       }
       {
         techDebtGreaterThan ? (
-          <FilterTag label={`Tech debt > ${techDebtGreaterThan}`} onClose={() => setTechDebtGreaterThan(undefined, 'replaceIn')} />
+          <FilterTag label={`Tech debt > ${techDebtGreaterThan}`} onClose={() => setTechDebtGreaterThan(undefined, true)} />
         ) : null
       }
       {
         selectedGroupLabels ? (
-          <FilterTag label={`Group: ${selectedGroupLabels}`} onClose={() => setSelectedGroupLabels(undefined, 'replaceIn')} />
+          <FilterTag label={`Group: ${selectedGroupLabels}`} onClose={() => setSelectedGroupLabels(undefined, true)} />
         ) : null
       }
 
       {
         nonMasterReleases ? (
-          <FilterTag label="Non-master releases" onClose={() => setNonMasterReleases(undefined, 'replaceIn')} />
+          <FilterTag label="Non-master releases" onClose={() => setNonMasterReleases(undefined, true)} />
         ) : null
       }
       {
         notStartsWithArtifact ? (
-          <FilterTag label="No starting artifact" onClose={() => setNotStartsWithArtifact(undefined, 'replaceIn')} />
+          <FilterTag label="No starting artifact" onClose={() => setNotStartsWithArtifact(undefined, true)} />
         ) : null
       }
       {
         stageNameExists ? (
-          <FilterTag label={`Has stage: ${stageNameExists}`} onClose={() => setStageNameExists(undefined, 'replaceIn')} />
+          <FilterTag label={`Has stage: ${stageNameExists}`} onClose={() => setStageNameExists(undefined, true)} />
         ) : null
       }
       {
         stageNameExistsNotUsed ? (
-          <FilterTag label={`Unused stage: ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined, 'replaceIn')} />
+          <FilterTag label={`Unused stage: ${stageNameExistsNotUsed}`} onClose={() => setStageNameExistsNotUsed(undefined, true)} />
         ) : null
       }
       {
         nonPolicyConforming ? (
-          <FilterTag label="Doesn't conform to branch policies" onClose={() => setNonPolicyConforming(undefined, 'replaceIn')} />
+          <FilterTag label="Doesn't conform to branch policies" onClose={() => setNonPolicyConforming(undefined, true)} />
         ) : null
       }
     </div>

@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useQueryParam } from 'use-query-params';
 import AlertMessage from '../components/common/AlertMessage';
 import RepoHealth from '../components/RepoHealth';
 import AppliedFilters from '../components/AppliedFilters';
@@ -16,6 +15,9 @@ import InfiniteScrollList from '../components/common/InfiniteScrollList';
 import { combinedQualityGateStatus } from '../components/code-quality-utils';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
 import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils';
+import useQueryParam, {
+  asBoolean, asNumber, asString, asStringArray
+} from '../hooks/use-query-param';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -52,12 +54,12 @@ const sorters: SortMap<RepoAnalysis> = {
 const Repos: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   const sorter = useSort(sorters, 'Builds');
-  const [search] = useQueryParam<string>('search');
-  const [commitsGreaterThanZero] = useQueryParam<boolean>('commitsGreaterThanZero');
-  const [buildsGreaterThanZero] = useQueryParam<boolean>('buildsGreaterThanZero');
-  const [withFailingLastBuilds] = useQueryParam<boolean>('withFailingLastBuilds');
-  const [techDebtMoreThanDays] = useQueryParam<number>('techDebtGreaterThan');
-  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam<string[] | undefined>('group');
+  const [search] = useQueryParam('search', asString);
+  const [commitsGreaterThanZero] = useQueryParam('commitsGreaterThanZero', asBoolean);
+  const [buildsGreaterThanZero] = useQueryParam('buildsGreaterThanZero', asBoolean);
+  const [withFailingLastBuilds] = useQueryParam('withFailingLastBuilds', asBoolean);
+  const [techDebtMoreThanDays] = useQueryParam('techDebtGreaterThan', asNumber);
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam('group', asStringArray);
 
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
