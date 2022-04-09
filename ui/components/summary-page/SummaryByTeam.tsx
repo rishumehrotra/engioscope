@@ -12,7 +12,14 @@ import {
   renderGroupItem, processSummary
 } from './utils';
 
-const Card: React.FC<{ title: React.ReactNode; type: 'small' | 'large'; comingSoon?: boolean }> = ({
+type CardProps = {
+  title: React.ReactNode;
+  type: 'small' | 'large';
+  comingSoon?: boolean;
+  children?: React.ReactNode;
+};
+
+const Card: React.FC<CardProps> = ({
   title, children, type, comingSoon = false
 }) => (
   <div className={`p-6 h-full bg-white rounded-lg shadow ${type === 'large' ? 'mt-4' : ''} ${comingSoon ? 'opacity-50' : ''}`}>

@@ -29,7 +29,7 @@ const DragHandle: React.FC<DragHandleProps> = ({
   const dragHandleRef = useRef<SVGSVGElement | null>(null);
   const isDragging = useRef<boolean>(false);
 
-  const onDrag = useCallback(e => {
+  const onDrag = useCallback((e: MouseEvent) => {
     if (!dragHandleRef.current || !isDragging.current) return;
     dragHandleRef.current.style.cursor = 'grab';
     const dragXCoord = e.offsetX;
@@ -44,7 +44,7 @@ const DragHandle: React.FC<DragHandleProps> = ({
     isDragging.current = true;
   }, []);
 
-  const mouseMove = useCallback(e => {
+  const mouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging.current) return;
     onDrag(e);
     // requestAnimationFrame(() => onDrag(e));

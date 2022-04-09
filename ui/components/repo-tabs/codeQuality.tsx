@@ -160,6 +160,7 @@ type SubCardProps = {
   rating?: string;
   ratingClassName?: string;
   className?: string;
+  children?: React.ReactNode;
 };
 
 const SubCard: React.FC<SubCardProps> = ({

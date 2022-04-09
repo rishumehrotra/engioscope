@@ -6,6 +6,7 @@ type ModalProps = {
   close: () => void;
   isOpen: boolean;
   heading?: ReactNode;
+  children?: ReactNode;
 };
 
 const Modal: React.FC<ModalProps> = ({

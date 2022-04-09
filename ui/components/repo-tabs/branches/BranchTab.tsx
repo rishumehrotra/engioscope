@@ -9,7 +9,7 @@ const BranchTab: React.FC<{
 }> = ({
   isSelected, onToggleSelect, count, label, tooltip
 }) => {
-  const onClick = useCallback(e => {
+  const onClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onToggleSelect();
   }, [onToggleSelect]);

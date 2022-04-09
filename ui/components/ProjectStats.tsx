@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React from 'react';
 
-const ProjectStats: React.FC<{ note?: ReactNode }> = ({ children, note }) => (
+const ProjectStats: React.FC<{ note?: ReactNode; children: ReactNode }> = ({ children, note }) => (
   <div className="justify-start grid grid-flow-row mb-3">
     <div className="grid grid-flow-col relative gap-2">
       {children}

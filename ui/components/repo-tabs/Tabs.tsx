@@ -17,7 +17,7 @@ type TopLevelTabProps = {
 export const TopLevelTab: React.FC<TopLevelTabProps> = ({
   isSelected, onToggleSelect, count, label
 }) => {
-  const onClick = useCallback(e => {
+  const onClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onToggleSelect();
   }, [onToggleSelect]);

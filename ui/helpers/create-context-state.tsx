@@ -5,7 +5,7 @@ const createContextState = <ValueType extends unknown>(defaultValue: ValueType) 
   type ContextType = [ValueType, (x: ValueType) => void];
   const ProjectDetailsContext = createContext<ContextType>([defaultValue, () => undefined]);
 
-  const Provider: React.FC = ({ children }) => {
+  const Provider: React.FC<{ children: React.ReactNode}> = ({ children }) => {
     const state = useState<ValueType>(defaultValue);
 
     return (

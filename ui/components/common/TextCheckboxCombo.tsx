@@ -16,7 +16,7 @@ const TextCheckboxCombo: React.FC<TextCheckboxComboProps> = ({
   const [textValue, setTextValue] = useState<string | undefined>(value);
 
   const getNewValue = useCallback(
-    (curVal, type) => {
+    (curVal: string | undefined, type: 'string' | 'number') => {
       if (curVal) return curVal;
       if (type === 'string') return '';
       return '0';

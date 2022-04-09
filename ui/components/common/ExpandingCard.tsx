@@ -39,6 +39,7 @@ export type CardProps = {
   onCardClick?: () => void;
   isExpanded: boolean;
   className?: string;
+  children?: React.ReactNode;
 };
 
 const Card: React.FC<CardProps> = ({
