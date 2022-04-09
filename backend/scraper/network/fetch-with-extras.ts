@@ -1,7 +1,7 @@
 import AbortController from 'abort-controller';
 import type { RequestInfo, RequestInit } from 'node-fetch';
-import fetch from 'node-fetch';
 import https from 'https';
+import fetch from './fetch-wrapper';
 
 export default (url: RequestInfo, init?: RequestInit & { timeout?: number; verifySsl: boolean }) => {
   const { timeout = 60000, verifySsl, ...restInit } = init || {};
