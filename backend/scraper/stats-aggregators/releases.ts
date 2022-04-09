@@ -118,8 +118,9 @@ const didAttemptGoAheadUsing = (
   if (!lastMatchingStage) return always(true);
 
   return (attempt: (typeof pipeline)['attempts'][number]) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const attemptProgressionMaxRank = last(attempt.progression)!.rank;
+    const lasstProgression = last(attempt.progression);
+    if (!lasstProgression) return false;
+    const attemptProgressionMaxRank = lasstProgression.rank;
     return attemptProgressionMaxRank > lastMatchingStage.rank;
   };
 };
