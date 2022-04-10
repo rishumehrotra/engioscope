@@ -76,6 +76,11 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
     throw new Error(`HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`);
   }
 
+  if (!response.body) {
+    logNetwork(`HTTP error: Stream is empty. ${response.url}`);
+    throw new Error(`HTTP error: Stream is empty. ${response.url}`);
+  }
+
   logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(filePath)}`);
 
   await fs.mkdir(fileLocation[0], { recursive: true });
