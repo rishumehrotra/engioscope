@@ -38,8 +38,8 @@ const byNotStartsWithArtifact = (pipeline: TPipeline) => Object.keys(pipeline.re
 const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => pipe(
   pipelineMeetsBranchPolicyRequirements(policyForBranch), not
 );
-const bySelectedGroups = (groupNames: string, groups: Record<string, string[]>) => (pipeline: TPipeline) => (
-  groupNames.split(',').some(groupName => (
+const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (pipeline: TPipeline) => (
+  groupNames.some(groupName => (
     isPipelineInGroup(groupName, groups[groupName] || [])(pipeline)
   ))
 );
@@ -102,7 +102,7 @@ const ReleasePipelines: React.FC = () => {
         !selectedGroupLabels || selectedGroupLabels?.length === 0 || !releaseAnalysis.groups?.groups
           ? dontFilter
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          : bySelectedGroups(selectedGroupLabels as unknown as string, releaseAnalysis.groups!.groups)
+          : bySelectedGroups(selectedGroupLabels, releaseAnalysis.groups!.groups)
       );
   }, [
     nonMasterReleases, nonPolicyConforming, notStartsWithArtifact, policyForBranch,
