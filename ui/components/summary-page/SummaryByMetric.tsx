@@ -51,19 +51,19 @@ const FlowMetricsByWorkItemType: React.FC<{
             <th />
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Number of new work items added in the last 30 days"
+              data-tip="Number of new work items added in the last 90 days"
             >
               New
             </th>
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Number of work items completed in the last 30 days"
+              data-tip="Number of work items completed in the last 90 days"
             >
               Velocity
             </th>
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Average time taken to complete a work item over the last 30 days"
+              data-tip="Average time taken to complete a work item over the last 90 days"
             >
               Cycle time
             </th>
@@ -81,7 +81,7 @@ const FlowMetricsByWorkItemType: React.FC<{
             </th>
             <th
               className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Increase in the number of WIP items over the last 30 days"
+              data-tip="Increase in the number of WIP items over the last 90 days"
             >
               WIP increase
             </th>
@@ -274,13 +274,13 @@ const QualityMetrics: React.FC<{
                     <th />
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Number of bugs opened in the last 30 days"
+                      data-tip="Number of bugs opened in the last 90 days"
                     >
                       New bugs
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Number of bugs closed in the last 30 days"
+                      data-tip="Number of bugs closed in the last 90 days"
                     >
                       Bugs fixed
                     </th>
@@ -304,7 +304,7 @@ const QualityMetrics: React.FC<{
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Increase in the number of WIP bugs over the last 30 days"
+                      data-tip="Increase in the number of WIP bugs over the last 90 days"
                     >
                       WIP increase
                     </th>
@@ -719,7 +719,7 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
           <th />
           <th
             className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of CI builds run in the last 30 days"
+            data-tip="Number of CI builds run in the last 90 days"
           >
             Runs
           </th>

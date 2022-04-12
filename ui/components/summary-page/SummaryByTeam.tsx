@@ -51,19 +51,19 @@ const FlowMetrics: React.FC<{
             <th className="w-1/12" />
             <th
               className="text-xs font-semibold py-3 w-1/12"
-              data-tip="Number of new work items added in the last 30 days"
+              data-tip="Number of new work items added in the last 90 days"
             >
               New
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Number of work items completed in the last 30 days"
+              data-tip="Number of work items completed in the last 90 days"
             >
               Velocity
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average time taken to complete a work item over the last 30 days"
+              data-tip="Average time taken to complete a work item over the last 90 days"
             >
               Cycle time
             </th>
@@ -81,7 +81,7 @@ const FlowMetrics: React.FC<{
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Increase in the number of WIP items over the last 30 days"
+              data-tip="Increase in the number of WIP items over the last 90 days"
             >
               WIP increase
             </th>
@@ -226,13 +226,13 @@ const QualityMetrics: React.FC<{
             <th className="w-1/12" />
             <th
               className="text-xs font-semibold py-3 w-1/12"
-              data-tip="Number of bugs opened in the last 30 days"
+              data-tip="Number of bugs opened in the last 90 days"
             >
               New
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Number of bugs closed in the last 30 days"
+              data-tip="Number of bugs closed in the last 90 days"
             >
               Fixed
             </th>
@@ -607,7 +607,7 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Number of CI builds run in the last 30 days"
+                data-tip="Number of CI builds run in the last 90 days"
               >
                 Runs
                 <div className="font-semibold text-xl mb-2">

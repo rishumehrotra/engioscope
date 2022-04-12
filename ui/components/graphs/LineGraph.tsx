@@ -6,8 +6,9 @@ import React, {
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 import useSvgEvent from '../../hooks/use-svg-event';
 
-const yAxisItemSpacing = 33;
+const yAxisItemSpacing = 11;
 const yAxisLeftPadding = 70;
+const yAxisLabelHeight = 20;
 const height = 600;
 const xAxisBottomPadding = 30;
 const xAxisLabelHeight = 30;
@@ -71,9 +72,9 @@ const GridLines = <Point extends unknown>({
               x={0}
               y={yCoord(gridLinesGap * i) - yAxisItemSpacing / 2}
               width={yAxisLeftPadding - axisOverhang}
-              height={yAxisItemSpacing}
+              height={yAxisLabelHeight}
             >
-              <div className="flex text-gray-500 justify-end text-sm w-full h-8 items-center">
+              <div className="text-gray-500 text-sm w-full h-12 text-right">
                 {yAxisLabel(i * gridLinesGap)}
               </div>
             </foreignObject>

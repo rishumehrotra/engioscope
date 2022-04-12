@@ -54,15 +54,15 @@ const NewGraph: React.FC<NewGraphProps> = ({
   workItems, accessors, openModal
 }) => {
   const {
-    wasWorkItemOpenedThisMonth, organizeByWorkItemType, workItemType,
+    wasWorkItemOpenedInLastThreeMonths, organizeByWorkItemType, workItemType,
     isBug, workItemTimes
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
   const preFilteredWorkItems = useMemo(
-    () => workItems.filter(wasWorkItemOpenedThisMonth),
-    [wasWorkItemOpenedThisMonth, workItems]
+    () => workItems.filter(wasWorkItemOpenedInLastThreeMonths),
+    [wasWorkItemOpenedInLastThreeMonths, workItems]
   );
 
   const filter = useCallback(
@@ -194,7 +194,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
   return (
     <GraphCard
       title="New work items"
-      subtitle="Work items on which work started this month"
+      subtitle="Work items on which work started in the last three months"
       hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
       csvData={csvData}
@@ -214,7 +214,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
                     ? 'created date'
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     : stringifyDateField(workItemType(witId).startDateFields!)
-                } within the last 30 days.`}
+                } within the last 90 days.`}
               </li>
             ))}
           </ul>

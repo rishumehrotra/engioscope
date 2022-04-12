@@ -62,12 +62,12 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
             </tbody>
           </table>
           <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-            <span>* Data shown is for the most recent test run, if it occurred in the last 30 days</span>
+            <span>* Data shown is for the most recent test run, if it occurred in the last 90 days</span>
           </div>
         </>
       ) : (
         <TabContents gridCols={1}>
-          <AlertMessage message="This repo didn't have any tests running in pipelines in the last month" />
+          <AlertMessage message="This repo didn't have any tests running in pipelines in the last three months" />
         </TabContents>
       )}
     </TabContents>

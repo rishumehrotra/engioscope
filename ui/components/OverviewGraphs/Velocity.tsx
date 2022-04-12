@@ -138,7 +138,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
           ?.workItemPoints || [];
 
         return openModal({
-          heading: 'Velocity over the last 30 days',
+          heading: 'Velocity over the last 90 days',
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemsNested
@@ -165,7 +165,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
   return (
     <GraphCard
       title="Velocity"
-      subtitle="Work items completed over the last 30 days"
+      subtitle="Work items completed over the last 90 days"
       hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
       csvData={csvData}

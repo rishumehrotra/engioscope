@@ -10,7 +10,7 @@ type CommitTimelineProps = {
 const barWidth = 10;
 const barSpacing = 2;
 const svgHeight = 50;
-const displayDays = 30;
+const displayDays = 90;
 const svgWidth = (barWidth + barSpacing) * displayDays;
 
 const dateString = (date: Date) => date.toISOString().split('T')[0];

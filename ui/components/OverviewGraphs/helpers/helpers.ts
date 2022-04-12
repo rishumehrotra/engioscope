@@ -24,9 +24,9 @@ export const lineColor = (() => {
   );
 })();
 
-const oneMonthAgoFrom = (lastUpdated: string) => {
+const threeMonthsAgoFrom = (lastUpdated: string) => {
   const queryPeriod = new Date(lastUpdated);
-  queryPeriod.setDate(queryPeriod.getDate() - 30);
+  queryPeriod.setDate(queryPeriod.getDate() - 90);
   queryPeriod.setHours(0, 0, 0, 0);
   return queryPeriod;
 };
@@ -41,7 +41,7 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
   const isBug = (witId: string) => workItemType(witId).name[0].toLowerCase().includes('bug');
 
-  const startOfQueryPeriod = oneMonthAgoFrom(projectAnalysis.lastUpdated);
+  const startOfQueryPeriod = threeMonthsAgoFrom(projectAnalysis.lastUpdated);
 
   const isWIPIn = isWIPInTimeRange(workItemTimes, projectAnalysis.ignoreForWIP);
 
@@ -78,10 +78,11 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
       // On the server, we're querying by state changed date. However, the last
       // state change date might not be the end date, depending on config.json.
-      // So, we need to filter out items that have an end date older than the last month.
+      // So, we need to filter out items that have an end date older than
+      // the last three months.
       return new Date(wiTimes.end) > startOfQueryPeriod;
     },
-    wasWorkItemOpenedThisMonth: isNewInTimeRange(workItemType, workItemTimes)(
+    wasWorkItemOpenedInLastThreeMonths: isNewInTimeRange(workItemType, workItemTimes)(
       d => d > startOfQueryPeriod
     ),
     organizeByWorkItemType: (workItems: UIWorkItem[], filter: (wi: UIWorkItem) => boolean) => (

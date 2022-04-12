@@ -29,7 +29,7 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, locatio
       <TabContents gridCols={1}>
         {commits.count === 0
           ? (
-            <AlertMessage message="No commits to this repo in the last month" />
+            <AlertMessage message="No commits to this repo in the last three months" />
           )
           : (
             <>
@@ -85,7 +85,7 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, locatio
                 </tbody>
               </table>
               <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-                <span>* Data shown is for the last 30 days, not including merge commits</span>
+                <span>* Data shown is for the last 90 days, not including merge commits</span>
               </div>
             </>
           )}

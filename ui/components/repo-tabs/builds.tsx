@@ -106,13 +106,13 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
               </tbody>
             </table>
             <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-              <span>* Data shown is for the last 30 days</span>
+              <span>* Data shown is for the last 90 days</span>
             </div>
           </div>
         )
         : (
           <TabContents gridCols={1}>
-            <AlertMessage message="No builds for this repo in the last month" />
+            <AlertMessage message="No builds for this repo in the last three months" />
           </TabContents>
         )}
     </TabContents>

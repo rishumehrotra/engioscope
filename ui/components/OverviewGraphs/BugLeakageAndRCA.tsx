@@ -74,13 +74,13 @@ const isBugLike = (workItemType: UIWorkItemType) => (
   workItemType.name[0].toLowerCase().includes('bug')
 );
 
-const bugsLeakedInLastMonth = (lastUpdated: Date) => {
-  const lastMonth = new Date(lastUpdated);
-  lastMonth.setDate(lastMonth.getDate() - 30);
+const bugsLeakedInLastThreeMonths = (lastUpdated: Date) => {
+  const lastThreeMonths = new Date(lastUpdated);
+  lastThreeMonths.setDate(lastThreeMonths.getDate() - 90);
 
   return (wi: UIWorkItem) => {
     if (wi.state.toLowerCase() === 'withdrawn') return false;
-    return new Date(wi.created.on) >= lastMonth;
+    return new Date(wi.created.on) >= lastThreeMonths;
   };
 };
 
@@ -448,17 +448,17 @@ const BugLeakageAndRCAGraph: React.FC<BugLeakageAndRCAGraphProps> = ({
   workItems, accessors, openModal
 }) => {
   const { workItemType, lastUpdated } = accessors;
-  const hasLeakedInLastMonth = bugsLeakedInLastMonth(lastUpdated);
+  const hasLeakedInLastThreeMonths = bugsLeakedInLastThreeMonths(lastUpdated);
 
   const witIdAndWorkItems = useMemo(
     () => workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
-      if (isBugLike(workItemType(wi.typeId)) && hasLeakedInLastMonth(wi)) {
+      if (isBugLike(workItemType(wi.typeId)) && hasLeakedInLastThreeMonths(wi)) {
         acc[wi.typeId] = acc[wi.typeId] || [];
         acc[wi.typeId].push(wi);
       }
       return acc;
     }, {}),
-    [hasLeakedInLastMonth, workItemType, workItems]
+    [hasLeakedInLastThreeMonths, workItemType, workItems]
   );
 
   return (

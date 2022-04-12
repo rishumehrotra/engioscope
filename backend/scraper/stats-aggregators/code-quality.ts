@@ -117,7 +117,7 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
   };
 };
 
-const uptillWeeks = [4, 3, 2, 1]
+const uptillWeeks = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
   .map(weekIndex => {
     const weekEnd = pastDate(`${(weekIndex - 1) * 7} days`);
     return (d: Date) => d <= weekEnd;

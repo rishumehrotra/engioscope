@@ -11,9 +11,9 @@ import { metricsSummary } from '../network';
 
 const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) => filterBySearch(search, group.groupName);
 
-const monthAgo = (date: string) => {
+const threeMonthsAgo = (date: string) => {
   const d = new Date(date);
-  d.setMonth(d.getMonth() - 1);
+  d.setMonth(d.getMonth() - 3);
   return d;
 };
 
@@ -36,7 +36,7 @@ const Summary: React.FC = () => {
             <strong className="font-semibold">
               Reporting period:
             </strong>
-            {` From ${shortDate(monthAgo(metrics.lastUpdateDate))} to ${shortDate(new Date(metrics.lastUpdateDate))}.`}
+            {` From ${shortDate(threeMonthsAgo(metrics.lastUpdateDate))} to ${shortDate(new Date(metrics.lastUpdateDate))}.`}
           </div>
           <div className="text-right justify-self-end">
             <div className="flex items-center">

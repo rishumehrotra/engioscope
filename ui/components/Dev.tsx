@@ -95,7 +95,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
             </tbody>
           </table>
           <p className="w-full text-right text-sm italic text-gray-500 mt-4">
-            * Data shown is for the last 30 days, not including merge commits
+            * Data shown is for the last 90 days, not including merge commits
           </p>
         </div>
       )}

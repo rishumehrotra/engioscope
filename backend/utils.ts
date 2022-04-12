@@ -51,7 +51,7 @@ export const chunkArray = <T>(array: T[], chunkSize: number) => (
 
 export const unique = <T>(xs: T[]) => [...new Set(xs)];
 
-export const weeks = [4, 3, 2, 1]
+export const weeks = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
   .map(weekIndex => allPass([
     isAfter(`${weekIndex * 7} days`),
     compose(not, isAfter(`${(weekIndex - 1) * 7} days`))

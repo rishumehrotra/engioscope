@@ -161,7 +161,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
         )?.workItems || [];
 
         return openModal({
-          heading: 'WIP items over the last 30 days',
+          heading: 'WIP items over the last 90 days',
           subheading: workItemSubheading(witId, groupName, workItemsForLastDay, workItemType),
           body: (
             <WorkItemFlatList
@@ -179,7 +179,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
   return (
     <GraphCard
       title="Work in progress trend"
-      subtitle="Trend of work items in progress per day over the last 30 days"
+      subtitle="Trend of work items in progress per day over the last 90 days"
       hasData={hasData}
       csvData={csvData}
       left={(

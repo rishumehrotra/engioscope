@@ -17,24 +17,24 @@ import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
-const workCenterTimeThisMonthUsing = (workItemTimes: WorkItemAccessors['workItemTimes']) => {
-  const monthAgo = new Date();
-  monthAgo.setDate(monthAgo.getDate() - 30);
+const workCenterTimeInLastThreeMonthsUsing = (workItemTimes: WorkItemAccessors['workItemTimes']) => {
+  const queryPeriodStart = new Date();
+  queryPeriodStart.setDate(queryPeriodStart.getDate() - 90);
 
   return (workItem: UIWorkItem) => {
     const times = workItemTimes(workItem);
     return times.workCenters.map(({ start, end }) => {
-      if (!end || new Date(end) < monthAgo) return 0;
-      if (new Date(start) > monthAgo) return timeDifference({ start, end });
-      return timeDifference({ start: monthAgo.toISOString(), end });
+      if (!end || new Date(end) < queryPeriodStart) return 0;
+      if (new Date(start) > queryPeriodStart) return timeDifference({ start, end });
+      return timeDifference({ start: queryPeriodStart.toISOString(), end });
     }).reduce(add, 0);
   };
 };
 
-const totalWorkCenterTimeThisMonthUsing = (workItemTimes: WorkItemAccessors['workItemTimes']) => {
-  const workCenterTimeThisMonth = workCenterTimeThisMonthUsing(workItemTimes);
+const totalWorkCenterTimeInLastThreeMonthsUsing = (workItemTimes: WorkItemAccessors['workItemTimes']) => {
+  const workCenterTimeInLastThreeMonths = workCenterTimeInLastThreeMonthsUsing(workItemTimes);
   return (workItems: UIWorkItem[]) => (
-    workItems.reduce((acc, workItemId) => acc + workCenterTimeThisMonth(workItemId), 0)
+    workItems.reduce((acc, workItemId) => acc + workCenterTimeInLastThreeMonths(workItemId), 0)
   );
 };
 
@@ -63,13 +63,13 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     [priorityFilter, sizeFilter]
   );
 
-  const workCenterTimeThisMonth = useMemo(
-    () => workCenterTimeThisMonthUsing(workItemTimes),
+  const workCenterTimeInLastThreeMonths = useMemo(
+    () => workCenterTimeInLastThreeMonthsUsing(workItemTimes),
     [workItemTimes]
   );
 
-  const totalWorkCenterTimeThisMonth = useMemo(
-    () => totalWorkCenterTimeThisMonthUsing(workItemTimes),
+  const totalWorkCenterTimeInLastThreeMonths = useMemo(
+    () => totalWorkCenterTimeInLastThreeMonthsUsing(workItemTimes),
     [workItemTimes]
   );
 
@@ -77,10 +77,10 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     () => Object.fromEntries(
       Object.entries(organizeByWorkItemType(preFilteredWorkItems, filter))
         .filter(([, group]) => Object.values(group).reduce(
-          (acc, wis) => acc + totalWorkCenterTimeThisMonth(wis), 0
+          (acc, wis) => acc + totalWorkCenterTimeInLastThreeMonths(wis), 0
         ) > 0)
     ),
-    [organizeByWorkItemType, preFilteredWorkItems, filter, totalWorkCenterTimeThisMonth]
+    [organizeByWorkItemType, preFilteredWorkItems, filter, totalWorkCenterTimeInLastThreeMonths]
   );
 
   const workItemTooltip = useMemo(
@@ -88,18 +88,18 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     [accessors]
   );
 
-  const monthAgo = useMemo(
+  const threeMonthsAgo = useMemo(
     () => {
-      const monthAgo = new Date(lastUpdated);
-      monthAgo.setDate(monthAgo.getDate() - 30);
-      return monthAgo;
+      const threeMonthsAgo = new Date(lastUpdated);
+      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
+      return threeMonthsAgo;
     },
     [lastUpdated]
   );
 
   const hasData = useMemo(
-    () => totalWorkCenterTimeThisMonth(preFilteredWorkItems) > 0,
-    [preFilteredWorkItems, totalWorkCenterTimeThisMonth]
+    () => totalWorkCenterTimeInLastThreeMonths(preFilteredWorkItems) > 0,
+    [preFilteredWorkItems, totalWorkCenterTimeInLastThreeMonths]
   );
 
   const effortDistribution = useMemo(
@@ -107,7 +107,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
       Object.entries(workItemsToDisplay).reduce<{ byGroup: Record<string, number>; total: number; maxValue: number}>(
         (acc, [witId, group]) => {
           Object.entries(group).forEach(([groupName, workItems]) => {
-            const effort = totalWorkCenterTimeThisMonth(workItems);
+            const effort = totalWorkCenterTimeInLastThreeMonths(workItems);
             acc.byGroup[witId + groupName] = effort;
             acc.total += effort;
             acc.maxValue = Math.max(acc.maxValue, effort);
@@ -117,7 +117,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
         { byGroup: {}, total: 0, maxValue: 0 }
       )
     ),
-    [totalWorkCenterTimeThisMonth, workItemsToDisplay]
+    [totalWorkCenterTimeInLastThreeMonths, workItemsToDisplay]
   );
 
   const effortDistributionStringifiedForWit = useCallback(
@@ -164,18 +164,18 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
           body: (
             <WorkItemFlatList
               workItemType={workItemType(witId)}
-              workItems={workItems.sort((a, b) => workCenterTimeThisMonth(b) - workCenterTimeThisMonth(a))}
+              workItems={workItems.sort((a, b) => workCenterTimeInLastThreeMonths(b) - workCenterTimeInLastThreeMonths(a))}
               tooltip={workItemTooltip}
-              flairs={workItem => [prettyMS(workCenterTimeThisMonth(workItem))]}
+              flairs={workItem => [prettyMS(workCenterTimeInLastThreeMonths(workItem))]}
               extra={workItem => (
                 <div className="text-gray-500 text-sm ml-6 mb-2">
                   {workItemTimes(workItem).workCenters
                     .map(wc => {
-                      if (!wc.end || new Date(wc.end) < monthAgo) return null;
-                      if (new Date(wc.start) > monthAgo) return wc;
+                      if (!wc.end || new Date(wc.end) < threeMonthsAgo) return null;
+                      if (new Date(wc.start) > threeMonthsAgo) return wc;
                       return {
                         ...wc,
-                        start: monthAgo.toISOString()
+                        start: threeMonthsAgo.toISOString()
                       };
                     })
                     .filter(exists)
@@ -193,14 +193,14 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
       }
     };
   }, [
-    accessors, openModal, workItemTooltip, workItemsToDisplay, workCenterTimeThisMonth,
-    effortDistributionStringifiedForGroup, effortDistributionStringifiedForWit, monthAgo, workItemTimes
+    accessors, openModal, workItemTooltip, workItemsToDisplay, workCenterTimeInLastThreeMonths,
+    effortDistributionStringifiedForGroup, effortDistributionStringifiedForWit, threeMonthsAgo, workItemTimes
   ]);
 
   return (
     <GraphCard
       title="Effort distribution"
-      subtitle="Percentage of time various work items have spent in work centers over the last 30 days"
+      subtitle="Percentage of time various work items have spent in work centers over the last 90 days"
       hasData={preFilteredWorkItems.length > 0 && hasData}
       left={(
         <>

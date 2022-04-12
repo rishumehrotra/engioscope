@@ -25,7 +25,7 @@ import {
 } from '../../shared/repo-utils';
 import { exists } from '../../shared/utils';
 
-const lastMonth = isAfter('30 days');
+const lastThreeMonths = isAfter('90 days');
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
 type RelevantResults = {
@@ -226,7 +226,7 @@ const analyseWorkItems = (
 
   const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
   const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
-  const wasWorkItemCompletedInLastMonth = wasWorkItemCompletedIn(lastMonth);
+  const wasWorkItemCompletedInLastMonth = wasWorkItemCompletedIn(lastThreeMonths);
 
   const wipWorkItems = isWIP(workItemTimes, projectConfig?.workitems.ignoreForWIP || []);
   const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
@@ -293,7 +293,7 @@ const analyseWorkItems = (
           filter(isWIPInTimeRange(
             workItemTimes,
             projectConfig?.workitems.ignoreForWIP || []
-          )(lastMonth)),
+          )(lastThreeMonths)),
           length
         )(wis),
         wipIncreaseByWeek: wis => (
@@ -306,7 +306,7 @@ const analyseWorkItems = (
           map(computeTimeDifferenceBetween('start'))
         )(wis),
         leakage: wis => pipe(
-          filter(leakage(lastMonth)),
+          filter(leakage(lastThreeMonths)),
           length
         )(wis),
         leakageByWeek: wis => (

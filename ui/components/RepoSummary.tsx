@@ -46,7 +46,7 @@ const sonarStats = (repos: RepoAnalysis[]) => (
 
 const pipelineLastUsed = (pipeline: UIBuildPipeline) => {
   if (pipeline.status.type === 'unknown') return 'Unknown';
-  if (pipeline.status.type === 'succeeded') return 'Within the last month';
+  if (pipeline.status.type === 'succeeded') return 'Within the last 3 months';
   if (!pipeline.status.since) return 'Unknown';
   return `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`;
 };
@@ -232,7 +232,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                                 {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
                                 <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider" />
                                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                                  Runs in the last 30 days
+                                  Runs in the last 90 days
                                 </th>
                                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Last used</th>
                               </tr>
@@ -272,7 +272,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Has releases',
-          tooltip: `${stats.reposWithPipelines.length} out of ${stats.repos.length} repos have made releases in the last 30 days`,
+          tooltip: `${stats.reposWithPipelines.length} out of ${stats.repos.length} repos have made releases in the last 90 days`,
           value: stats.repos.length === 0
             ? '-'
             : `${Math.round((stats.reposWithPipelines.length * 100) / stats.repos.length)}%`

@@ -55,7 +55,7 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount }) =
               style={{ width: `${(successful * 100) / max}%` }}
             />
             <div className="text-sm pl-2 py-0.5 z-20 relative">
-              <b>{`${(total / 30).toFixed(2).replace('.00', '')}`}</b>
+              <b>{`${(total / 90).toFixed(2).replace('.00', '')}`}</b>
               <span className="text-xs">{' deploys/day, '}</span>
               <b>{`${Math.round((successful * 100) / total)}%`}</b>
               <span className="text-xs">{' success rate'}</span>

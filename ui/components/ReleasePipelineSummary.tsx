@@ -49,7 +49,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
             title: `${lastStage[0]} deploys`,
             value: (
               <>
-                {num(Math.round(lastStage[1].total / 30))}
+                {num(Math.round(lastStage[1].total / 90))}
                 <span className="font-normal text-sm"> / day</span>
               </>
             )

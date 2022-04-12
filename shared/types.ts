@@ -9,6 +9,7 @@ export type AnalysedProjects = {
   projects: ScrapedProject[];
   lastUpdated: string;
   hasSummary: boolean;
+  banner?: string;
 };
 
 export type AnalyticsItem = {
@@ -311,6 +312,7 @@ export type UIProjectAnalysis = {
   releasePipelineCount: number;
   workItemCount: number;
   workItemLabel: [singular: string, plural: string];
+  banner?: string;
 };
 
 export type TestCaseAggregateStats = {
