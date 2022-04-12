@@ -13,6 +13,7 @@ import workItemsForCollection from './stats-aggregators/work-items-for-collectio
 import type { ProjectAnalysis } from './types';
 import summariseResults from './summarise-results';
 import { fetchCounters } from './network/fetch-with-disk-cache';
+import { mapSettleSeries } from '../utils';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -42,10 +43,9 @@ const scrape = async (config: ParsedConfig) => {
 
   const results = zip(
     projects,
-    await Promise.allSettled(
-      projects.map(
-        args => analyseProject(...args).then(tap(writeToFile(args[0].name, args[1])))
-      )
+    await mapSettleSeries(
+      projects,
+      args => analyseProject(...args).then(tap(writeToFile(args[0].name, args[1])))
     )
   );
 

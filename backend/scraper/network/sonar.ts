@@ -217,9 +217,22 @@ const getMatchingSonarProjects = async (
 
 // #endregion
 
+const sonarProjectsCache = new Map<ParsedConfig, Promise<SonarProject[]>>();
+const getSonarProjects = (config: ParsedConfig) => {
+  if (!sonarProjectsCache.has(config)) {
+    sonarProjectsCache.set(
+      config,
+      Promise.all((config.sonar || []).map(projectsAtSonarServer(config)))
+        .then(list => list.flat())
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return sonarProjectsCache.get(config)!;
+};
+
 export default (config: ParsedConfig) => {
-  const sonarProjects = Promise.all((config.sonar || []).map(projectsAtSonarServer(config)))
-    .then(list => list.flat());
+  const sonarProjects = getSonarProjects(config);
 
   // const measuresDefinition = Promise.all((config.sonar || []).map(getMeasureDefinitions(config)))
   //   .then(zip(config.sonar || []))

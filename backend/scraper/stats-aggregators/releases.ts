@@ -66,7 +66,7 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
       name: release.name,
       reposAndBranches: getArtifactDetails(release),
       progression: release.environments
-        .filter(env => env.status !== 'notStarted')
+        .filter(env => env.status !== 'notStarted' && env.deploySteps?.length)
         .map(env => ({
           env: env.name,
           rank: env.rank,

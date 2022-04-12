@@ -56,3 +56,23 @@ export const weeks = [4, 3, 2, 1]
     isAfter(`${weekIndex * 7} days`),
     compose(not, isAfter(`${(weekIndex - 1) * 7} days`))
   ]));
+
+type SettleSeriesType<T> = {
+  status: 'fulfilled';
+  value: T;
+} | {
+  status: 'rejected';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reason: any;
+};
+
+export const mapSettleSeries = <T, U>(xs: T[], fn: (x: T) => Promise<U>) => (
+  xs.reduce<Promise<SettleSeriesType<U>[]>>((acc, x) => (
+    acc.then(accArr => (
+      fn(x)
+        .then(value => ({ status: 'fulfilled', value } as const))
+        .catch(err => ({ status: 'rejected', reason: err } as const))
+        .then(result => [...accArr, result])
+    ))
+  ), Promise.resolve([]))
+);
