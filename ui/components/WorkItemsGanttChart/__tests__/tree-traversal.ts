@@ -1,3 +1,4 @@
+import { it, expect } from 'vitest';
 import { filterTree, reduceTree } from '../tree-traversal';
 
 it('should reduce a tree', () => {

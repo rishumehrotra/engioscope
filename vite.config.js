@@ -21,5 +21,8 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:1337/'
     }
+  },
+  test: {
+    include: ['**/__tests__/**.{ts,tsx}']
   }
 });
