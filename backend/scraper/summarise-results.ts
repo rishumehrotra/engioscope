@@ -23,7 +23,7 @@ import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
   sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
-import { exists } from '../../shared/utils';
+import { divide, exists, toPercentage } from '../../shared/utils';
 
 const lastThreeMonths = isAfter('90 days');
 
@@ -389,7 +389,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           codeQuality: codeQuality(matchesExcludingDeprecated),
           newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),
           sonarCountsByWeek: sonarCountsByWeek(matchesExcludingDeprecated),
-          coverage: coverage.total ? `${Math.round((coverage.covered * 100) / coverage.total)}%` : '-',
+          coverage: divide(coverage.covered, coverage.total).map(toPercentage).getOr('-'),
           ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length },
           hasPipelines: reposWithPipelines(matchesExcludingDeprecated).length
         };

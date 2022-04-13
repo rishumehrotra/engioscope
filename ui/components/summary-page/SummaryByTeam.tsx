@@ -1,7 +1,9 @@
 import React, {
   Fragment, useRef, useState
 } from 'react';
+import { maybe } from '../../../shared/maybe';
 import type { SummaryMetrics } from '../../../shared/types';
+import { divide, toPercentage } from '../../../shared/utils';
 import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
 import Sparkline from '../graphs/Sparkline';
 import UsageByEnv from '../UsageByEnv';
@@ -317,9 +319,9 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      bugInfo.cycleTime
-                        ? prettyMS(bugInfo.cycleTime)
-                        : '-',
+                      maybe(bugInfo.cycleTime)
+                        .map(prettyMS)
+                        .getOr('-'),
                       <Sparkline
                         data={bugInfo.cycleTimeByWeek}
                         lineColor={decreaseIsBetter(bugInfo.cycleTimeByWeek)}
@@ -329,9 +331,9 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      bugInfo.changeLeadTime
-                        ? prettyMS(bugInfo.changeLeadTime)
-                        : '-',
+                      maybe(bugInfo.changeLeadTime)
+                        .map(prettyMS)
+                        .getOr('-'),
                       <Sparkline
                         data={bugInfo.changeLeadTimeByWeek}
                         lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
@@ -341,9 +343,9 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td>
                     {renderBugMetric(
-                      bugInfo.flowEfficiency
-                        ? `${Math.round(flowEfficiency(bugInfo.flowEfficiency))}%`
-                        : '-',
+                      maybe(bugInfo.flowEfficiency)
+                        .map(x => `${Math.round(flowEfficiency(x))}%`)
+                        .getOr('-'),
                       <Sparkline
                         data={bugInfo.flowEfficiencyByWeek.map(flowEfficiency)}
                         lineColor={increaseIsBetter(bugInfo.flowEfficiencyByWeek.map(flowEfficiency))}
@@ -370,9 +372,9 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      bugInfo.wipAge
-                        ? prettyMS(bugInfo.wipAge)
-                        : '-',
+                      maybe(bugInfo.wipAge)
+                        .map(prettyMS)
+                        .getOr('-'),
                       null,
                       '#age-of-work-in-progress-items'
                     )}
@@ -460,7 +462,9 @@ const HealthMetrics: React.FC<{
                     {`Pipelines having ${stage.name}`}
                     <div className="font-semibold text-xl">
                       {pipelinesMetric(
-                        pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
+                        divide(stage.exists, pipelineStats.pipelines)
+                          .map(toPercentage)
+                          .getOr('-')
                       )}
                     </div>
                   </div>
@@ -471,7 +475,9 @@ const HealthMetrics: React.FC<{
                     {`Pipelines using ${stage.name}`}
                     <div className="font-semibold text-xl">
                       {pipelinesMetric(
-                        pipelineStats.pipelines === 0 ? '-' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
+                        divide(stage.used, pipelineStats.pipelines)
+                          .map(toPercentage)
+                          .getOr('-')
                       )}
                     </div>
                   </div>
@@ -499,7 +505,9 @@ const HealthMetrics: React.FC<{
                     ? (
                       <>
                         {reposMetric(
-                          `${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`,
+                          divide(codeQuality.configured, repoStats.repos)
+                            .map(toPercentage)
+                            .getOr('-'),
                           <Sparkline
                             data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
                             lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
@@ -599,8 +607,9 @@ const HealthMetrics: React.FC<{
               </div>
               <div className="font-semibold text-xl">
                 {pipelinesMetric(
-                  pipelineStats.pipelines === 0 ? '0'
-                    : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
+                  divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
+                    .map(toPercentage)
+                    .getOr('-')
                 )}
               </div>
             </div>
@@ -628,9 +637,9 @@ const HealthMetrics: React.FC<{
                 Success
               </div>
               <div className="font-semibold text-md">
-                {`${repoStats.builds.total
-                  ? `${Math.round((repoStats.builds.successful * 100) / repoStats.builds.total)}%`
-                  : '-'}`}
+                {divide(repoStats.builds.successful, repoStats.builds.total)
+                  .map(toPercentage)
+                  .getOr('-')}
               </div>
             </div>
             <div>
@@ -642,9 +651,9 @@ const HealthMetrics: React.FC<{
               </div>
               <div className="text-xs pt-2 uppercase font-light">
                 {reposMetric(
-                  repoStats.ymlPipelines.total === 0
-                    ? '-'
-                    : `${Math.round((repoStats.ymlPipelines.count * 100) / repoStats.ymlPipelines.total)}%`
+                  divide(repoStats.ymlPipelines.count, repoStats.ymlPipelines.total)
+                    .map(toPercentage)
+                    .getOr('-')
                 )}
               </div>
             </div>
@@ -674,9 +683,9 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {pipelinesMetric(
-                    pipelineStats.masterOnlyPipelines.total === 0
-                      ? '-'
-                      : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
+                    divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
+                      .map(toPercentage)
+                      .getOr('-')
                   )}
                 </div>
               </div>
@@ -689,9 +698,9 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {pipelinesMetric(
-                    pipelineStats.pipelines
-                      ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
-                      : '-'
+                    divide(pipelineStats.startsWithArtifact, pipelineStats.pipelines)
+                      .map(toPercentage)
+                      .getOr('-')
                   )}
                 </div>
               </div>
@@ -704,9 +713,9 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {reposMetric(
-                    repoStats.repos
-                      ? `${Math.round((repoStats.hasPipelines * 100) / repoStats.repos)}%`
-                      : '-'
+                    divide(repoStats.hasPipelines, repoStats.repos)
+                      .map(toPercentage)
+                      .getOr('-')
                   )}
                 </div>
               </div>

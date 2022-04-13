@@ -6,6 +6,7 @@ import {
   totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type { RepoAnalysis, UIBuildPipeline } from '../../shared/types';
+import { divide, toPercentage } from '../../shared/utils';
 import { num, exaggerateTrendLine, shortDate } from '../helpers/utils';
 import Sparkline from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
@@ -201,9 +202,9 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'YAML pipelines',
-          value: stats.buildPipelines.length === 0
-            ? '-'
-            : `${Math.round((stats.ymlPipelines.length * 100) / stats.buildPipelines.length)}%`,
+          value: divide(stats.ymlPipelines.length, stats.buildPipelines.length)
+            .map(toPercentage)
+            .getOr('-'),
           tooltip: `${stats.ymlPipelines.length} of ${stats.buildPipelines.length} pipelines use a YAML-based configuration`
         }]}
         onClick={stats.ymlPipelines.length === stats.buildPipelines.length
@@ -273,9 +274,9 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         topStats={[{
           title: 'Has releases',
           tooltip: `${stats.reposWithPipelines.length} out of ${stats.repos.length} repos have made releases in the last 90 days`,
-          value: stats.repos.length === 0
-            ? '-'
-            : `${Math.round((stats.reposWithPipelines.length * 100) / stats.repos.length)}%`
+          value: divide(stats.reposWithPipelines.length, stats.repos.length)
+            .map(toPercentage)
+            .getOr('-')
         }]}
       />
     </ProjectStats>

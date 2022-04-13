@@ -13,6 +13,7 @@ import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 import { count, incrementIf } from '../../shared/reducer-utils';
 import UsageByEnv from './UsageByEnv';
+import { divide, toPercentage } from '../../shared/utils';
 
 export const envRowTooltip = (env: string, successful: number, total: number, pipelineCount: number) => `
   <b>${env}</b><br />
@@ -56,7 +57,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
           }]}
           childStats={[{
             title: 'Success',
-            value: `${Math.round((lastStage[1].successful / lastStage[1].total) * 100)}%`
+            value: divide(lastStage[1].successful, lastStage[1].total)
+              .map(toPercentage)
+              .getOr('-')
           }]}
           onClick={{
             open: 'popup',
@@ -67,9 +70,10 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Starts with artifact',
-          value: pipelines.length === 0
-            ? '-'
-            : `${Math.round((count(incrementIf(pipelineHasStartingArtifact))(pipelines) * 100) / pipelines.length)}%`
+          value: divide(
+            count(incrementIf(pipelineHasStartingArtifact))(pipelines),
+            pipelines.length
+          ).map(toPercentage).getOr('-')
         }]}
       />
       {(stagesToHighlight || []).map(stageName => {
@@ -82,14 +86,14 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
               topStats={[
                 {
                   title: `${stageName}: exists`,
-                  value: pipelines.length === 0 ? '0' : `${Math.round((stageExistsCount * 100) / pipelines.length)}%`,
+                  value: divide(stageExistsCount, pipelines.length).map(toPercentage).getOr('-'),
                   tooltip: `${num(stageExistsCount)} out of ${pipelines.length} release ${
                     stageExistsCount === 1 ? 'pipeline has' : 'pipelines have'
                   } a stage named (or containing) ${stageName}.`
                 },
                 {
                   title: `${stageName}: used`,
-                  value: pipelines.length === 0 ? '0' : `${Math.round((stageExistsAndUsedCount * 100) / pipelines.length)}%`,
+                  value: divide(stageExistsAndUsedCount, pipelines.length).map(toPercentage).getOr('-'),
                   tooltip: `${num(stageExistsAndUsedCount)} out of ${pipelines.length} release ${
                     stageExistsAndUsedCount === 1 ? 'pipeline has' : 'pipelines have'
                   } a successful deployment from ${stageName}.`
@@ -102,7 +106,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Master-only pipelines',
-          value: masterDeploys.total === 0 ? '-' : `${Math.round((masterDeploys.count * 100) / masterDeploys.total)}%`,
+          value: divide(masterDeploys.count, masterDeploys.total).map(toPercentage).getOr('-'),
           tooltip: `${num(masterDeploys.count)} out of ${masterDeploys.total} release ${
             masterDeploys.count === 1 ? 'pipeline deploys' : 'pipelines deploy'
           } exclusively from master.${
@@ -113,7 +117,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Conforms to branch policies',
-          value: pipelines.length === 0 ? '-' : `${Math.round((policyPassCount * 100) / pipelines.length)}%`,
+          value: divide(policyPassCount, pipelines.length).map(toPercentage).getOr('-'),
           tooltip: `${num(policyPassCount)} out of ${pipelines.length} have branches that conform to the branch policy.${
             ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
           }`

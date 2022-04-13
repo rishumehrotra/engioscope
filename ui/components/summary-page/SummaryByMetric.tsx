@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { Fragment } from 'react';
 import type { SummaryMetrics } from '../../../shared/types';
+import { divide, toPercentage } from '../../../shared/utils';
 import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
 import { ExternalLink } from '../common/Icons';
 import Sparkline from '../graphs/Sparkline';
@@ -541,13 +542,17 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                     <Fragment key={stage.name}>
                       <td className="px-6 py-3">
                         {pipelinesMetric(
-                          pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.exists * 100) / pipelineStats.pipelines)}%`
+                          divide(stage.exists, pipelineStats.pipelines)
+                            .map(toPercentage)
+                            .getOr('-')
                         )}
                       </td>
                       <td className="px-6 py-3">
                         {
                           pipelinesMetric(
-                            pipelineStats.pipelines === 0 ? '0' : `${Math.round((stage.used * 100) / pipelineStats.pipelines)}%`
+                            divide(stage.used, pipelineStats.pipelines)
+                              .map(toPercentage)
+                              .getOr('-')
                           )
                         }
                       </td>
@@ -698,8 +703,9 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                 <td className="px-6 py-3 font-medium text-lg text-black" />
                 <td className="px-6 py-3 font-medium text-lg text-black">
                   {pipelinesMetric(
-                    pipelineStats.pipelines === 0 ? '0'
-                      : `${Math.round((pipelineStats.conformsToBranchPolicies * 100) / pipelineStats.pipelines)}%`
+                    divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
+                      .map(toPercentage)
+                      .getOr('-')
                   )}
                 </td>
               </tr>
@@ -837,23 +843,23 @@ const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ grou
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">
                 {pipelinesMetric(
-                  pipelineStats.masterOnlyPipelines.total === 0
-                    ? '-'
-                    : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
+                  divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
+                    .map(toPercentage)
+                    .getOr('-')
                 )}
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">
                 {pipelinesMetric(
-                  pipelineStats.pipelines
-                    ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
-                    : '-'
+                  divide(pipelineStats.startsWithArtifact, pipelineStats.pipelines)
+                    .map(toPercentage)
+                    .getOr('-')
                 )}
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">
                 {reposMetric(
-                  repoStats.repos
-                    ? `${Math.round((repoStats.hasPipelines * 100) / repoStats.repos)}%`
-                    : '-'
+                  divide(repoStats.hasPipelines, repoStats.repos)
+                    .map(toPercentage)
+                    .getOr('-')
                 )}
               </td>
             </tr>
