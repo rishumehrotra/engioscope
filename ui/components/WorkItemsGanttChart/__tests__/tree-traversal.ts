@@ -1,31 +1,22 @@
 import { it, expect } from 'vitest';
 import { filterTree, reduceTree } from '../tree-traversal';
 
-it('should reduce a tree', () => {
-  const tree = {
-    id: 'root',
-    children: [
-      {
-        id: 'child1',
-        children: [
-          {
-            id: 'grandchild1',
-            children: []
-          },
-          {
-            id: 'grandchild2',
-            children: []
-          }
-        ]
-      },
-      {
-        id: 'child2',
-        children: []
-      }
-    ]
-  };
+const tree = {
+  id: 'root',
+  children: [
+    {
+      id: 'child1',
+      children: [
+        { id: 'grandchild1', children: [] },
+        { id: 'grandchild2', children: [] }
+      ]
+    },
+    { id: 'child2', children: [] }
+  ]
+};
 
-  const reduced = reduceTree<{id: string}, string[]>((acc, node) => {
+it('should reduce a tree', () => {
+  const reduced = reduceTree<{ id: string }, string[]>((acc, node) => {
     acc.push(node.id);
     return acc;
   })([], tree);
@@ -34,68 +25,30 @@ it('should reduce a tree', () => {
 });
 
 it('should filter a tree', () => {
-  const tree = {
+  expect(filterTree<{ id: string }>(node => node.id === 'child1')(tree)).toEqual({
     id: 'root',
     children: [
       {
         id: 'child1',
         children: [
-          {
-            id: 'grandchild1',
-            children: []
-          },
-          {
-            id: 'grandchild2',
-            children: []
-          }
-        ]
-      },
-      {
-        id: 'child2',
-        children: []
-      }
-    ]
-  };
-
-  expect(filterTree<{ id: string}>(
-    node => node.id === 'child1'
-  )(tree)).toEqual({
-    id: 'root',
-    children: [
-      {
-        id: 'child1',
-        children: [
-          {
-            id: 'grandchild1',
-            children: []
-          },
-          {
-            id: 'grandchild2',
-            children: []
-          }
+          { id: 'grandchild1', children: [] },
+          { id: 'grandchild2', children: [] }
         ]
       }
     ]
   });
 
-  expect(filterTree<{ id: string}>(
-    node => node.id === 'grandchild1'
-  )(tree)).toEqual({
+  expect(filterTree<{ id: string }>(node => node.id === 'grandchild1')(tree)).toEqual({
     id: 'root',
     children: [
       {
         id: 'child1',
         children: [
-          {
-            id: 'grandchild1',
-            children: []
-          }
+          { id: 'grandchild1', children: [] }
         ]
       }
     ]
   });
 
-  expect(filterTree<{ id: string}>(
-    node => node.id === 'root'
-  )(tree)).toEqual(tree);
+  expect(filterTree<{ id: string}>(node => node.id === 'root')(tree)).toEqual(tree);
 });

@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import AlertMessage from '../common/AlertMessage';
 
 describe('Alert Message', () => {
