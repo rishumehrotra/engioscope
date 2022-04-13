@@ -381,7 +381,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   return (
     <GraphCard
       title={`${workItemType(witId).name[0]} leakage with root cause`}
-      subtitle={`${workItemType(witId).name[1]} leaked over the last 30 days with their root cause`}
+      subtitle={`${workItemType(witId).name[1]} leaked over the last 90 days with their root cause`}
       hasData={workItems.length > 0}
       csvData={csvData}
       left={(
