@@ -20,8 +20,8 @@ import {
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed, totalUsageByEnvironment
 } from '../../shared/pipeline-utils';
 import {
-  buildPipelines,
-  isDeprecated, isYmlPipeline, newSonarSetupsByWeek, sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
+  buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
+  sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import { exists } from '../../shared/utils';
 
@@ -195,6 +195,7 @@ type Summary = {
     sonarCountsByWeek: ReturnType<typeof sonarCountsByWeek>;
     coverage: string;
     ymlPipelines: { count: number; total: number };
+    hasPipelines: number;
   };
   pipelineStats: {
     pipelines: number;
@@ -389,7 +390,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),
           sonarCountsByWeek: sonarCountsByWeek(matchesExcludingDeprecated),
           coverage: coverage.total ? `${Math.round((coverage.covered * 100) / coverage.total)}%` : '-',
-          ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length }
+          ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length },
+          hasPipelines: reposWithPipelines(matchesExcludingDeprecated).length
         };
       };
 

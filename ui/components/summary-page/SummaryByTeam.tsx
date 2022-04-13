@@ -17,12 +17,17 @@ type CardProps = {
   type: 'small' | 'large';
   comingSoon?: boolean;
   children?: React.ReactNode;
+  width?: 1 | 2;
 };
 
 const Card: React.FC<CardProps> = ({
-  title, children, type, comingSoon = false
+  title, children, type, comingSoon = false, width = 1
 }) => (
-  <div className={`p-6 h-full bg-white rounded-lg shadow ${type === 'large' ? 'mt-4' : ''} ${comingSoon ? 'opacity-50' : ''}`}>
+  <div
+    className={`p-6 h-full bg-white rounded-lg shadow ${
+      type === 'large' ? 'mt-4' : ''
+    } ${comingSoon ? 'opacity-50' : ''} ${width === 2 ? 'col-span-2' : ''}`}
+  >
     <h2 className={`${type === 'large' ? 'text-xl' : 'text-lg'} mb-5 font-semibold flex items-center`}>
       {title}
       {comingSoon && (
@@ -657,6 +662,64 @@ const HealthMetrics: React.FC<{
           </div>
         </Card>
 
+        <Card title="Releases" type="small" width={2}>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Number of release pipelines that only release from the master branch"
+                >
+                  Master only pipelines
+                </div>
+                <div className="font-semibold text-xl">
+                  {pipelinesMetric(
+                    pipelineStats.masterOnlyPipelines.total === 0
+                      ? '-'
+                      : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
+                  )}
+                </div>
+              </div>
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Number of release pipelines that have a starting artifact"
+                >
+                  Starts with artifact
+                </div>
+                <div className="font-semibold text-xl">
+                  {pipelinesMetric(
+                    pipelineStats.pipelines
+                      ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
+                      : '-'
+                  )}
+                </div>
+              </div>
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Number of repos that have associated release pipelines"
+                >
+                  Repos with release pipelines
+                </div>
+                <div className="font-semibold text-xl">
+                  {reposMetric(
+                    repoStats.repos
+                      ? `${Math.round((repoStats.hasPipelines * 100) / repoStats.repos)}%`
+                      : '-'
+                  )}
+                </div>
+              </div>
+            </div>
+            <div>
+              <UsageByEnv
+                perEnvUsage={pipelineStats.usageByEnvironment}
+                pipelineCount={pipelineStats.pipelines}
+              />
+            </div>
+          </div>
+        </Card>
+
         <Card title="Contract driven development" type="small" comingSoon>
           <div className="grid grid-cols-2 gap-y-4">
             <div>
@@ -788,47 +851,6 @@ const HealthMetrics: React.FC<{
                 Bugs due to toggles
               </div>
               <div className="font-semibold text-xl">xx</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Releases" type="small">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Number of release pipelines that only release from the master branch"
-              >
-                Master only pipelines
-              </div>
-              <div className="font-semibold text-xl">
-                {pipelinesMetric(
-                  pipelineStats.masterOnlyPipelines.total === 0
-                    ? '-'
-                    : `${Math.round((pipelineStats.masterOnlyPipelines.count * 100) / pipelineStats.masterOnlyPipelines.total)}%`
-                )}
-              </div>
-            </div>
-            <div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Number of release pipelines that have a starting artifact"
-              >
-                Starts with artifact
-              </div>
-              <div className="font-semibold text-xl">
-                {pipelinesMetric(
-                  pipelineStats.pipelines
-                    ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
-                    : '-'
-                )}
-              </div>
-            </div>
-            <div className="col-span-2 w-full">
-              <UsageByEnv
-                perEnvUsage={pipelineStats.usageByEnvironment}
-                pipelineCount={pipelineStats.pipelines}
-              />
             </div>
           </div>
         </Card>

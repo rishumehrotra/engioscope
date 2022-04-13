@@ -807,14 +807,21 @@ const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ grou
           >
             Starts with artifact
           </th>
+          <th
+            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+            data-tip="Number of release pipelines that start with an artifact"
+          >
+            Repos with release pipelines
+          </th>
         </tr>
       </thead>
       <tbody>
         {groups.map(group => {
-          const { pipelineStats } = group;
+          const { pipelineStats, repoStats } = group;
           const [filterKey] = allExceptExpectedKeys(group);
           const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
           const baseProjectLink = `/${group.collection}/${group.project}`;
+          const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
           const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
           return (
@@ -839,6 +846,13 @@ const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ grou
                 {pipelinesMetric(
                   pipelineStats.pipelines
                     ? `${Math.round((pipelineStats.startsWithArtifact * 100) / pipelineStats.pipelines)}%`
+                    : '-'
+                )}
+              </td>
+              <td className="px-6 py-3 font-medium text-lg text-black">
+                {reposMetric(
+                  repoStats.repos
+                    ? `${Math.round((repoStats.hasPipelines * 100) / repoStats.repos)}%`
                     : '-'
                 )}
               </td>
