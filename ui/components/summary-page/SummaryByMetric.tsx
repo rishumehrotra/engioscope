@@ -13,17 +13,17 @@ import {
 } from './utils';
 
 const renderGroupItem = (link: string) => (label: ReactNode, anchor = '') => (
-  <span className="group">
+  <div className="group">
     <a
       href={`${link}${anchor}`}
       className="text-blue-500"
       target="_blank"
       rel="noreferrer"
     >
-      <span className="font-medium text-lg text-black">{label}</span>
+      <span className="font-medium text-lg text-black inline-block">{label}</span>
       <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 ml-1" />
     </a>
-  </span>
+  </div>
 );
 
 const FlowMetricsByWorkItemType: React.FC<{
@@ -44,7 +44,7 @@ const FlowMetricsByWorkItemType: React.FC<{
       </span>
     </summary>
 
-    <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
+    <div className="bg-white shadow rounded-lg my-4 mb-8">
       <table className="w-full">
         <thead className="bg-gray-800 text-white">
           <tr>
@@ -122,11 +122,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                   <td className="px-6 py-3">
                     {renderMetric(
                       <>
-                        {summary.leakage}
+                        <span className="inline-block pr-1">
+                          {summary.leakage}
+                        </span>
                         <Sparkline
                           data={summary.leakageByWeek}
                           lineColor={increaseIsBetter(summary.leakageByWeek)}
-                          className="ml-2"
                         />
                       </>,
                       '#new-work-items'
@@ -135,11 +136,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                   <td className="px-6 py-3">
                     {renderMetric(
                       <>
-                        {summary.velocity}
+                        <span className="inline-block pr-1">
+                          {summary.velocity}
+                        </span>
                         <Sparkline
                           data={summary.velocityByWeek}
                           lineColor={increaseIsBetter(summary.velocityByWeek)}
-                          className="ml-2"
                         />
                       </>,
                       '#velocity'
@@ -150,11 +152,13 @@ const FlowMetricsByWorkItemType: React.FC<{
                       summary.cycleTime
                         ? (
                           <>
-                            {prettyMS(summary.cycleTime)}
+                            <span className="inline-block pr-1">
+                              {prettyMS(summary.cycleTime)}
+                            </span>
                             <Sparkline
                               data={summary.cycleTimeByWeek}
                               lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
-                              className="ml-2"
+                              yAxisLabel={prettyMS}
                             />
                           </>
                         ) : '-',
@@ -165,11 +169,13 @@ const FlowMetricsByWorkItemType: React.FC<{
                     {renderMetric(summary.changeLeadTime
                       ? (
                         <>
-                          {prettyMS(summary.changeLeadTime)}
+                          <span className="inline-block pr-1">
+                            {prettyMS(summary.changeLeadTime)}
+                          </span>
                           <Sparkline
                             data={summary.changeLeadTimeByWeek}
                             lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
-                            className="ml-2"
+                            yAxisLabel={prettyMS}
                           />
                         </>
                       )
@@ -181,11 +187,13 @@ const FlowMetricsByWorkItemType: React.FC<{
                       summary.flowEfficiency
                         ? (
                           <>
-                            {`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
+                            <span className="inline-block pr-1">
+                              {`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
+                            </span>
                             <Sparkline
                               data={summary.flowEfficiencyByWeek.map(flowEfficiency)}
                               lineColor={increaseIsBetter(summary.flowEfficiencyByWeek.map(flowEfficiency))}
-                              className="ml-2"
+                              yAxisLabel={x => `${x}%`}
                             />
                           </>
                         )
@@ -198,17 +206,18 @@ const FlowMetricsByWorkItemType: React.FC<{
                       summary.wipCount
                         ? (
                           <>
-                            {summary.wipIncrease}
-                            <span className="text-lg text-gray-500 inline-block ml-2">
-                              <span className="font-normal text-sm">of</span>
-                              {' '}
-                              {summary.wipCount}
-                              <Sparkline
-                                data={summary.wipIncreaseByWeek}
-                                lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
-                                className="ml-2"
-                              />
+                            <span className="inline-block pr-1">
+                              {summary.wipIncrease}
+                              <span className="text-lg text-gray-500 inline-block ml-2">
+                                <span className="font-normal text-sm">of</span>
+                                {' '}
+                                {summary.wipCount}
+                              </span>
                             </span>
+                            <Sparkline
+                              data={summary.wipIncreaseByWeek}
+                              lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
+                            />
                           </>
                         )
                         : '0',
@@ -224,7 +233,6 @@ const FlowMetricsByWorkItemType: React.FC<{
         </tbody>
       </table>
     </div>
-
   </details>
 );
 
@@ -344,11 +352,12 @@ const QualityMetrics: React.FC<{
                               bugsForEnv
                                 ? (
                                   <>
-                                    {bugsForEnv.leakage}
+                                    <span className="inline-block pr-1">
+                                      {bugsForEnv.leakage}
+                                    </span>
                                     <Sparkline
                                       data={bugsForEnv.leakageByWeek}
                                       lineColor={decreaseIsBetter(bugsForEnv.leakageByWeek)}
-                                      className="ml-2"
                                     />
                                   </>
                                 )
@@ -361,11 +370,12 @@ const QualityMetrics: React.FC<{
                               bugsForEnv
                                 ? (
                                   <>
-                                    {bugsForEnv.velocity}
+                                    <span className="inline-block pr-1">
+                                      {bugsForEnv.velocity}
+                                    </span>
                                     <Sparkline
                                       data={bugsForEnv.velocityByWeek}
                                       lineColor={increaseIsBetter(bugsForEnv.velocityByWeek)}
-                                      className="ml-2"
                                     />
                                   </>
                                 )
@@ -378,11 +388,13 @@ const QualityMetrics: React.FC<{
                               bugsForEnv?.cycleTime
                                 ? (
                                   <>
-                                    {prettyMS(bugsForEnv.cycleTime)}
+                                    <span className="inline-block pr-1">
+                                      {prettyMS(bugsForEnv.cycleTime)}
+                                    </span>
                                     <Sparkline
                                       data={bugsForEnv.cycleTimeByWeek}
                                       lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
-                                      className="ml-2"
+                                      yAxisLabel={prettyMS}
                                     />
                                   </>
                                 )
@@ -395,11 +407,13 @@ const QualityMetrics: React.FC<{
                               bugsForEnv?.changeLeadTime
                                 ? (
                                   <>
-                                    {prettyMS(bugsForEnv.changeLeadTime)}
+                                    <span className="inline-block pr-1">
+                                      {prettyMS(bugsForEnv.changeLeadTime)}
+                                    </span>
                                     <Sparkline
                                       data={bugsForEnv.changeLeadTimeByWeek}
                                       lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
-                                      className="ml-2"
+                                      yAxisLabel={prettyMS}
                                     />
                                   </>
                                 )
@@ -412,11 +426,13 @@ const QualityMetrics: React.FC<{
                               bugsForEnv?.flowEfficiency
                                 ? (
                                   <>
-                                    {`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
+                                    <span className="inline-block pr-1">
+                                      {`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
+                                    </span>
                                     <Sparkline
                                       data={bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency)}
                                       lineColor={increaseIsBetter(bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency))}
-                                      className="ml-2"
+                                      yAxisLabel={x => `${x}%`}
                                     />
                                   </>
                                 )
@@ -429,16 +445,17 @@ const QualityMetrics: React.FC<{
                               bugsForEnv
                                 ? (
                                   <>
-                                    {bugsForEnv.wipIncrease}
-                                    <span className="text-lg text-gray-500 inline-block ml-2">
-                                      <span className="font-normal text-sm">of</span>
-                                      {' '}
-                                      {bugsForEnv.wipCount}
+                                    <span className="inline-block pr-1">
+                                      {bugsForEnv.wipIncrease}
+                                      <span className="text-lg text-gray-500 inline-block ml-2">
+                                        <span className="font-normal text-sm">of</span>
+                                        {' '}
+                                        {bugsForEnv.wipCount}
+                                      </span>
                                     </span>
                                     <Sparkline
                                       data={bugsForEnv.wipIncreaseByWeek}
                                       lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
-                                      className="ml-2"
                                     />
                                   </>
                                 )
@@ -517,19 +534,28 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
               <tr className="hover:bg-gray-50" key={group.groupName}>
                 <td className="px-6 py-3 font-semibold">
                   {group.groupName}
-                  <p className="justify-self-end text-xs text-gray-500">
-                    {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                    {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                  <p className="justify-self-end text-xs text-gray-600 font-normal">
+                    {'Analysed '}
+                    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
+                    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                    {repoStats.excluded ? (
+                      <>
+                        {', excluded '}
+                        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
+                        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
+                      </>
+                    ) : ''}
                   </p>
                 </td>
                 <td className="px-6 py-3">
                   {reposMetric((
                     <>
-                      {num(repoStats.tests)}
+                      <span className="inline-block pr-1">
+                        {num(repoStats.tests)}
+                      </span>
                       <Sparkline
                         data={exaggerateTrendLine(repoStats.testsByWeek)}
                         lineColor={increaseIsBetter(repoStats.testsByWeek)}
-                        className="ml-2 -mb-1"
                       />
                     </>
                   ))}
@@ -626,9 +652,17 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
               <tr className="hover:bg-gray-50" key={group.groupName}>
                 <td className="px-6 py-3 font-semibold">
                   {group.groupName}
-                  <p className="justify-self-end text-xs text-gray-500">
-                    {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                    {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                  <p className="justify-self-end text-xs text-gray-600 font-normal">
+                    {'Analysed '}
+                    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
+                    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                    {repoStats.excluded ? (
+                      <>
+                        {', excluded '}
+                        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
+                        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
+                      </>
+                    ) : ''}
                   </p>
                 </td>
                 <td
@@ -638,11 +672,12 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   {repoStats.repos
                     ? reposMetric(
                       <>
-                        {`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
+                        <span className="inline-block pr-1">
+                          {`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
+                        </span>
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
                           lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
-                          className="ml-2 -mb-1"
                         />
                       </>
                     )
@@ -655,11 +690,12 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   {codeQuality.sonarProjects
                     ? (
                       <>
-                        {`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
+                        <span className="inline-block pr-1">
+                          {`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
+                        </span>
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.sonarCountsByWeek.pass)}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
-                          className="ml-2 -mb-1"
                         />
                       </>
                     )
@@ -672,11 +708,12 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   {codeQuality.sonarProjects
                     ? (
                       <>
-                        {`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
+                        <span className="inline-block pr-1">
+                          {`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
+                        </span>
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.sonarCountsByWeek.warn)}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
-                          className="ml-2 -mb-1"
                         />
                       </>
                     )
@@ -689,11 +726,12 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   {codeQuality.sonarProjects
                     ? (
                       <>
-                        {`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
+                        <span className="inline-block pr-1">
+                          {`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
+                        </span>
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.sonarCountsByWeek.fail)}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
-                          className="ml-2 -mb-1"
                         />
                       </>
                     )
@@ -763,9 +801,17 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
               <tr className="hover:bg-gray-50" key={group.groupName}>
                 <td className="px-6 py-3 font-semibold">
                   {group.groupName}
-                  <p className="justify-self-end text-xs text-gray-500">
-                    {`Analysed ${repoStats.repos} ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                    {repoStats.excluded ? `, excluded ${repoStats.excluded} ${repoStats.excluded === 1 ? 'repo' : 'repos'}` : ''}
+                  <p className="justify-self-end text-xs text-gray-600 font-normal">
+                    {'Analysed '}
+                    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
+                    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                    {repoStats.excluded ? (
+                      <>
+                        {', excluded '}
+                        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
+                        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
+                      </>
+                    ) : ''}
                   </p>
                 </td>
                 <td className="px-6 py-3 font-medium text-lg text-black">
@@ -834,11 +880,17 @@ const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ grou
             <tr className="hover:bg-gray-50" key={group.groupName}>
               <td className="px-6 py-3 font-semibold">
                 {group.groupName}
-                <p className="justify-self-end text-xs text-gray-500">
-                  {`Analysed ${group.repoStats.repos} ${group.repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                  {group.repoStats.excluded
-                    ? `, excluded ${group.repoStats.excluded} ${group.repoStats.excluded === 1 ? 'repo' : 'repos'}`
-                    : ''}
+                <p className="justify-self-end text-xs text-gray-600 font-normal">
+                  {'Analysed '}
+                  <b className="text-gray-800 font-semibold">{num(group.repoStats.repos)}</b>
+                  {` ${group.repoStats.repos === 1 ? 'repo' : 'repos'}`}
+                  {group.repoStats.excluded ? (
+                    <>
+                      {', excluded '}
+                      <b className="text-gray-800 font-semibold">{num(group.repoStats.excluded)}</b>
+                      {` ${group.repoStats.excluded === 1 ? 'repo' : 'repos'}`}
+                    </>
+                  ) : ''}
                 </p>
               </td>
               <td className="px-6 py-3 font-medium text-lg text-black">

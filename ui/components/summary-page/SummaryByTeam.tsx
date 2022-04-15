@@ -147,6 +147,7 @@ const FlowMetrics: React.FC<{
                     <Sparkline
                       data={workItemsSummary.cycleTimeByWeek}
                       lineColor={decreaseIsBetter(workItemsSummary.cycleTimeByWeek)}
+                      yAxisLabel={prettyMS}
                     />,
                     '#cycle-time'
                   )}
@@ -159,6 +160,7 @@ const FlowMetrics: React.FC<{
                     <Sparkline
                       data={workItemsSummary.changeLeadTimeByWeek}
                       lineColor={decreaseIsBetter(workItemsSummary.changeLeadTimeByWeek)}
+                      yAxisLabel={prettyMS}
                     />,
                     '#change-lead-time'
                   )}
@@ -171,6 +173,7 @@ const FlowMetrics: React.FC<{
                     <Sparkline
                       data={workItemsSummary.flowEfficiencyByWeek.map(flowEfficiency)}
                       lineColor={increaseIsBetter(workItemsSummary.flowEfficiencyByWeek.map(flowEfficiency))}
+                      yAxisLabel={value => `${value}%`}
                     />,
                     '#flow-efficiency'
                   )}
@@ -325,6 +328,7 @@ const QualityMetrics: React.FC<{
                       <Sparkline
                         data={bugInfo.cycleTimeByWeek}
                         lineColor={decreaseIsBetter(bugInfo.cycleTimeByWeek)}
+                        yAxisLabel={prettyMS}
                       />,
                       '#cycle-time'
                     )}
@@ -337,6 +341,7 @@ const QualityMetrics: React.FC<{
                       <Sparkline
                         data={bugInfo.changeLeadTimeByWeek}
                         lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
+                        yAxisLabel={prettyMS}
                       />,
                       '#change-lead-time'
                     )}
@@ -349,6 +354,7 @@ const QualityMetrics: React.FC<{
                       <Sparkline
                         data={bugInfo.flowEfficiencyByWeek.map(flowEfficiency)}
                         lineColor={increaseIsBetter(bugInfo.flowEfficiencyByWeek.map(flowEfficiency))}
+                        yAxisLabel={x => `${x}%`}
                       />,
                       '#flow-efficiency'
                     )}
@@ -720,7 +726,7 @@ const HealthMetrics: React.FC<{
                 </div>
               </div>
             </div>
-            <div>
+            <div className="-mt-9">
               <UsageByEnv
                 perEnvUsage={pipelineStats.usageByEnvironment}
                 pipelineCount={pipelineStats.pipelines}
