@@ -163,11 +163,12 @@ type SparklineProps = {
   lineColor?: string;
   className?: string;
   yAxisLabel?: (index: number) => string;
+  showPopover?: boolean;
 };
 
 const Sparkline: React.FC<SparklineProps> = ({
   data, height: inputHeight, width: inputWidth, lineColor: inputLineColor, className,
-  yAxisLabel: inputYAxisLabel
+  yAxisLabel: inputYAxisLabel, showPopover = true
 }) => {
   const height = inputHeight || 20;
   const width = inputWidth || 20;
@@ -189,7 +190,7 @@ const Sparkline: React.FC<SparklineProps> = ({
 
   return (
     <span className="relative group">
-      <span className="group-hover:bg-slate-800 rounded-t-md px-2 pt-1 pb-2 group-hover:shadow-md">
+      <span className={`rounded-t-md px-2 pt-1 pb-2 ${showPopover ? 'group-hover:bg-slate-800 group-hover:shadow-md' : ''}`}>
         <svg
           height={height}
           width={width}
@@ -207,12 +208,14 @@ const Sparkline: React.FC<SparklineProps> = ({
         </svg>
       </span>
 
-      <span
-        className="absolute hidden group-hover:block bg-slate-800 rounded-2xl pb-2 pt-6 pl-4 pr-6 z-50 shadow-2xl"
-        style={{ marginLeft: `-${(popoverSvgConfig.width / 2) + 18}px` }}
-      >
-        <PopoverSvg lineColor={lineColor} data={data} yAxisLabel={yAxisLabel} />
-      </span>
+      {showPopover && (
+        <span
+          className="absolute hidden group-hover:block bg-slate-800 rounded-2xl pb-2 pt-6 pl-4 pr-6 z-50 shadow-2xl"
+          style={{ marginLeft: `-${(popoverSvgConfig.width / 2) + 18}px` }}
+        >
+          <PopoverSvg lineColor={lineColor} data={data} yAxisLabel={yAxisLabel} />
+        </span>
+      )}
     </span>
   );
 };

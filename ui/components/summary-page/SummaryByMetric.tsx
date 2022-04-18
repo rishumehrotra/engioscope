@@ -678,6 +678,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
                           lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
+                          showPopover={false}
                         />
                       </>
                     )
@@ -696,6 +697,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.sonarCountsByWeek.pass)}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                          showPopover={false}
                         />
                       </>
                     )
@@ -714,6 +716,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.sonarCountsByWeek.warn)}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                          showPopover={false}
                         />
                       </>
                     )
@@ -732,6 +735,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                         <Sparkline
                           data={exaggerateTrendLine(repoStats.sonarCountsByWeek.fail)}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                          showPopover={false}
                         />
                       </>
                     )

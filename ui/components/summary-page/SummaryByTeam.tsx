@@ -518,6 +518,7 @@ const HealthMetrics: React.FC<{
                             data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
                             lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
                             className="ml-1 -mb-1"
+                            showPopover={false}
                           />
                         )}
                       </>
@@ -546,6 +547,7 @@ const HealthMetrics: React.FC<{
                             data={exaggerateTrendLine(repoStats.sonarCountsByWeek.pass)}
                             lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
                             className="ml-1 -mb-1"
+                            showPopover={false}
                           />
                         </>
                       )
@@ -571,6 +573,7 @@ const HealthMetrics: React.FC<{
                             data={exaggerateTrendLine(repoStats.sonarCountsByWeek.warn)}
                             lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.warn)}
                             className="ml-1 -mb-1"
+                            showPopover={false}
                           />
                         </>
                       )
@@ -596,6 +599,7 @@ const HealthMetrics: React.FC<{
                             data={exaggerateTrendLine(repoStats.sonarCountsByWeek.fail)}
                             lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.fail)}
                             className="ml-1 -mb-1"
+                            showPopover={false}
                           />
                         </>
                       )

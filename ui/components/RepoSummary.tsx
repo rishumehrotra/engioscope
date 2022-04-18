@@ -103,6 +103,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                     data={exaggerateTrendLine(stats.newSonarByWeek)}
                     lineColor={increaseIsBetter(stats.newSonarByWeek)}
                     className="ml-2 -mb-1"
+                    showPopover={false}
                   />
                 </>
               )
@@ -123,6 +124,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                     data={exaggerateTrendLine(stats.sonarCountsByWeek.pass)}
                     lineColor={increaseIsBetter(stats.sonarCountsByWeek.pass)}
                     className="ml-2 -mb-1"
+                    showPopover={false}
                   />
                 </>
               )
@@ -139,6 +141,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                     data={exaggerateTrendLine(stats.sonarCountsByWeek.warn)}
                     lineColor={decreaseIsBetter(stats.sonarCountsByWeek.warn)}
                     className="ml-2 -mb-1"
+                    showPopover={false}
                   />
                 </>
               )
@@ -155,6 +158,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                     data={exaggerateTrendLine(stats.sonarCountsByWeek.fail)}
                     lineColor={decreaseIsBetter(stats.sonarCountsByWeek.fail)}
                     className="ml-2 -mb-1"
+                    showPopover={false}
                   />
                 </>
               )
