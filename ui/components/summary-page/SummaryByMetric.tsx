@@ -45,56 +45,35 @@ const FlowMetricsByWorkItemType: React.FC<{
     </summary>
 
     <div className="bg-white shadow rounded-lg my-4 mb-8">
-      <table className="w-full">
-        <thead className="bg-gray-800 text-white">
+      <table className="summary-table">
+        <thead>
           <tr>
             {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
             <th />
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Number of new work items added in the last 90 days"
-            >
+            <th data-tip="Number of new work items added in the last 90 days">
               New
             </th>
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Number of work items completed in the last 90 days"
-            >
+            <th data-tip="Number of work items completed in the last 90 days">
               Velocity
             </th>
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Average time taken to complete a work item over the last 90 days"
-            >
+            <th data-tip="Average time taken to complete a work item over the last 90 days">
               Cycle time
             </th>
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Average time taken to take a work item to production after development is complete"
-            >
+            <th data-tip="Average time taken to take a work item to production after development is complete">
               CLT
             </th>
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Fraction of overall time that work items spend in work centers on average"
-            >
+            <th data-tip="Fraction of overall time that work items spend in work centers on average">
               Flow efficiency
             </th>
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Increase in the number of WIP items over the last 90 days"
-            >
+            <th data-tip="Increase in the number of WIP items over the last 90 days">
               WIP increase
             </th>
-            <th
-              className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-              data-tip="Average age of work items in progress"
-            >
+            <th data-tip="Average age of work items in progress">
               WIP age
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody>
           {groups
             .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
             .map(group => {
@@ -115,11 +94,11 @@ const FlowMetricsByWorkItemType: React.FC<{
               if (!summary) return null;
 
               return (
-                <tr key={group.groupName} className="hover:bg-gray-50">
-                  <td className="px-6 py-3 font-semibold">
+                <tr key={group.groupName}>
+                  <td>
                     {group.groupName}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(
                       <>
                         <span className="inline-block pr-1">
@@ -133,7 +112,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       '#new-work-items'
                     )}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(
                       <>
                         <span className="inline-block pr-1">
@@ -147,7 +126,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       '#velocity'
                     )}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(
                       summary.cycleTime
                         ? (
@@ -165,7 +144,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       '#cycle-time'
                     )}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(summary.changeLeadTime
                       ? (
                         <>
@@ -182,7 +161,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       : '-',
                     '#change-lead-time')}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(
                       summary.flowEfficiency
                         ? (
@@ -201,7 +180,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       '#flow-efficiency'
                     )}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(
                       summary.wipCount
                         ? (
@@ -224,7 +203,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       '#age-of-work-in-progress-features-by-state'
                     )}
                   </td>
-                  <td className="px-6 py-3">
+                  <td>
                     {renderMetric(summary.wipAge ? prettyMS(summary.wipAge) : '-', '#age-of-work-in-progress-items')}
                   </td>
                 </tr>
@@ -276,33 +255,21 @@ const QualityMetrics: React.FC<{
             </summary>
 
             <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-              <table className="w-full">
-                <thead className="bg-gray-800 text-white">
+              <table className="summary-table">
+                <thead>
                   <tr>
                     {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
                     <th />
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Number of bugs opened in the last 90 days"
-                    >
+                    <th data-tip="Number of bugs opened in the last 90 days">
                       New bugs
                     </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Number of bugs closed in the last 90 days"
-                    >
+                    <th data-tip="Number of bugs closed in the last 90 days">
                       Bugs fixed
                     </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Average time taken to close a bug"
-                    >
+                    <th data-tip="Average time taken to close a bug">
                       Bugs cycle time
                     </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Average time taken to close a bug once development is complete"
-                    >
+                    <th data-tip="Average time taken to close a bug once development is complete">
                       Bugs CLT
                     </th>
                     <th
@@ -311,16 +278,10 @@ const QualityMetrics: React.FC<{
                     >
                       Flow efficiency
                     </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Increase in the number of WIP bugs over the last 90 days"
-                    >
+                    <th data-tip="Increase in the number of WIP bugs over the last 90 days">
                       WIP increase
                     </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Average age of work-in-progress bugs"
-                    >
+                    <th data-tip="Average age of work-in-progress bugs">
                       WIP age
                     </th>
                   </tr>
@@ -345,9 +306,9 @@ const QualityMetrics: React.FC<{
                       const renderBugMetric = renderGroupItem(portfolioProjectLink);
 
                       return (
-                        <tr className="hover:bg-gray-50" key={group.groupName}>
-                          <td className="px-6 py-3 font-semibold">{group.groupName}</td>
-                          <td className="px-6 py-3">
+                        <tr key={group.groupName}>
+                          <td>{group.groupName}</td>
+                          <td>
                             {renderBugMetric(
                               bugsForEnv
                                 ? (
@@ -365,7 +326,7 @@ const QualityMetrics: React.FC<{
                               '#bug-leakage-with-root-cause'
                             )}
                           </td>
-                          <td className="px-6 py-3">
+                          <td>
                             {renderBugMetric(
                               bugsForEnv
                                 ? (
@@ -383,7 +344,7 @@ const QualityMetrics: React.FC<{
                               '#velocity'
                             )}
                           </td>
-                          <td className="px-6 py-3">
+                          <td>
                             {renderBugMetric(
                               bugsForEnv?.cycleTime
                                 ? (
@@ -402,7 +363,7 @@ const QualityMetrics: React.FC<{
                               '#cycle-time'
                             )}
                           </td>
-                          <td className="px-6 py-3">
+                          <td>
                             {renderBugMetric(
                               bugsForEnv?.changeLeadTime
                                 ? (
@@ -421,7 +382,7 @@ const QualityMetrics: React.FC<{
                               '#change-lead-time'
                             )}
                           </td>
-                          <td className="px-6 py-3">
+                          <td>
                             {renderBugMetric(
                               bugsForEnv?.flowEfficiency
                                 ? (
@@ -440,7 +401,7 @@ const QualityMetrics: React.FC<{
                               '#flow-efficiency'
                             )}
                           </td>
-                          <td className="px-6 py-3">
+                          <td>
                             {renderBugMetric(
                               bugsForEnv
                                 ? (
@@ -463,7 +424,7 @@ const QualityMetrics: React.FC<{
                               '#work-in-progress-trend'
                             )}
                           </td>
-                          <td className="px-6 py-3">
+                          <td>
                             {renderBugMetric(bugsForEnv?.wipAge ? prettyMS(bugsForEnv.wipAge) : '-', '#age-of-work-in-progress-items')}
                           </td>
                         </tr>
@@ -481,38 +442,26 @@ const QualityMetrics: React.FC<{
 
 const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
   <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="w-full">
-      <thead className="bg-gray-800 text-white">
+    <table className="summary-table">
+      <thead>
         <tr>
           {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
           <th />
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of unit / components tests running in build pipelines"
-          >
+          <th data-tip="Number of unit / components tests running in build pipelines">
             Tests
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of code covered by tests"
-          >
+          <th data-tip="Percentage of code covered by tests">
             Coverage
           </th>
           {
             groups[0].pipelineStats.stages.map(stage => (
               <Fragment key={stage.name}>
-                <td
-                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                  data-tip={`Percentage of pipelines having ${stage.name}`}
-                >
+                <th data-tip={`Percentage of pipelines having ${stage.name}`}>
                   {`Pipelines having ${stage.name}`}
-                </td>
-                <td
-                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                  data-tip={`Percentage of pipelines using ${stage.name}`}
-                >
+                </th>
+                <th data-tip={`Percentage of pipelines using ${stage.name}`}>
                   {`Pipelines using ${stage.name}`}
-                </td>
+                </th>
               </Fragment>
             ))
           }
@@ -531,8 +480,8 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
             const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
             return (
-              <tr className="hover:bg-gray-50" key={group.groupName}>
-                <td className="px-6 py-3 font-semibold">
+              <tr key={group.groupName}>
+                <td>
                   {group.groupName}
                   <p className="justify-self-end text-xs text-gray-600 font-normal">
                     {'Analysed '}
@@ -547,7 +496,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                     ) : ''}
                   </p>
                 </td>
-                <td className="px-6 py-3">
+                <td>
                   {reposMetric((
                     <>
                       <span className="inline-block pr-1">
@@ -560,20 +509,20 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                     </>
                   ))}
                 </td>
-                <td className="px-6 py-3">
+                <td>
                   {reposMetric(repoStats.coverage)}
                 </td>
                 {
                   pipelineStats.stages.map(stage => (
                     <Fragment key={stage.name}>
-                      <td className="px-6 py-3">
+                      <td>
                         {pipelinesMetric(
                           divide(stage.exists, pipelineStats.pipelines)
                             .map(toPercentage)
                             .getOr('-')
                         )}
                       </td>
-                      <td className="px-6 py-3">
+                      <td>
                         {
                           pipelinesMetric(
                             divide(stage.used, pipelineStats.pipelines)
@@ -595,43 +544,28 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
 
 const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
   <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="w-full">
-      <thead className="bg-gray-800 text-white">
+    <table className="summary-table">
+      <thead>
         <tr>
           {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
           <th />
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of repos with Sonar configured"
-          >
+          <th data-tip="Percentage of repos with Sonar configured">
             Sonar
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of pipelines with sonar configured that pass quality checks"
-          >
+          <th data-tip="Percentage of pipelines with sonar configured that pass quality checks">
             Ok
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of pipelines with sonar configured that have a warning for quality checks"
-          >
+          <th data-tip="Percentage of pipelines with sonar configured that have a warning for quality checks">
             Warn
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of pipelines with sonar configured that fail quality checks"
-          >
+          <th data-tip="Percentage of pipelines with sonar configured that fail quality checks">
             Fail
           </th>
           {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
           <th
             className="px-12 py-3 text-left text-xs font-medium uppercase tracking-wider"
           />
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of pipelines conforming to branch policies"
-          >
+          <th data-tip="Percentage of pipelines conforming to branch policies">
             Branch policy met
           </th>
         </tr>
@@ -649,8 +583,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
             const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
             return (
-              <tr className="hover:bg-gray-50" key={group.groupName}>
-                <td className="px-6 py-3 font-semibold">
+              <tr key={group.groupName}>
+                <td>
                   {group.groupName}
                   <p className="justify-self-end text-xs text-gray-600 font-normal">
                     {'Analysed '}
@@ -665,10 +599,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                     ) : ''}
                   </p>
                 </td>
-                <td
-                  data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
-                  className="px-6 py-3 font-medium text-lg text-black"
-                >
+                <td data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}>
                   {repoStats.repos
                     ? reposMetric(
                       <>
@@ -684,10 +615,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                     )
                     : '-'}
                 </td>
-                <td
-                  data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
-                  className="px-6 py-3 font-medium text-lg text-black"
-                >
+                <td data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}>
                   {codeQuality.sonarProjects
                     ? (
                       <>
@@ -703,10 +631,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                     )
                     : '-'}
                 </td>
-                <td
-                  data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
-                  className="px-6 py-3 font-medium text-lg text-black"
-                >
+                <td data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}>
                   {codeQuality.sonarProjects
                     ? (
                       <>
@@ -722,10 +647,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                     )
                     : '-'}
                 </td>
-                <td
-                  data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
-                  className="px-6 py-3 font-medium text-lg text-black"
-                >
+                <td data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}>
                   {codeQuality.sonarProjects
                     ? (
                       <>
@@ -742,8 +664,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
 
                     : '-'}
                 </td>
-                <td className="px-6 py-3 font-medium text-lg text-black" />
-                <td className="px-6 py-3 font-medium text-lg text-black">
+                <td />
+                <td>
                   {pipelinesMetric(
                     divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
                       .map(toPercentage)
@@ -760,33 +682,21 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
 
 const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
   <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="w-full">
-      <thead className="bg-gray-800 text-white">
+    <table className="summary-table">
+      <thead>
         <tr>
           {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
           <th />
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of CI builds run in the last 90 days"
-          >
+          <th data-tip="Number of CI builds run in the last 90 days">
             Runs
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Percentage of successful builds"
-          >
+          <th data-tip="Percentage of successful builds">
             Success
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Pipelines configured using a YAML file"
-          >
+          <th data-tip="Pipelines configured using a YAML file">
             YAML pipelines
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Average time taken to fix a build failure"
-          >
+          <th data-tip="Average time taken to fix a build failure">
             MTTR build failure
           </th>
         </tr>
@@ -802,8 +712,8 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
             const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
 
             return (
-              <tr className="hover:bg-gray-50" key={group.groupName}>
-                <td className="px-6 py-3 font-semibold">
+              <tr key={group.groupName}>
+                <td>
                   {group.groupName}
                   <p className="justify-self-end text-xs text-gray-600 font-normal">
                     {'Analysed '}
@@ -818,22 +728,22 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
                     ) : ''}
                   </p>
                 </td>
-                <td className="px-6 py-3 font-medium text-lg text-black">
+                <td>
                   {reposMetric(num(repoStats.builds.total))}
                 </td>
-                <td className="px-6 py-3 font-medium text-lg text-black">
+                <td>
                   {reposMetric(
                     `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
                   )}
                 </td>
-                <td className="px-6 py-3 font-medium text-lg text-black">
+                <td>
                   {reposMetric(
                     repoStats.ymlPipelines.total === 0
                       ? '-'
                       : `${Math.round((repoStats.ymlPipelines.count * 100) / repoStats.ymlPipelines.total)}%`
                   )}
                 </td>
-                <td className="px-6 py-3 font-medium text-lg text-black">
+                <td>
                   <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
                 </td>
               </tr>
@@ -846,27 +756,18 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
 
 const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
   <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="w-full">
-      <thead className="bg-gray-800 text-white">
+    <table className="summary-table">
+      <thead>
         <tr>
           {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
           <th />
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of release pipelines that only release from the master branch"
-          >
+          <th data-tip="Number of release pipelines that only release from the master branch">
             Master only pipelines
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of release pipelines that start with an artifact"
-          >
+          <th data-tip="Number of release pipelines that start with an artifact">
             Starts with artifact
           </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            data-tip="Number of release pipelines that start with an artifact"
-          >
+          <th data-tip="Number of release pipelines that start with an artifact">
             Repos with release pipelines
           </th>
         </tr>
@@ -881,8 +782,8 @@ const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ grou
           const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
           return (
-            <tr className="hover:bg-gray-50" key={group.groupName}>
-              <td className="px-6 py-3 font-semibold">
+            <tr key={group.groupName}>
+              <td>
                 {group.groupName}
                 <p className="justify-self-end text-xs text-gray-600 font-normal">
                   {'Analysed '}
@@ -897,21 +798,21 @@ const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ grou
                   ) : ''}
                 </p>
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
+              <td>
                 {pipelinesMetric(
                   divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
                     .map(toPercentage)
                     .getOr('-')
                 )}
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
+              <td>
                 {pipelinesMetric(
                   divide(pipelineStats.startsWithArtifact, pipelineStats.pipelines)
                     .map(toPercentage)
                     .getOr('-')
                 )}
               </td>
-              <td className="px-6 py-3 font-medium text-lg text-black">
+              <td>
                 {reposMetric(
                   divide(repoStats.hasPipelines, repoStats.repos)
                     .map(toPercentage)

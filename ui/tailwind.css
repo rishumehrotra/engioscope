@@ -36,3 +36,31 @@ body {
 .commits-profile:hover .dev-name {
   @apply link-text underline;
 }
+
+.summary-table {
+  @apply w-full;
+}
+
+.summary-table thead {
+  @apply bg-gray-800 text-white;
+}
+
+.summary-table thead th {
+  @apply px-6 py-4 text-left text-xs font-medium uppercase tracking-wider;
+}
+
+.summary-table tbody {
+  @apply bg-white divide-y divide-gray-100;
+}
+
+.summary-table tbody tr {
+  @apply hover:bg-gray-50;
+}
+
+.summary-table tbody tr td {
+  @apply px-6 py-3;
+}
+
+.summary-table tbody tr td:first-child {
+  @apply font-semibold;
+}
