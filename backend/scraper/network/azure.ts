@@ -76,8 +76,7 @@ export default (config: ParsedConfig) => {
         url: url(collectionName, projectName, '/build/builds'),
         qsParams: {
           minTime: config.azure.queryFrom.toISOString(),
-          resultFilter: 'succeeded,failed,partiallySucceeded',
-          $top: '5000'
+          resultFilter: 'succeeded,failed,partiallySucceeded'
         },
         cacheFile: [collectionName, projectName, 'builds']
       })
@@ -90,7 +89,6 @@ export default (config: ParsedConfig) => {
           qsParams: {
             maxTime: config.azure.queryFrom.toISOString(),
             resultFilter: 'succeeded,failed,partiallySucceeded',
-            $top: '5000',
             maxBuildsPerDefinition: '1',
             definitions: buildDefinitionIds.join(','),
             branchName: 'master'
@@ -105,8 +103,7 @@ export default (config: ParsedConfig) => {
         url: url(collectionName, projectName, '/build/definitions'),
         qsParams: {
           includeLatestBuilds: 'true',
-          includeAllProperties: 'true',
-          $top: '5000'
+          includeAllProperties: 'true'
         },
         cacheFile: [collectionName, projectName, 'build-definitions']
       })
@@ -205,7 +202,7 @@ export default (config: ParsedConfig) => {
           'searchCriteria.fromDate': config.azure.queryFrom.toISOString(),
           'searchCriteria.$top': '5000',
           'searchCriteria.includeUserImageUrl': 'true',
-          ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 1000).toString() })
+          ...(pageIndex === 0 ? {} : { $skip: (pageIndex * 5000).toString() })
         }),
         hasAnotherPage: previousResponse => previousResponse.data.count === 1000,
         headers: () => authHeader,
