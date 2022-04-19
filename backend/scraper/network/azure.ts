@@ -72,14 +72,26 @@ export default (config: ParsedConfig) => {
     ),
 
     getBuilds: (collectionName: string, projectName: string) => (
-      list<Build>({
+      paginatedGet<ListOf<Build>>({
         url: url(collectionName, projectName, '/build/builds'),
-        qsParams: {
+        qsParams: (pageIndex, previousResponse) => ({
+          ...apiVersion,
           minTime: config.azure.queryFrom.toISOString(),
-          resultFilter: 'succeeded,failed,partiallySucceeded'
-        },
-        cacheFile: [collectionName, projectName, 'builds']
-      })
+          resultFilter: 'succeeded,failed,partiallySucceeded',
+          $top: '5000',
+          ...(previousResponse
+            ? {
+              maxTime: previousResponse.data.value
+                .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0]
+                ?.startTime.toISOString()
+            }
+            : {}
+          )
+        }),
+        hasAnotherPage: previousResponse => previousResponse.data.count === 5000,
+        headers: () => authHeader,
+        cacheFile: pageIndex => [collectionName, projectName, `builds_${pageIndex}`]
+      }).then(flattenToValues)
     ),
 
     getOneBuildBeforeQueryPeriod: (collectionName: string, projectName: string) => (
