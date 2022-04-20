@@ -1,6 +1,6 @@
 import qs from 'qs';
 import md5 from 'md5';
-import { filter, prop } from 'rambda';
+import { filter } from 'rambda';
 import fetch from './fetch-with-extras';
 import { chunkArray } from '../../utils';
 import type {
@@ -13,7 +13,6 @@ import createPaginatedGetter from './create-paginated-getter';
 import type { FetchResponse } from './fetch-with-disk-cache';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import type { ParsedConfig } from '../parse-config';
-import { asc, byDate } from '../../../shared/sort-utils';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -72,28 +71,39 @@ export default (config: ParsedConfig) => {
       })
     ),
 
-    getBuilds: (collectionName: string, projectName: string) => (
-      paginatedGet<ListOf<Build>>({
-        url: url(collectionName, projectName, '/build/builds'),
-        qsParams: (pageIndex, previousResponse) => ({
-          ...apiVersion,
-          minTime: config.azure.queryFrom.toISOString(),
-          resultFilter: 'succeeded,failed,partiallySucceeded',
-          $top: '5000',
-          ...(previousResponse
-            ? {
-              maxTime: previousResponse.data.value
-                .sort(asc(byDate(prop('startTime'))))[0]
-                ?.startTime.toISOString()
-            }
-            : {}
+    getBuilds: (collectionName: string, projectName: string) => {
+      // Gosh, this one turned out to be crazy. There's something up
+      // with this API. The continuationToken thing seems utterly broken.
+      // If we hit the limit of 5000 results, any form of pagination seems broken.
+      // So, we're taking the tack of querying per week, with the hope that
+      // there wouldn't be 5000 builds run per project per week. Fingers crossed.
+
+      const weeks: Date[] = [];
+      let currentDate = new Date();
+
+      while (currentDate >= config.azure.queryFrom) {
+        weeks.push(currentDate);
+        currentDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
+      }
+      weeks.push(config.azure.queryFrom);
+
+      return Promise.all(
+        weeks.slice(1).map((weekStart, index) => (
+          usingDiskCache<ListOf<Build>>(
+            [collectionName, projectName, `builds_${index}`],
+            () => fetch(
+              url(collectionName, projectName, `/build/builds?${qs.stringify({
+                ...apiVersion,
+                $top: 5000,
+                maxTime: weeks[index].toISOString(), // refers to previous week
+                minTime: weekStart.toISOString()
+              })}`),
+              { headers: authHeader, ...otherFetchParams }
+            )
           )
-        }),
-        hasAnotherPage: previousResponse => previousResponse.data.count === 5000,
-        headers: () => authHeader,
-        cacheFile: pageIndex => [collectionName, projectName, `builds_${pageIndex}`]
-      }).then(flattenToValues)
-    ),
+        ))
+      ).then(flattenToValues);
+    },
 
     getOneBuildBeforeQueryPeriod: (collectionName: string, projectName: string) => (
       (buildDefinitionIds: number[]) => (
