@@ -144,11 +144,13 @@ export type UITests = null | {
   }[];
 };
 
+export type QualityGateStatus = 'pass' | 'warn' | 'fail' | 'unknown';
+
 export type QualityGateDetails = {
   value?: number;
   op?: 'gt' | 'lt';
   level?: number;
-  status: 'pass' | 'warn' | 'fail' | 'unknown';
+  status: QualityGateStatus;
 };
 
 export type UICodeQuality = null | {
@@ -162,7 +164,7 @@ export type UICodeQuality = null | {
     cognitive?: number;
   };
   quality: {
-    gate: QualityGateDetails['status'];
+    gate: QualityGateStatus;
     securityRating?: QualityGateDetails;
     coverage?: QualityGateDetails;
     duplicatedLinesDensity?: QualityGateDetails;
@@ -199,7 +201,7 @@ export type UICodeQuality = null | {
     linesDensity?: number;
   };
   oldestFoundSample: string | undefined;
-  qualityGateByWeek: (QualityGateDetails['status'] | null)[];
+  qualityGateByWeek: (QualityGateStatus | null)[];
 }[];
 
 export type AggregatedCommitsByDev = {

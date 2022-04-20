@@ -5,7 +5,9 @@ import {
   reposWithPipelines, sonarCountsByWeek, totalBuilds, totalCoverage,
   totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
-import type { RepoAnalysis, UIBuildPipeline } from '../../shared/types';
+import type {
+  RepoAnalysis, UIBuildPipeline, QualityGateStatus, UICodeQuality
+} from '../../shared/types';
 import { divide, toPercentage } from '../../shared/utils';
 import { num, exaggerateTrendLine, shortDate } from '../helpers/utils';
 import Sparkline from './graphs/Sparkline';
@@ -30,14 +32,20 @@ const buildSuccessRate = (repos: RepoAnalysis[]) => {
     : `${((aggregated.success * 100) / aggregated.count).toFixed(0)}%`;
 };
 
+const qualityGateIs = (gate: QualityGateStatus) => (
+  (codeQuality: NonNullable<UICodeQuality>[number]) => (
+    codeQuality.quality.gate === gate
+  )
+);
+
 const sonarStats = (repos: RepoAnalysis[]) => (
   repos.reduce(
     (acc, r) => ({
       ...acc,
       configured: acc.configured + ((r.codeQuality || []).length),
-      ok: acc.ok + (r.codeQuality || []).filter(q => q.quality.gate === 'pass').length,
-      warn: acc.warn + (r.codeQuality || []).filter(q => q.quality.gate === 'warn').length,
-      error: acc.error + (r.codeQuality || []).filter(q => q.quality.gate === 'fail').length
+      ok: acc.ok + (r.codeQuality || []).filter(qualityGateIs('pass')).length,
+      warn: acc.warn + (r.codeQuality || []).filter(qualityGateIs('warn')).length,
+      error: acc.error + (r.codeQuality || []).filter(qualityGateIs('fail')).length
     }),
     {
       configured: 0, ok: 0, warn: 0, error: 0
