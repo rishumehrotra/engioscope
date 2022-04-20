@@ -1,6 +1,8 @@
 import { applySpec } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
-import type { QualityGateDetails, RepoAnalysis, UIBuildPipeline } from './types';
+import type {
+  QualityGateStatus, RepoAnalysis, UIBuildPipeline
+} from './types';
 import { exists } from './utils';
 
 export const isDeprecated = (repo: RepoAnalysis) => (
@@ -19,7 +21,7 @@ export const totalTests = count(incrementBy(numberOfTests));
 export const totalBuilds = count(incrementBy(numberOfBuilds));
 
 export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
-  repos.reduce((acc, repo) => {
+  repos.reduce<number[]>((acc, repo) => {
     if (!repo.tests) return acc;
 
     return repo.tests.pipelines.reduce((acc, pipeline) => (
@@ -28,10 +30,10 @@ export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
         return acc;
       }, acc)
     ), acc);
-  }, [0, 0, 0, 0])
+  }, [])
 );
 
-const isBeforeEndOfWeekFilters = [4, 3, 2, 1]
+const isBeforeEndOfWeekFilters = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
   .map(weekIndex => {
     const date = new Date();
     date.setDate(date.getDate() - ((weekIndex - 1) * 7));
@@ -52,7 +54,7 @@ export const newSonarSetupsByWeek = (repos: RepoAnalysis[]) => (
     }, [])
 );
 
-const sonarCountByWeek = (value: QualityGateDetails['status']) => (repos: RepoAnalysis[]) => (
+const sonarCountByWeek = (value: QualityGateStatus) => (repos: RepoAnalysis[]) => (
   repos
     .flatMap(r => r.codeQuality)
     .map(q => q?.qualityGateByWeek)

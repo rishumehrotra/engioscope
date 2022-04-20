@@ -1,6 +1,6 @@
 import { head, prop } from 'rambda';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGateDetails } from '../types-sonar';
-import type { QualityGateDetails, UICodeQuality } from '../../../shared/types';
+import type { QualityGateStatus, UICodeQuality } from '../../../shared/types';
 import { pastDate } from '../../utils';
 import { byDate, desc } from '../../../shared/sort-utils';
 
@@ -70,7 +70,7 @@ const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof for
   return Array.from(combinedSet.entries()).map(([lang, loc]) => ({ lang, loc }));
 };
 
-const parseQualityGateStatus = (gateLabel?: string): QualityGateDetails['status'] => {
+const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
   switch (gateLabel) {
     case 'OK':
       return 'pass';
