@@ -2,6 +2,8 @@ import { createReadStream } from 'fs';
 import { join } from 'path';
 import { Transform } from 'stream';
 import split2 from 'split2';
+import { prop } from 'rambda';
+import { byNum, desc } from '../../shared/sort-utils';
 
 type AnalyticsItem = {
   date: Date;
@@ -126,7 +128,7 @@ export default () => {
             uniques: Array.from(group.uniques.values()).length,
             pages: Array.from(group.pages.entries())
               .map(([pathname, count]) => ({ pathname, count }))
-              .sort((a, b) => b.count - a.count)
+              .sort(desc(byNum(prop('count'))))
               .slice(0, 20)
           }))));
         }

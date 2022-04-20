@@ -1,5 +1,7 @@
+import { prop } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { Fragment } from 'react';
+import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, toPercentage } from '../../../shared/utils';
 import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
@@ -75,7 +77,7 @@ const FlowMetricsByWorkItemType: React.FC<{
         </thead>
         <tbody>
           {groups
-            .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+            .sort(asc(byString(prop('groupName'))))
             .map(group => {
               const wiDefinitionId = getMetricCategoryDefinitionId(workItemTypes, workItemTypeName);
               const stats = wiDefinitionId ? group.summary[wiDefinitionId] : null;
@@ -288,7 +290,7 @@ const QualityMetrics: React.FC<{
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {groups
-                    .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+                    .sort(asc(byString(prop('groupName'))))
                     .map(group => {
                       const bugs = group.summary[bugsDefinitionId] || {};
                       const summaryBugsForEnv = (
@@ -470,7 +472,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
       </thead>
       <tbody>
         {groups
-          .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+          .sort(asc(byString(prop('groupName'))))
           .map(group => {
             const { repoStats, pipelineStats } = group;
             const [filterKey] = allExceptExpectedKeys(group);
@@ -572,7 +574,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
       </thead>
       <tbody>
         {groups
-          .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+          .sort(asc(byString(prop('groupName'))))
           .map(group => {
             const { repoStats, pipelineStats } = group;
             const { codeQuality } = repoStats;
@@ -703,7 +705,7 @@ const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups
       </thead>
       <tbody>
         {groups
-          .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+          .sort(asc(byString(prop('groupName'))))
           .map(group => {
             const { repoStats } = group;
             const [filterKey] = allExceptExpectedKeys(group);

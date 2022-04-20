@@ -17,6 +17,7 @@ import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
 import { closedWorkItemsCSV } from './helpers/create-csv-content';
+import { byNum, desc } from '../../../shared/sort-utils';
 
 type ChangeLeadTimeGraphProps = {
   workItems: UIWorkItem[];
@@ -94,9 +95,7 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemFlatList
-              workItems={(
-                workItems.sort((a, b) => clt(b) - clt(a))
-              )}
+              workItems={workItems.sort(desc(byNum(clt)))}
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}
               flairs={workItem => [`CLT: ${prettyMS(clt(workItem))}`]}

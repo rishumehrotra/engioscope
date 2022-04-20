@@ -1,5 +1,6 @@
 import { prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
+import { asc, byDate } from '../../../shared/sort-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import {
   num, prettyMS, priorityBasedColor
@@ -201,10 +202,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         body: (
           <WorkItemFlatList
             workItemType={workItemType}
-            workItems={statesToRender[key].sort((a, b) => (
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              new Date(a.since!).getTime() - new Date(b.since!).getTime()
-            )).map(prop('wi'))}
+            workItems={statesToRender[key].sort(asc(byDate(prop('since')))).map(prop('wi'))}
             tooltip={workItemTooltip}
             flairs={workItem => [
               prettyMS(Date.now()

@@ -1,4 +1,5 @@
-import { always, last } from 'rambda';
+import { always, last, prop } from 'rambda';
+import { asc, byNum } from '../../../shared/sort-utils';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types';
 import { exists } from '../../../shared/utils';
 import type { ParsedProjectConfig } from '../parse-config';
@@ -75,7 +76,7 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
           state: env.status
         }))
         .filter(exists)
-        .sort((a, b) => a.rank - b.rank)
+        .sort(asc(byNum(prop('rank'))))
     });
 
     acc[release.releaseDefinition.id].envs = release.environments
@@ -102,7 +103,7 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
     return {
       ...rest,
       envs: Object.values(envs)
-        .sort((a, b) => a.rank - b.rank)
+        .sort(asc(byNum(prop('rank'))))
     };
   });
 };
@@ -180,7 +181,7 @@ const getReposAndBranches = (
     ),
     stageCounts: pipeline.envs
       .filter(({ rank }) => stageInfo.has(rank))
-      .sort((a, b) => a.rank - b.rank)
+      .sort(asc(byNum(prop('rank'))))
       .map(stage => ({
         name: stage.name,
         successful: stageInfo.get(stage.rank)?.successful || 0,
@@ -219,7 +220,7 @@ export default (
 
 export const formatReleaseDefinition = (releaseDefinition: ReleaseDefinition): PipelineStage[] => (
   releaseDefinition.environments
-    .sort((a, b) => a.rank - b.rank)
+    .sort(asc(byNum(prop('rank'))))
     .map(env => ({
       name: env.name,
       rank: env.rank,

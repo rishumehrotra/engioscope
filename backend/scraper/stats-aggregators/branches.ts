@@ -1,35 +1,35 @@
+import { prop } from 'rambda';
 import type { UIBranches } from '../../../shared/types';
 import type { GitBranchStats } from '../types-azure';
 import { isWithinFortnight } from '../../utils';
+import {
+  asc, byDate, byNum, desc
+} from '../../../shared/sort-utils';
 
 const branchPageLimit = 20;
 
 const pageLimitBranches = (branches: GitBranchStats[]) => branches.slice(0, branchPageLimit);
-const sortByCommitDate = (asc: boolean) => (a: GitBranchStats, b: GitBranchStats) => (
-  (asc ? 1 : -1) * (a.commit.committer.date.getTime() - b.commit.committer.date.getTime())
-);
-const sortByCommitDateAsc = sortByCommitDate(true);
-const sortByCommitDateDesc = sortByCommitDate(false);
+const byCommitDate = byDate<GitBranchStats>(x => x.commit.committer.date);
 
 export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranchStats[]): UIBranches => {
-  const allBranches = branches.sort(sortByCommitDateDesc);
+  const allBranches = branches.sort(desc(byCommitDate));
   const activeBranches = branches
     .filter(b => isWithinFortnight(b.commit.committer.date))
-    .sort(sortByCommitDateDesc);
+    .sort(desc(byCommitDate));
   const inActiveBranches = branches
     .filter(b => !isWithinFortnight(b.commit.committer.date));
   const abandonedBranches = inActiveBranches
     .filter(b => b.aheadCount > 0 && b.behindCount > 0)
-    .sort(sortByCommitDateAsc);
+    .sort(asc(byCommitDate));
   const deleteCandidates = branches
     .filter(b => b.behindCount === 0 && b.name !== (defaultBranch ?? '').replace('refs/heads/', ''))
-    .sort(sortByCommitDateAsc);
+    .sort(asc(byCommitDate));
   const possiblyConflicting = branches
     .filter(b => b.aheadCount > 3 && b.behindCount > 10)
-    .sort(sortByCommitDateDesc);
+    .sort(desc(byCommitDate));
   const significantlyAheadBranches = branches
     .filter(b => b.aheadCount >= 20)
-    .sort((a, b) => b.aheadCount - a.aheadCount);
+    .sort(desc(byNum(prop('aheadCount'))));
 
   const getBranchWithLink = (linkType: 'history' | 'contents') => (
     branch: GitBranchStats

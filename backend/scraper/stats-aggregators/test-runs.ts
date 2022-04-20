@@ -3,6 +3,7 @@ import {
   last, prop, sum, T
 } from 'rambda';
 import { count, incrementBy } from '../../../shared/reducer-utils';
+import { asc, byDate, desc } from '../../../shared/sort-utils';
 import type { UITests } from '../../../shared/types';
 import { unique, weeks } from '../../utils';
 import type {
@@ -37,11 +38,11 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
   if (testRuns.length === 0) return defaultStat;
 
   const minStartTime = testRuns
-    .sort((a, b) => a.startedDate.getTime() - b.startedDate.getTime())[0]
+    .sort(asc(byDate(prop('startedDate'))))[0]
     .startedDate;
 
   const maxEndTime = testRuns
-    .sort((a, b) => a.completedDate.getTime() - b.completedDate.getTime())[testRuns.length - 1]
+    .sort(desc(byDate(prop('completedDate'))))[0]
     .completedDate;
 
   return {
@@ -58,7 +59,7 @@ const latestMasterBuilds = (allMasterBuilds: Record<number, Build[] | undefined>
   Object.values(allMasterBuilds).reduce<Build[]>((acc, builds) => {
     const latestBuild = [...(builds || [])]
       .filter(b => inTimeRange(b.startTime))
-      .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())[0];
+      .sort(desc(byDate(prop('startTime'))))[0];
     if (latestBuild) acc.push(latestBuild);
     return acc;
   }, [])

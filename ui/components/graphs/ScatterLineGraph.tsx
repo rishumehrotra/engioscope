@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { add, map, range } from 'rambda';
+import {
+  add, identity, map, range
+} from 'rambda';
 import React, {
   Fragment, useCallback, useMemo
 } from 'react';
+import { asc, byNum } from '../../../shared/sort-utils';
 import hexToHsl from '../../helpers/hex-to-hsl';
 import { prettyMS } from '../../helpers/utils';
 
@@ -38,7 +41,7 @@ const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
 );
 
 const median = (values: number[]) => {
-  const sortedValues = [...values].sort((a, b) => a - b);
+  const sortedValues = [...values].sort(asc(byNum(identity)));
   const middleIndex = Math.floor(sortedValues.length / 2);
   return sortedValues[middleIndex];
 };

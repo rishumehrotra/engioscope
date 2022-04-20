@@ -1,4 +1,5 @@
-import { add } from 'rambda';
+import { sum } from 'rambda';
+import { byNum, desc } from '../../../shared/sort-utils';
 import type { AggregatedCommitsByDev, UICommits } from '../../../shared/types';
 import type { GitCommitRef } from '../types-azure';
 
@@ -27,10 +28,8 @@ export default (commits: GitCommitRef[]): UICommits => {
   }, {});
 
   return {
-    count: Object.values(commitsByDev).map(c => Object.values(c.byDate).reduce(add, 0)).reduce(add, 0),
+    count: sum(Object.values(commitsByDev).map(c => sum(Object.values(c.byDate)))),
     byDev: Object.values(commitsByDev)
-      .sort((a, b) => (
-        Object.values(b.byDate).reduce(add, 0) - Object.values(a.byDate).reduce(add, 0)
-      ))
+      .sort(desc(byNum(x => sum(Object.values(x.byDate)))))
   };
 };

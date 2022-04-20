@@ -1,6 +1,7 @@
 import { length, not, pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import { count, incrementBy } from '../../../shared/reducer-utils';
+import { asc, byNum, desc } from '../../../shared/sort-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { noRCAValue } from '../../../shared/work-item-utils';
 import { num } from '../../helpers/utils';
@@ -142,7 +143,7 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
                   body: (
                     <WorkItemFlatList
                       workItemType={workItemType(witId)}
-                      workItems={wis.sort((a, b) => (a.priority || 10) - (b.priority || 10))}
+                      workItems={wis.sort(asc(byNum(x => x.priority || 10)))}
                       tooltip={workItemTooltip}
                       flairs={workItem => [
                         `Priority ${workItem.priority || 'unknown'}`,
@@ -245,7 +246,7 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
         children: (
           <ul>
             {wisInCategory
-              .sort((a, b) => (a.priority || 5) - (b.priority || 5))
+              .sort(asc(byNum(x => x.priority || 10)))
               .map(wi => (
                 <li key={wi.id} className="py-2">
                   <WorkItemLinkForModal
@@ -337,7 +338,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
     Object.entries(organizedByRCA)
       .map(([rca, wis]) => ({ rca, wis, color: '#00bcd4' }))
       .filter(({ wis }) => wis.length > 0)
-      .sort((a, b) => b.wis.length - a.wis.length)
+      .sort(desc(byNum(x => x.wis.length)))
   ), [organizedByRCA]);
 
   const workItemTooltip = useMemo(

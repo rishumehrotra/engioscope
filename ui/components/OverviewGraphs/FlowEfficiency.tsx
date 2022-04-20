@@ -1,5 +1,6 @@
 import { pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
+import { asc, byNum } from '../../../shared/sort-utils';
 import type { UIWorkItem } from '../../../shared/types';
 import { flowEfficiency } from '../../../shared/work-item-utils';
 import GraphCard from './helpers/GraphCard';
@@ -94,10 +95,9 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
           body: (
             <WorkItemFlatList
               workItemType={workItemType(witId)}
-              workItems={workItems.sort(
+              workItems={workItems
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                (a, b) => (workCenterTime(a) / cycleTime(a)!) - (workCenterTime(b) / cycleTime(b)!)
-              )}
+                .sort(asc(byNum(x => workCenterTime(x) / cycleTime(x)!)))}
               tooltip={workItemTooltip}
               flairs={flairs}
               extra={workItem => (

@@ -1,7 +1,9 @@
+import { head, prop } from 'rambda';
 import type { Overview, UIWorkItem, UIWorkItemType } from '../../../../shared/types';
 import { prettyMS } from '../../../helpers/utils';
 import type { WorkItemAccessors } from './helpers';
 import { timeDifference } from '../../../../shared/work-item-utils';
+import { byNum, desc } from '../../../../shared/sort-utils';
 
 const addSection = (label: string, value: string | number) => `
   <div class="pt-1">
@@ -54,8 +56,10 @@ export const createCompletedWorkItemTooltip = ({
     ? new Date(times.end!).getTime() - new Date(times.devComplete!).getTime()
     : undefined;
 
-  const worstOffender = computeTimes(times.workCenters)
-    .sort((a, b) => b.timeDiff - a.timeDiff)[0];
+  const worstOffender = head(
+    computeTimes(times.workCenters)
+      .sort(desc(byNum(prop('timeDiff'))))
+  );
 
   return `
     <div class="w-72">
@@ -74,8 +78,10 @@ export const createCompletedWorkItemTooltip = ({
 export const createWIPWorkItemTooltip = ({
   workItemType, workItemTimes, workItemGroup
 }: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: { label: string; value: string | number }[] = []) => {
-  const worstOffender = computeTimes(workItemTimes(workItem).workCenters)
-    .sort((a, b) => b.timeDiff - a.timeDiff)[0];
+  const worstOffender = head(
+    computeTimes(workItemTimes(workItem).workCenters)
+      .sort(desc(byNum(prop('timeDiff'))))
+  );
   const wig = workItem.groupId ? workItemGroup(workItem.groupId) : undefined;
 
   return `

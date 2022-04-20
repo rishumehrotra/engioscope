@@ -1,4 +1,5 @@
-import { head } from 'rambda';
+import { head, prop } from 'rambda';
+import { byNum, desc } from './sort-utils';
 import type {
   BranchPolicies, Pipeline, PipelineCount, PipelineStage
 } from './types';
@@ -156,9 +157,11 @@ export const usageByEnvironment = (environments?: string[]) => (pipeline: Pipeli
   if (!environments) return undefined;
 
   return environments.reduce<Record<string, { successful: number; total: number}>>((acc, env) => {
-    const matchingStage = head(pipeline.stageCounts
-      .filter(stageHasName(env))
-      .sort((a, b) => b.total - a.total));
+    const matchingStage = head(
+      pipeline.stageCounts
+        .filter(stageHasName(env))
+        .sort(desc(byNum(prop('total'))))
+    );
 
     if (!matchingStage) return acc;
 

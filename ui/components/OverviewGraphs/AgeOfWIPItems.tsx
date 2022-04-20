@@ -16,6 +16,7 @@ import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { wipWorkItemsCSV } from './helpers/create-csv-content';
+import { byNum, desc } from '../../../shared/sort-utils';
 
 type AgeOfWIPItemsGraphProps = {
   workItems: UIWorkItem[];
@@ -87,7 +88,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
           body: (
             <WorkItemFlatList
               workItems={(
-                workItems.sort((a, b) => ageOfWorkItem(b) - ageOfWorkItem(a))
+                workItems.sort(desc(byNum(ageOfWorkItem)))
               )}
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}

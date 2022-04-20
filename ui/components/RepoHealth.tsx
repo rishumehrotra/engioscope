@@ -2,6 +2,7 @@ import React, {
   useCallback, useEffect, useMemo, useState
 } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { prop } from 'rambda';
 import type { RepoAnalysis } from '../../shared/types';
 import { num } from '../helpers/utils';
 import Card from './common/ExpandingCard';
@@ -18,6 +19,7 @@ import { useSortParams } from '../hooks/sort-hooks';
 import usePageName from '../hooks/use-page-name';
 import type { Dev } from '../types';
 import { isDeprecated } from '../../shared/repo-utils';
+import { byNum, desc } from '../../shared/sort-utils';
 
 const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?: RepoAnalysis['defaultBranch']) => {
   if (!languages.length && !defaultBranch) return;
@@ -29,7 +31,7 @@ const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?:
       <span>
         {
           [...languages]
-            .sort((a, b) => b.loc - a.loc)
+            .sort(desc(byNum(prop('loc'))))
             .map(l => (
               <Flair
                 key={l.lang}

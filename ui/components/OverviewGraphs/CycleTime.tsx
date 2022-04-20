@@ -17,6 +17,7 @@ import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
 import { closedWorkItemsCSV } from './helpers/create-csv-content';
+import { byNum, desc } from '../../../shared/sort-utils';
 
 type CycleTimeGraphProps = {
   workItems: UIWorkItem[];
@@ -86,9 +87,7 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemFlatList
-              workItems={(
-                workItems.sort((a, b) => cycleTime(b) - cycleTime(a))
-              )}
+              workItems={workItems.sort(desc(byNum(cycleTime)))}
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}
               flairs={workItem => [prettyMS(cycleTime(workItem))]}

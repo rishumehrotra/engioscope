@@ -16,6 +16,7 @@ import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
+import { byNum, desc } from '../../../shared/sort-utils';
 
 const workCenterTimeInLastThreeMonthsUsing = (workItemTimes: WorkItemAccessors['workItemTimes']) => {
   const queryPeriodStart = new Date();
@@ -164,7 +165,7 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
           body: (
             <WorkItemFlatList
               workItemType={workItemType(witId)}
-              workItems={workItems.sort((a, b) => workCenterTimeInLastThreeMonths(b) - workCenterTimeInLastThreeMonths(a))}
+              workItems={workItems.sort(desc(byNum(workCenterTimeInLastThreeMonths)))}
               tooltip={workItemTooltip}
               flairs={workItem => [prettyMS(workCenterTimeInLastThreeMonths(workItem))]}
               extra={workItem => (

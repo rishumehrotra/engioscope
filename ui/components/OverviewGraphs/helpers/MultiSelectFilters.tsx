@@ -1,4 +1,6 @@
+import { identity, prop } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
+import { asc, byNum } from '../../../../shared/sort-utils';
 import type { UIWorkItem } from '../../../../shared/types';
 import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown';
 
@@ -18,7 +20,7 @@ export const PriorityFilter: React.FC<FilterProps> = ({ workItems, setFilter }) 
           return acc;
         }, new Set<number>())
     ]
-      .sort((a, b) => a - b)
+      .sort(asc(byNum(identity)))
       .map(x => ({ value: String(x), label: String(x) }))
   ), [workItems]);
 
@@ -76,7 +78,7 @@ export const SizeFilter: React.FC<FilterProps> = ({ workItems, setFilter }) => {
           return acc;
         }, new Set<typeof sizes['small']>())
     ]
-      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .sort(asc(byNum(prop('sortIndex'))))
       .map(x => ({ value: x.key, label: x.label }))
   ), [workItems]);
 

@@ -1,6 +1,6 @@
 import qs from 'qs';
 import md5 from 'md5';
-import { filter } from 'rambda';
+import { filter, prop } from 'rambda';
 import fetch from './fetch-with-extras';
 import { chunkArray } from '../../utils';
 import type {
@@ -13,6 +13,7 @@ import createPaginatedGetter from './create-paginated-getter';
 import type { FetchResponse } from './fetch-with-disk-cache';
 import fetchWithDiskCache from './fetch-with-disk-cache';
 import type { ParsedConfig } from '../parse-config';
+import { asc, byDate } from '../../../shared/sort-utils';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -82,7 +83,7 @@ export default (config: ParsedConfig) => {
           ...(previousResponse
             ? {
               maxTime: previousResponse.data.value
-                .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0]
+                .sort(asc(byDate(prop('startTime'))))[0]
                 ?.startTime.toISOString()
             }
             : {}

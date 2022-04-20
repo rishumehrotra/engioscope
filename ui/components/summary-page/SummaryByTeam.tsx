@@ -1,7 +1,9 @@
+import { prop } from 'rambda';
 import React, {
   Fragment, useRef, useState
 } from 'react';
 import { maybe } from '../../../shared/maybe';
+import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, toPercentage } from '../../../shared/utils';
 import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
@@ -918,7 +920,7 @@ const SummaryByTeam: React.FC<{
 }> = ({ groups, workItemTypes }) => (
   <ul className="bg-gray-50 p-8 rounded-lg">
     {groups
-      .sort((a, b) => (a.groupName.toLowerCase() < b.groupName.toLowerCase() ? -1 : 1))
+      .sort(asc(byString(prop('groupName'))))
       .map(group => (
         <li key={group.groupName} className="mb-8">
           <SummaryItem

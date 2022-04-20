@@ -7,6 +7,7 @@ import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-so
 import type { ParsedConfig, SonarConfig } from '../parse-config';
 import { pastDate, unique } from '../../utils';
 import parseBuildReports from '../parse-build-reports';
+import { byDate, desc } from '../../../shared/sort-utils';
 
 export type SonarProject = SonarConfig & {
   organization: string;
@@ -97,7 +98,7 @@ const getMeasures = (config: ParsedConfig) => (sonarProject: SonarProject) => {
     name: sonarProject.name,
     url: `${sonarProject.url}/dashboard?id=${sonarProject.key}`,
     measures: res.data.component?.measures || [],
-    lastAnalysisDate: sonarProject.lastAnalysisDate
+    lastAnalysisDate: new Date(sonarProject.lastAnalysisDate)
   }));
 };
 
@@ -151,9 +152,7 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
 
 // #endregion
 
-const sortByLastAnalysedDate = (a: SonarProject, b: SonarProject) => (
-  new Date(b.lastAnalysisDate).getTime() - new Date(a.lastAnalysisDate).getTime()
-);
+const sortByLastAnalysedDate = desc<SonarProject>(byDate(x => new Date(x.lastAnalysisDate)));
 
 const normliseNameForMatching = (name: string) => (
   name.replace(/-/g, '_').toLowerCase()

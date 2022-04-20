@@ -1,7 +1,8 @@
-import { head } from 'rambda';
+import { head, prop } from 'rambda';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGateDetails } from '../types-sonar';
 import type { QualityGateDetails, UICodeQuality } from '../../../shared/types';
 import { pastDate } from '../../utils';
+import { byDate, desc } from '../../../shared/sort-utils';
 
 // Get list of available metrics at <sonar-host>/api/metrics/search
 export const requiredMetrics = [
@@ -185,13 +186,15 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
           techDebt: measureAsNumber('sqale_index'),
           codeSmells: measureAsNumber('code_smells')
         },
-        oldestFoundSample: head(sonarAnalysis.qualityGateHistory
-          .sort((a, b) => b.date.getTime() - a.date.getTime()))?.date.toISOString(),
+        oldestFoundSample: head(
+          sonarAnalysis.qualityGateHistory
+            .sort(desc(byDate(prop('date'))))
+        )?.date.toISOString(),
         qualityGateByWeek: uptillWeeks.map(isUptillWeek => {
           const latestInWeek = head(
             sonarAnalysis.qualityGateHistory
               .filter(({ date }) => isUptillWeek(date))
-              .sort((a, b) => b.date.getTime() - a.date.getTime())
+              .sort(desc(byDate(prop('date'))))
           );
 
           return latestInWeek ? parseQualityGateStatus(latestInWeek.value) : null;

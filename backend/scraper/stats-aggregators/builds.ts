@@ -1,8 +1,11 @@
 import prettyMilliseconds from 'pretty-ms';
-import { add, pipe, replace } from 'rambda';
+import {
+  add, pipe, prop, replace
+} from 'rambda';
 import type { Build, BuildDefinitionReference } from '../types-azure';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types';
 import { isMaster } from '../../utils';
+import { asc, byDate, desc } from '../../../shared/sort-utils';
 
 type BuildStats = {
   count: number;
@@ -66,7 +69,7 @@ export default (
   };
 
   const { buildStats, allMasterBuilds } = [...builds]
-    .sort((a, b) => b.finishTime.getTime() - a.finishTime.getTime())
+    .sort(desc(byDate(prop('finishTime'))))
     .reduce<AggregatedBuilds>((acc, build) => {
       const rId = repoId(build);
 
@@ -132,7 +135,7 @@ export default (
         ? pipelines.concat(
           buildDefinitionsByRepoId(id)
             .filter(d => !pipelines.find(p => p.definitionId === d.id.toString()))
-            .sort((a, b) => (a.latestBuild?.startTime?.getTime() || 0) - (b.latestBuild?.startTime?.getTime() || 0))
+            .sort(asc(byDate(x => x.latestBuild?.startTime || new Date(0))))
             .map<UIBuildPipeline>(d => ({
               count: 0,
               name: d.name,

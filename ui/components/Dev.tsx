@@ -1,6 +1,7 @@
-import { add } from 'rambda';
+import { sum } from 'rambda';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { byNum, desc } from '../../shared/sort-utils';
 import type { Dev } from '../types';
 import Changes from './commits/Changes';
 import CommitTimeline from './commits/CommitTimeline';
@@ -11,7 +12,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
   const location = useLocation();
   const allCommits = dev.repos.flatMap(r => Object.values(r.byDate));
-  const commitsCount = allCommits.reduce(add, 0);
+  const commitsCount = sum(allCommits);
 
   return (
     <li
@@ -74,7 +75,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
             </thead>
             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
               {dev.repos
-                .sort((a, b) => Object.values(b.byDate).reduce(add, 0) - Object.values(a.byDate).reduce(add, 0))
+                .sort(desc(byNum(r => sum(Object.values(r.byDate)))))
                 .map(repo => (
                   <tr key={repo.name}>
                     <td className="px-6 py-4 text-left w-5/12">
@@ -85,7 +86,7 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
                         {repo.name}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap w-1/12">{Object.values(repo.byDate).reduce(add, 0)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap w-1/12">{sum(Object.values(repo.byDate))}</td>
                     <td className="whitespace-nowrap"><Changes changes={repo.changes} /></td>
                     <td className="px-6 py-4 whitespace-nowrap w-4/12">
                       <CommitTimeline timeline={repo.byDate} max={Math.max(...allCommits)} />
