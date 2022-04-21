@@ -6,7 +6,7 @@ import React, {
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
 import useSvgEvent from '../../hooks/use-svg-event';
 
-const yAxisItemSpacing = 11;
+const yAxisItemSpacing = 12;
 const yAxisLeftPadding = 70;
 const yAxisLabelHeight = 20;
 const height = 600;

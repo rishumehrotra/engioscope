@@ -195,7 +195,7 @@ const Sparkline: React.FC<SparklineProps> = ({
           height={height}
           width={width}
           viewBox={`0 0 ${width} ${height}`}
-          className={`inline-block -mt-1 ml-1 ${className || ''}`}
+          className={`inline-block -mt-1 ${className || ''}`}
         >
           <path
             d={data.map((item, itemIndex) => (
