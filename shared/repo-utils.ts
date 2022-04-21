@@ -14,23 +14,31 @@ export const isDeprecated = (repo: RepoAnalysis) => (
     && (repo.commits.count === 0)
 );
 
-export const numberOfTests = (repo: RepoAnalysis) => repo.tests?.total || 0;
+export const numberOfTests = (repo: RepoAnalysis) => repo.tests?.reduce(
+  (acc, p) => acc + p.successful + p.failed, 0
+) || 0;
+
 export const numberOfBuilds = (repo: RepoAnalysis) => repo.builds?.count || 0;
 
 export const totalTests = count(incrementBy(numberOfTests));
 export const totalBuilds = count(incrementBy(numberOfBuilds));
 
-export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
-  repos.reduce<number[]>((acc, repo) => {
-    if (!repo.tests) return acc;
-
-    return repo.tests.pipelines.reduce((acc, pipeline) => (
-      pipeline.testsByWeek.reduce((acc, testCount, index) => {
-        acc[index] = (acc[index] || 0) + testCount;
-        return acc;
-      }, acc)
-    ), acc);
+const addColumnsInArray = (rows: number[][]) => (
+  rows.reduce<number[]>((acc, row) => {
+    row.forEach((val, index) => {
+      acc[index] = (acc[index] || 0) + val;
+    });
+    return acc;
   }, [])
+);
+
+export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
+  addColumnsInArray(
+    repos
+      .map(r => r.tests)
+      .filter(exists)
+      .map(r => addColumnsInArray(r.map(p => p.testsByWeek)))
+  )
 );
 
 const isBeforeEndOfWeekFilters = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -74,7 +82,7 @@ const sonarCountByWeek = (value: QualityGateStatus) => (repos: RepoAnalysis[]) =
 );
 
 const coverage = (repo: RepoAnalysis) => (
-  repo.tests?.pipelines.reduce((acc, p) => {
+  repo.tests?.reduce((acc, p) => {
     if (!p.coverage?.covered) return acc;
 
     acc.covered += p.coverage.covered;

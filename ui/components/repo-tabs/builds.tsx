@@ -27,7 +27,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
               </thead>
               <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
                 {builds.pipelines.map(pipeline => (
-                  <tr key={pipeline.name} className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}>
+                  <tr key={pipeline.url} className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}>
                     <td className="pl-6 py-4 whitespace-nowrap text-left">
                       <a
                         href={pipeline.url}

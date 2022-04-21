@@ -73,7 +73,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }
     branches(repo.branches, repo.defaultBranch),
     commits(repo, aggregatedDevs, location),
     prs(repo.prs),
-    tests(repo.tests),
+    tests(repo),
     codeQuality(repo.codeQuality)
   ], [repo, aggregatedDevs, location]);
 

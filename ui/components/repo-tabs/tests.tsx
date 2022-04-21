@@ -6,13 +6,14 @@ import type { Tab } from './Tabs';
 import TabContents from './TabContents';
 import Sparkline from '../graphs/Sparkline';
 import { increaseIsBetter } from '../summary-page/utils';
+import { numberOfTests } from '../../../shared/repo-utils';
 
-export default (tests: RepoAnalysis['tests']): Tab => ({
+export default (repo: RepoAnalysis): Tab => ({
   title: 'Tests',
-  count: tests?.total || 0,
+  count: numberOfTests(repo),
   content: () => (
     <TabContents gridCols={1}>
-      {tests?.pipelines.length ? (
+      {repo.tests?.length ? (
         <>
           <table className="table-auto text-center divide-y divide-gray-200 w-full">
             <thead>
@@ -31,8 +32,8 @@ export default (tests: RepoAnalysis['tests']): Tab => ({
               </tr>
             </thead>
             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
-              {tests.pipelines.map(pipeline => (
-                <tr key={pipeline.name}>
+              {repo.tests.map(pipeline => (
+                <tr key={pipeline.id}>
                   <td className="pl-6 py-4 whitespace-nowrap text-left">
                     <a
                       href={pipeline.url}

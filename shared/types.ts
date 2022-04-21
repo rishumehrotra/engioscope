@@ -132,17 +132,15 @@ export type UIPullRequests = {
 };
 
 export type UITests = null | {
-  total: number;
-  pipelines: {
-    name: string;
-    url: string;
-    successful: number;
-    failed: number;
-    executionTime: string;
-    coverage: { covered: number; total: number } | null;
-    testsByWeek: number[];
-  }[];
-};
+  name: string;
+  id: number;
+  url: string;
+  successful: number;
+  failed: number;
+  executionTime: string;
+  coverage: { covered: number; total: number } | null;
+  testsByWeek: number[];
+}[];
 
 export type QualityGateStatus = 'pass' | 'warn' | 'fail' | 'unknown';
 

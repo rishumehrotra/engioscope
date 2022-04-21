@@ -1,6 +1,6 @@
 import prettyMs from 'pretty-ms';
 import {
-  last, prop, sum, T
+  head, last, prop, T
 } from 'rambda';
 import { count, incrementBy } from '../../../shared/reducer-utils';
 import { asc, byDate, desc } from '../../../shared/sort-utils';
@@ -55,11 +55,14 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
   };
 };
 
-const latestMasterBuilds = (allMasterBuilds: Record<number, Build[] | undefined>, inTimeRange: (d: Date) => boolean = T) => (
+const latestMasterBuilds = (allMasterBuilds: Record<number, Build[] | undefined>) => (inTimeRange: (d: Date) => boolean) => (
   Object.values(allMasterBuilds).reduce<Build[]>((acc, builds) => {
-    const latestBuild = [...(builds || [])]
-      .filter(b => inTimeRange(b.startTime))
-      .sort(desc(byDate(prop('startTime'))))[0];
+    const latestBuild = head(
+      [...(builds || [])]
+        .filter(b => inTimeRange(b.startTime))
+        .sort(desc(byDate(prop('startTime'))))
+    );
+
     if (latestBuild) acc.push(latestBuild);
     return acc;
   }, [])
@@ -104,19 +107,14 @@ const historicalTestCount = (
   const masterBuilds = getMasterBuilds(allMasterBuilds);
   const definitionIdsWithoutBuildsInFirstWeek = unique(
     Object.keys(allMasterBuilds)
-      .filter(repoId => {
-        const mb = masterBuilds(repoId);
-        return latestMasterBuilds(mb).length !== 0;
-      })
+      .filter(repoId => latestMasterBuilds(masterBuilds(repoId))(T).length !== 0)
       .map(repoId => {
-        const mb = masterBuilds(repoId);
+        const withoutBuilds = Object.entries(masterBuilds(repoId))
+          .filter(([, builds]) => (
+            (builds || []).filter(b => weeks[0](b.startTime)).length === 0
+          ));
 
-        const withoutBuilds = Object.entries(mb)
-          .filter(([, builds]) => (builds || []).filter(b => weeks[0](b.startTime)).length === 0);
-        return (
-          withoutBuilds
-            .map(([definitionId]) => Number(definitionId))
-        );
+        return withoutBuilds.map(([definitionId]) => Number(definitionId));
       })
       .flat()
   );
@@ -146,13 +144,11 @@ export default (
   );
 
   return async (repoId?: string): Promise<UITests> => {
-    const matchingBuilds = latestMasterBuilds(masterBuilds(repoId));
+    const matchingBuilds = latestMasterBuilds(masterBuilds(repoId))(T);
 
     if (matchingBuilds.length === 0) return null;
 
-    const latestBuildsInEachWeek = weeks.map(
-      isWithinWeek => latestMasterBuilds(masterBuilds(repoId), isWithinWeek)
-    );
+    const latestBuildsInEachWeek = weeks.map(latestMasterBuilds(masterBuilds(repoId)));
 
     const interestingBuilds = [...new Set([
       ...matchingBuilds,
@@ -192,21 +188,19 @@ export default (
 
     if (testStats.length === 0) return null;
 
-    return {
-      total: sum(unique(testStats.map(prop('total')))),
-      pipelines: await Promise.all(
-        testStats
-          .filter(stat => stat.success + stat.failure !== 0)
-          .map(async stat => ({
-            name: stat.buildName,
-            url: stat.url,
-            successful: stat.success,
-            failed: stat.failure,
-            executionTime: prettyMs(stat.executionTime),
-            testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
-            coverage: stat.coverage
-          }))
-      )
-    };
+    return Promise.all(
+      testStats
+        .filter(stat => stat.success + stat.failure !== 0)
+        .map(async stat => ({
+          name: stat.buildName,
+          id: stat.buildDefinitionId,
+          url: stat.url,
+          successful: stat.success,
+          failed: stat.failure,
+          executionTime: prettyMs(stat.executionTime),
+          testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
+          coverage: stat.coverage
+        }))
+    );
   };
 };
