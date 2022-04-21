@@ -107,18 +107,23 @@ export default (config: ParsedConfig) => {
 
     getOneBuildBeforeQueryPeriod: (collectionName: string, projectName: string) => (
       (buildDefinitionIds: number[]) => (
-        list<Build>({
-          url: url(collectionName, projectName, '/build/builds'),
-          qsParams: {
-            maxTime: config.azure.queryFrom.toISOString(),
-            resultFilter: 'succeeded,failed,partiallySucceeded',
-            maxBuildsPerDefinition: '1',
-            definitions: buildDefinitionIds.join(','),
-            branchName: 'master'
-          },
-          cacheFile: [collectionName, projectName, 'older-builds']
-        })
-      )
+        Promise.all(
+          chunkArray(buildDefinitionIds, 100)
+            .map((buildDefinitionIdsChunk, index) => (
+              list<Build>({
+                url: url(collectionName, projectName, '/build/builds'),
+                qsParams: {
+                  maxTime: config.azure.queryFrom.toISOString(),
+                  resultFilter: 'succeeded,failed,partiallySucceeded',
+                  maxBuildsPerDefinition: '1',
+                  definitions: buildDefinitionIdsChunk.join(','),
+                  branchName: 'master'
+                },
+                cacheFile: [collectionName, projectName, `older-builds_${index}`]
+              })
+            ))
+        )
+      ).then(x => x.flat())
     ),
 
     getBuildDefinitions: (collectionName: string, projectName: string) => (
