@@ -162,7 +162,7 @@ export const renderGroupItem = (link: string) => (label: ReactNode, anchor = '')
       rel="noreferrer"
     >
       {label}
-      <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 hover:text-blue-500 ml-1" />
+      <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 text-blue-500 ml-1" />
     </a>
   </div>
 );

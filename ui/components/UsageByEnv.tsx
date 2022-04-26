@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+import { AlertTriangle } from './common/Icons';
 import { envRowTooltip } from './ReleasePipelineSummary';
 
 type UsageByEnvProps = {
@@ -37,7 +38,7 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount }) =
             }) : {})}
           >
             {doesDeploysCountSeemInconsistent(allEnvs, index) && (
-              <span className="bg-orange-600 w-2 h-2 rounded-full inline-block mr-1" />
+              <AlertTriangle className="w-4 h-4 inline-block mr-1" />
             )}
             {env}
           </div>
