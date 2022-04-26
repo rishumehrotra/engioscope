@@ -184,7 +184,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
               <Sparkline
                 data={exaggerateTrendLine(totalTestsByWeek(stats.repos))}
                 lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
-                className="ml-2 -mb-1"
+                className="ml-1 -mb-1"
               />
             </>
           ),

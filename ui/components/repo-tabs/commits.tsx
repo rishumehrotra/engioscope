@@ -1,5 +1,5 @@
 import React from 'react';
-import { add } from 'rambda';
+import { add, sum } from 'rambda';
 import type { Location } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import type { RepoAnalysis } from '../../../shared/types';
@@ -33,22 +33,22 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, locatio
           )
           : (
             <>
-              <table className="table-auto text-center divide-y divide-gray-200 w-full">
+              <table className="table">
                 <thead>
                   <tr>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Commits</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Changes</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Timeline</th>
+                    <th> </th>
+                    <th>Commits</th>
+                    <th>Changes</th>
+                    <th>Timeline</th>
                   </tr>
                 </thead>
-                <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+                <tbody>
                   {commits.byDev.map(commitsByDev => {
                     const developerUrl = location.pathname.replace('/repos', `/devs?search="${commitsByDev.name}"`);
 
                     return (
                       <tr key={commitsByDev.name}>
-                        <td className="px-6 py-4 text-left text-sm">
+                        <td className="text-sm">
                           <Link to={developerUrl} className="flex commits-profile">
                             <ProfilePic
                               alt={`Profile pic for ${commitsByDev.name}`}
@@ -67,13 +67,13 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, locatio
                             </div>
                           </Link>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {Object.values(commitsByDev.byDate).reduce(add, 0)}
+                        <td>
+                          {sum(Object.values(commitsByDev.byDate))}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td>
                           <Changes changes={commitsByDev.changes} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td>
                           <CommitTimeline
                             timeline={commitsByDev.byDate}
                             max={max}

@@ -7,6 +7,7 @@ import TabContents from './TabContents';
 import Sparkline from '../graphs/Sparkline';
 import { increaseIsBetter } from '../summary-page/utils';
 import { numberOfTests } from '../../../shared/repo-utils';
+import { divide, toPercentage } from '../../../shared/utils';
 
 export default (repo: RepoAnalysis): Tab => ({
   title: 'Tests',
@@ -15,26 +16,26 @@ export default (repo: RepoAnalysis): Tab => ({
     <TabContents gridCols={1}>
       {repo.tests?.length ? (
         <>
-          <table className="table-auto text-center divide-y divide-gray-200 w-full">
+          <table className="table">
             <thead>
               <tr>
-                <th className="px-6 py-3 w-2/6 text-xs font-medium text-gray-800 uppercase tracking-wider"> </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                <th> </th>
+                <th>
                   <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
                   Successful
                 </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                <th>
                   <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
                   Failed
                 </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Execution time</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Branch coverage</th>
+                <th>Execution time</th>
+                <th>Branch coverage</th>
               </tr>
             </thead>
-            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+            <tbody>
               {repo.tests.map(pipeline => (
                 <tr key={pipeline.id}>
-                  <td className="pl-6 py-4 whitespace-nowrap text-left">
+                  <td>
                     <a
                       href={pipeline.url}
                       target="_blank"
@@ -52,11 +53,15 @@ export default (repo: RepoAnalysis): Tab => ({
                       </span>
                     </a>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.successful)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{num(pipeline.failed)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{pipeline.executionTime}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {pipeline.coverage ? `${Math.round((pipeline.coverage.covered * 100) / pipeline.coverage.total)}%` : '-'}
+                  <td>{num(pipeline.successful)}</td>
+                  <td>{num(pipeline.failed)}</td>
+                  <td>{pipeline.executionTime}</td>
+                  <td>
+                    {pipeline.coverage
+                      ? divide(pipeline.coverage.covered, pipeline.coverage.total)
+                        .map(toPercentage)
+                        .getOr('-')
+                      : '-'}
                   </td>
                 </tr>
               ))}

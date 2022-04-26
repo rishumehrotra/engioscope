@@ -13,22 +13,22 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
       {builds
         ? (
           <div className="overflow-auto">
-            <table className="table-auto text-center divide-y divide-gray-200 w-full">
+            <table className="table">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider"> </th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Successful</th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Runs</th>
-                  <th className="pl-6 pr-0 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Success rate</th>
-                  <th className="pr-6 pl-0 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">Average duration</th>
-                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-left">Current status</th>
+                  <th> </th>
+                  <th>Type</th>
+                  <th>Successful</th>
+                  <th>Runs</th>
+                  <th>Success rate</th>
+                  <th className="text-right" style={{ paddingRight: 0 }}>Average duration</th>
+                  <th className="text-left">Current status</th>
                 </tr>
               </thead>
-              <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+              <tbody>
                 {builds.pipelines.map(pipeline => (
                   <tr key={pipeline.url} className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}>
-                    <td className="pl-6 py-4 whitespace-nowrap text-left">
+                    <td>
                       <a
                         href={pipeline.url}
                         target="_blank"
@@ -41,7 +41,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                         </span>
                       </a>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td>
                       {pipeline.type === 'yml'
                         ? (
                           <span className="uppercase text-xs px-1 border border-green-300 rounded-sm text-green-500">
@@ -54,12 +54,12 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                           </span>
                         )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{pipeline.status.type === 'unused' ? '-' : pipeline.success}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>
-                    <td className="pl-6 pr-0 py-4 whitespace-nowrap">
+                    <td>{pipeline.status.type === 'unused' ? '-' : pipeline.success}</td>
+                    <td>{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>
+                    <td>
                       {pipeline.status.type === 'unused' ? '-' : `${Math.round((pipeline.success * 100) / pipeline.count)}%`}
                     </td>
-                    <td className="pr-6 pl-0 py-4 whitespace-nowrap text-right">
+                    <td style={{ textAlign: 'right' }}>
                       {pipeline.status.type === 'unused'
                         ? '-'
                         : (
@@ -73,7 +73,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                           </>
                         )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-left">
+                    <td style={{ textAlign: 'left' }} className="pl-6">
                       {pipeline.status.type !== 'failed' && pipeline.status.type !== 'unused' && (
                         <>
                           <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
