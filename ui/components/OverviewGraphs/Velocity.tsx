@@ -167,7 +167,6 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
       title="Velocity"
       subtitle="Work items completed over the last 90 days"
       hasData={preFilteredWorkItems.length > 0}
-      renderLazily={false}
       csvData={csvData}
       left={(
         <>

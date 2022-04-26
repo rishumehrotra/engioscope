@@ -266,7 +266,7 @@ const LineGraph = <L, P>({
 
   if (lines.length === 0) return <div>Couldn't find any matching workitems</div>;
 
-  const width = (points(lines[0]).length + 1) * yAxisItemSpacing;
+  const width = ((points(lines[0]).length - 1) * yAxisItemSpacing) + yAxisLeftPadding;
 
   return (
     <svg
@@ -302,7 +302,7 @@ const LineGraph = <L, P>({
         svgRef={svgRef}
         width={width}
         xCoord={xCoord}
-        crosshairWidth={(width - yAxisLeftPadding) / points(lines[0]).length}
+        crosshairWidth={yAxisItemSpacing}
         closestPointIndex={closestPointIndex}
         contents={crosshairBubble}
       />
