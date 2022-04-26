@@ -1,10 +1,10 @@
 import React from 'react';
 import type { RepoAnalysis } from '../../../shared/types';
-import { num, exaggerateTrendLine } from '../../helpers/utils';
+import { num } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
-import Sparkline from '../graphs/Sparkline';
+import { LabelWithSparkline } from '../graphs/Sparkline';
 import { increaseIsBetter } from '../summary-page/utils';
 import { numberOfTests } from '../../../shared/repo-utils';
 import { divide, toPercentage } from '../../../shared/utils';
@@ -36,22 +36,21 @@ export default (repo: RepoAnalysis): Tab => ({
               {repo.tests.map(pipeline => (
                 <tr key={pipeline.id}>
                   <td>
-                    <a
-                      href={pipeline.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-tip={pipeline.name}
-                      className="link-text"
-                    >
-                      <span className="truncate w-full block">
-                        {pipeline.name}
-                        <Sparkline
-                          data={exaggerateTrendLine(pipeline.testsByWeek)}
-                          className="inline-block ml-2 -mb-1"
-                          lineColor={increaseIsBetter(pipeline.testsByWeek)}
-                        />
-                      </span>
-                    </a>
+                    <LabelWithSparkline
+                      label={(
+                        <a
+                          href={pipeline.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          data-tip={pipeline.name}
+                          className="link-text truncate w-full"
+                        >
+                          {pipeline.name}
+                        </a>
+                      )}
+                      data={pipeline.testsByWeek}
+                      lineColor={increaseIsBetter(pipeline.testsByWeek)}
+                    />
                   </td>
                   <td>{num(pipeline.successful)}</td>
                   <td>{num(pipeline.failed)}</td>

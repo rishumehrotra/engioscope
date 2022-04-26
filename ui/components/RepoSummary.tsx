@@ -9,8 +9,8 @@ import type {
   RepoAnalysis, UIBuildPipeline, QualityGateStatus, UICodeQuality
 } from '../../shared/types';
 import { divide, toPercentage } from '../../shared/utils';
-import { num, exaggerateTrendLine, shortDate } from '../helpers/utils';
-import Sparkline from './graphs/Sparkline';
+import { num, shortDate } from '../helpers/utils';
+import { LabelWithSparkline } from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
 import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils';
@@ -105,15 +105,11 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           value: (
             stats.repos.length
               ? (
-                <>
-                  {`${Math.round((stats.repos.filter(r => !!r.codeQuality).length / stats.repos.length) * 100)}%`}
-                  <Sparkline
-                    data={exaggerateTrendLine(stats.newSonarByWeek)}
-                    lineColor={increaseIsBetter(stats.newSonarByWeek)}
-                    className="ml-2 -mb-1"
-                    showPopover={false}
-                  />
-                </>
+                <LabelWithSparkline
+                  label={`${Math.round((stats.repos.filter(r => !!r.codeQuality).length / stats.repos.length) * 100)}%`}
+                  data={stats.newSonarByWeek}
+                  lineColor={increaseIsBetter(stats.newSonarByWeek)}
+                />
               )
               : '-'
           ),
@@ -126,15 +122,11 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             title: 'Ok',
             value: stats.sonarStats.configured
               ? (
-                <>
-                  {`${((stats.sonarStats.ok / stats.sonarStats.configured) * 100).toFixed(0)}%`}
-                  <Sparkline
-                    data={exaggerateTrendLine(stats.sonarCountsByWeek.pass)}
-                    lineColor={increaseIsBetter(stats.sonarCountsByWeek.pass)}
-                    className="ml-2 -mb-1"
-                    showPopover={false}
-                  />
-                </>
+                <LabelWithSparkline
+                  label={`${((stats.sonarStats.ok / stats.sonarStats.configured) * 100).toFixed(0)}%`}
+                  data={stats.sonarCountsByWeek.pass}
+                  lineColor={increaseIsBetter(stats.sonarCountsByWeek.pass)}
+                />
               )
               : '-',
             tooltip: `${stats.sonarStats.ok} of ${stats.sonarStats.configured} sonar projects have 'pass' quality gate`
@@ -143,15 +135,11 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             title: 'Warn',
             value: stats.sonarStats.configured
               ? (
-                <>
-                  {`${((stats.sonarStats.warn / stats.sonarStats.configured) * 100).toFixed(0)}%`}
-                  <Sparkline
-                    data={exaggerateTrendLine(stats.sonarCountsByWeek.warn)}
-                    lineColor={decreaseIsBetter(stats.sonarCountsByWeek.warn)}
-                    className="ml-2 -mb-1"
-                    showPopover={false}
-                  />
-                </>
+                <LabelWithSparkline
+                  label={`${((stats.sonarStats.warn / stats.sonarStats.configured) * 100).toFixed(0)}%`}
+                  data={stats.sonarCountsByWeek.warn}
+                  lineColor={increaseIsBetter(stats.sonarCountsByWeek.warn)}
+                />
               )
               : '-',
             tooltip: `${stats.sonarStats.warn} of ${stats.sonarStats.configured} sonar projects have 'warn' quality gate`
@@ -160,15 +148,11 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             title: 'Fail',
             value: stats.sonarStats.configured
               ? (
-                <>
-                  {`${((stats.sonarStats.error / stats.sonarStats.configured) * 100).toFixed(0)}%`}
-                  <Sparkline
-                    data={exaggerateTrendLine(stats.sonarCountsByWeek.fail)}
-                    lineColor={decreaseIsBetter(stats.sonarCountsByWeek.fail)}
-                    className="ml-2 -mb-1"
-                    showPopover={false}
-                  />
-                </>
+                <LabelWithSparkline
+                  label={`${((stats.sonarStats.error / stats.sonarStats.configured) * 100).toFixed(0)}%`}
+                  data={stats.sonarCountsByWeek.fail}
+                  lineColor={decreaseIsBetter(stats.sonarCountsByWeek.fail)}
+                />
               )
               : '-',
             tooltip: `${stats.sonarStats.error} of ${stats.sonarStats.configured} sonar projects have 'fail' quality gate`
@@ -179,14 +163,11 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         topStats={[{
           title: 'Tests',
           value: (
-            <>
-              {num(totalTests(stats.repos))}
-              <Sparkline
-                data={exaggerateTrendLine(totalTestsByWeek(stats.repos))}
-                lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
-                className="ml-1 -mb-1"
-              />
-            </>
+            <LabelWithSparkline
+              label={num(totalTests(stats.repos))}
+              data={totalTestsByWeek(stats.repos)}
+              lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
+            />
           ),
           tooltip: 'Total number of tests across all matching repos'
         }]}

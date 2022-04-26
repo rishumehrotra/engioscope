@@ -1,6 +1,8 @@
-import { range } from 'rambda';
-import React, { useCallback, useMemo } from 'react';
+import { add, range } from 'rambda';
+import type { ReactNode } from 'react';
+import React, { useMemo } from 'react';
 import { shortDate } from '../../helpers/utils';
+import useHover from '../../hooks/use-hover';
 
 const popoverSvgConfig = {
   width: 250,
@@ -13,6 +15,16 @@ const popoverSvgConfig = {
   horizontalGridLineCount: 4,
   verticalGridLineCount: 4,
   topPadding: 5
+};
+
+const exaggerateTrendLine = (data: number[]) => {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const diff = max - min;
+
+  const exaggerated = data.map(val => val - (max - diff) + (diff * 1));
+
+  return exaggerated;
 };
 
 const computeLineGraphData = (
@@ -163,12 +175,11 @@ type SparklineProps = {
   lineColor?: string;
   className?: string;
   yAxisLabel?: (index: number) => string;
-  showPopover?: boolean;
 };
 
 const Sparkline: React.FC<SparklineProps> = ({
   data, height: inputHeight, width: inputWidth, lineColor: inputLineColor, className,
-  yAxisLabel: inputYAxisLabel, showPopover = true
+  yAxisLabel: inputYAxisLabel
 }) => {
   const height = inputHeight || 20;
   const width = inputWidth || 20;
@@ -177,31 +188,45 @@ const Sparkline: React.FC<SparklineProps> = ({
 
   const spacing = width / (data.length - 1);
 
-  const yCoord = useCallback(
-    (value: number) => height - lineStrokeWidth - (value / Math.max(...data)) * height,
-    [data, height]
+  const [ref, isHovering] = useHover();
+
+  const path = useMemo(
+    () => {
+      const dataForSparkline = exaggerateTrendLine(data);
+      const maxData = Math.max(...dataForSparkline);
+      const addOffset = dataForSparkline.every(item => item === maxData);
+
+      const maxDataToRender = addOffset ? maxData + 3 : maxData;
+
+      return dataForSparkline
+        .map(add(addOffset ? 2 : 0))
+        .map((value, index) => {
+          const yCoord = height - lineStrokeWidth - ((value / maxDataToRender) * (height - lineStrokeWidth));
+          return `${index === 0 ? 'M' : 'L'} ${index * spacing} ${yCoord}`;
+        })
+        .join(' ');
+    },
+    [data, height, spacing]
   );
 
-  const yAxisLabel = useCallback(
-    (index: number) => (inputYAxisLabel ? inputYAxisLabel(index) : `${index}`),
-    [inputYAxisLabel]
-  );
+  const yAxisLabel = useMemo(() => inputYAxisLabel || String, [inputYAxisLabel]);
 
   if (data.every(point => point === 0)) return null;
 
   return (
-    <span className="relative group">
-      <span className={`rounded-t-md px-2 pt-1 pb-2 ${showPopover ? 'group-hover:bg-slate-800 group-hover:shadow-md' : ''}`}>
+    <span className="relative group inline-block" ref={ref}>
+      <span className={`rounded-t-md inline-block ml-1 px-2 ${
+        isHovering ? 'group-hover:bg-slate-800 group-hover:shadow-md' : ''
+      }`}
+      >
         <svg
           height={height}
           width={width}
           viewBox={`0 0 ${width} ${height}`}
-          className={`inline-block -mt-1 ${className || ''}`}
+          className={`inline-block -mb-1 ${className || ''}`}
         >
           <path
-            d={data.map((item, itemIndex) => (
-              `${itemIndex === 0 ? 'M' : 'L'} ${itemIndex * spacing} ${yCoord(item)}`
-            )).join(' ')}
+            d={path}
             stroke={lineColor}
             strokeWidth={lineStrokeWidth}
             fill="none"
@@ -209,7 +234,7 @@ const Sparkline: React.FC<SparklineProps> = ({
         </svg>
       </span>
 
-      {showPopover
+      {isHovering
         ? (
           <span
             className="absolute hidden group-hover:block bg-slate-800 rounded-2xl pb-2 pt-6 pl-4 pr-6 z-50 shadow-2xl"
@@ -224,3 +249,14 @@ const Sparkline: React.FC<SparklineProps> = ({
 };
 
 export default Sparkline;
+
+const LabelWithSparkline: React.FC<{ label: ReactNode } & SparklineProps> = ({
+  label, ...sparklineProps
+}) => (
+  <span className="inline-flex items-end gap-x-0.5">
+    <span>{label}</span>
+    <Sparkline {...sparklineProps} />
+  </span>
+);
+
+export { LabelWithSparkline };

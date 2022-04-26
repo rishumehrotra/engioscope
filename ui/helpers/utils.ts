@@ -80,10 +80,3 @@ export const prettyMS = (ms: number) => (
 
 export const last = <T>(arr: T[]) => (arr.length ? arr[arr.length - 1] : undefined);
 
-export const exaggerateTrendLine = (data: number[]) => {
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const diff = max - min;
-
-  return data.map(val => val - (max - diff) + (diff * 1));
-};

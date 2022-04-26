@@ -4,9 +4,9 @@ import React, { Fragment } from 'react';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, toPercentage } from '../../../shared/utils';
-import { num, prettyMS, exaggerateTrendLine } from '../../helpers/utils';
+import { num, prettyMS } from '../../helpers/utils';
 import { ExternalLink } from '../common/Icons';
-import Sparkline from '../graphs/Sparkline';
+import { LabelWithSparkline } from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
 import {
   flowEfficiency,
@@ -102,29 +102,21 @@ const FlowMetricsByWorkItemType: React.FC<{
                   </td>
                   <td>
                     {renderMetric(
-                      <>
-                        <span className="inline-block pr-1">
-                          {summary.leakage}
-                        </span>
-                        <Sparkline
-                          data={summary.leakageByWeek}
-                          lineColor={increaseIsBetter(summary.leakageByWeek)}
-                        />
-                      </>,
+                      <LabelWithSparkline
+                        label={summary.leakage}
+                        data={summary.leakageByWeek}
+                        lineColor={increaseIsBetter(summary.leakageByWeek)}
+                      />,
                       '#new-work-items'
                     )}
                   </td>
                   <td>
                     {renderMetric(
-                      <>
-                        <span className="inline-block pr-1">
-                          {summary.velocity}
-                        </span>
-                        <Sparkline
-                          data={summary.velocityByWeek}
-                          lineColor={increaseIsBetter(summary.velocityByWeek)}
-                        />
-                      </>,
+                      <LabelWithSparkline
+                        label={summary.velocity}
+                        data={summary.velocityByWeek}
+                        lineColor={increaseIsBetter(summary.velocityByWeek)}
+                      />,
                       '#velocity'
                     )}
                   </td>
@@ -132,16 +124,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                     {renderMetric(
                       summary.cycleTime
                         ? (
-                          <>
-                            <span className="inline-block pr-1">
-                              {prettyMS(summary.cycleTime)}
-                            </span>
-                            <Sparkline
-                              data={summary.cycleTimeByWeek}
-                              lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
-                              yAxisLabel={prettyMS}
-                            />
-                          </>
+                          <LabelWithSparkline
+                            label={prettyMS(summary.cycleTime)}
+                            data={summary.cycleTimeByWeek}
+                            lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
+                            yAxisLabel={prettyMS}
+                          />
                         ) : '-',
                       '#cycle-time'
                     )}
@@ -149,16 +137,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                   <td>
                     {renderMetric(summary.changeLeadTime
                       ? (
-                        <>
-                          <span className="inline-block pr-1">
-                            {prettyMS(summary.changeLeadTime)}
-                          </span>
-                          <Sparkline
-                            data={summary.changeLeadTimeByWeek}
-                            lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
-                            yAxisLabel={prettyMS}
-                          />
-                        </>
+                        <LabelWithSparkline
+                          label={prettyMS(summary.changeLeadTime)}
+                          data={summary.changeLeadTimeByWeek}
+                          lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
+                          yAxisLabel={prettyMS}
+                        />
                       )
                       : '-',
                     '#change-lead-time')}
@@ -167,16 +151,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                     {renderMetric(
                       summary.flowEfficiency
                         ? (
-                          <>
-                            <span className="inline-block pr-1">
-                              {`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
-                            </span>
-                            <Sparkline
-                              data={summary.flowEfficiencyByWeek.map(flowEfficiency)}
-                              lineColor={increaseIsBetter(summary.flowEfficiencyByWeek.map(flowEfficiency))}
-                              yAxisLabel={x => `${x}%`}
-                            />
-                          </>
+                          <LabelWithSparkline
+                            label={`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
+                            data={summary.flowEfficiencyByWeek.map(flowEfficiency)}
+                            lineColor={increaseIsBetter(summary.flowEfficiencyByWeek.map(flowEfficiency))}
+                            yAxisLabel={x => `${x}%`}
+                          />
                         )
                         : '-',
                       '#flow-efficiency'
@@ -186,20 +166,20 @@ const FlowMetricsByWorkItemType: React.FC<{
                     {renderMetric(
                       summary.wipCount
                         ? (
-                          <>
-                            <span className="inline-block pr-1">
-                              {summary.wipIncrease}
-                              <span className="text-lg text-gray-500 inline-block ml-2">
-                                <span className="font-normal text-sm">of</span>
-                                {' '}
-                                {summary.wipCount}
+                          <LabelWithSparkline
+                            label={(
+                              <span className="inline-block pr-1">
+                                {summary.wipIncrease}
+                                <span className="text-lg text-gray-500 inline-block ml-2">
+                                  <span className="font-normal text-sm">of</span>
+                                  {' '}
+                                  {summary.wipCount}
+                                </span>
                               </span>
-                            </span>
-                            <Sparkline
-                              data={summary.wipIncreaseByWeek}
-                              lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
-                            />
-                          </>
+                            )}
+                            data={summary.wipIncreaseByWeek}
+                            lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
+                          />
                         )
                         : '0',
                       '#age-of-work-in-progress-features-by-state'
@@ -314,15 +294,11 @@ const QualityMetrics: React.FC<{
                             {renderBugMetric(
                               bugsForEnv
                                 ? (
-                                  <>
-                                    <span className="inline-block pr-1">
-                                      {bugsForEnv.leakage}
-                                    </span>
-                                    <Sparkline
-                                      data={bugsForEnv.leakageByWeek}
-                                      lineColor={decreaseIsBetter(bugsForEnv.leakageByWeek)}
-                                    />
-                                  </>
+                                  <LabelWithSparkline
+                                    label={bugsForEnv.leakage}
+                                    data={bugsForEnv.leakageByWeek}
+                                    lineColor={decreaseIsBetter(bugsForEnv.leakageByWeek)}
+                                  />
                                 )
                                 : '-',
                               '#bug-leakage-with-root-cause'
@@ -332,15 +308,11 @@ const QualityMetrics: React.FC<{
                             {renderBugMetric(
                               bugsForEnv
                                 ? (
-                                  <>
-                                    <span className="inline-block pr-1">
-                                      {bugsForEnv.velocity}
-                                    </span>
-                                    <Sparkline
-                                      data={bugsForEnv.velocityByWeek}
-                                      lineColor={increaseIsBetter(bugsForEnv.velocityByWeek)}
-                                    />
-                                  </>
+                                  <LabelWithSparkline
+                                    label={bugsForEnv.velocity}
+                                    data={bugsForEnv.velocityByWeek}
+                                    lineColor={increaseIsBetter(bugsForEnv.velocityByWeek)}
+                                  />
                                 )
                                 : '-',
                               '#velocity'
@@ -350,16 +322,12 @@ const QualityMetrics: React.FC<{
                             {renderBugMetric(
                               bugsForEnv?.cycleTime
                                 ? (
-                                  <>
-                                    <span className="inline-block pr-1">
-                                      {prettyMS(bugsForEnv.cycleTime)}
-                                    </span>
-                                    <Sparkline
-                                      data={bugsForEnv.cycleTimeByWeek}
-                                      lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
-                                      yAxisLabel={prettyMS}
-                                    />
-                                  </>
+                                  <LabelWithSparkline
+                                    label={prettyMS(bugsForEnv.cycleTime)}
+                                    data={bugsForEnv.cycleTimeByWeek}
+                                    lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
+                                    yAxisLabel={prettyMS}
+                                  />
                                 )
                                 : '-',
                               '#cycle-time'
@@ -369,16 +337,12 @@ const QualityMetrics: React.FC<{
                             {renderBugMetric(
                               bugsForEnv?.changeLeadTime
                                 ? (
-                                  <>
-                                    <span className="inline-block pr-1">
-                                      {prettyMS(bugsForEnv.changeLeadTime)}
-                                    </span>
-                                    <Sparkline
-                                      data={bugsForEnv.changeLeadTimeByWeek}
-                                      lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
-                                      yAxisLabel={prettyMS}
-                                    />
-                                  </>
+                                  <LabelWithSparkline
+                                    label={prettyMS(bugsForEnv.changeLeadTime)}
+                                    data={bugsForEnv.changeLeadTimeByWeek}
+                                    lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
+                                    yAxisLabel={prettyMS}
+                                  />
                                 )
                                 : '-',
                               '#change-lead-time'
@@ -388,16 +352,12 @@ const QualityMetrics: React.FC<{
                             {renderBugMetric(
                               bugsForEnv?.flowEfficiency
                                 ? (
-                                  <>
-                                    <span className="inline-block pr-1">
-                                      {`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
-                                    </span>
-                                    <Sparkline
-                                      data={bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency)}
-                                      lineColor={increaseIsBetter(bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency))}
-                                      yAxisLabel={x => `${x}%`}
-                                    />
-                                  </>
+                                  <LabelWithSparkline
+                                    label={`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
+                                    data={bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency)}
+                                    lineColor={increaseIsBetter(bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency))}
+                                    yAxisLabel={x => `${x}%`}
+                                  />
                                 )
                                 : '-',
                               '#flow-efficiency'
@@ -407,20 +367,20 @@ const QualityMetrics: React.FC<{
                             {renderBugMetric(
                               bugsForEnv
                                 ? (
-                                  <>
-                                    <span className="inline-block pr-1">
-                                      {bugsForEnv.wipIncrease}
-                                      <span className="text-lg text-gray-500 inline-block ml-2">
-                                        <span className="font-normal text-sm">of</span>
-                                        {' '}
-                                        {bugsForEnv.wipCount}
+                                  <LabelWithSparkline
+                                    label={(
+                                      <span className="inline-block pr-1">
+                                        {bugsForEnv.wipIncrease}
+                                        <span className="text-lg text-gray-500 inline-block ml-2">
+                                          <span className="font-normal text-sm">of</span>
+                                          {' '}
+                                          {bugsForEnv.wipCount}
+                                        </span>
                                       </span>
-                                    </span>
-                                    <Sparkline
-                                      data={bugsForEnv.wipIncreaseByWeek}
-                                      lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
-                                    />
-                                  </>
+                                    )}
+                                    data={bugsForEnv.wipIncreaseByWeek}
+                                    lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
+                                  />
                                 )
                                 : '-',
                               '#work-in-progress-trend'
@@ -500,15 +460,11 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
                 </td>
                 <td>
                   {reposMetric((
-                    <>
-                      <span className="inline-block pr-1">
-                        {num(repoStats.tests)}
-                      </span>
-                      <Sparkline
-                        data={exaggerateTrendLine(repoStats.testsByWeek)}
-                        lineColor={increaseIsBetter(repoStats.testsByWeek)}
-                      />
-                    </>
+                    <LabelWithSparkline
+                      label={num(repoStats.tests)}
+                      data={repoStats.testsByWeek}
+                      lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                    />
                   ))}
                 </td>
                 <td>
@@ -604,64 +560,44 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                 <td data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}>
                   {repoStats.repos
                     ? reposMetric(
-                      <>
-                        <span className="inline-block pr-1">
-                          {`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
-                        </span>
-                        <Sparkline
-                          data={exaggerateTrendLine(repoStats.newSonarSetupsByWeek)}
-                          lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
-                          showPopover={false}
-                        />
-                      </>
+                      <LabelWithSparkline
+                        label={`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
+                        data={repoStats.newSonarSetupsByWeek}
+                        lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
+                      />
                     )
                     : '-'}
                 </td>
                 <td data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}>
                   {codeQuality.sonarProjects
                     ? (
-                      <>
-                        <span className="inline-block pr-1">
-                          {`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
-                        </span>
-                        <Sparkline
-                          data={exaggerateTrendLine(repoStats.sonarCountsByWeek.pass)}
-                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
-                          showPopover={false}
-                        />
-                      </>
+                      <LabelWithSparkline
+                        label={`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
+                        data={repoStats.sonarCountsByWeek.pass}
+                        lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                      />
                     )
                     : '-'}
                 </td>
                 <td data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}>
                   {codeQuality.sonarProjects
                     ? (
-                      <>
-                        <span className="inline-block pr-1">
-                          {`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
-                        </span>
-                        <Sparkline
-                          data={exaggerateTrendLine(repoStats.sonarCountsByWeek.warn)}
-                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
-                          showPopover={false}
-                        />
-                      </>
+                      <LabelWithSparkline
+                        label={`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
+                        data={repoStats.sonarCountsByWeek.warn}
+                        lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                      />
                     )
                     : '-'}
                 </td>
                 <td data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}>
                   {codeQuality.sonarProjects
                     ? (
-                      <>
-                        <span className="inline-block pr-1">
-                          {`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
-                        </span>
-                        <Sparkline
-                          data={exaggerateTrendLine(repoStats.sonarCountsByWeek.fail)}
-                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
-                          showPopover={false}
-                        />
-                      </>
+                      <LabelWithSparkline
+                        label={`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
+                        data={repoStats.sonarCountsByWeek.fail}
+                        lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                      />
                     )
 
                     : '-'}

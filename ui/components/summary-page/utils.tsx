@@ -154,21 +154,15 @@ export const getMetricCategoryDefinitionId = (
   field: string
 ) => Object.entries(workItemTypes).find(([, { name }]) => name[0] === field)?.[0];
 
-export const renderGroupItem = (link: string) => (label: ReactNode, children?: React.ReactNode, anchor = '') => (
+export const renderGroupItem = (link: string) => (label: ReactNode, anchor = '') => (
   <div className="group inline-flex items-center">
     <a
       href={`${link}${anchor}`}
-      className="text-blue-500 flex items-center"
       target="_blank"
       rel="noreferrer"
     >
-      <span className="font-semibold text-xl text-black">{label}</span>
-      {children && (
-        <span className="ml-2">
-          {children}
-        </span>
-      )}
-      <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 ml-1" />
+      {label}
+      <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 hover:text-blue-500 ml-1" />
     </a>
   </div>
 );
