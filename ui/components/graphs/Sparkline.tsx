@@ -173,11 +173,12 @@ const Sparkline: React.FC<SparklineProps> = ({
   const height = inputHeight || 20;
   const width = inputWidth || 20;
   const lineColor = inputLineColor || '#00bcd4';
+  const lineStrokeWidth = 2;
 
   const spacing = width / (data.length - 1);
 
   const yCoord = useCallback(
-    (value: number) => height - (value / Math.max(...data)) * height,
+    (value: number) => height - lineStrokeWidth - (value / Math.max(...data)) * height,
     [data, height]
   );
 
@@ -202,20 +203,22 @@ const Sparkline: React.FC<SparklineProps> = ({
               `${itemIndex === 0 ? 'M' : 'L'} ${itemIndex * spacing} ${yCoord(item)}`
             )).join(' ')}
             stroke={lineColor}
-            strokeWidth="2"
+            strokeWidth={lineStrokeWidth}
             fill="none"
           />
         </svg>
       </span>
 
-      {showPopover && (
-        <span
-          className="absolute hidden group-hover:block bg-slate-800 rounded-2xl pb-2 pt-6 pl-4 pr-6 z-50 shadow-2xl"
-          style={{ marginLeft: `-${(popoverSvgConfig.width / 2) + 18}px` }}
-        >
-          <PopoverSvg lineColor={lineColor} data={data} yAxisLabel={yAxisLabel} />
-        </span>
-      )}
+      {showPopover
+        ? (
+          <span
+            className="absolute hidden group-hover:block bg-slate-800 rounded-2xl pb-2 pt-6 pl-4 pr-6 z-50 shadow-2xl"
+            style={{ marginLeft: `-${(popoverSvgConfig.width / 2) + 18}px` }}
+          >
+            <PopoverSvg lineColor={lineColor} data={data} yAxisLabel={yAxisLabel} />
+          </span>
+        )
+        : null}
     </span>
   );
 };
