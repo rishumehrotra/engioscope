@@ -3,11 +3,15 @@ import type { MouseEventHandler, ReactNode } from 'react';
 import React, {
   useState, useCallback, Fragment
 } from 'react';
-import { asc, byString } from '../../../shared/sort-utils';
+import {
+  asc, byNum, byString, desc
+} from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, toPercentage } from '../../../shared/utils';
 import { num, prettyMS } from '../../helpers/utils';
-import { ExternalLink } from '../common/Icons';
+import {
+  ArrowDown, ArrowUp, ExternalLink
+} from '../common/Icons';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
 import {
@@ -49,35 +53,29 @@ type CollapsibleSectionProps = {
 };
 
 const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table }) => {
-  const [computedTableMarkup, setComputedTableMarkup] = useState<ReactNode>(null);
+  const [tableData, setTableData] = useState<ReturnType<typeof table> | null>(null);
+  const [sort, setSort] = useState<{
+    byIndex: number;
+    direction: 'asc' | 'desc';
+  }>({ byIndex: 0, direction: 'asc' });
+
+  const onColumnClick = useCallback((index: number) => () => {
+    setSort(sort => {
+      const newSort: typeof sort = ({
+        byIndex: index,
+        // eslint-disable-next-line no-nested-ternary
+        direction: sort.byIndex === index
+          ? (sort.direction === 'asc' ? 'desc' : 'asc')
+          : 'asc'
+      });
+
+      return newSort;
+    });
+  }, []);
 
   const onDetailsClick = useCallback<MouseEventHandler<HTMLDetailsElement>>(() => {
-    if (computedTableMarkup) return;
-
-    const { columns, rows } = table();
-    setComputedTableMarkup(
-      <table className="summary-table">
-        <thead>
-          <tr>
-            {columns.map(col => (
-              <th data-tip={col?.tooltip} key={col?.label || 'heading'}>{col?.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(row => (
-            <tr key={row.key}>
-              {row.values.map((cell, j) => (
-              // Ok to use indexes as keys since we're never changing order
-              // eslint-disable-next-line react/no-array-index-key
-                <td key={j}>{cell.content}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  }, [computedTableMarkup, table]);
+    if (!tableData) setTableData(table());
+  }, [table, tableData]);
 
   return (
     <details onToggle={onDetailsClick}>
@@ -86,7 +84,64 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table 
       </summary>
 
       <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-        {computedTableMarkup}
+        {tableData
+          ? (
+            <table className="summary-table">
+              <thead>
+                <tr>
+                  {tableData.columns.map((col, index) => (
+                    <th
+                      data-tip={col?.tooltip}
+                      key={col?.label || 'heading'}
+                    >
+                      {col?.label && (
+                        <button
+                          onClick={onColumnClick(index)}
+                        >
+                          {col.label}
+                          <span className="ml-2 inline-block text-white">
+                            {
+                              // eslint-disable-next-line no-nested-ternary
+                              sort.byIndex === index
+                                ? (
+                                  sort.direction === 'asc'
+                                    ? <ArrowUp className="w-4" />
+                                    : <ArrowDown className="w-4" />
+                                )
+                                : (
+                                  <div className="h-6" />
+                                )
+                            }
+                          </span>
+                        </button>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.rows
+                  .sort(
+                    (sort.direction === 'asc' ? asc : desc)(
+                      (sort.byIndex === 0
+                        ? byString(row => row.values[sort.byIndex].value as string)
+                        : byNum(row => row.values[sort.byIndex].value as number)
+                      )
+                    )
+                  )
+                  .map(row => (
+                    <tr key={row.key}>
+                      {row.values.map((cell, j) => (
+                        // Ok to use indexes as keys since we're never changing order
+                        // eslint-disable-next-line react/no-array-index-key
+                        <td key={j}>{cell.content}</td>
+                      ))}
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          )
+          : null}
       </div>
     </details>
   );

@@ -106,6 +106,18 @@ export const Descending = () => (
   </svg>
 );
 
+export const ArrowUp: React.FC<{ className?: string }> = ({ className }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M14,20H10V11L6.5,14.5L4.08,12.08L12,4.16L19.92,12.08L17.5,14.5L14,11V20Z" />
+  </svg>
+);
+
+export const ArrowDown: React.FC<{ className?: string }> = ({ className }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M10,4H14V13L17.5,9.5L19.92,11.92L12,19.84L4.08,11.92L6.5,9.5L10,13V4Z" />
+  </svg>
+);
+
 export const Refresh = () => (
   <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
     <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
