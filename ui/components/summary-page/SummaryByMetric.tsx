@@ -573,7 +573,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
             ))
           },
           {
-            value: repoStats.coverage,
+            value: repoStats.coverage === '-' ? 0 : parseInt(repoStats.coverage, 10),
             content: reposMetric(repoStats.coverage)
           },
           ...pipelineStats.stages.flatMap(stage => [
