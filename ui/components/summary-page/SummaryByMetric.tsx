@@ -1,4 +1,3 @@
-import { prop } from 'rambda';
 import type { MouseEventHandler, ReactNode } from 'react';
 import React, {
   useMemo,
@@ -165,7 +164,6 @@ const FlowMetricsByWorkItemType: React.FC<{
       { label: 'WIP age', tooltip: 'Average age of work items in progress' }
     ],
     rows: groups
-      .sort(asc(byString(prop('groupName'))))
       .filter(group => {
         const wit = workItemTypeByName(workItemTypeName)(workItemTypes);
         return wit ? group.summary[wit.witId] : null;
@@ -512,368 +510,335 @@ const QualityMetrics: React.FC<{
   );
 };
 
-const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
-  <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="summary-table">
-      <thead>
-        <tr>
-          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-          <th />
-          <th data-tip="Number of unit / components tests running in build pipelines">
-            Tests
-          </th>
-          <th data-tip="Percentage of code covered by tests">
-            Coverage
-          </th>
+const RepoAnalysisDetails: React.FC<{ repoStats: SummaryMetrics['groups'][number]['repoStats']}> = ({ repoStats }) => (
+  <p className="justify-self-end text-xs text-gray-600 font-normal">
+    {'Analysed '}
+    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
+    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
+    {repoStats.excluded ? (
+      <>
+        {', excluded '}
+        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
+        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
+      </>
+    ) : ''}
+  </p>
+);
+
+const metricsFormatters = (group: SummaryMetrics['groups'][number]) => {
+  const [filterKey] = allExceptExpectedKeys(group);
+  const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
+  const baseProjectLink = `/${group.collection}/${group.project}`;
+  const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
+  const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
+
+  return { reposMetric, pipelinesMetric };
+};
+
+const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => {
+  const table: CollapsibleSectionProps['table'] = useCallback(() => ({
+    columns: [
+      null,
+      { label: 'Tests', tooltip: 'Number of unit / components tests running in build pipelines' },
+      { label: 'Coverage', tooltip: 'Percentage of code covered by tests' },
+      ...groups[0].pipelineStats.stages.flatMap(stage => [
+        { label: `Pipelines having ${stage.name}`, tooltip: `Percentage of pipelines having ${stage.name}` },
+        { label: `Pipelines using ${stage.name}`, tooltip: `Percentage of pipelines using ${stage.name}` }
+      ])
+    ],
+    rows: groups.map(group => {
+      const { repoStats, pipelineStats } = group;
+      const { reposMetric, pipelinesMetric } = metricsFormatters(group);
+
+      return {
+        key: group.groupName,
+        values: [
           {
-            groups[0].pipelineStats.stages.map(stage => (
-              <Fragment key={stage.name}>
-                <th data-tip={`Percentage of pipelines having ${stage.name}`}>
-                  {`Pipelines having ${stage.name}`}
-                </th>
-                <th data-tip={`Percentage of pipelines using ${stage.name}`}>
-                  {`Pipelines using ${stage.name}`}
-                </th>
-              </Fragment>
-            ))
-          }
-
-        </tr>
-      </thead>
-      <tbody>
-        {groups
-          .sort(asc(byString(prop('groupName'))))
-          .map(group => {
-            const { repoStats, pipelineStats } = group;
-            const [filterKey] = allExceptExpectedKeys(group);
-            const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-            const baseProjectLink = `/${group.collection}/${group.project}`;
-            const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-            const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
-
-            return (
-              <tr key={group.groupName}>
-                <td>
-                  {group.groupName}
-                  <p className="justify-self-end text-xs text-gray-600 font-normal">
-                    {'Analysed '}
-                    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
-                    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                    {repoStats.excluded ? (
-                      <>
-                        {', excluded '}
-                        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
-                        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
-                      </>
-                    ) : ''}
-                  </p>
-                </td>
-                <td>
-                  {reposMetric((
-                    <LabelWithSparkline
-                      label={num(repoStats.tests)}
-                      data={repoStats.testsByWeek}
-                      lineColor={increaseIsBetter(repoStats.testsByWeek)}
-                    />
-                  ))}
-                </td>
-                <td>
-                  {reposMetric(repoStats.coverage)}
-                </td>
-                {
-                  pipelineStats.stages.map(stage => (
-                    <Fragment key={stage.name}>
-                      <td>
-                        {pipelinesMetric(
-                          divide(stage.exists, pipelineStats.pipelines)
-                            .map(toPercentage)
-                            .getOr('-')
-                        )}
-                      </td>
-                      <td>
-                        {
-                          pipelinesMetric(
-                            divide(stage.used, pipelineStats.pipelines)
-                              .map(toPercentage)
-                              .getOr('-')
-                          )
-                        }
-                      </td>
-                    </Fragment>
-                  ))
-                }
-              </tr>
-            );
-          })}
-      </tbody>
-    </table>
-  </div>
-);
-
-const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
-  <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="summary-table">
-      <thead>
-        <tr>
-          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-          <th />
-          <th data-tip="Percentage of repos with Sonar configured">
-            Sonar
-          </th>
-          <th data-tip="Percentage of pipelines with sonar configured that pass quality checks">
-            Ok
-          </th>
-          <th data-tip="Percentage of pipelines with sonar configured that have a warning for quality checks">
-            Warn
-          </th>
-          <th data-tip="Percentage of pipelines with sonar configured that fail quality checks">
-            Fail
-          </th>
-          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-          <th
-            className="px-12 py-3 text-left text-xs font-medium uppercase tracking-wider"
-          />
-          <th data-tip="Percentage of pipelines conforming to branch policies">
-            Branch policy met
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {groups
-          .sort(asc(byString(prop('groupName'))))
-          .map(group => {
-            const { repoStats, pipelineStats } = group;
-            const { codeQuality } = repoStats;
-            const [filterKey] = allExceptExpectedKeys(group);
-            const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-            const baseProjectLink = `/${group.collection}/${group.project}`;
-            const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-            const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
-
-            return (
-              <tr key={group.groupName}>
-                <td>
-                  {group.groupName}
-                  <p className="justify-self-end text-xs text-gray-600 font-normal">
-                    {'Analysed '}
-                    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
-                    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                    {repoStats.excluded ? (
-                      <>
-                        {', excluded '}
-                        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
-                        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
-                      </>
-                    ) : ''}
-                  </p>
-                </td>
-                <td data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}>
-                  {repoStats.repos
-                    ? reposMetric(
-                      <LabelWithSparkline
-                        label={`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
-                        data={repoStats.newSonarSetupsByWeek}
-                        lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
-                      />
-                    )
-                    : '-'}
-                </td>
-                <td data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}>
-                  {codeQuality.sonarProjects
-                    ? (
-                      <LabelWithSparkline
-                        label={`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
-                        data={repoStats.sonarCountsByWeek.pass}
-                        lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
-                      />
-                    )
-                    : '-'}
-                </td>
-                <td data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}>
-                  {codeQuality.sonarProjects
-                    ? (
-                      <LabelWithSparkline
-                        label={`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
-                        data={repoStats.sonarCountsByWeek.warn}
-                        lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
-                      />
-                    )
-                    : '-'}
-                </td>
-                <td data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}>
-                  {codeQuality.sonarProjects
-                    ? (
-                      <LabelWithSparkline
-                        label={`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
-                        data={repoStats.sonarCountsByWeek.fail}
-                        lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
-                      />
-                    )
-
-                    : '-'}
-                </td>
-                <td />
-                <td>
-                  {pipelinesMetric(
-                    divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
-                      .map(toPercentage)
-                      .getOr('-')
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-      </tbody>
-    </table>
-  </div>
-);
-
-const BuildPipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
-  <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="summary-table">
-      <thead>
-        <tr>
-          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-          <th />
-          <th data-tip="Number of CI builds run in the last 90 days">
-            Runs
-          </th>
-          <th data-tip="Percentage of successful builds">
-            Success
-          </th>
-          <th data-tip="Pipelines configured using a YAML file">
-            YAML pipelines
-          </th>
-          <th data-tip="Average time taken to fix a build failure">
-            MTTR build failure
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {groups
-          .sort(asc(byString(prop('groupName'))))
-          .map(group => {
-            const { repoStats } = group;
-            const [filterKey] = allExceptExpectedKeys(group);
-            const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-            const baseProjectLink = `/${group.collection}/${group.project}`;
-            const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-
-            return (
-              <tr key={group.groupName}>
-                <td>
-                  {group.groupName}
-                  <p className="justify-self-end text-xs text-gray-600 font-normal">
-                    {'Analysed '}
-                    <b className="text-gray-800 font-semibold">{num(repoStats.repos)}</b>
-                    {` ${repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                    {repoStats.excluded ? (
-                      <>
-                        {', excluded '}
-                        <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
-                        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
-                      </>
-                    ) : ''}
-                  </p>
-                </td>
-                <td>
-                  {reposMetric(num(repoStats.builds.total))}
-                </td>
-                <td>
-                  {reposMetric(
-                    `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
-                  )}
-                </td>
-                <td>
-                  {reposMetric(
-                    repoStats.ymlPipelines.total === 0
-                      ? '-'
-                      : `${Math.round((repoStats.ymlPipelines.count * 100) / repoStats.ymlPipelines.total)}%`
-                  )}
-                </td>
-                <td>
-                  <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
-                </td>
-              </tr>
-            );
-          })}
-      </tbody>
-    </table>
-  </div>
-);
-
-const ReleasePipelines: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => (
-  <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-    <table className="summary-table">
-      <thead>
-        <tr>
-          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-          <th />
-          <th data-tip="Number of release pipelines that only release from the master branch">
-            Master only pipelines
-          </th>
-          <th data-tip="Number of release pipelines that start with an artifact">
-            Starts with artifact
-          </th>
-          <th data-tip="Number of release pipelines that start with an artifact">
-            Repos with release pipelines
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {groups.map(group => {
-          const { pipelineStats, repoStats } = group;
-          const [filterKey] = allExceptExpectedKeys(group);
-          const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-          const baseProjectLink = `/${group.collection}/${group.project}`;
-          const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-          const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
-
-          return (
-            <tr key={group.groupName}>
-              <td>
+            value: group.groupName,
+            content: (
+              <>
                 {group.groupName}
-                <p className="justify-self-end text-xs text-gray-600 font-normal">
-                  {'Analysed '}
-                  <b className="text-gray-800 font-semibold">{num(group.repoStats.repos)}</b>
-                  {` ${group.repoStats.repos === 1 ? 'repo' : 'repos'}`}
-                  {group.repoStats.excluded ? (
-                    <>
-                      {', excluded '}
-                      <b className="text-gray-800 font-semibold">{num(group.repoStats.excluded)}</b>
-                      {` ${group.repoStats.excluded === 1 ? 'repo' : 'repos'}`}
-                    </>
-                  ) : ''}
-                </p>
-              </td>
-              <td>
-                {pipelinesMetric(
-                  divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
-                    .map(toPercentage)
-                    .getOr('-')
-                )}
-              </td>
-              <td>
-                {pipelinesMetric(
-                  divide(pipelineStats.startsWithArtifact, pipelineStats.pipelines)
-                    .map(toPercentage)
-                    .getOr('-')
-                )}
-              </td>
-              <td>
-                {reposMetric(
-                  divide(repoStats.hasPipelines, repoStats.repos)
-                    .map(toPercentage)
-                    .getOr('-')
-                )}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  </div>
-);
+                <RepoAnalysisDetails repoStats={repoStats} />
+              </>
+            )
+          },
+          {
+            value: repoStats.tests,
+            content: reposMetric((
+              <LabelWithSparkline
+                label={num(repoStats.tests)}
+                data={repoStats.testsByWeek}
+                lineColor={increaseIsBetter(repoStats.testsByWeek)}
+              />
+            ))
+          },
+          {
+            value: repoStats.coverage,
+            content: reposMetric(repoStats.coverage)
+          },
+          ...pipelineStats.stages.flatMap(stage => [
+            {
+              value: divide(stage.exists, pipelineStats.pipelines).getOr(0),
+              content: pipelinesMetric(
+                divide(stage.exists, pipelineStats.pipelines)
+                  .map(toPercentage)
+                  .getOr('-')
+              )
+            },
+            {
+              value: divide(stage.used, pipelineStats.pipelines).getOr(0),
+              content: pipelinesMetric(
+                divide(stage.used, pipelineStats.pipelines)
+                  .map(toPercentage)
+                  .getOr('-')
+              )
+            }
+          ])
+        ]
+      };
+    })
+  }), [groups]);
+
+  return (
+    <CollapsibleSection
+      heading="Test automation"
+      table={table}
+    />
+  );
+};
+
+const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => {
+  const table: CollapsibleSectionProps['table'] = useCallback(() => ({
+    columns: [
+      null,
+      { label: 'Sonar', tooltip: 'Percentage of repos with Sonar configured' },
+      { label: 'Ok', tooltip: 'Percentage of pipelines with sonar configured that pass quality checks' },
+      { label: 'Warn', tooltip: 'Percentage of pipelines with sonar configured that have a warning for quality checks' },
+      { label: 'Fail', tooltip: 'Percentage of pipelines with sonar configured that fail quality checks' },
+      { label: 'Branch policy met', tooltip: 'Percentage of pipelines conforming to branch policies' }
+    ],
+    rows: groups.map(group => {
+      const { repoStats, pipelineStats } = group;
+      const { codeQuality } = repoStats;
+      const { reposMetric, pipelinesMetric } = metricsFormatters(group);
+
+      return {
+        key: group.groupName,
+        values: [
+          {
+            value: group.groupName,
+            content: (
+              <>
+                {group.groupName}
+                <RepoAnalysisDetails repoStats={repoStats} />
+              </>
+            )
+          },
+          {
+            value: divide(codeQuality.configured, repoStats.repos).getOr(0),
+            content: (
+              <div data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}>
+                {repoStats.repos
+                  ? reposMetric(
+                    <LabelWithSparkline
+                      label={`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
+                      data={repoStats.newSonarSetupsByWeek}
+                      lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
+                    />
+                  )
+                  : '-'}
+              </div>
+            )
+          },
+          {
+            value: divide(codeQuality.pass, codeQuality.sonarProjects).getOr(0),
+            content: (
+              <div data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}>
+                {codeQuality.sonarProjects
+                  ? (
+                    <LabelWithSparkline
+                      label={divide(codeQuality.pass, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
+                      data={repoStats.sonarCountsByWeek.pass}
+                      lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                    />
+                  )
+                  : '-'}
+              </div>
+            )
+          },
+          {
+            value: divide(codeQuality.warn, codeQuality.sonarProjects).getOr(0),
+            content: (
+              <div data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}>
+                {codeQuality.sonarProjects
+                  ? (
+                    <LabelWithSparkline
+                      label={divide(codeQuality.warn, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
+                      data={repoStats.sonarCountsByWeek.warn}
+                      lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                    />
+                  )
+                  : '-'}
+              </div>
+            )
+          },
+          {
+            value: divide(codeQuality.fail, codeQuality.sonarProjects).getOr(0),
+            content: (
+              <div data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}>
+                {codeQuality.sonarProjects
+                  ? (
+                    <LabelWithSparkline
+                      label={divide(codeQuality.fail, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
+                      data={repoStats.sonarCountsByWeek.fail}
+                      lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                    />
+                  )
+                  : '-'}
+              </div>
+            )
+          },
+          {
+            value: divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines).getOr(0),
+            content: pipelinesMetric(
+              divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
+                .map(toPercentage)
+                .getOr('-')
+            )
+          }
+        ]
+      };
+    })
+  }), [groups]);
+
+  return (
+    <CollapsibleSection
+      heading="Code quality"
+      table={table}
+    />
+  );
+};
+
+const CIBuilds: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => {
+  const table: CollapsibleSectionProps['table'] = useCallback(() => ({
+    columns: [
+      null,
+      { label: 'Runs', tooltip: 'Number of CI builds run in the last 90 days' },
+      { label: 'Success', tooltip: 'Percentage of successful builds' },
+      { label: 'YAML pipelines', tooltip: 'Pipelines configured using a YAML file' },
+      { label: 'MTTR build failure', tooltip: 'Average time taken to fix a build failure' }
+    ],
+    rows: groups.map(group => {
+      const { repoStats } = group;
+      const { reposMetric } = metricsFormatters(group);
+
+      return {
+        key: group.groupName,
+        values: [
+          {
+            value: group.groupName,
+            content: (
+              <>
+                {group.groupName}
+                <RepoAnalysisDetails repoStats={repoStats} />
+              </>
+            )
+          },
+          {
+            value: repoStats.builds.total,
+            content: reposMetric(num(repoStats.builds.total))
+          },
+          {
+            value: divide(repoStats.builds.successful, repoStats.builds.total).getOr(0),
+            content: reposMetric(
+              `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
+            )
+          },
+          {
+            value: divide(repoStats.ymlPipelines.count, repoStats.ymlPipelines.total).getOr(0),
+            content: reposMetric(
+              repoStats.ymlPipelines.total === 0
+                ? '-'
+                : `${Math.round((repoStats.ymlPipelines.count * 100) / repoStats.ymlPipelines.total)}%`
+            )
+          },
+          {
+            value: 0,
+            content: <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
+          }
+        ]
+      };
+    })
+  }), [groups]);
+
+  return (
+    <CollapsibleSection
+      heading="CI Builds"
+      table={table}
+    />
+  );
+};
+
+const Releases: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => {
+  const table: CollapsibleSectionProps['table'] = useCallback(() => ({
+    columns: [
+      null,
+      { label: 'Master only pipelines', tooltip: 'Number of release pipelines that only release from the master branch' },
+      { label: 'Starts with artifact', tooltip: 'Number of release pipelines that start with an artifact' },
+      { label: 'Repos with release pipelines', tooltip: 'Number of repos having release pipelines' }
+    ],
+    rows: groups.map(group => {
+      const { pipelineStats, repoStats } = group;
+      const { reposMetric, pipelinesMetric } = metricsFormatters(group);
+
+      return {
+        key: group.groupName,
+        values: [
+          {
+            value: group.groupName,
+            content: (
+              <>
+                {group.groupName}
+                <RepoAnalysisDetails repoStats={repoStats} />
+              </>
+            )
+          },
+          {
+            value: divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total).getOr(0),
+            content: pipelinesMetric(
+              divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
+                .map(toPercentage)
+                .getOr('-')
+            )
+          },
+          {
+            value: divide(pipelineStats.startsWithArtifact, pipelineStats.pipelines).getOr(0),
+            content: pipelinesMetric(
+              divide(pipelineStats.startsWithArtifact, pipelineStats.pipelines)
+                .map(toPercentage)
+                .getOr('-')
+            )
+          },
+          {
+            value: divide(repoStats.hasPipelines, repoStats.repos).getOr(0),
+            content: reposMetric(
+              divide(repoStats.hasPipelines, repoStats.repos)
+                .map(toPercentage)
+                .getOr('-')
+            )
+          }
+        ]
+      };
+    })
+  }), [groups]);
+
+  return (
+    <CollapsibleSection
+      heading="Releases"
+      table={table}
+    />
+  );
+};
 
 const SummaryByMetric: React.FC<{
   groups: SummaryMetrics['groups'];
@@ -898,25 +863,10 @@ const SummaryByMetric: React.FC<{
     <QualityMetrics groups={groups} workItemTypes={workItemTypes} />
 
     <h2 className="text-2xl font-bold mt-8">Health metrics</h2>
-    <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">Test automation</summary>
-      <TestAutomationMetrics groups={groups} />
-    </details>
-
-    <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">Code quality</summary>
-      <CodeQualityMetrics groups={groups} />
-    </details>
-
-    <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">CI builds</summary>
-      <BuildPipelines groups={groups} />
-    </details>
-
-    <details>
-      <summary className="font-semibold text-xl my-2 cursor-pointer">Releases</summary>
-      <ReleasePipelines groups={groups} />
-    </details>
+    <TestAutomationMetrics groups={groups} />
+    <CodeQualityMetrics groups={groups} />
+    <CIBuilds groups={groups} />
+    <Releases groups={groups} />
   </div>
 );
 
