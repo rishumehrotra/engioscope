@@ -1,6 +1,8 @@
 import { prop } from 'rambda';
-import type { ReactNode } from 'react';
-import React, { Fragment } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
+import React, {
+  useState, useCallback, Fragment
+} from 'react';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, toPercentage } from '../../../shared/utils';
@@ -9,6 +11,7 @@ import { ExternalLink } from '../common/Icons';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import type { SummaryGroupKey } from './utils';
 import {
+  workItemTypeByName,
   flowEfficiency,
   decreaseIsBetter, increaseIsBetter, processSummary,
   flattenSummaryGroups, getMetricCategoryDefinitionId, allExceptExpectedKeys
@@ -28,174 +31,228 @@ const renderGroupItem = (link: string) => (label: ReactNode, anchor = '') => (
   </div>
 );
 
+type CollapsibleSectionProps = {
+  heading: ReactNode;
+  table: () => {
+    columns: ({
+      label: string;
+      tooltip: string;
+    } | null)[];
+    rows: {
+      key: string;
+      values: {
+        content: ReactNode;
+        value: string | number;
+      }[];
+    }[];
+  };
+};
+
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table }) => {
+  const [computedTableMarkup, setComputedTableMarkup] = useState<ReactNode>(null);
+
+  const onDetailsClick = useCallback<MouseEventHandler<HTMLDetailsElement>>(() => {
+    if (computedTableMarkup) return;
+
+    const { columns, rows } = table();
+    setComputedTableMarkup(
+      <table className="summary-table">
+        <thead>
+          <tr>
+            {columns.map(col => (
+              <th data-tip={col?.tooltip} key={col?.label || 'heading'}>{col?.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.key}>
+              {row.values.map((cell, j) => (
+              // Ok to use indexes as keys since we're never changing order
+              // eslint-disable-next-line react/no-array-index-key
+                <td key={j}>{cell.content}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }, [computedTableMarkup, table]);
+
+  return (
+    <details onToggle={onDetailsClick}>
+      <summary className="font-semibold text-xl my-2 cursor-pointer">
+        {heading}
+      </summary>
+
+      <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
+        {computedTableMarkup}
+      </div>
+    </details>
+  );
+};
+
 const FlowMetricsByWorkItemType: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
   workItemTypeName: string;
-}> = ({ groups, workItemTypes, workItemTypeName }) => (
-  <details>
-    <summary className="font-semibold text-xl my-2 cursor-pointer">
-      <span className="inline-flex align-middle">
-        <img
-          src={Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)?.icon}
-          alt={`Icon for ${Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)?.name[1]}`}
-          className="inline-block mr-1"
-          width="18"
-        />
-        {Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)?.name[1]}
-      </span>
-    </summary>
+}> = ({ groups, workItemTypes, workItemTypeName }) => {
+  const table = useCallback(() => ({
+    columns: [
+      null,
+      { label: 'New', tooltip: 'Number of new work items added in the last 90 days' },
+      { label: 'Velocity', tooltip: 'Number of work items completed in the last 90 days' },
+      { label: 'Cycle time', tooltip: 'Average time taken to complete a work item over the last 90 days' },
+      { label: 'CLT', tooltip: 'Average time taken to take a work item to production after development is complete' },
+      { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
+      { label: 'WIP increase', tooltip: 'Increase in the number of WIP items over the last 90 days' },
+      { label: 'WIP age', tooltip: 'Average age of work items in progress' }
+    ],
+    rows: groups
+      .sort(asc(byString(prop('groupName'))))
+      .filter(group => {
+        const wit = workItemTypeByName(workItemTypeName)(workItemTypes);
+        return wit ? group.summary[wit.witId] : null;
+      })
+      .map(group => {
+        // Ok to non-null-assert since we're covered by the filter clause above
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { witId, wit } = workItemTypeByName(workItemTypeName)(workItemTypes)!;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const summary = flattenSummaryGroups(group.summary[witId]!);
+        const [filterKey] = allExceptExpectedKeys(group);
+        const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+        const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
+        const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
-    <div className="bg-white shadow rounded-lg my-4 mb-8">
-      <table className="summary-table">
-        <thead>
-          <tr>
-            {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-            <th />
-            <th data-tip="Number of new work items added in the last 90 days">
-              New
-            </th>
-            <th data-tip="Number of work items completed in the last 90 days">
-              Velocity
-            </th>
-            <th data-tip="Average time taken to complete a work item over the last 90 days">
-              Cycle time
-            </th>
-            <th data-tip="Average time taken to take a work item to production after development is complete">
-              CLT
-            </th>
-            <th data-tip="Fraction of overall time that work items spend in work centers on average">
-              Flow efficiency
-            </th>
-            <th data-tip="Increase in the number of WIP items over the last 90 days">
-              WIP increase
-            </th>
-            <th data-tip="Average age of work items in progress">
-              WIP age
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups
-            .sort(asc(byString(prop('groupName'))))
-            .map(group => {
-              const wiDefinitionId = getMetricCategoryDefinitionId(workItemTypes, workItemTypeName);
-              const stats = wiDefinitionId ? group.summary[wiDefinitionId] : null;
-              const summary = stats ? flattenSummaryGroups(stats) : null;
-              const [filterKey] = allExceptExpectedKeys(group);
-              const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
-              const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
-              const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
+        const renderMetric = renderGroupItem(
+          wit.name[0] === 'Feature' ? portfolioProjectLink : projectLink
+        );
 
-              const renderMetric = renderGroupItem(
-                workItemTypes[wiDefinitionId || '']?.name[0] === 'Feature'
-                  ? portfolioProjectLink
-                  : projectLink
-              );
+        return {
+          key: group.groupName,
+          values: [
+            { value: group.groupName, content: group.groupName },
+            {
+              value: summary.leakage,
+              content: renderMetric(
+                <LabelWithSparkline
+                  label={summary.leakage}
+                  data={summary.leakageByWeek}
+                  lineColor={increaseIsBetter(summary.leakageByWeek)}
+                />,
+                '#new-work-items'
+              )
+            },
+            {
+              value: summary.velocity,
+              content: renderMetric(
+                <LabelWithSparkline
+                  label={summary.velocity}
+                  data={summary.velocityByWeek}
+                  lineColor={increaseIsBetter(summary.velocityByWeek)}
+                />,
+                '#velocity'
+              )
+            },
+            {
+              value: summary.cycleTime,
+              content: renderMetric(
+                summary.cycleTime
+                  ? (
+                    <LabelWithSparkline
+                      label={prettyMS(summary.cycleTime)}
+                      data={summary.cycleTimeByWeek}
+                      lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
+                      yAxisLabel={prettyMS}
+                    />
+                  ) : '-',
+                '#cycle-time'
+              )
+            },
+            {
+              value: summary.changeLeadTime,
+              content: renderMetric(summary.changeLeadTime
+                ? (
+                  <LabelWithSparkline
+                    label={prettyMS(summary.changeLeadTime)}
+                    data={summary.changeLeadTimeByWeek}
+                    lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
+                    yAxisLabel={prettyMS}
+                  />
+                )
+                : '-',
+              '#change-lead-time')
+            },
+            {
+              value: divide(summary.flowEfficiency.wcTime, summary.flowEfficiency.total).getOr(0),
+              content: renderMetric(
+                summary.flowEfficiency
+                  ? (
+                    <LabelWithSparkline
+                      label={`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
+                      data={summary.flowEfficiencyByWeek.map(flowEfficiency)}
+                      lineColor={increaseIsBetter(summary.flowEfficiencyByWeek.map(flowEfficiency))}
+                      yAxisLabel={x => `${x}%`}
+                    />
+                  )
+                  : '-',
+                '#flow-efficiency'
+              )
+            },
+            {
+              value: summary.wipCount,
+              content: renderMetric(
+                summary.wipCount
+                  ? (
+                    <LabelWithSparkline
+                      label={(
+                        <span className="inline-block pr-1">
+                          {summary.wipIncrease}
+                          <span className="text-lg text-gray-500 inline-block ml-2">
+                            <span className="font-normal text-sm">of</span>
+                            {' '}
+                            {summary.wipCount}
+                          </span>
+                        </span>
+                      )}
+                      data={summary.wipIncreaseByWeek}
+                      lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
+                    />
+                  )
+                  : '0',
+                '#age-of-work-in-progress-features-by-state'
+              )
+            },
+            {
+              value: summary.wipAge,
+              content: renderMetric(
+                summary.wipAge ? prettyMS(summary.wipAge) : '-',
+                '#age-of-work-in-progress-items'
+              )
+            }
+          ]
+        };
+      })
+  }), [groups, workItemTypeName, workItemTypes]);
 
-              if (!summary) return null;
-
-              return (
-                <tr key={group.groupName}>
-                  <td>
-                    {group.groupName}
-                  </td>
-                  <td>
-                    {renderMetric(
-                      <LabelWithSparkline
-                        label={summary.leakage}
-                        data={summary.leakageByWeek}
-                        lineColor={increaseIsBetter(summary.leakageByWeek)}
-                      />,
-                      '#new-work-items'
-                    )}
-                  </td>
-                  <td>
-                    {renderMetric(
-                      <LabelWithSparkline
-                        label={summary.velocity}
-                        data={summary.velocityByWeek}
-                        lineColor={increaseIsBetter(summary.velocityByWeek)}
-                      />,
-                      '#velocity'
-                    )}
-                  </td>
-                  <td>
-                    {renderMetric(
-                      summary.cycleTime
-                        ? (
-                          <LabelWithSparkline
-                            label={prettyMS(summary.cycleTime)}
-                            data={summary.cycleTimeByWeek}
-                            lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
-                            yAxisLabel={prettyMS}
-                          />
-                        ) : '-',
-                      '#cycle-time'
-                    )}
-                  </td>
-                  <td>
-                    {renderMetric(summary.changeLeadTime
-                      ? (
-                        <LabelWithSparkline
-                          label={prettyMS(summary.changeLeadTime)}
-                          data={summary.changeLeadTimeByWeek}
-                          lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
-                          yAxisLabel={prettyMS}
-                        />
-                      )
-                      : '-',
-                    '#change-lead-time')}
-                  </td>
-                  <td>
-                    {renderMetric(
-                      summary.flowEfficiency
-                        ? (
-                          <LabelWithSparkline
-                            label={`${Math.round(flowEfficiency(summary.flowEfficiency))}%`}
-                            data={summary.flowEfficiencyByWeek.map(flowEfficiency)}
-                            lineColor={increaseIsBetter(summary.flowEfficiencyByWeek.map(flowEfficiency))}
-                            yAxisLabel={x => `${x}%`}
-                          />
-                        )
-                        : '-',
-                      '#flow-efficiency'
-                    )}
-                  </td>
-                  <td>
-                    {renderMetric(
-                      summary.wipCount
-                        ? (
-                          <LabelWithSparkline
-                            label={(
-                              <span className="inline-block pr-1">
-                                {summary.wipIncrease}
-                                <span className="text-lg text-gray-500 inline-block ml-2">
-                                  <span className="font-normal text-sm">of</span>
-                                  {' '}
-                                  {summary.wipCount}
-                                </span>
-                              </span>
-                            )}
-                            data={summary.wipIncreaseByWeek}
-                            lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
-                          />
-                        )
-                        : '0',
-                      '#age-of-work-in-progress-features-by-state'
-                    )}
-                  </td>
-                  <td>
-                    {renderMetric(summary.wipAge ? prettyMS(summary.wipAge) : '-', '#age-of-work-in-progress-items')}
-                  </td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
-    </div>
-  </details>
-);
+  return (
+    <CollapsibleSection
+      heading={(
+        <>
+          <img
+            src={Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)?.icon}
+            alt={`Icon for ${Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)?.name[1]}`}
+            className="inline-block mr-1"
+            width="18"
+          />
+          {Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)?.name[1]}
+        </>
+      )}
+      table={table}
+    />
+  );
+};
 
 const equivalientEnvironments = ['Replica', 'Pre-Prod'];
 

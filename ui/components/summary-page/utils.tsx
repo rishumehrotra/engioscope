@@ -1,7 +1,7 @@
 import { head, last, sum } from 'rambda';
 import type { ReactNode } from 'react';
 import React from 'react';
-import type { SummaryMetrics } from '../../../shared/types';
+import type { SummaryMetrics, UIWorkItemType } from '../../../shared/types';
 import { ExternalLink } from '../common/Icons';
 
 type SummaryGroups = SummaryMetrics['groups'][number]['summary'][string];
@@ -147,6 +147,13 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
 export type SummaryItemProps = {
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
+};
+
+export const workItemTypeByName = (name: string) => (workItemTypes: Record<string, UIWorkItemType>) => {
+  const result = Object.entries(workItemTypes).find(([, wi]) => wi.name[0] === name);
+  if (!result) return null;
+  const [witId, wit] = result;
+  return { witId, wit };
 };
 
 export const getMetricCategoryDefinitionId = (
