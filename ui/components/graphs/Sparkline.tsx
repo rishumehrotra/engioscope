@@ -184,7 +184,7 @@ const Sparkline: React.FC<SparklineProps> = ({
   const height = inputHeight || 20;
   const width = inputWidth || 20;
   const lineColor = inputLineColor || '#00bcd4';
-  const lineStrokeWidth = 2;
+  const lineStrokeWidth = 1.25;
 
   const spacing = width / (data.length - 1);
 

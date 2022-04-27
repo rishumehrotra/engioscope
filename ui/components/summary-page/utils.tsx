@@ -188,7 +188,7 @@ export const increaseIsBetter = (data: number[]) => {
   return (
     // eslint-disable-next-line no-nested-ternary
     end - start > 0
-      ? '#4add4a'
+      ? '#3fba3f'
       : end - start === 0
         ? 'grey'
         : 'red'
@@ -202,7 +202,7 @@ export const decreaseIsBetter = (data: number[]) => {
   return (
     // eslint-disable-next-line no-nested-ternary
     end - start < 0
-      ? '#4add4a'
+      ? '#3fba3f'
       : end - start === 0
         ? 'grey'
         : 'red'
