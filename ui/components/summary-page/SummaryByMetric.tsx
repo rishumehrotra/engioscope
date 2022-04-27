@@ -1,6 +1,7 @@
 import { prop } from 'rambda';
 import type { MouseEventHandler, ReactNode } from 'react';
 import React, {
+  useMemo,
   useState, useCallback, Fragment
 } from 'react';
 import {
@@ -315,28 +316,31 @@ const QualityMetrics: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
 }> = ({ groups, workItemTypes }) => {
-  const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
-  if (!bugsDefinitionId) return null;
-  const allEnvironments = [...new Set(groups.map(group => Object.keys(group.summary[bugsDefinitionId] || {})).flat())]
-    .sort((a, b) => {
-      if (!groups[0].environments) return 0;
-      return groups[0].environments.indexOf(a) - groups[0].environments.indexOf(b);
-    });
+  const sections = useMemo(() => {
+    const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
+    if (!bugsDefinitionId) return null;
 
-  let encounteredEquivalentEnvironment = false;
+    const allEnvironments = [...new Set(groups.map(group => Object.keys(group.summary[bugsDefinitionId] || {})).flat())]
+      .sort((a, b) => {
+        if (!groups[0].environments) return 0;
+        return groups[0].environments.indexOf(a) - groups[0].environments.indexOf(b);
+      });
 
-  return (
-    <>
-      {allEnvironments.map(env => {
-        const envDisplayName = equivalientEnvironments.includes(env) ? equivalientEnvironments.join(' or ') : env;
+    return allEnvironments
+      // eslint-disable-next-line func-call-spacing, no-spaced-func
+      .reduce<{ sections: (CollapsibleSectionProps & { key: string })[]; encounteredEquivalentEnvironment: boolean }>(
+        ({ sections, encounteredEquivalentEnvironment }, env) => {
+          const envDisplayName = equivalientEnvironments.includes(env) ? equivalientEnvironments.join(' or ') : env;
 
-        if (equivalientEnvironments.includes(env) && encounteredEquivalentEnvironment) return null;
+          if (equivalientEnvironments.includes(env) && encounteredEquivalentEnvironment) {
+            return {
+              sections, encounteredEquivalentEnvironment
+            };
+          }
 
-        if (equivalientEnvironments.includes(env)) encounteredEquivalentEnvironment = true;
-
-        return (
-          <details key={envDisplayName}>
-            <summary className="font-semibold text-xl my-2 cursor-pointer">
+          sections.push({
+            key: envDisplayName,
+            heading: (
               <span className="inline-flex align-middle">
                 <img
                   src={workItemTypes[bugsDefinitionId].icon}
@@ -346,170 +350,164 @@ const QualityMetrics: React.FC<{
                 />
                 {envDisplayName}
               </span>
-            </summary>
+            ),
+            table: () => ({
+              columns: [
+                null,
+                { label: 'New bugs', tooltip: 'Number of bugs opened in the last 90 days' },
+                { label: 'Bugs fixed', tooltip: 'Number of bugs closed in the last 90 days' },
+                { label: 'Bugs cycle time', tooltip: 'Average time taken to close a bug' },
+                { label: 'Bugs CLT', tooltip: 'Average time taken to close a bug once development is complete' },
+                { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
+                { label: 'WIP increase', tooltip: 'Increase in the number of WIP bugs over the last 90 days' },
+                { label: 'WIP age', tooltip: 'Average age of work-in-progress bugs' }
+              ],
+              rows: groups
+                .map(group => {
+                  const bugs = group.summary[bugsDefinitionId] || {};
+                  const summaryBugsForEnv = (
+                    equivalientEnvironments.includes(env)
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  && bugs[equivalientEnvironments.find(e => bugs[e])!]
+                  ) || bugs[env];
 
-            <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
-              <table className="summary-table">
-                <thead>
-                  <tr>
-                    {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                    <th />
-                    <th data-tip="Number of bugs opened in the last 90 days">
-                      New bugs
-                    </th>
-                    <th data-tip="Number of bugs closed in the last 90 days">
-                      Bugs fixed
-                    </th>
-                    <th data-tip="Average time taken to close a bug">
-                      Bugs cycle time
-                    </th>
-                    <th data-tip="Average time taken to close a bug once development is complete">
-                      Bugs CLT
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                      data-tip="Fraction of overall time that work items spend in work centers on average"
-                    >
-                      Flow efficiency
-                    </th>
-                    <th data-tip="Increase in the number of WIP bugs over the last 90 days">
-                      WIP increase
-                    </th>
-                    <th data-tip="Average age of work-in-progress bugs">
-                      WIP age
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {groups
-                    .sort(asc(byString(prop('groupName'))))
-                    .map(group => {
-                      const bugs = group.summary[bugsDefinitionId] || {};
-                      const summaryBugsForEnv = (
-                        equivalientEnvironments.includes(env)
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        && bugs[equivalientEnvironments.find(e => bugs[e])!]
-                      ) || bugs[env];
+                  const bugsForEnv = summaryBugsForEnv ? processSummary(summaryBugsForEnv) : null;
 
-                      const bugsForEnv = summaryBugsForEnv ? processSummary(summaryBugsForEnv) : null;
+                  const [filterKey] = allExceptExpectedKeys(group);
+                  const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+                  const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
-                      const [filterKey] = allExceptExpectedKeys(group);
-                      const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
-                      const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
+                  const renderBugMetric = renderGroupItem(portfolioProjectLink);
 
-                      const renderBugMetric = renderGroupItem(portfolioProjectLink);
+                  return {
+                    key: group.groupName,
+                    values: [
+                      { value: group.groupName, content: group.groupName },
+                      {
+                        value: bugsForEnv?.leakage || 0,
+                        content: renderBugMetric(
+                          bugsForEnv
+                            ? (
+                              <LabelWithSparkline
+                                label={bugsForEnv.leakage}
+                                data={bugsForEnv.leakageByWeek}
+                                lineColor={decreaseIsBetter(bugsForEnv.leakageByWeek)}
+                              />
+                            )
+                            : '-',
+                          '#bug-leakage-with-root-cause'
+                        )
+                      },
+                      {
+                        value: bugsForEnv?.velocity || 0,
+                        content: renderBugMetric(
+                          bugsForEnv
+                            ? (
+                              <LabelWithSparkline
+                                label={bugsForEnv.velocity}
+                                data={bugsForEnv.velocityByWeek}
+                                lineColor={increaseIsBetter(bugsForEnv.velocityByWeek)}
+                              />
+                            )
+                            : '-',
+                          '#velocity'
+                        )
+                      },
+                      {
+                        value: bugsForEnv?.cycleTime || 0,
+                        content: renderBugMetric(
+                          bugsForEnv?.cycleTime
+                            ? (
+                              <LabelWithSparkline
+                                label={prettyMS(bugsForEnv.cycleTime)}
+                                data={bugsForEnv.cycleTimeByWeek}
+                                lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
+                                yAxisLabel={prettyMS}
+                              />
+                            )
+                            : '-',
+                          '#cycle-time'
+                        )
+                      },
+                      {
+                        value: bugsForEnv?.changeLeadTime || 0,
+                        content: renderBugMetric(
+                          bugsForEnv?.changeLeadTime
+                            ? (
+                              <LabelWithSparkline
+                                label={prettyMS(bugsForEnv.changeLeadTime)}
+                                data={bugsForEnv.changeLeadTimeByWeek}
+                                lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
+                                yAxisLabel={prettyMS}
+                              />
+                            )
+                            : '-',
+                          '#change-lead-time'
+                        )
+                      },
+                      {
+                        value: divide(bugsForEnv?.flowEfficiency.wcTime || 0, bugsForEnv?.flowEfficiency.total || 0).getOr(0),
+                        content: renderBugMetric(
+                          bugsForEnv?.flowEfficiency
+                            ? (
+                              <LabelWithSparkline
+                                label={`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
+                                data={bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency)}
+                                lineColor={increaseIsBetter(bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency))}
+                                yAxisLabel={x => `${x}%`}
+                              />
+                            )
+                            : '-',
+                          '#flow-efficiency'
+                        )
+                      },
+                      {
+                        value: bugsForEnv?.wipCount || 0,
+                        content: renderBugMetric(
+                          bugsForEnv
+                            ? (
+                              <LabelWithSparkline
+                                label={(
+                                  <span className="inline-block pr-1">
+                                    {bugsForEnv.wipIncrease}
+                                    <span className="text-lg text-gray-500 inline-block ml-2">
+                                      <span className="font-normal text-sm">of</span>
+                                      {' '}
+                                      {bugsForEnv.wipCount}
+                                    </span>
+                                  </span>
+                                )}
+                                data={bugsForEnv.wipIncreaseByWeek}
+                                lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
+                              />
+                            )
+                            : '-',
+                          '#work-in-progress-trend'
+                        )
+                      },
+                      {
+                        value: bugsForEnv?.wipAge || 0,
+                        content: renderBugMetric(bugsForEnv?.wipAge ? prettyMS(bugsForEnv.wipAge) : '-', '#age-of-work-in-progress-items')
+                      }
+                    ]
+                  };
+                })
+            })
+          });
 
-                      return (
-                        <tr key={group.groupName}>
-                          <td>{group.groupName}</td>
-                          <td>
-                            {renderBugMetric(
-                              bugsForEnv
-                                ? (
-                                  <LabelWithSparkline
-                                    label={bugsForEnv.leakage}
-                                    data={bugsForEnv.leakageByWeek}
-                                    lineColor={decreaseIsBetter(bugsForEnv.leakageByWeek)}
-                                  />
-                                )
-                                : '-',
-                              '#bug-leakage-with-root-cause'
-                            )}
-                          </td>
-                          <td>
-                            {renderBugMetric(
-                              bugsForEnv
-                                ? (
-                                  <LabelWithSparkline
-                                    label={bugsForEnv.velocity}
-                                    data={bugsForEnv.velocityByWeek}
-                                    lineColor={increaseIsBetter(bugsForEnv.velocityByWeek)}
-                                  />
-                                )
-                                : '-',
-                              '#velocity'
-                            )}
-                          </td>
-                          <td>
-                            {renderBugMetric(
-                              bugsForEnv?.cycleTime
-                                ? (
-                                  <LabelWithSparkline
-                                    label={prettyMS(bugsForEnv.cycleTime)}
-                                    data={bugsForEnv.cycleTimeByWeek}
-                                    lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
-                                    yAxisLabel={prettyMS}
-                                  />
-                                )
-                                : '-',
-                              '#cycle-time'
-                            )}
-                          </td>
-                          <td>
-                            {renderBugMetric(
-                              bugsForEnv?.changeLeadTime
-                                ? (
-                                  <LabelWithSparkline
-                                    label={prettyMS(bugsForEnv.changeLeadTime)}
-                                    data={bugsForEnv.changeLeadTimeByWeek}
-                                    lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
-                                    yAxisLabel={prettyMS}
-                                  />
-                                )
-                                : '-',
-                              '#change-lead-time'
-                            )}
-                          </td>
-                          <td>
-                            {renderBugMetric(
-                              bugsForEnv?.flowEfficiency
-                                ? (
-                                  <LabelWithSparkline
-                                    label={`${Math.round(flowEfficiency(bugsForEnv.flowEfficiency))}%`}
-                                    data={bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency)}
-                                    lineColor={increaseIsBetter(bugsForEnv.flowEfficiencyByWeek.map(flowEfficiency))}
-                                    yAxisLabel={x => `${x}%`}
-                                  />
-                                )
-                                : '-',
-                              '#flow-efficiency'
-                            )}
-                          </td>
-                          <td>
-                            {renderBugMetric(
-                              bugsForEnv
-                                ? (
-                                  <LabelWithSparkline
-                                    label={(
-                                      <span className="inline-block pr-1">
-                                        {bugsForEnv.wipIncrease}
-                                        <span className="text-lg text-gray-500 inline-block ml-2">
-                                          <span className="font-normal text-sm">of</span>
-                                          {' '}
-                                          {bugsForEnv.wipCount}
-                                        </span>
-                                      </span>
-                                    )}
-                                    data={bugsForEnv.wipIncreaseByWeek}
-                                    lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
-                                  />
-                                )
-                                : '-',
-                              '#work-in-progress-trend'
-                            )}
-                          </td>
-                          <td>
-                            {renderBugMetric(bugsForEnv?.wipAge ? prettyMS(bugsForEnv.wipAge) : '-', '#age-of-work-in-progress-items')}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        );
-      })}
+          return {
+            sections,
+            encounteredEquivalentEnvironment: equivalientEnvironments.includes(env) ? true : encounteredEquivalentEnvironment
+          };
+        }, { sections: [], encounteredEquivalentEnvironment: false })
+      .sections;
+  }, [groups, workItemTypes]);
+
+  if (!sections) return null;
+
+  return (
+    <>
+      {sections.map(section => <CollapsibleSection {...section} />)}
     </>
   );
 };
