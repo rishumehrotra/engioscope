@@ -1,7 +1,7 @@
-import { add, range } from 'rambda';
+import { pipe, range } from 'rambda';
 import type { ReactNode } from 'react';
-import React, { useMemo } from 'react';
-import { shortDate } from '../../helpers/utils';
+import React, { useCallback, useMemo } from 'react';
+import { exists, shortDate } from '../../helpers/utils';
 import useHover from '../../hooks/use-hover';
 
 const popoverSvgConfig = {
@@ -17,21 +17,58 @@ const popoverSvgConfig = {
   topPadding: 5
 };
 
-const exaggerateTrendLine = (data: number[]) => {
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+const exaggerateTrendLine = (data: (number | undefined)[]) => {
+  const dataWithoutUndefineds = data.filter(exists);
+
+  const min = Math.min(...dataWithoutUndefineds);
+  const max = Math.max(...dataWithoutUndefineds);
   const diff = max - min;
 
-  const exaggerated = data.map(val => val - (max - diff) + (diff * 1));
+  const exaggerated = data.map(val => {
+    if (val === undefined) return undefined;
+    return val - (max - diff) + (diff * 1);
+  });
 
   return exaggerated;
 };
 
+type Renderer = {
+  ({ lineColor, lineStrokeWidth }: { lineColor: string; lineStrokeWidth: number }): (
+    ({ data, yCoord, xCoord }: { data: (number | undefined)[]; yCoord: (value: number) => number; xCoord: (index: number) => number }) => (
+      ReactNode | ReactNode[]
+    )
+  );
+};
+
+export const pathRenderer: Renderer = ({ lineColor, lineStrokeWidth }: { lineColor: string; lineStrokeWidth: number}) => (
+  ({ data, yCoord, xCoord }: {
+    data: (number | undefined)[];
+    yCoord: (value: number) => number;
+    xCoord: (index: number) => number;
+  }) => {
+    if (data.some(i => i === undefined)) throw new Error('pathRenderer can\'t handle undefined values');
+
+    return (
+      <path
+        d={data.map((item, itemIndex) => (
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          `${itemIndex === 0 ? 'M' : 'L'} ${xCoord(itemIndex)} ${yCoord(item!)}`
+        )).join(' ')}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth={lineStrokeWidth}
+      />
+    );
+  }
+);
+
 const computeLineGraphData = (
   config: typeof popoverSvgConfig,
-  data: number[]
+  data: (number | undefined)[],
+  renderer: ReturnType<Renderer>
 ) => {
-  const maxValue = Math.max(...data);
+  const dataWithoutUndefineds = data.filter(exists);
+  const maxValue = Math.max(...dataWithoutUndefineds);
   const popoverSpacing = config.width / (data.length - 1);
   const xAxisYLocation = config.height + config.yAxisOverhang + config.topPadding;
   const yAxisXLocation = config.yAxisLabelWidth;
@@ -102,20 +139,23 @@ const computeLineGraphData = (
           // return gridLineIndex;
         })()
       })),
-    linePath: data.map((item, itemIndex) => (
-      `${itemIndex === 0 ? 'M' : 'L'} ${popoverXCoord(itemIndex)} ${popoverYCoord(item)}`
-    )).join(' ')
+    paths: renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord })
   };
 };
 
 type PopoverSvgProps = {
-  lineColor?: string;
-  data: number[];
+  lineColor: string;
+  data: (number | undefined)[];
   yAxisLabel: (index: number) => string;
+  renderer: Renderer;
 };
 
-const PopoverSvg: React.FC<PopoverSvgProps> = ({ lineColor, data, yAxisLabel }) => {
-  const lineGraph = useMemo(() => computeLineGraphData(popoverSvgConfig, data), [data]);
+const PopoverSvg: React.FC<PopoverSvgProps> = ({
+  renderer, data, yAxisLabel, lineColor
+}) => {
+  const lineGraph = useMemo(() => (
+    computeLineGraphData(popoverSvgConfig, data, renderer({ lineColor, lineStrokeWidth: 2 }))
+  ), [data, lineColor, renderer]);
 
   return (
     <svg
@@ -158,28 +198,24 @@ const PopoverSvg: React.FC<PopoverSvgProps> = ({ lineColor, data, yAxisLabel }) 
         </g>
       ))}
 
-      <path
-        d={lineGraph.linePath}
-        stroke={lineColor}
-        strokeWidth="3"
-        fill="none"
-      />
+      {lineGraph.paths}
     </svg>
   );
 };
 
 type SparklineProps = {
-  data: number[];
+  data: (number | undefined)[];
   height?: number;
   width?: number;
   lineColor?: string;
   className?: string;
   yAxisLabel?: (index: number) => string;
+  renderer?: Renderer;
 };
 
 const Sparkline: React.FC<SparklineProps> = ({
   data, height: inputHeight, width: inputWidth, lineColor: inputLineColor, className,
-  yAxisLabel: inputYAxisLabel
+  yAxisLabel: inputYAxisLabel, renderer = pathRenderer
 }) => {
   const height = inputHeight || 20;
   const width = inputWidth || 20;
@@ -190,28 +226,32 @@ const Sparkline: React.FC<SparklineProps> = ({
 
   const [ref, isHovering] = useHover();
 
-  const path = useMemo(
-    () => {
-      const dataForSparkline = exaggerateTrendLine(data);
-      const maxData = Math.max(...dataForSparkline);
-      const addOffset = dataForSparkline.every(item => item === maxData);
+  const processForPlacement = useCallback((dataForSparkline: (number | undefined)[]) => {
+    const dataWithoutUndefineds = dataForSparkline.filter(exists);
+    const maxData = Math.max(...dataWithoutUndefineds);
+    const addOffset = dataWithoutUndefineds.every(item => item === maxData);
 
-      const maxDataToRender = addOffset ? maxData + 3 : maxData;
+    const maxDataToRender = addOffset ? maxData + 3 : maxData;
+    const yCoord = (value: number) => height - lineStrokeWidth - ((value / maxDataToRender) * (height - lineStrokeWidth));
+    const xCoord = (index: number) => index * spacing;
+    const addOffsetIfNeeded = ((value: number | undefined) => {
+      if (value === undefined) return undefined;
+      return addOffset ? value + 2 : value;
+    });
 
-      return dataForSparkline
-        .map(add(addOffset ? 2 : 0))
-        .map((value, index) => {
-          const yCoord = height - lineStrokeWidth - ((value / maxDataToRender) * (height - lineStrokeWidth));
-          return `${index === 0 ? 'M' : 'L'} ${index * spacing} ${yCoord}`;
-        })
-        .join(' ');
-    },
-    [data, height, spacing]
-  );
+    return { data: dataForSparkline.map(addOffsetIfNeeded), yCoord, xCoord };
+  }, [height, spacing]);
+
+  const path = useMemo(() => pipe(
+    exaggerateTrendLine,
+    processForPlacement,
+    renderer({ lineColor, lineStrokeWidth })
+  )(data), [data, lineColor, processForPlacement, renderer]);
 
   const yAxisLabel = useMemo(() => inputYAxisLabel || String, [inputYAxisLabel]);
 
   if (data.every(point => point === 0)) return null;
+  if (data.every(point => point === undefined)) return null;
 
   return (
     <span className="relative group inline-block" ref={ref}>
@@ -225,12 +265,7 @@ const Sparkline: React.FC<SparklineProps> = ({
           viewBox={`0 0 ${width} ${height}`}
           className={`inline-block -mb-1 ${className || ''}`}
         >
-          <path
-            d={path}
-            stroke={lineColor}
-            strokeWidth={lineStrokeWidth}
-            fill="none"
-          />
+          {path}
         </svg>
       </span>
 
@@ -240,7 +275,12 @@ const Sparkline: React.FC<SparklineProps> = ({
             className="absolute hidden group-hover:block bg-slate-800 rounded-2xl pb-2 pt-6 pl-4 pr-6 z-50 shadow-2xl"
             style={{ marginLeft: `-${(popoverSvgConfig.width / 2) + 18}px` }}
           >
-            <PopoverSvg lineColor={lineColor} data={data} yAxisLabel={yAxisLabel} />
+            <PopoverSvg
+              lineColor={lineColor}
+              data={data}
+              yAxisLabel={yAxisLabel}
+              renderer={renderer}
+            />
           </span>
         )
         : null}

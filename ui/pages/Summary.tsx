@@ -55,22 +55,21 @@ const Summary: React.FC = () => {
       ) : null}
 
       <div className="mx-32">
+        {/* eslint-disable-next-line no-nested-ternary */}
         {metrics
           ? (
-            <div>
-              {show
-                ? (
-                  <SummaryByMetric
-                    groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-                    workItemTypes={metrics.workItemTypes}
-                  />
-                ) : (
-                  <SummaryByTeam
-                    groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-                    workItemTypes={metrics.workItemTypes}
-                  />
-                )}
-            </div>
+            show
+              ? (
+                <SummaryByMetric
+                  groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
+                  workItemTypes={metrics.workItemTypes}
+                />
+              ) : (
+                <SummaryByTeam
+                  groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
+                  workItemTypes={metrics.workItemTypes}
+                />
+              )
           )
           : (
             <div className="my-4">
