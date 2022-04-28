@@ -1,8 +1,12 @@
-import { pipe, range } from 'rambda';
+import {
+  pipe, range
+} from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useCallback, useMemo } from 'react';
 import { exists, shortDate } from '../../helpers/utils';
 import useHover from '../../hooks/use-hover';
+import type { Renderer } from './sparkline-renderers';
+import { pathRenderer } from './sparkline-renderers';
 
 const popoverSvgConfig = {
   width: 250,
@@ -31,36 +35,6 @@ const exaggerateTrendLine = (data: (number | undefined)[]) => {
 
   return exaggerated;
 };
-
-type Renderer = {
-  ({ lineColor, lineStrokeWidth }: { lineColor: string; lineStrokeWidth: number }): (
-    ({ data, yCoord, xCoord }: { data: (number | undefined)[]; yCoord: (value: number) => number; xCoord: (index: number) => number }) => (
-      ReactNode | ReactNode[]
-    )
-  );
-};
-
-export const pathRenderer: Renderer = ({ lineColor, lineStrokeWidth }: { lineColor: string; lineStrokeWidth: number}) => (
-  ({ data, yCoord, xCoord }: {
-    data: (number | undefined)[];
-    yCoord: (value: number) => number;
-    xCoord: (index: number) => number;
-  }) => {
-    if (data.some(i => i === undefined)) throw new Error('pathRenderer can\'t handle undefined values');
-
-    return (
-      <path
-        d={data.map((item, itemIndex) => (
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          `${itemIndex === 0 ? 'M' : 'L'} ${xCoord(itemIndex)} ${yCoord(item!)}`
-        )).join(' ')}
-        fill="none"
-        stroke={lineColor}
-        strokeWidth={lineStrokeWidth}
-      />
-    );
-  }
-);
 
 const computeLineGraphData = (
   config: typeof popoverSvgConfig,
