@@ -13,6 +13,7 @@ import {
   ArrowDown, ArrowUp, ExternalLink
 } from '../common/Icons';
 import { LabelWithSparkline } from '../graphs/Sparkline';
+import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import type { SummaryGroupKey } from './utils';
 import {
   workItemTypeByName,
@@ -216,9 +217,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                   ? (
                     <LabelWithSparkline
                       label={prettyMS(summary.cycleTime)}
-                      data={summary.cycleTimeByWeek}
-                      lineColor={decreaseIsBetter(summary.cycleTimeByWeek)}
                       yAxisLabel={prettyMS}
+                      lineColor={decreaseIsBetter(
+                        summary.cycleTimeByWeek.filter(x => x === 0)
+                      )}
+                      data={summary.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                      renderer={pathRendererSkippingUndefineds}
                     />
                   ) : '-',
                 '#cycle-time'
@@ -230,9 +234,12 @@ const FlowMetricsByWorkItemType: React.FC<{
                 ? (
                   <LabelWithSparkline
                     label={prettyMS(summary.changeLeadTime)}
-                    data={summary.changeLeadTimeByWeek}
-                    lineColor={decreaseIsBetter(summary.changeLeadTimeByWeek)}
+                    lineColor={decreaseIsBetter(
+                      summary.changeLeadTimeByWeek.filter(x => x === 0)
+                    )}
                     yAxisLabel={prettyMS}
+                    data={summary.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                    renderer={pathRendererSkippingUndefineds}
                   />
                 )
                 : '-',
@@ -418,9 +425,12 @@ const QualityMetrics: React.FC<{
                             ? (
                               <LabelWithSparkline
                                 label={prettyMS(bugsForEnv.cycleTime)}
-                                data={bugsForEnv.cycleTimeByWeek}
-                                lineColor={decreaseIsBetter(bugsForEnv.cycleTimeByWeek)}
                                 yAxisLabel={prettyMS}
+                                lineColor={decreaseIsBetter(
+                                  bugsForEnv.cycleTimeByWeek.filter(x => x === 0)
+                                )}
+                                data={bugsForEnv.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                                renderer={pathRendererSkippingUndefineds}
                               />
                             )
                             : '-',
@@ -434,9 +444,12 @@ const QualityMetrics: React.FC<{
                             ? (
                               <LabelWithSparkline
                                 label={prettyMS(bugsForEnv.changeLeadTime)}
-                                data={bugsForEnv.changeLeadTimeByWeek}
-                                lineColor={decreaseIsBetter(bugsForEnv.changeLeadTimeByWeek)}
+                                lineColor={decreaseIsBetter(
+                                  bugsForEnv.changeLeadTimeByWeek.filter(x => x === 0)
+                                )}
                                 yAxisLabel={prettyMS}
+                                data={bugsForEnv.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                                renderer={pathRendererSkippingUndefineds}
                               />
                             )
                             : '-',

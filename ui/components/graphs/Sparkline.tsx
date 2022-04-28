@@ -110,7 +110,6 @@ const computeLineGraphData = (
           const date = new Date();
           date.setDate(date.getDate() - (weekIndex * 7));
           return shortDate(date);
-          // return gridLineIndex;
         })()
       })),
     paths: renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord })
@@ -128,7 +127,10 @@ const PopoverSvg: React.FC<PopoverSvgProps> = ({
   renderer, data, yAxisLabel, lineColor
 }) => {
   const lineGraph = useMemo(() => (
-    computeLineGraphData(popoverSvgConfig, data, renderer({ lineColor, lineStrokeWidth: 2 }))
+    computeLineGraphData(
+      popoverSvgConfig, data,
+      renderer({ lineColor, lineStrokeWidth: 2, strokeDasharray: '7,5' })
+    )
   ), [data, lineColor, renderer]);
 
   return (
@@ -216,16 +218,16 @@ const Sparkline: React.FC<SparklineProps> = ({
     return { data: dataForSparkline.map(addOffsetIfNeeded), yCoord, xCoord };
   }, [height, spacing]);
 
-  const path = useMemo(() => pipe(
-    exaggerateTrendLine,
-    processForPlacement,
-    renderer({ lineColor, lineStrokeWidth })
-  )(data), [data, lineColor, processForPlacement, renderer]);
-
   const yAxisLabel = useMemo(() => inputYAxisLabel || String, [inputYAxisLabel]);
 
   if (data.every(point => point === 0)) return null;
   if (data.every(point => point === undefined)) return null;
+
+  const path = pipe(
+    exaggerateTrendLine,
+    processForPlacement,
+    renderer({ lineColor, lineStrokeWidth, strokeDasharray: '2,1' })
+  )(data);
 
   return (
     <span className="relative group inline-block" ref={ref}>

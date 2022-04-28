@@ -1,9 +1,9 @@
 import React from 'react';
-import { init, last } from 'rambda';
+import { last } from 'rambda';
 import type { ReactNode } from 'react';
 
 export type Renderer = {
-  ({ lineColor, lineStrokeWidth }: { lineColor: string; lineStrokeWidth: number }): (
+  ({ lineColor, lineStrokeWidth, strokeDasharray }: { lineColor: string; lineStrokeWidth: number; strokeDasharray?: string }): (
     ({ data, yCoord, xCoord }: { data: (number | undefined)[]; yCoord: (value: number) => number; xCoord: (index: number) => number }) => (
       ReactNode | ReactNode[]
     )
@@ -32,88 +32,66 @@ export const pathRenderer: Renderer = ({ lineColor, lineStrokeWidth }: { lineCol
   }
 );
 
-export const pathRendererSkippingUndefineds: Renderer = ({ lineColor, lineStrokeWidth }) => (
+export const pathRendererSkippingUndefineds: Renderer = ({ lineColor, lineStrokeWidth, strokeDasharray }) => (
   ({ data, yCoord, xCoord }) => {
     const mustSkip = (item: number | undefined): item is undefined => item === undefined;
 
+    type Point = [xCoord: number, yCoord: number];
+
+    const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) => (
+      <line
+        key={index}
+        x1={p1[0]}
+        y1={p1[1]}
+        x2={p2[0]}
+        y2={p2[1]}
+        stroke={lineColor}
+        strokeWidth={lineStrokeWidth}
+        strokeDasharray={continuous ? '' : (strokeDasharray || '7,5')}
+      />
+    );
+
+    const brokenLine = drawLine(false);
+    const continuousLine = drawLine(true);
+
     const nodes = data
-      .reduce<{
-        isSkipping: boolean;
-        points: [xCoord: number, yCoord: number][];
-      }[]>(
-        (acc, item, itemIndex) => {
-          // Skip the first element. We'll return to it in the next pass.
-          if (itemIndex === 0) { return acc; }
+      .map<(Point | undefined)>(item => (
+        mustSkip(item) ? undefined : [xCoord(data.indexOf(item)), yCoord(item)]
+      ))
+      .reduce<(Point | undefined)[]>((acc, item) => {
+        if (acc.length === 0 && item === undefined) return [];
 
-          if (mustSkip(item)) { // skip this value
-            const lastNode = last(acc);
+        if (item === undefined) {
+          if (last(acc) === undefined) return acc;
+          return [...acc, undefined];
+        }
 
-            if (!lastNode) {
-              // Nothing in the list so far, we're must skip this value, nothing to do.
-              return acc;
-            }
+        return [...acc, item];
+      }, []);
 
-            if (lastNode.isSkipping) { return acc; } // Already skipping. Nothing to do.
+    const toRender = nodes.reduce<ReactNode[]>((acc, item, itemIndex) => {
+      if (itemIndex === 0) return acc;
+      if (item === undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const prevItem = nodes[itemIndex - 1]!; // Prev item definitely exists
+        const nextItem = nodes[itemIndex + 1];
 
-            // We have a previous node, and it's not skipping, so we have a previous point.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return [...acc, { isSkipping: true, points: [last(lastNode.points)!] }];
-          }
+        if (!nextItem) { // trailing broken line
+          return [...acc, brokenLine(prevItem, [xCoord(data.length - 1), prevItem[1]], itemIndex)];
+        }
 
-          // We shouldn't skip this value
-          const lastNode = last(acc);
+        return [...acc, brokenLine(prevItem, nextItem, itemIndex)];
+      }
 
-          if (!lastNode) {
-            // Nothing in the list so far, we're not skipping this value, so we can just add it.
-            return [...acc, { isSkipping: false, points: [[xCoord(itemIndex), yCoord(item)]] }];
-          }
+      const prevItem = nodes[itemIndex - 1];
+      if (prevItem === undefined) return acc;
+      return [...acc, continuousLine(prevItem, item, itemIndex)];
+    }, [
+      // start with an skip segment. Might be zero length.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      brokenLine([xCoord(0), nodes[0]![1]], nodes[0]!, -1)
+    ]);
 
-          if (lastNode.isSkipping) {
-            // Previous node was skipping. We must terminate that, and start a new node.
-            return [
-              ...init(acc),
-              { isSkipping: true, points: [...lastNode.points, [xCoord(itemIndex), yCoord(item)]] },
-              { isSkipping: false, points: [[xCoord(itemIndex), yCoord(item)]] }
-            ];
-          }
-
-          // Previous node was not skipping. We can just add this point to it.
-          return [
-            ...init(acc),
-            { isSkipping: false, points: [...lastNode.points, [xCoord(itemIndex), yCoord(item)]] }
-          ];
-        }, []
-      );
-
-    const lastNode = last(nodes);
-    const nodesToRender = (lastNode?.isSkipping && lastNode.points.length === 1)
-      // Remove the last node, since it's an incomplete skipping node
-      ? init(nodes)
-      : nodes;
-
-    return nodesToRender.map(node => (
-      node.isSkipping
-        ? (
-          <line
-            x1={node.points[0][0]}
-            y1={node.points[0][1]}
-            x2={node.points[1][0]}
-            y2={node.points[1][1]}
-            stroke={lineColor}
-            strokeWidth={lineStrokeWidth}
-            strokeDasharray="5,5"
-          />
-        )
-        : (
-          <path
-            d={node.points.map((point, index) => (
-              `${index === 0 ? 'M' : 'L'} ${point[0]} ${point[1]}`
-            )).join(' ')}
-            fill="none"
-            stroke={lineColor}
-            strokeWidth={lineStrokeWidth}
-          />
-        )
-    ));
+    return toRender;
   }
 );

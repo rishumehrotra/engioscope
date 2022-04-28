@@ -8,6 +8,7 @@ import type { SummaryMetrics } from '../../../shared/types';
 import { divide, toPercentage } from '../../../shared/utils';
 import { num, prettyMS } from '../../helpers/utils';
 import { LabelWithSparkline } from '../graphs/Sparkline';
+import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import UsageByEnv from '../UsageByEnv';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
@@ -147,9 +148,12 @@ const FlowMetrics: React.FC<{
                       label={workItemsSummary.cycleTime
                         ? prettyMS(workItemsSummary.cycleTime)
                         : '-'}
-                      data={workItemsSummary.cycleTimeByWeek}
-                      lineColor={decreaseIsBetter(workItemsSummary.cycleTimeByWeek)}
+                      lineColor={decreaseIsBetter(
+                        workItemsSummary.cycleTimeByWeek.filter(x => x === 0)
+                      )}
                       yAxisLabel={prettyMS}
+                      data={workItemsSummary.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                      renderer={pathRendererSkippingUndefineds}
                     />,
                     '#cycle-time'
                   )}
@@ -160,9 +164,12 @@ const FlowMetrics: React.FC<{
                       label={workItemsSummary.changeLeadTime
                         ? prettyMS(workItemsSummary.changeLeadTime)
                         : '-'}
-                      data={workItemsSummary.changeLeadTimeByWeek}
-                      lineColor={decreaseIsBetter(workItemsSummary.changeLeadTimeByWeek)}
+                      lineColor={decreaseIsBetter(
+                        workItemsSummary.changeLeadTimeByWeek.filter(x => x === 0)
+                      )}
                       yAxisLabel={prettyMS}
+                      data={workItemsSummary.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                      renderer={pathRendererSkippingUndefineds}
                     />,
                     '#change-lead-time'
                   )}
@@ -329,9 +336,12 @@ const QualityMetrics: React.FC<{
                         label={maybe(bugInfo.cycleTime)
                           .map(prettyMS)
                           .getOr('-')}
-                        data={bugInfo.cycleTimeByWeek}
-                        lineColor={decreaseIsBetter(bugInfo.cycleTimeByWeek)}
+                        lineColor={decreaseIsBetter(
+                          bugInfo.cycleTimeByWeek.filter(x => x === 0)
+                        )}
                         yAxisLabel={prettyMS}
+                        data={bugInfo.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                        renderer={pathRendererSkippingUndefineds}
                       />,
                       '#cycle-time'
                     )}
@@ -342,9 +352,12 @@ const QualityMetrics: React.FC<{
                         label={maybe(bugInfo.changeLeadTime)
                           .map(prettyMS)
                           .getOr('-')}
-                        data={bugInfo.changeLeadTimeByWeek}
-                        lineColor={decreaseIsBetter(bugInfo.changeLeadTimeByWeek)}
+                        lineColor={decreaseIsBetter(
+                          bugInfo.changeLeadTimeByWeek.filter(x => x === 0)
+                        )}
                         yAxisLabel={prettyMS}
+                        data={bugInfo.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
+                        renderer={pathRendererSkippingUndefineds}
                       />,
                       '#change-lead-time'
                     )}
