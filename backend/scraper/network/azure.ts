@@ -83,7 +83,8 @@ export default (config: ParsedConfig) => {
 
       while (currentDate >= config.azure.queryFrom) {
         weeks.push(currentDate);
-        currentDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
+        currentDate = new Date(currentDate);
+        currentDate.setDate(currentDate.getDate() - 7);
       }
       weeks.push(config.azure.queryFrom);
 
@@ -95,7 +96,7 @@ export default (config: ParsedConfig) => {
               url(collectionName, projectName, `/build/builds?${qs.stringify({
                 ...apiVersion,
                 $top: 5000,
-                maxTime: weeks[index].toISOString(), // refers to previous week
+                maxTime: weeks[index].toISOString(),
                 minTime: weekStart.toISOString()
               })}`),
               { headers: authHeader, ...otherFetchParams }
