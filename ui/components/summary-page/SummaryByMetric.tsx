@@ -219,7 +219,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                       label={prettyMS(summary.cycleTime)}
                       yAxisLabel={prettyMS}
                       lineColor={decreaseIsBetter(
-                        summary.cycleTimeByWeek.filter(x => x === 0)
+                        summary.cycleTimeByWeek.filter(x => x !== 0)
                       )}
                       data={summary.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
                       renderer={pathRendererSkippingUndefineds}
@@ -235,7 +235,7 @@ const FlowMetricsByWorkItemType: React.FC<{
                   <LabelWithSparkline
                     label={prettyMS(summary.changeLeadTime)}
                     lineColor={decreaseIsBetter(
-                      summary.changeLeadTimeByWeek.filter(x => x === 0)
+                      summary.changeLeadTimeByWeek.filter(x => x !== 0)
                     )}
                     yAxisLabel={prettyMS}
                     data={summary.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
@@ -427,7 +427,7 @@ const QualityMetrics: React.FC<{
                                 label={prettyMS(bugsForEnv.cycleTime)}
                                 yAxisLabel={prettyMS}
                                 lineColor={decreaseIsBetter(
-                                  bugsForEnv.cycleTimeByWeek.filter(x => x === 0)
+                                  bugsForEnv.cycleTimeByWeek.filter(x => x !== 0)
                                 )}
                                 data={bugsForEnv.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
                                 renderer={pathRendererSkippingUndefineds}
@@ -445,7 +445,7 @@ const QualityMetrics: React.FC<{
                               <LabelWithSparkline
                                 label={prettyMS(bugsForEnv.changeLeadTime)}
                                 lineColor={decreaseIsBetter(
-                                  bugsForEnv.changeLeadTimeByWeek.filter(x => x === 0)
+                                  bugsForEnv.changeLeadTimeByWeek.filter(x => x !== 0)
                                 )}
                                 yAxisLabel={prettyMS}
                                 data={bugsForEnv.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}

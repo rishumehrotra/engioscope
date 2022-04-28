@@ -149,7 +149,7 @@ const FlowMetrics: React.FC<{
                         ? prettyMS(workItemsSummary.cycleTime)
                         : '-'}
                       lineColor={decreaseIsBetter(
-                        workItemsSummary.cycleTimeByWeek.filter(x => x === 0)
+                        workItemsSummary.cycleTimeByWeek.filter(x => x !== 0)
                       )}
                       yAxisLabel={prettyMS}
                       data={workItemsSummary.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
@@ -165,7 +165,7 @@ const FlowMetrics: React.FC<{
                         ? prettyMS(workItemsSummary.changeLeadTime)
                         : '-'}
                       lineColor={decreaseIsBetter(
-                        workItemsSummary.changeLeadTimeByWeek.filter(x => x === 0)
+                        workItemsSummary.changeLeadTimeByWeek.filter(x => x !== 0)
                       )}
                       yAxisLabel={prettyMS}
                       data={workItemsSummary.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
@@ -337,7 +337,7 @@ const QualityMetrics: React.FC<{
                           .map(prettyMS)
                           .getOr('-')}
                         lineColor={decreaseIsBetter(
-                          bugInfo.cycleTimeByWeek.filter(x => x === 0)
+                          bugInfo.cycleTimeByWeek.filter(x => x !== 0)
                         )}
                         yAxisLabel={prettyMS}
                         data={bugInfo.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
@@ -353,7 +353,7 @@ const QualityMetrics: React.FC<{
                           .map(prettyMS)
                           .getOr('-')}
                         lineColor={decreaseIsBetter(
-                          bugInfo.changeLeadTimeByWeek.filter(x => x === 0)
+                          bugInfo.changeLeadTimeByWeek.filter(x => x !== 0)
                         )}
                         yAxisLabel={prettyMS}
                         data={bugInfo.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
