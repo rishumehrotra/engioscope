@@ -17,6 +17,7 @@ import languageColors from './language-colors';
 import type { RepoAnalysis } from '../../shared/types';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
 import type { GitBranchStats, WorkItemField } from './types-azure';
+import { startTimer } from '../utils';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -40,7 +41,7 @@ export default (config: ParsedConfig) => {
     getWorkItems: (projectConfig: ParsedProjectConfig, workItemFieldsPromise: Promise<WorkItemField[]>) => Promise<WorkItemAnalysis>,
     workItemFieldsPromise: Promise<WorkItemField[]>
   ): Promise<ProjectAnalysis> => {
-    const startTime = Date.now();
+    const time = startTimer();
     const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collection.name, projectConfig.name);
 
     const codeQualityByRepo = forProject(sonar(config));
@@ -123,7 +124,7 @@ export default (config: ParsedConfig) => {
       testCasesAnalysis
     };
 
-    analyserLog(`Took ${Date.now() - startTime}ms to analyse ${collection.name}/${projectConfig.name}.`);
+    analyserLog(`Took ${time()} to analyse ${collection.name}/${projectConfig.name}.`);
 
     return analysisResults;
   };

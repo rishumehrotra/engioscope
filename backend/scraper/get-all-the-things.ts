@@ -13,7 +13,7 @@ import workItemsForCollection from './stats-aggregators/work-items-for-collectio
 import type { ProjectAnalysis } from './types';
 import summariseResults from './summarise-results';
 import { fetchCounters } from './network/fetch-with-disk-cache';
-import { mapSettleSeries } from '../utils';
+import { mapSettleSeries, startTimer } from '../utils';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -22,11 +22,12 @@ const logStep = debug('step');
 
 const scrape = async (config: ParsedConfig) => {
   logStep('Starting scrape...');
+  const time = startTimer();
+
   const { getCollectionWorkItemFields } = azure(config);
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
   const collectionWorkItems = workItemsForCollection(config);
-  const now = Date.now();
 
   const projects = config.azure.collections.flatMap(collection => {
     // Execute these only once per collection
@@ -72,7 +73,7 @@ const scrape = async (config: ParsedConfig) => {
   }
   console.log('\n');
 
-  logStep(`Scraping completed in ${(Date.now() - now) / 1000}s.`);
+  logStep(`Scraping completed in ${time()}`);
 
   await writeSummaryMetricsFile(summariseResults(
     config,
@@ -92,17 +93,17 @@ const printFetchCounters = () => {
 
 const createTarGz = async () => {
   logStep('Creating data/cache.tar.gz...');
-  const startTime = Date.now();
+  const time = startTimer();
   await tar.create({
     gzip: true,
     file: 'data/cache.tar.gz'
   }, ['cache']);
-  logStep(`Created data/cache.tar.gz in ${(Date.now() - startTime) / 1000}s`);
+  logStep(`Created data/cache.tar.gz in ${time()}`);
 };
 
 const saveToArchive = async () => {
   logStep('Saving to archive...');
-  const startTime = Date.now();
+  const time = startTimer();
 
   await fs.mkdir(join(process.cwd(), 'archive'), { recursive: true });
   const fileName = `cache-${new Date().toISOString().split('T')[0]}.tar.gz`;
@@ -111,15 +112,15 @@ const saveToArchive = async () => {
     join(process.cwd(), 'archive', fileName)
   );
 
-  logStep(`Saved to archive/${fileName} in ${(Date.now() - startTime) / 1000}s`);
+  logStep(`Saved to archive/${fileName} in ${time()}`);
 };
 
 export default (config: ParsedConfig) => {
-  const startTime = Date.now();
+  const time = startTimer();
 
   return scrape(config)
     .then(tap(printFetchCounters))
     .then(createTarGz)
     .then(saveToArchive)
-    .then(() => debug('done')(`in ${(Date.now() - startTime) / 1000}s.`));
+    .then(() => debug('done')(`in ${time()}.`));
 };

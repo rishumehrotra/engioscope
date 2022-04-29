@@ -76,3 +76,8 @@ export const mapSettleSeries = <T, U>(xs: T[], fn: (x: T) => Promise<U>) => (
     ))
   ), Promise.resolve([]))
 );
+
+export const startTimer = () => {
+  const start = Date.now();
+  return () => `${(Date.now() - start) / 1000}s`;
+};
