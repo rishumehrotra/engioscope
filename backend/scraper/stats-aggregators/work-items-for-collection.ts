@@ -41,7 +41,7 @@ const getWorkItemTypesForCollection = (
 ));
 
 const workItemsById = (
-  getCollectionWorkItems: (collectionName: string, workItemIds: number[]) => Promise<WorkItem[]>,
+  getCollectionWorkItems: (collectionName: string, workItemIds: number[], queryName: string) => Promise<WorkItem[]>,
   collection: ParsedCollection
 ) => async (workItemTreeForCollection: WorkItemIDTree) => {
   const ids = unique(
@@ -50,7 +50,7 @@ const workItemsById = (
     ))
   ).filter(exists);
 
-  const workItems = await getCollectionWorkItems(collection.name, ids);
+  const workItems = await getCollectionWorkItems(collection.name, ids, 'features-and-bugs');
   return workItems.reduce<Record<number, WorkItem>>((acc, wi) => {
     // Not immutable to avoid memory trashing
     acc[wi.id] = wi;
@@ -235,11 +235,6 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
       workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
     );
 
-    type AggregatedWorkItemsAndTypes = {
-      byId: Record<number, UIWorkItem>;
-      types: Record<string, UIWorkItemType>;
-    };
-
     const workItemFieldsByReferenceName = workItemFields.reduce<Record<string, WorkItemField>>(
       (acc, field) => {
         acc[field.referenceName] = field;
@@ -249,6 +244,11 @@ export default (config: ParsedConfig) => (collection: ParsedCollection) => {
     );
 
     const getFieldName = (f: string) => workItemFieldsByReferenceName[f]?.name || undefined;
+
+    type AggregatedWorkItemsAndTypes = {
+      byId: Record<number, UIWorkItem>;
+      types: Record<string, UIWorkItemType>;
+    };
 
     const { byId, types } = Object.entries(workItemsById).reduce<AggregatedWorkItemsAndTypes>((acc, [id, workItem]) => {
       acc.byId[Number(id)] = createUIWorkItem(workItem);

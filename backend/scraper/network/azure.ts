@@ -301,11 +301,11 @@ export default (config: ParsedConfig) => {
         })
       ),
 
-    getCollectionWorkItems: async (collectionName: string, workItemIds: number[]) => {
+    getCollectionWorkItems: async (collectionName: string, workItemIds: number[], queryName: string) => {
       const workItemsById = (await Promise.all(chunkArray(workItemIds, 200)
         .map((chunk, index) => (
           usingDiskCache<{ count: number; value: WorkItem[] }>(
-            [collectionName, 'work-items', 'by-id', String(index)],
+            [collectionName, 'work-items', 'by-id', queryName, String(index)],
             () => fetch(
               url(collectionName, null, `/wit/workitems/?${qs.stringify({
                 ...apiVersion,
