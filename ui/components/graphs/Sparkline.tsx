@@ -9,7 +9,7 @@ import type { Renderer } from './sparkline-renderers';
 import { pathRenderer } from './sparkline-renderers';
 
 const popoverSvgConfig = {
-  width: 250,
+  width: 350,
   height: 150,
   yAxisLabelHeight: 15,
   yAxisLabelWidth: 40,
@@ -17,7 +17,7 @@ const popoverSvgConfig = {
   xAxisOverhang: 0,
   yAxisOverhang: 0,
   horizontalGridLineCount: 4,
-  verticalGridLineCount: 4,
+  verticalGridLineCount: 6,
   topPadding: 5
 };
 
@@ -88,7 +88,7 @@ const computeLineGraphData = (
         height: config.yAxisLabelHeight
       }
     })),
-    verticalGridLines: range(1, config.verticalGridLineCount + 1)
+    verticalGridLines: range(0, config.verticalGridLineCount + 1)
       .map(gridLineIndex => ({
         lineCoords: {
           x1: popoverXCoord(Math.round(gridLineIndex * (data.length / (config.verticalGridLineCount)))),
@@ -106,9 +106,9 @@ const computeLineGraphData = (
         label: (() => {
           const numWeeks = data.length;
           const weeksPerPart = numWeeks / config.verticalGridLineCount;
-          const weekIndex = numWeeks - (weeksPerPart * gridLineIndex) - 1;
+          const weekIndex = numWeeks - (weeksPerPart * gridLineIndex);
           const date = new Date();
-          date.setDate(date.getDate() - (weekIndex * 7));
+          date.setDate(date.getDate() - ((weekIndex - 1) * 7));
           return shortDate(date);
         })()
       })),
