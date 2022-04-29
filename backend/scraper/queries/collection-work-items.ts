@@ -1,4 +1,4 @@
-import type { ParsedCollection } from './parse-config';
+import type { ParsedCollection } from '../parse-config';
 
 const dayInMs = 24 * 60 * 60 * 1000;
 

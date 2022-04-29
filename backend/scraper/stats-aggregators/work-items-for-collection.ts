@@ -11,7 +11,7 @@ import type { WorkItemAnalysis } from '../types';
 import type {
   WorkItem, WorkItemField, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
 } from '../types-azure';
-import { queryForCollectionWorkItems } from '../work-item-queries';
+import { queryForCollectionWorkItems } from '../queries/collection-work-items';
 import { getOverviewData } from './work-item-overview';
 import { workItemTypeId, workItemTypeIconColor } from './work-item-utils';
 

@@ -1,39 +1,8 @@
 import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azure';
-
-const priorities = ['1', '2', '3', '4', '5'] as const;
-
-const queries = {
-  automatedTestCases: (projectName: string) => `
-    SELECT [System.Id] FROM workitems
-    WHERE
-      [System.WorkItemType] = 'Test Case'
-      AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
-      AND [System.TeamProject] = '${projectName}'
-  `,
-  notAutomatedTestCases: (projectName: string) => `
-    SELECT [System.Id] FROM workitems
-    WHERE
-      [System.WorkItemType] = 'Test Case'
-      AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
-      AND [System.TeamProject] = '${projectName}'
-  `,
-  automatedTestCasesOfPriority: (projectName: string, priority: (typeof priorities)[number]) => `
-    SELECT [System.Id] FROM workitems
-    WHERE
-      [System.WorkItemType] = 'Test Case'
-      AND [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
-      AND [Microsoft.VSTS.Common.Priority] = ${priority}
-      AND [System.TeamProject] = '${projectName}'
-  `,
-  notAutomatedTestCasesOfPriority: (projectName: string, priority: (typeof priorities)[number]) => `
-    SELECT [System.Id] FROM workitems
-    WHERE
-      [System.WorkItemType] = 'Test Case'
-      AND NOT [Microsoft.VSTS.TCM.AutomationStatus] IN ('Complete', 'Automated', 'Done')
-      AND [Microsoft.VSTS.Common.Priority] = ${priority}
-      AND [System.TeamProject] = '${projectName}'
-  `
-};
+import {
+  automatedTestCases, automatedTestCasesOfPriority,
+  notAutomatedTestCases, notAutomatedTestCasesOfPriority, priorities
+} from '../queries/test-cases';
 
 export default async (
   getIds: (query: string) => Promise<WorkItemQueryResult<WorkItemQueryFlatResult>>,
@@ -42,8 +11,8 @@ export default async (
   const getCount = (query: string) => getIds(query).then(r => r.workItems.length);
 
   const [
-    automatedTestCases,
-    notAutomatedTestCases,
+    automatedTestCasesCount,
+    notAutomatedTestCasesCount,
     automatedTestCasesP1,
     automatedTestCasesP2,
     automatedTestCasesP3,
@@ -55,15 +24,15 @@ export default async (
     notAutomatedTestCasesP4,
     notAutomatedTestCasesP5
   ] = await Promise.all([
-    getCount(queries.automatedTestCases(projectName)),
-    getCount(queries.notAutomatedTestCases(projectName)),
-    ...priorities.map(priority => getCount(queries.automatedTestCasesOfPriority(projectName, priority))),
-    ...priorities.map(priority => getCount(queries.notAutomatedTestCasesOfPriority(projectName, priority)))
+    getCount(automatedTestCases(projectName)),
+    getCount(notAutomatedTestCases(projectName)),
+    ...priorities.map(priority => getCount(automatedTestCasesOfPriority(projectName, priority))),
+    ...priorities.map(priority => getCount(notAutomatedTestCasesOfPriority(projectName, priority)))
   ]);
 
   return {
     automated: {
-      total: automatedTestCases,
+      total: automatedTestCasesCount,
       p1: automatedTestCasesP1,
       p2: automatedTestCasesP2,
       p3: automatedTestCasesP3,
@@ -71,7 +40,7 @@ export default async (
       p5: automatedTestCasesP5
     },
     notAutomated: {
-      total: notAutomatedTestCases,
+      total: notAutomatedTestCasesCount,
       p1: notAutomatedTestCasesP1,
       p2: notAutomatedTestCasesP2,
       p3: notAutomatedTestCasesP3,
