@@ -365,10 +365,19 @@ export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 
   collection: string;
   team: string;
   theme: string;
+  plannedStart?: string;
+  plannedCompletion?: string;
+  actualStart?: string;
+  actualCompletion?: string;
 };
 
 export type UIChangeProgram = {
   lastUpdateDate: string;
-  name: string;
-  changeProgramTasks: UIChangeProgramTask[];
+  details: null | {
+    taskName: string;
+    name: string;
+    startedState: string;
+    doneState: string;
+    tasks: UIChangeProgramTask[];
+  };
 };

@@ -6,7 +6,7 @@ import { singular } from 'pluralize';
 import type {
   AnalysedProjects, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
-  UIChangeProgramTask, UIProjectAnalysis
+  UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist } from '../utils';
 import type { ProjectAnalysis } from './types';
@@ -180,11 +180,25 @@ export const writeSummaryMetricsFile = (summary: SummaryMetrics) => (
   writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
 );
 
-export const writeChangeProgramFile = (config: ParsedConfig) => (changeProgramTasks: UIChangeProgramTask[]) => (
-  writeFile(['./'], 'change-program.json', JSON.stringify({
+export const writeChangeProgramFile = (config: ParsedConfig) => (tasks: UIChangeProgramTask[]) => {
+  const someCollectionWithChangeProgram = config.azure.collections.find(c => c.changeProgram);
+
+  const changeProgram: UIChangeProgram = {
     lastUpdateDate: new Date().toISOString(),
-    taskName: config.azure.collections[0].changeProgram?.workItemTypeName,
-    name: config.azure.collections[0].changeProgram?.name,
-    changeProgramTasks
-  }))
-);
+    details: someCollectionWithChangeProgram
+      ? {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        taskName: someCollectionWithChangeProgram.changeProgram!.workItemTypeName,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        name: someCollectionWithChangeProgram.changeProgram!.name,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        startedState: someCollectionWithChangeProgram.changeProgram!.startedState,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        doneState: someCollectionWithChangeProgram.changeProgram!.doneState,
+        tasks
+      }
+      : null
+  };
+
+  return writeFile(['./'], 'change-program.json', JSON.stringify(changeProgram));
+};

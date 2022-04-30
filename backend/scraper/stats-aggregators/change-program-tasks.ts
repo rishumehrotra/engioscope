@@ -8,7 +8,7 @@ import type { WorkItem, WorkItemQueryFlatResult, WorkItemQueryResult } from '../
 const createChangeProgramTask = (collectionConfig: ParsedCollection) => (wi: WorkItem): UIChangeProgramTask => ({
   id: wi.id,
   title: wi.fields['System.Title'],
-  url: wi.url,
+  url: wi.url.replace('_apis/wit/workItems', '_workitems/edit'),
   state: wi.fields['System.State'],
   project: wi.fields['System.TeamProject'],
   collection: collectionConfig.name,
@@ -21,7 +21,19 @@ const createChangeProgramTask = (collectionConfig: ParsedCollection) => (wi: Wor
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   team: wi.fields[collectionConfig.changeProgram!.teamNameField],
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  theme: wi.fields[collectionConfig.changeProgram!.themeNameField]
+  theme: wi.fields[collectionConfig.changeProgram!.themeNameField],
+  plannedStart: collectionConfig.changeProgram?.plannedStartDateField
+    ? wi.fields[collectionConfig.changeProgram.plannedStartDateField]
+    : undefined,
+  plannedCompletion: collectionConfig.changeProgram?.plannedCompletionDateField
+    ? wi.fields[collectionConfig.changeProgram.plannedCompletionDateField]
+    : undefined,
+  actualStart: collectionConfig.changeProgram?.actualStartDateField
+    ? wi.fields[collectionConfig.changeProgram.actualStartDateField]
+    : undefined,
+  actualCompletion: collectionConfig.changeProgram?.actualCompletionDateField
+    ? wi.fields[collectionConfig.changeProgram.actualCompletionDateField]
+    : undefined
 });
 
 const queryName = 'change-program-tasks';

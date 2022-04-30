@@ -12,12 +12,12 @@ const ChangeProgram: React.FC = () => {
   return (
     <>
       <Header
-        title={changeProgram?.name || ''}
+        title={changeProgram?.details?.name || 'Change program'}
         lastUpdated={changeProgram ? new Date(changeProgram.lastUpdateDate) : null}
       />
       <div className="mx-32">
-        {changeProgram ? (
-          <ByTheme changeProgram={changeProgram} />
+        {changeProgram?.details ? (
+          <ByTheme changeProgramDetails={changeProgram.details} />
         ) : (
           <Loading />
         )}

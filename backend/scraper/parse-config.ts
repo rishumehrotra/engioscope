@@ -41,6 +41,13 @@ type ChangeProgramConfig = {
   workItemTypeName: string;
   teamNameField: string;
   themeNameField: string;
+  startedState: string;
+  doneState: string;
+  ignoreStates?: string[];
+  plannedStartDateField?: string;
+  plannedCompletionDateField?: string;
+  actualStartDateField?: string;
+  actualCompletionDateField?: string;
 };
 
 type CollectionConfig = {
@@ -136,6 +143,13 @@ export type ParsedCollectionChangeProgramConfig = Readonly<{
   workItemTypeName: string;
   teamNameField: string;
   themeNameField: string;
+  ignoreStates: string[];
+  startedState: string;
+  doneState: string;
+  plannedStartDateField?: string;
+  plannedCompletionDateField?: string;
+  actualStartDateField?: string;
+  actualCompletionDateField?: string;
 }>;
 
 export type ParsedProjectConfig = Readonly<{
@@ -230,7 +244,22 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         teamNameField: (collection.changeProgram?.teamNameField ?? config.azure.changeProgram?.teamNameField)!,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        themeNameField: (collection.changeProgram?.themeNameField ?? config.azure.changeProgram?.themeNameField)!
+        themeNameField: (collection.changeProgram?.themeNameField ?? config.azure.changeProgram?.themeNameField)!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        startedState: (collection.changeProgram?.startedState ?? config.azure.changeProgram?.startedState)!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        doneState: (collection.changeProgram?.doneState ?? config.azure.changeProgram?.doneState)!,
+        ignoreStates: collection.changeProgram?.ignoreStates ?? config.azure.changeProgram?.ignoreStates ?? [],
+        plannedStartDateField: (collection.changeProgram?.plannedStartDateField ?? config.azure.changeProgram?.plannedStartDateField),
+        plannedCompletionDateField: (
+          collection.changeProgram?.plannedCompletionDateField
+          ?? config.azure.changeProgram?.plannedCompletionDateField
+        ),
+        actualStartDateField: (collection.changeProgram?.actualStartDateField ?? config.azure.changeProgram?.actualStartDateField),
+        actualCompletionDateField: (
+          collection.changeProgram?.actualCompletionDateField
+          ?? config.azure.changeProgram?.actualCompletionDateField
+        )
       }
       : null
   );
