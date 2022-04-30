@@ -20,6 +20,8 @@ type ProjectName = string;
 type WorkItemTypeName = string;
 type WorkItemTypeByTypeName = Record<WorkItemTypeName, WorkItemType>;
 
+const queryName = 'features-and-bugs';
+
 const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
   (acc, workItemType) => {
     acc[workItemType.name] = workItemType;
@@ -50,7 +52,7 @@ const workItemsById = (
     ))
   ).filter(exists);
 
-  const workItems = await getCollectionWorkItems(collection.name, ids, 'features-and-bugs');
+  const workItems = await getCollectionWorkItems(collection.name, ids, queryName);
   return workItems.reduce<Record<number, WorkItem>>((acc, wi) => {
     // Not immutable to avoid memory trashing
     acc[wi.id] = wi;
@@ -178,7 +180,7 @@ const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedColle
 
   const workItemDetails = async () => {
     const workItemTreeForCollection: WorkItemIDTree = await getCollectionWorkItemIdsForQuery(
-      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection)
+      collection.name, queryForCollectionWorkItems(config.azure.queryFrom, collection), queryName
     );
 
     const workItems = await workItemIdTree(workItemTreeForCollection);

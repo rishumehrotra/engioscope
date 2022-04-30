@@ -36,10 +36,18 @@ type CollectionWorkItemConfig = {
   }[];
 };
 
+type ChangeProgramConfig = {
+  name?: string;
+  workItemTypeName: string;
+  teamNameField: string;
+  themeNameField: string;
+};
+
 type CollectionConfig = {
   name: string;
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
+  changeProgram?: ChangeProgramConfig;
   environments?: string[];
   projects: (string | ProjectConfig)[];
 };
@@ -62,6 +70,7 @@ type AzureConfig = {
   lookAtPast: string;
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
+  changeProgram?: ChangeProgramConfig;
   collections: CollectionConfig[];
   environments?: string[];
   summaryPageGroups?: ({
@@ -122,6 +131,13 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   }[];
 }>;
 
+export type ParsedCollectionChangeProgramConfig = Readonly<{
+  name: string;
+  workItemTypeName: string;
+  teamNameField: string;
+  themeNameField: string;
+}>;
+
 export type ParsedProjectConfig = Readonly<{
   name: string;
   releasePipelines: ReleasePipelineConfig;
@@ -141,6 +157,7 @@ export type ParsedCollection = Readonly<{
   name: string;
   workitems: ParsedCollectionWorkItemConfig;
   projects: ParsedProjectConfig[];
+  changeProgram: null | ParsedCollectionChangeProgramConfig;
 }>;
 
 export type ParsedConfig = Readonly<{
@@ -202,9 +219,26 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     }))
   };
 
+  const changeProgram: null | ParsedCollectionChangeProgramConfig = (
+    (collection.changeProgram || config.azure.changeProgram)
+      ? {
+        name: collection.changeProgram?.name
+          ?? config.azure.changeProgram?.name
+          ?? 'Change program',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        workItemTypeName: (collection.changeProgram?.workItemTypeName ?? config.azure.changeProgram?.workItemTypeName)!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        teamNameField: (collection.changeProgram?.teamNameField ?? config.azure.changeProgram?.teamNameField)!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        themeNameField: (collection.changeProgram?.themeNameField ?? config.azure.changeProgram?.themeNameField)!
+      }
+      : null
+  );
+
   return {
     name: collection.name,
     workitems,
+    changeProgram,
     projects: collection.projects.map<ParsedProjectConfig>(project => {
       if (typeof project === 'string') {
         return {

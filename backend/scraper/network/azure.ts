@@ -280,7 +280,7 @@ export default (config: ParsedConfig) => {
 
     getCollectionWorkItemIdsForQuery:
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(
-        collectionName: string, query: string
+        collectionName: string, query: string, queryName: string
       ) => (
         usingDiskCache<T>(
           [collectionName, 'work-items', 'work-items', `ids_${md5(query)}`],
@@ -295,7 +295,7 @@ export default (config: ParsedConfig) => {
           )
         ).then(async res => {
           if (!res.fromCache) {
-            await clearDiskCache([collectionName, 'work-items', 'by-id']);
+            await clearDiskCache([collectionName, 'work-items', 'by-id', queryName]);
           }
           return res.data as T;
         })

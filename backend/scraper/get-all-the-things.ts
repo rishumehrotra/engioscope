@@ -5,7 +5,7 @@ import { tap, zip } from 'rambda';
 import tar from 'tar';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import aggregationWriter, { writeSummaryMetricsFile } from './aggregation-writer';
+import aggregationWriter, { writeChangeProgramFile, writeSummaryMetricsFile } from './aggregation-writer';
 import azure from './network/azure';
 import type { ParsedConfig } from './parse-config';
 import projectAnalyser from './project-analyser';
@@ -14,6 +14,7 @@ import type { ProjectAnalysis } from './types';
 import summariseResults from './summarise-results';
 import { fetchCounters } from './network/fetch-with-disk-cache';
 import { mapSettleSeries, startTimer } from '../utils';
+import changeProgramTasks from './stats-aggregators/change-program-tasks';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -24,10 +25,20 @@ const scrape = async (config: ParsedConfig) => {
   logStep('Starting scrape...');
   const time = startTimer();
 
-  const { getCollectionWorkItemFields } = azure(config);
+  const {
+    getCollectionWorkItemFields, getCollectionWorkItemIdsForQuery,
+    getCollectionWorkItems
+  } = azure(config);
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
   const collectionWorkItems = workItemsForCollection(config);
+
+  const changeProgramWorkItems = Promise.all(
+    config.azure.collections.map(changeProgramTasks(
+      getCollectionWorkItemIdsForQuery,
+      getCollectionWorkItems
+    ))
+  ).then(x => x.flat());
 
   const projects = config.azure.collections.flatMap(collection => {
     // Execute these only once per collection
@@ -75,15 +86,18 @@ const scrape = async (config: ParsedConfig) => {
 
   logStep(`Scraping completed in ${time()}`);
 
-  await writeSummaryMetricsFile(summariseResults(
-    config,
-    results
-      .map(r => ({
-        collectionConfig: r[0][0],
-        projectConfig: r[0][1],
-        analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
-      }))
-  ));
+  await Promise.all([
+    changeProgramWorkItems.then(writeChangeProgramFile(config)),
+    () => writeSummaryMetricsFile(summariseResults(
+      config,
+      results
+        .map(r => ({
+          collectionConfig: r[0][0],
+          projectConfig: r[0][1],
+          analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
+        }))
+    ))
+  ]);
 };
 
 const printFetchCounters = () => {

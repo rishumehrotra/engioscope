@@ -360,3 +360,15 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
 };
 
 export type SummaryMetrics = SummaryMetricsType;
+
+export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
+  collection: string;
+  team: string;
+  theme: string;
+};
+
+export type UIChangeProgram = {
+  lastUpdatedDate: string;
+  name: string;
+  changeProgramTasks: UIChangeProgramTask[];
+};

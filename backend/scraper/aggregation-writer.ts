@@ -4,10 +4,9 @@ import { join } from 'path';
 import debug from 'debug';
 import { singular } from 'pluralize';
 import type {
-  AnalysedProjects,
-  ProjectOverviewAnalysis,
-  ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
-  ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics, UIProjectAnalysis
+  AnalysedProjects, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
+  ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
+  UIChangeProgramTask, UIProjectAnalysis
 } from '../../shared/types';
 import { doesFileExist } from '../utils';
 import type { ProjectAnalysis } from './types';
@@ -179,4 +178,13 @@ export default (config: ParsedConfig) => (collectionName: string, projectConfig:
 
 export const writeSummaryMetricsFile = (summary: SummaryMetrics) => (
   writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
+);
+
+export const writeChangeProgramFile = (config: ParsedConfig) => (changeProgramTasks: UIChangeProgramTask[]) => (
+  writeFile(['./'], 'change-program.json', JSON.stringify({
+    lastUpdateDate: new Date().toISOString(),
+    taskName: config.azure.collections[0].changeProgram?.workItemTypeName,
+    name: config.azure.collections[0].changeProgram?.name,
+    changeProgramTasks
+  }))
 );
