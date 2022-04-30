@@ -1,7 +1,8 @@
 import type {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, UIWorkItemRevision, ProjectOverviewAnalysis,
-  AnalyticsItem, PipelineDefinitions, SummaryMetrics, AnalysedProjects
+  AnalyticsItem, PipelineDefinitions, SummaryMetrics, AnalysedProjects,
+  UIChangeProgram
 } from '../shared/types';
 
 const json = (res: Response) => res.json();
@@ -40,4 +41,8 @@ export const releaseDefinitions = (collection: string, project: string, definiti
 
 export const metricsSummary = (): Promise<SummaryMetrics> => (
   fetch('/api/summary-metrics.json').then(json)
+);
+
+export const changeProgramDetails = (): Promise<UIChangeProgram> => (
+  fetch('/api/change-program.json').then(json)
 );

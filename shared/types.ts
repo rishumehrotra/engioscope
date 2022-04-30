@@ -368,7 +368,7 @@ export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 
 };
 
 export type UIChangeProgram = {
-  lastUpdatedDate: string;
+  lastUpdateDate: string;
   name: string;
   changeProgramTasks: UIChangeProgramTask[];
 };

@@ -8,6 +8,7 @@ import { SortContextProvider } from './hooks/sort-hooks';
 import RecordAnalytics from './components/RecordAnalytics';
 import Analytics from './pages/Analytics';
 import Summary from './pages/Summary';
+import ChangeProgram from './pages/ChangeProgram';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -28,6 +29,7 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/summary" element={<Summary />} />
+              <Route path="/change-program" element={<ChangeProgram />} />
               <Route path="/:collection/:project/*" element={<Project />} />
               <Route path="/" element={<Collection />} />
             </Routes>
