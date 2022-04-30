@@ -1,29 +1,8 @@
+import { prop } from 'rambda';
 import React, { useMemo } from 'react';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { UIChangeProgram, UIChangeProgramTask } from '../../../shared/types';
-
-const tooltip = (task: UIChangeProgramTask) => `
-  <div class="w-64">
-    <strong>${task.title}</strong><br />
-    Status: <strong>${task.state}</strong><br />
-  </div>
-`;
-
-const taskClassName = (task: UIChangeProgramTask) => {
-  if (task.state === 'New') {
-    return 'border-2 border-slate-600';
-  }
-
-  if (task.state === 'In Progress') {
-    return 'border-2 border-green-600';
-  }
-
-  if (task.state === 'Live') {
-    return 'border-2 border-green-600 bg-green-600';
-  }
-
-  return '';
-};
+import { tooltip, taskClassName } from './change-program-utils';
 
 const ByTheme: React.FC<{ changeProgramDetails: NonNullable<UIChangeProgram['details']> }> = ({ changeProgramDetails }) => {
   const byTheme = useMemo(() => (
@@ -53,23 +32,25 @@ const ByTheme: React.FC<{ changeProgramDetails: NonNullable<UIChangeProgram['det
 
                       <td>
                         <ul className="flex gap-1">
-                          {tasks.map(task => (
-                            <li
-                              key={task.id}
-                              className=""
-                              data-tip={tooltip(task)}
-                              data-html
-                            >
-                              <a
-                                href={task.url}
-                                className={`w-4 h-4 rounded-full block ${taskClassName(task)}`}
-                                target="_blank"
-                                rel="noreferrer"
+                          {tasks
+                            .sort(asc(byString(prop('state'))))
+                            .map(task => (
+                              <li
+                                key={task.id}
+                                className=""
+                                data-tip={tooltip(task)}
+                                data-html
                               >
-                                {' '}
-                              </a>
-                            </li>
-                          ))}
+                                <a
+                                  href={task.url}
+                                  className={`w-4 h-4 rounded-full block ${taskClassName(changeProgramDetails, task)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {' '}
+                                </a>
+                              </li>
+                            ))}
                         </ul>
                       </td>
                     </tr>
