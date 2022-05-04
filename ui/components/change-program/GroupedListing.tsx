@@ -1,5 +1,5 @@
 import { range } from 'rambda';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   CircularAlert, CircularCheckmark, Minus, Plus
 } from '../common/Icons';
@@ -116,7 +116,16 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup }) => {
   );
 };
 
-const ActivityGroupItem: React.FC<{ group: GroupedListingProps['planned']['groups'][number] }> = ({ group }) => {
+type ActivityGroupItemProps = {
+  group: GroupedListingProps['planned']['groups'][number];
+  isHovered: (weekIndex: number) => boolean;
+  mouseEvents: (weekIndex: number) => {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
+  };
+};
+
+const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered, mouseEvents }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   return (
@@ -140,8 +149,12 @@ const ActivityGroupItem: React.FC<{ group: GroupedListingProps['planned']['group
           </div>
         </td>
         {group.rolledUpByWeek.map(({ state, count }, index) => (
-          // eslint-disable-next-line react/no-array-index-key
-          <td key={index} className="text-center">
+          <td
+            // eslint-disable-next-line react/no-array-index-key
+            key={index}
+            className={`text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
+            {...mouseEvents(index)}
+          >
             <span className={`px-2 py-1 rounded-lg text-sm border border-transparent ${styleForState(state)}`}>
               {count === 0 ? ' ' : count}
             </span>
@@ -160,35 +173,52 @@ const ActivityGroupItem: React.FC<{ group: GroupedListingProps['planned']['group
   );
 };
 
-const ActivitiesTable: React.FC<{ title: string; activities: GroupedListingProps['planned'] }> = ({ title, activities }) => (
-  <>
-    <h2 className="text-xl font-semibold mt-20">{title}</h2>
-    <table className="w-full" cellPadding="3">
-      <thead>
-        <tr>
-          <th className="text-left w-1/2"> </th>
-          {activities.weeks.map(week => (
-            <th key={week.label} className="relative text-center">
-              <div className="absolute -top-4 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
-                <span className={`p-1 rounded-md ${week.highlight ? 'bg-orange-300' : ''}`}>
-                  {week.label}
-                </span>
-              </div>
-            </th>
+const ActivitiesTable: React.FC<{ title: string; activities: GroupedListingProps['planned'] }> = ({ title, activities }) => {
+  const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
+
+  const mouseEvents = useCallback((weekIndex: number) => ({
+    onMouseOver: () => setHoveredWeekIndex(weekIndex),
+    onMouseOut: () => setHoveredWeekIndex(null)
+  }), []);
+
+  const isHovered = (weekIndex: number) => hoveredWeekIndex === weekIndex;
+
+  return (
+    <>
+      <h2 className="text-xl font-semibold mt-20">{title}</h2>
+      <table className="w-full" cellPadding="3">
+        <thead>
+          <tr>
+            <th className="text-left w-1/2"> </th>
+            {activities.weeks.map((week, weekIndex) => (
+              <th
+                key={week.label}
+                className={`relative text-center ${isHovered(weekIndex) ? 'bg-gray-100' : ''}`}
+                {...mouseEvents(weekIndex)}
+              >
+                <div className="absolute -top-4 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
+                  <span className={`p-1 rounded-md ${week.highlight ? 'bg-orange-300' : ''}`}>
+                    {week.label}
+                  </span>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {activities.groups.map(group => (
+            <ActivityGroupItem
+              key={group.groupName}
+              group={group}
+              isHovered={isHovered}
+              mouseEvents={mouseEvents}
+            />
           ))}
-        </tr>
-      </thead>
-      <tbody>
-        {activities.groups.map(group => (
-          <ActivityGroupItem
-            key={group.groupName}
-            group={group}
-          />
-        ))}
-      </tbody>
-    </table>
-  </>
-);
+        </tbody>
+      </table>
+    </>
+  );
+};
 
 const GroupedListing: React.FC<GroupedListingProps> = ({ planned, unplanned }) => (
   <>
