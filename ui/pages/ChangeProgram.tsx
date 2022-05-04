@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { UIChangeProgram } from '../../shared/types';
-import ByTeam from '../components/change-program/ByTeam';
-import ByTheme from '../components/change-program/ByTheme';
+import { organizeBy } from '../components/change-program/change-program-utils';
+import GroupedListing from '../components/change-program/GroupedListing';
 import Switcher from '../components/common/Switcher';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
@@ -58,13 +58,7 @@ const ChangeProgram: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    {show
-                      ? (
-                        <ByTheme changeProgramDetails={changeProgram.details} />
-                      )
-                      : (
-                        <ByTeam changeProgramDetails={changeProgram.details} />
-                      )}
+                    <GroupedListing {...organizeBy(show ? 'theme' : 'team')(changeProgram.details.tasks)} />
                   </>
                 )}
             </div>

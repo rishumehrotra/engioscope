@@ -55,17 +55,19 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
   };
 };
 
-const latestMasterBuilds = (allMasterBuilds: Record<number, Build[] | undefined>) => (inTimeRange: (d: Date) => boolean) => (
-  Object.values(allMasterBuilds).reduce<Build[]>((acc, builds) => {
-    const latestBuild = head(
-      [...(builds || [])]
-        .filter(b => inTimeRange(b.startTime))
-        .sort(desc(byDate(prop('startTime'))))
-    );
+const latestBuilds = (allBuilds: Record<number, Build[] | undefined>) => (
+  (inTimeRange: (d: Date) => boolean) => (
+    Object.values(allBuilds).reduce<Build[]>((acc, builds) => {
+      const latestBuild = head(
+        [...(builds || [])]
+          .filter(b => inTimeRange(b.startTime))
+          .sort(desc(byDate(prop('startTime'))))
+      );
 
-    if (latestBuild) acc.push(latestBuild);
-    return acc;
-  }, [])
+      if (latestBuild) acc.push(latestBuild);
+      return acc;
+    }, [])
+  )
 );
 
 const extrapolateIfNeeded = async (testRunsByWeek: number[], historicalCount: () => Promise<number>) => {
@@ -107,7 +109,7 @@ const historicalTestCount = (
   const masterBuilds = getMasterBuilds(allMasterBuilds);
   const definitionIdsWithoutBuildsInFirstWeek = unique(
     Object.keys(allMasterBuilds)
-      .filter(repoId => latestMasterBuilds(masterBuilds(repoId))(T).length !== 0)
+      .filter(repoId => latestBuilds(masterBuilds(repoId))(T).length !== 0)
       .map(repoId => {
         const withoutBuilds = Object.entries(masterBuilds(repoId))
           .filter(([, builds]) => (
@@ -144,11 +146,11 @@ export default (
   );
 
   return async (repoId?: string): Promise<UITests> => {
-    const matchingBuilds = latestMasterBuilds(masterBuilds(repoId))(T);
+    const matchingBuilds = latestBuilds(masterBuilds(repoId))(T);
 
     if (matchingBuilds.length === 0) return null;
 
-    const latestBuildsInEachWeek = weeks.map(latestMasterBuilds(masterBuilds(repoId)));
+    const latestBuildsInEachWeek = weeks.map(latestBuilds(masterBuilds(repoId)));
 
     const interestingBuilds = [...new Set([
       ...matchingBuilds,

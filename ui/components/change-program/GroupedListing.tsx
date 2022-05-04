@@ -1,0 +1,200 @@
+import { range } from 'rambda';
+import React from 'react';
+import {
+  CircularAlert, CircularCheckmark, Minus, Plus
+} from '../common/Icons';
+import type { organizeBy, RollupTaskState, TaskState } from './change-program-utils';
+import { tooltip } from './change-program-utils';
+
+const styleForState = (state: RollupTaskState) => {
+  switch (state) {
+    case 'completed-on-time': return 'bg-green-600 border-green-600 completed-on-time';
+    case 'completed-late': return 'bg-orange-400 border-orange-400 completed-late';
+    case 'overdue': return 'bg-red-600 border-red-600 text-white overdue';
+    case 'planned': return 'border-black planned';
+    case 'unplanned': return 'border-black unplanned';
+    default: return 'border-transparent';
+  }
+};
+
+const styleForTask = (state: TaskState) => {
+  switch (state) {
+    case 'completed-on-time': return 'text-green-600';
+    case 'completed-late': return 'text-orange-400 completed-late';
+    case 'overdue': return 'text-red-600 overdue';
+    case 'planned': return 'text-gray-500';
+    default: return '';
+  }
+};
+
+const formatTitle = (title: string, teamName: string) => {
+  const regex = new RegExp(`.*${teamName.split(' ').join('\\ ')}\\s+\\|\\s+(.*)`);
+  const match = title.match(regex);
+  if (!match) return title.trim();
+  return match[1].trim();
+};
+
+type GroupedListingProps = ReturnType<ReturnType<typeof organizeBy>>;
+
+type ActivitySubgroupProps = {
+  subgroup: GroupedListingProps['planned']['groups'][number]['subgroups'][number];
+};
+
+const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  return (
+    <>
+      <tr
+        className="hover:bg-gray-100 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <td>
+          <div className="flex items-center gap-2 p-2 ml-8">
+            <div>
+              <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
+                {isExpanded
+                  ? <Minus className="w-4 -mt-1 inline-block" />
+                  : <Plus className="w-4 -mt-1 inline-block" />}
+              </span>
+            </div>
+            <span>
+              {subgroup.subgroupName}
+            </span>
+          </div>
+        </td>
+        {subgroup.rolledUpByWeek.map((value, index) => (
+          <td
+            // eslint-disable-next-line react/no-array-index-key
+            key={index}
+            className="text-center"
+          >
+            <span className={`px-2 py-1 rounded-lg text-sm border ${styleForState(value.state)}`}>
+              {value.count || ' '}
+            </span>
+          </td>
+        ))}
+      </tr>
+      {isExpanded && (
+        subgroup.tasks.map(({
+          task, weekIndex, status, weekCount
+        }) => (
+          <tr key={task.id} className="hover:bg-gray-100">
+            <td className="text-lg pr-4 py-1">
+              <a
+                href={task.url}
+                target="_blank"
+                rel="noreferrer"
+                className="link-text text-base pl-20 inline-block truncate max-w-screen-sm"
+                data-tip={tooltip(task)}
+                data-html
+              >
+                {formatTitle(task.title, task.team)}
+              </a>
+            </td>
+            {range(0, weekCount).map(value => (
+              <td
+                key={value}
+                className={`text-center ${
+                  value === weekIndex ? styleForTask(status) : ''
+                }`}
+              >
+                {/* eslint-disable-next-line no-nested-ternary */}
+                {value === weekIndex
+                  ? (
+                    status === 'overdue'
+                      ? <CircularAlert className="w-5 m-auto" />
+                      : <CircularCheckmark className="w-5 m-auto" />
+                  )
+                  : ' '}
+              </td>
+            ))}
+          </tr>
+        ))
+      )}
+    </>
+  );
+};
+
+const ActivityGroupItem: React.FC<{ group: GroupedListingProps['planned']['groups'][number] }> = ({ group }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  return (
+    <>
+      <tr
+        className="hover:bg-gray-100 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <td className="w-full">
+          <div className="flex items-center gap-2 p-2">
+            <div>
+              <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
+                {isExpanded
+                  ? <Minus className="w-4 -mt-1 inline-block" />
+                  : <Plus className="w-4 -mt-1 inline-block" />}
+              </span>
+            </div>
+            <span>
+              {group.groupName}
+            </span>
+          </div>
+        </td>
+        {group.rolledUpByWeek.map(({ state, count }, index) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <td key={index} className="text-center">
+            <span className={`px-2 py-1 rounded-lg text-sm border border-transparent ${styleForState(state)}`}>
+              {count === 0 ? ' ' : count}
+            </span>
+          </td>
+        ))}
+      </tr>
+      {isExpanded && (
+        group.subgroups.map(subgroup => (
+          <ActivitySubGroup
+            key={subgroup.subgroupName}
+            subgroup={subgroup}
+          />
+        ))
+      )}
+    </>
+  );
+};
+
+const ActivitiesTable: React.FC<{ title: string; activities: GroupedListingProps['planned'] }> = ({ title, activities }) => (
+  <>
+    <h2 className="text-xl font-semibold mt-20">{title}</h2>
+    <table className="w-full" cellPadding="3">
+      <thead>
+        <tr>
+          <th className="text-left w-1/2"> </th>
+          {activities.weeks.map(week => (
+            <th key={week.label} className="relative text-center">
+              <div className="absolute -top-4 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
+                <span className={`p-1 rounded-md ${week.highlight ? 'bg-orange-300' : ''}`}>
+                  {week.label}
+                </span>
+              </div>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {activities.groups.map(group => (
+          <ActivityGroupItem
+            key={group.groupName}
+            group={group}
+          />
+        ))}
+      </tbody>
+    </table>
+  </>
+);
+
+const GroupedListing: React.FC<GroupedListingProps> = ({ planned, unplanned }) => (
+  <>
+    <ActivitiesTable title="Planned activities" activities={planned} />
+    <ActivitiesTable title="Unplanned activities" activities={unplanned} />
+  </>
+);
+
+export default GroupedListing;
