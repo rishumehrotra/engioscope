@@ -35,7 +35,17 @@ const rollUpGroupStates = (states: RollupTaskState[]) => {
   return rollUpTaskStates(uniq(states).filter(state => state !== 'no-tasks') as TaskState[]);
 };
 
-export const taskTooltip = (task: UIChangeProgramTask) => `
+export const taskTooltip = (task: UIChangeProgramTask) => {
+  const showStatus = (className: string, label: string) => `
+  <div class="flex items-center">
+    <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
+    <span class="pl-2">
+      ${label}
+    </span>
+  </div>
+  `;
+
+  return `
   <div class="w-64">
     ${task.id}: <strong>${task.title}</strong><br />
     Status: <strong>${task.state}</strong><br />
@@ -45,15 +55,21 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
     ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
     ${(() => {
     switch (taskState(new Date())(task)) {
-      case 'completed-on-time': return '<span class="text-green-400">Completed on time</span>';
-      case 'completed-late': return '<span class="text-orange-400">Completed, delayed</span>';
-      case 'planned': return '<span class="text-gray-400">Planned</span>';
-      case 'overdue': return '<span class="text-red-400">Overdue</span>';
-      default: return '<span class="text-gray-400">Unplanned</span>';
+      case 'completed-on-time': return showStatus('bg-green-600', 'Completed on time');
+      case 'completed-late': return showStatus('bg-orange-600', 'Completed, delayed');
+      case 'overdue': return showStatus('bg-red-600', 'Overdue');
+      case 'planned': return showStatus('bg-gray-600', 'Planned');
+      default: return showStatus('bg-gray-600', 'Unplanned');
+      // case 'completed-on-time': return '<span class="text-green-400">Completed on time</span>';
+      // case 'completed-late': return '<span class="text-orange-400">Completed, delayed</span>';
+      // case 'planned': return '<span class="text-gray-400">Planned</span>';
+      // case 'overdue': return '<span class="text-red-400">Overdue</span>';
+      // default: return '<span class="text-gray-400">Unplanned</span>';
     }
   })()}
   </div>
 `;
+};
 
 export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks['weeks'][number]) => {
   const states = tasks.map(task => taskState(new Date())(task));
@@ -66,17 +82,24 @@ export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks
 
   const showCount = (count: number, label: string, className: string) => (
     count !== 0
-      ? `<span class="${className}"><strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}</span><br />`
+      ? (`
+        <div class="flex items-center">
+          <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
+          <span class="pl-2">
+            <strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}
+          </span>
+        </div>
+      `)
       : ''
   );
 
   return `
     Week: <strong>${week.label}</strong><br />
-    ${showCount(overdueCount, 'overdue', 'text-red-400')}
-    ${showCount(completedLateCount, 'completed late', 'text-orange-400')}
-    ${showCount(completedOnTimeCount, 'completed on time', 'text-green-400')}
-    ${showCount(plannedCount, 'planned', 'text-gray-400')}
-    ${showCount(unplannedCount, 'unplanned', 'text-gray-400')}
+    ${showCount(overdueCount, 'overdue', 'bg-red-600')}
+    ${showCount(completedLateCount, 'completed late', 'bg-orange-500')}
+    ${showCount(completedOnTimeCount, 'completed on time', 'bg-green-500')}
+    ${showCount(plannedCount, 'planned', 'bg-gray-500')}
+    ${showCount(unplannedCount, 'unplanned', 'bg-gray-500')}
   `;
 };
 

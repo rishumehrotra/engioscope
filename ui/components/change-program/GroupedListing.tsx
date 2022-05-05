@@ -6,7 +6,7 @@ import {
   CircularAlert, CircularCheckmark, Minus, Plus
 } from '../common/Icons';
 import type {
-  ListingType, OrganizedTasks, RollupTaskState, TaskState
+  OrganizedTasks, RollupTaskState, TaskState
 } from './change-program-utils';
 import { rollupTooltip, taskTooltip } from './change-program-utils';
 
@@ -45,12 +45,11 @@ type ActivitySubgroupProps = {
     onMouseOver: () => void;
     onMouseOut: () => void;
   };
-  listingType: ListingType;
   weeks: OrganizedTasks['weeks'];
 };
 
 const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
-  subgroup, isHovered, mouseEvents, listingType, weeks
+  subgroup, isHovered, mouseEvents, weeks
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -80,8 +79,8 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
             </div>
             <span>
               {subgroup.subgroupName}
-              <span className="text-xs text-gray-500">
-                {`: ${listingType === 'planned' ? 'Planned' : 'Unplanned'}: ${subgroup.tasks.length} of ${subgroup.totalTasks}`}
+              <span className="pl-2 text-xs text-gray-600">
+                {`${subgroup.tasks.length} of ${subgroup.totalTasks}`}
               </span>
             </span>
           </div>
@@ -97,7 +96,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
               .map(t => t.task), weeks[index])}
             data-html
           >
-            <span className={`px-2 py-1 rounded-lg text-sm border ${styleForState(value.state)}`}>
+            <span className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold ${styleForState(value.state)}`}>
               {value.count || ' '}
             </span>
           </td>
@@ -157,12 +156,11 @@ type ActivityGroupItemProps = {
     onMouseOver: () => void;
     onMouseOut: () => void;
   };
-  listingType: ListingType;
   weeks: OrganizedTasks['weeks'];
 };
 
 const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
-  group, isHovered, mouseEvents, listingType, weeks
+  group, isHovered, mouseEvents, weeks
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -186,8 +184,8 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             </div>
             <span>
               {group.groupName}
-              <span className="text-xs text-gray-500">
-                {`: ${listingType === 'planned' ? 'Planned' : 'Unplanned'}: ${group.groupTasks} of ${group.totalTasks}`}
+              <span className="pl-2 text-xs text-gray-600">
+                {` ${group.groupTasks} of ${group.totalTasks}`}
               </span>
             </span>
           </div>
@@ -205,7 +203,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             data-html
           >
             <span
-              className={`px-2 py-1 rounded-lg text-sm border border-transparent ${styleForState(state)}`}
+              className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold border-transparent ${styleForState(state)}`}
             >
               {count === 0 ? ' ' : count}
             </span>
@@ -219,7 +217,6 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             subgroup={subgroup}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
-            listingType={listingType}
             weeks={weeks}
           />
         ))
@@ -254,14 +251,14 @@ const TableHeader: React.FC<TableHeaderProps> = ({
         role="button"
         tabIndex={0}
       >
-        <span className="inline-block text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
+        <span className="inline-block bg-gray-700 px-1 text-white font-semibold rounded-md">
           {isExpanded
             ? <Minus className="w-4 -mt-1 inline-block" />
             : <Plus className="w-4 -mt-1 inline-block" />}
         </span>
         <h2 className="text-xl font-semibold">
           {title}
-          <span className="text-xs text-gray-500 font-normal pl-2">
+          <span className="text-xs text-gray-600 font-normal pl-2">
             {counters}
           </span>
         </h2>
@@ -323,7 +320,6 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
             group={group}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
-            listingType="planned"
             weeks={groups.weeks}
           />
         ))}
@@ -346,7 +342,6 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
             group={group}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
-            listingType="unplanned"
             weeks={groups.weeks}
           />
         ))}
