@@ -5,7 +5,7 @@ import {
   CircularAlert, CircularCheckmark, Minus, Plus
 } from '../common/Icons';
 import type {
-  OrganizedTasks, RollupTaskState, TaskState
+  ListingType, OrganizedTasks, RollupTaskState, TaskState
 } from './change-program-utils';
 import { taskTooltip } from './change-program-utils';
 
@@ -44,9 +44,12 @@ type ActivitySubgroupProps = {
     onMouseOver: () => void;
     onMouseOut: () => void;
   };
+  listingType: ListingType;
 };
 
-const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered, mouseEvents }) => {
+const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
+  subgroup, isHovered, mouseEvents, listingType
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   return (
@@ -58,7 +61,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered
         <td>
           <div
             className="grid grid-cols-2 items-center gap-2 p-2 ml-8"
-            style={{ gridTemplateColumns: '35px 1fr' }}
+            style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
               {subgroup.tasks.length
@@ -75,6 +78,9 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered
             </div>
             <span>
               {subgroup.subgroupName}
+              <span className="text-sm text-gray-500">
+                {`: ${listingType === 'planned' ? 'Planned' : 'Unplanned'}: ${subgroup.tasks.length} of ${subgroup.totalTasks}`}
+              </span>
             </span>
           </div>
         </td>
@@ -145,9 +151,12 @@ type ActivityGroupItemProps = {
     onMouseOver: () => void;
     onMouseOut: () => void;
   };
+  listingType: ListingType;
 };
 
-const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered, mouseEvents }) => {
+const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
+  group, isHovered, mouseEvents, listingType
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   return (
@@ -157,7 +166,10 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered,
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <td className="w-full">
-          <div className="flex items-center gap-2 p-2">
+          <div
+            className="grid grid-cols-2 items-center gap-2 p-2"
+            style={{ gridTemplateColumns: '25px 1fr' }}
+          >
             <div>
               <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
                 {isExpanded
@@ -167,6 +179,9 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered,
             </div>
             <span>
               {group.groupName}
+              <span className="text-sm text-gray-500">
+                {`: ${listingType === 'planned' ? 'Planned' : 'Unplanned'}: ${group.groupTasks} of ${group.totalTasks}`}
+              </span>
             </span>
           </div>
         </td>
@@ -190,6 +205,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered,
             subgroup={subgroup}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
+            listingType={listingType}
           />
         ))
       )}
@@ -259,6 +275,7 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
               group={group}
               isHovered={isHovered}
               mouseEvents={mouseEvents}
+              listingType="planned"
             />
           ))}
           <TableHeader
@@ -273,6 +290,7 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
               group={group}
               isHovered={isHovered}
               mouseEvents={mouseEvents}
+              listingType="unplanned"
             />
           ))}
         </tbody>

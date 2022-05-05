@@ -1,9 +1,12 @@
 import {
-  add, allPass, compose, identity, not, prop, range, uniq
+  add, allPass, compose, identity, length, not, pipe, prop, range, uniq
 } from 'rambda';
+import { count, incrementBy } from '../../../shared/reducer-utils';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { UIChangeProgram, UIChangeProgramTask } from '../../../shared/types';
 import { shortDate } from '../../helpers/utils';
+
+export type ListingType = 'planned' | 'unplanned';
 
 const taskState = (referenceDate: Date) => (task: UIChangeProgramTask) => {
   if (!task.plannedCompletion) return 'unplanned';
@@ -51,6 +54,7 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
   })()}
   </div>
 `;
+
 export const taskClassName = (
   details: NonNullable<UIChangeProgram['details']>, task: UIChangeProgramTask
 ) => {
@@ -107,7 +111,7 @@ export const organizeTasksByWeek = (
 const isOfTeam = (teamName: string) => (task: UIChangeProgramTask) => task.team === teamName;
 const isOfTheme = (themeName: string) => (task: UIChangeProgramTask) => task.theme === themeName;
 const isPlanned = (task: UIChangeProgramTask) => task.plannedCompletion !== undefined;
-const isOfType = (listingType: 'planned' | 'unplanned') => (
+const isOfType = (listingType: ListingType) => (
   compose(listingType === 'planned' ? identity : not, isPlanned)
 );
 
@@ -129,7 +133,7 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
 
   const taskStateToday = taskState(today);
 
-  const createGroupingWith = (listingType: 'planned' | 'unplanned') => {
+  const createGroupingWith = (listingType: ListingType) => {
     const splitByGroups = firstGroup.map(groupName => ({
       groupName,
       subgroups: secondGroup.map(subgroupName => {
@@ -141,6 +145,10 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
 
         return {
           subgroupName,
+          totalTasks: tasks.filter(allPass([
+            isOfTeam(type === 'theme' ? subgroupName : groupName),
+            isOfTheme(type === 'theme' ? groupName : subgroupName)
+          ])).length,
           tasks: Object.entries(tasksByWeek)
             .flatMap(([weekStart, tasks], weekIndex) => {
               const applicableTasks = tasks.filter(applicableTasksFilter);
@@ -170,6 +178,8 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
     return splitByGroups
       .map(group => ({
         ...group,
+        totalTasks: count<(typeof group.subgroups)[number]>(incrementBy(prop('totalTasks')))(group.subgroups),
+        groupTasks: count<(typeof group.subgroups)[number]>(incrementBy(pipe(prop('tasks'), length)))(group.subgroups),
         rolledUpByWeek: range(0, Object.keys(tasksByWeek).length)
           .map(weekIndex => ({
             state: rollUpGroupStates(
