@@ -1,5 +1,6 @@
-import { range } from 'rambda';
+import { not, prop, range } from 'rambda';
 import React, { useCallback, useState } from 'react';
+import { count, incrementBy } from '../../../shared/reducer-utils';
 import type { UIChangeProgramTask } from '../../../shared/types';
 import {
   CircularAlert, CircularCheckmark, Minus, Plus
@@ -7,10 +8,7 @@ import {
 import type {
   ListingType, OrganizedTasks, RollupTaskState, TaskState
 } from './change-program-utils';
-import {
-  rollupTooltip,
-  taskTooltip
-} from './change-program-utils';
+import { rollupTooltip, taskTooltip } from './change-program-utils';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
@@ -64,7 +62,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
       >
         <td>
           <div
-            className="grid grid-cols-2 items-center gap-2 p-2 ml-8"
+            className="grid grid-cols-2 items-center gap-2 p-2 ml-16"
             style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
@@ -82,7 +80,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
             </div>
             <span>
               {subgroup.subgroupName}
-              <span className="text-sm text-gray-500">
+              <span className="text-xs text-gray-500">
                 {`: ${listingType === 'planned' ? 'Planned' : 'Unplanned'}: ${subgroup.tasks.length} of ${subgroup.totalTasks}`}
               </span>
             </span>
@@ -120,7 +118,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
                 href={task.url}
                 target="_blank"
                 rel="noreferrer"
-                className="link-text text-base pl-20 inline-block truncate max-w-screen-sm"
+                className="link-text text-base pl-28 inline-block truncate max-w-screen-sm"
               >
                 {formatTitle(task)}
               </a>
@@ -176,7 +174,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
       >
         <td className="w-full">
           <div
-            className="grid grid-cols-2 items-center gap-2 p-2"
+            className="grid grid-cols-2 items-center gap-2 p-2 ml-8"
             style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
@@ -188,7 +186,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             </div>
             <span>
               {group.groupName}
-              <span className="text-sm text-gray-500">
+              <span className="text-xs text-gray-500">
                 {`: ${listingType === 'planned' ? 'Planned' : 'Unplanned'}: ${group.groupTasks} of ${group.totalTasks}`}
               </span>
             </span>
@@ -238,14 +236,36 @@ type TableHeaderProps = {
   };
   title: string;
   weeks: OrganizedTasks['weeks'];
+  isExpanded: boolean;
+  toggleExpand: () => void;
+  counters: string;
 };
 
 const TableHeader: React.FC<TableHeaderProps> = ({
-  title, weeks, isHovered, mouseEvents
+  title, weeks, isHovered, mouseEvents, isExpanded, toggleExpand, counters
 }) => (
   <tr>
     <th className="text-left w-1/2">
-      <h2 className="text-xl font-semibold mt-16 mb-2">{title}</h2>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+      <div
+        className="grid grid-cols-2 items-center gap-2 p-2 mt-16 mb-2"
+        style={{ gridTemplateColumns: '25px 1fr' }}
+        onClick={toggleExpand}
+        role="button"
+        tabIndex={0}
+      >
+        <span className="inline-block text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
+          {isExpanded
+            ? <Minus className="w-4 -mt-1 inline-block" />
+            : <Plus className="w-4 -mt-1 inline-block" />}
+        </span>
+        <h2 className="text-xl font-semibold">
+          {title}
+          <span className="text-xs text-gray-500 font-normal pl-2">
+            {counters}
+          </span>
+        </h2>
+      </div>
     </th>
     {weeks.map((week, weekIndex) => (
       <th
@@ -253,14 +273,17 @@ const TableHeader: React.FC<TableHeaderProps> = ({
         className="relative text-center"
         {...mouseEvents(weekIndex)}
       >
-        <div className="absolute -bottom-2 -ml-2 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
-          <span className={`p-1 rounded-md ${
-            week.highlight ? 'bg-orange-300' : ''
-          } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
-          >
-            {week.label}
-          </span>
-        </div>
+        {isExpanded
+          ? (
+            <div className="absolute -bottom-2 -ml-2 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
+              <span className={`p-1 rounded-md ${
+                week.highlight ? 'bg-orange-300' : ''
+              } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
+              >
+                {week.label}
+              </span>
+            </div>
+          ) : null}
       </th>
     ))}
   </tr>
@@ -268,6 +291,8 @@ const TableHeader: React.FC<TableHeaderProps> = ({
 
 const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
+  const [expandPlanned, setExpandPlanned] = useState(false);
+  const [expandUnplanned, setExpandUnplanned] = useState(false);
 
   const mouseEvents = useCallback((weekIndex: number) => ({
     onMouseOver: () => setHoveredWeekIndex(weekIndex),
@@ -284,8 +309,15 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
           isHovered={isHovered}
           mouseEvents={mouseEvents}
           weeks={groups.weeks}
+          isExpanded={expandPlanned}
+          toggleExpand={() => setExpandPlanned(not)}
+          counters={`${
+            count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.planned)
+          } of ${
+            count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.planned)
+          }`}
         />
-        {groups.planned.map(group => (
+        {expandPlanned && groups.planned.map(group => (
           <ActivityGroupItem
             key={group.groupName}
             group={group}
@@ -300,8 +332,15 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
           isHovered={isHovered}
           mouseEvents={mouseEvents}
           weeks={groups.weeks}
+          isExpanded={expandUnplanned}
+          toggleExpand={() => setExpandUnplanned(not)}
+          counters={`${
+            count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.unplanned)
+          } of ${
+            count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.unplanned)
+          }`}
         />
-        {groups.unplanned.map(group => (
+        {expandUnplanned && groups.unplanned.map(group => (
           <ActivityGroupItem
             key={group.groupName}
             group={group}
