@@ -7,7 +7,10 @@ import {
 import type {
   ListingType, OrganizedTasks, RollupTaskState, TaskState
 } from './change-program-utils';
-import { taskTooltip } from './change-program-utils';
+import {
+  rollupTooltip,
+  taskTooltip
+} from './change-program-utils';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
@@ -45,10 +48,11 @@ type ActivitySubgroupProps = {
     onMouseOut: () => void;
   };
   listingType: ListingType;
+  weeks: OrganizedTasks['weeks'];
 };
 
 const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
-  subgroup, isHovered, mouseEvents, listingType
+  subgroup, isHovered, mouseEvents, listingType, weeks
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -90,6 +94,10 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
             key={index}
             className={`text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
             {...mouseEvents(index)}
+            data-tip={rollupTooltip(subgroup.tasks
+              .filter(t => t.weekIndex === index)
+              .map(t => t.task), weeks[index])}
+            data-html
           >
             <span className={`px-2 py-1 rounded-lg text-sm border ${styleForState(value.state)}`}>
               {value.count || ' '}
@@ -152,10 +160,11 @@ type ActivityGroupItemProps = {
     onMouseOut: () => void;
   };
   listingType: ListingType;
+  weeks: OrganizedTasks['weeks'];
 };
 
 const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
-  group, isHovered, mouseEvents, listingType
+  group, isHovered, mouseEvents, listingType, weeks
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -191,8 +200,15 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             key={index}
             className={`text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
             {...mouseEvents(index)}
+            data-tip={rollupTooltip(group.subgroups
+              .flatMap(s => s.tasks)
+              .filter(t => t.weekIndex === index)
+              .map(t => t.task), weeks[index])}
+            data-html
           >
-            <span className={`px-2 py-1 rounded-lg text-sm border border-transparent ${styleForState(state)}`}>
+            <span
+              className={`px-2 py-1 rounded-lg text-sm border border-transparent ${styleForState(state)}`}
+            >
               {count === 0 ? ' ' : count}
             </span>
           </td>
@@ -206,6 +222,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             isHovered={isHovered}
             mouseEvents={mouseEvents}
             listingType={listingType}
+            weeks={weeks}
           />
         ))
       )}
@@ -260,42 +277,42 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
   const isHovered = (weekIndex: number) => hoveredWeekIndex === weekIndex;
 
   return (
-    <>
-      <table className="w-full" cellPadding="3">
-        <tbody>
-          <TableHeader
-            title="Planned activities"
+    <table className="w-full" cellPadding="3">
+      <tbody>
+        <TableHeader
+          title="Planned activities"
+          isHovered={isHovered}
+          mouseEvents={mouseEvents}
+          weeks={groups.weeks}
+        />
+        {groups.planned.map(group => (
+          <ActivityGroupItem
+            key={group.groupName}
+            group={group}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
+            listingType="planned"
             weeks={groups.weeks}
           />
-          {groups.planned.map(group => (
-            <ActivityGroupItem
-              key={group.groupName}
-              group={group}
-              isHovered={isHovered}
-              mouseEvents={mouseEvents}
-              listingType="planned"
-            />
-          ))}
-          <TableHeader
-            title="Unplanned activities"
+        ))}
+        <TableHeader
+          title="Unplanned activities"
+          isHovered={isHovered}
+          mouseEvents={mouseEvents}
+          weeks={groups.weeks}
+        />
+        {groups.unplanned.map(group => (
+          <ActivityGroupItem
+            key={group.groupName}
+            group={group}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
+            listingType="unplanned"
             weeks={groups.weeks}
           />
-          {groups.unplanned.map(group => (
-            <ActivityGroupItem
-              key={group.groupName}
-              group={group}
-              isHovered={isHovered}
-              mouseEvents={mouseEvents}
-              listingType="unplanned"
-            />
-          ))}
-        </tbody>
-      </table>
-    </>
+        ))}
+      </tbody>
+    </table>
   );
 };
 

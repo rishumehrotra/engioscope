@@ -55,6 +55,31 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
   </div>
 `;
 
+export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks['weeks'][number]) => {
+  const states = tasks.map(task => taskState(new Date())(task));
+  const getCountOf = (state: TaskState) => states.filter(s => s === state).length;
+  const overdueCount = getCountOf('overdue');
+  const completedLateCount = getCountOf('completed-late');
+  const completedOnTimeCount = getCountOf('completed-on-time');
+  const plannedCount = getCountOf('planned');
+  const unplannedCount = getCountOf('unplanned');
+
+  const showCount = (count: number, label: string, className: string) => (
+    count !== 0
+      ? `<span class="${className}"><strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}</span><br />`
+      : ''
+  );
+
+  return `
+    Week: <strong>${week.label}</strong><br />
+    ${showCount(overdueCount, 'overdue', 'text-red-400')}
+    ${showCount(completedLateCount, 'completed late', 'text-orange-400')}
+    ${showCount(completedOnTimeCount, 'completed on time', 'text-green-400')}
+    ${showCount(plannedCount, 'planned', 'text-gray-400')}
+    ${showCount(unplannedCount, 'unplanned', 'text-gray-400')}
+  `;
+};
+
 export const taskClassName = (
   details: NonNullable<UIChangeProgram['details']>, task: UIChangeProgramTask
 ) => {
