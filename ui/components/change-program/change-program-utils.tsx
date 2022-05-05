@@ -86,8 +86,8 @@ const rollUpTaskStates = (states: TaskState[]): RollupTaskState => {
   if (states.length === 0) return 'no-tasks';
   if (states.every(state => state === 'unplanned')) return 'unplanned';
   if (states.every(state => state === 'planned')) return 'planned';
-  if (states.every(state => state === 'overdue')) return 'overdue';
   if (states.every(state => state === 'completed-on-time')) return 'completed-on-time';
+  if (states.some(state => state === 'overdue')) return 'overdue';
   return 'completed-late';
 };
 
