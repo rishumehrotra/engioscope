@@ -38,9 +38,14 @@ type GroupedListingProps = ReturnType<ReturnType<typeof organizeBy>>;
 
 type ActivitySubgroupProps = {
   subgroup: GroupedListingProps['planned']['groups'][number]['subgroups'][number];
+  isHovered: (weekIndex: number) => boolean;
+  mouseEvents: (weekIndex: number) => {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
+  };
 };
 
-const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup }) => {
+const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered, mouseEvents }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   return (
@@ -67,7 +72,8 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup }) => {
           <td
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            className="text-center"
+            className={`text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
+            {...mouseEvents(index)}
           >
             <span className={`px-2 py-1 rounded-lg text-sm border ${styleForState(value.state)}`}>
               {value.count || ' '}
@@ -97,7 +103,10 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup }) => {
                 key={value}
                 className={`text-center ${
                   value === weekIndex ? styleForTask(status) : ''
+                } ${
+                  isHovered(value) ? 'bg-gray-100' : ''
                 }`}
+                {...mouseEvents(value)}
               >
                 {/* eslint-disable-next-line no-nested-ternary */}
                 {value === weekIndex
@@ -166,6 +175,8 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered,
           <ActivitySubGroup
             key={subgroup.subgroupName}
             subgroup={subgroup}
+            isHovered={isHovered}
+            mouseEvents={mouseEvents}
           />
         ))
       )}
