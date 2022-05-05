@@ -1,10 +1,11 @@
 import { range } from 'rambda';
 import React, { useCallback, useState } from 'react';
+import type { UIChangeProgramTask } from '../../../shared/types';
 import {
   CircularAlert, CircularCheckmark, Minus, Plus
 } from '../common/Icons';
 import type { organizeBy, RollupTaskState, TaskState } from './change-program-utils';
-import { tooltip } from './change-program-utils';
+import { taskTooltip } from './change-program-utils';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
@@ -27,11 +28,11 @@ const styleForTask = (state: TaskState) => {
   }
 };
 
-const formatTitle = (title: string, teamName: string) => {
-  const regex = new RegExp(`.*${teamName.split(' ').join('\\ ')}\\s+\\|\\s+(.*)`);
-  const match = title.match(regex);
-  if (!match) return title.trim();
-  return match[1].trim();
+const formatTitle = (task: UIChangeProgramTask) => {
+  const regex = new RegExp(`.*${task.team.split(' ').join('\\ ')}\\s+\\|\\s+(.*)`);
+  const match = task.title.match(regex);
+  if (!match) return `${task.id}: ${task.title.trim()}`;
+  return `${task.id}: ${match[1].trim()}`;
 };
 
 type GroupedListingProps = ReturnType<ReturnType<typeof organizeBy>>;
@@ -85,17 +86,20 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered
         subgroup.tasks.map(({
           task, weekIndex, status, weekCount
         }) => (
-          <tr key={task.id} className="hover:bg-gray-100">
+          <tr
+            key={task.id}
+            className="hover:bg-gray-100"
+            data-tip={taskTooltip(task)}
+            data-html
+          >
             <td className="text-lg pr-4 py-1">
               <a
                 href={task.url}
                 target="_blank"
                 rel="noreferrer"
                 className="link-text text-base pl-20 inline-block truncate max-w-screen-sm"
-                data-tip={tooltip(task)}
-                data-html
               >
-                {formatTitle(task.title, task.team)}
+                {formatTitle(task)}
               </a>
             </td>
             {range(0, weekCount).map(value => (

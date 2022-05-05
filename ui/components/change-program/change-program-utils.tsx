@@ -5,14 +5,52 @@ import { asc, byString } from '../../../shared/sort-utils';
 import type { UIChangeProgram, UIChangeProgramTask } from '../../../shared/types';
 import { shortDate } from '../../helpers/utils';
 
-export const tooltip = (task: UIChangeProgramTask) => `
+const taskState = (referenceDate: Date) => (task: UIChangeProgramTask) => {
+  if (!task.plannedCompletion) return 'unplanned';
+  if (!task.actualCompletion) {
+    if (new Date(task.plannedCompletion) < referenceDate) return 'overdue';
+    return 'planned';
+  }
+  if (new Date(task.actualCompletion) <= new Date(task.plannedCompletion)) return 'completed-on-time';
+  return 'completed-late';
+};
+
+export type TaskState = ReturnType<ReturnType<typeof taskState>>;
+export type RollupTaskState = TaskState | 'no-tasks';
+
+const rollUpTaskStates = (states: TaskState[]): RollupTaskState => {
+  if (states.length === 0) return 'no-tasks';
+  if (states.every(state => state === 'unplanned')) return 'unplanned';
+  if (states.every(state => state === 'planned')) return 'planned';
+  if (states.every(state => state === 'completed-on-time')) return 'completed-on-time';
+  if (states.some(state => state === 'overdue')) return 'overdue';
+  return 'completed-late';
+};
+
+const rollUpGroupStates = (states: RollupTaskState[]) => {
+  if (states.every(state => state === 'no-tasks')) return 'no-tasks';
+  return rollUpTaskStates(uniq(states).filter(state => state !== 'no-tasks') as TaskState[]);
+};
+
+export const taskTooltip = (task: UIChangeProgramTask) => `
   <div class="w-64">
-    <strong>${task.title}</strong><br />
+    ${task.id}: <strong>${task.title}</strong><br />
     Status: <strong>${task.state}</strong><br />
     ${task.plannedStart ? `Planned start: <strong>${shortDate(new Date(task.plannedStart))}</strong><br />` : ''}
     ${task.actualStart ? `Actual start: <strong>${shortDate(new Date(task.actualStart))}</strong><br />` : ''}
     ${task.plannedCompletion ? `Planned completion: <strong>${shortDate(new Date(task.plannedCompletion))}</strong><br />` : ''}
     ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
+    <div class="border-t border-gray-600 mt-2">
+      ${(() => {
+    switch (taskState(new Date())(task)) {
+      case 'completed-on-time': return '<span class="text-green-400">Completed on time</span>';
+      case 'completed-late': return '<span class="text-orange-400">Completed, delayed</span>';
+      case 'planned': return '<span class="text-gray-400">Planned</span>';
+      case 'overdue': return '<span class="text-red-400">Overdue</span>';
+      default: return '<span class="text-gray-400">Unplanned</span>';
+    }
+  })()}
+    </div>
   </div>
 `;
 export const taskClassName = (
@@ -68,33 +106,6 @@ export const organizeTasksByWeek = (dateFromTask: (task: UIChangeProgramTask) =>
 
 const isOfTeam = (teamName: string) => (task: UIChangeProgramTask) => task.team === teamName;
 const isOfTheme = (themeName: string) => (task: UIChangeProgramTask) => task.theme === themeName;
-
-const taskState = (referenceDate: Date) => (task: UIChangeProgramTask) => {
-  if (!task.plannedCompletion) return 'unplanned';
-  if (!task.actualCompletion) {
-    if (new Date(task.plannedCompletion) < referenceDate) return 'overdue';
-    return 'planned';
-  }
-  if (new Date(task.actualCompletion) <= new Date(task.plannedCompletion)) return 'completed-on-time';
-  return 'completed-late';
-};
-
-export type TaskState = ReturnType<ReturnType<typeof taskState>>;
-export type RollupTaskState = TaskState | 'no-tasks';
-
-const rollUpTaskStates = (states: TaskState[]): RollupTaskState => {
-  if (states.length === 0) return 'no-tasks';
-  if (states.every(state => state === 'unplanned')) return 'unplanned';
-  if (states.every(state => state === 'planned')) return 'planned';
-  if (states.every(state => state === 'completed-on-time')) return 'completed-on-time';
-  if (states.some(state => state === 'overdue')) return 'overdue';
-  return 'completed-late';
-};
-
-const rollUpGroupStates = (states: RollupTaskState[]) => {
-  if (states.every(state => state === 'no-tasks')) return 'no-tasks';
-  return rollUpTaskStates(uniq(states).filter(state => state !== 'no-tasks') as TaskState[]);
-};
 
 export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTask[]) => {
   const today = new Date();
