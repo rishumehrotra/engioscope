@@ -38,7 +38,7 @@ const formatTitle = (task: UIChangeProgramTask) => {
 };
 
 type ActivitySubgroupProps = {
-  subgroup: OrganizedTasks['planned']['groups'][number]['subgroups'][number];
+  subgroup: OrganizedTasks['planned'][number]['subgroups'][number];
   isHovered: (weekIndex: number) => boolean;
   mouseEvents: (weekIndex: number) => {
     onMouseOver: () => void;
@@ -139,7 +139,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered
 };
 
 type ActivityGroupItemProps = {
-  group: OrganizedTasks['planned']['groups'][number];
+  group: OrganizedTasks['planned'][number];
   isHovered: (weekIndex: number) => boolean;
   mouseEvents: (weekIndex: number) => {
     onMouseOver: () => void;
@@ -204,7 +204,7 @@ type TableHeaderProps = {
     onMouseOut: () => void;
   };
   title: string;
-  weeks: OrganizedTasks['planned']['weeks'];
+  weeks: OrganizedTasks['weeks'];
 };
 
 const TableHeader: React.FC<TableHeaderProps> = ({
@@ -233,11 +233,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
   </tr>
 );
 
-const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups: { planned, unplanned } }) => {
-  // <>
-  //   <ActivitiesTable title="Planned activities" activities={planned} />
-  //   <ActivitiesTable title="Unplanned activities" activities={unplanned} />
-  // </>
+const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
 
   const mouseEvents = useCallback((weekIndex: number) => ({
@@ -255,9 +251,9 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups: { planned
             title="Planned activities"
             isHovered={isHovered}
             mouseEvents={mouseEvents}
-            weeks={planned.weeks}
+            weeks={groups.weeks}
           />
-          {planned.groups.map(group => (
+          {groups.planned.map(group => (
             <ActivityGroupItem
               key={group.groupName}
               group={group}
@@ -269,9 +265,9 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups: { planned
             title="Unplanned activities"
             isHovered={isHovered}
             mouseEvents={mouseEvents}
-            weeks={unplanned.weeks}
+            weeks={groups.weeks}
           />
-          {unplanned.groups.map(group => (
+          {groups.unplanned.map(group => (
             <ActivityGroupItem
               key={group.groupName}
               group={group}

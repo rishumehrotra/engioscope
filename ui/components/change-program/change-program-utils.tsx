@@ -40,8 +40,7 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
     ${task.actualStart ? `Actual start: <strong>${shortDate(new Date(task.actualStart))}</strong><br />` : ''}
     ${task.plannedCompletion ? `Planned completion: <strong>${shortDate(new Date(task.plannedCompletion))}</strong><br />` : ''}
     ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
-    <div class="border-t border-gray-600 mt-2">
-      ${(() => {
+    ${(() => {
     switch (taskState(new Date())(task)) {
       case 'completed-on-time': return '<span class="text-green-400">Completed on time</span>';
       case 'completed-late': return '<span class="text-orange-400">Completed, delayed</span>';
@@ -50,7 +49,6 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
       default: return '<span class="text-gray-400">Unplanned</span>';
     }
   })()}
-    </div>
   </div>
 `;
 export const taskClassName = (
@@ -169,36 +167,34 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
       })
     }));
 
-    return {
-      groups: splitByGroups
-        .map(group => ({
-          ...group,
-          rolledUpByWeek: range(0, Object.keys(tasksByWeek).length)
-            .map(weekIndex => ({
-              state: rollUpGroupStates(
-                group.subgroups.map(subgroup => subgroup.rolledUpByWeek[weekIndex].state)
-              ) as RollupTaskState,
-              count: group.subgroups
-                .map(subgroup => subgroup.rolledUpByWeek[weekIndex].count)
-                .reduce(add, 0)
-            }))
-        })),
-      weeks: Object.keys(tasksByWeek)
-        .map(weekStartString => {
-          const weekStart = new Date(weekStartString);
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekEnd.getDate() + 7);
-          return {
-            label: `${shortDate(new Date(weekStart))} - ${shortDate(weekEnd)}`,
-            highlight: today >= weekStart && today < weekEnd
-          };
-        })
-    };
+    return splitByGroups
+      .map(group => ({
+        ...group,
+        rolledUpByWeek: range(0, Object.keys(tasksByWeek).length)
+          .map(weekIndex => ({
+            state: rollUpGroupStates(
+              group.subgroups.map(subgroup => subgroup.rolledUpByWeek[weekIndex].state)
+            ) as RollupTaskState,
+            count: group.subgroups
+              .map(subgroup => subgroup.rolledUpByWeek[weekIndex].count)
+              .reduce(add, 0)
+          }))
+      }));
   };
 
   return {
     planned: createGroupingWith('planned'),
-    unplanned: createGroupingWith('unplanned')
+    unplanned: createGroupingWith('unplanned'),
+    weeks: Object.keys(tasksByWeek)
+      .map(weekStartString => {
+        const weekStart = new Date(weekStartString);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        return {
+          label: `${shortDate(new Date(weekStart))} - ${shortDate(weekEnd)}`,
+          highlight: today >= weekStart && today < weekEnd
+        };
+      })
   };
 };
 
