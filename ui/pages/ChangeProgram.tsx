@@ -43,7 +43,7 @@ const ChangeProgram: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <GroupedListing {...organizeBy(show ? 'theme' : 'team')(changeProgram.details.tasks)} />
+                    <GroupedListing groups={organizeBy(show ? 'theme' : 'team')(changeProgram.details.tasks)} />
                   </>
                 )}
             </div>

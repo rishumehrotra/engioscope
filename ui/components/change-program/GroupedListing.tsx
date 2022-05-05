@@ -4,7 +4,9 @@ import type { UIChangeProgramTask } from '../../../shared/types';
 import {
   CircularAlert, CircularCheckmark, Minus, Plus
 } from '../common/Icons';
-import type { organizeBy, RollupTaskState, TaskState } from './change-program-utils';
+import type {
+  OrganizedTasks, RollupTaskState, TaskState
+} from './change-program-utils';
 import { taskTooltip } from './change-program-utils';
 
 const styleForState = (state: RollupTaskState) => {
@@ -35,10 +37,8 @@ const formatTitle = (task: UIChangeProgramTask) => {
   return `${task.id}: ${match[1].trim()}`;
 };
 
-type GroupedListingProps = ReturnType<ReturnType<typeof organizeBy>>;
-
 type ActivitySubgroupProps = {
-  subgroup: GroupedListingProps['planned']['groups'][number]['subgroups'][number];
+  subgroup: OrganizedTasks['planned']['groups'][number]['subgroups'][number];
   isHovered: (weekIndex: number) => boolean;
   mouseEvents: (weekIndex: number) => {
     onMouseOver: () => void;
@@ -139,7 +139,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered
 };
 
 type ActivityGroupItemProps = {
-  group: GroupedListingProps['planned']['groups'][number];
+  group: OrganizedTasks['planned']['groups'][number];
   isHovered: (weekIndex: number) => boolean;
   mouseEvents: (weekIndex: number) => {
     onMouseOver: () => void;
@@ -197,7 +197,47 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({ group, isHovered,
   );
 };
 
-const ActivitiesTable: React.FC<{ title: string; activities: GroupedListingProps['planned'] }> = ({ title, activities }) => {
+type TableHeaderProps = {
+  isHovered: (weekIndex: number) => boolean;
+  mouseEvents: (weekIndex: number) => {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
+  };
+  title: string;
+  weeks: OrganizedTasks['planned']['weeks'];
+};
+
+const TableHeader: React.FC<TableHeaderProps> = ({
+  title, weeks, isHovered, mouseEvents
+}) => (
+  <tr>
+    <th className="text-left w-1/2">
+      <h2 className="text-xl font-semibold mt-16 mb-2">{title}</h2>
+    </th>
+    {weeks.map((week, weekIndex) => (
+      <th
+        key={week.label}
+        className="relative text-center"
+        {...mouseEvents(weekIndex)}
+      >
+        <div className="absolute -bottom-2 -ml-2 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
+          <span className={`p-1 rounded-md ${
+            week.highlight ? 'bg-orange-300' : ''
+          } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
+          >
+            {week.label}
+          </span>
+        </div>
+      </th>
+    ))}
+  </tr>
+);
+
+const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups: { planned, unplanned } }) => {
+  // <>
+  //   <ActivitiesTable title="Planned activities" activities={planned} />
+  //   <ActivitiesTable title="Unplanned activities" activities={unplanned} />
+  // </>
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
 
   const mouseEvents = useCallback((weekIndex: number) => ({
@@ -209,28 +249,29 @@ const ActivitiesTable: React.FC<{ title: string; activities: GroupedListingProps
 
   return (
     <>
-      <h2 className="text-xl font-semibold mt-20">{title}</h2>
       <table className="w-full" cellPadding="3">
-        <thead>
-          <tr>
-            <th className="text-left w-1/2"> </th>
-            {activities.weeks.map((week, weekIndex) => (
-              <th
-                key={week.label}
-                className={`relative text-center ${isHovered(weekIndex) ? 'bg-gray-100' : ''}`}
-                {...mouseEvents(weekIndex)}
-              >
-                <div className="absolute -top-4 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
-                  <span className={`p-1 rounded-md ${week.highlight ? 'bg-orange-300' : ''}`}>
-                    {week.label}
-                  </span>
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
         <tbody>
-          {activities.groups.map(group => (
+          <TableHeader
+            title="Planned activities"
+            isHovered={isHovered}
+            mouseEvents={mouseEvents}
+            weeks={planned.weeks}
+          />
+          {planned.groups.map(group => (
+            <ActivityGroupItem
+              key={group.groupName}
+              group={group}
+              isHovered={isHovered}
+              mouseEvents={mouseEvents}
+            />
+          ))}
+          <TableHeader
+            title="Unplanned activities"
+            isHovered={isHovered}
+            mouseEvents={mouseEvents}
+            weeks={unplanned.weeks}
+          />
+          {unplanned.groups.map(group => (
             <ActivityGroupItem
               key={group.groupName}
               group={group}
@@ -243,12 +284,5 @@ const ActivitiesTable: React.FC<{ title: string; activities: GroupedListingProps
     </>
   );
 };
-
-const GroupedListing: React.FC<GroupedListingProps> = ({ planned, unplanned }) => (
-  <>
-    <ActivitiesTable title="Planned activities" activities={planned} />
-    <ActivitiesTable title="Unplanned activities" activities={unplanned} />
-  </>
-);
 
 export default GroupedListing;

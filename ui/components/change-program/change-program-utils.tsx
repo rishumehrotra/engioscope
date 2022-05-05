@@ -1,5 +1,5 @@
 import {
-  add, allPass, identity, prop, range, uniq
+  add, allPass, compose, identity, not, prop, range, uniq
 } from 'rambda';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { UIChangeProgram, UIChangeProgramTask } from '../../../shared/types';
@@ -90,59 +90,60 @@ const getWeekStarting = (date: Date, referenceDate: Date, deltaWeeks = 1): Date 
   return getWeekStarting(date, referenceDate, deltaWeeks + 1);
 };
 
-export const organizeTasksByWeek = (dateFromTask: (task: UIChangeProgramTask) => Date) => (
-  (tasks: UIChangeProgramTask[], referenceDate = new Date()) => (
-    tasks
-      .reduce<Record<string, UIChangeProgramTask[]>>((acc, task) => {
-        const weekStart = getWeekStarting(dateFromTask(task), referenceDate);
+export const organizeTasksByWeek = (
+  dateFromTask: (task: UIChangeProgramTask) => Date,
+  tasks: UIChangeProgramTask[],
+  referenceDate = new Date()
+) => (
+  tasks
+    .reduce<Record<string, UIChangeProgramTask[]>>((acc, task) => {
+      const weekStart = getWeekStarting(dateFromTask(task), referenceDate);
 
-        acc[weekStart.toISOString()] = acc[weekStart.toISOString()] || [];
-        acc[weekStart.toISOString()].push(task);
+      acc[weekStart.toISOString()] = acc[weekStart.toISOString()] || [];
+      acc[weekStart.toISOString()].push(task);
 
-        return acc;
-      }, {})
-  )
+      return acc;
+    }, {})
 );
 
 const isOfTeam = (teamName: string) => (task: UIChangeProgramTask) => task.team === teamName;
 const isOfTheme = (themeName: string) => (task: UIChangeProgramTask) => task.theme === themeName;
+const isPlanned = (task: UIChangeProgramTask) => task.plannedCompletion !== undefined;
+const isOfType = (listingType: 'planned' | 'unplanned') => (
+  compose(listingType === 'planned' ? identity : not, isPlanned)
+);
 
 export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTask[]) => {
   const today = new Date();
 
-  const plannedTasksByWeek = Object.fromEntries(
+  const tasksByWeek = Object.fromEntries(
     Object.entries(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      organizeTasksByWeek(task => new Date(task.plannedCompletion!))(
-        tasks.filter(task => task.plannedCompletion),
-        today
+      organizeTasksByWeek(
+        task => new Date(task.plannedCompletion ?? task.created.on), tasks, today
       )
     ).sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-  );
-
-  const unplannedTasksByCreateDate = organizeTasksByWeek(task => new Date(task.created.on))(
-    tasks.filter(task => !task.plannedCompletion),
-    today
   );
 
   const teams = uniq(tasks.map(prop('team'))).sort(asc(byString(identity)));
   const themes = uniq(tasks.map(prop('theme'))).sort(asc(byString(identity)));
 
   const [firstGroup, secondGroup] = type === 'theme' ? [themes, teams] : [teams, themes];
+
   const taskStateToday = taskState(today);
 
-  const createGroupingWith = (grouped: Record<string, UIChangeProgramTask[]>) => {
+  const createGroupingWith = (listingType: 'planned' | 'unplanned') => {
     const splitByGroups = firstGroup.map(groupName => ({
       groupName,
       subgroups: secondGroup.map(subgroupName => {
         const applicableTasksFilter = allPass([
           isOfTeam(type === 'theme' ? subgroupName : groupName),
-          isOfTheme(type === 'theme' ? groupName : subgroupName)
+          isOfTheme(type === 'theme' ? groupName : subgroupName),
+          isOfType(listingType)
         ]);
 
         return {
           subgroupName,
-          tasks: Object.entries(grouped)
+          tasks: Object.entries(tasksByWeek)
             .flatMap(([weekStart, tasks], weekIndex) => {
               const applicableTasks = tasks.filter(applicableTasksFilter);
               return (
@@ -151,12 +152,12 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
                     task,
                     weekIndex,
                     weekStart,
-                    weekCount: Object.keys(grouped).length,
+                    weekCount: Object.keys(tasksByWeek).length,
                     status: taskStateToday(task) as TaskState
                   }))
               );
             }),
-          rolledUpByWeek: Object.values(grouped)
+          rolledUpByWeek: Object.values(tasksByWeek)
             .map(tasks => {
               const applicableTasks = tasks.filter(applicableTasksFilter);
               return {
@@ -172,7 +173,7 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
       groups: splitByGroups
         .map(group => ({
           ...group,
-          rolledUpByWeek: range(0, Object.keys(grouped).length)
+          rolledUpByWeek: range(0, Object.keys(tasksByWeek).length)
             .map(weekIndex => ({
               state: rollUpGroupStates(
                 group.subgroups.map(subgroup => subgroup.rolledUpByWeek[weekIndex].state)
@@ -182,7 +183,7 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
                 .reduce(add, 0)
             }))
         })),
-      weeks: Object.keys(grouped)
+      weeks: Object.keys(tasksByWeek)
         .map(weekStartString => {
           const weekStart = new Date(weekStartString);
           const weekEnd = new Date(weekStart);
@@ -196,10 +197,12 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
   };
 
   return {
-    planned: createGroupingWith(plannedTasksByWeek),
-    unplanned: createGroupingWith(unplannedTasksByCreateDate)
+    planned: createGroupingWith('planned'),
+    unplanned: createGroupingWith('unplanned')
   };
 };
+
+export type OrganizedTasks = ReturnType<ReturnType<typeof organizeBy>>;
 
 export const organizeByTheme = organizeBy('theme');
 export const organizeByTeam = organizeBy('team');
