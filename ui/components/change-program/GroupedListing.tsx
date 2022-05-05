@@ -56,13 +56,22 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({ subgroup, isHovered
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <td>
-          <div className="flex items-center gap-2 p-2 ml-8">
+          <div
+            className="grid grid-cols-2 items-center gap-2 p-2 ml-8"
+            style={{ gridTemplateColumns: '35px 1fr' }}
+          >
             <div>
-              <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
-                {isExpanded
-                  ? <Minus className="w-4 -mt-1 inline-block" />
-                  : <Plus className="w-4 -mt-1 inline-block" />}
-              </span>
+              {subgroup.tasks.length
+                ? (
+                  <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
+                    {isExpanded
+                      ? <Minus className="w-4 -mt-1 inline-block" />
+                      : <Plus className="w-4 -mt-1 inline-block" />}
+                  </span>
+                )
+                : (
+                  <span className="text-lg px-1 font-semibold w-10"> </span>
+                )}
             </div>
             <span>
               {subgroup.subgroupName}

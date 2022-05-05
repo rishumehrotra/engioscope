@@ -5,15 +5,8 @@ import GroupedListing from '../components/change-program/GroupedListing';
 import Switcher from '../components/common/Switcher';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
-import { shortDate } from '../helpers/utils';
 import useQueryParam, { asString } from '../hooks/use-query-param';
 import { changeProgramDetails } from '../network';
-
-const threeMonthsAgo = (date: string) => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() - 3);
-  return d;
-};
 
 const ChangeProgram: React.FC = () => {
   const [changeProgram, setChangeProgram] = useState<UIChangeProgram | null>(null);
@@ -35,15 +28,7 @@ const ChangeProgram: React.FC = () => {
                 ? 'Change program not configured'
                 : (
                   <>
-                    <div className="mt-8 bg-gray-50 grid grid-cols-2">
-                      <div>
-                        <strong className="font-semibold">
-                          Reporting period:
-                        </strong>
-                        {` From ${
-                          shortDate(threeMonthsAgo(changeProgram.lastUpdateDate))
-                        } to ${shortDate(new Date(changeProgram.lastUpdateDate))}.`}
-                      </div>
+                    <div className="mt-8 bg-gray-50 grid grid-cols-1">
                       <div className="text-right justify-self-end">
                         <div className="flex items-center">
                           <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
