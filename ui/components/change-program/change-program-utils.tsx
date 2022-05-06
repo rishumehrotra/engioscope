@@ -60,11 +60,6 @@ export const taskTooltip = (task: UIChangeProgramTask) => {
       case 'overdue': return showStatus('bg-red-600', 'Overdue');
       case 'planned': return showStatus('bg-gray-600', 'Planned');
       default: return showStatus('bg-gray-600', 'Unplanned');
-      // case 'completed-on-time': return '<span class="text-green-400">Completed on time</span>';
-      // case 'completed-late': return '<span class="text-orange-400">Completed, delayed</span>';
-      // case 'planned': return '<span class="text-gray-400">Planned</span>';
-      // case 'overdue': return '<span class="text-red-400">Overdue</span>';
-      // default: return '<span class="text-gray-400">Unplanned</span>';
     }
   })()}
   </div>
