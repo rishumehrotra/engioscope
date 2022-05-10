@@ -46,14 +46,14 @@ export const taskTooltip = (task: UIChangeProgramTask) => {
   `;
 
   return `
-  <div class="w-64">
-    ${task.id}: <strong>${task.title}</strong><br />
-    Status: <strong>${task.state}</strong><br />
-    ${task.plannedStart ? `Planned start: <strong>${shortDate(new Date(task.plannedStart))}</strong><br />` : ''}
-    ${task.actualStart ? `Actual start: <strong>${shortDate(new Date(task.actualStart))}</strong><br />` : ''}
-    ${task.plannedCompletion ? `Planned completion: <strong>${shortDate(new Date(task.plannedCompletion))}</strong><br />` : ''}
-    ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
-    ${(() => {
+    <div class="w-64">
+      ${task.id}: <strong>${task.title}</strong><br />
+      Status: <strong>${task.state}</strong><br />
+      ${task.plannedStart ? `Planned start: <strong>${shortDate(new Date(task.plannedStart))}</strong><br />` : ''}
+      ${task.actualStart ? `Actual start: <strong>${shortDate(new Date(task.actualStart))}</strong><br />` : ''}
+      ${task.plannedCompletion ? `Planned completion: <strong>${shortDate(new Date(task.plannedCompletion))}</strong><br />` : ''}
+      ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
+      ${(() => {
     switch (taskState(new Date())(task)) {
       case 'completed-on-time': return showStatus('bg-green-600', 'Completed on time');
       case 'completed-late': return showStatus('bg-orange-600', 'Completed, delayed');
@@ -62,8 +62,8 @@ export const taskTooltip = (task: UIChangeProgramTask) => {
       default: return showStatus('bg-gray-600', 'Unplanned');
     }
   })()}
-  </div>
-`;
+    </div>
+  `;
 };
 
 export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks['weeks'][number]) => {
