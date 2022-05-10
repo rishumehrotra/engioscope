@@ -654,7 +654,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                 {repoStats.repos
                   ? reposMetric(
                     <LabelWithSparkline
-                      label={`${((codeQuality.configured / repoStats.repos) * 100).toFixed(0)}%`}
+                      label={divide(codeQuality.configured, repoStats.repos).map(toPercentage).getOr('-')}
                       data={repoStats.newSonarSetupsByWeek}
                       lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
                     />
@@ -673,6 +673,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                       label={divide(codeQuality.pass, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
                       data={repoStats.sonarCountsByWeek.pass}
                       lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                      yAxisLabel={x => `${x}%`}
                     />
                   )
                   : '-'}
@@ -689,6 +690,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                       label={divide(codeQuality.warn, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
                       data={repoStats.sonarCountsByWeek.warn}
                       lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                      yAxisLabel={x => `${x}%`}
                     />
                   )
                   : '-'}
@@ -705,6 +707,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                       label={divide(codeQuality.fail, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
                       data={repoStats.sonarCountsByWeek.fail}
                       lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                      yAxisLabel={x => `${x}%`}
                     />
                   )
                   : '-'}

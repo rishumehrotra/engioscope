@@ -554,9 +554,10 @@ const HealthMetrics: React.FC<{
                     {codeQuality.sonarProjects
                       ? (
                         <LabelWithSparkline
-                          label={`${Math.round((codeQuality.pass / codeQuality.sonarProjects) * 100)}%`}
+                          label={divide(codeQuality.pass, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
                           data={repoStats.sonarCountsByWeek.pass}
                           lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                          yAxisLabel={n => `${n}%`}
                         />
                       )
                       : '-'}
@@ -576,9 +577,10 @@ const HealthMetrics: React.FC<{
                     {codeQuality.sonarProjects
                       ? (
                         <LabelWithSparkline
-                          label={`${Math.round((codeQuality.warn / codeQuality.sonarProjects) * 100)}%`}
+                          label={divide(codeQuality.warn, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
                           data={repoStats.sonarCountsByWeek.warn}
                           lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                          yAxisLabel={n => `${n}%`}
                         />
                       )
                       : '-'}
@@ -598,9 +600,10 @@ const HealthMetrics: React.FC<{
                     {codeQuality.sonarProjects
                       ? (
                         <LabelWithSparkline
-                          label={`${Math.round((codeQuality.fail / codeQuality.sonarProjects) * 100)}%`}
+                          label={divide(codeQuality.fail, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
                           data={repoStats.sonarCountsByWeek.fail}
                           lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                          yAxisLabel={n => `${n}%`}
                         />
                       )
                       : '-'}
