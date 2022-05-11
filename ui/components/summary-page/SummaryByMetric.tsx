@@ -762,12 +762,28 @@ const CIBuilds: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
           },
           {
             value: repoStats.builds.total,
-            content: reposMetric(num(repoStats.builds.total))
+            content: reposMetric(
+              <LabelWithSparkline
+                label={num(repoStats.builds.total)}
+                data={repoStats.builds.byWeek}
+                lineColor={increaseIsBetter(repoStats.builds.byWeek)}
+                yAxisLabel={num}
+              />
+            )
           },
           {
             value: divide(repoStats.builds.successful, repoStats.builds.total).getOr(0),
             content: reposMetric(
-              `${repoStats.builds.total ? `${((repoStats.builds.successful * 100) / repoStats.builds.total).toFixed(0)}%` : '-'}`
+              <LabelWithSparkline
+                label={
+                  divide(repoStats.builds.successful, repoStats.builds.total)
+                    .map(toPercentage)
+                    .getOr('-')
+                }
+                data={repoStats.builds.successfulByWeek}
+                lineColor={increaseIsBetter(repoStats.builds.successfulByWeek)}
+                yAxisLabel={num}
+              />
             )
           },
           {

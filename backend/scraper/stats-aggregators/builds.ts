@@ -1,10 +1,10 @@
 import prettyMilliseconds from 'pretty-ms';
 import {
-  add, pipe, prop, replace
+  add, adjust, identity, inc, pipe, prop, replace
 } from 'rambda';
 import type { Build, BuildDefinitionReference } from '../types-azure';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types';
-import { isMaster } from '../../utils';
+import { isMaster, weeks } from '../../utils';
 import { asc, byDate, desc } from '../../../shared/sort-utils';
 
 type BuildStats = {
@@ -13,6 +13,8 @@ type BuildStats = {
   url: string;
   success: number;
   duration: number[];
+  buildsByWeek: number[];
+  successesByWeek: number[];
   status:
   | { type: 'unknown' }
   | { type: 'succeeded'; latest: Date }
@@ -21,7 +23,14 @@ type BuildStats = {
 
 const repoId = (build: Build) => build.repository?.id ?? '<unknown>';
 const defaultBuildStats: BuildStats = {
-  count: 0, name: 'unknown', url: '', success: 0, duration: [], status: { type: 'unknown' }
+  count: 0,
+  name: 'unknown',
+  url: '',
+  success: 0,
+  duration: [],
+  status: { type: 'unknown' },
+  buildsByWeek: weeks.map(() => 0),
+  successesByWeek: weeks.map(() => 0)
 };
 
 const status = (a: BuildStats, b: BuildStats): BuildStats['status'] => {
@@ -43,16 +52,23 @@ const status = (a: BuildStats, b: BuildStats): BuildStats['status'] => {
 };
 
 const combineStats = (
-  incoming: BuildStats,
+  incoming: Omit<BuildStats, 'buildsByWeek' | 'successesByWeek'> & { date: Date },
   existing = defaultBuildStats
-): BuildStats => ({
-  count: existing.count + incoming.count,
-  name: incoming.name,
-  url: incoming.url,
-  success: existing.success + incoming.success,
-  duration: [...existing.duration, ...incoming.duration],
-  status: status(incoming, existing)
-});
+): BuildStats => {
+  const weekIndex = weeks.findIndex(isInWeek => isInWeek(incoming.date));
+  return ({
+    count: existing.count + incoming.count,
+    name: incoming.name,
+    url: incoming.url,
+    success: existing.success + incoming.success,
+    duration: [...existing.duration, ...incoming.duration],
+    status: status(incoming as unknown as BuildStats, existing),
+    buildsByWeek: adjust(weekIndex, weekIndex === -1 ? identity : inc, existing.buildsByWeek),
+    successesByWeek: incoming.success
+      ? adjust(weekIndex, weekIndex === -1 ? identity : inc, existing.successesByWeek)
+      : existing.successesByWeek
+  });
+};
 
 const buildDefinitionWebUrl = pipe(
   replace('_apis/build/Definitions/', '_build/definition?definitionId='),
@@ -86,7 +102,8 @@ export default (
               duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())],
               status: build.result !== 'failed'
                 ? { type: 'succeeded', latest: build.finishTime }
-                : { type: 'failed', since: build.finishTime }
+                : { type: 'failed', since: build.finishTime },
+              date: build.finishTime
             }, acc.buildStats[rId]?.[build.definition.id] || undefined)
           }
         },
@@ -128,7 +145,9 @@ export default (
             : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status'],
           type: buildDefinitionsByRepoId(id)
             .find(bd => bd.id === Number(definitionId))
-            ?.process.type === 1 ? 'ui' : 'yml'
+            ?.process.type === 1 ? 'ui' : 'yml',
+          buildsByWeek: buildStats.buildsByWeek,
+          successesByWeek: buildStats.successesByWeek
         }));
 
       const pipelinesWithUnused = buildDefinitionsByRepoId(id)

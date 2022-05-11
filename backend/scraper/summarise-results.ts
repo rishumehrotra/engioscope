@@ -21,7 +21,8 @@ import {
 } from '../../shared/pipeline-utils';
 import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
-  sonarCountsByWeek, totalBuilds, totalCoverage, totalTests, totalTestsByWeek
+  sonarCountsByWeek, totalBuilds, totalBuildsByWeek, totalCoverage,
+  totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import { divide, exists, toPercentage } from '../../shared/utils';
 
@@ -183,6 +184,8 @@ type Summary = {
     builds: {
       total: number;
       successful: number;
+      byWeek: number[];
+      successfulByWeek: number[];
     };
     codeQuality: {
       configured: number;
@@ -252,16 +255,16 @@ const analyseWorkItems = (
     processItemsInGroup(
       applySpec({
         count: length,
-        velocity: wis => pipe(filter(wasWorkItemCompletedInLastMonth), length)(wis),
+        velocity: pipe(filter(wasWorkItemCompletedInLastMonth), length),
         velocityByWeek: wis => (
           weeks.map(
             week => wis.filter(wasWorkItemCompletedIn(week)).length
           )
         ),
-        cycleTime: wis => pipe(
+        cycleTime: pipe(
           filter(wasWorkItemCompletedInLastMonth),
           map(computeTimeDifferenceBetween('start', 'end'))
-        )(wis),
+        ),
         cycleTimeByWeek: wis => (
           weeks.map(week => (
             wis
@@ -269,10 +272,10 @@ const analyseWorkItems = (
               .map(computeTimeDifferenceBetween('start', 'end'))
           ))
         ),
-        changeLeadTime: wis => pipe(
+        changeLeadTime: pipe(
           filter(wasWorkItemCompletedInLastMonth),
           map(computeTimeDifferenceBetween('devComplete', 'end'))
-        )(wis),
+        ),
         changeLeadTimeByWeek: wis => (
           weeks.map(week => (
             wis
@@ -280,36 +283,27 @@ const analyseWorkItems = (
               .map(computeTimeDifferenceBetween('devComplete', 'end'))
           ))
         ),
-        flowEfficiency: wis => pipe(
-          filter(wasWorkItemCompletedInLastMonth),
-          flowEfficiency
-        )(wis),
+        flowEfficiency: pipe(filter(wasWorkItemCompletedInLastMonth), flowEfficiency),
         flowEfficiencyByWeek: wis => (
           weeks.map(week => flowEfficiency(
             wis.filter(wasWorkItemCompletedIn(week))
           ))
         ),
-        wipCount: wis => pipe(filter(wipWorkItems), length)(wis),
-        wipIncrease: wis => pipe(
+        wipCount: pipe(filter(wipWorkItems), length),
+        wipIncrease: pipe(
           filter(isWIPInTimeRange(
             workItemTimes,
             projectConfig?.workitems.ignoreForWIP || []
           )(lastThreeMonths)),
           length
-        )(wis),
+        ),
         wipIncreaseByWeek: wis => (
           weeks
             .map(isWIPInTimeRange(workItemTimes, projectConfig?.workitems.ignoreForWIP || []))
             .map(filter => wis.filter(filter).length)
         ),
-        wipAge: wis => pipe(
-          filter(wipWorkItems),
-          map(computeTimeDifferenceBetween('start'))
-        )(wis),
-        leakage: wis => pipe(
-          filter(leakage(lastThreeMonths)),
-          length
-        )(wis),
+        wipAge: pipe(filter(wipWorkItems), map(computeTimeDifferenceBetween('start'))),
+        leakage: pipe(filter(leakage(lastThreeMonths)), length),
         leakageByWeek: wis => (
           weeks.map(week => wis.filter(leakage(week)).length)
         )
@@ -384,7 +378,9 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             total: totalBuilds(matchesExcludingDeprecated),
             successful: count<RepoAnalysis>(incrementBy(
               repo => count<UIBuildPipeline>(incrementBy(prop('success')))(repo.builds?.pipelines || [])
-            ))(matchesExcludingDeprecated)
+            ))(matchesExcludingDeprecated),
+            byWeek: totalBuildsByWeek(matchesExcludingDeprecated),
+            successfulByWeek: totalSuccessfulBuildsByWeek(matchesExcludingDeprecated)
           },
           codeQuality: codeQuality(matchesExcludingDeprecated),
           newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),

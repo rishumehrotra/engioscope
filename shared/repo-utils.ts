@@ -41,6 +41,24 @@ export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
   )
 );
 
+export const totalBuildsByWeek = (repos: RepoAnalysis[]) => (
+  addColumnsInArray(
+    repos
+      .flatMap(r => r.builds?.pipelines.map(p => p.buildsByWeek))
+      .filter(exists)
+  )
+);
+
+export const totalSuccessfulBuildsByWeek = (repos: RepoAnalysis[]) => (
+  addColumnsInArray(
+    repos
+      .flatMap(r => r.builds?.pipelines)
+      .filter(exists)
+      .map(p => p.successesByWeek)
+      .filter(exists)
+  )
+);
+
 const isBeforeEndOfWeekFilters = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
   .map(weekIndex => {
     const date = new Date();

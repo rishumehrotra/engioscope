@@ -91,6 +91,8 @@ export type UIBuildPipeline = {
   | { type: 'failed'; since: Date }
   | { type: 'unused'; since: Date | undefined };
   type: 'ui' | 'yml';
+  buildsByWeek?: number[];
+  successesByWeek?: number[];
 };
 
 export type UIBuilds = null | {

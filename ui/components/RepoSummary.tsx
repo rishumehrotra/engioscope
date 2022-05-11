@@ -2,8 +2,8 @@ import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek,
-  reposWithPipelines, sonarCountsByWeek, totalBuilds, totalCoverage,
-  totalTests, totalTestsByWeek
+  reposWithPipelines, sonarCountsByWeek, totalBuilds, totalBuildsByWeek,
+  totalCoverage, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type {
   RepoAnalysis, UIBuildPipeline, QualityGateStatus, UICodeQuality
@@ -79,7 +79,14 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
       .filter(r => (
         (r.builds?.pipelines.length || 0) > 0
           && (r.builds?.pipelines.filter(notYmlPipeline) || []).length > 0
-      ))
+      )),
+    totalTests: totalTests(repos),
+    totalTestsByWeek: totalTestsByWeek(repos),
+    totalBuilds: totalBuilds(repos),
+    totalBuildsByWeek: totalBuildsByWeek(repos),
+    buildSuccessRate: buildSuccessRate(repos),
+    totalSuccessfulByWeek: totalSuccessfulBuildsByWeek(repos),
+    totalCoverage: totalCoverage(repos)
   };
 };
 
@@ -164,9 +171,9 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           title: 'Tests',
           value: (
             <LabelWithSparkline
-              label={num(totalTests(stats.repos))}
-              data={totalTestsByWeek(stats.repos)}
-              lineColor={increaseIsBetter(totalTestsByWeek(stats.repos))}
+              label={num(stats.totalTests)}
+              data={stats.totalTestsByWeek}
+              lineColor={increaseIsBetter(stats.totalTestsByWeek)}
             />
           ),
           tooltip: 'Total number of tests across all matching repos'
@@ -177,18 +184,31 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
             total === 0
               ? '-'
               : `${Math.round((covered * 100) / total)}%`
-          ))(totalCoverage(stats.repos))
+          ))(stats.totalCoverage)
         }]}
       />
       <ProjectStat
         topStats={[{
           title: 'Builds',
-          value: num(totalBuilds(stats.repos)),
+          value: (
+            <LabelWithSparkline
+              label={num(stats.totalBuilds)}
+              data={stats.totalBuildsByWeek}
+              lineColor={increaseIsBetter(stats.totalBuildsByWeek)}
+            />
+          ),
           tooltip: 'Total number of builds across all matching repos'
         }]}
         childStats={[{
           title: 'Success',
-          value: buildSuccessRate(stats.repos),
+          // value: stats.buildSuccessRate,
+          value: (
+            <LabelWithSparkline
+              label={stats.buildSuccessRate}
+              data={stats.totalSuccessfulByWeek}
+              lineColor={increaseIsBetter(stats.totalSuccessfulByWeek)}
+            />
+          ),
           tooltip: 'Success rate across all matching repos'
         }]}
       />

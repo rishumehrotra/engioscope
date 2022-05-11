@@ -638,7 +638,14 @@ const HealthMetrics: React.FC<{
               >
                 Runs
                 <div className="font-semibold text-xl mb-2">
-                  {reposMetric(num(repoStats.builds.total))}
+                  {reposMetric(
+                    <LabelWithSparkline
+                      label={num(repoStats.builds.total)}
+                      data={repoStats.builds.byWeek}
+                      lineColor={increaseIsBetter(repoStats.builds.byWeek)}
+                      yAxisLabel={num}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -650,9 +657,18 @@ const HealthMetrics: React.FC<{
                 Success
               </div>
               <div className="font-semibold text-lg">
-                {divide(repoStats.builds.successful, repoStats.builds.total)
-                  .map(toPercentage)
-                  .getOr('-')}
+                {reposMetric(
+                  <LabelWithSparkline
+                    label={
+                      divide(repoStats.builds.successful, repoStats.builds.total)
+                        .map(toPercentage)
+                        .getOr('-')
+                    }
+                    data={repoStats.builds.successfulByWeek}
+                    lineColor={increaseIsBetter(repoStats.builds.successfulByWeek)}
+                    yAxisLabel={num}
+                  />
+                )}
               </div>
             </div>
             <div>

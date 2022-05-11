@@ -12,9 +12,7 @@ export default (url: RequestInfo, init?: RequestInit & { timeout?: number; verif
     ...restInit,
     signal: controller.signal,
     agent: verifySsl === false
-      ? new https.Agent({
-        rejectUnauthorized: false
-      })
+      ? new https.Agent({ rejectUnauthorized: false })
       : undefined
   })
     .catch(err => {
