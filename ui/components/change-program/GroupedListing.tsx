@@ -12,7 +12,7 @@ import { rollupTooltip, taskTooltip } from './change-program-utils';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
-    case 'completed-on-time': return 'bg-green-600 border-green-600 completed-on-time';
+    case 'completed-on-time': return 'bg-green-600 border-green-600 text-white completed-on-time';
     case 'completed-late': return 'bg-orange-400 border-orange-400 completed-late';
     case 'overdue': return 'bg-red-600 border-red-600 text-white overdue';
     case 'planned': return 'border-black planned';
