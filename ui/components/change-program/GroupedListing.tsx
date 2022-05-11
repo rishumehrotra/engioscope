@@ -9,6 +9,7 @@ import type {
   OrganizedTasks, RollupTaskState, TaskState
 } from './change-program-utils';
 import { rollupTooltip, taskTooltip } from './change-program-utils';
+import useHover from '../../hooks/use-hover';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
@@ -38,6 +39,55 @@ const formatTitle = (task: UIChangeProgramTask) => {
   return `${task.id}: ${match[1].trim()}`;
 };
 
+type TaskProps = {
+  taskDetails: OrganizedTasks['planned'][number]['subgroups'][number]['tasks'][number];
+  isHovered: (weekIndex: number) => boolean;
+  mouseEvents: (weekIndex: number) => {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
+  };
+};
+
+const Task: React.FC<TaskProps> = ({
+  taskDetails: {
+    task, weekIndex, weekCount, status
+  }, isHovered, mouseEvents
+}) => {
+  const [ref, onRowHover] = useHover<HTMLTableRowElement>();
+
+  return (
+    <tr
+      key={task.id}
+      className="bg-gray-50 hover:bg-gray-100"
+      ref={ref}
+      data-tip={taskTooltip(task)}
+      data-html
+    >
+      <td className={`text-lg pr-4 py-1 sticky z-10 left-0 ${onRowHover ? 'bg-gray-100' : 'bg-gray-50'}`}>
+        <a href={task.url} target="_blank" rel="noreferrer" className="link-text text-base pl-28 inline-block truncate max-w-screen-sm">
+          {formatTitle(task)}
+        </a>
+      </td>
+      {range(0, weekCount).map(value => (
+        <td
+          key={value}
+          className={`text-center ${value === weekIndex ? styleForTask(status) : ''} ${isHovered(value) ? 'bg-gray-100' : ''}`}
+          {...mouseEvents(value)}
+        >
+          {/* eslint-disable-next-line no-nested-ternary */}
+          {value === weekIndex
+            ? (
+              status === 'overdue'
+                ? <CircularAlert className="w-5 m-auto" />
+                : <CircularCheckmark className="w-5 m-auto" />
+            )
+            : ' '}
+        </td>
+      ))}
+    </tr>
+  );
+};
+
 type ActivitySubgroupProps = {
   subgroup: OrganizedTasks['planned'][number]['subgroups'][number];
   isHovered: (weekIndex: number) => boolean;
@@ -52,14 +102,16 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
   subgroup, isHovered, mouseEvents, weeks
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [ref, isSubGroupRowHovered] = useHover<HTMLTableRowElement>();
 
   return (
     <>
       <tr
-        className="hover:bg-gray-100 cursor-pointer"
+        className="bg-gray-50 hover:bg-gray-100 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
+        ref={ref}
       >
-        <td>
+        <td className={`sticky z-20 left-0 ${isSubGroupRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}>
           <div
             className="grid grid-cols-2 items-center gap-2 p-2 ml-16"
             style={{ gridTemplateColumns: '25px 1fr' }}
@@ -89,7 +141,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
           <td
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            className={`text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
+            className={`sticky z-10 left-0 text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
             {...mouseEvents(index)}
             data-tip={rollupTooltip(subgroup.tasks
               .filter(t => t.weekIndex === index)
@@ -103,46 +155,12 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
         ))}
       </tr>
       {isExpanded && (
-        subgroup.tasks.map(({
-          task, weekIndex, status, weekCount
-        }) => (
-          <tr
-            key={task.id}
-            className="hover:bg-gray-100"
-            data-tip={taskTooltip(task)}
-            data-html
-          >
-            <td className="text-lg pr-4 py-1">
-              <a
-                href={task.url}
-                target="_blank"
-                rel="noreferrer"
-                className="link-text text-base pl-28 inline-block truncate max-w-screen-sm"
-              >
-                {formatTitle(task)}
-              </a>
-            </td>
-            {range(0, weekCount).map(value => (
-              <td
-                key={value}
-                className={`text-center ${
-                  value === weekIndex ? styleForTask(status) : ''
-                } ${
-                  isHovered(value) ? 'bg-gray-100' : ''
-                }`}
-                {...mouseEvents(value)}
-              >
-                {/* eslint-disable-next-line no-nested-ternary */}
-                {value === weekIndex
-                  ? (
-                    status === 'overdue'
-                      ? <CircularAlert className="w-5 m-auto" />
-                      : <CircularCheckmark className="w-5 m-auto" />
-                  )
-                  : ' '}
-              </td>
-            ))}
-          </tr>
+        subgroup.tasks.map(taskDetails => (
+          <Task
+            taskDetails={taskDetails}
+            isHovered={isHovered}
+            mouseEvents={mouseEvents}
+          />
         ))
       )}
     </>
@@ -163,14 +181,16 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
   group, isHovered, mouseEvents, weeks
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [ref, isRowHovered] = useHover<HTMLTableRowElement>();
 
   return (
     <>
       <tr
-        className="hover:bg-gray-100 cursor-pointer"
+        className="bg-gray-50 hover:bg-gray-100 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
+        ref={ref}
       >
-        <td className="w-full">
+        <td className={`sticky z-10 left-0 ${isRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}>
           <div
             className="grid grid-cols-2 items-center gap-2 p-2 ml-8"
             style={{ gridTemplateColumns: '25px 1fr' }}
@@ -242,7 +262,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
   title, weeks, isHovered, mouseEvents, isExpanded, toggleExpand, counters
 }) => (
   <tr>
-    <th className="text-left w-1/2">
+    <th className="text-left sticky z-10 left-0 bg-gray-50" style={{ width: '700px' }}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
       <div
         className="grid grid-cols-2 items-center gap-2 p-2 mt-16 mb-2"
@@ -267,20 +287,22 @@ const TableHeader: React.FC<TableHeaderProps> = ({
     {weeks.map((week, weekIndex) => (
       <th
         key={week.label}
-        className="relative text-center"
+        className="text-center"
         {...mouseEvents(weekIndex)}
       >
-        {isExpanded
-          ? (
-            <div className="absolute -bottom-2 -ml-2 text-left origin-top-left pl-2 -rotate-45 w-32 text-xs font-normal text-gray-600">
-              <span className={`p-1 rounded-md ${
-                week.highlight ? 'bg-orange-300' : ''
-              } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
-              >
-                {week.label}
-              </span>
-            </div>
-          ) : null}
+        <div className="relative">
+          {isExpanded
+            ? (
+              <div className="absolute -bottom-16 -ml-2 text-left origin-top-left pl-2 w-32 -rotate-45 text-xs font-normal text-gray-600">
+                <span className={`p-1 rounded-md ${
+                  week.highlight ? 'bg-orange-300' : ''
+                } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
+                >
+                  {week.label}
+                </span>
+              </div>
+            ) : null}
+        </div>
       </th>
     ))}
   </tr>
@@ -299,54 +321,56 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
   const isHovered = (weekIndex: number) => hoveredWeekIndex === weekIndex;
 
   return (
-    <table className="w-full" cellPadding="3">
-      <tbody>
-        <TableHeader
-          title="Planned activities"
-          isHovered={isHovered}
-          mouseEvents={mouseEvents}
-          weeks={groups.weeks}
-          isExpanded={expandPlanned}
-          toggleExpand={() => setExpandPlanned(not)}
-          counters={`${
-            count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.planned)
-          } of ${
-            count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.planned)
-          }`}
-        />
-        {expandPlanned && groups.planned.map(group => (
-          <ActivityGroupItem
-            key={group.groupName}
-            group={group}
+    <div className="overflow-x-scroll">
+      <table cellPadding="3" className="w-max">
+        <tbody>
+          <TableHeader
+            title="Planned activities"
             isHovered={isHovered}
             mouseEvents={mouseEvents}
             weeks={groups.weeks}
+            isExpanded={expandPlanned}
+            toggleExpand={() => setExpandPlanned(not)}
+            counters={`${
+              count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.planned)
+            } of ${
+              count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.planned)
+            }`}
           />
-        ))}
-        <TableHeader
-          title="Unplanned activities"
-          isHovered={isHovered}
-          mouseEvents={mouseEvents}
-          weeks={groups.weeks}
-          isExpanded={expandUnplanned}
-          toggleExpand={() => setExpandUnplanned(not)}
-          counters={`${
-            count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.unplanned)
-          } of ${
-            count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.unplanned)
-          }`}
-        />
-        {expandUnplanned && groups.unplanned.map(group => (
-          <ActivityGroupItem
-            key={group.groupName}
-            group={group}
+          {expandPlanned && groups.planned.map(group => (
+            <ActivityGroupItem
+              key={group.groupName}
+              group={group}
+              isHovered={isHovered}
+              mouseEvents={mouseEvents}
+              weeks={groups.weeks}
+            />
+          ))}
+          <TableHeader
+            title="Unplanned activities"
             isHovered={isHovered}
             mouseEvents={mouseEvents}
             weeks={groups.weeks}
+            isExpanded={expandUnplanned}
+            toggleExpand={() => setExpandUnplanned(not)}
+            counters={`${
+              count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.unplanned)
+            } of ${
+              count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.unplanned)
+            }`}
           />
-        ))}
-      </tbody>
-    </table>
+          {expandUnplanned && groups.unplanned.map(group => (
+            <ActivityGroupItem
+              key={group.groupName}
+              group={group}
+              isHovered={isHovered}
+              mouseEvents={mouseEvents}
+              weeks={groups.weeks}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
