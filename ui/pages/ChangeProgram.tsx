@@ -18,7 +18,9 @@ const ChangeProgram: React.FC = () => {
     <>
       <Header
         title="Progress"
-        lastUpdated={changeProgram ? new Date(changeProgram.lastUpdateDate) : null}
+        lastUpdated={changeProgram ? new Date(changeProgram.lastUpdated) : null}
+        changeProgramName={changeProgram?.changeProgramName}
+        hasSummary={changeProgram?.hasSummary}
       />
 
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>

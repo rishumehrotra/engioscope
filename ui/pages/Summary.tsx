@@ -29,6 +29,8 @@ const Summary: React.FC = () => {
       <Header
         title="Metrics summary"
         lastUpdated={metrics ? new Date(metrics.lastUpdateDate) : null}
+        changeProgramName={metrics?.changeProgramName}
+        hasSummary={metrics?.hasSummary}
         subtitle={() => (metrics
           ? (
             <div className="text-base mt-2 font-normal text-gray-200">

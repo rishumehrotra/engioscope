@@ -35,6 +35,8 @@ const Collection: React.FC = () => {
       <Header
         lastUpdated={analysedProjects?.lastUpdated ? new Date(analysedProjects.lastUpdated) : null}
         title="Projects"
+        hasSummary={analysedProjects?.hasSummary}
+        changeProgramName={analysedProjects?.changeProgramName}
       />
       <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
         <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">

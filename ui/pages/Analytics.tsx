@@ -13,7 +13,11 @@ const Analytics: React.FC = () => {
 
   return (
     <>
-      <Header title="Analytics" lastUpdated={new Date()} />
+      <Header
+        title="Analytics"
+        lastUpdated={new Date()}
+        hasSummary={false}
+      />
       <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
         {!analytics
           ? <Loading />

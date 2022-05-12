@@ -7,11 +7,13 @@ type HeaderProps = {
   lastUpdated?: Date | null;
   title: string;
   subtitle?: () => React.ReactNode;
+  changeProgramName?: string;
+  hasSummary?: boolean;
 };
 
-const navItems = [
+const navItems = (changeProgramName?: string) => [
   { url: '/', name: 'Projects' },
-  { url: '/summary', name: 'Change program' }
+  { url: '/summary', name: changeProgramName || 'Change program' }
 ];
 
 const isSelectedForPath = (pathName: string) => (url: string) => (
@@ -20,7 +22,9 @@ const isSelectedForPath = (pathName: string) => (url: string) => (
     : url === '/'
 );
 
-const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => {
+const Header: React.FC<HeaderProps> = ({
+  lastUpdated, title, subtitle, changeProgramName, hasSummary
+}) => {
   const location = useLocation();
   const isSelected = useMemo(() => isSelectedForPath(location.pathname), [location.pathname]);
 
@@ -31,25 +35,28 @@ const Header: React.FC<HeaderProps> = ({ lastUpdated, title, subtitle }) => {
           <img src={logo} alt="Logo" className="w-36" />
         </Link>
         <ul>
-          {navItems.map(({ url, name }) => (
-            <li
-              key={url}
-              className="inline-block mr-4"
-            >
-              <Link
-                to={url}
-                className={`
-                px-3 mr-2 h-10 rounded-md text-lg font-medium leading-4 focus:outline-none
-                transition duration-300 ease-in-out flex items-center border-2 border-transparent
-                ${isSelected(url)
-              ? 'text-gray-100 bg-slate-700'
-              : 'hover:border-slate-500 text-gray-200 cursor-pointer'}
-              `}
-              >
-                {name}
-              </Link>
-            </li>
-          ))}
+          {(changeProgramName || hasSummary)
+            ? (
+              navItems(changeProgramName).map(({ url, name }) => (
+                <li
+                  key={url}
+                  className="inline-block mr-4"
+                >
+                  <Link
+                    to={url}
+                    className={`
+                  px-3 mr-2 h-10 rounded-md text-lg font-medium leading-4 focus:outline-none
+                  transition duration-300 ease-in-out flex items-center border-2 border-transparent
+                  ${isSelected(url)
+                  ? 'text-gray-100 bg-slate-700'
+                  : 'hover:border-slate-500 text-gray-200 cursor-pointer'}
+                `}
+                  >
+                    {name}
+                  </Link>
+                </li>
+              ))
+            ) : null}
         </ul>
       </div>
       <div className="mt-24">

@@ -4,7 +4,7 @@ import { join } from 'path';
 import debug from 'debug';
 import { singular } from 'pluralize';
 import type {
-  AnalysedProjects, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
+  AnalysedProjects, GlobalUIConfig, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
   UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis
 } from '../../shared/types';
@@ -34,12 +34,15 @@ const writeFile = async (path: string[], fileName: string, contents: string) => 
 };
 
 const projectSummary = (
+  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ): UIProjectAnalysis => ({
   name: [collectionName, projectConfig.name],
   lastUpdated: new Date().toISOString(),
+  hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
+  changeProgramName: config.azure.collections.find(c => c.name === collectionName)?.changeProgram?.name,
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.pipelines.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,
@@ -47,12 +50,13 @@ const projectSummary = (
 });
 
 const writeRepoAnalysisFile = async (
+  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectRepoAnalysis = {
-    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
     repos: projectAnalysis.repoAnalysis,
     groups: projectConfig.groupRepos
   };
@@ -64,12 +68,13 @@ const writeRepoAnalysisFile = async (
 };
 
 const writeReleaseAnalysisFile = async (
+  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectReleasePipelineAnalysis = {
-    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
     ...projectAnalysis.releaseAnalysis,
     stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight,
     ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore,
@@ -84,12 +89,13 @@ const writeReleaseAnalysisFile = async (
 };
 
 const writeWorkItemAnalysisFile = async (
+  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectWorkItemAnalysis = {
-    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
     workItems: projectAnalysis.workItemAnalysis.analysedWorkItems,
     taskType: projectConfig.workitems.label
   };
@@ -101,12 +107,13 @@ const writeWorkItemAnalysisFile = async (
 };
 
 const writeOverviewFile = async (
+  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectOverviewAnalysis = {
-    ...projectSummary(collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
     overview: projectAnalysis.workItemAnalysis?.overview,
     testCases: projectAnalysis.testCasesAnalysis,
     ignoreForWIP: projectConfig.workitems.ignoreForWIP,
@@ -157,6 +164,7 @@ const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: ScrapedP
     .then(analysedProjects => ({
       ...analysedProjects,
       hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
+      changeProgramName: config.azure.collections.find(c => c.name === scrapedProject.name[0])?.changeProgram?.name,
       lastUpdated: new Date().toISOString(),
       projects: analysedProjects.projects.map(p => (
         matchingProject(p.name)(scrapedProject) ? scrapedProject : p
@@ -168,23 +176,34 @@ const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: ScrapedP
 
 export default (config: ParsedConfig) => (collectionName: string, projectConfig: ParsedProjectConfig) => (
   (analysis: ProjectAnalysis) => Promise.all([
-    writeRepoAnalysisFile(collectionName, projectConfig, analysis),
-    writeReleaseAnalysisFile(collectionName, projectConfig, analysis),
-    writeWorkItemAnalysisFile(collectionName, projectConfig, analysis),
-    writeOverviewFile(collectionName, projectConfig, analysis),
+    writeRepoAnalysisFile(config, collectionName, projectConfig, analysis),
+    writeReleaseAnalysisFile(config, collectionName, projectConfig, analysis),
+    writeWorkItemAnalysisFile(config, collectionName, projectConfig, analysis),
+    writeOverviewFile(config, collectionName, projectConfig, analysis),
     updateOverallSummary(config)({ name: [collectionName, projectConfig.name] })
   ])
 );
 
-export const writeSummaryMetricsFile = (summary: SummaryMetrics) => (
-  writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
-);
+export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<SummaryMetrics, keyof GlobalUIConfig>) => {
+  const summaryMetrics: SummaryMetrics = {
+    ...summary,
+    lastUpdated: new Date().toISOString(),
+    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
+    changeProgramName: config.azure.collections[0]?.changeProgram?.name
+  };
+
+  return (
+    writeFile(['./'], 'summary-metrics.json', JSON.stringify(summaryMetrics))
+  );
+};
 
 export const writeChangeProgramFile = (config: ParsedConfig) => (tasks: UIChangeProgramTask[]) => {
   const someCollectionWithChangeProgram = config.azure.collections.find(c => c.changeProgram);
 
   const changeProgram: UIChangeProgram = {
-    lastUpdateDate: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
+    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
     details: someCollectionWithChangeProgram
       ? {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

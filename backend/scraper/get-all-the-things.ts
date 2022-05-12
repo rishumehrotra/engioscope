@@ -88,7 +88,7 @@ const scrape = async (config: ParsedConfig) => {
 
   await Promise.all([
     changeProgramWorkItems.then(writeChangeProgramFile(config)),
-    writeSummaryMetricsFile(summariseResults(
+    writeSummaryMetricsFile(config, summariseResults(
       config,
       results
         .map(r => ({

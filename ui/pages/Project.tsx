@@ -46,6 +46,8 @@ const Project: React.FC = () => {
             ) : <span className="font-bold text-lg">&nbsp;</span>}
           </div>
         )}
+        changeProgramName={project?.changeProgramName}
+        hasSummary={project?.hasSummary}
       />
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
         <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">

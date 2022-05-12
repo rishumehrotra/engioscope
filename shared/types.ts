@@ -5,7 +5,7 @@ export type ScrapedProject = {
   name: [collection: string, project: string];
 };
 
-export type AnalysedProjects = {
+export type AnalysedProjects = GlobalUIConfig & {
   projects: ScrapedProject[];
   lastUpdated: string;
   hasSummary: boolean;
@@ -307,9 +307,14 @@ export type Overview = {
   relations: Record<number, number[]>;
 };
 
-export type UIProjectAnalysis = {
-  name: [collection: string, project: string];
+export type GlobalUIConfig = {
   lastUpdated: string;
+  hasSummary: boolean;
+  changeProgramName?: string;
+};
+
+export type UIProjectAnalysis = GlobalUIConfig & {
+  name: [collection: string, project: string];
   reposCount: number;
   releasePipelineCount: number;
   workItemCount: number;
@@ -361,7 +366,7 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   environments?: string[];
 };
 
-export type SummaryMetrics = SummaryMetricsType;
+export type SummaryMetrics = SummaryMetricsType & GlobalUIConfig;
 
 export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
   collection: string;
@@ -373,8 +378,7 @@ export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 
   actualCompletion?: string;
 };
 
-export type UIChangeProgram = {
-  lastUpdateDate: string;
+export type UIChangeProgram = GlobalUIConfig & {
   details: null | {
     taskName: string;
     name: string;
