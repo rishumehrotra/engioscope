@@ -14,7 +14,7 @@ import useHover from '../../hooks/use-hover';
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
     case 'completed-on-time': return 'bg-green-600 border-green-600 text-white completed-on-time';
-    case 'completed-late': return 'bg-orange-400 border-orange-400 completed-late';
+    case 'completed-late': return 'bg-amber-400 border-amber-400 completed-late';
     case 'overdue': return 'bg-red-600 border-red-600 text-white overdue';
     case 'planned': return 'border-black planned';
     case 'unplanned': return 'border-black unplanned';
@@ -25,8 +25,8 @@ const styleForState = (state: RollupTaskState) => {
 const styleForTask = (state: TaskState) => {
   switch (state) {
     case 'completed-on-time': return 'text-green-600';
-    case 'completed-late': return 'text-orange-400 completed-late';
-    case 'overdue': return 'text-red-600 overdue';
+    case 'completed-late': return 'text-amber-500 completed-late';
+    case 'overdue': return 'text-red-700 overdue';
     case 'planned': return 'text-gray-500';
     default: return '';
   }
@@ -46,12 +46,13 @@ type TaskProps = {
     onMouseOver: () => void;
     onMouseOut: () => void;
   };
+  weeks: OrganizedTasks['weeks'];
 };
 
 const Task: React.FC<TaskProps> = ({
   taskDetails: {
     task, weekIndex, weekCount, status
-  }, isHovered, mouseEvents
+  }, isHovered, mouseEvents, weeks
 }) => {
   const [ref, onRowHover] = useHover<HTMLTableRowElement>();
 
@@ -63,15 +64,26 @@ const Task: React.FC<TaskProps> = ({
       data-tip={taskTooltip(task)}
       data-html
     >
-      <td className={`text-lg pr-4 py-1 sticky z-10 left-0 ${onRowHover ? 'bg-gray-100' : 'bg-gray-50'}`}>
-        <a href={task.url} target="_blank" rel="noreferrer" className="link-text text-base pl-28 inline-block truncate max-w-screen-sm">
-          {formatTitle(task)}
-        </a>
+      <td className={`text-lg sticky z-10 left-0 ${
+        onRowHover ? 'bg-gray-100' : 'bg-gray-50'
+      }`}
+      >
+        <div className="border-r border-gray-300 pr-4 py-1 ">
+          <a href={task.url} target="_blank" rel="noreferrer" className="link-text text-base pl-28 inline-block truncate max-w-screen-sm">
+            {formatTitle(task)}
+          </a>
+        </div>
       </td>
-      {range(0, weekCount).map(value => (
+      {range(0, weekCount).map((value, wIndex) => (
         <td
           key={value}
-          className={`text-center ${value === weekIndex ? styleForTask(status) : ''} ${isHovered(value) ? 'bg-gray-100' : ''}`}
+          className={`text-center ${
+            value === weekIndex ? styleForTask(status) : ''
+          // eslint-disable-next-line no-nested-ternary
+          } ${isHovered(value)
+            ? (weeks[wIndex].highlight ? 'bg-blue-200' : 'bg-gray-100')
+            : (weeks[wIndex].highlight ? 'bg-blue-100' : '')
+          }`}
           {...mouseEvents(value)}
         >
           {/* eslint-disable-next-line no-nested-ternary */}
@@ -113,7 +125,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
       >
         <td className={`sticky z-20 left-0 ${isSubGroupRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}>
           <div
-            className="grid grid-cols-2 items-center gap-2 p-2 ml-16"
+            className="grid grid-cols-2 items-center gap-2 p-2 ml-16 border-r border-gray-300"
             style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
@@ -141,7 +153,11 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
           <td
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            className={`sticky z-10 left-0 text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
+            // eslint-disable-next-line no-nested-ternary
+            className={`sticky z-10 left-0 text-center ${isHovered(index)
+              ? weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100'
+              : weeks[index].highlight ? 'bg-blue-100' : ''
+            }`}
             {...mouseEvents(index)}
             data-tip={rollupTooltip(subgroup.tasks
               .filter(t => t.weekIndex === index)
@@ -160,6 +176,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
             taskDetails={taskDetails}
             isHovered={isHovered}
             mouseEvents={mouseEvents}
+            weeks={weeks}
           />
         ))
       )}
@@ -192,7 +209,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
       >
         <td className={`sticky z-10 left-0 ${isRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}>
           <div
-            className="grid grid-cols-2 items-center gap-2 p-2 ml-8"
+            className="grid grid-cols-2 items-center gap-2 p-2 ml-8 border-r border-gray-300"
             style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
@@ -214,7 +231,11 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
           <td
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            className={`text-center ${isHovered(index) ? 'bg-gray-100' : ''}`}
+            // eslint-disable-next-line no-nested-ternary
+            className={`text-center ${isHovered(index)
+              ? weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100'
+              : weeks[index].highlight ? 'bg-blue-100' : ''
+            }`}
             {...mouseEvents(index)}
             data-tip={rollupTooltip(group.subgroups
               .flatMap(s => s.tasks)
@@ -295,7 +316,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
             ? (
               <div className="absolute -bottom-16 -ml-2 text-left origin-top-left pl-2 w-32 -rotate-45 text-xs font-normal text-gray-600">
                 <span className={`p-1 rounded-md ${
-                  week.highlight ? 'bg-orange-300' : ''
+                  week.highlight ? 'bg-blue-200 text-blue-800' : ''
                 } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
                 >
                   {week.label}
@@ -322,7 +343,7 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
 
   return (
     <div className="overflow-x-scroll">
-      <table cellPadding="3" className="w-max">
+      <table className="w-max">
         <tbody>
           <TableHeader
             title="Planned activities"

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { SummaryMetrics } from '../../shared/types';
+import ChangeProgramNavBar from '../components/ChangeProgramNavBar';
 import Switcher from '../components/common/Switcher';
 import Header from '../components/Header';
 import Loading from '../components/Loading';
@@ -28,31 +29,33 @@ const Summary: React.FC = () => {
       <Header
         title="Metrics summary"
         lastUpdated={metrics ? new Date(metrics.lastUpdateDate) : null}
+        subtitle={() => (metrics
+          ? (
+            <div className="text-base mt-2 font-normal text-gray-200">
+              <span className="text-lg font-bold">{shortDate(threeMonthsAgo(metrics.lastUpdateDate))}</span>
+              {' to '}
+              <span className="text-lg font-bold">{shortDate(new Date(metrics.lastUpdateDate))}</span>
+            </div>
+          )
+          : null)}
       />
 
-      {metrics ? (
-        <div className="mx-32 mt-8 bg-gray-50 grid grid-cols-2">
-          <div>
-            <strong className="font-semibold">
-              Reporting period:
-            </strong>
-            {` From ${shortDate(threeMonthsAgo(metrics.lastUpdateDate))} to ${shortDate(new Date(metrics.lastUpdateDate))}.`}
-          </div>
-          <div className="text-right justify-self-end">
-            <div className="flex items-center">
-              <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
-              <Switcher
-                options={[
-                  { label: 'Teams', value: 'teams' },
-                  { label: 'Metric', value: 'metric' }
-                ]}
-                onChange={value => setShow(value === 'teams' ? undefined : value, true)}
-                value={show === undefined ? 'teams' : show}
-              />
-            </div>
+      <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
+        <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
+          <ChangeProgramNavBar />
+          <div className="flex items-center">
+            <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
+            <Switcher
+              options={[
+                { label: 'Teams', value: 'teams' },
+                { label: 'Metric', value: 'metric' }
+              ]}
+              onChange={value => setShow(value === 'teams' ? undefined : value, true)}
+              value={show === undefined ? 'teams' : show}
+            />
           </div>
         </div>
-      ) : null}
+      </div>
 
       <div className="mx-32">
         {/* eslint-disable-next-line no-nested-ternary */}

@@ -13,12 +13,12 @@ const Switcher: <T extends string | number>(props: SwitcherProps<T>) => React.Re
   if (options.length === 0) return null;
 
   return (
-    <ul className="group p-1 bg-gray-100 hover:bg-gray-200 rounded-lg inline-flex">
+    <ul className="group p-1 bg-slate-100 hover:bg-slate-200 rounded-lg inline-flex">
       {options.map(option => (
         <li key={option.value}>
           <label className={
             `py-1 px-5 relative rounded-md items-center text-base font-medium inline-block
-            ${option.value === value ? 'bg-white group-hover:shadow-sm' : 'group-hover:bg-gray-200'}`
+            ${option.value === value ? 'bg-gray-700 text-white group-hover:shadow-sm' : 'group-hover:bg-gray-200'}`
           }
           >
             <input

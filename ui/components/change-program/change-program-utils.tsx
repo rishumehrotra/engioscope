@@ -24,7 +24,7 @@ export type RollupTaskState = TaskState | 'no-tasks';
 const rollUpTaskStates = (states: TaskState[]): RollupTaskState => {
   if (states.length === 0) return 'no-tasks';
   if (states.every(state => state === 'unplanned')) return 'unplanned';
-  if (states.every(state => state === 'planned')) return 'planned';
+  if (states.some(state => state === 'planned')) return 'planned';
   if (states.every(state => state === 'completed-on-time')) return 'completed-on-time';
   if (states.some(state => state === 'overdue')) return 'overdue';
   return 'completed-late';
@@ -56,7 +56,7 @@ export const taskTooltip = (task: UIChangeProgramTask) => {
       ${(() => {
     switch (taskState(new Date())(task)) {
       case 'completed-on-time': return showStatus('bg-green-600', 'Completed on time');
-      case 'completed-late': return showStatus('bg-orange-600', 'Completed, delayed');
+      case 'completed-late': return showStatus('bg-amber-500', 'Completed, delayed');
       case 'overdue': return showStatus('bg-red-600', 'Overdue');
       case 'planned': return showStatus('bg-gray-600', 'Planned');
       default: return showStatus('bg-gray-600', 'Unplanned');
@@ -91,8 +91,8 @@ export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks
   return `
     Week: <strong>${week.label}</strong><br />
     ${showCount(overdueCount, 'overdue', 'bg-red-600')}
-    ${showCount(completedLateCount, 'completed late', 'bg-orange-500')}
-    ${showCount(completedOnTimeCount, 'completed on time', 'bg-green-500')}
+    ${showCount(completedLateCount, 'completed late', 'bg-amber-500')}
+    ${showCount(completedOnTimeCount, 'completed on time', 'bg-green-600')}
     ${showCount(plannedCount, 'planned', 'bg-gray-500')}
     ${showCount(unplannedCount, 'unplanned', 'bg-gray-500')}
   `;

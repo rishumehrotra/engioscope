@@ -33,6 +33,18 @@ body {
   @apply text-blue-600 hover:underline
 }
 
+.nav-link {
+  @apply px-3 mr-2 h-10 rounded-md text-lg font-medium leading-4 focus:outline-none transition duration-300 ease-in-out flex items-center;
+}
+
+.nav-link.selected {
+  @apply bg-gray-800 text-gray-200;
+}
+
+.nav-link.not-selected {
+  @apply border-2 border-transparent hover:border-gray-800 text-gray-800 cursor-pointer;
+}
+
 .commits-profile:hover .dev-name {
   @apply link-text underline;
 }

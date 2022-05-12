@@ -25,7 +25,7 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
 }) => (
   <div style={{ width: sidebarWidth }} className="justify-self-end">
     {headlineStats.length > 0 && (
-      <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-md grid grid-cols-2 gap-4">
+      <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-lg grid grid-cols-2 gap-4">
         {headlineStats.map(({ label, value, unit }) => (
           <div key={label}>
             <h3 className="font-semibold pb-1">
