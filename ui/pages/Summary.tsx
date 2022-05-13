@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import type { SummaryMetrics } from '../../shared/types';
 import ChangeProgramNavBar from '../components/ChangeProgramNavBar';
 import Switcher from '../components/common/Switcher';
-import Header from '../components/Header';
 import Loading from '../components/Loading';
 import SummaryByMetric from '../components/summary-page/SummaryByMetric';
 import SummaryByTeam from '../components/summary-page/SummaryByTeam';
 import { dontFilter, filterBySearch, shortDate } from '../helpers/utils';
+import { useSetHeaderDetails } from '../hooks/header-hooks';
 import useQueryParam, { asString } from '../hooks/use-query-param';
 import { metricsSummary } from '../network';
 
@@ -23,25 +23,26 @@ const Summary: React.FC = () => {
   useEffect(() => { metricsSummary().then(setMetrics); }, []);
   const [search] = useQueryParam('search', asString);
   const [show, setShow] = useQueryParam('show', asString);
+  const setHeaderDetails = useSetHeaderDetails();
+
+  useEffect(() => {
+    setHeaderDetails({
+      globalSettings: metrics,
+      title: 'Metrics',
+      subtitle: metrics
+        ? (
+          <div className="text-base mt-2 font-normal text-gray-200">
+            <span className="text-lg font-bold">{shortDate(threeMonthsAgo(metrics.lastUpdateDate))}</span>
+            {' to '}
+            <span className="text-lg font-bold">{shortDate(new Date(metrics.lastUpdateDate))}</span>
+          </div>
+        )
+        : null
+    });
+  }, [metrics, setHeaderDetails]);
 
   return (
     <>
-      <Header
-        title="Metrics summary"
-        lastUpdated={metrics ? new Date(metrics.lastUpdateDate) : null}
-        changeProgramName={metrics?.changeProgramName}
-        hasSummary={metrics?.hasSummary}
-        subtitle={() => (metrics
-          ? (
-            <div className="text-base mt-2 font-normal text-gray-200">
-              <span className="text-lg font-bold">{shortDate(threeMonthsAgo(metrics.lastUpdateDate))}</span>
-              {' to '}
-              <span className="text-lg font-bold">{shortDate(new Date(metrics.lastUpdateDate))}</span>
-            </div>
-          )
-          : null)}
-      />
-
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
         <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
           <ChangeProgramNavBar />

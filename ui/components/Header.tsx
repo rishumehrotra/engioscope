@@ -1,15 +1,8 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { shortDate } from '../helpers/utils';
+import { useHeaderDetails } from '../hooks/header-hooks';
 import logo from '../images/engioscope.png';
-
-type HeaderProps = {
-  lastUpdated?: Date | null;
-  title: string;
-  subtitle?: () => React.ReactNode;
-  changeProgramName?: string;
-  hasSummary?: boolean;
-};
 
 const navItems = (changeProgramName?: string) => [
   { url: '/', name: 'Projects' },
@@ -22,10 +15,9 @@ const isSelectedForPath = (pathName: string) => (url: string) => (
     : url === '/'
 );
 
-const Header: React.FC<HeaderProps> = ({
-  lastUpdated, title, subtitle, changeProgramName, hasSummary
-}) => {
+const Header2: React.FC = () => {
   const location = useLocation();
+  const headerDetails = useHeaderDetails();
   const isSelected = useMemo(() => isSelectedForPath(location.pathname), [location.pathname]);
 
   return (
@@ -35,9 +27,9 @@ const Header: React.FC<HeaderProps> = ({
           <img src={logo} alt="Logo" className="w-36" />
         </Link>
         <ul>
-          {(changeProgramName || hasSummary)
+          {(headerDetails.globalSettings?.changeProgramName || headerDetails.globalSettings?.hasSummary)
             ? (
-              navItems(changeProgramName).map(({ url, name }) => (
+              navItems(headerDetails.globalSettings?.changeProgramName).map(({ url, name }) => (
                 <li
                   key={url}
                   className="inline-block mr-4"
@@ -60,19 +52,21 @@ const Header: React.FC<HeaderProps> = ({
         </ul>
       </div>
       <div className="mt-24">
-        <div className={`flex align-baseline justify-between ${subtitle ? '' : 'mb-6'}`}>
+        <div className="flex align-baseline justify-between">
           <div>
-            <h1 className="text-5xl font-bold text-gray-200 pr-2">{title}</h1>
-            {subtitle ? subtitle() : (
-              <div className="text-lg font-semibold mt-2">
-                {' '}
+            <h1 className="text-5xl font-bold text-gray-200 pr-2">{headerDetails.title}</h1>
+            {headerDetails.subtitle || (
+              <div className="invisible text-lg font-bold mt-2">
+                Dummy
               </div>
             )}
           </div>
           <div className="text-sm text-gray-300 justify-self-end place-self-end">
             Last updated on
             <span className="font-semibold ml-1">
-              {lastUpdated ? shortDate(lastUpdated) : '...'}
+              {headerDetails.globalSettings?.lastUpdated
+                ? shortDate(new Date(headerDetails.globalSettings.lastUpdated))
+                : '...'}
             </span>
           </div>
         </div>
@@ -81,4 +75,4 @@ const Header: React.FC<HeaderProps> = ({
   );
 };
 
-export default Header;
+export default Header2;

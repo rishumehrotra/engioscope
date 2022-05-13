@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { AnalysedProjects } from '../../shared/types';
-import Header from '../components/Header';
 import Loading from '../components/Loading';
+import { useSetHeaderDetails } from '../hooks/header-hooks';
 import { useSetProjectDetails } from '../hooks/project-details-hooks';
 import { fetchCollections } from '../network';
 
@@ -26,35 +26,34 @@ const Project: React.FC<{
 const Collection: React.FC = () => {
   const [analysedProjects, setAnalysedProjects] = useState<AnalysedProjects | undefined>();
   const setProjectDetails = useSetProjectDetails();
+  const setHeaderDetails = useSetHeaderDetails();
 
   useEffect(() => { fetchCollections().then(setAnalysedProjects); }, []);
   useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
+  useEffect(() => {
+    setHeaderDetails({
+      globalSettings: analysedProjects,
+      title: 'Projects'
+    });
+  }, [analysedProjects, setHeaderDetails]);
 
   return (
-    <>
-      <Header
-        lastUpdated={analysedProjects?.lastUpdated ? new Date(analysedProjects.lastUpdated) : null}
-        title="Projects"
-        hasSummary={analysedProjects?.hasSummary}
-        changeProgramName={analysedProjects?.changeProgramName}
-      />
-      <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-        <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-          {
-            analysedProjects
-              ? analysedProjects.projects.map(collection => (
-                <Project
-                  key={collection.name[1]}
-                  projectName={collection.name[1]}
-                  route={`/${collection.name.join('/')}/`}
-                  collectionName={collection.name[0]}
-                />
-              ))
-              : <Loading />
-          }
-        </div>
+    <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
+      <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+        {
+          analysedProjects
+            ? analysedProjects.projects.map(collection => (
+              <Project
+                key={collection.name[1]}
+                projectName={collection.name[1]}
+                route={`/${collection.name.join('/')}/`}
+                collectionName={collection.name[0]}
+              />
+            ))
+            : <Loading />
+        }
       </div>
-    </>
+    </div>
   );
 };
 

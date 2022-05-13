@@ -1,6 +1,12 @@
 import type { SummaryMetricsType } from '../backend/scraper/summarise-results';
 import type { ReleaseCondition } from '../backend/scraper/types-azure';
 
+export type GlobalUIConfig = {
+  lastUpdated: string;
+  hasSummary: boolean;
+  changeProgramName?: string;
+};
+
 export type ScrapedProject = {
   name: [collection: string, project: string];
 };
@@ -305,12 +311,6 @@ export type Overview = {
   groups: Record<string, { witId: string; name: string }>;
   times: Record<number, WorkItemTimes>;
   relations: Record<number, number[]>;
-};
-
-export type GlobalUIConfig = {
-  lastUpdated: string;
-  hasSummary: boolean;
-  changeProgramName?: string;
 };
 
 export type UIProjectAnalysis = GlobalUIConfig & {

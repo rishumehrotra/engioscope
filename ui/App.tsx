@@ -9,6 +9,8 @@ import RecordAnalytics from './components/RecordAnalytics';
 import Analytics from './pages/Analytics';
 import Summary from './pages/Summary';
 import ChangeProgram from './pages/ChangeProgram';
+import Header from './components/Header';
+import { HeaderProvider } from './hooks/header-hooks';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -23,17 +25,20 @@ const App: React.FC = () => {
     <BrowserRouter>
       <ProjectDetailsProvider>
         <SortContextProvider>
-          <div className="mb-32 overflow-y-auto transition duration-500 ease-in-out">
-            <ReactTooltip />
-            <RecordAnalytics />
-            <Routes>
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/summary" element={<Summary />} />
-              <Route path="/change-program" element={<ChangeProgram />} />
-              <Route path="/:collection/:project/*" element={<Project />} />
-              <Route path="/" element={<Collection />} />
-            </Routes>
-          </div>
+          <HeaderProvider>
+            <div className="mb-32 overflow-y-auto transition duration-500 ease-in-out">
+              <ReactTooltip />
+              <RecordAnalytics />
+              <Header />
+              <Routes>
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/summary" element={<Summary />} />
+                <Route path="/change-program" element={<ChangeProgram />} />
+                <Route path="/:collection/:project/*" element={<Project />} />
+                <Route path="/" element={<Collection />} />
+              </Routes>
+            </div>
+          </HeaderProvider>
         </SortContextProvider>
       </ProjectDetailsProvider>
     </BrowserRouter>

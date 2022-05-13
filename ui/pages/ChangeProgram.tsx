@@ -4,8 +4,8 @@ import { organizeBy } from '../components/change-program/change-program-utils';
 import GroupedListing from '../components/change-program/GroupedListing';
 import ChangeProgramNavBar from '../components/ChangeProgramNavBar';
 import Switcher from '../components/common/Switcher';
-import Header from '../components/Header';
 import Loading from '../components/Loading';
+import { useSetHeaderDetails } from '../hooks/header-hooks';
 import useQueryParam, { asString } from '../hooks/use-query-param';
 import { changeProgramDetails } from '../network';
 
@@ -13,16 +13,17 @@ const ChangeProgram: React.FC = () => {
   const [changeProgram, setChangeProgram] = useState<UIChangeProgram | null>(null);
   useEffect(() => { changeProgramDetails().then(setChangeProgram); }, []);
   const [show, setShow] = useQueryParam('show', asString);
+  const setHeaderDetails = useSetHeaderDetails();
+
+  useEffect(() => {
+    setHeaderDetails({
+      globalSettings: changeProgram,
+      title: 'Progress'
+    });
+  }, [changeProgram, setHeaderDetails]);
 
   return (
     <>
-      <Header
-        title="Progress"
-        lastUpdated={changeProgram ? new Date(changeProgram.lastUpdated) : null}
-        changeProgramName={changeProgram?.changeProgramName}
-        hasSummary={changeProgram?.hasSummary}
-      />
-
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
         <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
           <ChangeProgramNavBar />
