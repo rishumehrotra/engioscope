@@ -1,10 +1,10 @@
 import prettyMs from 'pretty-ms';
 import {
-  head, last, prop, T
+  equals, head, isNil, last, pipe, prop, T
 } from 'rambda';
 import { count, incrementBy } from '../../../shared/reducer-utils';
 import { asc, byDate, desc } from '../../../shared/sort-utils';
-import type { UITests } from '../../../shared/types';
+import type { UITests, UIPipelineTest } from '../../../shared/types';
 import { unique, weeks } from '../../utils';
 import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
@@ -70,44 +70,45 @@ const latestBuilds = (allBuilds: Record<number, Build[] | undefined>) => (
   )
 );
 
-const extrapolateIfNeeded = async (testRunsByWeek: number[], historicalCount: () => Promise<number>) => {
-  const historical = await (testRunsByWeek[0] === 0 ? historicalCount() : 0);
-  return (
-    testRunsByWeek.reduce<number[]>((acc, runCount, index) => {
-      if (runCount !== 0) {
-        acc.push(runCount);
-        return acc;
-      }
+const extrapolateIfNeeded = async <T>(
+  valuesByWeek: T[],
+  historicalCount: () => Promise<T>,
+  isEmpty: (value: T) => boolean,
+  emptyValue: T
+) => {
+  const historical = await (isEmpty(valuesByWeek[0]) ? historicalCount() : emptyValue);
 
-      // runCount is 0
-      if (index === 0) {
-        // No past data to extrapolate from
-        acc.push(historical);
-        return acc;
-      }
-
-      // runCount is 0
-      // Extrapolate from previous week
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      acc.push(last(acc)!);
+  return valuesByWeek.reduce<T[]>((acc, val, index) => {
+    if (!isEmpty(val)) {
+      acc.push(val);
       return acc;
-    }, [])
-  );
+    }
+
+    // val is empty
+    if (index === 0) {
+      // No past data to extrapolate from
+      acc.push(historical);
+      return acc;
+    }
+
+    // val is empty, and this isn't the 0th week
+    // Extrapolate from previous week
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    acc.push(last(acc)!);
+    return acc;
+  }, []);
 };
 
 const getMasterBuilds = (allMasterBuilds: Record<string, Record<number, Build[] | undefined>>) => (
-  (repoId?: string) => (
-    (repoId ? (allMasterBuilds[repoId] || {}) : [])
-  )
+  (repoId?: string) => (repoId ? (allMasterBuilds[repoId] || {}) : [])
 );
 
-const historicalTestCount = (
-  allMasterBuilds: Record<string, Record<number, Build[] | undefined>>,
-  getOneBuildBeforeQueryPeriod: (buildDefinitionIds: number[]) => Promise<Build[]>,
-  testRunsByBuild: (build: Build) => Promise<TestRun[]>
+const getDefinitionIdsWithoutBuildsInFirstWeek = (
+  allMasterBuilds: Record<string, Record<number, Build[] | undefined>>
 ) => {
   const masterBuilds = getMasterBuilds(allMasterBuilds);
-  const definitionIdsWithoutBuildsInFirstWeek = unique(
+
+  return unique(
     Object.keys(allMasterBuilds)
       .filter(repoId => latestBuilds(masterBuilds(repoId))(T).length !== 0)
       .map(repoId => {
@@ -120,15 +121,29 @@ const historicalTestCount = (
       })
       .flat()
   );
+};
 
-  const pRunsByDefinitionIdBeforeQueryPeriod = getOneBuildBeforeQueryPeriod(definitionIdsWithoutBuildsInFirstWeek)
-    .then(builds => Promise.all(builds.map(async b => [b.definition.id, await testRunsByBuild(b)] as const)))
-    .then(x => Object.fromEntries(x));
+const historicalStatCollector = (
+  allMasterBuilds: Record<string, Record<number, Build[] | undefined>>,
+  getOneBuildBeforeQueryPeriod: (buildDefinitionIds: number[]) => Promise<Build[]>
+) => {
+  const buildsBeforeQueryPeriod = getOneBuildBeforeQueryPeriod(
+    getDefinitionIdsWithoutBuildsInFirstWeek(allMasterBuilds)
+  );
 
-  return async (buildDefinitionId: number) => {
-    const runsByDefinitionId = await pRunsByDefinitionIdBeforeQueryPeriod;
-    const runs = runsByDefinitionId[buildDefinitionId];
-    return runs ? count<TestRun>(incrementBy(prop('totalTests')))(runs) : 0;
+  return <T, U>(
+    statByBuild: (build: Build) => Promise<T>,
+    aggregator: (runs: T) => U
+  ) => {
+    const pBuildsByDefinitionIdBeforeQueryPeriod = buildsBeforeQueryPeriod
+      .then(builds => Promise.all(builds.map(async b => [b.definition.id, await statByBuild(b)] as const)))
+      .then(x => Object.fromEntries(x));
+
+    return async (buildDefinitionId: number) => {
+      const runsByDefinitionId = await pBuildsByDefinitionIdBeforeQueryPeriod;
+      const runs = runsByDefinitionId[buildDefinitionId];
+      return aggregator(runs);
+    };
   };
 };
 
@@ -139,10 +154,21 @@ export default (
   allMasterBuilds: Record<string, Record<number, Build[] | undefined>>
 ) => {
   const masterBuilds = getMasterBuilds(allMasterBuilds);
-  const historicalTestCountByBuildId = historicalTestCount(
+  const collectHistoricalStat = historicalStatCollector(
     allMasterBuilds,
-    getOneBuildBeforeQueryPeriod,
-    testRunsByBuild
+    getOneBuildBeforeQueryPeriod
+  );
+  const historicalTestCountByBuildId = collectHistoricalStat(
+    testRunsByBuild,
+    runs => (runs ? count<TestRun>(incrementBy(prop('totalTests')))(runs) : 0)
+  );
+
+  const historicalCoverageByBuildId = collectHistoricalStat(
+    pipe(prop('id'), testCoverageByBuildId),
+    coverage => {
+      if (!coverage) return null;
+      return coverageFrom(coverage.coverageData);
+    }
   );
 
   return async (repoId?: string): Promise<UITests> => {
@@ -157,17 +183,14 @@ export default (
       ...latestBuildsInEachWeek.flat()
     ])];
 
-    const testRunsByBuildIds = Object.fromEntries(
-      await Promise.all(
+    const [testRunsByBuildIds, testCoverageByBuildIds] = await Promise.all([
+      Promise.all(
         interestingBuilds.map(async b => [b.id, await testRunsByBuild(b)] as const)
-      )
-    );
-
-    const testCoverageByBuildIds = Object.fromEntries(
-      await Promise.all(
-        matchingBuilds.map(async b => [b.id, await testCoverageByBuildId(b.id)] as const)
-      )
-    );
+      ).then(x => Object.fromEntries(x)),
+      Promise.all(
+        interestingBuilds.map(async b => [b.id, await testCoverageByBuildId(b.id)] as const)
+      ).then(x => Object.fromEntries(x))
+    ]);
 
     const testStats = matchingBuilds.map(build => {
       const runs = testRunsByBuildIds[build.id];
@@ -184,7 +207,22 @@ export default (
             .map(b => testRunsByBuildIds[b.id])
             .reduce(incrementBy(count(incrementBy(prop('totalTests')))), 0)
         ),
-        coverage: coverageFrom(coverage.coverageData)
+        coverage: coverageFrom(coverage.coverageData),
+        coverageByWeek: latestBuildsInEachWeek.map(
+          builds => builds.flat()
+            .filter(b => b.definition.id === build.definition.id)
+            .map(b => testCoverageByBuildIds[b.id])
+            .reduce<ReturnType<typeof coverageFrom>>((acc, coverage) => {
+              const coverageData = coverageFrom(coverage.coverageData);
+              if (coverageData === null) return acc;
+              if (acc === null) return coverageData;
+
+              return {
+                covered: acc.covered + coverageData.covered,
+                total: acc.total + coverageData.total
+              };
+            }, null)
+        )
       };
     });
 
@@ -193,14 +231,25 @@ export default (
     return Promise.all(
       testStats
         .filter(stat => stat.success + stat.failure !== 0)
-        .map(async stat => ({
+        .map<Promise<UIPipelineTest>>(async stat => ({
           name: stat.buildName,
           id: stat.buildDefinitionId,
           url: stat.url,
           successful: stat.success,
           failed: stat.failure,
           executionTime: prettyMs(stat.executionTime),
-          testsByWeek: await extrapolateIfNeeded(stat.testsByWeek, () => historicalTestCountByBuildId(stat.buildDefinitionId)),
+          testsByWeek: await extrapolateIfNeeded(
+            stat.testsByWeek,
+            () => historicalTestCountByBuildId(stat.buildDefinitionId),
+            equals(0), 0
+          ),
+          coverageByWeek: stat.coverageByWeek.every(isNil)
+            ? null
+            : await extrapolateIfNeeded(
+              stat.coverageByWeek,
+              () => historicalCoverageByBuildId(stat.buildDefinitionId),
+              isNil, null
+            ),
           coverage: stat.coverage
         }))
     );

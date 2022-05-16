@@ -1,9 +1,9 @@
-import { applySpec } from 'rambda';
+import { add, applySpec } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
 import type {
   QualityGateStatus, RepoAnalysis, UIBuildPipeline
 } from './types';
-import { exists } from './utils';
+import { divide, exists } from './utils';
 
 export const isDeprecated = (repo: RepoAnalysis) => (
   (
@@ -23,14 +23,16 @@ export const numberOfBuilds = (repo: RepoAnalysis) => repo.builds?.count || 0;
 export const totalTests = count(incrementBy(numberOfTests));
 export const totalBuilds = count(incrementBy(numberOfBuilds));
 
-const addColumnsInArray = (rows: number[][]) => (
-  rows.reduce<number[]>((acc, row) => {
+const combineColumnsInArray = <T>(combiner: (a: T, b: T) => T) => (rows: T[][]) => (
+  rows.reduce<T[]>((acc, row) => {
     row.forEach((val, index) => {
-      acc[index] = (acc[index] || 0) + val;
+      acc[index] = combiner(acc[index], val);
     });
     return acc;
   }, [])
 );
+
+const addColumnsInArray = combineColumnsInArray<number>((a, b) => add(a || 0, b));
 
 export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
   addColumnsInArray(
@@ -118,6 +120,26 @@ export const totalCoverage = (repos: RepoAnalysis[]) => (
     acc.total += cov.total;
     return acc;
   }, { total: 0, covered: 0 })
+);
+
+export const totalCoverageByWeek = (repos: RepoAnalysis[]) => (
+  combineColumnsInArray<{ covered: number; total: number } | null>(
+    (a, b) => {
+      if (!b) return a;
+      if (!a) return b;
+      return {
+        covered: a.covered + b.covered,
+        total: a.total + b.total
+      };
+    }
+  )(
+    repos
+      .flatMap(r => r.tests?.map(t => t.coverageByWeek))
+      .filter(exists)
+  ).map(c => {
+    if (!c) return 0;
+    return divide(c.covered, c.total).getOr(0);
+  })
 );
 
 export const sonarCountsByWeek = applySpec({

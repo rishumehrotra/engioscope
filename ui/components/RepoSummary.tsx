@@ -1,9 +1,10 @@
-import { compose, not } from 'rambda';
+import { compose, multiply, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek,
   reposWithPipelines, sonarCountsByWeek, totalBuilds, totalBuildsByWeek,
-  totalCoverage, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
+  totalCoverage, totalCoverageByWeek, totalSuccessfulBuildsByWeek,
+  totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import type {
   RepoAnalysis, UIBuildPipeline, QualityGateStatus, UICodeQuality
@@ -86,7 +87,8 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     totalBuildsByWeek: totalBuildsByWeek(repos),
     buildSuccessRate: buildSuccessRate(repos),
     totalSuccessfulByWeek: totalSuccessfulBuildsByWeek(repos),
-    totalCoverage: totalCoverage(repos)
+    totalCoverage: totalCoverage(repos),
+    totalCoverageByWeek: totalCoverageByWeek(repos)
   };
 };
 
@@ -180,11 +182,14 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
         }]}
         childStats={[{
           title: 'Coverage',
-          value: (({ total, covered }: { total: number; covered: number }) => (
-            total === 0
-              ? '-'
-              : `${Math.round((covered * 100) / total)}%`
-          ))(stats.totalCoverage)
+          value: (
+            <LabelWithSparkline
+              label={divide(stats.totalCoverage.covered, stats.totalCoverage.total).map(toPercentage).getOr('-')}
+              data={stats.totalCoverageByWeek.map(multiply(100))}
+              lineColor={increaseIsBetter(stats.totalCoverageByWeek)}
+              yAxisLabel={x => `${x}%`}
+            />
+          )
         }]}
       />
       <ProjectStat

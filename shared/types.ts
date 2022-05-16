@@ -139,16 +139,22 @@ export type UIPullRequests = {
   timeToApprove: null | { average: string; min: string; max: string };
 };
 
-export type UITests = null | {
+export type UIPipelineTest = {
   name: string;
   id: number;
   url: string;
   successful: number;
   failed: number;
   executionTime: string;
-  coverage: { covered: number; total: number } | null;
+  coverage: {
+    covered: number;
+    total: number;
+  } | null;
+  coverageByWeek: UIPipelineTest['coverage'][] | null;
   testsByWeek: number[];
-}[];
+};
+
+export type UITests = null | UIPipelineTest[];
 
 export type QualityGateStatus = 'pass' | 'warn' | 'fail' | 'unknown';
 

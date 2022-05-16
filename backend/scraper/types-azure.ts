@@ -325,7 +325,7 @@ export type TestRun = {
 
 export type CodeCoverageData = {
   buildFlavor: string;
-  buiildPlatform: string;
+  buildPlatform: string;
   coverageStats: {
     covered: number;
     delta?: number;

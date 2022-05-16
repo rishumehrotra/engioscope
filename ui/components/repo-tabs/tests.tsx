@@ -1,4 +1,5 @@
 import React from 'react';
+import { multiply } from 'rambda';
 import type { RepoAnalysis } from '../../../shared/types';
 import { num } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
@@ -57,10 +58,27 @@ export default (repo: RepoAnalysis): Tab => ({
                   <td>{pipeline.executionTime}</td>
                   <td>
                     {pipeline.coverage
-                      ? divide(pipeline.coverage.covered, pipeline.coverage.total)
-                        .map(toPercentage)
-                        .getOr('-')
-                      : '-'}
+                      ? (
+                        <LabelWithSparkline
+                          label={(
+                            pipeline.coverage
+                              ? divide(pipeline.coverage.covered, pipeline.coverage.total)
+                                .map(toPercentage)
+                                .getOr('-')
+                              : '-'
+                          )}
+                          data={(pipeline.coverageByWeek || []).map(c => (
+                            !c ? 0 : divide(c.covered, c.total).map(multiply(100)).getOr(0)
+                          ))}
+                          lineColor={increaseIsBetter((pipeline.coverageByWeek || []).map(c => (
+                            !c ? 0 : divide(c.covered, c.total).getOr(0)
+                          )))}
+                          yAxisLabel={x => `${x}%`}
+                        />
+                      )
+                      : (
+                        '-'
+                      )}
                   </td>
                 </tr>
               ))}
