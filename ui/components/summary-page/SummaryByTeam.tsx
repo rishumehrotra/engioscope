@@ -468,7 +468,14 @@ const HealthMetrics: React.FC<{
               >
                 Coverage
                 <div className="text-lg">
-                  {reposMetric(repoStats.coverage)}
+                  {reposMetric(
+                    <LabelWithSparkline
+                      label={repoStats.coverage}
+                      data={repoStats.coverageByWeek}
+                      lineColor={increaseIsBetter(repoStats.coverageByWeek)}
+                      yAxisLabel={x => `${x}%`}
+                    />
+                  )}
                 </div>
               </div>
             </div>

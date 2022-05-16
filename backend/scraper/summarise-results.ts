@@ -22,7 +22,7 @@ import {
 import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
   sonarCountsByWeek, totalBuilds, totalBuildsByWeek, totalCoverage,
-  totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
+  totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import { divide, exists, toPercentage } from '../../shared/utils';
 
@@ -197,6 +197,7 @@ type Summary = {
     newSonarSetupsByWeek: number[];
     sonarCountsByWeek: ReturnType<typeof sonarCountsByWeek>;
     coverage: string;
+    coverageByWeek: number[];
     ymlPipelines: { count: number; total: number };
     hasPipelines: number;
   };
@@ -367,6 +368,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           });
 
         const coverage = totalCoverage(matchesExcludingDeprecated);
+        const coverageByWeek = totalCoverageByWeek(matchesExcludingDeprecated);
         const pipelines = buildPipelines(matchesExcludingDeprecated);
 
         return {
@@ -386,6 +388,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),
           sonarCountsByWeek: sonarCountsByWeek(matchesExcludingDeprecated),
           coverage: divide(coverage.covered, coverage.total).map(toPercentage).getOr('-'),
+          coverageByWeek,
           ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length },
           hasPipelines: reposWithPipelines(matchesExcludingDeprecated).length
         };

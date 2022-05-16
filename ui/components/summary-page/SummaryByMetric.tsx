@@ -587,7 +587,14 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
           },
           {
             value: repoStats.coverage === '-' ? 0 : parseInt(repoStats.coverage, 10),
-            content: reposMetric(repoStats.coverage)
+            content: reposMetric(
+              <LabelWithSparkline
+                label={repoStats.coverage}
+                data={repoStats.coverageByWeek}
+                lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                yAxisLabel={x => `${x}%`}
+              />
+            )
           },
           ...pipelineStats.stages.flatMap(stage => [
             {

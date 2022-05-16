@@ -1,4 +1,4 @@
-import { add, applySpec } from 'rambda';
+import { add, applySpec, multiply } from 'rambda';
 import { count, incrementBy } from './reducer-utils';
 import type {
   QualityGateStatus, RepoAnalysis, UIBuildPipeline
@@ -138,7 +138,7 @@ export const totalCoverageByWeek = (repos: RepoAnalysis[]) => (
       .filter(exists)
   ).map(c => {
     if (!c) return 0;
-    return divide(c.covered, c.total).getOr(0);
+    return divide(c.covered, c.total).map(multiply(100)).map(Math.round).getOr(0);
   })
 );
 

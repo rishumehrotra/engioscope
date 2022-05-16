@@ -1,4 +1,4 @@
-import { compose, multiply, not } from 'rambda';
+import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek,
@@ -185,7 +185,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           value: (
             <LabelWithSparkline
               label={divide(stats.totalCoverage.covered, stats.totalCoverage.total).map(toPercentage).getOr('-')}
-              data={stats.totalCoverageByWeek.map(multiply(100))}
+              data={stats.totalCoverageByWeek}
               lineColor={increaseIsBetter(stats.totalCoverageByWeek)}
               yAxisLabel={x => `${x}%`}
             />
