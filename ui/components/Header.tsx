@@ -23,7 +23,7 @@ const Header2: React.FC = () => {
   return (
     <div className="bg-gray-900 px-32 pt-4 pb-16">
       <div className="inline-grid grid-flow-col items-center gap-20">
-        <Link to="/">
+        <Link to="/" className="outline-offset-8">
           <img src={logo} alt="Logo" className="w-36" />
         </Link>
         <ul>
@@ -36,8 +36,7 @@ const Header2: React.FC = () => {
                 >
                   <Link
                     to={url}
-                    className={`
-                  px-3 mr-2 h-10 rounded-md text-lg font-medium leading-4 focus:outline-none
+                    className={`px-3 mr-2 h-10 rounded-md text-lg font-medium leading-4
                   transition duration-300 ease-in-out flex items-center border-2 border-transparent
                   ${isSelected(url)
                   ? 'text-gray-100 bg-slate-700'
