@@ -1,7 +1,7 @@
 import {
-  always, last, length, pipe, prop, T
+  allPass, always, last, length, pipe, prop, T
 } from 'rambda';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types';
 import { num, shortDate } from '../../helpers/utils';
 import type { LineGraphProps } from '../graphs/LineGraph';
@@ -55,16 +55,11 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
     [accessors, organizeByWorkItemType, workItems]
   );
 
-  const filter = useCallback(
-    (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
-    [priorityFilter, sizeFilter]
-  );
-
   const csvData = useMemo(() => wipWorkItemsCSV(workItems, accessors), [workItems, accessors]);
 
   const workItemsToDisplay = useMemo(
-    () => organizeByWorkItemType(workItems, filter),
-    [organizeByWorkItemType, workItems, filter]
+    () => organizeByWorkItemType(workItems, allPass([priorityFilter, sizeFilter])),
+    [organizeByWorkItemType, workItems, priorityFilter, sizeFilter]
   );
 
   const workItemTooltip = useMemo(

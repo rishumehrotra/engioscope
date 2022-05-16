@@ -1,4 +1,4 @@
-import { prop } from 'rambda';
+import { allPass, pipe, prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import { asc, byDate } from '../../../shared/sort-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
@@ -105,10 +105,8 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     [groups]
   );
 
-  const filter = useCallback(
-    (workItem: UIWorkItem) => (
-      priorityFilter(workItem) && sizeFilter(workItem) && selectedStateFilter(workItem)
-    ),
+  const showWorkItem = useMemo(
+    () => allPass([priorityFilter, sizeFilter, selectedStateFilter]),
     [priorityFilter, selectedStateFilter, sizeFilter]
   );
 
@@ -131,7 +129,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
       Object.entries(states).reduce<typeof states>(
         (acc, [state, wis]) => {
           if (checkboxStatesForSidebar[state]) {
-            acc[state] = wis.filter(({ wi }) => filter(wi));
+            acc[state] = wis.filter(pipe(prop('wi'), showWorkItem));
           } else {
             acc[state] = [];
           }
@@ -141,7 +139,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         {}
       )
     ),
-    [checkboxStatesForSidebar, filter, states]
+    [checkboxStatesForSidebar, showWorkItem, states]
   );
 
   const hasData = useMemo(
@@ -291,7 +289,7 @@ const AgeOfWorkItemsByStatus: React.FC<AgeOfWorkItemsByStatusProps> = ({
   );
 
   const organised = useMemo(
-    () => accessors.organizeByWorkItemType(workItems, () => true),
+    () => accessors.organizeByWorkItemType(workItems, accessors.isWIP),
     [accessors, workItems]
   );
 
