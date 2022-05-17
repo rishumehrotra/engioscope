@@ -52,13 +52,28 @@ export const totalBuildsByWeek = (repos: RepoAnalysis[]) => (
 );
 
 export const totalSuccessfulBuildsByWeek = (repos: RepoAnalysis[]) => (
-  addColumnsInArray(
+  combineColumnsInArray(
+    (a?: { success: number; total: number }, b?: { success: number; total: number }) => {
+      if (!a) return b;
+      if (!b) return a;
+      return ({
+        success: add(a.success, b.success),
+        total: add(a.total, b.total)
+      });
+    }
+  )(
     repos
       .flatMap(r => r.builds?.pipelines)
       .filter(exists)
-      .map(p => p.successesByWeek)
+      .map(p => p.successesByWeek?.map(
+        (success, i) => ({ success, total: p.buildsByWeek?.[i] || 0 })
+      ))
       .filter(exists)
-  )
+  ).map(r => (
+    !r
+      ? 0
+      : divide(r.success, r.total).map(multiply(100)).map(Math.round).getOr(0)
+  ))
 );
 
 const isBeforeEndOfWeekFilters = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]

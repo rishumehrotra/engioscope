@@ -673,7 +673,7 @@ const HealthMetrics: React.FC<{
                     }
                     data={repoStats.builds.successfulByWeek}
                     lineColor={increaseIsBetter(repoStats.builds.successfulByWeek)}
-                    yAxisLabel={num}
+                    yAxisLabel={x => `${x}%`}
                   />
                 )}
               </div>

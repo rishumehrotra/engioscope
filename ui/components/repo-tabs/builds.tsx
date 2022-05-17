@@ -4,6 +4,7 @@ import { num, shortDate } from '../../helpers/utils';
 import AlertMessage from '../common/AlertMessage';
 import type { Tab } from './Tabs';
 import TabContents from './TabContents';
+import { divide, toPercentage } from '../../../shared/utils';
 
 export default (builds: RepoAnalysis['builds']): Tab => ({
   title: 'Builds',
@@ -57,7 +58,13 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
                     <td>{pipeline.status.type === 'unused' ? '-' : pipeline.success}</td>
                     <td>{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>
                     <td>
-                      {pipeline.status.type === 'unused' ? '-' : `${Math.round((pipeline.success * 100) / pipeline.count)}%`}
+                      {pipeline.status.type === 'unused'
+                        ? '-'
+                        : (
+                          divide(pipeline.success, pipeline.count)
+                            .map(toPercentage)
+                            .getOr('-')
+                        )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       {pipeline.status.type === 'unused'

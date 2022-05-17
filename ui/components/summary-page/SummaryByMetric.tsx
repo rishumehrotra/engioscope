@@ -789,7 +789,7 @@ const CIBuilds: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
                 }
                 data={repoStats.builds.successfulByWeek}
                 lineColor={increaseIsBetter(repoStats.builds.successfulByWeek)}
-                yAxisLabel={num}
+                yAxisLabel={x => `${x}%`}
               />
             )
           },

@@ -86,7 +86,7 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     totalBuilds: totalBuilds(repos),
     totalBuildsByWeek: totalBuildsByWeek(repos),
     buildSuccessRate: buildSuccessRate(repos),
-    totalSuccessfulByWeek: totalSuccessfulBuildsByWeek(repos),
+    totalSuccessfulBuildsByWeek: totalSuccessfulBuildsByWeek(repos),
     totalCoverage: totalCoverage(repos),
     totalCoverageByWeek: totalCoverageByWeek(repos)
   };
@@ -210,8 +210,9 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           value: (
             <LabelWithSparkline
               label={stats.buildSuccessRate}
-              data={stats.totalSuccessfulByWeek}
-              lineColor={increaseIsBetter(stats.totalSuccessfulByWeek)}
+              data={stats.totalSuccessfulBuildsByWeek}
+              lineColor={increaseIsBetter(stats.totalSuccessfulBuildsByWeek)}
+              yAxisLabel={x => `${x}%`}
             />
           ),
           tooltip: 'Success rate across all matching repos'
