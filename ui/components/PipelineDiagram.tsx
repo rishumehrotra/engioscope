@@ -1,5 +1,6 @@
 import { add, range } from 'rambda';
 import React, { useMemo } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { exists } from '../helpers/utils';
 import type { PipelineStageWithCounts } from '../../shared/pipeline-utils';
 
@@ -130,7 +131,7 @@ type PipelineDiagramProps = {
   stages: PipelineStageWithCounts[];
 };
 
-const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
+const PipelineDiagramInternal: React.FC<PipelineDiagramProps> = ({ stages }) => {
   const grid = useMemo(() => stagesGrid(stages), [stages]);
 
   const gridWidth = useMemo(() => (
@@ -204,5 +205,15 @@ const PipelineDiagram: React.FC<PipelineDiagramProps> = ({ stages }) => {
     </div>
   );
 };
+
+const PipelineDiagram: React.FC<PipelineDiagramProps> = pipelineDiagramProps => (
+  <ErrorBoundary
+    fallback={(
+      <div className="text-sm text-amber-700">Sorry, something went wrong when showing the pipeline diagram.</div>
+    )}
+  >
+    <PipelineDiagramInternal {...pipelineDiagramProps} />
+  </ErrorBoundary>
+);
 
 export default PipelineDiagram;
