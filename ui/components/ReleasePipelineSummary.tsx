@@ -105,11 +105,9 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       })}
       <ProjectStat
         topStats={[{
-          title: 'Master-only pipelines',
+          title: 'Master-only releases',
           value: divide(masterDeploys.count, masterDeploys.total).map(toPercentage).getOr('-'),
-          tooltip: `${num(masterDeploys.count)} out of ${masterDeploys.total} release ${
-            masterDeploys.count === 1 ? 'pipeline deploys' : 'pipelines deploy'
-          } exclusively from master.${
+          tooltip: `${num(masterDeploys.count)} out of ${masterDeploys.total} releases were exclusively from master.${
             ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
           }`
         }]}

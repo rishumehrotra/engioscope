@@ -713,9 +713,9 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Number of release pipelines that only release from the master branch"
+                  data-tip="Percentage of releases where all the artifacts were from the master branch"
                 >
-                  Master only pipelines
+                  Master-only releases
                 </div>
                 <div className="font-semibold text-xl">
                   {pipelinesMetric(

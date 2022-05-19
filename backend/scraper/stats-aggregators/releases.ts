@@ -2,6 +2,7 @@ import { always, last, prop } from 'rambda';
 import { asc, byNum } from '../../../shared/sort-utils';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types';
 import { exists } from '../../../shared/utils';
+import { isMaster } from '../../utils';
 import type { ParsedProjectConfig } from '../parse-config';
 import type {
   Release, ReleaseCondition, EnvironmentStatus, ReleaseDefinition
@@ -134,9 +135,10 @@ const getReposAndBranches = (
     ? didAttemptGoAheadUsing(pipeline, ignoreStagesBefore)
     : always(true);
 
-  const { repos, stageInfo } = pipeline.attempts.reduce<{
+  const { repos, stageInfo, attempts } = pipeline.attempts.reduce<{
     repos: Record<string, { name: string; branches: Set<string>; additionalBranches: Set<string> }>;
     stageInfo: Map<number, { successful: number; total: number }>;
+    attempts: { total: number; master: number };
   }>((acc, attempt) => {
     const attemptWentAhead = didAttemptGoAhead(attempt);
 
@@ -164,8 +166,15 @@ const getReposAndBranches = (
       acc.stageInfo.set(stage.rank, stageInfo);
     });
 
+    if (attemptWentAhead) {
+      acc.attempts.total += 1;
+      if (attempt.reposAndBranches.every(b => isMaster(b.branchName))) {
+        acc.attempts.master += 1;
+      }
+    }
+
     return acc;
-  }, { repos: {}, stageInfo: new Map() });
+  }, { repos: {}, stageInfo: new Map(), attempts: { total: 0, master: 0 } });
 
   return {
     repos: Object.entries(repos).reduce<Record<string, { name: string; branches: string[]; additionalBranches?: string[] }>>(
@@ -179,6 +188,7 @@ const getReposAndBranches = (
       },
       {}
     ),
+    attempts,
     stageCounts: pipeline.envs
       .filter(({ rank }) => stageInfo.has(rank))
       .sort(asc(byNum(prop('rank'))))

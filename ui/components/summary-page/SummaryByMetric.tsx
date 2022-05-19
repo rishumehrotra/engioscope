@@ -822,7 +822,7 @@ const Releases: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
   const table: CollapsibleSectionProps['table'] = useCallback(() => ({
     columns: [
       null,
-      { label: 'Master only pipelines', tooltip: 'Number of release pipelines that only release from the master branch' },
+      { label: 'Master-only releases', tooltip: 'Percentage of releases where all the artifacts were from the master branch' },
       { label: 'Starts with artifact', tooltip: 'Number of release pipelines that start with an artifact' },
       { label: 'Repos with release pipelines', tooltip: 'Number of repos having release pipelines' }
     ],

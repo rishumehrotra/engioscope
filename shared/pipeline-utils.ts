@@ -137,13 +137,12 @@ export const pipelineMeetsBranchPolicyRequirements = (
     .every(p => p === 'pass')
 );
 
-export const masterDeploysCount = (pipelines: Pipeline[]) => {
-  const pipelinesWithBranches = pipelines.filter(p => repoBranches(p).length > 0);
-  return {
-    count: pipelinesWithBranches.filter(pipelineDeploysExclusivelyFromMaster).length,
-    total: pipelinesWithBranches.length
-  };
-};
+export const masterDeploysCount = (pipelines: Pipeline[]) => pipelines
+  .reduce<{ count: number; total: number }>((acc, pipeline) => {
+    acc.total += pipeline.attempts.total;
+    acc.count += pipeline.attempts.master;
+    return acc;
+  }, { count: 0, total: 0 });
 
 export const isPipelineInGroup = (groupName: string, repos: string[]) => (
   (pipeline: Pipeline) => (
