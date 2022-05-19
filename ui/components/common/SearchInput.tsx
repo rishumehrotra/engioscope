@@ -19,7 +19,7 @@ const SearchInput: React.FC = () => {
       </button>
       <input
         className="bg-white h-9 pl-9 pr-1 rounded-lg text-sm focus:outline-none
-        focus:ring focus:border-gray-100 w-full placeholder-gray-600 placeholder"
+        focus:ring focus:border-gray-100 w-52 placeholder-gray-600 placeholder"
         type="search"
         name="search"
         placeholder="Search"

@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useParams } from 'react-router-dom';
-import NavBar from '../components/NavBar';
+import {
+  Routes, Route, useParams, useLocation
+} from 'react-router-dom';
+import NavBar from '../components/common/NavBar';
 import Repos from './Repos';
 import ReleasePipelines from './ReleasePipelines';
 import WorkItems from './WorkItems';
@@ -12,6 +14,7 @@ import { useProjectDetails } from '../hooks/project-details-hooks';
 import usePageName from '../hooks/use-page-name';
 import Overview from './Overview';
 import { useSetHeaderDetails } from '../hooks/header-hooks';
+import type { UIProjectAnalysis } from '../../shared/types';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>
@@ -21,6 +24,29 @@ const renderStatIfAvailable = (count: number | undefined, label: string) => (cou
   </>
 ) : '');
 
+const useNavItems = (projectDetails: UIProjectAnalysis | null) => {
+  const location = useLocation();
+  const pathParts = location.pathname.split('/');
+  const selectedTab = pathParts[pathParts.length - 1];
+
+  const route = (selectedKey: string) => `${pathParts.slice(0, -1).join('/')}/${selectedKey}`;
+
+  return {
+    navItems: [
+      { key: '', label: 'Overview', linkTo: route('') },
+      { key: 'repos', label: 'Repositories', linkTo: route('repos') },
+      { key: 'release-pipelines', label: 'Release Pipelines', linkTo: route('release-pipelines') },
+      ...(
+        projectDetails?.workItemLabel
+          ? [{ key: 'workitems', label: projectDetails.workItemLabel[1], linkTo: 'workitems' }]
+          : []
+      ),
+      { key: 'devs', label: 'Developers', linkTo: 'devs' }
+    ],
+    selectedTab
+  };
+};
+
 const Project: React.FC = () => {
   const projectDetails = useProjectDetails();
   const pageName = usePageName();
@@ -28,6 +54,8 @@ const Project: React.FC = () => {
   const setHeaderDetails = useSetHeaderDetails();
 
   const project = projectDetails?.name[1] === projectName ? projectDetails : null;
+
+  const { navItems, selectedTab } = useNavItems(projectDetails);
 
   useEffect(() => {
     projectDetails && setHeaderDetails({
@@ -50,27 +78,33 @@ const Project: React.FC = () => {
   }, [pageName, project, projectDetails, projectName, setHeaderDetails]);
 
   return (
-    <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
-      <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
-        <NavBar />
-        <div className="flex">
-          <div className="flex mr-4">
-            <SearchInput />
-            <AdvancedFilters />
-          </div>
-          <SortControls />
-        </div>
-      </div>
+    <>
+      <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
+        <NavBar
+          navItems={navItems}
+          selectedTab={selectedTab}
+          right={(
+            <div className="flex">
+              <div className="flex mr-4">
+                <SearchInput />
+                <AdvancedFilters />
+              </div>
+              <SortControls />
+            </div>
+          )}
+        />
 
-      <Routes>
-        <Route path="repos" element={<Repos />} />
-        <Route path="release-pipelines" element={<ReleasePipelines />} />
-        <Route path="devs" element={<Devs />} />
-        <Route path="workitems" element={<WorkItems />} />
-        <Route path="" element={<Overview />} />
-      </Routes>
-    </div>
+        <Routes>
+          <Route path="repos" element={<Repos />} />
+          <Route path="release-pipelines" element={<ReleasePipelines />} />
+          <Route path="devs" element={<Devs />} />
+          <Route path="workitems" element={<WorkItems />} />
+          <Route path="" element={<Overview />} />
+        </Routes>
+      </div>
+    </>
   );
 };
 
 export default Project;
+

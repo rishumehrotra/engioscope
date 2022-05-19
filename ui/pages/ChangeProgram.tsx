@@ -25,20 +25,21 @@ const ChangeProgram: React.FC = () => {
   return (
     <>
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
-        <div className="flex justify-between mb-8 rounded-lg p-4 bg-white shadow">
-          <ChangeProgramNavBar />
-          <div className="flex items-center">
-            <span className="inline-block pr-2 uppercase text-xs font-semibold">View by</span>
-            <Switcher
-              options={[
-                { label: 'Teams', value: 'teams' },
-                { label: 'Themes', value: 'theme' }
-              ]}
-              onChange={value => setShow(value === 'teams' ? undefined : value, true)}
-              value={show === undefined ? 'teams' : show}
-            />
-          </div>
-        </div>
+        <ChangeProgramNavBar
+          right={(
+            <div className="flex items-center">
+              <span className="inline-block pr-2 uppercase text-xs font-semibold w-20 text-right">View by</span>
+              <Switcher
+                options={[
+                  { label: 'Teams', value: 'teams' },
+                  { label: 'Themes', value: 'theme' }
+                ]}
+                onChange={value => setShow(value === 'teams' ? undefined : value, true)}
+                value={show === undefined ? 'teams' : show}
+              />
+            </div>
+          )}
+        />
       </div>
 
       <div className="mx-32">

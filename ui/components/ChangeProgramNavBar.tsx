@@ -1,36 +1,22 @@
-import React, { useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
+import NavBar from './common/NavBar';
 
-type NavItem = {
-  url: string;
-  name?: string;
-};
-
-const navItems: NavItem[] = [
-  { url: '/summary', name: 'Metrics' },
-  { url: '/change-program', name: 'Progress' }
+const navItems = [
+  { key: 'metrics', label: 'Metrics', linkTo: '/summary' },
+  { key: 'progress', label: 'Progress', linkTo: '/change-program' }
 ];
 
-const isSelectedForPath = (pathName: string) => (url: string) => pathName.startsWith(url);
-
-const ChangeProgramNavBar: React.FC = () => {
+const ChangeProgramNavBar: React.FC<{ right: ReactNode }> = ({ right }) => {
   const location = useLocation();
-  const isSelected = useMemo(() => isSelectedForPath(location.pathname), [location.pathname]);
 
   return (
-    <div className="grid col-span-2">
-      <div className="flex mr-4">
-        {navItems.map(({ url, name }) => (
-          <Link
-            key={url}
-            to={url}
-            className={`nav-link ${isSelected(url) ? 'selected' : 'not-selected'}`}
-          >
-            {name || url}
-          </Link>
-        ))}
-      </div>
-    </div>
+    <NavBar
+      navItems={navItems}
+      selectedTab={navItems.find(n => n.linkTo.startsWith(location.pathname))?.key || navItems[0].key}
+      right={right}
+    />
   );
 };
 
