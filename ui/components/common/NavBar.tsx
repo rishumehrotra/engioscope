@@ -1,4 +1,6 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, {
+  Fragment, useCallback, useLayoutEffect, useRef, useState
+} from 'react';
 import { Link } from 'react-router-dom';
 import useResizeObserver from '@react-hook/resize-observer';
 import { not } from 'rambda';
@@ -29,7 +31,7 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
   useOnClickOutside(menuRef, closeOverflow);
   useHotkeys('esc', closeOverflow);
 
-  useResizeObserver(menuContainerRef, () => {
+  const onResize = useCallback(() => {
     const container = menuContainerRef.current;
     if (!container) return;
 
@@ -38,9 +40,9 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
       || container.clientHeight < container.scrollHeight
     ) : false;
 
-    if (!areNavButtonsOverflowing) { setOverflowNavItems(null); }
+    if (!areNavButtonsOverflowing) setOverflowNavItems(null);
 
-    const lis = [...(container?.querySelectorAll('li') || [])];
+    const lis = [...(container?.querySelectorAll<HTMLLIElement>('li:not(.overflow-menu)') || [])];
     const offsetTops = lis.map(e => e.offsetTop);
     const offsetTopOfFirstElement = offsetTops[0];
 
@@ -49,7 +51,11 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
     lis.forEach(li => {
       if (li.offsetTop > offsetTopOfFirstElement) { li.classList.add('invisible'); } else { li.classList.remove('invisible'); }
     });
-  });
+  }, [navItems]);
+
+  useResizeObserver(menuContainerRef, onResize);
+
+  useLayoutEffect(() => { onResize(); }, [onResize]);
 
   return (
     <div
@@ -59,15 +65,16 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
     >
       <ul className="overflow-hidden max-h-10" ref={menuContainerRef}>
         {navItems.map(({ key, label, linkTo }) => (
-          <li key={key} className="inline-block">
-            <Link
-              key={key}
-              to={linkTo}
-              className={`nav-link ${selectedTab === key ? 'selected' : 'not-selected'}`}
-            >
-              {label}
-            </Link>
-          </li>
+          <Fragment key={key}>
+            <li className="inline-block">
+              <Link
+                to={linkTo}
+                className={`nav-link ${selectedTab === key ? 'selected' : 'not-selected'}`}
+              >
+                {label}
+              </Link>
+            </li>
+          </Fragment>
         ))}
       </ul>
       <div>
