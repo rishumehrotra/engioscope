@@ -20,7 +20,7 @@ const renderStatIfAvailable = (count: number | undefined, label: string) => (cou
   <>
     <span className="font-bold text-lg">{count}</span>
     {' '}
-    <span>{label}</span>
+    <span>{label.toLowerCase()}</span>
   </>
 ) : '');
 

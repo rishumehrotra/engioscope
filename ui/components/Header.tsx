@@ -15,7 +15,7 @@ const isSelectedForPath = (pathName: string) => (url: string) => (
     : url === '/'
 );
 
-const Header2: React.FC = () => {
+const Header: React.FC = () => {
   const location = useLocation();
   const headerDetails = useHeaderDetails();
   const isSelected = useMemo(() => isSelectedForPath(location.pathname), [location.pathname]);
@@ -74,4 +74,4 @@ const Header2: React.FC = () => {
   );
 };
 
-export default Header2;
+export default Header;
