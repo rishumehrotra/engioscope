@@ -77,7 +77,7 @@ export type Pipeline = {
     additionalBranches?: string[];
   }>;
   stageCounts: PipelineCount[];
-  attempts: { total: number; master: number };
+  attempts: { total: number; master: number; byWeek: { total: number; master: number}[] };
 };
 
 export type ReleasePipelineStats = {

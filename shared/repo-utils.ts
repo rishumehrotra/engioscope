@@ -3,7 +3,9 @@ import { count, incrementBy } from './reducer-utils';
 import type {
   QualityGateStatus, RepoAnalysis, UIBuildPipeline
 } from './types';
-import { divide, exists } from './utils';
+import {
+  addColumnsInArray, combineColumnsInArray, divide, exists
+} from './utils';
 
 export const isDeprecated = (repo: RepoAnalysis) => (
   (
@@ -22,17 +24,6 @@ export const numberOfBuilds = (repo: RepoAnalysis) => repo.builds?.count || 0;
 
 export const totalTests = count(incrementBy(numberOfTests));
 export const totalBuilds = count(incrementBy(numberOfBuilds));
-
-const combineColumnsInArray = <T>(combiner: (a: T, b: T) => T) => (rows: T[][]) => (
-  rows.reduce<T[]>((acc, row) => {
-    row.forEach((val, index) => {
-      acc[index] = combiner(acc[index], val);
-    });
-    return acc;
-  }, [])
-);
-
-const addColumnsInArray = combineColumnsInArray<number>((a, b) => add(a || 0, b));
 
 export const totalTestsByWeek = (repos: RepoAnalysis[]) => (
   addColumnsInArray(

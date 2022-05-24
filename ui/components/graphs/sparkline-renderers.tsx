@@ -34,7 +34,9 @@ export const pathRenderer: Renderer = ({ lineColor, lineStrokeWidth }: { lineCol
 
 export const pathRendererSkippingUndefineds: Renderer = ({ lineColor, lineStrokeWidth, strokeDasharray }) => (
   ({ data, yCoord, xCoord }) => {
-    const mustSkip = (item: number | undefined): item is undefined => item === undefined;
+    const mustSkip = (item: number | undefined | null): item is undefined | null => (
+      item === undefined || item === null
+    );
 
     type Point = [xCoord: number, yCoord: number];
 
@@ -55,8 +57,8 @@ export const pathRendererSkippingUndefineds: Renderer = ({ lineColor, lineStroke
     const continuousLine = drawLine(true);
 
     const nodes = data
-      .map<(Point | undefined)>(item => (
-        mustSkip(item) ? undefined : [xCoord(data.indexOf(item)), yCoord(item)]
+      .map<(Point | undefined)>((item, itemIndex) => (
+        mustSkip(item) ? undefined : [xCoord(itemIndex), yCoord(item)]
       ))
       .reduce<(Point | undefined)[]>((acc, item) => {
         if (acc.length === 0 && item === undefined) return [];

@@ -1,12 +1,11 @@
 import React, { Fragment } from 'react';
 import { last } from 'rambda';
 import type { Pipeline } from '../../shared/types';
-import { num } from '../helpers/utils';
+import { exists, num } from '../helpers/utils';
 import type { NormalizedPolicies } from '../../shared/pipeline-utils';
 import {
-  pipelineHasStartingArtifact,
-  totalUsageByEnvironment,
-  masterDeploysCount, pipelineHasStageNamed,
+  masterOnlyReleasesByWeek, pipelineHasStartingArtifact,
+  totalUsageByEnvironment, masterDeploysCount, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
 } from '../../shared/pipeline-utils';
 import ProjectStat from './ProjectStat';
@@ -14,6 +13,9 @@ import ProjectStats from './ProjectStats';
 import { count, incrementIf } from '../../shared/reducer-utils';
 import UsageByEnv from './UsageByEnv';
 import { divide, toPercentage } from '../../shared/utils';
+import { LabelWithSparkline } from './graphs/Sparkline';
+import { increaseIsBetter } from './summary-page/utils';
+import { pathRendererSkippingUndefineds } from '../components/graphs/sparkline-renderers';
 
 export const envRowTooltip = (env: string, successful: number, total: number, pipelineCount: number) => `
   <b>${env}</b><br />
@@ -34,6 +36,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
   pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore, environments
 }) => {
   const masterDeploys = masterDeploysCount(pipelines);
+  const masterReleasesByWeek = masterOnlyReleasesByWeek(pipelines);
 
   const policyPassCount = count(
     incrementIf(pipelineMeetsBranchPolicyRequirements(policyForBranch))
@@ -106,7 +109,15 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
       <ProjectStat
         topStats={[{
           title: 'Master-only releases',
-          value: divide(masterDeploys.count, masterDeploys.total).map(toPercentage).getOr('-'),
+          value: (
+            <LabelWithSparkline
+              label={divide(masterDeploys.count, masterDeploys.total).map(toPercentage).getOr('-')}
+              data={masterReleasesByWeek}
+              yAxisLabel={x => `${x}%`}
+              lineColor={increaseIsBetter(masterReleasesByWeek.filter(exists))}
+              renderer={pathRendererSkippingUndefineds}
+            />
+          ),
           tooltip: `${num(masterDeploys.count)} out of ${num(masterDeploys.total)} releases were exclusively from master.${
             ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
           }`

@@ -5,7 +5,7 @@ import React, {
 import { maybe } from '../../../shared/maybe';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
-import { divide, toPercentage } from '../../../shared/utils';
+import { divide, exists, toPercentage } from '../../../shared/utils';
 import { num, prettyMS } from '../../helpers/utils';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
@@ -719,9 +719,17 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {pipelinesMetric(
-                    divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
-                      .map(toPercentage)
-                      .getOr('-')
+                    <LabelWithSparkline
+                      label={
+                        divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
+                          .map(toPercentage)
+                          .getOr('-')
+                      }
+                      data={pipelineStats.masterOnlyReleasesByWeek}
+                      lineColor={increaseIsBetter(pipelineStats.masterOnlyReleasesByWeek.filter(exists))}
+                      yAxisLabel={x => `${x}%`}
+                      renderer={pathRendererSkippingUndefineds}
+                    />
                   )}
                 </div>
               </div>

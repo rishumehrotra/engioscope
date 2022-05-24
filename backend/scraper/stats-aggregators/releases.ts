@@ -1,8 +1,10 @@
-import { always, last, prop } from 'rambda';
+import {
+  always, last, pipe, prop
+} from 'rambda';
 import { asc, byNum } from '../../../shared/sort-utils';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types';
 import { exists } from '../../../shared/utils';
-import { isMaster } from '../../utils';
+import { isMaster, weeks } from '../../utils';
 import type { ParsedProjectConfig } from '../parse-config';
 import type {
   Release, ReleaseCondition, EnvironmentStatus, ReleaseDefinition
@@ -120,9 +122,9 @@ const didAttemptGoAheadUsing = (
   if (!lastMatchingStage) return always(true);
 
   return (attempt: (typeof pipeline)['attempts'][number]) => {
-    const lasstProgression = last(attempt.progression);
-    if (!lasstProgression) return false;
-    const attemptProgressionMaxRank = lasstProgression.rank;
+    const lastProgression = last(attempt.progression);
+    if (!lastProgression) return false;
+    const attemptProgressionMaxRank = lastProgression.rank;
     return attemptProgressionMaxRank > lastMatchingStage.rank;
   };
 };
@@ -135,10 +137,32 @@ const getReposAndBranches = (
     ? didAttemptGoAheadUsing(pipeline, ignoreStagesBefore)
     : always(true);
 
+  const isAttemptIn = (week: (d: Date) => boolean) => (attempt: (typeof pipeline)['attempts'][number]) => {
+    const lastProgression = last(attempt.progression);
+    if (!lastProgression) return false;
+    const attemptProgressionDate = lastProgression.date;
+    return week(attemptProgressionDate);
+  };
+
+  const isAttemptFromMaster = (attempt: (typeof pipeline)['attempts'][number]) => {
+    if (attempt.reposAndBranches.length === 0) return false;
+    return attempt.reposAndBranches.every(pipe(prop('branchName'), isMaster));
+  };
+
+  const masterOnlyReleasesByWeek = weeks
+    .map(week => pipeline.attempts.filter(isAttemptIn(week)))
+    .map(attempts => (
+      attempts.reduce((acc, attempt) => {
+        acc.total += 1;
+        acc.master += isAttemptFromMaster(attempt) ? 1 : 0;
+        return acc;
+      }, { total: 0, master: 0 })
+    ));
+
   const { repos, stageInfo, attempts } = pipeline.attempts.reduce<{
     repos: Record<string, { name: string; branches: Set<string>; additionalBranches: Set<string> }>;
     stageInfo: Map<number, { successful: number; total: number }>;
-    attempts: { total: number; master: number };
+    attempts: { total: number; master: number; byWeek: { total: number; master: number }[] };
   }>((acc, attempt) => {
     const attemptWentAhead = didAttemptGoAhead(attempt);
 
@@ -168,13 +192,15 @@ const getReposAndBranches = (
 
     if (attemptWentAhead) {
       acc.attempts.total += 1;
-      if (attempt.reposAndBranches.every(b => isMaster(b.branchName))) {
-        acc.attempts.master += 1;
-      }
+      if (isAttemptFromMaster(attempt)) acc.attempts.master += 1;
     }
 
     return acc;
-  }, { repos: {}, stageInfo: new Map(), attempts: { total: 0, master: 0 } });
+  }, {
+    repos: {},
+    stageInfo: new Map(),
+    attempts: { total: 0, master: 0, byWeek: masterOnlyReleasesByWeek }
+  });
 
   return {
     repos: Object.entries(repos).reduce<Record<string, { name: string; branches: string[]; additionalBranches?: string[] }>>(

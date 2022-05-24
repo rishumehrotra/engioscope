@@ -15,7 +15,7 @@ import {
 } from '../../shared/work-item-utils';
 import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
 import {
-  isPipelineInGroup, masterDeploysCount, normalizePolicy, pipelineHasStageNamed,
+  isPipelineInGroup, masterDeploysCount, masterOnlyReleasesByWeek, normalizePolicy, pipelineHasStageNamed,
   pipelineHasStartingArtifact,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed, totalUsageByEnvironment
 } from '../../shared/pipeline-utils';
@@ -215,6 +215,7 @@ type Summary = {
     conformsToBranchPolicies: number;
     startsWithArtifact: number;
     usageByEnvironment: Record<string, { total: number; successful: number }>;
+    masterOnlyReleasesByWeek: (number | undefined)[];
   };
   collection: string;
   project: string;
@@ -412,7 +413,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           conformsToBranchPolicies: count(incrementIf(pipelineMeetsBranchPolicyRequirements(
             (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
           )))(matchingPipelines),
-          usageByEnvironment: totalUsageByEnvironment(projectConfig?.environments)(matchingPipelines)
+          usageByEnvironment: totalUsageByEnvironment(projectConfig?.environments)(matchingPipelines),
+          masterOnlyReleasesByWeek: masterOnlyReleasesByWeek(matchingPipelines)
         };
       };
 

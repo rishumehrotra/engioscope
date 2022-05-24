@@ -1,9 +1,9 @@
-import { head, prop } from 'rambda';
+import { head, multiply, prop } from 'rambda';
 import { byNum, desc } from './sort-utils';
 import type {
   BranchPolicies, Pipeline, PipelineCount, PipelineStage
 } from './types';
-import { exists } from './utils';
+import { combineColumnsInArray, divide, exists } from './utils';
 
 export type PipelineStageWithCounts = PipelineStage & PipelineCount;
 
@@ -192,4 +192,21 @@ export const totalUsageByEnvironment = (environments?: string[]) => (pipelines: 
         return envs.indexOf(a.toLowerCase()) - envs.indexOf(b.toLowerCase());
       })
   )
+);
+
+export const masterOnlyReleasesByWeek = (pipelines: Pipeline[]) => (
+  combineColumnsInArray<Pipeline['attempts']['byWeek'][number] | undefined>(
+    (a, b) => {
+      if (!a) return b;
+      if (!b) return a;
+      return { total: a.total + b.total, master: a.master + b.master };
+    }
+  )(
+    pipelines
+      .flatMap(p => p.attempts)
+      .map(a => a.byWeek)
+  ).map(a => {
+    if (!a) return undefined;
+    return divide(a.master, a.total).map(multiply(100)).map(Math.round).getOr(undefined);
+  })
 );

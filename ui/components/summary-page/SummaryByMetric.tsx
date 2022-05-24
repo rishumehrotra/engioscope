@@ -7,7 +7,7 @@ import {
   asc, byNum, byString, desc
 } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
-import { divide, toPercentage } from '../../../shared/utils';
+import { divide, exists, toPercentage } from '../../../shared/utils';
 import { num, prettyMS } from '../../helpers/utils';
 import {
   ArrowDown, ArrowUp, ExternalLink
@@ -84,7 +84,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table 
         {heading}
       </summary>
 
-      <div className="bg-white shadow overflow-hidden rounded-lg my-4 mb-8">
+      <div className="bg-white shadow rounded-lg my-4 mb-8">
         {tableData
           ? (
             <table className="summary-table">
@@ -845,9 +845,17 @@ const Releases: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
           {
             value: divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total).getOr(0),
             content: pipelinesMetric(
-              divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
-                .map(toPercentage)
-                .getOr('-')
+              <LabelWithSparkline
+                label={
+                  divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
+                    .map(toPercentage)
+                    .getOr('-')
+                }
+                data={pipelineStats.masterOnlyReleasesByWeek}
+                lineColor={increaseIsBetter(pipelineStats.masterOnlyReleasesByWeek.filter(exists))}
+                yAxisLabel={x => `${x}%`}
+                renderer={pathRendererSkippingUndefineds}
+              />
             )
           },
           {
