@@ -26,7 +26,7 @@ const App: React.FC = () => {
       <ProjectDetailsProvider>
         <SortContextProvider>
           <HeaderProvider>
-            <div className="mb-32 overflow-y-auto transition duration-500 ease-in-out">
+            <div className="pb-64 overflow-y-auto transition duration-500 ease-in-out">
               <ReactTooltip />
               <RecordAnalytics />
               <Header />
