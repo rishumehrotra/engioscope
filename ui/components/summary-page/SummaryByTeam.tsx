@@ -413,7 +413,8 @@ const QualityMetrics: React.FC<{
 
 const HealthMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
-}> = ({ group }) => {
+  queryPeriodDays: number;
+}> = ({ group, queryPeriodDays }) => {
   const { repoStats, pipelineStats } = group;
   const { codeQuality } = repoStats;
   const [filterKey] = allExceptExpectedKeys(group);
@@ -768,6 +769,7 @@ const HealthMetrics: React.FC<{
               <UsageByEnv
                 perEnvUsage={pipelineStats.usageByEnvironment}
                 pipelineCount={pipelineStats.pipelines}
+                queryPeriodDays={queryPeriodDays}
               />
             </div>
           </div>
@@ -912,7 +914,7 @@ const HealthMetrics: React.FC<{
   );
 };
 
-const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
+const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes, queryPeriodDays }) => {
   const [isOpen, setIsOpen] = useState(false);
   const summaryRef = useRef<HTMLElement>(null);
 
@@ -939,7 +941,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
           </h2>
           <FlowMetrics group={group} workItemTypes={workItemTypes} />
           <QualityMetrics group={group} workItemTypes={workItemTypes} />
-          <HealthMetrics group={group} />
+          <HealthMetrics group={group} queryPeriodDays={queryPeriodDays} />
         </>
       )}
     </details>
@@ -949,7 +951,8 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes }) => {
 const SummaryByTeam: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
-}> = ({ groups, workItemTypes }) => (
+  queryPeriodDays: number;
+}> = ({ groups, workItemTypes, queryPeriodDays }) => (
   <ul className="bg-gray-50 p-8 rounded-lg">
     {groups
       .sort(asc(byString(prop('groupName'))))
@@ -958,6 +961,7 @@ const SummaryByTeam: React.FC<{
           <SummaryItem
             group={group}
             workItemTypes={workItemTypes}
+            queryPeriodDays={queryPeriodDays}
           />
         </li>
       ))}

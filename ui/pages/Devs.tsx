@@ -24,14 +24,19 @@ const Devs: React.FC = () => {
   const [search] = useQueryParam('search', asString);
 
   const sorter = useSort(sorters, 'Name');
-  const devs = useMemo(() => {
+  const processed = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
-    return Object.values(aggregateDevs(projectAnalysis))
-      .filter(search === undefined ? dontFilter : bySearch(search))
-      .sort(sorter);
+    return {
+      devs: Object.values(aggregateDevs(projectAnalysis))
+        .filter(search === undefined ? dontFilter : bySearch(search))
+        .sort(sorter),
+      queryPeriodDays: projectAnalysis.queryPeriodDays
+    };
   }, [projectAnalysis, search, sorter]);
 
-  if (devs === 'loading') return <Loading />;
+  if (processed === 'loading') return <Loading />;
+
+  const { devs, queryPeriodDays } = processed;
 
   return (
     <>
@@ -43,6 +48,7 @@ const Devs: React.FC = () => {
             key={dev.name}
             dev={dev}
             isFirst={index === 0}
+            queryPeriodDays={queryPeriodDays}
           />
         ))}
       </ul>

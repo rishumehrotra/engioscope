@@ -6,7 +6,7 @@ import type { Tab } from './Tabs';
 import TabContents from './TabContents';
 import { divide, toPercentage } from '../../../shared/utils';
 
-export default (builds: RepoAnalysis['builds']): Tab => ({
+export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab => ({
   title: 'Builds',
   count: builds?.count || 0,
   content: () => (
@@ -113,7 +113,7 @@ export default (builds: RepoAnalysis['builds']): Tab => ({
               </tbody>
             </table>
             <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-              <span>* Data shown is for the last 90 days</span>
+              {`* Data shown is for the last ${queryPeriodDays} days`}
             </div>
           </div>
         )

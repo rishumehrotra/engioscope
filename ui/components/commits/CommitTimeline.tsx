@@ -5,24 +5,24 @@ import { shortDate } from '../../helpers/utils';
 type CommitTimelineProps = {
   timeline: UICommits['byDev'][number]['byDate'];
   max: number;
+  queryPeriodDays: number;
 };
 
 const barWidth = 10;
 const barSpacing = 2;
 const svgHeight = 50;
-const displayDays = 90;
-const svgWidth = (barWidth + barSpacing) * displayDays;
 
 const dateString = (date: Date) => date.toISOString().split('T')[0];
 const range = (max: number) => [...Array(max).keys()];
 
-const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max }) => {
+const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max, queryPeriodDays }) => {
   const startDate = new Date();
-  startDate.setDate((new Date()).getDate() - displayDays);
+  startDate.setDate((new Date()).getDate() - queryPeriodDays);
+  const svgWidth = (barWidth + barSpacing) * queryPeriodDays;
 
   return (
     <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%">
-      {range(displayDays + 1).map(day => {
+      {range(queryPeriodDays + 1).map(day => {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + day);
         const commitsForThisDay = timeline[dateString(date)];

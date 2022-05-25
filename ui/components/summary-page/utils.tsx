@@ -147,6 +147,7 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
 export type SummaryItemProps = {
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
+  queryPeriodDays: number;
 };
 
 export const workItemTypeByName = (name: string) => (workItemTypes: Record<string, UIWorkItemType>) => {

@@ -92,7 +92,12 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
   };
 };
 
-const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
+type RepoSummaryProps = {
+  repos: RepoAnalysis[];
+  queryPeriodDays: number;
+};
+
+const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
 
   return (
@@ -224,7 +229,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
           value: divide(stats.ymlPipelines.length, stats.buildPipelines.length)
             .map(toPercentage)
             .getOr('-'),
-          tooltip: `${stats.ymlPipelines.length} of ${stats.buildPipelines.length} pipelines use a YAML-based configuration`
+          tooltip: `${num(stats.ymlPipelines.length)} of ${num(stats.buildPipelines.length)} pipelines use a YAML-based configuration`
         }]}
         onClick={stats.ymlPipelines.length === stats.buildPipelines.length
           ? undefined
@@ -252,7 +257,7 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
                                 {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
                                 <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider" />
                                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                                  Runs in the last 90 days
+                                  {`Runs in the last ${queryPeriodDays} days`}
                                 </th>
                                 <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Last used</th>
                               </tr>
@@ -292,7 +297,13 @@ const RepoSummary: React.FC<{ repos: RepoAnalysis[] }> = ({ repos }) => {
       <ProjectStat
         topStats={[{
           title: 'Has releases',
-          tooltip: `${stats.reposWithPipelines.length} out of ${stats.repos.length} repos have made releases in the last 90 days`,
+          tooltip: `${
+            num(stats.reposWithPipelines.length)
+          } out of ${
+            num(stats.repos.length)
+          } repos have made releases in the last ${
+            queryPeriodDays
+          } days`,
           value: divide(stats.reposWithPipelines.length, stats.repos.length)
             .map(toPercentage)
             .getOr('-')

@@ -8,6 +8,7 @@ type UsageByEnvProps = {
     total: number;
   }>;
   pipelineCount: number;
+  queryPeriodDays: number;
 };
 
 const doesDeploysCountSeemInconsistent = (perEnvUsage: [string, { successful: number; total: number }][], index: number) => {
@@ -15,7 +16,7 @@ const doesDeploysCountSeemInconsistent = (perEnvUsage: [string, { successful: nu
   return perEnvUsage[index - 1][1].successful < perEnvUsage[index][1].total;
 };
 
-const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount }) => {
+const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount, queryPeriodDays }) => {
   const max = Math.max(...Object.values(perEnvUsage).map(({ total }) => total));
   const allEnvs = Object.entries(perEnvUsage);
   return (
@@ -56,7 +57,7 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount }) =
               style={{ width: `${(successful * 100) / max}%` }}
             />
             <div className="text-sm pl-2 py-0.5 z-20 relative">
-              <b>{`${(total / 90).toFixed(2).replace('.00', '')}`}</b>
+              <b>{`${(total / queryPeriodDays).toFixed(2).replace('.00', '')}`}</b>
               <span className="text-xs">{' deploys/day, '}</span>
               <b>{`${Math.round((successful * 100) / total)}%`}</b>
               <span className="text-xs">{' success rate'}</span>

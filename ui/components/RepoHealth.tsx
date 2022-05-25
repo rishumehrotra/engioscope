@@ -62,20 +62,23 @@ type RepoHealthProps = {
   repo: RepoAnalysis;
   aggregatedDevs: Record<string, Dev>;
   isFirst?: boolean;
+  queryPeriodDays: number;
 };
 
-const RepoHealth: React.FC<RepoHealthProps> = ({ repo, isFirst, aggregatedDevs }) => {
+const RepoHealth: React.FC<RepoHealthProps> = ({
+  repo, isFirst, aggregatedDevs, queryPeriodDays
+}) => {
   const pageName = usePageName();
   const location = useLocation();
 
   const tabs = useMemo(() => [
-    builds(repo.builds),
+    builds(repo.builds, queryPeriodDays),
     branches(repo.branches, repo.defaultBranch),
-    commits(repo, aggregatedDevs, location),
+    commits(repo, aggregatedDevs, location, queryPeriodDays),
     prs(repo.prs),
-    tests(repo),
+    tests(repo, queryPeriodDays),
     codeQuality(repo.codeQuality)
-  ], [repo, aggregatedDevs, location]);
+  ], [repo, aggregatedDevs, location, queryPeriodDays]);
 
   const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);

@@ -10,7 +10,7 @@ import { increaseIsBetter } from '../summary-page/utils';
 import { numberOfTests } from '../../../shared/repo-utils';
 import { divide, toPercentage } from '../../../shared/utils';
 
-export default (repo: RepoAnalysis): Tab => ({
+export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
   title: 'Tests',
   count: numberOfTests(repo),
   content: () => (
@@ -85,7 +85,7 @@ export default (repo: RepoAnalysis): Tab => ({
             </tbody>
           </table>
           <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-            <span>* Data shown is for the most recent test run, if it occurred in the last 90 days</span>
+            {`* Data shown is for the most recent test run, if it occurred in the last ${queryPeriodDays} days`}
           </div>
         </>
       ) : (

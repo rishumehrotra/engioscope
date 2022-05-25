@@ -11,7 +11,12 @@ import { ProfilePic } from '../common/ProfilePic';
 import Changes from '../commits/Changes';
 import type { Dev } from '../../types';
 
-export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, location: Location): Tab => {
+export default (
+  repo: RepoAnalysis,
+  aggregatedDevs: Record<string, Dev>,
+  location: Location,
+  queryPeriodDays: number
+): Tab => {
   const { commits } = repo;
   const max = Math.max(...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate)));
   const subtitle = (devName: string) => {
@@ -77,6 +82,7 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, locatio
                           <CommitTimeline
                             timeline={commitsByDev.byDate}
                             max={max}
+                            queryPeriodDays={queryPeriodDays}
                           />
                         </td>
                       </tr>
@@ -85,7 +91,7 @@ export default (repo: RepoAnalysis, aggregatedDevs: Record<string, Dev>, locatio
                 </tbody>
               </table>
               <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-                <span>* Data shown is for the last 90 days, not including merge commits</span>
+                {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
               </div>
             </>
           )}

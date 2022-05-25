@@ -140,6 +140,7 @@ const ReleasePipelines: React.FC = () => {
         policyForBranch={policyForBranch}
         ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
         environments={releaseAnalysis.environments}
+        queryPeriodDays={releaseAnalysis.queryPeriodDays}
       />
       <InfiniteScrollList
         items={pipelines}

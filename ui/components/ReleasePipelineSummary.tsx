@@ -30,10 +30,11 @@ type ReleasePipelineSummaryProps = {
   policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
   ignoreStagesBefore?: string;
   environments?: string[];
+  queryPeriodDays: number;
 };
 
 const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
-  pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore, environments
+  pipelines, stagesToHighlight, policyForBranch, ignoreStagesBefore, environments, queryPeriodDays
 }) => {
   const masterDeploys = masterDeploysCount(pipelines);
   const masterReleasesByWeek = masterOnlyReleasesByWeek(pipelines);
@@ -53,7 +54,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
             title: `${lastStage[0]} deploys`,
             value: (
               <>
-                {num(Math.round(lastStage[1].total / 90))}
+                {num(Math.round(lastStage[1].total / queryPeriodDays))}
                 <span className="font-normal text-sm"> / day</span>
               </>
             )
@@ -66,7 +67,15 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
           }]}
           onClick={{
             open: 'popup',
-            contents: () => <div className="w-96"><UsageByEnv perEnvUsage={perEnvUsage} pipelineCount={pipelines.length} /></div>
+            contents: () => (
+              <div className="w-96">
+                <UsageByEnv
+                  perEnvUsage={perEnvUsage}
+                  pipelineCount={pipelines.length}
+                  queryPeriodDays={queryPeriodDays}
+                />
+              </div>
+            )
           }}
         />
       )}

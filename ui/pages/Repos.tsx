@@ -109,7 +109,7 @@ const Repos: React.FC = () => {
         )
         : null}
       <AppliedFilters type="repos" count={repos.length} />
-      <RepoSummary repos={repos} />
+      <RepoSummary repos={repos} queryPeriodDays={projectAnalysis.queryPeriodDays} />
       <InfiniteScrollList
         items={repos}
         itemKey={repo => repo.id}
@@ -118,6 +118,7 @@ const Repos: React.FC = () => {
             repo={repo}
             aggregatedDevs={aggregatedDevs}
             isFirst={index === 0}
+            queryPeriodDays={projectAnalysis.queryPeriodDays}
           />
         )}
       />

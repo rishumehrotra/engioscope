@@ -8,7 +8,13 @@ import CommitTimeline from './commits/CommitTimeline';
 import { DownChevron, UpChevron } from './common/Icons';
 import { ProfilePic } from './common/ProfilePic';
 
-const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) => {
+type DeveloperProps = {
+  dev: Dev;
+  isFirst: boolean;
+  queryPeriodDays: number;
+};
+
+const Developer: React.FC<DeveloperProps> = ({ dev, isFirst, queryPeriodDays }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(isFirst);
   const location = useLocation();
   const allCommits = dev.repos.flatMap(r => Object.values(r.byDate));
@@ -89,14 +95,18 @@ const Developer: React.FC<{ dev: Dev; isFirst: boolean }> = ({ dev, isFirst }) =
                     <td className="px-6 py-4 whitespace-nowrap w-1/12">{sum(Object.values(repo.byDate))}</td>
                     <td className="whitespace-nowrap"><Changes changes={repo.changes} /></td>
                     <td className="px-6 py-4 whitespace-nowrap w-4/12">
-                      <CommitTimeline timeline={repo.byDate} max={Math.max(...allCommits)} />
+                      <CommitTimeline
+                        timeline={repo.byDate}
+                        max={Math.max(...allCommits)}
+                        queryPeriodDays={queryPeriodDays}
+                      />
                     </td>
                   </tr>
                 ))}
             </tbody>
           </table>
           <p className="w-full text-right text-sm italic text-gray-500 mt-4">
-            * Data shown is for the last 90 days, not including merge commits
+            {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
           </p>
         </div>
       )}
