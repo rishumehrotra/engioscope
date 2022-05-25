@@ -5,6 +5,7 @@
 import { promises as fs } from 'fs';
 import ms from 'ms';
 import { allPass, compose, not } from 'rambda';
+import type { ParsedConfig } from './scraper/parse-config';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
@@ -81,3 +82,7 @@ export const startTimer = () => {
   const start = Date.now();
   return () => `${(Date.now() - start) / 1000}s`;
 };
+
+export const queryPeriodDays = (config: ParsedConfig) => Math.round(
+  (Date.now() - config.azure.queryFrom.getTime()) / (1000 * 60 * 60 * 24)
+);

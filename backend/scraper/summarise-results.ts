@@ -5,7 +5,7 @@ import {
 import type {
   Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
-import { isAfter, weeks } from '../utils';
+import { isAfter, queryPeriodDays, weeks } from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils';
@@ -25,8 +25,6 @@ import {
   totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
 } from '../../shared/repo-utils';
 import { divide, exists, toPercentage } from '../../shared/utils';
-
-const lastThreeMonths = isAfter('90 days');
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
 type RelevantResults = {
@@ -225,6 +223,7 @@ type Summary = {
 
 const analyseWorkItems = (
   results: { workItems: UIWorkItemWithGroup[]; workItemTypes: Record<string, UIWorkItemType>; workItemTimes: Overview['times'] },
+  isInQueryPeriod: (d: Date) => boolean,
   projectConfig?: ParsedProjectConfig
 ) => {
   const workItemTimes = (wi: UIWorkItem) => results.workItemTimes[wi.id];
@@ -232,7 +231,7 @@ const analyseWorkItems = (
 
   const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
   const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
-  const wasWorkItemCompletedInLastMonth = wasWorkItemCompletedIn(lastThreeMonths);
+  const wasWorkItemCompletedInLastMonth = wasWorkItemCompletedIn(isInQueryPeriod);
 
   const wipWorkItems = isWIP(workItemTimes, projectConfig?.workitems.ignoreForWIP || []);
   const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
@@ -296,7 +295,7 @@ const analyseWorkItems = (
           filter(isWIPInTimeRange(
             workItemTimes,
             projectConfig?.workitems.ignoreForWIP || []
-          )(lastThreeMonths)),
+          )(isInQueryPeriod)),
           length
         ),
         wipIncreaseByWeek: wis => (
@@ -305,7 +304,7 @@ const analyseWorkItems = (
             .map(filter => wis.filter(filter).length)
         ),
         wipAge: pipe(filter(wipWorkItems), map(computeTimeDifferenceBetween('start'))),
-        leakage: pipe(filter(leakage(lastThreeMonths)), length),
+        leakage: pipe(filter(leakage(isInQueryPeriod)), length),
         leakageByWeek: wis => (
           weeks.map(week => wis.filter(leakage(week)).length)
         )
@@ -421,7 +420,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       return {
         ...group,
         groupName: groupType(group)[1],
-        summary: analyseWorkItems(mergedResults, projectConfig),
+        summary: analyseWorkItems(mergedResults, isAfter(`${queryPeriodDays(config)} days`), projectConfig),
         repoStats: repoStats(),
         pipelineStats: pipelineStats(),
         workItemTypes: mergedResults.workItemTypes,

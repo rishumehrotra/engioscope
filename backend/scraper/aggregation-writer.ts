@@ -8,7 +8,7 @@ import type {
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
   UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis
 } from '../../shared/types';
-import { doesFileExist } from '../utils';
+import { doesFileExist, queryPeriodDays } from '../utils';
 import type { ProjectAnalysis } from './types';
 import type { ParsedConfig, ParsedProjectConfig } from './parse-config';
 
@@ -26,10 +26,6 @@ const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 const projectName = (project: string | ParsedProjectConfig) => (
   typeof project === 'string' ? project : project.name
 );
-
-const queryPeriodDays = (config: ParsedConfig) => Math.round((
-  Date.now() - config.azure.queryFrom.getTime()
-) / (1000 * 60 * 60 * 24));
 
 const writeFile = async (path: string[], fileName: string, contents: string) => {
   outputFileLog('Writing', join(dataFolderPath, ...path, fileName).replace(`${process.cwd()}/`, ''));
