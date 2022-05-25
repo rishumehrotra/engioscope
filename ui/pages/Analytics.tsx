@@ -15,7 +15,8 @@ const Analytics: React.FC = () => {
     analytics && setHeaderDetails({
       globalSettings: {
         lastUpdated: new Date().toISOString(),
-        hasSummary: false
+        hasSummary: false,
+        queryPeriodDays: 0 // unused
       },
       title: 'Analytics'
     });

@@ -5,6 +5,7 @@ export type GlobalUIConfig = {
   lastUpdated: string;
   hasSummary: boolean;
   changeProgramName?: string;
+  queryPeriodDays: number;
 };
 
 export type ScrapedProject = {

@@ -27,6 +27,10 @@ const projectName = (project: string | ParsedProjectConfig) => (
   typeof project === 'string' ? project : project.name
 );
 
+const queryPeriodDays = (config: ParsedConfig) => Math.round((
+  Date.now() - config.azure.queryFrom.getTime()
+) / (1000 * 60 * 60 * 24));
+
 const writeFile = async (path: string[], fileName: string, contents: string) => {
   outputFileLog('Writing', join(dataFolderPath, ...path, fileName).replace(`${process.cwd()}/`, ''));
   await fs.mkdir(join(dataFolderPath, ...path), { recursive: true });
@@ -46,7 +50,8 @@ const projectSummary = (
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.pipelines.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,
-  workItemLabel: [singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel]
+  workItemLabel: [singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel],
+  queryPeriodDays: queryPeriodDays(config)
 });
 
 const writeRepoAnalysisFile = async (
@@ -189,7 +194,8 @@ export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<Summ
     ...summary,
     lastUpdated: new Date().toISOString(),
     hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-    changeProgramName: config.azure.collections[0]?.changeProgram?.name
+    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
+    queryPeriodDays: queryPeriodDays(config)
   };
 
   return (
@@ -203,6 +209,7 @@ export const writeChangeProgramFile = (config: ParsedConfig) => (tasks: UIChange
   const changeProgram: UIChangeProgram = {
     lastUpdated: new Date().toISOString(),
     changeProgramName: config.azure.collections[0]?.changeProgram?.name,
+    queryPeriodDays: queryPeriodDays(config),
     hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
     details: someCollectionWithChangeProgram
       ? {
