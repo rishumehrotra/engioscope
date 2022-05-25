@@ -46,7 +46,8 @@ const Card: React.FC<CardProps> = ({
 const FlowMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
-}> = ({ group, workItemTypes }) => {
+  queryPeriodDays: number;
+}> = ({ group, workItemTypes, queryPeriodDays }) => {
   const [filterKey] = allExceptExpectedKeys(group);
   const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
   const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
@@ -61,19 +62,19 @@ const FlowMetrics: React.FC<{
             <th className="w-1/12" />
             <th
               className="text-xs font-semibold py-3 w-1/12"
-              data-tip="Number of new work items added in the last 90 days"
+              data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
             >
               New
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Number of work items completed in the last 90 days"
+              data-tip={`Number of work items completed in the last ${queryPeriodDays} days`}
             >
               Velocity
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average time taken to complete a work item over the last 90 days"
+              data-tip={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
             >
               Cycle time
             </th>
@@ -91,7 +92,7 @@ const FlowMetrics: React.FC<{
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Increase in the number of WIP items over the last 90 days"
+              data-tip={`Increase in the number of WIP items over the last ${queryPeriodDays} days`}
             >
               WIP increase
             </th>
@@ -226,7 +227,8 @@ const FlowMetrics: React.FC<{
 const QualityMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   workItemTypes: SummaryMetrics['workItemTypes'];
-}> = ({ group, workItemTypes }) => {
+  queryPeriodDays: number;
+}> = ({ group, workItemTypes, queryPeriodDays }) => {
   const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
   const bugs = bugsDefinitionId ? group.summary[bugsDefinitionId] : null;
   const [filterKey] = allExceptExpectedKeys(group);
@@ -246,13 +248,13 @@ const QualityMetrics: React.FC<{
             <th className="w-1/12" />
             <th
               className="text-xs font-semibold py-3 w-1/12"
-              data-tip="Number of bugs opened in the last 90 days"
+              data-tip={`Number of bugs opened in the last ${queryPeriodDays} days`}
             >
               New
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Number of bugs closed in the last 90 days"
+              data-tip={`Number of bugs closed in the last ${queryPeriodDays} days`}
             >
               Fixed
             </th>
@@ -642,7 +644,7 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Number of CI builds run in the last 90 days"
+                data-tip={`Number of CI builds run in the last ${queryPeriodDays} days`}
               >
                 Runs
                 <div className="font-semibold text-xl mb-2">
@@ -939,8 +941,16 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes, queryPe
           <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
             Value metrics
           </h2>
-          <FlowMetrics group={group} workItemTypes={workItemTypes} />
-          <QualityMetrics group={group} workItemTypes={workItemTypes} />
+          <FlowMetrics
+            group={group}
+            workItemTypes={workItemTypes}
+            queryPeriodDays={queryPeriodDays}
+          />
+          <QualityMetrics
+            group={group}
+            workItemTypes={workItemTypes}
+            queryPeriodDays={queryPeriodDays}
+          />
           <HealthMetrics group={group} queryPeriodDays={queryPeriodDays} />
         </>
       )}

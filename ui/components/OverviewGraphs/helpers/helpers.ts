@@ -24,9 +24,9 @@ export const lineColor = (() => {
   );
 })();
 
-const threeMonthsAgoFrom = (lastUpdated: string) => {
+const queryPeriodStart = (lastUpdated: string, queryPeriodDays: number) => {
   const queryPeriod = new Date(lastUpdated);
-  queryPeriod.setDate(queryPeriod.getDate() - 90);
+  queryPeriod.setDate(queryPeriod.getDate() - queryPeriodDays);
   queryPeriod.setHours(0, 0, 0, 0);
   return queryPeriod;
 };
@@ -41,11 +41,12 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
   const isBug = (witId: string) => workItemType(witId).name[0].toLowerCase().includes('bug');
 
-  const startOfQueryPeriod = threeMonthsAgoFrom(projectAnalysis.lastUpdated);
+  const startOfQueryPeriod = queryPeriodStart(projectAnalysis.lastUpdated, projectAnalysis.queryPeriodDays);
 
   const isWIPIn = isWIPInTimeRange(workItemTimes, projectAnalysis.ignoreForWIP);
 
   return {
+    queryPeriodDays: projectAnalysis.queryPeriodDays,
     allWorkItems: Object.values(overview.byId),
     lastUpdated: new Date(projectAnalysis.lastUpdated),
     ignoreForWIP: projectAnalysis.ignoreForWIP,

@@ -42,7 +42,7 @@ type WIPTrendGraphProps = {
 const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
   workItems, accessors, openModal
 }) => {
-  const { organizeByWorkItemType, workItemType } = accessors;
+  const { organizeByWorkItemType, workItemType, queryPeriodDays } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(always(T));
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(always(T));
 
@@ -156,7 +156,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
         )?.workItems || [];
 
         return openModal({
-          heading: 'WIP items over the last 90 days',
+          heading: `WIP items over the last ${queryPeriodDays} days`,
           subheading: workItemSubheading(witId, groupName, workItemsForLastDay, workItemType),
           body: (
             <WorkItemFlatList
@@ -169,12 +169,12 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
       },
       onCheckboxClick
     };
-  }, [accessors, dataByDay, isChecked, onCheckboxClick, openModal, workItemTooltip, workItemsToDisplay]);
+  }, [accessors, dataByDay, isChecked, onCheckboxClick, openModal, queryPeriodDays, workItemTooltip, workItemsToDisplay]);
 
   return (
     <GraphCard
       title="Work in progress trend"
-      subtitle="Trend of work items in progress per day over the last 90 days"
+      subtitle={`Trend of work items in progress per day over the last ${queryPeriodDays} days`}
       hasData={hasData}
       csvData={csvData}
       left={(

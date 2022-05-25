@@ -70,6 +70,7 @@ const Summary: React.FC = () => {
                 <SummaryByMetric
                   groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
                   workItemTypes={metrics.workItemTypes}
+                  queryPeriodDays={metrics.queryPeriodDays}
                 />
               ) : (
                 <SummaryByTeam

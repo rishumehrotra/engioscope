@@ -42,7 +42,7 @@ export const splitByDateForLineGraph = (
   const separator = ':';
   const key = (witId: string, groupName: string) => `${witId}${separator}${groupName}`;
 
-  const splitByDay = range(0, 90)
+  const splitByDay = range(0, accessors.queryPeriodDays)
     .reduce<Record<string, { date: Date; workItems: UIWorkItem[] }[]>>((acc, day) => {
       const date = new Date(accessors.lastUpdated);
       date.setDate(date.getDate() - day);

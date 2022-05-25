@@ -39,7 +39,9 @@ type VelocityGraphProps = {
 const VelocityGraph: React.FC<VelocityGraphProps> = ({
   workItems, accessors, openModal
 }) => {
-  const { isWorkItemClosed, organizeByWorkItemType, workItemType } = accessors;
+  const {
+    isWorkItemClosed, organizeByWorkItemType, workItemType, queryPeriodDays
+  } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
@@ -138,7 +140,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
           ?.workItemPoints || [];
 
         return openModal({
-          heading: 'Velocity over the last 90 days',
+          heading: `Velocity over the last ${queryPeriodDays} days`,
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemsNested
@@ -160,12 +162,12 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
       },
       onCheckboxClick
     };
-  }, [accessors, dataByDay, isChecked, onCheckboxClick, openModal, workItemTooltip, workItemsToDisplay]);
+  }, [accessors, dataByDay, isChecked, onCheckboxClick, openModal, queryPeriodDays, workItemTooltip, workItemsToDisplay]);
 
   return (
     <GraphCard
       title="Velocity"
-      subtitle="Work items completed over the last 90 days"
+      subtitle={`Work items completed over the last ${queryPeriodDays} days`}
       hasData={preFilteredWorkItems.length > 0}
       csvData={csvData}
       left={(

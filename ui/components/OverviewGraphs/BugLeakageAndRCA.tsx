@@ -75,13 +75,13 @@ const isBugLike = (workItemType: UIWorkItemType) => (
   workItemType.name[0].toLowerCase().includes('bug')
 );
 
-const bugsLeakedInLastThreeMonths = (lastUpdated: Date) => {
-  const lastThreeMonths = new Date(lastUpdated);
-  lastThreeMonths.setDate(lastThreeMonths.getDate() - 90);
+const bugsLeakedInQueryPeriod = (lastUpdated: Date, queryPeriodDays: number) => {
+  const queryPeriodStart = new Date(lastUpdated);
+  queryPeriodStart.setDate(queryPeriodStart.getDate() - queryPeriodDays);
 
   return (wi: UIWorkItem) => {
     if (wi.state.toLowerCase() === 'withdrawn') return false;
-    return new Date(wi.created.on) >= lastThreeMonths;
+    return new Date(wi.created.on) >= queryPeriodStart;
   };
 };
 
@@ -382,7 +382,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   return (
     <GraphCard
       title={`${workItemType(witId).name[0]} leakage with root cause`}
-      subtitle={`${workItemType(witId).name[1]} leaked over the last 90 days with their root cause`}
+      subtitle={`${workItemType(witId).name[1]} leaked over the last ${accessors.queryPeriodDays} days with their root cause`}
       hasData={workItems.length > 0}
       csvData={csvData}
       left={(
@@ -449,17 +449,17 @@ const BugLeakageAndRCAGraph: React.FC<BugLeakageAndRCAGraphProps> = ({
   workItems, accessors, openModal
 }) => {
   const { workItemType, lastUpdated } = accessors;
-  const hasLeakedInLastThreeMonths = bugsLeakedInLastThreeMonths(lastUpdated);
+  const hasLeakedInQueryPeriod = bugsLeakedInQueryPeriod(lastUpdated, accessors.queryPeriodDays);
 
   const witIdAndWorkItems = useMemo(
     () => workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
-      if (isBugLike(workItemType(wi.typeId)) && hasLeakedInLastThreeMonths(wi)) {
+      if (isBugLike(workItemType(wi.typeId)) && hasLeakedInQueryPeriod(wi)) {
         acc[wi.typeId] = acc[wi.typeId] || [];
         acc[wi.typeId].push(wi);
       }
       return acc;
     }, {}),
-    [hasLeakedInLastThreeMonths, workItemType, workItems]
+    [hasLeakedInQueryPeriod, workItemType, workItems]
   );
 
   return (

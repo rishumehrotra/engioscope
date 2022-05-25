@@ -152,16 +152,19 @@ const FlowMetricsByWorkItemType: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
   workItemTypeName: string;
-}> = ({ groups, workItemTypes, workItemTypeName }) => {
+  queryPeriodDays: number;
+}> = ({
+  groups, workItemTypes, workItemTypeName, queryPeriodDays
+}) => {
   const table = useCallback(() => ({
     columns: [
       null,
-      { label: 'New', tooltip: 'Number of new work items added in the last 90 days' },
-      { label: 'Velocity', tooltip: 'Number of work items completed in the last 90 days' },
-      { label: 'Cycle time', tooltip: 'Average time taken to complete a work item over the last 90 days' },
+      { label: 'New', tooltip: `Number of new work items added in the last ${queryPeriodDays} days` },
+      { label: 'Velocity', tooltip: `Number of work items completed in the last ${queryPeriodDays} days` },
+      { label: 'Cycle time', tooltip: `Average time taken to complete a work item over the last ${queryPeriodDays} days` },
       { label: 'CLT', tooltip: 'Average time taken to take a work item to production after development is complete' },
       { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
-      { label: 'WIP increase', tooltip: 'Increase in the number of WIP items over the last 90 days' },
+      { label: 'WIP increase', tooltip: `Increase in the number of WIP items over the last ${queryPeriodDays} days` },
       { label: 'WIP age', tooltip: 'Average age of work items in progress' }
     ],
     rows: groups
@@ -295,7 +298,7 @@ const FlowMetricsByWorkItemType: React.FC<{
           ]
         };
       })
-  }), [groups, workItemTypeName, workItemTypes]);
+  }), [groups, queryPeriodDays, workItemTypeName, workItemTypes]);
 
   return (
     <CollapsibleSection
@@ -320,7 +323,8 @@ const equivalientEnvironments = ['Replica', 'Pre-Prod'];
 const QualityMetrics: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
-}> = ({ groups, workItemTypes }) => {
+  queryPeriodDays: number;
+}> = ({ groups, workItemTypes, queryPeriodDays }) => {
   const sections = useMemo(() => {
     const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
     if (!bugsDefinitionId) return null;
@@ -359,12 +363,12 @@ const QualityMetrics: React.FC<{
             table: () => ({
               columns: [
                 null,
-                { label: 'New bugs', tooltip: 'Number of bugs opened in the last 90 days' },
-                { label: 'Bugs fixed', tooltip: 'Number of bugs closed in the last 90 days' },
+                { label: 'New bugs', tooltip: `Number of bugs opened in the last ${queryPeriodDays} days` },
+                { label: 'Bugs fixed', tooltip: `Number of bugs closed in the last ${queryPeriodDays} days` },
                 { label: 'Bugs cycle time', tooltip: 'Average time taken to close a bug' },
                 { label: 'Bugs CLT', tooltip: 'Average time taken to close a bug once development is complete' },
                 { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
-                { label: 'WIP increase', tooltip: 'Increase in the number of WIP bugs over the last 90 days' },
+                { label: 'WIP increase', tooltip: `Increase in the number of WIP bugs over the last ${queryPeriodDays} days` },
                 { label: 'WIP age', tooltip: 'Average age of work-in-progress bugs' }
               ],
               rows: groups
@@ -512,7 +516,7 @@ const QualityMetrics: React.FC<{
           };
         }, { sections: [], encounteredEquivalentEnvironment: false })
       .sections;
-  }, [groups, workItemTypes]);
+  }, [groups, queryPeriodDays, workItemTypes]);
 
   if (!sections) return null;
 
@@ -742,11 +746,16 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
   );
 };
 
-const CIBuilds: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) => {
+type CIBuildsProps = {
+  groups: SummaryMetrics['groups'];
+  queryPeriodDays: number;
+};
+
+const CIBuilds: React.FC<CIBuildsProps> = ({ groups, queryPeriodDays }) => {
   const table: CollapsibleSectionProps['table'] = useCallback(() => ({
     columns: [
       null,
-      { label: 'Runs', tooltip: 'Number of CI builds run in the last 90 days' },
+      { label: 'Runs', tooltip: `Number of CI builds run in the last ${queryPeriodDays} days` },
       { label: 'Success', tooltip: 'Percentage of successful builds' },
       { label: 'YAML pipelines', tooltip: 'Pipelines configured using a YAML file' },
       { label: 'MTTR build failure', tooltip: 'Average time taken to fix a build failure' }
@@ -808,7 +817,7 @@ const CIBuilds: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
         ]
       };
     })
-  }), [groups]);
+  }), [groups, queryPeriodDays]);
 
   return (
     <CollapsibleSection
@@ -890,7 +899,8 @@ const Releases: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
 const SummaryByMetric: React.FC<{
   groups: SummaryMetrics['groups'];
   workItemTypes: SummaryMetrics['workItemTypes'];
-}> = ({ groups, workItemTypes }) => (
+  queryPeriodDays: number;
+}> = ({ groups, workItemTypes, queryPeriodDays }) => (
   <div className="mt-8">
     <h2 className="text-2xl font-bold">Flow metrics</h2>
 
@@ -898,21 +908,27 @@ const SummaryByMetric: React.FC<{
       groups={groups}
       workItemTypes={workItemTypes}
       workItemTypeName="Feature"
+      queryPeriodDays={queryPeriodDays}
     />
 
     <FlowMetricsByWorkItemType
       groups={groups}
       workItemTypes={workItemTypes}
       workItemTypeName="User Story"
+      queryPeriodDays={queryPeriodDays}
     />
 
     <h2 className="text-2xl font-bold mt-8">Quality metrics</h2>
-    <QualityMetrics groups={groups} workItemTypes={workItemTypes} />
+    <QualityMetrics
+      groups={groups}
+      workItemTypes={workItemTypes}
+      queryPeriodDays={queryPeriodDays}
+    />
 
     <h2 className="text-2xl font-bold mt-8">Health metrics</h2>
     <TestAutomationMetrics groups={groups} />
     <CodeQualityMetrics groups={groups} />
-    <CIBuilds groups={groups} />
+    <CIBuilds groups={groups} queryPeriodDays={queryPeriodDays} />
     <Releases groups={groups} />
   </div>
 );

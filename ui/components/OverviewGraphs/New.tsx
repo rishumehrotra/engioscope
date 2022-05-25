@@ -55,7 +55,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
 }) => {
   const {
     wasWorkItemOpenedInLastThreeMonths, organizeByWorkItemType, workItemType,
-    isBug, workItemTimes
+    isBug, workItemTimes, queryPeriodDays
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -194,7 +194,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
   return (
     <GraphCard
       title="New work items"
-      subtitle="Work items on which work started in the last three months"
+      subtitle={`Work items on which work started in the last ${accessors.queryPeriodDays} days`}
       hasData={preFilteredWorkItems.length > 0}
       renderLazily={false}
       csvData={csvData}
@@ -214,7 +214,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
                     ? 'created date'
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     : stringifyDateField(workItemType(witId).startDateFields!)
-                } within the last 90 days.`}
+                } within the last ${queryPeriodDays} days.`}
               </li>
             ))}
           </ul>
