@@ -49,6 +49,10 @@ export default (config: ParsedConfig) => {
     analytics().pipe(res);
   });
 
+  router.get('/api/ui-version', async (req, res) => {
+    res.send(process.env.npm_package_version);
+  });
+
   router.get('/api/cache', async (req, res) => {
     const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
     res.setHeader('Content-type', 'application/gzip');

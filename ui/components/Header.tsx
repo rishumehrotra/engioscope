@@ -49,6 +49,10 @@ const Header: React.FC = () => {
               ))
             ) : null}
         </ul>
+        <span className="cursor-default text-gray-900">
+          {/* eslint-disable-next-line no-undef */}
+          {APP_VERSION}
+        </span>
       </div>
       <div className="mt-24">
         <div className="flex align-baseline justify-between">

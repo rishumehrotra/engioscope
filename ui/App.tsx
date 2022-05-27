@@ -11,6 +11,7 @@ import Summary from './pages/Summary';
 import ChangeProgram from './pages/ChangeProgram';
 import Header from './components/Header';
 import { HeaderProvider } from './hooks/header-hooks';
+import RefreshIfUpdated from './components/RefreshIfUpdated';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -23,24 +24,26 @@ const App: React.FC = () => {
 
   return (
     <BrowserRouter>
-      <ProjectDetailsProvider>
-        <SortContextProvider>
-          <HeaderProvider>
-            <div className="pb-64 overflow-y-auto transition duration-500 ease-in-out">
-              <ReactTooltip />
-              <RecordAnalytics />
-              <Header />
-              <Routes>
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/summary" element={<Summary />} />
-                <Route path="/change-program" element={<ChangeProgram />} />
-                <Route path="/:collection/:project/*" element={<Project />} />
-                <Route path="/" element={<Collection />} />
-              </Routes>
-            </div>
-          </HeaderProvider>
-        </SortContextProvider>
-      </ProjectDetailsProvider>
+      <RefreshIfUpdated>
+        <ProjectDetailsProvider>
+          <SortContextProvider>
+            <HeaderProvider>
+              <div className="pb-64 overflow-y-auto transition duration-500 ease-in-out">
+                <ReactTooltip />
+                <RecordAnalytics />
+                <Header />
+                <Routes>
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/summary" element={<Summary />} />
+                  <Route path="/change-program" element={<ChangeProgram />} />
+                  <Route path="/:collection/:project/*" element={<Project />} />
+                  <Route path="/" element={<Collection />} />
+                </Routes>
+              </div>
+            </HeaderProvider>
+          </SortContextProvider>
+        </ProjectDetailsProvider>
+      </RefreshIfUpdated>
     </BrowserRouter>
   );
 };

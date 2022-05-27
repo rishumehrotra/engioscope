@@ -3,7 +3,8 @@
   "include": [
     "./**/*.ts",
     "./**/*.tsx",
-    "../shared/**/*.ts"
+    "../shared/**/*.ts",
+    "../vite-env.d.ts"
   ],
   "compilerOptions": {
     "lib": [
