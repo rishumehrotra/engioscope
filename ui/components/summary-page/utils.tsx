@@ -1,4 +1,6 @@
-import { head, last, sum } from 'rambda';
+import {
+  head, last, sum
+} from 'rambda';
 import type { ReactNode } from 'react';
 import React from 'react';
 import type { SummaryMetrics, UIWorkItemType } from '../../../shared/types';
@@ -11,9 +13,9 @@ type ProcessedSummary = {
   velocity: number;
   velocityByWeek: number[];
   cycleTime: number;
-  cycleTimeByWeek: number[];
+  cycleTimeByWeek: number[][];
   changeLeadTime: number;
-  changeLeadTimeByWeek: number[];
+  changeLeadTimeByWeek: number[][];
   flowEfficiency: { total: number; wcTime: number };
   flowEfficiencyByWeek: { total: number; wcTime: number }[];
   wipCount: number;
@@ -29,13 +31,9 @@ export const processSummary = (summary: SummaryGroups[string]): ProcessedSummary
   velocity: summary.velocity,
   velocityByWeek: summary.velocityByWeek,
   cycleTime: sum(summary.cycleTime) / summary.velocity,
-  cycleTimeByWeek: summary.cycleTimeByWeek.map(
-    cycleTimeByWeek => (cycleTimeByWeek.length === 0 ? 0 : (sum(cycleTimeByWeek) / cycleTimeByWeek.length))
-  ),
+  cycleTimeByWeek: summary.cycleTimeByWeek,
   changeLeadTime: sum(summary.changeLeadTime) / summary.velocity,
-  changeLeadTimeByWeek: summary.changeLeadTimeByWeek.map(
-    changeLeadTimeByWeek => (changeLeadTimeByWeek.length === 0 ? 0 : (sum(changeLeadTimeByWeek) / changeLeadTimeByWeek.length))
-  ),
+  changeLeadTimeByWeek: summary.changeLeadTimeByWeek,
   flowEfficiency: summary.flowEfficiency,
   flowEfficiencyByWeek: summary.flowEfficiencyByWeek,
   wipCount: summary.wipCount,

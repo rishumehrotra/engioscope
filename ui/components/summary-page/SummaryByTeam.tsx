@@ -6,13 +6,20 @@ import { maybe } from '../../../shared/maybe';
 import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, exists, toPercentage } from '../../../shared/utils';
-import { num, prettyMS } from '../../helpers/utils';
+import { prettyMS } from '../../helpers/utils';
+import LabelWithSparkline2 from '../graphs/LabelWithSparkline2';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
+import {
+  buildRunsSparkline,
+  changeLeadTimeSparkline, coverageSparkline, cycleTimeSparkline,
+  flowEfficiencySparkline, newItemsSparkline, newSonarSetupsSparkline,
+  testAutomationSparkline, velocitySparkline
+} from '../sparkline-props';
 import UsageByEnv from '../UsageByEnv';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
 import {
-  flowEfficiency, decreaseIsBetter, increaseIsBetter,
+  decreaseIsBetter, increaseIsBetter,
   getMetricCategoryDefinitionId, flattenSummaryGroups, allExceptExpectedKeys,
   renderGroupItem, processSummary
 } from './utils';
@@ -125,65 +132,45 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl">
                   {renderMetric(
-                    <LabelWithSparkline
-                      label={num(workItemsSummary.leakage)}
+                    <LabelWithSparkline2
                       data={workItemsSummary.leakageByWeek}
-                      lineColor={increaseIsBetter(workItemsSummary.leakageByWeek)}
+                      {...newItemsSparkline}
                     />,
                     '#new-work-items'
                   )}
                 </td>
                 <td className="font-semibold text-xl">
                   {renderMetric(
-                    <LabelWithSparkline
-                      label={num(workItemsSummary.velocity)}
+                    <LabelWithSparkline2
                       data={workItemsSummary.velocityByWeek}
-                      lineColor={increaseIsBetter(workItemsSummary.velocityByWeek)}
+                      {...velocitySparkline}
                     />,
                     '#velocity'
                   )}
                 </td>
                 <td className="font-semibold text-xl">
                   {renderMetric(
-                    <LabelWithSparkline
-                      label={workItemsSummary.cycleTime
-                        ? prettyMS(workItemsSummary.cycleTime)
-                        : '-'}
-                      lineColor={decreaseIsBetter(
-                        workItemsSummary.cycleTimeByWeek.filter(x => x !== 0)
-                      )}
-                      yAxisLabel={prettyMS}
-                      data={workItemsSummary.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
-                      renderer={pathRendererSkippingUndefineds}
+                    <LabelWithSparkline2
+                      data={workItemsSummary.cycleTimeByWeek}
+                      {...cycleTimeSparkline}
                     />,
                     '#cycle-time'
                   )}
                 </td>
                 <td className="font-semibold text-xl">
                   {renderMetric(
-                    <LabelWithSparkline
-                      label={workItemsSummary.changeLeadTime
-                        ? prettyMS(workItemsSummary.changeLeadTime)
-                        : '-'}
-                      lineColor={decreaseIsBetter(
-                        workItemsSummary.changeLeadTimeByWeek.filter(x => x !== 0)
-                      )}
-                      yAxisLabel={prettyMS}
-                      data={workItemsSummary.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
-                      renderer={pathRendererSkippingUndefineds}
+                    <LabelWithSparkline2
+                      data={workItemsSummary.changeLeadTimeByWeek}
+                      {...changeLeadTimeSparkline}
                     />,
                     '#change-lead-time'
                   )}
                 </td>
                 <td className="font-semibold text-xl">
                   {renderMetric(
-                    <LabelWithSparkline
-                      label={workItemsSummary.flowEfficiency
-                        ? `${Math.round(flowEfficiency(workItemsSummary.flowEfficiency))}%`
-                        : '-'}
-                      data={workItemsSummary.flowEfficiencyByWeek.map(flowEfficiency)}
-                      lineColor={increaseIsBetter(workItemsSummary.flowEfficiencyByWeek.map(flowEfficiency))}
-                      yAxisLabel={value => `${value}%`}
+                    <LabelWithSparkline2
+                      data={workItemsSummary.flowEfficiencyByWeek}
+                      {...flowEfficiencySparkline}
                     />,
                     '#flow-efficiency'
                   )}
@@ -314,65 +301,45 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      <LabelWithSparkline
-                        label={bugInfo.leakage}
+                      <LabelWithSparkline2
                         data={bugInfo.leakageByWeek}
-                        lineColor={decreaseIsBetter(bugInfo.leakageByWeek)}
+                        {...newItemsSparkline}
                       />,
                       '#bug-leakage-with-root-cause'
                     )}
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      <LabelWithSparkline
-                        label={bugInfo.velocity}
+                      <LabelWithSparkline2
                         data={bugInfo.velocityByWeek}
-                        lineColor={increaseIsBetter(bugInfo.velocityByWeek)}
+                        {...velocitySparkline}
                       />,
                       '#velocity'
                     )}
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      <LabelWithSparkline
-                        label={maybe(bugInfo.cycleTime)
-                          .map(prettyMS)
-                          .getOr('-')}
-                        lineColor={decreaseIsBetter(
-                          bugInfo.cycleTimeByWeek.filter(x => x !== 0)
-                        )}
-                        yAxisLabel={prettyMS}
-                        data={bugInfo.cycleTimeByWeek.map(x => (x === 0 ? undefined : x))}
-                        renderer={pathRendererSkippingUndefineds}
+                      <LabelWithSparkline2
+                        data={bugInfo.cycleTimeByWeek}
+                        {...cycleTimeSparkline}
                       />,
                       '#cycle-time'
                     )}
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      <LabelWithSparkline
-                        label={maybe(bugInfo.changeLeadTime)
-                          .map(prettyMS)
-                          .getOr('-')}
-                        lineColor={decreaseIsBetter(
-                          bugInfo.changeLeadTimeByWeek.filter(x => x !== 0)
-                        )}
-                        yAxisLabel={prettyMS}
-                        data={bugInfo.changeLeadTimeByWeek.map(x => (x === 0 ? undefined : x))}
-                        renderer={pathRendererSkippingUndefineds}
+                      <LabelWithSparkline2
+                        data={bugInfo.changeLeadTimeByWeek}
+                        {...changeLeadTimeSparkline}
                       />,
                       '#change-lead-time'
                     )}
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      <LabelWithSparkline
-                        label={maybe(bugInfo.flowEfficiency)
-                          .map(x => `${Math.round(flowEfficiency(x))}%`)
-                          .getOr('-')}
-                        data={bugInfo.flowEfficiencyByWeek.map(flowEfficiency)}
-                        lineColor={increaseIsBetter(bugInfo.flowEfficiencyByWeek.map(flowEfficiency))}
-                        yAxisLabel={x => `${x}%`}
+                      <LabelWithSparkline2
+                        data={bugInfo.flowEfficiencyByWeek}
+                        {...flowEfficiencySparkline}
                       />,
                       '#flow-efficiency'
                     )}
@@ -456,10 +423,9 @@ const HealthMetrics: React.FC<{
               Tests
               <div className="font-semibold text-xl">
                 {reposMetric(
-                  <LabelWithSparkline
-                    label={num(repoStats.tests)}
+                  <LabelWithSparkline2
                     data={repoStats.testsByWeek}
-                    lineColor={increaseIsBetter(repoStats.testsByWeek)}
+                    {...testAutomationSparkline}
                   />
                 )}
               </div>
@@ -472,11 +438,9 @@ const HealthMetrics: React.FC<{
                 Coverage
                 <div className="text-lg">
                   {reposMetric(
-                    <LabelWithSparkline
-                      label={repoStats.coverage}
+                    <LabelWithSparkline2
                       data={repoStats.coverageByWeek}
-                      lineColor={increaseIsBetter(repoStats.coverageByWeek)}
-                      yAxisLabel={x => `${x}%`}
+                      {...coverageSparkline}
                     />
                   )}
                 </div>
@@ -535,12 +499,9 @@ const HealthMetrics: React.FC<{
                     ? (
                       <>
                         {reposMetric(
-                          <LabelWithSparkline
-                            label={divide(codeQuality.configured, repoStats.repos)
-                              .map(toPercentage)
-                              .getOr('-')}
+                          <LabelWithSparkline2
                             data={repoStats.newSonarSetupsByWeek}
-                            lineColor={increaseIsBetter(repoStats.newSonarSetupsByWeek)}
+                            {...newSonarSetupsSparkline(repoStats.repos)}
                           />
                         )}
                       </>
@@ -649,11 +610,9 @@ const HealthMetrics: React.FC<{
                 Runs
                 <div className="font-semibold text-xl mb-2">
                   {reposMetric(
-                    <LabelWithSparkline
-                      label={num(repoStats.builds.total)}
+                    <LabelWithSparkline2
                       data={repoStats.builds.byWeek}
-                      lineColor={increaseIsBetter(repoStats.builds.byWeek)}
-                      yAxisLabel={num}
+                      {...buildRunsSparkline}
                     />
                   )}
                 </div>
