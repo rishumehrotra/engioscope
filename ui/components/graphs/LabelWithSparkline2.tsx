@@ -45,16 +45,6 @@ const LabelWithSparkline2 = <T extends {}>({
     <span className="grid">
       <span className="inline-flex items-end gap-x-0.5">
         {valueToLabel(thisMonthValue)}
-        {previousMonthStats ? (
-          <span style={{ color: previousMonthStats.color }}>
-            {/* eslint-disable-next-line no-nested-ternary */}
-            {previousMonthStats.trendDirection === 'up'
-              ? '▲'
-              : previousMonthStats.trendDirection === 'same'
-                ? ' '
-                : '▼'}
-          </span>
-        ) : null}
         <Sparkline
           data={dataForSparkline}
           lineColor={colorBy?.(dataForSparkline)}
@@ -63,12 +53,26 @@ const LabelWithSparkline2 = <T extends {}>({
         />
       </span>
       {previousMonthStats ? (
-        <span className="text-sm text-gray-600">
-          {valueToLabel(previousMonthStats.value)}
-          <span className="pl-4">
-            {parseInt(previousMonthStats.changePercentage, 10) > 0 ? '+' : null}
-            {previousMonthStats.changePercentage}
-          </span>
+        <span className="text-sm text-gray-600" style={{ color: previousMonthStats.color }}>
+          {/* eslint-disable-next-line no-nested-ternary */}
+          {previousMonthStats.trendDirection === 'up'
+            ? '▲'
+            : previousMonthStats.trendDirection === 'same'
+              ? ' '
+              : '▼'}
+          {' '}
+          {valueToLabel(Math.abs(thisMonthValue - previousMonthStats.value))}
+          {' '}
+          {parseInt(previousMonthStats.changePercentage, 10) === 0
+            ? null
+            : (
+              <span className="text-xs">
+                (
+                {parseInt(previousMonthStats.changePercentage, 10) > 0 ? '+' : null}
+                {previousMonthStats.changePercentage}
+                )
+              </span>
+            )}
         </span>
       ) : null}
     </span>

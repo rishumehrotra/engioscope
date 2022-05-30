@@ -168,8 +168,8 @@ export const renderGroupItem = (link: string) => (label: ReactNode, anchor = '')
       rel="noreferrer"
     >
       {label}
-      <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 text-blue-500 ml-1" />
     </a>
+    <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 text-blue-500 ml-1" />
   </div>
 );
 
@@ -187,10 +187,10 @@ export const increaseIsBetter = (data: number[]) => {
   return (
     // eslint-disable-next-line no-nested-ternary
     end - start > 0
-      ? '#3fba3f'
+      ? '#009966'
       : end - start === 0
         ? 'grey'
-        : 'red'
+        : '#dd0000'
   );
 };
 
@@ -201,10 +201,10 @@ export const decreaseIsBetter = (data: number[]) => {
   return (
     // eslint-disable-next-line no-nested-ternary
     end - start < 0
-      ? '#3fba3f'
+      ? '#009966'
       : end - start === 0
         ? 'grey'
-        : 'red'
+        : '#dd0000'
   );
 };
 

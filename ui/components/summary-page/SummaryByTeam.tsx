@@ -122,15 +122,17 @@ const FlowMetrics: React.FC<{
 
             return (
               <tr key={typeName}>
-                <td className="font-semibold text-sm flex items-center py-3">
-                  <img
-                    src={workItemTypes[definitionId].icon}
-                    alt="Features"
-                    className="w-4 h-4 mr-2"
-                  />
-                  <span>{workItemTypes[definitionId].name[1]}</span>
+                <td className="font-semibold text-sm py-3" valign="middle">
+                  <span className="inline-flex items-center">
+                    <img
+                      src={workItemTypes[definitionId].icon}
+                      alt="Features"
+                      className="w-4 h-4 mr-2"
+                    />
+                    <span>{workItemTypes[definitionId].name[1]}</span>
+                  </span>
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl py-3">
                   {renderMetric(
                     <LabelWithSparkline2
                       data={workItemsSummary.leakageByWeek}
@@ -139,7 +141,7 @@ const FlowMetrics: React.FC<{
                     '#new-work-items'
                   )}
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl  py-3">
                   {renderMetric(
                     <LabelWithSparkline2
                       data={workItemsSummary.velocityByWeek}
@@ -148,7 +150,7 @@ const FlowMetrics: React.FC<{
                     '#velocity'
                   )}
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl py-3">
                   {renderMetric(
                     <LabelWithSparkline2
                       data={workItemsSummary.cycleTimeByWeek}
@@ -157,7 +159,7 @@ const FlowMetrics: React.FC<{
                     '#cycle-time'
                   )}
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl py-3">
                   {renderMetric(
                     <LabelWithSparkline2
                       data={workItemsSummary.changeLeadTimeByWeek}
@@ -166,7 +168,7 @@ const FlowMetrics: React.FC<{
                     '#change-lead-time'
                   )}
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl py-3">
                   {renderMetric(
                     <LabelWithSparkline2
                       data={workItemsSummary.flowEfficiencyByWeek}
@@ -175,7 +177,7 @@ const FlowMetrics: React.FC<{
                     '#flow-efficiency'
                   )}
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl py-3">
                   {renderMetric(
                     <LabelWithSparkline
                       label={(
@@ -194,7 +196,7 @@ const FlowMetrics: React.FC<{
                     '#work-in-progress-trend'
                   )}
                 </td>
-                <td className="font-semibold text-xl">
+                <td className="font-semibold text-xl py-3">
                   {renderMetric(
                     workItemsSummary.wipAge
                       ? prettyMS(workItemsSummary.wipAge)
@@ -288,18 +290,20 @@ const QualityMetrics: React.FC<{
 
               return (
                 <tr key={environment}>
-                  <td className="font-semibold text-sm flex items-center py-3">
-                    { bugsDefinitionId ? (
-                      <img
-                        src={workItemTypes[bugsDefinitionId].icon}
-                        alt="Features"
-                        className="w-4 h-4 mr-2"
-                      />
-                    )
-                      : null}
-                    {environment}
+                  <td className="font-semibold text-sm py-3" valign="middle">
+                    <span className="inline-flex items-center">
+                      { bugsDefinitionId ? (
+                        <img
+                          src={workItemTypes[bugsDefinitionId].icon}
+                          alt="Features"
+                          className="w-4 h-4 mr-2"
+                        />
+                      )
+                        : null}
+                      {environment}
+                    </span>
                   </td>
-                  <td className="font-semibold text-xl">
+                  <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
                       <LabelWithSparkline2
                         data={bugInfo.leakageByWeek}
@@ -308,7 +312,7 @@ const QualityMetrics: React.FC<{
                       '#bug-leakage-with-root-cause'
                     )}
                   </td>
-                  <td className="font-semibold text-xl">
+                  <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
                       <LabelWithSparkline2
                         data={bugInfo.velocityByWeek}
@@ -317,7 +321,7 @@ const QualityMetrics: React.FC<{
                       '#velocity'
                     )}
                   </td>
-                  <td className="font-semibold text-xl">
+                  <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
                       <LabelWithSparkline2
                         data={bugInfo.cycleTimeByWeek}
@@ -326,7 +330,7 @@ const QualityMetrics: React.FC<{
                       '#cycle-time'
                     )}
                   </td>
-                  <td className="font-semibold text-xl">
+                  <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
                       <LabelWithSparkline2
                         data={bugInfo.changeLeadTimeByWeek}
@@ -344,7 +348,7 @@ const QualityMetrics: React.FC<{
                       '#flow-efficiency'
                     )}
                   </td>
-                  <td className="font-semibold text-xl">
+                  <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
                       <LabelWithSparkline
                         label={(
@@ -363,7 +367,7 @@ const QualityMetrics: React.FC<{
                       '#work-in-progress-trend'
                     )}
                   </td>
-                  <td className="font-semibold text-xl">
+                  <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
                       maybe(bugInfo.wipAge)
                         .map(prettyMS)
