@@ -119,7 +119,7 @@ const computeLineGraphData = (
 type PopoverSvgProps = {
   lineColor: string;
   data: (number | undefined)[];
-  yAxisLabel: (index: number) => string;
+  yAxisLabel: (value: number) => string;
   renderer: Renderer;
 };
 
@@ -179,7 +179,7 @@ const PopoverSvg: React.FC<PopoverSvgProps> = ({
   );
 };
 
-type SparklineProps = {
+export type SparklineProps = {
   data: (number | undefined)[];
   height?: number;
   width?: number;
@@ -189,7 +189,7 @@ type SparklineProps = {
   renderer?: Renderer;
 };
 
-const Sparkline: React.FC<SparklineProps> = ({
+export const Sparkline: React.FC<SparklineProps> = ({
   data, height: inputHeight, width: inputWidth, lineColor: inputLineColor, className,
   yAxisLabel: inputYAxisLabel, renderer = pathRenderer
 }) => {

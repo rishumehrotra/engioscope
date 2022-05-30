@@ -231,7 +231,7 @@ const analyseWorkItems = (
 
   const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
   const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
-  const wasWorkItemCompletedInLastMonth = wasWorkItemCompletedIn(isInQueryPeriod);
+  const wasWorkItemCompletedInQueryPeriod = wasWorkItemCompletedIn(isInQueryPeriod);
 
   const wipWorkItems = isWIP(workItemTimes, projectConfig?.workitems.ignoreForWIP || []);
   const isOfType = (type: string) => (workItem: UIWorkItemWithGroup) => (
@@ -256,14 +256,14 @@ const analyseWorkItems = (
     processItemsInGroup(
       applySpec({
         count: length,
-        velocity: pipe(filter(wasWorkItemCompletedInLastMonth), length),
+        velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
         velocityByWeek: wis => (
           weeks.map(
             week => wis.filter(wasWorkItemCompletedIn(week)).length
           )
         ),
         cycleTime: pipe(
-          filter(wasWorkItemCompletedInLastMonth),
+          filter(wasWorkItemCompletedInQueryPeriod),
           map(computeTimeDifferenceBetween('start', 'end'))
         ),
         cycleTimeByWeek: wis => (
@@ -274,7 +274,7 @@ const analyseWorkItems = (
           ))
         ),
         changeLeadTime: pipe(
-          filter(wasWorkItemCompletedInLastMonth),
+          filter(wasWorkItemCompletedInQueryPeriod),
           map(computeTimeDifferenceBetween('devComplete', 'end'))
         ),
         changeLeadTimeByWeek: wis => (
@@ -284,7 +284,7 @@ const analyseWorkItems = (
               .map(computeTimeDifferenceBetween('devComplete', 'end'))
           ))
         ),
-        flowEfficiency: pipe(filter(wasWorkItemCompletedInLastMonth), flowEfficiency),
+        flowEfficiency: pipe(filter(wasWorkItemCompletedInQueryPeriod), flowEfficiency),
         flowEfficiencyByWeek: wis => (
           weeks.map(week => flowEfficiency(
             wis.filter(wasWorkItemCompletedIn(week))
