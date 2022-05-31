@@ -23,7 +23,10 @@ export default defineConfig({
     }
   },
   test: {
-    include: ['**/__tests__/**.{ts,tsx}']
+    include: ['**/__tests__/**.{ts,tsx}'],
+    coverage: {
+      reportsDirectory: '../coverage'
+    }
   },
   define: {
     APP_VERSION: JSON.stringify(process.env.npm_package_version)
