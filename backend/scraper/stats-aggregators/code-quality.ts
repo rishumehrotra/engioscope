@@ -27,7 +27,6 @@ export const requiredMetrics = [
   'alert_status',
   'reliability_rating',
   'security_rating',
-  'team_size',
   'sqale_index',
   'sqale_rating',
   'uncovered_conditions',
