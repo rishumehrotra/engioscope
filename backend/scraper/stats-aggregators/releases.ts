@@ -34,7 +34,7 @@ type PipelineDetails = {
     name: string;
     reposAndBranches: Readonly<{ repoId: string; repoName: string; branchName: string }>[];
     progression: {
-      env: string;
+      name: string;
       date: Date;
       rank: number;
       state: EnvironmentStatus;
@@ -72,7 +72,7 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
       progression: release.environments
         .filter(env => env.status !== 'notStarted' && env.deploySteps?.length)
         .map(env => ({
-          env: env.name,
+          name: env.name,
           rank: env.rank,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           date: last(env.deploySteps)!.lastModifiedOn,
@@ -83,15 +83,15 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
     });
 
     acc[release.releaseDefinition.id].envs = release.environments
-      .reduce<Record<number, EnvDetails>>((acc, env) => {
-        if (!acc[env.rank]) {
-          acc[env.rank] = {
+      .reduce<Record<string, EnvDetails>>((acc, env) => {
+        if (!acc[env.name]) {
+          acc[env.name] = {
             name: env.name,
             conditions: env.conditions.map(createCondition),
             rank: env.rank
           };
-        } else if (!acc[env.rank].conditions.length) {
-          acc[env.rank].conditions = env.conditions.map(createCondition);
+        } else if (!acc[env.name].conditions.length) {
+          acc[env.name].conditions = env.conditions.map(createCondition);
         }
 
         return acc;
@@ -161,7 +161,7 @@ const getReposAndBranches = (
 
   const { repos, stageInfo, attempts } = pipeline.attempts.reduce<{
     repos: Record<string, { name: string; branches: Set<string>; additionalBranches: Set<string> }>;
-    stageInfo: Map<number, { successful: number; total: number }>;
+    stageInfo: Map<string, { successful: number; total: number }>;
     attempts: { total: number; master: number; byWeek: { total: number; master: number }[] };
   }>((acc, attempt) => {
     const attemptWentAhead = didAttemptGoAhead(attempt);
@@ -182,12 +182,12 @@ const getReposAndBranches = (
     });
 
     attempt.progression.forEach(stage => {
-      const stageInfo = acc.stageInfo.get(stage.rank) || { successful: 0, total: 0 };
+      const stageInfo = acc.stageInfo.get(stage.name) || { successful: 0, total: 0 };
 
       stageInfo.total += 1;
       if (stage.state === 'succeeded') stageInfo.successful += 1;
 
-      acc.stageInfo.set(stage.rank, stageInfo);
+      acc.stageInfo.set(stage.name, stageInfo);
     });
 
     if (attemptWentAhead) {
@@ -216,12 +216,12 @@ const getReposAndBranches = (
     ),
     attempts,
     stageCounts: pipeline.envs
-      .filter(({ rank }) => stageInfo.has(rank))
+      .filter(({ name }) => stageInfo.has(name))
       .sort(asc(byNum(prop('rank'))))
       .map(stage => ({
         name: stage.name,
-        successful: stageInfo.get(stage.rank)?.successful || 0,
-        total: stageInfo.get(stage.rank)?.total || 0
+        successful: stageInfo.get(stage.name)?.successful || 0,
+        total: stageInfo.get(stage.name)?.total || 0
       }))
   };
 };
