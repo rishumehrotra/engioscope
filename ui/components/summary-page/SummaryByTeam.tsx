@@ -13,7 +13,7 @@ import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import {
   buildRunsSparkline,
   changeLeadTimeSparkline, coverageSparkline, cycleTimeSparkline,
-  flowEfficiencySparkline, newItemsSparkline, newSonarSetupsSparkline,
+  flowEfficiencySparkline, newBugsSparkline, newItemsSparkline, newSonarSetupsSparkline,
   testAutomationSparkline, velocitySparkline
 } from '../sparkline-props';
 import UsageByEnv from '../UsageByEnv';
@@ -307,7 +307,7 @@ const QualityMetrics: React.FC<{
                     {renderBugMetric(
                       <LabelWithSparkline2
                         data={bugInfo.leakageByWeek}
-                        {...newItemsSparkline}
+                        {...newBugsSparkline}
                       />,
                       '#bug-leakage-with-root-cause'
                     )}

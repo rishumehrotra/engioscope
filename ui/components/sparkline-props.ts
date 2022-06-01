@@ -40,6 +40,11 @@ export const newItemsSparkline: SparklinePropsWithoutData<number> = {
   ...sparklineAsNumber
 };
 
+export const newBugsSparkline: SparklinePropsWithoutData<number> = {
+  colorBy: decreaseIsBetterStrippingZerosAndUndefineds,
+  ...sparklineAsNumber
+};
+
 export const velocitySparkline = newItemsSparkline;
 
 export const cycleTimeSparkline: SparklinePropsWithoutData<number[]> = {
