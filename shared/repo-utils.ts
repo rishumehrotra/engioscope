@@ -1,5 +1,8 @@
-import { add, applySpec, multiply } from 'rambda';
+import {
+  add, applySpec, identity, multiply
+} from 'rambda';
 import { count, incrementBy } from './reducer-utils';
+import { byString, desc } from './sort-utils';
 import type {
   QualityGateStatus, RepoAnalysis, UIBuildPipeline
 } from './types';
@@ -72,10 +75,12 @@ const isBeforeEndOfWeekFilters = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 export const newSonarSetupsByWeek = (repos: RepoAnalysis[]) => (
   repos
-    .flatMap(r => r.codeQuality)
-    .filter(q => q?.oldestFoundSample)
+    .map(r => r.codeQuality
+      ?.map(q => q?.oldestFoundSample)
+      .filter(exists)
+      .sort(desc(byString(identity)))[0])
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    .map(q => isBeforeEndOfWeekFilters.map(f => f(q!.oldestFoundSample!)))
+    .map(q => isBeforeEndOfWeekFilters.map(f => f(q!)))
     .reduce<number[]>((acc, row) => {
       row.forEach((val, index) => {
         acc[index] = (acc[index] || 0) + (val ? 1 : 0);
