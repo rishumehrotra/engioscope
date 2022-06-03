@@ -85,7 +85,9 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
             </tbody>
           </table>
           <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-            {`* Data shown is for the most recent test run, if it occurred in the last ${queryPeriodDays} days`}
+            {`* Data shown is for the most recent test run, if it occurred in the last ${queryPeriodDays} days on the `}
+            <code>master</code>
+            {' branch'}
           </div>
         </>
       ) : (
