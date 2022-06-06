@@ -1,5 +1,5 @@
-
 import { parse as parseHtml } from 'node-html-parser';
+import { decode } from 'html-entities';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
@@ -22,6 +22,7 @@ const parseReport = async (fileName: string) => {
 
   const root = parseHtml(htmlContent);
   const read = (selector: string) => root.querySelector(`#${selector}`)?.innerText;
+  const buildScript = read('buildScript');
 
   return {
     sonarHost: read('sonarHost'),
@@ -36,7 +37,8 @@ const parseReport = async (fileName: string) => {
     agentName: read('AGENT_NAME'),
     buildId: read('BUILD_BUILDID'),
     buildDefinitionId: read('SYSTEM_DEFINITIONID'),
-    buildReason: read('BUILD_REASON')
+    buildReason: read('BUILD_REASON'),
+    buildScript: buildScript ? decode(buildScript) : undefined
   };
 };
 
@@ -44,6 +46,7 @@ export default (collectionName: string, projectName: string) => (
   async (repoName: string, branchName: string) => {
     const buildReportDir = join(process.cwd(), 'build-reports', collectionName, projectName, repoName);
     const matchingBuildReportFiles = await globAsync(join(buildReportDir, '**', `${normalizeBranchName(branchName)}.html`));
+
     return (
       (await Promise.all(matchingBuildReportFiles.map(parseReport)))
         .filter(exists)

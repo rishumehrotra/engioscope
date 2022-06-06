@@ -101,6 +101,7 @@ export type UIBuildPipeline = {
   type: 'ui' | 'yml';
   buildsByWeek?: number[];
   successesByWeek?: number[];
+  usesTemplate: boolean | undefined;
 };
 
 export type UIBuilds = null | {

@@ -57,6 +57,7 @@ type CollectionConfig = {
   changeProgram?: ChangeProgramConfig;
   environments?: string[];
   projects: (string | ProjectConfig)[];
+  templateRepoName?: string;
 };
 
 type ProjectConfig = {
@@ -64,6 +65,7 @@ type ProjectConfig = {
   releasePipelines?: ReleasePipelineConfig;
   workitems?: CollectionWorkItemConfig;
   environments?: string[];
+  templateRepoName?: string;
   groupRepos?: {
     label: string;
     groups: Record<string, string[]>;
@@ -85,6 +87,7 @@ type AzureConfig = {
     project: string;
     portfolioProject: string;
   } & Record<string, string>)[];
+  templateRepoName?: string;
 } & Omit<ProjectConfig, 'name'>;
 
 export type SonarConfig = {
@@ -165,6 +168,7 @@ export type ParsedProjectConfig = Readonly<{
     groups: Record<string, string[]>;
   };
   environments?: string[];
+  templateRepoName?: string;
 }>;
 
 export type ParsedCollection = Readonly<{
@@ -282,7 +286,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
               ?? config.azure.workitems?.ignoreForWIP
               ?? []
           },
-          environments: collection.environments ?? config.azure.environments
+          environments: collection.environments ?? config.azure.environments,
+          templateRepoName: collection.templateRepoName ?? config.azure.templateRepoName
         };
       }
 
@@ -301,7 +306,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
             ?? []
         },
         environments: project.environments ?? collection.environments ?? config.azure.environments,
-        groupRepos: project.groupRepos
+        groupRepos: project.groupRepos,
+        templateRepoName: project.templateRepoName ?? collection.templateRepoName ?? config.azure.templateRepoName
       };
     })
   };

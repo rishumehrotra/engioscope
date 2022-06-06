@@ -18,6 +18,7 @@ import type { RepoAnalysis } from '../../shared/types';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos';
 import type { GitBranchStats, WorkItemField } from './types-azure';
 import { startTimer } from '../utils';
+import parseBuildReports from './parse-build-reports';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -67,8 +68,10 @@ export default (config: ParsedConfig) => {
       aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name)
     ]);
 
+    const repoNameById = (id: string) => repos.find(r => r.id === id)?.name;
+
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
-      builds, buildDefinitionsByRepoId
+      builds, buildDefinitionsByRepoId, repoNameById, forProject(parseBuildReports), projectConfig.templateRepoName
     );
 
     const getTestsByRepoId = aggregateTestRuns(
@@ -91,12 +94,14 @@ export default (config: ParsedConfig) => {
         branches,
         tests,
         { languages, codeQuality },
-        commits
+        commits,
+        builds
       ] = await Promise.all([
         branchStats.then(aggregateBranches(r.webUrl, r.defaultBranch)),
         getTestsByRepoId(r.id),
         codeQualityByRepo(r.name, r.defaultBranch).then(aggregateCodeQuality),
-        forProject(getCommits)(r.id).then(aggregateCommits)
+        forProject(getCommits)(r.id).then(aggregateCommits),
+        buildsByRepoId(r.id)
       ]);
 
       return {
@@ -106,7 +111,7 @@ export default (config: ParsedConfig) => {
         defaultBranch: (r.defaultBranch || '').replace('refs/heads/', ''),
         languages: languages?.map(l => ({ ...l, color: getLanguageColor(l.lang) })),
         commits,
-        builds: buildsByRepoId(r.id),
+        builds,
         branches,
         prs: prByRepoId(r.id),
         tests,
