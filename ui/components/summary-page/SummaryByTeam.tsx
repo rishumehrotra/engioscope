@@ -7,7 +7,7 @@ import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, exists, toPercentage } from '../../../shared/utils';
 import { prettyMS } from '../../helpers/utils';
-import LabelWithSparkline2 from '../graphs/LabelWithSparkline2';
+import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import {
@@ -134,7 +134,7 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl py-3">
                   {renderMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={workItemsSummary.leakageByWeek}
                       {...newItemsSparkline}
                     />,
@@ -143,7 +143,7 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl  py-3">
                   {renderMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={workItemsSummary.velocityByWeek}
                       {...velocitySparkline}
                     />,
@@ -152,7 +152,7 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl py-3">
                   {renderMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={workItemsSummary.cycleTimeByWeek}
                       {...cycleTimeSparkline}
                     />,
@@ -161,7 +161,7 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl py-3">
                   {renderMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={workItemsSummary.changeLeadTimeByWeek}
                       {...changeLeadTimeSparkline}
                     />,
@@ -170,7 +170,7 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl py-3">
                   {renderMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={workItemsSummary.flowEfficiencyByWeek}
                       {...flowEfficiencySparkline}
                     />,
@@ -305,7 +305,7 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
-                      <LabelWithSparkline2
+                      <ExtendedLabelWithSparkline
                         data={bugInfo.leakageByWeek}
                         {...newBugsSparkline}
                       />,
@@ -314,7 +314,7 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
-                      <LabelWithSparkline2
+                      <ExtendedLabelWithSparkline
                         data={bugInfo.velocityByWeek}
                         {...velocitySparkline}
                       />,
@@ -323,7 +323,7 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
-                      <LabelWithSparkline2
+                      <ExtendedLabelWithSparkline
                         data={bugInfo.cycleTimeByWeek}
                         {...cycleTimeSparkline}
                       />,
@@ -332,7 +332,7 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
-                      <LabelWithSparkline2
+                      <ExtendedLabelWithSparkline
                         data={bugInfo.changeLeadTimeByWeek}
                         {...changeLeadTimeSparkline}
                       />,
@@ -341,7 +341,7 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl">
                     {renderBugMetric(
-                      <LabelWithSparkline2
+                      <ExtendedLabelWithSparkline
                         data={bugInfo.flowEfficiencyByWeek}
                         {...flowEfficiencySparkline}
                       />,
@@ -427,7 +427,7 @@ const HealthMetrics: React.FC<{
               Tests
               <div className="font-semibold text-xl">
                 {reposMetric(
-                  <LabelWithSparkline2
+                  <ExtendedLabelWithSparkline
                     data={repoStats.testsByWeek}
                     {...testAutomationSparkline}
                   />
@@ -442,7 +442,7 @@ const HealthMetrics: React.FC<{
                 Coverage
                 <div className="text-lg">
                   {reposMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={repoStats.coverageByWeek}
                       {...coverageSparkline}
                     />
@@ -503,7 +503,7 @@ const HealthMetrics: React.FC<{
                     ? (
                       <>
                         {reposMetric(
-                          <LabelWithSparkline2
+                          <ExtendedLabelWithSparkline
                             data={repoStats.newSonarSetupsByWeek}
                             {...newSonarSetupsSparkline(repoStats.repos)}
                           />
@@ -614,7 +614,7 @@ const HealthMetrics: React.FC<{
                 Runs
                 <div className="font-semibold text-xl mb-2">
                   {reposMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={repoStats.builds.byWeek}
                       {...buildRunsSparkline}
                     />

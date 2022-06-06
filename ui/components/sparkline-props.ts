@@ -5,11 +5,11 @@ import {
 } from 'rambda';
 import { divide, exists, toPercentage } from '../../shared/utils';
 import { num, prettyMS } from '../helpers/utils';
-import type { LabelWithSparklineProps } from './graphs/LabelWithSparkline2';
+import type { ExtendedLabelWithSparklineProps } from './graphs/ExtendedLabelWithSparkline';
 import { pathRendererSkippingUndefineds } from './graphs/sparkline-renderers';
 import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils';
 
-type SparklinePropsWithoutData<T> = Omit<LabelWithSparklineProps<T>, 'data'>;
+type SparklinePropsWithoutData<T> = Omit<ExtendedLabelWithSparklineProps<T>, 'data'>;
 
 const sparklineAsNumber = {
   toValue: identity,

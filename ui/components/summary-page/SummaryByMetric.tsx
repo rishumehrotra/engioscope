@@ -12,7 +12,7 @@ import { num, prettyMS } from '../../helpers/utils';
 import {
   ArrowDown, ArrowUp, ExternalLink
 } from '../common/Icons';
-import LabelWithSparkline2 from '../graphs/LabelWithSparkline2';
+import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import {
@@ -199,7 +199,7 @@ const FlowMetricsByWorkItemType: React.FC<{
             {
               value: summary.leakage,
               content: renderMetric(
-                <LabelWithSparkline2
+                <ExtendedLabelWithSparkline
                   data={summary.leakageByWeek}
                   {...newItemsSparkline}
                 />,
@@ -209,7 +209,7 @@ const FlowMetricsByWorkItemType: React.FC<{
             {
               value: summary.velocity,
               content: renderMetric(
-                <LabelWithSparkline2
+                <ExtendedLabelWithSparkline
                   data={summary.velocityByWeek}
                   {...velocitySparkline}
                 />,
@@ -221,7 +221,7 @@ const FlowMetricsByWorkItemType: React.FC<{
               content: renderMetric(
                 summary.cycleTime
                   ? (
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={summary.cycleTimeByWeek}
                       {...cycleTimeSparkline}
                     />
@@ -233,7 +233,7 @@ const FlowMetricsByWorkItemType: React.FC<{
               value: summary.changeLeadTime,
               content: renderMetric(summary.changeLeadTime
                 ? (
-                  <LabelWithSparkline2
+                  <ExtendedLabelWithSparkline
                     data={summary.changeLeadTimeByWeek}
                     {...changeLeadTimeSparkline}
                   />
@@ -246,7 +246,7 @@ const FlowMetricsByWorkItemType: React.FC<{
               content: renderMetric(
                 summary.flowEfficiency
                   ? (
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={summary.flowEfficiencyByWeek}
                       {...flowEfficiencySparkline}
                     />
@@ -388,7 +388,7 @@ const QualityMetrics: React.FC<{
                         content: renderBugMetric(
                           bugsForEnv
                             ? (
-                              <LabelWithSparkline2
+                              <ExtendedLabelWithSparkline
                                 data={bugsForEnv.leakageByWeek}
                                 {...newItemsSparkline}
                               />
@@ -402,7 +402,7 @@ const QualityMetrics: React.FC<{
                         content: renderBugMetric(
                           bugsForEnv
                             ? (
-                              <LabelWithSparkline2
+                              <ExtendedLabelWithSparkline
                                 data={bugsForEnv.velocityByWeek}
                                 {...velocitySparkline}
                               />
@@ -416,7 +416,7 @@ const QualityMetrics: React.FC<{
                         content: renderBugMetric(
                           bugsForEnv?.cycleTime
                             ? (
-                              <LabelWithSparkline2
+                              <ExtendedLabelWithSparkline
                                 data={bugsForEnv.cycleTimeByWeek}
                                 {...cycleTimeSparkline}
                               />
@@ -430,7 +430,7 @@ const QualityMetrics: React.FC<{
                         content: renderBugMetric(
                           bugsForEnv?.changeLeadTime
                             ? (
-                              <LabelWithSparkline2
+                              <ExtendedLabelWithSparkline
                                 data={bugsForEnv.changeLeadTimeByWeek}
                                 {...changeLeadTimeSparkline}
                               />
@@ -444,7 +444,7 @@ const QualityMetrics: React.FC<{
                         content: renderBugMetric(
                           bugsForEnv?.flowEfficiency
                             ? (
-                              <LabelWithSparkline2
+                              <ExtendedLabelWithSparkline
                                 data={bugsForEnv.flowEfficiencyByWeek}
                                 {...flowEfficiencySparkline}
                               />
@@ -559,7 +559,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
           {
             value: repoStats.tests,
             content: reposMetric((
-              <LabelWithSparkline2
+              <ExtendedLabelWithSparkline
                 data={repoStats.testsByWeek}
                 {...testAutomationSparkline}
               />
@@ -568,7 +568,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
           {
             value: repoStats.coverage === '-' ? 0 : parseInt(repoStats.coverage, 10),
             content: reposMetric(
-              <LabelWithSparkline2
+              <ExtendedLabelWithSparkline
                 data={repoStats.coverageByWeek}
                 {...coverageSparkline}
               />
@@ -638,7 +638,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
               <div data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}>
                 {repoStats.repos
                   ? reposMetric(
-                    <LabelWithSparkline2
+                    <ExtendedLabelWithSparkline
                       data={repoStats.newSonarSetupsByWeek}
                       {...newSonarSetupsSparkline(repoStats.repos)}
                     />
@@ -752,7 +752,7 @@ const CIBuilds: React.FC<CIBuildsProps> = ({ groups, queryPeriodDays }) => {
           {
             value: repoStats.builds.total,
             content: reposMetric(
-              <LabelWithSparkline2
+              <ExtendedLabelWithSparkline
                 data={repoStats.builds.byWeek}
                 {...buildRunsSparkline}
               />

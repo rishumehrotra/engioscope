@@ -9,7 +9,7 @@ const trendDirection = (currentValue: number, previousValue: number) => {
   return 'same';
 };
 
-export type LabelWithSparklineProps<T> = {
+export type ExtendedLabelWithSparklineProps<T> = {
   data: T[];
   toValue: (item: T) => number | undefined;
   combineValues: (item: T[]) => number;
@@ -21,7 +21,7 @@ export type LabelWithSparklineProps<T> = {
 // eslint-disable-next-line @typescript-eslint/ban-types
 const LabelWithSparkline2 = <T extends {}>({
   data, toValue, colorBy, valueToLabel, renderer, combineValues
-}: LabelWithSparklineProps<T>) => {
+}: ExtendedLabelWithSparklineProps<T>) => {
   const thisMonthValue = useMemo(() => combineValues(data.slice(-4)), [combineValues, data]);
 
   const dataForSparkline = useMemo(() => data.map(toValue), [data, toValue]);
