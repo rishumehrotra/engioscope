@@ -43,7 +43,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                             <span
                               className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
                                 rounded-sm text-red-700 border font-semibold no-underline`}
-                              data-tip="This pipeline is not configured using a YAML file"
+                              data-tip="This pipeline is configured using the UI instead of a YAML file"
                             >
                               UI
                             </span>
