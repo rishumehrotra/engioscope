@@ -120,7 +120,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
       {isDeprecated(repo) ? (
         <p className="pl-5">
           <span
-            className="bg-yellow-500 text-xs inline-block py-1 px-2 uppercase rounded-md"
+            className="bg-amber-300 text-xs inline-block py-1 px-2 uppercase rounded-md"
             data-tip={`This repository doesn't count towards stats,<br />
             as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}
             data-html

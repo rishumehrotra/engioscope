@@ -127,14 +127,16 @@ export const fullPolicyStatus = (policy: NormalizedPolicies) => {
 export const pipelineMeetsBranchPolicyRequirements = (
   policyForBranch: (repoId: string, branch: string) => NormalizedPolicies
 ) => (pipeline: Pipeline) => (
-  Object.entries(pipeline.repos)
-    .reduce<ReturnType<typeof fullPolicyStatus>[]>((acc, [repoId, { branches }]) => {
-      branches.forEach(branch => {
-        acc.push(fullPolicyStatus(policyForBranch(repoId, branch)));
-      });
-      return acc;
-    }, [])
-    .every(p => p === 'pass')
+  Object.keys(pipeline.repos).length === 0
+    ? false
+    : Object.entries(pipeline.repos)
+      .reduce<ReturnType<typeof fullPolicyStatus>[]>((acc, [repoId, { branches }]) => {
+        branches.forEach(branch => {
+          acc.push(fullPolicyStatus(policyForBranch(repoId, branch)));
+        });
+        return acc;
+      }, [])
+      .every(p => p === 'pass')
 );
 
 export const masterDeploysCount = (pipelines: Pipeline[]) => pipelines

@@ -18,7 +18,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
               <thead>
                 <tr>
                   <th> </th>
-                  <th>Type</th>
+                  <th>Central template</th>
                   <th>Successful</th>
                   <th>Runs</th>
                   <th>Success rate</th>
@@ -39,19 +39,30 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                       >
                         <span className="truncate w-96 block">
                           {pipeline.name}
+                          {pipeline.type !== 'yml' ? (
+                            <span
+                              className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
+                                rounded-sm text-red-700 border font-semibold no-underline`}
+                              data-tip="This pipeline is not configured using a YAML file"
+                            >
+                              UI
+                            </span>
+                          ) : null}
                         </span>
                       </a>
                     </td>
                     <td>
-                      {pipeline.type === 'yml'
+                      {pipeline.usesTemplate
                         ? (
-                          <span className="uppercase text-xs px-1 border border-green-300 rounded-sm text-green-500">
-                            YAML
+                          <span className={`uppercase text-xs px-1 border bg-green-100 border-green-700
+                            rounded-sm text-green-700 font-semibold`}
+                          >
+                            Yes
                           </span>
                         )
                         : (
-                          <span className="uppercase text-xs px-1 border border-red-300 rounded-sm text-red-500">
-                            UI
+                          <span className="uppercase text-xs px-1 border-red-300 bg-red-100 rounded-sm text-red-500 border">
+                            No
                           </span>
                         )}
                     </td>
