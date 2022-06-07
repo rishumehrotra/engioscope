@@ -22,7 +22,7 @@ import {
 import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
   sonarCountsByWeek, totalBuilds, totalBuildsByWeek, totalCoverage,
-  totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek
+  totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek, totalUsingCentralTemplate
 } from '../../shared/repo-utils';
 import { divide, exists, toPercentage } from '../../shared/utils';
 
@@ -198,6 +198,7 @@ type Summary = {
     coverageByWeek: number[];
     ymlPipelines: { count: number; total: number };
     hasPipelines: number;
+    usesCentralTemplate: { count: number; total: number };
   };
   pipelineStats: {
     pipelines: number;
@@ -390,7 +391,8 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           coverage: divide(coverage.covered, coverage.total).map(toPercentage).getOr('-'),
           coverageByWeek,
           ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length },
-          hasPipelines: reposWithPipelines(matchesExcludingDeprecated).length
+          hasPipelines: reposWithPipelines(matchesExcludingDeprecated).length,
+          usesCentralTemplate: totalUsingCentralTemplate(matchesExcludingDeprecated)
         };
       };
 

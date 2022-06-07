@@ -4,7 +4,7 @@ import {
   buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek,
   reposWithPipelines, sonarCountsByWeek, totalBuilds, totalBuildsByWeek,
   totalCoverage, totalCoverageByWeek, totalSuccessfulBuildsByWeek,
-  totalTests, totalTestsByWeek
+  totalTests, totalTestsByWeek, totalUsingCentralTemplate
 } from '../../shared/repo-utils';
 import type {
   RepoAnalysis, UIBuildPipeline, QualityGateStatus, UICodeQuality
@@ -88,7 +88,10 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     buildSuccessRate: buildSuccessRate(repos),
     totalSuccessfulBuildsByWeek: totalSuccessfulBuildsByWeek(repos),
     totalCoverage: totalCoverage(repos),
-    totalCoverageByWeek: totalCoverageByWeek(repos)
+    totalCoverageByWeek: totalCoverageByWeek(repos),
+    usingCentralTemplate: {
+      ...totalUsingCentralTemplate(repos)
+    }
   };
 };
 
@@ -307,6 +310,19 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           value: divide(stats.reposWithPipelines.length, stats.repos.length)
             .map(toPercentage)
             .getOr('-')
+        }]}
+      />
+      <ProjectStat
+        topStats={[{
+          title: 'Using central template',
+          value: `${divide(stats.usingCentralTemplate.count, stats.usingCentralTemplate.total)
+            .map(toPercentage)
+            .getOr('-')}`,
+          tooltip: `${
+            num(stats.usingCentralTemplate.count)
+          } out of ${
+            num(stats.usingCentralTemplate.total)
+          } pipeliines are using the central template`
         }]}
       />
     </ProjectStats>

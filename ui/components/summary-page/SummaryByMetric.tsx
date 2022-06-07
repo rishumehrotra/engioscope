@@ -731,7 +731,7 @@ const CIBuilds: React.FC<CIBuildsProps> = ({ groups, queryPeriodDays }) => {
       { label: 'Runs', tooltip: `Number of CI builds run in the last ${queryPeriodDays} days` },
       { label: 'Success', tooltip: 'Percentage of successful builds' },
       { label: 'YAML pipelines', tooltip: 'Pipelines configured using a YAML file' },
-      { label: 'MTTR build failure', tooltip: 'Average time taken to fix a build failure' }
+      { label: 'Uses central template', tooltip: 'Pipelines using the standard template' }
     ],
     rows: groups.map(group => {
       const { repoStats } = group;
@@ -782,8 +782,12 @@ const CIBuilds: React.FC<CIBuildsProps> = ({ groups, queryPeriodDays }) => {
             )
           },
           {
-            value: 0,
-            content: <span className="bg-gray-100 py-1 px-2 rounded text-xs uppercase">Coming soon</span>
+            value: divide(repoStats.usesCentralTemplate.count, repoStats.usesCentralTemplate.total).getOr(0),
+            content: reposMetric(
+              repoStats.usesCentralTemplate.total === 0
+                ? '0%'
+                : `${Math.round((repoStats.usesCentralTemplate.count * 100) / repoStats.usesCentralTemplate.total)}%`
+            )
           }
         ]
       };

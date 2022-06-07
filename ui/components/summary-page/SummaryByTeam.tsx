@@ -662,12 +662,16 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Average time taken to fix a build failure"
+                data-tip="Number of pipelines using the central template"
               >
-                MTTR build failure
+                Uses central template
               </div>
-              <div className="text-xs pt-2 uppercase font-light">
-                Coming soon
+              <div className="text-xl font-semibold">
+                {reposMetric(
+                  divide(repoStats.usesCentralTemplate.count, repoStats.usesCentralTemplate.total)
+                    .map(toPercentage)
+                    .getOr('-')
+                )}
               </div>
             </div>
           </div>

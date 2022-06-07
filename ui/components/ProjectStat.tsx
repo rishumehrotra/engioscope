@@ -51,7 +51,7 @@ const ProjectStat: React.FC<ProjectStatProps> = ({
   return (
     <>
       <button
-        className={`p-4 border border-gray-200 bg-white shadow-sm ml-1 rounded-lg flex text-left
+        className={`p-4 border border-gray-200 bg-white shadow-sm ml-1 rounded-lg flex text-left min-w-max
           ${isPopupOpen ? 'border-gray-300' : ''}
           ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
         onClick={onButtonClick}

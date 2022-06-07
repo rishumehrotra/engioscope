@@ -155,6 +155,16 @@ export const sonarCountsByWeek = applySpec({
   warn: sonarCountByWeek('warn')
 });
 
+export const totalUsingCentralTemplate = (repos: RepoAnalysis[]) => {
+  const pipelines = repos.flatMap(r => r.builds?.pipelines);
+  const usingCentralTemplate = pipelines.filter(p => p?.usesTemplate);
+
+  return {
+    count: usingCentralTemplate.length,
+    total: pipelines.length
+  };
+};
+
 export const buildPipelines = (repos: RepoAnalysis[]) => (
   repos.flatMap(r => r.builds?.pipelines).filter(exists)
 );
