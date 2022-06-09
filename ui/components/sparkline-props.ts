@@ -37,11 +37,13 @@ const excludeUndefinedsAndAdd = (values: (number | undefined)[][]) => (
 );
 export const newItemsSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
+  tooltipLabel: 'new work items',
   ...sparklineAsNumber
 };
 
 export const newBugsSparkline: SparklinePropsWithoutData<number> = {
   colorBy: decreaseIsBetterStrippingZerosAndUndefineds,
+  tooltipLabel: 'new bugs',
   ...sparklineAsNumber
 };
 
@@ -52,10 +54,14 @@ export const cycleTimeSparkline: SparklinePropsWithoutData<number[]> = {
   toValue: x => averageOfTimes(x).getOr(undefined),
   combineValues: excludeUndefinedsAndAdd,
   valueToLabel: x => (x === 0 ? '-' : prettyMS(x)),
-  renderer: pathRendererSkippingUndefineds
+  renderer: pathRendererSkippingUndefineds,
+  tooltipLabel: 'cycle time'
 };
 
-export const changeLeadTimeSparkline = cycleTimeSparkline;
+export const changeLeadTimeSparkline = {
+  ...cycleTimeSparkline,
+  tooltipLabel: 'change lead time'
+};
 
 const addNumeratorsAndDenominators = <T>(
   numerator: (x: T) => number,
@@ -80,31 +86,36 @@ export const flowEfficiencySparkline: SparklinePropsWithoutData<{ wcTime: number
   colorBy: increaseIsBetterStrippingUndefineds,
   toValue: x => divide(x.wcTime, x.total).getOr(0),
   combineValues: x => averageOfFractions<{ wcTime: number; total: number}>(prop('wcTime'), prop('total'))(x).getOr(0),
-  valueToLabel: toPercentage
+  valueToLabel: toPercentage,
+  tooltipLabel: 'flow efficiency'
 };
 
 export const testAutomationSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
   combineValues: x => last(x) || 0,
   toValue: identity,
-  valueToLabel: num
+  valueToLabel: num,
+  tooltipLabel: 'automated tests'
 };
 
 export const coverageSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
   combineValues: x => last(x) || 0,
   toValue: identity,
-  valueToLabel: x => `${x}%`
+  valueToLabel: x => `${x}%`,
+  tooltipLabel: 'branch coverage'
 };
 
 export const newSonarSetupsSparkline = (repoCount: number): SparklinePropsWithoutData<number> => ({
   colorBy: increaseIsBetterStrippingUndefineds,
   combineValues: x => last(x) || 0,
   toValue: identity,
-  valueToLabel: x => divide(x, repoCount).map(toPercentage).getOr('-')
+  valueToLabel: x => divide(x, repoCount).map(toPercentage).getOr('-'),
+  tooltipLabel: 'repos with sonar'
 });
 
 export const buildRunsSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
-  ...sparklineAsNumber
+  ...sparklineAsNumber,
+  tooltipLabel: 'builds'
 };

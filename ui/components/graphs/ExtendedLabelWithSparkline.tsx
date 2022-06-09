@@ -3,11 +3,29 @@ import { divide, toPercentage } from '../../../shared/utils';
 import { Sparkline } from './Sparkline';
 import type { Renderer } from './sparkline-renderers';
 
+type PreviousMonthStats = {
+  value: number;
+  color: string | undefined;
+  trendDirection: 'up' | 'down' | 'same';
+  changePercentage: string;
+} | null;
+
 const trendDirection = (currentValue: number, previousValue: number) => {
   if (currentValue > previousValue) return 'up';
   if (currentValue < previousValue) return 'down';
   return 'same';
 };
+
+const tooltip = (label: string, thisMonthValue: string, previousMonthStats: PreviousMonthStats) => `
+  <strong>${thisMonthValue}</strong> ${label} in the last month${
+  previousMonthStats && previousMonthStats.trendDirection !== 'same'
+    ? `<br />This is a <strong>${
+      previousMonthStats?.changePercentage.replace('-', '')
+    } ${
+      previousMonthStats.trendDirection === 'up' ? 'increase' : 'decrease'
+    }</strong> from the previous month`
+    : ''
+}`;
 
 export type ExtendedLabelWithSparklineProps<T> = {
   data: T[];
@@ -16,17 +34,18 @@ export type ExtendedLabelWithSparklineProps<T> = {
   colorBy?: (values: (number | undefined)[]) => string;
   valueToLabel: (value: number) => string;
   renderer?: Renderer;
+  tooltipLabel: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const LabelWithSparkline2 = <T extends {}>({
-  data, toValue, colorBy, valueToLabel, renderer, combineValues
+  data, toValue, colorBy, valueToLabel, renderer, combineValues, tooltipLabel
 }: ExtendedLabelWithSparklineProps<T>) => {
   const thisMonthValue = useMemo(() => combineValues(data.slice(-4)), [combineValues, data]);
 
   const dataForSparkline = useMemo(() => data.map(toValue), [data, toValue]);
 
-  const previousMonthStats = useMemo(() => {
+  const previousMonthStats: PreviousMonthStats = useMemo(() => {
     if (data.length < 5) return null;
     const previousMonthData = data.slice(-5).slice(0, 4);
     const previousMonthValue = combineValues(previousMonthData);
@@ -42,7 +61,11 @@ const LabelWithSparkline2 = <T extends {}>({
   }, [colorBy, combineValues, data, thisMonthValue]);
 
   return (
-    <span className="grid">
+    <span
+      className="grid"
+      data-tip={tooltip(tooltipLabel, valueToLabel(thisMonthValue), previousMonthStats)}
+      data-html
+    >
       <span className="inline-flex items-end gap-x-0.5">
         {valueToLabel(thisMonthValue)}
         <Sparkline
