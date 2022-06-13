@@ -32,7 +32,7 @@ const decreaseIsBetterStrippingZerosAndUndefineds = (values: (number | undefined
 );
 
 const averageOfTimes = (value: number[]) => divide(sum(value), value.length);
-const excludeUndefinedsAndAdd = (values: (number | undefined)[][]) => (
+const excludeUndefinedsAndAverage = (values: (number | undefined)[][]) => (
   averageOfTimes(values.flat().filter(exists).filter(notZero)).getOr(0)
 );
 export const newItemsSparkline: SparklinePropsWithoutData<number> = {
@@ -52,7 +52,7 @@ export const velocitySparkline = newItemsSparkline;
 export const cycleTimeSparkline: SparklinePropsWithoutData<number[]> = {
   colorBy: decreaseIsBetterStrippingZerosAndUndefineds,
   toValue: x => averageOfTimes(x).getOr(undefined),
-  combineValues: excludeUndefinedsAndAdd,
+  combineValues: excludeUndefinedsAndAverage,
   valueToLabel: x => (x === 0 ? '-' : prettyMS(x)),
   renderer: pathRendererSkippingUndefineds,
   tooltipLabel: 'cycle time'

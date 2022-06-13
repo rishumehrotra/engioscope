@@ -113,7 +113,7 @@ const Artefacts: React.FC<{
               </ol>
             ) : (
               <div className="text-sm mb-2">
-                {`No branches went beyond ${ignoreStagesBefore}.`}
+                {`No branches went to ${ignoreStagesBefore}.`}
               </div>
             )}
             {additionalBranches?.length && (
@@ -121,7 +121,7 @@ const Artefacts: React.FC<{
                 <summary className="text-gray-500 text-xs pl-1 mt-1 cursor-pointer">
                   {`${additionalBranches.length} additional ${
                     additionalBranches.length === 1 ? 'branch' : 'branches'
-                  } that didn't go beyond ${ignoreStagesBefore}`}
+                  } that didn't go to ${ignoreStagesBefore}`}
                 </summary>
                 <ol className="flex flex-wrap mt-2">
                   {additionalBranches.map(branch => {

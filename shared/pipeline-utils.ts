@@ -55,7 +55,7 @@ const repoBranches = (pipeline: Pipeline) => (
 
 export const pipelineDeploysExclusivelyFromMaster = (pipeline: Pipeline) => {
   const branches = repoBranches(pipeline);
-  if (!branches.length) return false;
+  if (!branches.length) return null;
   return branches.length === 1 && branches[0] === 'refs/heads/master';
 };
 

@@ -1,5 +1,5 @@
 import {
-  always, last, pipe, prop
+  always, head, last, pipe, prop
 } from 'rambda';
 import { asc, byNum } from '../../../shared/sort-utils';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types';
@@ -115,17 +115,17 @@ const didAttemptGoAheadUsing = (
   pipeline: ReturnType<typeof aggregateReleasesIntoPipelines>[number],
   ignoreStagesBefore: string
 ) => {
-  const lastMatchingStage: EnvDetails | undefined = last(pipeline.envs.filter(
+  const firstMatchingStage: EnvDetails | undefined = head(pipeline.envs.filter(
     env => env.name.toLowerCase().includes(ignoreStagesBefore.toLowerCase())
   ));
 
-  if (!lastMatchingStage) return always(true);
+  if (!firstMatchingStage) return always(false);
 
   return (attempt: (typeof pipeline)['attempts'][number]) => {
     const lastProgression = last(attempt.progression);
     if (!lastProgression) return false;
     const attemptProgressionMaxRank = lastProgression.rank;
-    return attemptProgressionMaxRank > lastMatchingStage.rank;
+    return attemptProgressionMaxRank >= firstMatchingStage.rank;
   };
 };
 

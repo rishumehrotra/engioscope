@@ -33,7 +33,7 @@ const bySearch = (search: string) => (pipeline: TPipeline) => (
     ? filterPipelinesByRepo(search, pipeline)
     : filterBySearch(search, pipeline.name) || Object.values(pipeline.repos).some(r => filterBySearch(search, r.name))
 );
-const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, not);
+const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, x => (x === null ? true : x), not);
 const byNotStartsWithArtifact = (pipeline: TPipeline) => Object.keys(pipeline.repos).length === 0;
 const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => pipe(
   pipelineMeetsBranchPolicyRequirements(policyForBranch), not

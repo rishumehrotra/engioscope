@@ -128,7 +128,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
             />
           ),
           tooltip: `${num(masterDeploys.count)} out of ${num(masterDeploys.total)} releases were exclusively from master.${
-            ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
+            ignoreStagesBefore ? `<br />Branches that didn't go to ${ignoreStagesBefore} are not considered.` : ''
           }`
         }]}
       />
@@ -137,7 +137,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
           title: 'Conforms to branch policies',
           value: divide(policyPassCount, pipelines.length).map(toPercentage).getOr('-'),
           tooltip: `${num(policyPassCount)} out of ${num(pipelines.length)} have branches that conform to the branch policy.${
-            ignoreStagesBefore ? `<br />Branches that didn't go beyond ${ignoreStagesBefore} are not considered.` : ''
+            ignoreStagesBefore ? `<br />Branches that didn't go to ${ignoreStagesBefore} are not considered.` : ''
           }`
 
         }]}
