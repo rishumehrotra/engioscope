@@ -78,31 +78,29 @@ const Project: React.FC = () => {
   }, [pageName, project, projectDetails, projectName, setHeaderDetails]);
 
   return (
-    <>
-      <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
-        <NavBar
-          navItems={navItems}
-          selectedTab={selectedTab}
-          right={(
-            <div className="flex">
-              <div className="flex mr-4">
-                <SearchInput />
-                <AdvancedFilters />
-              </div>
-              <SortControls />
+    <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
+      <NavBar
+        navItems={navItems}
+        selectedTab={selectedTab}
+        right={(
+          <div className="flex">
+            <div className="flex mr-4">
+              <SearchInput />
+              <AdvancedFilters />
             </div>
-          )}
-        />
+            <SortControls />
+          </div>
+        )}
+      />
 
-        <Routes>
-          <Route path="repos" element={<Repos />} />
-          <Route path="release-pipelines" element={<ReleasePipelines />} />
-          <Route path="devs" element={<Devs />} />
-          <Route path="workitems" element={<WorkItems />} />
-          <Route path="" element={<Overview />} />
-        </Routes>
-      </div>
-    </>
+      <Routes>
+        <Route path="repos" element={<Repos />} />
+        <Route path="release-pipelines" element={<ReleasePipelines />} />
+        <Route path="devs" element={<Devs />} />
+        <Route path="workitems" element={<WorkItems />} />
+        <Route path="" element={<Overview />} />
+      </Routes>
+    </div>
   );
 };
 

@@ -241,14 +241,16 @@ export default (
           testsByWeek: await extrapolateIfNeeded(
             stat.testsByWeek,
             () => historicalTestCountByBuildId(stat.buildDefinitionId),
-            equals(0), 0
+            equals(0),
+            0
           ),
           coverageByWeek: stat.coverageByWeek.every(isNil)
             ? null
             : await extrapolateIfNeeded(
               stat.coverageByWeek,
               () => historicalCoverageByBuildId(stat.buildDefinitionId),
-              isNil, null
+              isNil,
+              null
             ),
           coverage: stat.coverage
         }))

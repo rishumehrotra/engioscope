@@ -189,7 +189,19 @@
       "record"
     ],
     "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "error"
+    "react-hooks/exhaustive-deps": "error",
+    "react/function-component-definition": [
+      "error",
+      {
+        "namedComponents": "arrow-function",
+        "unnamedComponents": "arrow-function"
+      }
+    ],
+    "react/no-unstable-nested-components": "warn",
+    "function-paren-newline": [
+      "error",
+      "consistent"
+    ]
   },
   "settings": {
     "react": {

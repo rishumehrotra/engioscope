@@ -21,6 +21,7 @@ import type { Dev } from '../types';
 import { isDeprecated } from '../../shared/repo-utils';
 import { byNum, desc } from '../../shared/sort-utils';
 
+// eslint-disable-next-line default-param-last
 const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?: RepoAnalysis['defaultBranch']) => {
   if (!languages.length && !defaultBranch) return;
 

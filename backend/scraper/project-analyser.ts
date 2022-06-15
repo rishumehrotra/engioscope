@@ -75,8 +75,10 @@ export default (config: ParsedConfig) => {
     );
 
     const getTestsByRepoId = aggregateTestRuns(
-      forProject(getTestRuns), forProject(getTestCoverage),
-      forProject(getOneBuildBeforeQueryPeriod), allMasterBuilds
+      forProject(getTestRuns),
+      forProject(getTestCoverage),
+      forProject(getOneBuildBeforeQueryPeriod),
+      allMasterBuilds
     );
 
     const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {

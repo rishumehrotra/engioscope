@@ -185,30 +185,28 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
               </a>
             </>
           ) : (
-            <>
-              <button
-                style={{ marginLeft: `${row.depth * 20}px` }}
-                className="mt-1 flex items-center"
-                onClick={toggle}
-              >
-                <span className="mr-2 inline-block">
-                  {row.expandedState === 'collapsed' ? <Plus /> : <Minus />}
-                </span>
-                <div className="text-sm text-gray-800 flex items-center">
-                  {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) ? (
-                    <img
-                      src={row.icon}
-                      alt={`Icon for ${row.label}`}
-                      width="16"
-                      className="mr-1"
-                    />
-                  ) : null}
-                  {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) || isProjectRow(row) ? (
-                    `${row.label} (${row.childCount})`
-                  ) : ''}
-                </div>
-              </button>
-            </>
+            <button
+              style={{ marginLeft: `${row.depth * 20}px` }}
+              className="mt-1 flex items-center"
+              onClick={toggle}
+            >
+              <span className="mr-2 inline-block">
+                {row.expandedState === 'collapsed' ? <Plus /> : <Minus />}
+              </span>
+              <div className="text-sm text-gray-800 flex items-center">
+                {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) ? (
+                  <img
+                    src={row.icon}
+                    alt={`Icon for ${row.label}`}
+                    width="16"
+                    className="mr-1"
+                  />
+                ) : null}
+                {isWorkItemTypeRow(row) || isWorkItemEnvironmentRow(row) || isProjectRow(row) ? (
+                  `${row.label} (${row.childCount})`
+                ) : ''}
+              </div>
+            </button>
           )}
         </div>
       </foreignObject>

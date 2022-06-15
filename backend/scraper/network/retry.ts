@@ -1,4 +1,4 @@
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = (ms: number) => new Promise(resolve => { setTimeout(resolve, ms); });
 
 const retry = <T>(fn: () => Promise<T>, { retryCount = 10, waitTime = 1 } = {}): Promise<T> => (
   fn().catch(async err => {

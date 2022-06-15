@@ -128,7 +128,8 @@ const PopoverSvg: React.FC<PopoverSvgProps> = ({
 }) => {
   const lineGraph = useMemo(() => (
     computeLineGraphData(
-      popoverSvgConfig, data,
+      popoverSvgConfig,
+      data,
       renderer({ lineColor, lineStrokeWidth: 2, strokeDasharray: '7,5' })
     )
   ), [data, lineColor, renderer]);

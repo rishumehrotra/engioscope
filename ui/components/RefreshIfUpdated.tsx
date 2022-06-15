@@ -35,6 +35,7 @@ const RefreshIfUpdated: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, []);
 
+  // eslint-disable-next-line react/jsx-no-useless-fragment
   return (<>{children}</>);
 };
 

@@ -180,23 +180,19 @@ const Pipeline: React.FC<{
       title={pipeline.name}
       titleUrl={pipeline.url}
       isExpanded={false}
-      subtitle={(
-        <>
-          {stagesToHighlight?.map(stageToHighlight => {
-            const doesStageExist = pipelineHasStageNamed(stageToHighlight)(pipeline);
-            const isStageUsed = pipelineUsesStageNamed(stageToHighlight)(pipeline);
+      subtitle={stagesToHighlight?.map(stageToHighlight => {
+        const doesStageExist = pipelineHasStageNamed(stageToHighlight)(pipeline);
+        const isStageUsed = pipelineUsesStageNamed(stageToHighlight)(pipeline);
 
-            return (
-              <Flair
-                key={stageToHighlight}
-                // eslint-disable-next-line no-nested-ternary
-                colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : doesStageExist ? 'bg-yellow-400' : 'bg-gray-400'}
-                label={`${stageToHighlight}: ${doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"}`}
-              />
-            );
-          })}
-        </>
-      )}
+        return (
+          <Flair
+            key={stageToHighlight}
+            // eslint-disable-next-line no-nested-ternary
+            colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : doesStageExist ? 'bg-yellow-400' : 'bg-gray-400'}
+            label={`${stageToHighlight}: ${doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"}`}
+          />
+        );
+      })}
     >
       <div className="px-6">
         <Artefacts

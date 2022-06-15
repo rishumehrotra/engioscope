@@ -35,8 +35,8 @@ const bySearch = (search: string) => (pipeline: TPipeline) => (
 );
 const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, x => (x === null ? true : x), not);
 const byNotStartsWithArtifact = (pipeline: TPipeline) => Object.keys(pipeline.repos).length === 0;
-const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => pipe(
-  pipelineMeetsBranchPolicyRequirements(policyForBranch), not
+const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => (
+  pipe(pipelineMeetsBranchPolicyRequirements(policyForBranch), not)
 );
 const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (pipeline: TPipeline) => (
   groupNames.some(groupName => (

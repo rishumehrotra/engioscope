@@ -149,7 +149,7 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
                         `Priority ${workItem.priority || 'unknown'}`,
                         ...(
                           (workItemType(witId).rootCauseFields || [])
-                            ?.map((f, index) => `${f}: ${workItem.rca[index] || `No ${f} provided`}`)
+                            .map((f, index) => `${f}: ${workItem.rca[index] || `No ${f} provided`}`)
                             .filter((f, index) => index !== selectedSwitcherIndex)
                         )
                       ]}
@@ -257,7 +257,7 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
                       `Priority ${wi.priority || 'unknown'}`,
                       ...(
                         (workItemType.rootCauseFields || [])
-                          ?.map((f, index) => `${f}: ${wi.rca[index] || `No ${f} provided`}`)
+                          .map((f, index) => `${f}: ${wi.rca[index] || `No ${f} provided`}`)
                           .filter((f, index) => index !== selectedSwitcherIndex)
                       )
                     ]}

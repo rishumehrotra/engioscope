@@ -245,7 +245,9 @@ export default (config: ParsedConfig) => {
     collectionName: string, projectName: string
   ) => async (repoName: string, defaultBranch?: string): Promise<SonarAnalysisByRepo> => {
     const matchingSonarProjects = await getMatchingSonarProjects(
-      repoName, defaultBranch, await sonarProjects,
+      repoName,
+      defaultBranch,
+      await sonarProjects,
       parseBuildReports(collectionName, projectName)
     );
 
