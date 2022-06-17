@@ -6,8 +6,7 @@ import { promisify } from 'util';
 import debug from 'debug';
 import { join } from 'path';
 import rimraf from '@zkochan/rimraf';
-import { doesFileExist } from '../../utils';
-import retry from './retry';
+import { doesFileExist, retry } from '../../utils';
 
 const logFetch = debug('fetch');
 const logNetwork = logFetch.extend('network-io');
