@@ -6,7 +6,7 @@ import { singular } from 'pluralize';
 import type {
   AnalysedProjects, GlobalUIConfig, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
-  UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis
+  Tracks, UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis, UIWorkItem
 } from '../../shared/types';
 import { doesFileExist, queryPeriodDays } from '../utils';
 import type { ProjectAnalysis } from './types';
@@ -196,6 +196,20 @@ export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<Summ
 
   return (
     writeFile(['./'], 'summary-metrics.json', JSON.stringify(summaryMetrics))
+  );
+};
+
+export const writeTracks = (config: ParsedConfig, workItems: UIWorkItem[]) => {
+  const tracksWorkItems: Tracks = {
+    workItems,
+    lastUpdated: new Date().toISOString(),
+    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
+    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
+    queryPeriodDays: queryPeriodDays(config)
+  };
+
+  return (
+    writeFile(['./'], 'by-track.json', JSON.stringify(tracksWorkItems))
   );
 };
 

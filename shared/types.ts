@@ -275,6 +275,7 @@ export type UIWorkItem = {
   groupId?: string;
   priority?: number;
   severity?: string;
+  track?: string;
   rca: string[];
   filterBy?: { label: string; tags: string[] }[];
 };
@@ -376,6 +377,7 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
 };
 
 export type SummaryMetrics = SummaryMetricsType & GlobalUIConfig;
+export type Tracks = { workItems: UIWorkItem[] } & GlobalUIConfig;
 
 export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
   collection: string;

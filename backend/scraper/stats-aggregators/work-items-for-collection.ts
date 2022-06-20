@@ -111,6 +111,11 @@ const rca = (collectionConfig: ParsedCollection, workItem: WorkItem, workItemTyp
   return { rca: (match?.rootCause || []).map(field => workItem.fields[field] || noRCAValue) };
 };
 
+const track = (collectionConfig: ParsedCollection, workItem: WorkItem, workItemType: WorkItemType) => {
+  const match = collectionConfig.workitems.types?.find(({ type }) => type === workItemType.name);
+  return { track: match?.track ? workItem.fields[match.track] : undefined };
+};
+
 const filterTags = (collectionConfig: ParsedCollection, workItem: WorkItem) => {
   if ((collectionConfig.workitems.filterBy || []).length === 0) return;
 
@@ -164,7 +169,8 @@ const uiWorkItemCreator = (
       priority: workItem.fields['Microsoft.VSTS.Common.Priority'],
       severity: workItem.fields['Microsoft.VSTS.Common.Severity'],
       ...rca(collectionConfig, workItem, workItemType),
-      ...filterTags(collectionConfig, workItem)
+      ...filterTags(collectionConfig, workItem),
+      ...track(collectionConfig, workItem, workItemType)
     };
   }
 );

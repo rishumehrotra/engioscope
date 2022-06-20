@@ -5,7 +5,7 @@ import { tap, zip } from 'rambda';
 import tar from 'tar';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import aggregationWriter, { writeChangeProgramFile, writeSummaryMetricsFile } from './aggregation-writer';
+import aggregationWriter, { writeChangeProgramFile, writeSummaryMetricsFile, writeTracks } from './aggregation-writer';
 import azure from './network/azure';
 import type { ParsedConfig } from './parse-config';
 import projectAnalyser from './project-analyser';
@@ -15,6 +15,7 @@ import summariseResults from './summarise-results';
 import { fetchCounters } from './network/fetch-with-disk-cache';
 import { mapSettleSeries, startTimer } from '../utils';
 import changeProgramTasks from './stats-aggregators/change-program-tasks';
+import getTracks from './get-tracks';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -88,6 +89,11 @@ const scrape = async (config: ParsedConfig) => {
 
   await Promise.all([
     changeProgramWorkItems.then(writeChangeProgramFile(config)),
+    writeTracks(config, getTracks(config, results.map(r => ({
+      collectionConfig: r[0][0],
+      projectConfig: r[0][1],
+      analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
+    })))),
     writeSummaryMetricsFile(config, summariseResults(
       config,
       results
