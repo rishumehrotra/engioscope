@@ -12,6 +12,7 @@ import ChangeProgram from './pages/ChangeProgram';
 import Header from './components/Header';
 import { HeaderProvider } from './hooks/header-hooks';
 import RefreshIfUpdated from './components/RefreshIfUpdated';
+import ByTrack from './pages/ByTrack';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -36,6 +37,7 @@ const App: React.FC = () => {
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/summary" element={<Summary />} />
                   <Route path="/change-program" element={<ChangeProgram />} />
+                  <Route path="/by-track" element={<ByTrack />} />
                   <Route path="/:collection/:project/*" element={<Project />} />
                   <Route path="/" element={<Collection />} />
                 </Routes>

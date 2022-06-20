@@ -377,7 +377,13 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
 };
 
 export type SummaryMetrics = SummaryMetricsType & GlobalUIConfig;
-export type Tracks = { workItems: UIWorkItem[] } & GlobalUIConfig;
+
+export type TrackwiseData = {
+  workItems: UIWorkItem[];
+  times: Record<number, WorkItemTimes>;
+};
+
+export type Tracks = TrackwiseData & GlobalUIConfig;
 
 export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
   collection: string;

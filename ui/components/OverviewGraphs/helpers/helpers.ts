@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { last, T } from 'rambda';
-import type { ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType } from '../../../../shared/types';
+import type {
+  ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType, WorkItemTimes
+} from '../../../../shared/types';
 import { createPalette } from '../../../helpers/utils';
 import type { LegendSidebarProps } from './LegendSidebar';
 import {
   cycleTime, isNewInTimeRange, isWIPInTimeRange, totalCycleTime, totalWorkCenterTime, workCenterTime
 } from '../../../../shared/work-item-utils';
+import { exists } from '../../../../shared/utils';
 
 export type GroupLabel = { witId: string; groupName: string };
 export type OrganizedWorkItems = Record<string, Record<string, UIWorkItem[]>>;
@@ -241,4 +244,45 @@ export const workItemStateUsing = (
       since: new Date(lastState.start)
     };
   }
+);
+
+export type TimeInArea = {
+  label: string;
+  start: Date;
+  end?: Date;
+  isWorkCenter: boolean;
+};
+
+export const timeSpent = (times: WorkItemTimes) => (
+  times.workCenters
+    .reduce<TimeInArea[]>((acc, { label, start, end }) => {
+      if (start) {
+        const prevItem = last(acc);
+        if (prevItem) prevItem.end = new Date(start);
+
+        acc.push({
+          label: `In ${label}`,
+          start: new Date(start),
+          end: end ? new Date(end) : undefined,
+          isWorkCenter: true
+        });
+      }
+
+      if (end) {
+        acc.push({
+          label: `After ${label}`,
+          start: new Date(end),
+          end: undefined,
+          isWorkCenter: false
+        });
+      }
+
+      return acc;
+    }, [times.start ? {
+      label: `Before ${times.workCenters[0].label}`,
+      start: new Date(times.start),
+      end: undefined,
+      isWorkCenter: false
+    } : undefined].filter(exists))
+    .slice(1)
 );
