@@ -32,7 +32,6 @@ export const getOverviewData = (
   relations: Record<number, number[]>
 ): Overview => {
   const groupCache = new Map<string, { id: string; witId: string; name: string }>();
-  let groupIndex = 0;
 
   const results = workItemsForProject.reduce<{
     reducedIds: Record<number, UIWorkItem>;
@@ -73,11 +72,10 @@ export const getOverviewData = (
 
       if (!groupCache.has(groupCacheKey)) {
         groupCache.set(groupCacheKey, {
-          id: `g${groupIndex}`,
+          id: groupCacheKey,
           witId: byId[workItem.id].typeId,
           name: groupName
         });
-        groupIndex += 1;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

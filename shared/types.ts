@@ -381,6 +381,8 @@ export type SummaryMetrics = SummaryMetricsType & GlobalUIConfig;
 export type TrackwiseData = {
   workItems: UIWorkItem[];
   times: Record<number, WorkItemTimes>;
+  types: Record<string, UIWorkItemType>;
+  groups: Record<string, { witId: string; name: string }>;
 };
 
 export type Tracks = TrackwiseData & GlobalUIConfig;

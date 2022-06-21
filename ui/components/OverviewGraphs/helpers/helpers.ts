@@ -272,7 +272,7 @@ export const timeSpent = (times: WorkItemTimes) => (
         acc.push({
           label: `After ${label}`,
           start: new Date(end),
-          end: undefined,
+          end: new Date(end),
           isWorkCenter: false
         });
       }

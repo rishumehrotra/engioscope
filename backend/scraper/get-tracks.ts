@@ -1,4 +1,4 @@
-import type { TrackwiseData, WorkItemTimes } from '../../shared/types';
+import type { TrackwiseData, UIWorkItemType, WorkItemTimes } from '../../shared/types';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 
@@ -27,7 +27,36 @@ const byTrack = (config: ParsedConfig, results: Result[]): TrackwiseData => {
       return acc;
     }, {});
 
-  return { workItems: workItemsWithTracks, times: workItemTimes };
+  const allWorkItemTypes = results
+    .map(r => r.analysisResult.workItemAnalysis.overview.types)
+    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+  const workItemTypes = [
+    ...workItemsWithTracks
+      .reduce((acc, workItem) => {
+        acc.add(workItem.typeId);
+        return acc;
+      }, new Set<string>())
+  ].reduce<Record<string, UIWorkItemType>>((acc, curr) => ({ ...acc, [curr]: allWorkItemTypes[curr] }), {});
+
+  const allGroups = results
+    .map(r => r.analysisResult.workItemAnalysis.overview.groups)
+    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+  const groups = [
+    ...workItemsWithTracks
+      .reduce((acc, workItem) => {
+        if (workItem.groupId) acc.add(workItem.groupId);
+        return acc;
+      }, new Set<string>())
+  ].reduce<Record<string, {
+    witId: string;
+    name: string;
+  }>>((acc, curr) => ({ ...acc, [curr]: allGroups[curr] }), {});
+
+  return {
+    workItems: workItemsWithTracks, times: workItemTimes, types: workItemTypes, groups
+  };
 };
 
 export default byTrack;
