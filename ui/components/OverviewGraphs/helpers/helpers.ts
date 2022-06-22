@@ -34,6 +34,40 @@ const queryPeriodStart = (lastUpdated: string, queryPeriodDays: number) => {
   return queryPeriod;
 };
 
+export const timeSpent = (times: WorkItemTimes) => (
+  times.workCenters
+    .reduce<TimeInArea[]>((acc, { label, start, end }) => {
+      if (start) {
+        const prevItem = last(acc);
+        if (prevItem) prevItem.end = new Date(start);
+
+        acc.push({
+          label: `In ${label}`,
+          start: new Date(start),
+          end: end ? new Date(end) : undefined,
+          isWorkCenter: true
+        });
+      }
+
+      if (end) {
+        acc.push({
+          label: `After ${label}`,
+          start: new Date(end),
+          end: new Date(end),
+          isWorkCenter: false
+        });
+      }
+
+      return acc;
+    }, [times.start ? {
+      label: `Before ${times.workCenters[0].label}`,
+      start: new Date(times.start),
+      end: undefined,
+      isWorkCenter: false
+    } : undefined].filter(exists))
+    .slice(1)
+);
+
 export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
   const { overview } = projectAnalysis;
 
@@ -63,6 +97,7 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     totalWorkCenterTime: totalWorkCenterTime(workItemTimes),
     isWIPInTimeRange: isWIPIn,
     isWIP: isWIPIn(T),
+    timeSpent: (wi: UIWorkItem) => timeSpent(workItemTimes(wi)),
     environments: projectAnalysis.environments,
     sortByEnvironment: ((environments?: string[]) => {
       const envs = environments?.map(e => e.toLowerCase());
@@ -252,37 +287,3 @@ export type TimeInArea = {
   end?: Date;
   isWorkCenter: boolean;
 };
-
-export const timeSpent = (times: WorkItemTimes) => (
-  times.workCenters
-    .reduce<TimeInArea[]>((acc, { label, start, end }) => {
-      if (start) {
-        const prevItem = last(acc);
-        if (prevItem) prevItem.end = new Date(start);
-
-        acc.push({
-          label: `In ${label}`,
-          start: new Date(start),
-          end: end ? new Date(end) : undefined,
-          isWorkCenter: true
-        });
-      }
-
-      if (end) {
-        acc.push({
-          label: `After ${label}`,
-          start: new Date(end),
-          end: new Date(end),
-          isWorkCenter: false
-        });
-      }
-
-      return acc;
-    }, [times.start ? {
-      label: `Before ${times.workCenters[0].label}`,
-      start: new Date(times.start),
-      end: undefined,
-      isWorkCenter: false
-    } : undefined].filter(exists))
-    .slice(1)
-);

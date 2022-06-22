@@ -113,7 +113,7 @@ const organiseByTrack = (
       .filter(inclusions === 'live' ? (wi => tracks.times[wi.id].end) : always(true))
       .filter(groupId.length === 0 ? always(true) : (wi => wi.groupId && groupId.includes(wi.groupId)))
       .filter(priority.length === 0 ? always(true) : (wi => wi.priority && priority.includes(String(wi.priority))));
-    // .filter(wi => wi.priority === 1);
+
     return {
       workItems: workItems.sort(asc(byDate(x => new Date(x.updated.on)))),
       timeSpentById: workItems.reduce<Record<number, TimeInArea[]>>((acc, wi) => {

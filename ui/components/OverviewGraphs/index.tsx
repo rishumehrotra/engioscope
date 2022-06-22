@@ -17,6 +17,7 @@ import ProjectStats from '../ProjectStats';
 import { createPalette, num } from '../../helpers/utils';
 import ProjectStat from '../ProjectStat';
 import NewGraph from './New';
+import TimeSpentGraph from './TimeSpentGraph';
 
 const palette = createPalette([
   '#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9'
@@ -167,7 +168,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       {[
         NewGraph, VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
-        FlowEfficiencyGraph, BugLeakageAndRCAGraph,
+        TimeSpentGraph, FlowEfficiencyGraph, BugLeakageAndRCAGraph,
         AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
       ].map((Graph, index) => (
         <Graph
