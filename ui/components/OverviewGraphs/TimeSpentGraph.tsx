@@ -178,17 +178,13 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
     [showWorkItem, states]
   );
 
-  const hasData = useMemo(
-    () => Object.values(statesToRender).some(wis => wis.length > 0),
-    [statesToRender]
-  );
-
-  const statterLineGraphProps = useMemo(
+  const scatterLineGraphProps = useMemo(
     (): ScatterLineGraphProps<{ wi: UIWorkItem; timeSpent: TimeInArea }> => ({
       className: 'max-w-full',
       graphData: [{
         label: workItemType.name[1],
         data: statesToRender,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         yAxisPoint: x => x.timeSpent.end!.getTime() - x.timeSpent.start.getTime(),
         tooltip: ({ wi }, label, timeTaken) => (
           workItemTooltip(
@@ -221,11 +217,16 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         },
         group => checkboxStatesForSidebar[group]
       );
+
+      const workItems = Object.values(groups).flat().filter(showWorkItem);
+      const cycleTime = divide(accessors.totalCycleTime(workItems), workItems.length)
+        .map(prettyMS).getOr('-');
+
       return {
         headlineStats: [{
           label: workItemType.name[1],
-          value: num(Object.values(groups).flat().filter(showWorkItem).map(x => x).length),
-          unit: 'total'
+          value: cycleTime,
+          unit: num(Object.values(groups).flat().filter(showWorkItem).map(x => x).length)
         }],
         items,
         onItemClick: key => openModal({
@@ -234,6 +235,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
           body: (
             <WorkItemFlatList
               workItemType={workItemType}
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               workItems={statesToRender[key].sort(asc(byDate(x => x.timeSpent.end!))).map(prop('wi'))}
               tooltip={workItemTooltip}
               flairs={workItem => [
@@ -263,7 +265,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
       } that closed in the last ${
         accessors.queryPeriodDays
       } days spent their time?`}
-      hasData={allWorkItems.length > 0 && hasData}
+      hasData={allWorkItems.length > 0}
       left={(
         <>
           <div className="mb-8 flex justify-end mr-4 gap-2">
@@ -280,7 +282,13 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
             <SizeFilter setFilter={setSizeFilter} workItems={allWorkItems} />
             <PriorityFilter setFilter={setPriorityFilter} workItems={allWorkItems} />
           </div>
-          <ScatterLineGraph {...statterLineGraphProps} />
+          {Object.values(statesToRender).flat().length
+            ? <ScatterLineGraph {...scatterLineGraphProps} />
+            : (
+              <p className="bg-yellow-100 py-2 px-4">
+                {`Your filters don't match any ${workItemType.name[0].toLowerCase()}`}
+              </p>
+            )}
 
           {analysisCounts.analysed === analysisCounts.total
             ? null
@@ -302,22 +310,22 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
               {workItemType.workCenters.flatMap((wc, index, wcs) => ([
                 index !== 0 ? (
                   <li key={`waiting for ${wc.label}`}>
-                    {`A ${workItemType.name[0].toLowerCase()} is in the 'Waiting for ${wc.label}' state
-                    if it has a ${fieldName(wcs[index - 1].endDateField)} but doesn't have
-                    a ${fieldName(wc.startDateField)}.`}
+                    {`The 'Waiting for ${wc.label}' duration is computed from the ${
+                      fieldName(wcs[index - 1].endDateField)
+                    } to the ${fieldName(wc.startDateField)}.`}
                   </li>
                 ) : undefined,
                 <li key={`in ${wc.label}`}>
-                  {`A ${workItemType.name[0].toLowerCase()} is in the 'In ${wc.label}' state
-                  if it has a ${fieldName(wc.startDateField)} but doesn't have
-                  a ${fieldName(wc.endDateField)}.`}
+                  {`The 'In ${wc.label}' duration is computed from the ${
+                    fieldName(wc.startDateField)
+                  } to the ${fieldName(wc.endDateField)}.`}
                 </li>,
                 index === wcs.length - 1 ? (
                   <li key={`after ${wc.label}`}>
-                    {`A ${workItemType.name[0].toLowerCase()} is in the 'After ${wc.label}' state
-                    if it has a ${fieldName(wc.endDateField)} but doesn't have a `}
-                    {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                    {`${fieldName(workItemType.endDateFields!)}.`}
+                    {`The 'After ${wc.label}' duration is computed from the ${
+                      fieldName(wc.endDateField)
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    } to the ${fieldName(workItemType.endDateFields!)}.`}
                   </li>
                 ) : undefined
               ]))}
@@ -360,6 +368,7 @@ const TimeSpentGraph: React.FC<TimeSpentGraphProps> = ({
   return (
     <>
       {Object.entries(organised)
+        .filter(([, group]) => Object.values(group).flat().length)
         .filter(([witId]) => accessors.workItemType(witId).name[0].toLowerCase() === 'feature')
         .map(([witId, groups]) => (
           <TimeSpentGraphInner

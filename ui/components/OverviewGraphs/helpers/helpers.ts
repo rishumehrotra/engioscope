@@ -9,7 +9,6 @@ import type { LegendSidebarProps } from './LegendSidebar';
 import {
   cycleTime, isNewInTimeRange, isWIPInTimeRange, totalCycleTime, totalWorkCenterTime, workCenterTime
 } from '../../../../shared/work-item-utils';
-import { exists } from '../../../../shared/utils';
 
 export type GroupLabel = { witId: string; groupName: string };
 export type OrganizedWorkItems = Record<string, Record<string, UIWorkItem[]>>;
@@ -35,38 +34,40 @@ const queryPeriodStart = (lastUpdated: string, queryPeriodDays: number) => {
   return queryPeriod;
 };
 
-export const timeSpent = (times: WorkItemTimes) => (
-  times.workCenters
-    .reduce<TimeInArea[]>((acc, { label, start, end }) => {
-      if (start) {
-        const prevItem = last(acc);
-        if (prevItem) prevItem.end = new Date(start);
+export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes) => (
+  !times.start
+    ? []
+    : workItemType.workCenters.reduce<TimeInArea[]>((acc, wc, index) => {
+      const matchingTime = times.workCenters.find(c => c.label === wc.label);
 
-        acc.push({
-          label: `In ${label}`,
-          start: new Date(start),
-          end: end ? new Date(end) : undefined,
-          isWorkCenter: true
-        });
-      }
+      if (!matchingTime) return acc;
 
-      if (end) {
+      acc.push({
+        label: `Waiting for ${wc.label}`,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        start: index === 0 ? new Date(times.start!) : acc[index - 1].end!,
+        end: new Date(matchingTime.start),
+        isWorkCenter: false
+      });
+
+      acc.push({
+        label: `In ${wc.label}`,
+        start: new Date(matchingTime.start),
+        end: matchingTime.end ? new Date(matchingTime.end) : undefined,
+        isWorkCenter: true
+      });
+
+      if (index === workItemType.workCenters.length - 1 && matchingTime.end) {
         acc.push({
-          label: `After ${label}`,
-          start: new Date(end),
-          end: new Date(end),
+          label: `After ${wc.label}`,
+          start: new Date(matchingTime.end),
+          end: times.end ? new Date(times.end) : undefined,
           isWorkCenter: false
         });
       }
 
       return acc;
-    }, [times.start ? {
-      label: `Before ${times.workCenters[0].label}`,
-      start: new Date(times.start),
-      end: undefined,
-      isWorkCenter: false
-    } : undefined].filter(exists))
-    .slice(1)
+    }, []).slice(1)
 );
 
 export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
@@ -98,7 +99,7 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     totalWorkCenterTime: totalWorkCenterTime(workItemTimes),
     isWIPInTimeRange: isWIPIn,
     isWIP: isWIPIn(T),
-    timeSpent: (wi: UIWorkItem) => timeSpent(workItemTimes(wi)),
+    timeSpent: (wi: UIWorkItem) => timeSpent(workItemType(wi.typeId))(workItemTimes(wi)),
     environments: projectAnalysis.environments,
     sortByEnvironment: ((environments?: string[]) => {
       const envs = environments?.map(e => e.toLowerCase());

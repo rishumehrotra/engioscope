@@ -117,12 +117,11 @@ const organiseByTrack = (
     return {
       workItems: workItems.sort(asc(byDate(x => new Date(x.updated.on)))),
       timeSpentById: workItems.reduce<Record<number, TimeInArea[]>>((acc, wi) => {
-        acc[wi.id] = timeSpent(tracks.times[wi.id]);
+        acc[wi.id] = timeSpent(tracks.types[wi.typeId])(tracks.times[wi.id]);
         return acc;
       }, {}),
       timeSpentByCenter: workItems
-        .map(wi => tracks.times[wi.id])
-        .flatMap(timeSpent)
+        .flatMap(wi => timeSpent(tracks.types[wi.typeId])(tracks.times[wi.id]))
         .reduce<Record<string, { time: number; count: number; isWorkCenter: boolean }>>((acc, times) => {
           acc[times.label] = acc[times.label] || { time: 0, count: 0, isWorkCenter: false };
           if (times.end) {
