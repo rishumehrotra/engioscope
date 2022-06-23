@@ -21,3 +21,10 @@ export const combineColumnsInArray = <T>(combiner: (a: T, b: T) => T) => (rows: 
 );
 
 export const addColumnsInArray = combineColumnsInArray<number>((a, b) => add(a || 0, b));
+
+export const mapObj = <T, U>(xform: (x: T) => U) => (obj: Record<string, T>) => (
+  Object.fromEntries(
+    Object.entries(obj)
+      .map(([key, value]) => [key, xform(value)])
+  )
+);

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import React from 'react';
 
 export const sidebarWidth = '310px';
@@ -11,7 +12,7 @@ export type LegendSidebarProps = {
   items: {
     iconUrl?: string;
     label: string;
-    value: string;
+    value: ReactNode;
     key: string;
     color: string;
     isChecked?: boolean;

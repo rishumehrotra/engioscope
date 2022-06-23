@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { last, T } from 'rambda';
 import type {
@@ -160,7 +161,7 @@ export const getSidebarHeadlineStats = (
 export const getSidebarItemStats = (
   organizedWorkIItems: OrganizedWorkItems,
   { workItemType, sortByEnvironment }: WorkItemAccessors,
-  aggregator: (workItems: UIWorkItem[], witId: string, groupName: string) => string,
+  aggregator: (workItems: UIWorkItem[], witId: string, groupName: string) => ReactNode,
   isChecked?: (key: string) => boolean,
   color = lineColor
 ) => (

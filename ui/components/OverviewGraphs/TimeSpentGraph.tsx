@@ -1,8 +1,10 @@
-import { allPass, prop, uniq } from 'rambda';
+import {
+  allPass, prop, uniq
+} from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import { asc, byDate } from '../../../shared/sort-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { divide, exists } from '../../../shared/utils';
+import { divide, exists, mapObj } from '../../../shared/utils';
 import { totalCycleTime } from '../../../shared/work-item-utils';
 import {
   num, prettyMS, priorityBasedColor
@@ -95,16 +97,33 @@ type TimeSpentGraphInnerProps = {
 };
 
 const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
-  witId, groups, workItemType, accessors, workItemTooltip, openModal
+  witId, groups: groupsPreFilter, workItemType, accessors, workItemTooltip, openModal
 }) => {
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [selectedTracks, setSelectedTracks] = React.useState([] as string[]);
 
+  const preFilter = useCallback((wi: UIWorkItem) => (
+    accessors.workItemTimes(wi).workCenters.every(wc => wc.end)
+    && (
+      accessors.workItemTimes(wi).workCenters.length
+      === workItemType.workCenters.length
+    )
+  ), [accessors, workItemType.workCenters.length]);
+
+  const groups = useMemo(() => mapObj(
+    (wis: UIWorkItem[]) => wis.filter(preFilter)
+  )(groupsPreFilter), [groupsPreFilter, preFilter]);
+
   const allWorkItems = useMemo(
     () => Object.values(groups).flat(),
     [groups]
   );
+
+  const analysisCounts = useMemo(() => ({
+    total: Object.values(groupsPreFilter).flat().length,
+    analysed: allWorkItems.length
+  }), [allWorkItems.length, groupsPreFilter]);
 
   const states = useSplitByState(groups, workItemType, accessors.timeSpent);
 
@@ -141,9 +160,9 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
 
   const showWorkItem = useMemo(
     () => allPass([
-      priorityFilter, sizeFilter, selectedGroupFilter, selectedTracksFilter
+      preFilter, priorityFilter, sizeFilter, selectedGroupFilter, selectedTracksFilter
     ]),
-    [priorityFilter, selectedGroupFilter, selectedTracksFilter, sizeFilter]
+    [preFilter, priorityFilter, selectedGroupFilter, selectedTracksFilter, sizeFilter]
   );
 
   const statesToRender = useMemo(
@@ -151,7 +170,6 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
       Object.entries(states).reduce<typeof states>(
         (acc, [state, wis]) => {
           acc[state] = wis.filter(({ wi }) => showWorkItem(wi));
-
           return acc;
         },
         {}
@@ -189,15 +207,24 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
   const legendSidebarProps: LegendSidebarProps = useMemo(
     () => {
       const items = getSidebarItemStats(
-        { [witId]: groups },
+        { [witId]: mapObj((wis: UIWorkItem[]) => wis.filter(showWorkItem))(groups) },
         accessors,
-        wis => divide(totalCycleTime(accessors.workItemTimes)(wis), wis.length).map(prettyMS).getOr('-'),
+        wis => {
+          const cycleTime = divide(totalCycleTime(accessors.workItemTimes)(wis), wis.length).map(prettyMS).getOr('-');
+          const numberOfWorkItems = num(wis.length);
+          return (
+            <span className="flex items-baseline gap-2">
+              <span>{cycleTime}</span>
+              {cycleTime !== '-' && <span className="text-sm font-normal">{numberOfWorkItems}</span>}
+            </span>
+          );
+        },
         group => checkboxStatesForSidebar[group]
       );
       return {
         headlineStats: [{
           label: workItemType.name[1],
-          value: num(allWorkItems.length),
+          value: num(Object.values(groups).flat().filter(showWorkItem).map(x => x).length),
           unit: 'total'
         }],
         items,
@@ -222,13 +249,20 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         )
       };
     },
-    [accessors, allWorkItems.length, checkboxStatesForSidebar, groups, openModal, statesToRender, witId, workItemTooltip, workItemType]
+    [
+      accessors, checkboxStatesForSidebar, groups, openModal,
+      showWorkItem, statesToRender, witId, workItemTooltip, workItemType
+    ]
   );
 
   return (
     <GraphCard
-      title={`Time spent - ${workItemType.name[1].toLowerCase()} by stages`}
-      subtitle={`Where various closed ${workItemType.name[1].toLowerCase()} spent their time`}
+      title={`Time spent - ${workItemType.name[1].toLowerCase()}`}
+      subtitle={`Where did the ${
+        workItemType.name[1].toLowerCase()
+      } that closed in the last ${
+        accessors.queryPeriodDays
+      } days spent their time?`}
       hasData={allWorkItems.length > 0 && hasData}
       left={(
         <>
@@ -247,6 +281,21 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
             <PriorityFilter setFilter={setPriorityFilter} workItems={allWorkItems} />
           </div>
           <ScatterLineGraph {...statterLineGraphProps} />
+
+          {analysisCounts.analysed === analysisCounts.total
+            ? null
+            : (
+              <p className="text-gray-600 text-sm pl-4 mt-4 italic">
+                {'Only analysing '}
+                <span className="font-semibold">{num(analysisCounts.analysed)}</span>
+                {' of '}
+                <span className="font-semibold">{num(analysisCounts.total)}</span>
+                {` ${workItemType.name[
+                  analysisCounts.total === 1 ? 0 : 1
+                ].toLowerCase()} due to incomplete stage data for the rest.`}
+              </p>
+            )}
+
           <details className="text-sm text-gray-600 pl-4 mt-4 bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
             <summary className="cursor-pointer">How is this computed?</summary>
             <ul className="list-disc pl-8">
@@ -310,17 +359,19 @@ const TimeSpentGraph: React.FC<TimeSpentGraphProps> = ({
 
   return (
     <>
-      {Object.entries(organised).map(([witId, groups]) => (
-        <TimeSpentGraphInner
-          key={witId}
-          witId={witId}
-          groups={groups}
-          accessors={accessors}
-          workItemTooltip={workItemTooltip}
-          workItemType={accessors.workItemType(witId)}
-          openModal={openModal}
-        />
-      ))}
+      {Object.entries(organised)
+        .filter(([witId]) => accessors.workItemType(witId).name[0].toLowerCase() === 'feature')
+        .map(([witId, groups]) => (
+          <TimeSpentGraphInner
+            key={witId}
+            witId={witId}
+            groups={groups}
+            accessors={accessors}
+            workItemTooltip={workItemTooltip}
+            workItemType={accessors.workItemType(witId)}
+            openModal={openModal}
+          />
+        ))}
     </>
   );
 };
