@@ -45,7 +45,7 @@ export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes
       acc.push({
         label: `Waiting for ${wc.label}`,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: index === 0 ? new Date(times.start!) : acc[index - 1].end!,
+        start: index === 0 ? new Date(times.start!) : acc[acc.length - 1].end!,
         end: new Date(matchingTime.start),
         isWorkCenter: false
       });
