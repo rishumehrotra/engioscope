@@ -97,7 +97,12 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   useLayoutEffect(() => {
     if (window.location.hash) {
       const element = document.querySelector(window.location.hash);
-      if (element) element.scrollIntoView();
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        window.scrollTo({
+          top: rect.top - (document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0)
+        });
+      }
     }
 
     // The root node has a margin-bottom of 100vh so that the location

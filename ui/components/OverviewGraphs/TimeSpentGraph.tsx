@@ -209,9 +209,13 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
           const cycleTime = divide(totalCycleTime(accessors.workItemTimes)(wis), wis.length).map(prettyMS).getOr('-');
           const numberOfWorkItems = num(wis.length);
           return (
-            <span className="flex items-baseline gap-2">
+            <span className="flex items-baseline gap-2 max-w-full">
               <span>{cycleTime}</span>
-              {cycleTime !== '-' && <span className="text-sm font-normal">{numberOfWorkItems}</span>}
+              {cycleTime !== '-' && (
+                <span className="text-sm font-normal truncate overflow-hidden">
+                  {`${numberOfWorkItems} ${wis.length === 1 ? 'item' : "items'"}`}
+                </span>
+              )}
             </span>
           );
         },
@@ -226,7 +230,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         headlineStats: [{
           label: workItemType.name[1],
           value: cycleTime,
-          unit: num(Object.values(groups).flat().filter(showWorkItem).map(x => x).length)
+          unit: `${num(Object.values(groups).flat().filter(showWorkItem).map(x => x).length)} items`
         }],
         items,
         onItemClick: key => {
@@ -239,7 +243,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
             ));
 
           return openModal({
-            heading: key,
+            heading: key.slice(32),
             subheading: `${workItemType.name[1]} (${workItems.length})`,
             body: (
               <WorkItemFlatList

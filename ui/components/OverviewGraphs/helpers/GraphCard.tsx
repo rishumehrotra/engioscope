@@ -39,7 +39,7 @@ const GraphCard: React.FC<GraphCardProps> = ({
   const [ref, inView] = useInView({
     threshold: 0,
     triggerOnce: true,
-    rootMargin: '300px'
+    rootMargin: `-${document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0}px`
   });
 
   const mustRender = useMemo(
