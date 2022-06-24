@@ -1,8 +1,7 @@
 import {
-  allPass, prop, uniq
+  allPass, uniq
 } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import { asc, byDate } from '../../../shared/sort-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
 import { divide, exists, mapObj } from '../../../shared/utils';
 import { totalCycleTime } from '../../../shared/work-item-utils';
@@ -52,20 +51,21 @@ const useSplitByState = (
 ) => (
   useMemo(
     () => {
-      const unsorted = Object.values(groups).reduce<Record<string, { wi: UIWorkItem; timeSpent: TimeInArea }[]>>(
-        (acc, wis) => {
-          wis.forEach(wi => {
-            const times = timeSpent(wi);
-            times.forEach(t => {
-              if (!t.end) return;
-              acc[t.label] = acc[t.label] || [];
-              acc[t.label].push({ wi, timeSpent: t });
+      const unsorted = Object.values(groups)
+        .reduce<Record<string, { wi: UIWorkItem; timeSpent: TimeInArea }[]>>(
+          (acc, wis) => {
+            wis.forEach(wi => {
+              const times = timeSpent(wi);
+              times.forEach(t => {
+                if (!t.end) return;
+                acc[t.label] = acc[t.label] || [];
+                acc[t.label].push({ wi, timeSpent: t });
+              });
             });
-          });
-          return acc;
-        },
-        {}
-      );
+            return acc;
+          },
+          {}
+        );
 
       return Object.fromEntries(Object.entries(unsorted).sort(([a], [b]) => (
         indexOfStateLabel(workItemType, a)
@@ -189,7 +189,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         tooltip: ({ wi }, label, timeTaken) => (
           workItemTooltip(
             wi,
-            [{ label: `In '${label.replace('In ', '')}' since`, value: prettyMS(timeTaken) }]
+            [{ label: `Was in '${label.replace('In ', '')}' for`, value: prettyMS(timeTaken) }]
           )
         )
       }],
@@ -229,32 +229,38 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
           unit: num(Object.values(groups).flat().filter(showWorkItem).map(x => x).length)
         }],
         items,
-        onItemClick: key => openModal({
-          heading: key,
-          subheading: `${workItemType.name[1]} (${statesToRender[key].length})`,
-          body: (
-            <WorkItemFlatList
-              workItemType={workItemType}
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              workItems={statesToRender[key].sort(asc(byDate(x => x.timeSpent.end!))).map(prop('wi'))}
-              tooltip={workItemTooltip}
-              flairs={workItem => [
-                prettyMS(Date.now()
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                - statesToRender[key].find(({ wi }) => wi.id === workItem.id)!.timeSpent.end!.getTime())
-              ]}
-            />
-          )
-        }),
+        onItemClick: key => {
+          const workItems = Object.values(groups)
+            .flat()
+            .filter(wi => (
+              wi.groupId
+                ? (({ witId, name }) => witId + name === key)(accessors.workItemGroup(wi.groupId))
+                : false
+            ));
+
+          return openModal({
+            heading: key,
+            subheading: `${workItemType.name[1]} (${workItems.length})`,
+            body: (
+              <WorkItemFlatList
+                workItemType={workItemType}
+                workItems={workItems}
+                tooltip={workItemTooltip}
+                // flairs={workItem => [
+                //   prettyMS(Date.now()
+                //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                //     - workItems.find(wi => wi.id === workItem.id)!.timeSpent.end!.getTime())
+                // ]}
+              />
+            )
+          });
+        },
         onCheckboxClick: key => (
           setCheckboxStatesForSidebar(state => ({ ...state, [key]: !state[key] }))
         )
       };
     },
-    [
-      accessors, checkboxStatesForSidebar, groups, openModal,
-      showWorkItem, statesToRender, witId, workItemTooltip, workItemType
-    ]
+    [accessors, checkboxStatesForSidebar, groups, openModal, showWorkItem, witId, workItemTooltip, workItemType]
   );
 
   return (

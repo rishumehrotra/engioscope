@@ -1,7 +1,8 @@
 import { head, prop } from 'rambda';
-import type { Overview, UIWorkItem, UIWorkItemType } from '../../../../shared/types';
+import type { UIWorkItem, UIWorkItemType, WorkItemTimes } from '../../../../shared/types';
 import { prettyMS } from '../../../helpers/utils';
 import type { WorkItemAccessors } from './helpers';
+import { timeSpent } from './helpers';
 import { timeDifference } from '../../../../shared/work-item-utils';
 import { byNum, desc } from '../../../../shared/sort-utils';
 
@@ -20,25 +21,13 @@ const workItemBasicDetails = (workItem: UIWorkItem, workItemType: UIWorkItemType
   ${workItem.rca.length ? addSection('RCA', workItem.rca.join(' / ')) : ''}
 `;
 
-const computeTimes = (workCenters: Overview['times'][number]['workCenters']) => (
-  workCenters.reduce<{ label: string; timeDiff: number }[]>(
-    (acc, wc, index, wcs) => {
-      acc.push({
-        label: wc.label,
-        timeDiff: timeDifference(wc)
-      });
-
-      if (index !== wcs.length - 1) {
-        acc.push({
-          label: `${wc.label} to ${wcs[index + 1].label}`,
-          timeDiff: timeDifference({ start: wc.end || new Date().toISOString(), end: wcs[index + 1].start })
-        });
-      }
-
-      return acc;
-    },
-    []
-  )
+const computeTimes = (workItemType: UIWorkItemType, times: WorkItemTimes) => (
+  timeSpent(workItemType)(times)
+    .filter(x => x.start)
+    .map(time => ({
+      label: time.label,
+      timeDiff: timeDifference({ start: time.start.toISOString(), end: time.end?.toISOString() })
+    }))
 );
 
 export const createCompletedWorkItemTooltip = ({
@@ -57,8 +46,7 @@ export const createCompletedWorkItemTooltip = ({
     : undefined;
 
   const worstOffender = head(
-    computeTimes(times.workCenters)
-      .sort(desc(byNum(prop('timeDiff'))))
+    computeTimes(wit, times).sort(desc(byNum(prop('timeDiff'))))
   );
 
   return `
@@ -79,7 +67,7 @@ export const createWIPWorkItemTooltip = ({
   workItemType, workItemTimes, workItemGroup
 }: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: { label: string; value: string | number }[] = []) => {
   const worstOffender = head(
-    computeTimes(workItemTimes(workItem).workCenters)
+    computeTimes(workItemType(workItem.typeId), workItemTimes(workItem))
       .sort(desc(byNum(prop('timeDiff'))))
   );
   const wig = workItem.groupId ? workItemGroup(workItem.groupId) : undefined;
