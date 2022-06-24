@@ -1,15 +1,12 @@
-import {
-  allPass, uniq
-} from 'rambda';
+import { allPass } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { divide, exists, mapObj } from '../../../shared/utils';
+import { divide, mapObj } from '../../../shared/utils';
 import { totalCycleTime } from '../../../shared/work-item-utils';
 import {
   num, prettyMS, priorityBasedColor
 } from '../../helpers/utils';
 import useQueryParam, { asBoolean } from '../../hooks/use-query-param';
-import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import GraphCard from './helpers/GraphCard';
@@ -80,10 +77,6 @@ const fieldName = (fields: string[]) => (
   fields.map(x => `'${x}'`).join(' or a ')
 );
 
-const trackField = (wi: UIWorkItem) => wi
-  .filterBy
-  ?.find(x => x.label.toLowerCase().includes('track'));
-
 type TimeSpentGraphInnerProps = {
   witId: string;
   groups: OrganizedWorkItems[string];
@@ -101,7 +94,6 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
 }) => {
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-  const [selectedTracks, setSelectedTracks] = React.useState([] as string[]);
 
   const preFilter = useCallback((wi: UIWorkItem) => (
     accessors.workItemTimes(wi).workCenters.every(wc => wc.end)
@@ -134,24 +126,6 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
     }, {})
   );
 
-  const tracksList = useMemo(() => (
-    allWorkItems
-      .map(trackField)
-      .filter(exists)
-      .reduce<{ label: string; tracks: string[] }>((acc, { label, tags }) => ({
-        label,
-        tracks: uniq([...acc.tracks, ...tags])
-      }), { label: '', tracks: [] })
-  ), [allWorkItems]);
-
-  const selectedTracksFilter = useCallback((workItem: UIWorkItem) => {
-    if (selectedTracks.length === 0) return true;
-    const t = trackField(workItem);
-    return t
-      ? selectedTracks.some(st => t.tags.some(tg => tg === st))
-      : false;
-  }, [selectedTracks]);
-
   const selectedGroupFilter = useCallback((workItem: UIWorkItem) => {
     const group = workItem.groupId ? accessors.workItemGroup(workItem.groupId) : undefined;
     if (!group) return false;
@@ -160,9 +134,9 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
 
   const showWorkItem = useMemo(
     () => allPass([
-      preFilter, priorityFilter, sizeFilter, selectedGroupFilter, selectedTracksFilter
+      preFilter, priorityFilter, sizeFilter, selectedGroupFilter
     ]),
-    [preFilter, priorityFilter, selectedGroupFilter, selectedTracksFilter, sizeFilter]
+    [preFilter, priorityFilter, selectedGroupFilter, sizeFilter]
   );
 
   const statesToRender = useMemo(
@@ -213,7 +187,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
               <span>{cycleTime}</span>
               {cycleTime !== '-' && (
                 <span className="text-sm font-normal truncate overflow-hidden">
-                  {`${numberOfWorkItems} ${wis.length === 1 ? 'item' : "items'"}`}
+                  {`${numberOfWorkItems} ${wis.length === 1 ? 'item' : 'items'}`}
                 </span>
               )}
             </span>
@@ -279,16 +253,6 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
       left={(
         <>
           <div className="mb-8 flex justify-end mr-4 gap-2">
-            {tracksList.label && tracksList.tracks.length && (
-              <MultiSelectDropdownWithLabel
-                name="groups"
-                label={tracksList.label}
-                options={tracksList.tracks.map(t => ({ label: t, value: t }))}
-                value={selectedTracks}
-                onChange={setSelectedTracks}
-                className="w-64 text-sm"
-              />
-            )}
             <SizeFilter setFilter={setSizeFilter} workItems={allWorkItems} />
             <PriorityFilter setFilter={setPriorityFilter} workItems={allWorkItems} />
           </div>
