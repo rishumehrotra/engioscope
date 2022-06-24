@@ -27,7 +27,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, selectedFilters, onChange })
 
   return (
     <div
-      className="sticky top-0 bg-gray-50 ml-1 px-1 py-1 z-10 rounded-b-3xl overflow-hidden opacity-90 hover:opacity-100"
+      className="sticky top-0 bg-gray-50 ml-1 px-1 py-1 z-10 rounded-b-3xl opacity-90 hover:opacity-100"
       id="sticky-block"
     >
       <div className="flex gap-2 items-center mb-6 ml-5">
