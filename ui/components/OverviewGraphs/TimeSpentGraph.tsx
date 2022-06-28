@@ -6,7 +6,6 @@ import { totalCycleTime } from '../../../shared/work-item-utils';
 import {
   num, prettyMS, priorityBasedColor
 } from '../../helpers/utils';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
 import ScatterLineGraph from '../graphs/ScatterLineGraph';
 import GraphCard from './helpers/GraphCard';
@@ -96,7 +95,8 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
 
   const preFilter = useCallback((wi: UIWorkItem) => (
-    accessors.workItemTimes(wi).workCenters.every(wc => wc.end)
+    accessors.workItemTimes(wi).workCenters.length > 0
+    && accessors.workItemTimes(wi).workCenters.every(wc => wc.end)
     && (
       accessors.workItemTimes(wi).workCenters.length
       === workItemType.workCenters.length
@@ -241,6 +241,8 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
     [accessors, checkboxStatesForSidebar, groups, openModal, showWorkItem, witId, workItemTooltip, workItemType]
   );
 
+  if (allWorkItems.length === 0) return null;
+
   return (
     <GraphCard
       title={`Time spent - ${workItemType.name[1].toLowerCase()}`}
@@ -248,7 +250,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         workItemType.name[1].toLowerCase()
       } that closed in the last ${
         accessors.queryPeriodDays
-      } days spent their time?`}
+      } days spend their time?`}
       hasData={allWorkItems.length > 0}
       left={(
         <>
@@ -321,7 +323,6 @@ type TimeSpentGraphProps = {
 const TimeSpentGraph: React.FC<TimeSpentGraphProps> = ({
   workItems, accessors, openModal
 }) => {
-  const [timeSpentEnabled] = useQueryParam('time-spent', asBoolean);
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(accessors),
     [accessors]
@@ -336,8 +337,6 @@ const TimeSpentGraph: React.FC<TimeSpentGraphProps> = ({
     () => accessors.organizeByWorkItemType(preFilteredWorkItems, accessors.isWorkItemClosed),
     [accessors, preFilteredWorkItems]
   );
-
-  if (!timeSpentEnabled) return null;
 
   return (
     <>
