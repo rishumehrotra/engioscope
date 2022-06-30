@@ -201,6 +201,14 @@
     "function-paren-newline": [
       "error",
       "consistent"
+    ],
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": [
+          "_id"
+        ]
+      }
     ]
   },
   "settings": {

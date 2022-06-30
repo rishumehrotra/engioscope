@@ -68,5 +68,7 @@
       "label": "All open issues",
       "query": "state:open repo:${owner}/${repository} sort:created-desc"
     }
-  ]
+  ],
+  "vitest.commandLine": "",
+  "vitest.enable": true
 }
