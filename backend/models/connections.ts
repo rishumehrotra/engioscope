@@ -1,7 +1,7 @@
 import type { ObjectId } from 'mongoose';
 import { Schema, model } from 'mongoose';
 
-export type AzureConnection = {
+export type AzurePATConnection = {
   type: 'azure-pat';
   host: string;
   token: string;
@@ -16,19 +16,17 @@ export type SonarConnection = {
 };
 
 export type Connection = { _id: ObjectId } & (
-  | AzureConnection
+  | AzurePATConnection
   | SonarConnection
 );
 
 const connectionSchema = new Schema<Connection>({}, { strict: false });
 const DBConnection = model<Connection>('Connection', connectionSchema);
 
-export const listConnections = () => (
-  DBConnection.find().exec() as Promise<Connection[]>
-);
+export const listConnections = () => DBConnection.find().lean();
 
 export const getConnectionById = (id: ObjectId | string) => (
-  DBConnection.findOne({ _id: id }).exec() as Promise<Connection>
+  DBConnection.findOne({ _id: id }).lean()
 );
 
 export const createNewConnection = (connection: Omit<Connection, '_id'>) => (
@@ -36,32 +34,9 @@ export const createNewConnection = (connection: Omit<Connection, '_id'>) => (
 );
 
 export const modifyConnection = (connection: Connection) => (
-  DBConnection.replaceOne({ _id: connection._id }, connection).exec()
+  DBConnection.replaceOne({ _id: connection._id }, connection).lean()
 );
 
 export const deleteConnection = (id: ObjectId | string) => (
-  DBConnection.deleteOne({ _id: id }).exec()
+  DBConnection.deleteOne({ _id: id }).lean()
 );
-
-export type TProvider = {
-  type:
-  | 'azure-devops-work-items'
-  | 'azure-devops-repos';
-  config: Map<string, string>;
-};
-
-const providerSchema = new Schema<TProvider>({
-  type: { type: String, required: true },
-  config: {
-    type: Map,
-    of: String
-  }
-});
-
-export const Provider = model<TProvider>('Provider', providerSchema);
-
-const provider = new Provider({
-  type: 'azure-devops-work-items'
-});
-
-provider._id.toString();
