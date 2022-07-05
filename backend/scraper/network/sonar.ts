@@ -1,4 +1,5 @@
 import qs from 'qs';
+import { head, map } from 'rambda';
 import fetch from './fetch-with-extras';
 import { requiredMetrics } from '../stats-aggregators/code-quality';
 import fetchWithDiskCache from './fetch-with-disk-cache';
@@ -16,7 +17,7 @@ export type SonarProject = SonarConfig & {
   name: string;
   qualifier: string;
   visibility: string;
-  lastAnalysisDate: Date;
+  lastAnalysisDate: Date | null;
 };
 
 // #region Network calls
@@ -60,6 +61,7 @@ const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfi
         ...c, url: sonarServer.url, token: sonarServer.token
       }))))
       .then(projects => projects.flat())
+      .then(map(p => ({ ...p, lastAnalysisDate: p.lastAnalysisDate ? new Date(p.lastAnalysisDate) : null })))
   );
 };
 
@@ -98,7 +100,7 @@ const getMeasures = (config: ParsedConfig) => (sonarProject: SonarProject) => {
     name: sonarProject.name,
     url: `${sonarProject.url}/dashboard?id=${sonarProject.key}`,
     measures: res.data.component?.measures || [],
-    lastAnalysisDate: new Date(sonarProject.lastAnalysisDate)
+    lastAnalysisDate: sonarProject.lastAnalysisDate ? new Date(sonarProject.lastAnalysisDate) : null
   }));
 };
 
@@ -152,7 +154,8 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
 
 // #endregion
 
-const sortByLastAnalysedDate = desc<SonarProject>(byDate(x => new Date(x.lastAnalysisDate)));
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const sortByLastAnalysedDate = desc<SonarProject>(byDate(x => x.lastAnalysisDate!));
 
 const normliseNameForMatching = (name: string) => (
   name.replace(/-/g, '_').toLowerCase()
@@ -230,6 +233,19 @@ const getSonarProjects = (config: ParsedConfig) => {
   return sonarProjectsCache.get(config)!;
 };
 
+const dedupeSonarProjectsByKey = (sonarProjects: SonarProject[]) => (
+  sonarProjects.filter(sp => {
+    const matchingProjects = sonarProjects.filter(s => s.key === sp.key);
+    if (matchingProjects.length < 2) return true;
+    return head(
+      matchingProjects
+        .filter(p => p.lastAnalysisDate)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .sort(desc(byDate(p => p.lastAnalysisDate!)))
+    ) === sp;
+  })
+);
+
 export default (config: ParsedConfig) => {
   const sonarProjects = getSonarProjects(config);
 
@@ -253,7 +269,7 @@ export default (config: ParsedConfig) => {
 
     if (!matchingSonarProjects) return null;
 
-    return Promise.all(matchingSonarProjects.map(sonarProject => (
+    return Promise.all(dedupeSonarProjectsByKey(matchingSonarProjects).map(sonarProject => (
       Promise.all([
         getMeasures(config)(sonarProject),
         getQualityGateName(config)(sonarProject),

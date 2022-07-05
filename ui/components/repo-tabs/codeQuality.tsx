@@ -405,7 +405,9 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
     </div>
     <div className="flex justify-between text-sm italic mt-4">
       <div className="text-gray-600">
-        {`Last analysis was run on ${shortDate(new Date(codeQuality.lastAnalysisDate))}.`}
+        {codeQuality.lastAnalysisDate
+          ? `Last analysis was run on ${shortDate(new Date(codeQuality.lastAnalysisDate))}.`
+          : 'Analysis has never been run'}
       </div>
       <div className="items-end">
         <a

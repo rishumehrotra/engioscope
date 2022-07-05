@@ -81,4 +81,3 @@ export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranch
     }
   };
 };
-
