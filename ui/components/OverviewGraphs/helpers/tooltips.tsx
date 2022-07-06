@@ -1,24 +1,58 @@
 import { head, prop } from 'rambda';
 import type { UIWorkItem, UIWorkItemType, WorkItemTimes } from '../../../../shared/types';
-import { prettyMS } from '../../../helpers/utils';
+import { prettyMS, priorityBasedColor } from '../../../helpers/utils';
 import type { WorkItemAccessors } from './helpers';
 import { timeSpent } from './helpers';
 import { timeDifference } from '../../../../shared/work-item-utils';
 import { byNum, desc } from '../../../../shared/sort-utils';
+import { divide, exists } from '../../../../shared/utils';
 
-const addSection = (label: string, value: string | number) => `
-  <div class="pt-1">
-    <strong>${label}:</strong> ${value}
+type TooltipSection = {
+  label: string;
+  value: string | number;
+  graphValue?: number;
+};
+
+const addSection = (section: TooltipSection) => `
+  <div>
+    ${section.label}
+    <div class="font-semibold">${section.value}</div>
+    ${section.graphValue !== undefined && section.graphValue <= 1
+    ? `
+    <div class="rounded-md bg-gray-500 mt-1 h-1.5 w-full">
+      <div class="bg-gray-300 h-1.5 rounded-md" style="width: ${section.graphValue * 100}%"></div>
+    </div>`
+    : ''
+}
   </div>
 `;
 
-const workItemBasicDetails = (workItem: UIWorkItem, workItemType: UIWorkItemType, workItemGroupName?: string) => `
-  <img src="${workItemType.icon}" width="14" height="14" class="inline-block -mt-1" />
-  <strong>#${workItem.id}:</strong> ${workItem.title}
-  ${workItemGroupName ? addSection(workItemType.groupLabel || 'Group', workItemGroupName) : ''}
-  ${workItem.priority ? addSection('Priority', workItem.priority) : ''}
-  ${workItem.severity ? addSection('Severity', workItem.severity) : ''}
-  ${workItem.rca.length ? addSection('RCA', workItem.rca.join(' / ')) : ''}
+const standardSections = (workItem: UIWorkItem, workItemType: UIWorkItemType, workItemGroupName?: string) => [
+  workItemGroupName ? { label: workItemType.groupLabel || 'Group', value: workItemGroupName } : undefined,
+  workItem.priority
+    ? {
+      label: 'Priority',
+      value: `
+        <span
+          class='inline-block w-2 h-2 mr-1'
+          style='background: ${priorityBasedColor(workItem.priority)}'
+        ></span>
+        ${workItem.priority}
+      `
+    } : undefined,
+  workItem.severity ? { label: 'Severity', value: workItem.severity } : undefined,
+  workItem.rca.length ? { label: 'RCA', value: workItem.rca.join(' / ') } : undefined
+];
+
+const addSections = (sections: (TooltipSection | undefined)[]) => `
+  <div class="grid grid-cols-2 gap-4 my-3">
+    ${sections.filter(exists).map(addSection).join('')}
+  </div>
+`;
+
+const workItemName = (workItem: UIWorkItem, workItemType: UIWorkItemType) => `
+  <img src="${workItemType.icon}" width="14" height="14" class="inline -mt-1" />
+  <strong>#${workItem.id}: ${workItem.title}</strong>
 `;
 
 const computeTimes = (workItemType: UIWorkItemType, times: WorkItemTimes) => (
@@ -32,7 +66,7 @@ const computeTimes = (workItemType: UIWorkItemType, times: WorkItemTimes) => (
 
 export const createCompletedWorkItemTooltip = ({
   workItemType, cycleTime, workCenterTime, workItemTimes, workItemGroup
-}: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: { label: string; value: string | number }[] = []) => {
+}: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: TooltipSection[] = []) => {
   const times = workItemTimes(workItem);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ct = cycleTime(workItem)!;
@@ -49,40 +83,51 @@ export const createCompletedWorkItemTooltip = ({
     computeTimes(wit, times).sort(desc(byNum(prop('timeDiff'))))
   );
 
+  const sections: (TooltipSection | undefined)[] = [
+    ...standardSections(workItem, wit, wig?.name),
+    { label: 'Cycle Time', value: prettyMS(ct) },
+    clt ? { label: 'Change lead time', value: prettyMS(clt) } : undefined,
+    worstOffender
+      ? {
+        label: 'Longest time',
+        value: `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`,
+        graphValue: divide(worstOffender.timeDiff, ct).getOr(undefined)
+      } : undefined,
+    { label: 'Efficiency', value: `${efficiency}%`, graphValue: efficiency / 100 },
+    ...additionalSections
+  ];
+
   return `
-    <div class="w-72">
-      <div class="pl-3" style="text-indent: -1.15rem">
-        ${workItemBasicDetails(workItem, wit, wig?.name)}
-        ${addSection('Cycle Time', prettyMS(ct))}
-        ${clt ? addSection('Change lead time', prettyMS(clt)) : ''}
-        ${worstOffender ? addSection('Longest time', `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`) : ''}
-        ${addSection('Efficiency', `${efficiency}%`)}
-        ${additionalSections.map(({ label, value }) => addSection(label, value)).join('')}
-      </div>
+    <div class="w-72 pt-2">
+      ${workItemName(workItem, wit)}
+      ${addSections(sections)}
     </div>
   `.trim();
 };
 
 export const createWIPWorkItemTooltip = ({
   workItemType, workItemTimes, workItemGroup
-}: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: { label: string; value: string | number }[] = []) => {
+}: WorkItemAccessors) => (workItem: UIWorkItem, additionalSections: TooltipSection[] = []) => {
   const worstOffender = head(
     computeTimes(workItemType(workItem.typeId), workItemTimes(workItem))
       .sort(desc(byNum(prop('timeDiff'))))
   );
   const wig = workItem.groupId ? workItemGroup(workItem.groupId) : undefined;
 
+  const sections = [
+    ...standardSections(workItem, workItemType(workItem.typeId), wig?.name),
+    { label: 'Current status', value: workItem.state },
+    { label: 'Age', value: prettyMS(Date.now() - new Date(workItem.created.on).getTime()) },
+    worstOffender
+      ? { label: 'Longest time so far', value: `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})` }
+      : undefined,
+    ...additionalSections
+  ];
+
   return `
-  <div class="w-72">
-    <div class="pl-3" style="text-indent: -1.15rem">
-      ${workItemBasicDetails(workItem, workItemType(workItem.typeId), wig?.name)}
-      ${addSection('Current status', workItem.state)}
-      ${addSection('Age', prettyMS(Date.now() - new Date(workItem.created.on).getTime()))}
-      ${worstOffender
-    ? addSection('Longest time so far', `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`)
-    : ''}
-      ${additionalSections.map(({ label, value }) => addSection(label, value)).join('')}
-    </div>
+  <div class="w-72 pt-2">
+    ${workItemName(workItem, workItemType(workItem.typeId))}
+    ${addSections(sections)}
   </div>
 `.trim();
 };
