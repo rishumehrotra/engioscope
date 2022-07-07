@@ -113,25 +113,18 @@ export type UIBranchStats = {
   branches: {
     name: string;
     url: string;
+    aheadCount: number;
+    behindCount: number;
     lastCommitDate: Date;
   }[];
   count: number;
   limit: number;
 };
 
-type SignificantlyAheadBranchStats = Pick<UIBranchStats, 'count' | 'limit'> & {
-  branches: (UIBranchStats['branches'][0] & {
-    aheadBy: number;
-  })[];
-};
-
 export type UIBranches = {
-  total: UIBranchStats;
-  active: UIBranchStats;
-  abandoned: UIBranchStats;
-  deleteCandidates: UIBranchStats;
-  possiblyConflicting: UIBranchStats;
-  significantlyAhead: SignificantlyAheadBranchStats;
+  total: number;
+  healthy: UIBranchStats;
+  unhealthy: UIBranchStats;
 };
 
 export type UIPullRequests = {

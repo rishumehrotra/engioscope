@@ -1,6 +1,13 @@
 import { add } from 'rambda';
 import { maybe } from './maybe';
 
+export const oneSecondInMs = 1000;
+export const oneMinuteInMs = 60 * oneSecondInMs;
+export const oneHourInMs = 60 * oneMinuteInMs;
+export const oneDayInMs = 24 * oneHourInMs;
+export const oneFortnightInMs = 15 * oneDayInMs;
+export const oneMonthInMs = 30 * oneDayInMs;
+
 export const exists = <T>(x: T | undefined | null): x is T => (
   x !== null && x !== undefined
 );

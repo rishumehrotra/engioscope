@@ -44,7 +44,7 @@ const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>
 
 const sorters: SortMap<RepoAnalysis> = {
   'Builds': (a, b) => numberOfBuilds(a) - numberOfBuilds(b),
-  'Branches': (a, b) => a.branches.total.count - b.branches.total.count,
+  'Branches': (a, b) => a.branches.total - b.branches.total,
   'Commits': (a, b) => a.commits.count - b.commits.count,
   'Pull requests': (a, b) => a.prs.total - b.prs.total,
   'Tests': (a, b) => numberOfTests(a) - numberOfTests(b),

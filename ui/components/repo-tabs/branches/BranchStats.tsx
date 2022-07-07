@@ -1,10 +1,13 @@
 import React from 'react';
 import type { UIBranchStats } from '../../../../shared/types';
+import { oneFortnightInMs } from '../../../../shared/utils';
 import { mediumDate, num } from '../../../helpers/utils';
 
 const BranchStats: React.FC<{
   branchStats: UIBranchStats;
+  defaultBranch: string | undefined;
 }> = ({
+  defaultBranch,
   branchStats: {
     branches,
     count,
@@ -18,6 +21,12 @@ const BranchStats: React.FC<{
           <tr>
             <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider w-3/5 text-left"> </th>
             <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">
+              Ahead by
+            </th>
+            <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">
+              Behind by
+            </th>
+            <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">
               Last commit
             </th>
           </tr>
@@ -30,7 +39,30 @@ const BranchStats: React.FC<{
                   {branch.name}
                 </a>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right">{mediumDate(new Date(branch.lastCommitDate))}</td>
+              <td
+                className={`px-6 py-4 whitespace-nowrap text-right ${branch.aheadCount > 20 ? 'text-red-700' : ''}`}
+                {...(branch.aheadCount > 20 ? { 'data-tip': `This branch is more than 20 commits ahead of ${defaultBranch}` } : {})}
+              >
+                {`${num(branch.aheadCount)} commits`}
+              </td>
+              <td
+                className={`px-6 py-4 whitespace-nowrap text-right ${branch.behindCount > 20 ? 'text-red-700' : ''}`}
+                {...(branch.behindCount > 20 ? { 'data-tip': `This branch is more than 20 commits behind ${defaultBranch}` } : {})}
+              >
+                {`${num(branch.behindCount)} commits`}
+              </td>
+              <td
+                className={`px-6 py-4 whitespace-nowrap text-right ${
+                  (Date.now() - new Date(branch.lastCommitDate).getTime()) > oneFortnightInMs
+                    ? 'text-red-700'
+                    : ''}`}
+                {...(
+                  (Date.now() - new Date(branch.lastCommitDate).getTime()) > oneFortnightInMs
+                    ? { 'data-tip': 'This branch hasn\'t been committed to in the last 15 days' }
+                    : {})}
+              >
+                {mediumDate(new Date(branch.lastCommitDate))}
+              </td>
             </tr>
           ))}
         </tbody>
