@@ -16,6 +16,7 @@ import { LegendSidebar } from './helpers/LegendSidebar';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import type { TooltipSection } from './helpers/tooltips';
 import { createCompletedWorkItemTooltip } from './helpers/tooltips';
 
 const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => {
@@ -81,10 +82,7 @@ type TimeSpentGraphInnerProps = {
   groups: OrganizedWorkItems[string];
   workItemType: UIWorkItemType;
   accessors: WorkItemAccessors;
-  workItemTooltip: (workItem: UIWorkItem, additionalSections?: {
-    label: string;
-    value: string | number;
-  }[]) => string;
+  workItemTooltip: (workItem: UIWorkItem, additionalSections?: TooltipSection[]) => string;
   openModal: (x: ModalArgs) => void;
 };
 
@@ -163,7 +161,11 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         tooltip: ({ wi }, label, timeTaken) => (
           workItemTooltip(
             wi,
-            [{ label: `Was in '${label.replace('In ', '')}' for`, value: prettyMS(timeTaken) }]
+            [{
+              label: 'This stage',
+              value: `${label.replace('In ', '')} (${prettyMS(timeTaken)})`,
+              graphValue: divide(timeTaken, accessors.cycleTime(wi) || 0).getOr(0)
+            }]
           )
         )
       }],
@@ -171,7 +173,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
       linkForItem: ({ wi }) => wi.url,
       pointColor: ({ wi }) => (wi.priority ? priorityBasedColor(wi.priority) : null)
     }),
-    [statesToRender, workItemTooltip, workItemType.name]
+    [accessors, statesToRender, workItemTooltip, workItemType.name]
   );
 
   const legendSidebarProps: LegendSidebarProps = useMemo(

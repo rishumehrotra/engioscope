@@ -7,14 +7,15 @@ import { timeDifference } from '../../../../shared/work-item-utils';
 import { byNum, desc } from '../../../../shared/sort-utils';
 import { divide, exists } from '../../../../shared/utils';
 
-type TooltipSection = {
+export type TooltipSection = {
   label: string;
   value: string | number;
   graphValue?: number;
+  width?: 1 | 2;
 };
 
 const addSection = (section: TooltipSection) => `
-  <div>
+  <div class="${section.width === 2 ? 'col-span-2' : ''}">
     ${section.label}
     <div class="font-semibold">${section.value}</div>
     ${section.graphValue !== undefined && section.graphValue <= 1
@@ -27,7 +28,11 @@ const addSection = (section: TooltipSection) => `
   </div>
 `;
 
-const standardSections = (workItem: UIWorkItem, workItemType: UIWorkItemType, workItemGroupName?: string) => [
+const standardSections = (
+  workItem: UIWorkItem,
+  workItemType: UIWorkItemType,
+  workItemGroupName?: string
+): (TooltipSection | undefined)[] => [
   workItemGroupName ? { label: workItemType.groupLabel || 'Group', value: workItemGroupName } : undefined,
   workItem.priority
     ? {
@@ -41,7 +46,7 @@ const standardSections = (workItem: UIWorkItem, workItemType: UIWorkItemType, wo
       `
     } : undefined,
   workItem.severity ? { label: 'Severity', value: workItem.severity } : undefined,
-  workItem.rca.length ? { label: 'RCA', value: workItem.rca.join(' / ') } : undefined
+  workItem.rca.length ? { label: 'RCA', value: workItem.rca.join(' / '), width: 2 } : undefined
 ];
 
 const addSections = (sections: (TooltipSection | undefined)[]) => `
@@ -85,8 +90,8 @@ export const createCompletedWorkItemTooltip = ({
 
   const sections: (TooltipSection | undefined)[] = [
     ...standardSections(workItem, wit, wig?.name),
-    { label: 'Cycle Time', value: prettyMS(ct) },
-    clt ? { label: 'Change lead time', value: prettyMS(clt) } : undefined,
+    { label: 'Cycle time', value: prettyMS(ct) },
+    clt ? { label: 'Change lead time', value: prettyMS(clt), graphValue: divide(clt, ct).getOr(undefined) } : undefined,
     worstOffender
       ? {
         label: 'Longest time',
@@ -119,7 +124,11 @@ export const createWIPWorkItemTooltip = ({
     { label: 'Current status', value: workItem.state },
     { label: 'Age', value: prettyMS(Date.now() - new Date(workItem.created.on).getTime()) },
     worstOffender
-      ? { label: 'Longest time so far', value: `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})` }
+      ? {
+        label: 'Longest time so far',
+        value: `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`,
+        graphValue: divide(worstOffender.timeDiff, Date.now() - new Date(workItem.created.on).getTime()).getOr(undefined)
+      }
       : undefined,
     ...additionalSections
   ];

@@ -2,6 +2,7 @@ import { allPass, pipe, prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import { asc, byDate } from '../../../shared/sort-utils';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
+import { divide } from '../../../shared/utils';
 import {
   num, prettyMS, priorityBasedColor
 } from '../../helpers/utils';
@@ -17,6 +18,7 @@ import { LegendSidebar } from './helpers/LegendSidebar';
 import type { ModalArgs } from './helpers/modal-helpers';
 import { WorkItemFlatList } from './helpers/modal-helpers';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
+import type { TooltipSection } from './helpers/tooltips';
 import { createWIPWorkItemTooltip } from './helpers/tooltips';
 
 const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => {
@@ -79,10 +81,7 @@ type AgeOfWorkItemsByStatusInnerProps = {
   groups: OrganizedWorkItems[string];
   workItemType: UIWorkItemType;
   accessors: WorkItemAccessors;
-  workItemTooltip: (workItem: UIWorkItem, additionalSections?: {
-    label: string;
-    value: string | number;
-  }[]) => string;
+  workItemTooltip: (workItem: UIWorkItem, additionalSections?: TooltipSection[]) => string;
   openModal: (x: ModalArgs) => void;
 };
 
@@ -169,7 +168,11 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
         tooltip: ({ wi }, label, timeTaken) => (
           workItemTooltip(
             wi,
-            [{ label: `In '${label.replace('In ', '')}' since`, value: prettyMS(timeTaken) }]
+            [{
+              label: 'This stage',
+              value: `${label.replace('In ', '')} (${prettyMS(timeTaken)})`,
+              graphValue: divide(timeTaken, Date.now() - new Date(wi.created.on).getTime()).getOr(undefined)
+            }]
           )
         )
       }],

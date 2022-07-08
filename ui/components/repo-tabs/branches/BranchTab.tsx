@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
 
 const BranchTab: React.FC<{
   isSelected: boolean;
   onToggleSelect: () => void;
   count: string;
-  label: string;
+  label: ReactNode;
 }> = ({
   isSelected, onToggleSelect, count, label
 }) => {

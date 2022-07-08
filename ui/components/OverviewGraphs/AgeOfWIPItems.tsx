@@ -137,7 +137,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
   return (
     <GraphCard
       title="Age of work-in-progress items"
-      subtitle="How old are the currently work-in-progress items"
+      subtitle="How old are the current work-in-progress items"
       hasData={preFilteredWorkItems.length > 0}
       csvData={csvData}
       left={(

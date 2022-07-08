@@ -122,6 +122,7 @@ export type UIBranchStats = {
 };
 
 export type UIBranches = {
+  listingUrl: string;
   total: number;
   healthy: UIBranchStats;
   unhealthy: UIBranchStats;

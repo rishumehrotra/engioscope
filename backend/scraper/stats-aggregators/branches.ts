@@ -54,6 +54,7 @@ export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranch
 
   return {
     total: allBranches.length,
+    listingUrl: `${repoUrl}/branches?_a=all`,
     healthy: {
       count: healthyBranches.length,
       limit: branchPageLimit,
