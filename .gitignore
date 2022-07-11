@@ -33,3 +33,4 @@ analytics.csv
 archive
 cache.tar.gz
 todo.md
+ui/node_modules
