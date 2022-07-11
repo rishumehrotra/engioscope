@@ -513,7 +513,7 @@ const RepoAnalysisDetails: React.FC<{ repoStats: SummaryMetrics['groups'][number
       <>
         {', excluded '}
         <b className="text-gray-800 font-semibold">{num(repoStats.excluded)}</b>
-        {` ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
+        {`inactive ${repoStats.excluded === 1 ? 'repo' : 'repos'}`}
       </>
     ) : ''}
   </p>
@@ -613,7 +613,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
       { label: 'Ok', tooltip: 'Percentage of pipelines with sonar configured that pass quality checks' },
       { label: 'Warn', tooltip: 'Percentage of pipelines with sonar configured that have a warning for quality checks' },
       { label: 'Fail', tooltip: 'Percentage of pipelines with sonar configured that fail quality checks' },
-      { label: 'Branch policy met', tooltip: 'Percentage of pipelines conforming to branch policies' }
+      { label: 'Branch policy met', tooltip: 'Percentage of pipelines conforming to branch policies' },
+      { label: 'Healthy branches', tooltip: 'Percentage of healthy branches' }
     ],
     rows: groups.map(group => {
       const { repoStats, pipelineStats } = group;
@@ -702,6 +703,16 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
             value: divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines).getOr(0),
             content: pipelinesMetric(
               divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
+                .map(toPercentage)
+                .getOr('-')
+            )
+          },
+          {
+            value: divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
+              .map(toPercentage)
+              .getOr('-'),
+            content: reposMetric(
+              divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
                 .map(toPercentage)
                 .getOr('-')
             )

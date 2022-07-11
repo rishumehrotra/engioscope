@@ -10,7 +10,7 @@ import {
   addColumnsInArray, combineColumnsInArray, divide, exists
 } from './utils';
 
-export const isDeprecated = (repo: RepoAnalysis) => (
+export const isInactive = (repo: RepoAnalysis) => (
   ((repo.builds?.count || 0) === 0)
     && (repo.commits.count === 0)
 );
@@ -179,4 +179,12 @@ export const hasPipeline = (repos: RepoAnalysis) => (
 
 export const reposWithPipelines = (repos: RepoAnalysis[]) => (
   repos.filter(hasPipeline)
+);
+
+export const healthyBranches = (repos: RepoAnalysis[]) => (
+  repos.reduce<{ count: number; total: number }>((acc, repo) => {
+    acc.count += repo.branches.healthy.count;
+    acc.total += repo.branches.total;
+    return acc;
+  }, { count: 0, total: 0 })
 );

@@ -18,7 +18,7 @@ import { TopLevelTab } from './repo-tabs/Tabs';
 import { useSortParams } from '../hooks/sort-hooks';
 import usePageName from '../hooks/use-page-name';
 import type { Dev } from '../types';
-import { isDeprecated } from '../../shared/repo-utils';
+import { isInactive } from '../../shared/repo-utils';
 import { byNum, desc } from '../../shared/sort-utils';
 
 // eslint-disable-next-line default-param-last
@@ -105,7 +105,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
       subtitle={repoSubtitle(repo.languages, repo.defaultBranch)}
       onCardClick={onCardClick}
       isExpanded={selectedTab !== null || isFirst || false}
-      className={isDeprecated(repo) ? 'opacity-60' : ''}
+      className={isInactive(repo) ? 'opacity-60' : ''}
     >
       {repo.pipelineCount ? (
         <div className="mx-6 flex flex-wrap items-baseline">
@@ -118,7 +118,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
         </div>
       ) : null}
 
-      {isDeprecated(repo) ? (
+      {isInactive(repo) ? (
         <p className="pl-5">
           <span
             className="bg-amber-300 text-xs inline-block py-1 px-2 uppercase rounded-md"

@@ -20,7 +20,7 @@ import {
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed, totalUsageByEnvironment
 } from '../../shared/pipeline-utils';
 import {
-  buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
+  buildPipelines, healthyBranches, isInactive, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
   sonarCountsByWeek, totalBuilds, totalBuildsByWeek, totalCoverage,
   totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek, totalUsingCentralTemplate
 } from '../../shared/repo-utils';
@@ -199,6 +199,7 @@ type Summary = {
     ymlPipelines: { count: number; total: number };
     hasPipelines: number;
     usesCentralTemplate: { count: number; total: number };
+    healthyBranches: { count: number; total: number };
   };
   pipelineStats: {
     pipelines: number;
@@ -350,9 +351,9 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           : allRepos.filter(r => repoNames.includes(r.name));
       };
 
-      const repoStats = () => {
+      const repoStats = (): Summary['repoStats'] => {
         const matches = matchingRepos(repoNames);
-        const matchesExcludingDeprecated = matches.filter(compose(not, isDeprecated));
+        const matchesExcludingInactive = matches.filter(compose(not, isInactive));
 
         const codeQuality = (repos: RepoAnalysis[]) => repos
           .reduce((acc, repo) => ({
@@ -368,31 +369,32 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
             pass: 0, warn: 0, fail: 0, configured: 0, sonarProjects: 0
           });
 
-        const coverage = totalCoverage(matchesExcludingDeprecated);
-        const coverageByWeek = totalCoverageByWeek(matchesExcludingDeprecated);
-        const pipelines = buildPipelines(matchesExcludingDeprecated);
+        const coverage = totalCoverage(matchesExcludingInactive);
+        const coverageByWeek = totalCoverageByWeek(matchesExcludingInactive);
+        const pipelines = buildPipelines(matchesExcludingInactive);
 
         return {
-          repos: length(matchesExcludingDeprecated),
-          excluded: pipe(length, subtract(length(matches)))(matchesExcludingDeprecated),
-          tests: totalTests(matchesExcludingDeprecated),
-          testsByWeek: totalTestsByWeek(matchesExcludingDeprecated),
+          repos: length(matchesExcludingInactive),
+          excluded: pipe(length, subtract(length(matches)))(matchesExcludingInactive),
+          tests: totalTests(matchesExcludingInactive),
+          testsByWeek: totalTestsByWeek(matchesExcludingInactive),
           builds: {
-            total: totalBuilds(matchesExcludingDeprecated),
+            total: totalBuilds(matchesExcludingInactive),
             successful: count<RepoAnalysis>(incrementBy(
               repo => count<UIBuildPipeline>(incrementBy(prop('success')))(repo.builds?.pipelines || [])
-            ))(matchesExcludingDeprecated),
-            byWeek: totalBuildsByWeek(matchesExcludingDeprecated),
-            successfulByWeek: totalSuccessfulBuildsByWeek(matchesExcludingDeprecated)
+            ))(matchesExcludingInactive),
+            byWeek: totalBuildsByWeek(matchesExcludingInactive),
+            successfulByWeek: totalSuccessfulBuildsByWeek(matchesExcludingInactive)
           },
-          codeQuality: codeQuality(matchesExcludingDeprecated),
-          newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingDeprecated),
-          sonarCountsByWeek: sonarCountsByWeek(matchesExcludingDeprecated),
+          codeQuality: codeQuality(matchesExcludingInactive),
+          newSonarSetupsByWeek: newSonarSetupsByWeek(matchesExcludingInactive),
+          sonarCountsByWeek: sonarCountsByWeek(matchesExcludingInactive),
           coverage: divide(coverage.covered, coverage.total).map(toPercentage).getOr('-'),
           coverageByWeek,
           ymlPipelines: { count: pipelines.filter(isYmlPipeline).length, total: pipelines.length },
-          hasPipelines: reposWithPipelines(matchesExcludingDeprecated).length,
-          usesCentralTemplate: totalUsingCentralTemplate(matchesExcludingDeprecated)
+          hasPipelines: reposWithPipelines(matchesExcludingInactive).length,
+          usesCentralTemplate: totalUsingCentralTemplate(matchesExcludingInactive),
+          healthyBranches: healthyBranches(matchesExcludingInactive)
         };
       };
 

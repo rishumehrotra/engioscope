@@ -1,7 +1,7 @@
 import { compose, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
-  buildPipelines, isDeprecated, isYmlPipeline, newSonarSetupsByWeek,
+  buildPipelines, healthyBranches, isInactive, isYmlPipeline, newSonarSetupsByWeek,
   reposWithPipelines, sonarCountsByWeek, totalBuilds, totalBuildsByWeek,
   totalCoverage, totalCoverageByWeek, totalSuccessfulBuildsByWeek,
   totalTests, totalTestsByWeek, totalUsingCentralTemplate
@@ -11,6 +11,7 @@ import type {
 } from '../../shared/types';
 import { divide, toPercentage } from '../../shared/utils';
 import { num, shortDate } from '../helpers/utils';
+import useQueryParam, { asBoolean } from '../hooks/use-query-param';
 import { LabelWithSparkline } from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
@@ -61,11 +62,11 @@ const pipelineLastUsed = (pipeline: UIBuildPipeline) => {
   return `${shortDate(new Date(pipeline.status.since))}, ${new Date(pipeline.status.since).getFullYear()}`;
 };
 
-const notDeprecated = compose(not, isDeprecated);
+const active = compose(not, isInactive);
 const notYmlPipeline = compose(not, isYmlPipeline);
 
 const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
-  const repos = reposBeforeExclusions.filter(notDeprecated);
+  const repos = reposBeforeExclusions.filter(active);
   const allBuildPipelines = buildPipelines(repos);
 
   return {
@@ -89,9 +90,8 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     totalSuccessfulBuildsByWeek: totalSuccessfulBuildsByWeek(repos),
     totalCoverage: totalCoverage(repos),
     totalCoverageByWeek: totalCoverageByWeek(repos),
-    usingCentralTemplate: {
-      ...totalUsingCentralTemplate(repos)
-    }
+    usingCentralTemplate: { ...totalUsingCentralTemplate(repos) },
+    healthBranches: healthyBranches(repos)
   };
 };
 
@@ -101,6 +101,7 @@ type RepoSummaryProps = {
 };
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
+  const [showHealthyBranches] = useQueryParam('branches', asBoolean);
   const stats = useMemo(() => computeStats(repos), [repos]);
 
   return (
@@ -111,7 +112,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           <>
             {'Excluded '}
             <b>{repos.length - stats.repos.length}</b>
-            {' deprecated repositories from analysis'}
+            {' inactive repositories from analysis'}
           </>
         )
     }
@@ -325,6 +326,15 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           } pipeliines are using the central template`
         }]}
       />
+      {showHealthyBranches && (
+        <ProjectStat
+          topStats={[{
+            title: 'Healthy branches',
+            value: divide(stats.healthBranches.count, stats.healthBranches.total)
+              .map(toPercentage).getOr('-')
+          }]}
+        />
+      )}
     </ProjectStats>
   );
 };

@@ -7,6 +7,7 @@ import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, exists, toPercentage } from '../../../shared/utils';
 import { prettyMS } from '../../helpers/utils';
+import useQueryParam, { asBoolean } from '../../hooks/use-query-param';
 import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
@@ -388,6 +389,7 @@ const HealthMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   queryPeriodDays: number;
 }> = ({ group, queryPeriodDays }) => {
+  const [showHealthyBranches] = useQueryParam('branches', asBoolean);
   const { repoStats, pipelineStats } = group;
   const { codeQuality } = repoStats;
   const [filterKey] = allExceptExpectedKeys(group);
@@ -411,6 +413,7 @@ const HealthMetrics: React.FC<{
               <>
                 {', excluded '}
                 <b>{repoStats.excluded}</b>
+                {' inactive'}
                 {repoStats.excluded === 1 ? ' repo' : ' repos'}
               </>
             )
@@ -586,20 +589,40 @@ const HealthMetrics: React.FC<{
                 </div>
               </div>
             </div>
-            <div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Percentage of pipelines conforming to branch policies"
-              >
-                Branch policy met
+            <div className="grid grid-rows-2 gap-10">
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Percentage of pipelines conforming to branch policies"
+                >
+                  Branch policy met
+                </div>
+                <div className="font-semibold text-xl">
+                  {reposMetric(
+                    divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
+                      .map(toPercentage)
+                      .getOr('-')
+                  )}
+                </div>
               </div>
-              <div className="font-semibold text-xl">
-                {pipelinesMetric(
-                  divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
-                    .map(toPercentage)
-                    .getOr('-')
-                )}
-              </div>
+
+              {showHealthyBranches && (
+                <div>
+                  <div
+                    className="text-xs font-semibold"
+                    data-tip="Percentage of healthy branches"
+                  >
+                    Healthy branches
+                  </div>
+                  <div className="font-semibold text-xl">
+                    {pipelinesMetric(
+                      divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
+                        .map(toPercentage)
+                        .getOr('-')
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </Card>
