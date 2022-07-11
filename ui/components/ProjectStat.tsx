@@ -109,7 +109,7 @@ const ProjectStat: React.FC<ProjectStatProps> = ({
           style={{ top: '90px' }}
           className={`flex absolute ${
             (onClick.direction || 'left') === 'left' ? 'left-1' : 'right-0'
-          } z-10 bg-white px-5 py-5 rounded-lg mb-3 shadow-lg border border-gray-200`}
+          } z-20 bg-white px-5 py-5 rounded-lg mb-3 shadow-lg border border-gray-200`}
         >
           {onClick.contents({ topStats, childStats })}
         </div>
