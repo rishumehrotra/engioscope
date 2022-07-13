@@ -21,8 +21,6 @@ type ProcessedSummary = {
   wipTrend: number[];
   wipCount: number;
   wipAge: number;
-  wipIncrease: number;
-  wipIncreaseByWeek: number[];
   leakage: number;
   leakageByWeek: number[];
 };
@@ -40,8 +38,6 @@ export const processSummary = (summary: SummaryGroups[string]): ProcessedSummary
   wipTrend: summary.wipTrend,
   wipCount: summary.wipCount,
   wipAge: sum(summary.wipAge) / summary.wipCount,
-  wipIncrease: summary.wipIncrease,
-  wipIncreaseByWeek: summary.wipIncreaseByWeek,
   leakage: summary.leakage,
   leakageByWeek: summary.leakageByWeek
 });
@@ -59,8 +55,6 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     flowEfficiencyByWeek: { total: number; wcTime: number }[];
     wipTrend: number[];
     wipCount: number;
-    wipIncrease: number;
-    wipIncreaseByWeek: number[];
     wipAge: number[];
     leakage: number;
     leakageByWeek: number[];
@@ -113,14 +107,6 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
       acc.wipTrend
     ),
     wipCount: acc.wipCount + group.wipCount,
-    wipIncreaseByWeek: group.wipIncreaseByWeek.reduce<number[]>(
-      (acc, wipAdded, index) => {
-        acc[index] = wipAdded + (acc[index] || 0);
-        return acc;
-      },
-      acc.wipIncreaseByWeek
-    ),
-    wipIncrease: acc.wipIncrease + group.wipIncrease,
     wipAge: [...acc.wipAge, ...group.wipAge],
     count: acc.count + group.count,
     leakage: acc.leakage + group.leakage,
@@ -143,8 +129,6 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     flowEfficiencyByWeek: [],
     wipTrend: [],
     wipCount: 0,
-    wipIncreaseByWeek: [],
-    wipIncrease: 0,
     wipAge: [],
     leakage: 0,
     leakageByWeek: []

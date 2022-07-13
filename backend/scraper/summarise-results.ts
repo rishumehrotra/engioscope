@@ -5,7 +5,9 @@ import {
 import type {
   Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
 } from '../../shared/types';
-import { isAfter, queryPeriodDays, weeks } from '../utils';
+import {
+  isAfter, queryPeriodDays, weekLimits, weeks
+} from '../utils';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
 import type { ProjectAnalysis } from './types';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils';
@@ -169,8 +171,6 @@ type Summary = {
     flowEfficiencyByWeek: { total: number; wcTime: number }[];
     wipTrend: number[];
     wipCount: number;
-    wipIncrease: number;
-    wipIncreaseByWeek: number[];
     wipAge: number[];
     leakage: number;
     leakageByWeek: number[];
@@ -253,9 +253,14 @@ const analyseWorkItems = (
     };
   })();
 
-  const isWIPIn = isWIPInTimeRange(
-    workItemTimes,
-    projectConfig?.workitems.ignoreForWIP || []
+  const isWIPIn = ([, weekEnd]: readonly [Date, Date]) => (
+    isWIPInTimeRange(
+      workItemTimes,
+      projectConfig?.workitems.ignoreForWIP || []
+    )((d, type) => {
+      if (type === 'start') return d <= weekEnd;
+      return d < weekEnd;
+    })
   );
 
   return pipe(
@@ -299,13 +304,9 @@ const analyseWorkItems = (
           ))
         ),
         wipTrend: (wis: UIWorkItem[]) => (
-          weeks.map(week => wis.filter(isWIPIn(week)).length)
+          weekLimits.map(limit => wis.filter(isWIPIn(limit)).length)
         ),
         wipCount: pipe(filter(wipWorkItems), length),
-        wipIncrease: pipe(filter(isWIPIn(isInQueryPeriod)), length),
-        wipIncreaseByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(isWIPIn).map(filter => wis.filter(filter).length)
-        ),
         wipAge: pipe(filter(wipWorkItems), map(computeTimeDifferenceBetween('start'))),
         leakage: pipe(filter(leakage(isInQueryPeriod)), length),
         leakageByWeek: (wis: UIWorkItem[]) => (

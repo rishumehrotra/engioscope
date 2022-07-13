@@ -95,7 +95,7 @@ export const wipTrendSparkline: SparklinePropsWithoutData<number> = {
   toValue: identity,
   combineValues: x => last(x) || 0,
   valueToLabel: num,
-  tooltipLabel: 'WIP trend'
+  tooltipLabel: 'WIP'
 };
 
 export const testAutomationSparkline: SparklinePropsWithoutData<number> = {

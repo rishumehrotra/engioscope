@@ -18,7 +18,7 @@ import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import {
   buildRunsSparkline, changeLeadTimeSparkline, coverageSparkline,
   cycleTimeSparkline, flowEfficiencySparkline, newItemsSparkline,
-  newSonarSetupsSparkline, testAutomationSparkline, velocitySparkline
+  newSonarSetupsSparkline, testAutomationSparkline, velocitySparkline, wipTrendSparkline
 } from '../sparkline-props';
 import type { SummaryGroupKey } from './utils';
 import {
@@ -169,7 +169,7 @@ const FlowMetricsByWorkItemType: React.FC<{
       { label: 'Cycle time', tooltip: `Average time taken to complete a work item over the last ${queryPeriodDays} days` },
       { label: 'CLT', tooltip: 'Average time taken to take a work item to production after development is complete' },
       { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
-      { label: 'WIP increase', tooltip: `Increase in the number of WIP items over the last ${queryPeriodDays} days` },
+      { label: 'WIP trend', tooltip: `WIP items over the last ${queryPeriodDays} days` },
       { label: 'WIP age', tooltip: 'Average age of work items in progress' }
     ],
     rows: groups
@@ -182,7 +182,7 @@ const FlowMetricsByWorkItemType: React.FC<{
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { witId, wit } = workItemTypeByName(workItemTypeName)(workItemTypes)!;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const summary = flattenSummaryGroups(group.workItems[witId]!);
+        const workItems = flattenSummaryGroups(group.workItems[witId]!);
         const [filterKey] = allExceptExpectedKeys(group);
         const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
         const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
@@ -197,32 +197,32 @@ const FlowMetricsByWorkItemType: React.FC<{
           values: [
             { value: group.groupName, content: group.groupName },
             {
-              value: summary.leakage,
+              value: workItems.leakage,
               content: renderMetric(
                 <ExtendedLabelWithSparkline
-                  data={summary.leakageByWeek}
+                  data={workItems.leakageByWeek}
                   {...newItemsSparkline}
                 />,
                 '#new-work-items'
               )
             },
             {
-              value: summary.velocity,
+              value: workItems.velocity,
               content: renderMetric(
                 <ExtendedLabelWithSparkline
-                  data={summary.velocityByWeek}
+                  data={workItems.velocityByWeek}
                   {...velocitySparkline}
                 />,
                 '#velocity'
               )
             },
             {
-              value: summary.cycleTime,
+              value: workItems.cycleTime,
               content: renderMetric(
-                summary.cycleTime
+                workItems.cycleTime
                   ? (
                     <ExtendedLabelWithSparkline
-                      data={summary.cycleTimeByWeek}
+                      data={workItems.cycleTimeByWeek}
                       {...cycleTimeSparkline}
                     />
                   ) : '-',
@@ -230,11 +230,11 @@ const FlowMetricsByWorkItemType: React.FC<{
               )
             },
             {
-              value: summary.changeLeadTime,
-              content: renderMetric(summary.changeLeadTime
+              value: workItems.changeLeadTime,
+              content: renderMetric(workItems.changeLeadTime
                 ? (
                   <ExtendedLabelWithSparkline
-                    data={summary.changeLeadTimeByWeek}
+                    data={workItems.changeLeadTimeByWeek}
                     {...changeLeadTimeSparkline}
                   />
                 )
@@ -242,12 +242,12 @@ const FlowMetricsByWorkItemType: React.FC<{
               '#change-lead-time')
             },
             {
-              value: divide(summary.flowEfficiency.wcTime, summary.flowEfficiency.total).getOr(0),
+              value: divide(workItems.flowEfficiency.wcTime, workItems.flowEfficiency.total).getOr(0),
               content: renderMetric(
-                summary.flowEfficiency
+                workItems.flowEfficiency
                   ? (
                     <ExtendedLabelWithSparkline
-                      data={summary.flowEfficiencyByWeek}
+                      data={workItems.flowEfficiencyByWeek}
                       {...flowEfficiencySparkline}
                     />
                   )
@@ -256,23 +256,13 @@ const FlowMetricsByWorkItemType: React.FC<{
               )
             },
             {
-              value: summary.wipCount,
+              value: workItems.wipCount,
               content: renderMetric(
-                summary.wipCount
+                workItems.wipCount
                   ? (
-                    <LabelWithSparkline
-                      label={(
-                        <span className="inline-block pr-1">
-                          {summary.wipIncrease}
-                          <span className="text-lg text-gray-500 inline-block ml-2">
-                            <span className="font-normal text-sm">of</span>
-                            {' '}
-                            {summary.wipCount}
-                          </span>
-                        </span>
-                      )}
-                      data={summary.wipIncreaseByWeek}
-                      lineColor={decreaseIsBetter(summary.wipIncreaseByWeek)}
+                    <ExtendedLabelWithSparkline
+                      data={workItems.wipTrend}
+                      {...wipTrendSparkline}
                     />
                   )
                   : '0',
@@ -280,9 +270,9 @@ const FlowMetricsByWorkItemType: React.FC<{
               )
             },
             {
-              value: summary.wipAge,
+              value: workItems.wipAge,
               content: renderMetric(
-                summary.wipAge ? prettyMS(summary.wipAge) : '-',
+                workItems.wipAge ? prettyMS(workItems.wipAge) : '-',
                 '#age-of-work-in-progress-items'
               )
             }
@@ -359,7 +349,7 @@ const QualityMetrics: React.FC<{
                 { label: 'Bugs cycle time', tooltip: 'Average time taken to close a bug' },
                 { label: 'Bugs CLT', tooltip: 'Average time taken to close a bug once development is complete' },
                 { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
-                { label: 'WIP increase', tooltip: `Increase in the number of WIP bugs over the last ${queryPeriodDays} days` },
+                { label: 'WIP trend', tooltip: `WIP bugs over the last ${queryPeriodDays} days` },
                 { label: 'WIP age', tooltip: 'Average age of work-in-progress bugs' }
               ],
               rows: groups
@@ -458,19 +448,9 @@ const QualityMetrics: React.FC<{
                         content: renderBugMetric(
                           bugsForEnv
                             ? (
-                              <LabelWithSparkline
-                                label={(
-                                  <span className="inline-block pr-1">
-                                    {bugsForEnv.wipIncrease}
-                                    <span className="text-lg text-gray-500 inline-block ml-2">
-                                      <span className="font-normal text-sm">of</span>
-                                      {' '}
-                                      {bugsForEnv.wipCount}
-                                    </span>
-                                  </span>
-                                )}
-                                data={bugsForEnv.wipIncreaseByWeek}
-                                lineColor={decreaseIsBetter(bugsForEnv.wipIncreaseByWeek)}
+                              <ExtendedLabelWithSparkline
+                                data={bugsForEnv.wipTrend}
+                                {...wipTrendSparkline}
                               />
                             )
                             : '-',

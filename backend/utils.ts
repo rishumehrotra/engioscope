@@ -55,10 +55,18 @@ export const chunkArray = <T>(array: T[], chunkSize: number) => (
 
 export const unique = <T>(xs: T[]) => [...new Set(xs)];
 
-export const weeks = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-  .map(weekIndex => allPass([
-    isAfter(`${weekIndex * 7} days`),
-    compose(not, isAfter(`${(weekIndex - 1) * 7} days`))
+const weekNumbers = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+export const weekLimits = weekNumbers
+  .map(weekNumber => [
+    pastDate(`${weekNumber * 7} days`),
+    pastDate(`${(weekNumber - 1) * 7} days`)
+  ] as const);
+
+export const weeks = weekNumbers
+  .map(weekNumber => allPass([
+    isAfter(`${weekNumber * 7} days`),
+    compose(not, isAfter(`${(weekNumber - 1) * 7} days`))
   ]));
 
 type SettleSeriesType<T> = {

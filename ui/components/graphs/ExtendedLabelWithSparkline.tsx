@@ -17,7 +17,7 @@ const trendDirection = (currentValue: number, previousValue: number) => {
 };
 
 const tooltip = (label: string, thisMonthValue: string, previousMonthStats: PreviousMonthStats) => `
-  <strong>${thisMonthValue}</strong> ${label} in the last month${
+  <strong>${thisMonthValue}</strong> ${label} ${label === 'WIP' ? 'today' : 'in the last month'}${
   previousMonthStats && previousMonthStats.trendDirection !== 'same'
     ? `<br />This is a <strong>${
       previousMonthStats?.changePercentage.replace('-', '')
@@ -84,7 +84,9 @@ const LabelWithSparkline2 = <T extends {}>({
               ? ' '
               : '▼'}
           {' '}
-          {valueToLabel(Math.abs(thisMonthValue - previousMonthStats.value))}
+          {thisMonthValue - previousMonthStats.value === 0
+            ? '-'
+            : valueToLabel(Math.abs(thisMonthValue - previousMonthStats.value))}
           {' '}
           {parseInt(previousMonthStats.changePercentage, 10) === 0
             ? null

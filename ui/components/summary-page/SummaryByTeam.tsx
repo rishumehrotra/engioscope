@@ -15,7 +15,7 @@ import {
   buildRunsSparkline,
   changeLeadTimeSparkline, coverageSparkline, cycleTimeSparkline,
   flowEfficiencySparkline, newBugsSparkline, newItemsSparkline, newSonarSetupsSparkline,
-  testAutomationSparkline, velocitySparkline
+  testAutomationSparkline, velocitySparkline, wipTrendSparkline
 } from '../sparkline-props';
 import UsageByEnv from '../UsageByEnv';
 import type { SummaryGroupKey, SummaryItemProps } from './utils';
@@ -180,19 +180,9 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl py-3">
                   {renderMetric(
-                    <LabelWithSparkline
-                      label={(
-                        <>
-                          {workItemsSummary.wipIncrease}
-                          <span className="text-lg text-gray-500 inline-block ml-2">
-                            <span className="font-normal text-sm">of</span>
-                            {' '}
-                            {workItemsSummary.wipCount}
-                          </span>
-                        </>
-                      )}
-                      data={workItemsSummary.wipIncreaseByWeek}
-                      lineColor={decreaseIsBetter(workItemsSummary.wipIncreaseByWeek)}
+                    <ExtendedLabelWithSparkline
+                      data={workItemsSummary.wipTrend}
+                      {...wipTrendSparkline}
                     />,
                     '#work-in-progress-trend'
                   )}
@@ -268,9 +258,9 @@ const QualityMetrics: React.FC<{
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Number of work-in-progress bugs"
+              data-tip={`WIP items over the last ${queryPeriodDays} days`}
             >
-              WIP increase
+              WIP trend
             </th>
             <th
               className="text-xs font-semibold w-1/12"
@@ -351,19 +341,9 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
-                      <LabelWithSparkline
-                        label={(
-                          <>
-                            {bugInfo.wipIncrease}
-                            <span className="text-lg text-gray-500 inline-block ml-2">
-                              <span className="font-normal text-sm">of</span>
-                              {' '}
-                              {bugInfo.wipCount}
-                            </span>
-                          </>
-                        )}
-                        data={bugInfo.wipIncreaseByWeek}
-                        lineColor={decreaseIsBetter(bugInfo.wipIncreaseByWeek)}
+                      <ExtendedLabelWithSparkline
+                        data={bugInfo.wipTrend}
+                        {...wipTrendSparkline}
                       />,
                       '#work-in-progress-trend'
                     )}
