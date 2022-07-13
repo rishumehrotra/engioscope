@@ -6,7 +6,7 @@ import React from 'react';
 import type { SummaryMetrics, UIWorkItemType } from '../../../shared/types';
 import { ExternalLink } from '../common/Icons';
 
-type SummaryGroups = SummaryMetrics['groups'][number]['summary'][string];
+type SummaryGroups = SummaryMetrics['groups'][number]['workItems'][string];
 
 type ProcessedSummary = {
   count: number;
@@ -18,6 +18,7 @@ type ProcessedSummary = {
   changeLeadTimeByWeek: number[][];
   flowEfficiency: { total: number; wcTime: number };
   flowEfficiencyByWeek: { total: number; wcTime: number }[];
+  wipTrend: number[];
   wipCount: number;
   wipAge: number;
   wipIncrease: number;
@@ -36,6 +37,7 @@ export const processSummary = (summary: SummaryGroups[string]): ProcessedSummary
   changeLeadTimeByWeek: summary.changeLeadTimeByWeek,
   flowEfficiency: summary.flowEfficiency,
   flowEfficiencyByWeek: summary.flowEfficiencyByWeek,
+  wipTrend: summary.wipTrend,
   wipCount: summary.wipCount,
   wipAge: sum(summary.wipAge) / summary.wipCount,
   wipIncrease: summary.wipIncrease,
@@ -55,6 +57,7 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     changeLeadTimeByWeek: number[][];
     flowEfficiency: { total: number; wcTime: number };
     flowEfficiencyByWeek: { total: number; wcTime: number }[];
+    wipTrend: number[];
     wipCount: number;
     wipIncrease: number;
     wipIncreaseByWeek: number[];
@@ -102,6 +105,13 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
       },
       acc.flowEfficiencyByWeek
     ),
+    wipTrend: group.wipTrend.reduce<number[]>(
+      (acc, item, index) => {
+        acc[index] = (acc[index] || 0) + item;
+        return acc;
+      },
+      acc.wipTrend
+    ),
     wipCount: acc.wipCount + group.wipCount,
     wipIncreaseByWeek: group.wipIncreaseByWeek.reduce<number[]>(
       (acc, wipAdded, index) => {
@@ -131,6 +141,7 @@ export const flattenSummaryGroups = (summaryGroups: SummaryGroups) => {
     changeLeadTimeByWeek: [],
     flowEfficiency: { total: 0, wcTime: 0 },
     flowEfficiencyByWeek: [],
+    wipTrend: [],
     wipCount: 0,
     wipIncreaseByWeek: [],
     wipIncrease: 0,
@@ -175,7 +186,7 @@ export const renderGroupItem = (link: string) => (label: ReactNode, anchor = '')
 export type SummaryGroupKey = keyof SummaryItemProps['group'];
 
 export const allExceptExpectedKeys = (group: SummaryItemProps['group']) => {
-  const expectedKeys: SummaryGroupKey[] = ['collection', 'groupName', 'portfolioProject', 'project', 'summary'];
+  const expectedKeys: SummaryGroupKey[] = ['collection', 'groupName', 'portfolioProject', 'project', 'workItems'];
   return Object.keys(group).filter(k => !expectedKeys.includes(k as SummaryGroupKey));
 };
 

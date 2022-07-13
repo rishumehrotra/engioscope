@@ -157,7 +157,7 @@ const computeTimeDifference = (workItemTimes: WorkItemTimesGetter) => (
 
 type Summary = {
   groupName: string;
-  summary: Record<string, Record<string, {
+  workItems: Record<string, Record<string, {
     count: number;
     velocity: number;
     velocityByWeek: number[];
@@ -167,6 +167,7 @@ type Summary = {
     changeLeadTimeByWeek: number[][];
     flowEfficiency: { total: number; wcTime: number };
     flowEfficiencyByWeek: { total: number; wcTime: number }[];
+    wipTrend: number[];
     wipCount: number;
     wipIncrease: number;
     wipIncreaseByWeek: number[];
@@ -252,6 +253,11 @@ const analyseWorkItems = (
     };
   })();
 
+  const isWIPIn = isWIPInTimeRange(
+    workItemTimes,
+    projectConfig?.workitems.ignoreForWIP || []
+  );
+
   return pipe(
     filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
     organiseWorkItemsIntoGroups,
@@ -259,7 +265,7 @@ const analyseWorkItems = (
       applySpec({
         count: length,
         velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
-        velocityByWeek: wis => (
+        velocityByWeek: (wis: UIWorkItem[]) => (
           weeks.map(
             week => wis.filter(wasWorkItemCompletedIn(week)).length
           )
@@ -268,7 +274,7 @@ const analyseWorkItems = (
           filter(wasWorkItemCompletedInQueryPeriod),
           map(computeTimeDifferenceBetween('start', 'end'))
         ),
-        cycleTimeByWeek: wis => (
+        cycleTimeByWeek: (wis: UIWorkItem[]) => (
           weeks.map(week => (
             wis
               .filter(wasWorkItemCompletedIn(week))
@@ -279,7 +285,7 @@ const analyseWorkItems = (
           filter(wasWorkItemCompletedInQueryPeriod),
           map(computeTimeDifferenceBetween('devComplete', 'end'))
         ),
-        changeLeadTimeByWeek: wis => (
+        changeLeadTimeByWeek: (wis: UIWorkItem[]) => (
           weeks.map(week => (
             wis
               .filter(wasWorkItemCompletedIn(week))
@@ -287,27 +293,22 @@ const analyseWorkItems = (
           ))
         ),
         flowEfficiency: pipe(filter(wasWorkItemCompletedInQueryPeriod), flowEfficiency),
-        flowEfficiencyByWeek: wis => (
+        flowEfficiencyByWeek: (wis: UIWorkItem[]) => (
           weeks.map(week => flowEfficiency(
             wis.filter(wasWorkItemCompletedIn(week))
           ))
         ),
-        wipCount: pipe(filter(wipWorkItems), length),
-        wipIncrease: pipe(
-          filter(isWIPInTimeRange(
-            workItemTimes,
-            projectConfig?.workitems.ignoreForWIP || []
-          )(isInQueryPeriod)),
-          length
+        wipTrend: (wis: UIWorkItem[]) => (
+          weeks.map(week => wis.filter(isWIPIn(week)).length)
         ),
-        wipIncreaseByWeek: wis => (
-          weeks
-            .map(isWIPInTimeRange(workItemTimes, projectConfig?.workitems.ignoreForWIP || []))
-            .map(filter => wis.filter(filter).length)
+        wipCount: pipe(filter(wipWorkItems), length),
+        wipIncrease: pipe(filter(isWIPIn(isInQueryPeriod)), length),
+        wipIncreaseByWeek: (wis: UIWorkItem[]) => (
+          weeks.map(isWIPIn).map(filter => wis.filter(filter).length)
         ),
         wipAge: pipe(filter(wipWorkItems), map(computeTimeDifferenceBetween('start'))),
         leakage: pipe(filter(leakage(isInQueryPeriod)), length),
-        leakageByWeek: wis => (
+        leakageByWeek: (wis: UIWorkItem[]) => (
           weeks.map(week => wis.filter(leakage(week)).length)
         )
       })
@@ -398,7 +399,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         };
       };
 
-      const pipelineStats = () => {
+      const pipelineStats = (): Summary['pipelineStats'] => {
         const matchingPipelines = (resultsForThisProject?.analysisResult.releaseAnalysis.pipelines || [])
           .filter(
             repoNames.length === 0 ? T : isPipelineInGroup(groupType(group)[1], repoNames)
@@ -424,7 +425,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       return {
         ...group,
         groupName: groupType(group)[1],
-        summary: analyseWorkItems(mergedResults, isAfter(`${queryPeriodDays(config)} days`), projectConfig),
+        workItems: analyseWorkItems(mergedResults, isAfter(`${queryPeriodDays(config)} days`), projectConfig),
         repoStats: repoStats(),
         pipelineStats: pipelineStats(),
         workItemTypes: mergedResults.workItemTypes,

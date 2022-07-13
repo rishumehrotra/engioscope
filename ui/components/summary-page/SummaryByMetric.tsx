@@ -175,14 +175,14 @@ const FlowMetricsByWorkItemType: React.FC<{
     rows: groups
       .filter(group => {
         const wit = workItemTypeByName(workItemTypeName)(workItemTypes);
-        return wit ? group.summary[wit.witId] : null;
+        return wit ? group.workItems[wit.witId] : null;
       })
       .map(group => {
         // Ok to non-null-assert since we're covered by the filter clause above
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { witId, wit } = workItemTypeByName(workItemTypeName)(workItemTypes)!;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const summary = flattenSummaryGroups(group.summary[witId]!);
+        const summary = flattenSummaryGroups(group.workItems[witId]!);
         const [filterKey] = allExceptExpectedKeys(group);
         const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
         const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
@@ -320,7 +320,7 @@ const QualityMetrics: React.FC<{
     const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
     if (!bugsDefinitionId) return null;
 
-    const allEnvironments = [...new Set(groups.map(group => Object.keys(group.summary[bugsDefinitionId] || {})).flat())]
+    const allEnvironments = [...new Set(groups.map(group => Object.keys(group.workItems[bugsDefinitionId] || {})).flat())]
       .sort((a, b) => {
         if (!groups[0].environments) return 0;
         return groups[0].environments.indexOf(a) - groups[0].environments.indexOf(b);
@@ -364,7 +364,7 @@ const QualityMetrics: React.FC<{
               ],
               rows: groups
                 .map(group => {
-                  const bugs = group.summary[bugsDefinitionId] || {};
+                  const bugs = group.workItems[bugsDefinitionId] || {};
                   const summaryBugsForEnv = (
                     equivalientEnvironments.includes(env)
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

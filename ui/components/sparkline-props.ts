@@ -90,6 +90,14 @@ export const flowEfficiencySparkline: SparklinePropsWithoutData<{ wcTime: number
   tooltipLabel: 'flow efficiency'
 };
 
+export const wipTrendSparkline: SparklinePropsWithoutData<number> = {
+  colorBy: decreaseIsBetterStrippingZerosAndUndefineds,
+  toValue: identity,
+  combineValues: x => last(x) || 0,
+  valueToLabel: num,
+  tooltipLabel: 'WIP trend'
+};
+
 export const testAutomationSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
   combineValues: x => last(x) || 0,

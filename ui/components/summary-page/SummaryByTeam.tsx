@@ -100,9 +100,9 @@ const FlowMetrics: React.FC<{
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip={`Increase in the number of WIP items over the last ${queryPeriodDays} days`}
+              data-tip={`WIP items over the last ${queryPeriodDays} days`}
             >
-              WIP increase
+              WIP trend
             </th>
             <th
               className="text-xs font-semibold w-1/12"
@@ -117,7 +117,7 @@ const FlowMetrics: React.FC<{
             const definitionId = getMetricCategoryDefinitionId(workItemTypes, typeName);
             if (!definitionId) return null;
 
-            const workItems = group.summary[definitionId];
+            const workItems = group.workItems[definitionId];
             const workItemsSummary = flattenSummaryGroups(workItems || {});
             const renderMetric = renderGroupItem(typeName === 'Feature' ? portfolioProjectLink : projectLink);
 
@@ -220,7 +220,7 @@ const QualityMetrics: React.FC<{
   queryPeriodDays: number;
 }> = ({ group, workItemTypes, queryPeriodDays }) => {
   const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
-  const bugs = bugsDefinitionId ? group.summary[bugsDefinitionId] : null;
+  const bugs = bugsDefinitionId ? group.workItems[bugsDefinitionId] : null;
   const [filterKey] = allExceptExpectedKeys(group);
   const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;

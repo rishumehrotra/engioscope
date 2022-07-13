@@ -27,8 +27,8 @@ const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => {
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayStart.getDate() + 1);
 
-  return accessors.isWIPInTimeRange((d, limit) => {
-    if (limit === 'start') return d <= dayEnd; // started on or before today
+  return accessors.isWIPInTimeRange((d, type) => {
+    if (type === 'start') return d <= dayEnd; // started on or before today
     return d < dayEnd; // ended before today day end
   });
 };
