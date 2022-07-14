@@ -1,10 +1,10 @@
 import {
-  allPass, anyPass, complement, filter, pipe
+  allPass, anyPass, complement, compose, filter, not, pipe
 } from 'rambda';
 import type { UIBranches } from '../../../shared/types';
 import type { GitBranchStats } from '../types-azure';
 import {
-  byDate, byNum, desc
+  asc, byDate, byNum, desc
 } from '../../../shared/sort-utils';
 import { oneFortnightInMs } from '../../../shared/utils';
 
@@ -33,13 +33,36 @@ const isBranchHealthy = (defaultBranch?: string) => anyPass([
   allPass([isActive, isNotTooAhead, isNotTooBehind])
 ]);
 
+const isDeleteCandidate = (defaultBranch?: string) => allPass([
+  compose(not, isBranchHealthy(defaultBranch)),
+  compose(not, isActive),
+  compose(not, isAheadBy(0))
+]);
+
+const isAbandoned = (defaultBranch?: string) => allPass([
+  compose(not, isBranchHealthy(defaultBranch)),
+  compose(not, isActive),
+  isAheadBy(0),
+  isBehindBy(0)
+]);
+
+const isUnhealthy = (defaultBranch?: string) => complement(anyPass([
+  isBranchHealthy(defaultBranch),
+  isDeleteCandidate(defaultBranch),
+  isAbandoned(defaultBranch)
+]));
+
 export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranchStats[]): UIBranches => {
   const allBranches = branches.sort(desc(byCommitDate));
 
   const healthy = filter(isBranchHealthy(defaultBranch));
-  const unhealthy = filter(complement(isBranchHealthy(defaultBranch)));
+  const deleteCandidates = filter(isDeleteCandidate(defaultBranch));
+  const abandoned = filter(isAbandoned(defaultBranch));
+  const unhealthy = filter(isUnhealthy(defaultBranch));
 
   const healthyBranches = healthy(branches).sort(desc(byCommitDate));
+  const deleteCandidateBranches = deleteCandidates(branches).sort(asc(byCommitDate));
+  const abandonedBranches = abandoned(branches).sort(asc(byCommitDate));
   const unhealthyBranches = unhealthy(branches).sort(desc(byNum(b => b.aheadCount + b.behindCount)));
 
   const getBranchWithLink = (linkType: 'history' | 'contents') => (
@@ -59,6 +82,16 @@ export default (repoUrl: string, defaultBranch?: string) => (branches: GitBranch
       count: healthyBranches.length,
       limit: branchPageLimit,
       branches: pageLimitBranches(healthyBranches).map(getBranchWithLink('contents'))
+    },
+    deleteCandidates: {
+      count: deleteCandidateBranches.length,
+      limit: branchPageLimit,
+      branches: pageLimitBranches(deleteCandidateBranches).map(getBranchWithLink('history'))
+    },
+    abandoned: {
+      count: abandonedBranches.length,
+      limit: branchPageLimit,
+      branches: pageLimitBranches(abandonedBranches).map(getBranchWithLink('history'))
     },
     unhealthy: {
       count: unhealthyBranches.length,

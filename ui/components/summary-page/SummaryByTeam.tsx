@@ -7,7 +7,6 @@ import { asc, byString } from '../../../shared/sort-utils';
 import type { SummaryMetrics } from '../../../shared/types';
 import { divide, exists, toPercentage } from '../../../shared/utils';
 import { prettyMS } from '../../helpers/utils';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param';
 import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline';
 import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
@@ -369,7 +368,6 @@ const HealthMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   queryPeriodDays: number;
 }> = ({ group, queryPeriodDays }) => {
-  const [showHealthyBranches] = useQueryParam('branches', asBoolean);
   const { repoStats, pipelineStats } = group;
   const { codeQuality } = repoStats;
   const [filterKey] = allExceptExpectedKeys(group);
@@ -586,23 +584,21 @@ const HealthMetrics: React.FC<{
                 </div>
               </div>
 
-              {showHealthyBranches && (
-                <div>
-                  <div
-                    className="text-xs font-semibold"
-                    data-tip="Percentage of healthy branches"
-                  >
-                    Healthy branches
-                  </div>
-                  <div className="font-semibold text-xl">
-                    {pipelinesMetric(
-                      divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
-                        .map(toPercentage)
-                        .getOr('-')
-                    )}
-                  </div>
+              <div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip="Percentage of healthy branches"
+                >
+                  Healthy branches
                 </div>
-              )}
+                <div className="font-semibold text-xl">
+                  {reposMetric(
+                    divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
+                      .map(toPercentage)
+                      .getOr('-')
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </Card>

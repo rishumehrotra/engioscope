@@ -11,7 +11,6 @@ import type {
 } from '../../shared/types';
 import { divide, toPercentage } from '../../shared/utils';
 import { num, shortDate } from '../helpers/utils';
-import useQueryParam, { asBoolean } from '../hooks/use-query-param';
 import { LabelWithSparkline } from './graphs/Sparkline';
 import ProjectStat from './ProjectStat';
 import ProjectStats from './ProjectStats';
@@ -101,7 +100,6 @@ type RepoSummaryProps = {
 };
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
-  const [showHealthyBranches] = useQueryParam('branches', asBoolean);
   const stats = useMemo(() => computeStats(repos), [repos]);
 
   return (
@@ -326,15 +324,13 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           } pipeliines are using the central template`
         }]}
       />
-      {showHealthyBranches && (
-        <ProjectStat
-          topStats={[{
-            title: 'Healthy branches',
-            value: divide(stats.healthBranches.count, stats.healthBranches.total)
-              .map(toPercentage).getOr('-')
-          }]}
-        />
-      )}
+      <ProjectStat
+        topStats={[{
+          title: 'Healthy branches',
+          value: divide(stats.healthBranches.count, stats.healthBranches.total)
+            .map(toPercentage).getOr('-')
+        }]}
+      />
     </ProjectStats>
   );
 };

@@ -37,24 +37,14 @@ const Branches: React.FC<{
           of the following conditions are met.
           <ul className="list-disc px-4">
             <li>
-              It
-              {' '}
-              <strong>has</strong>
-              {' '}
-              a commit in the last 15 days.
+              It has a commit in the last 15 days.
             </li>
             <li>
-              It is
-              {' '}
-              ahead of the
+              It is ahead of the
               {' '}
               <code>{defaultBranch}</code>
               {' '}
-              branch by
-              {' '}
-              <strong>no more</strong>
-              {' '}
-              than 10 commits
+              branch by no more than 10 commits.
             </li>
             <li>
               It is
@@ -63,11 +53,7 @@ const Branches: React.FC<{
               {' '}
               <code>{defaultBranch}</code>
               {' '}
-              branch by
-              {' '}
-              <strong>no more</strong>
-              {' '}
-              than 10 commits
+              branch by no more than 10 commits.
             </li>
           </ul>
           <div className="mt-1">
@@ -84,6 +70,76 @@ const Branches: React.FC<{
   }, {
     label: (
       <>
+        <span className="w-2 h-2 bg-gray-500 inline-block mr-1.5 rounded-full" />
+        Delete candidates
+      </>
+    ),
+    key: 'delete-candidates',
+    count: num(branchStats.deleteCandidates.count),
+    // eslint-disable-next-line react/no-unstable-nested-components
+    component: () => (
+      <>
+        <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
+          A branch is considered to be a delete candidate if
+          {' '}
+          <strong>all</strong>
+          {' '}
+          of the following conditions are met.
+          <ul className="list-disc px-4">
+            <li>
+              It is not already marked as a healthy branch.
+            </li>
+            <li>
+              All its commits are already merged into
+              {' '}
+              <code>{defaultBranch}</code>
+              .
+            </li>
+          </ul>
+        </div>
+        <BranchStats branchStats={branchStats.deleteCandidates} />
+      </>
+    )
+  }, {
+    label: (
+      <>
+        <span className="w-2 h-2 bg-amber-500 inline-block mr-1.5 rounded-full" />
+        Abandoned branches
+      </>
+    ),
+    key: 'abandoned-branches',
+    count: num(branchStats.abandoned.count),
+    // eslint-disable-next-line react/no-unstable-nested-components
+    component: () => (
+      <>
+        <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
+          A branch is considered to be abandoned if
+          {' '}
+          <strong>all</strong>
+          {' '}
+          of the following conditions are met.
+          <ul className="list-disc px-4">
+            <li>
+              It is not already marked as a healthy branch.
+            </li>
+            <li>
+              It is ahead of the
+              {' '}
+              <code>{defaultBranch}</code>
+              {' '}
+              by at least one commit.
+            </li>
+            <li>
+              There have been no commits to the branch in the last 15 days.
+            </li>
+          </ul>
+        </div>
+        <BranchStats branchStats={branchStats.abandoned} />
+      </>
+    )
+  }, {
+    label: (
+      <>
         <span className="w-2 h-2 bg-red-500 inline-block mr-1.5 rounded-full" />
         Unhealthy
       </>
@@ -94,53 +150,13 @@ const Branches: React.FC<{
     component: () => (
       <>
         <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
-          A branch is considered to be unhealthy if
+          If a branch isn't marked as 'healthy', a 'delete candidate',
+          or 'abandoned', it's considered to be unhealthy. These branches are
+          out of sync with
           {' '}
-          <strong>any</strong>
+          <code>{defaultBranch}</code>
           {' '}
-          of the following conditions are met.
-          <ul className="list-disc px-4">
-            <li>
-              It
-              {' '}
-              <strong>does not have</strong>
-              {' '}
-              a commit in the last 15 days.
-            </li>
-            <li>
-              It is
-              {' '}
-              ahead of the
-              {' '}
-              <code>{defaultBranch}</code>
-              {' '}
-              branch by
-              {' '}
-              <strong>more</strong>
-              {' '}
-              than 10 commits.
-            </li>
-            <li>
-              It is
-              {' '}
-              behind the
-              {' '}
-              <code>{defaultBranch}</code>
-              {' '}
-              branch by
-              {' '}
-              <strong>more</strong>
-              {' '}
-              than 10 commits.
-            </li>
-          </ul>
-          <div className="mt-1">
-            The
-            {' '}
-            <code>{defaultBranch}</code>
-            {' '}
-            branch is always considered to be healthy.
-          </div>
+          and have't seen any commits in a while.
         </div>
 
         <BranchStats branchStats={branchStats.unhealthy} />

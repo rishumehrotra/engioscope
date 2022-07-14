@@ -126,6 +126,8 @@ export type UIBranches = {
   total: number;
   healthy: UIBranchStats;
   unhealthy: UIBranchStats;
+  deleteCandidates: UIBranchStats;
+  abandoned: UIBranchStats;
 };
 
 export type UIPullRequests = {
