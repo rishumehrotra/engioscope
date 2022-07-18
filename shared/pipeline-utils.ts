@@ -131,6 +131,11 @@ export const pipelineMeetsBranchPolicyRequirements = (
     ? false
     : Object.entries(pipeline.repos)
       .reduce<ReturnType<typeof fullPolicyStatus>[]>((acc, [repoId, { branches }]) => {
+        if (branches.length === 0) {
+          acc.push('fail');
+          return acc;
+        }
+
         branches.forEach(branch => {
           acc.push(fullPolicyStatus(policyForBranch(repoId, branch)));
         });

@@ -576,7 +576,7 @@ const HealthMetrics: React.FC<{
                   Branch policy met
                 </div>
                 <div className="font-semibold text-xl">
-                  {reposMetric(
+                  {pipelinesMetric(
                     divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
                       .map(toPercentage)
                       .getOr('-')

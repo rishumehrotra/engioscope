@@ -599,7 +599,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
     rows: groups.map(group => {
       const { repoStats, pipelineStats } = group;
       const { codeQuality } = repoStats;
-      const { reposMetric, pipelinesMetric } = metricsFormatters(group);
+      const { reposMetric } = metricsFormatters(group);
 
       return {
         key: group.groupName,
@@ -681,7 +681,7 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
           },
           {
             value: divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines).getOr(0),
-            content: pipelinesMetric(
+            content: reposMetric(
               divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
                 .map(toPercentage)
                 .getOr('-')
