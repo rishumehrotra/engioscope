@@ -17,7 +17,7 @@ import { LabelWithSparkline } from '../graphs/Sparkline';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
 import {
   buildRunsSparkline, changeLeadTimeSparkline, coverageSparkline,
-  cycleTimeSparkline, flowEfficiencySparkline, newItemsSparkline,
+  cycleTimeSparkline, flowEfficiencySparkline, newBugsSparkline, newItemsSparkline,
   newSonarSetupsSparkline, testAutomationSparkline, velocitySparkline, wipTrendSparkline
 } from '../sparkline-props';
 import type { SummaryGroupKey } from './utils';
@@ -380,7 +380,7 @@ const QualityMetrics: React.FC<{
                             ? (
                               <ExtendedLabelWithSparkline
                                 data={bugsForEnv.leakageByWeek}
-                                {...newItemsSparkline}
+                                {...newBugsSparkline}
                               />
                             )
                             : '-',
