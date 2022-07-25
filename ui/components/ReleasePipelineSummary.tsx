@@ -15,14 +15,7 @@ import UsageByEnv from './UsageByEnv';
 import { divide, toPercentage } from '../../shared/utils';
 import { LabelWithSparkline } from './graphs/Sparkline';
 import { increaseIsBetter } from './summary-page/utils';
-import { pathRendererSkippingUndefineds } from '../components/graphs/sparkline-renderers';
-
-export const envRowTooltip = (env: string, successful: number, total: number, pipelineCount: number) => `
-  <b>${env}</b><br />
-  Successful deployments: <b>${num(successful)}</b><br />
-  Total deployments: <b>${num(total)}</b><br />
-  Total pipelines: <b>${num(pipelineCount)}</b>
-`;
+import { pathRendererSkippingUndefineds } from './graphs/sparkline-renderers';
 
 type ReleasePipelineSummaryProps = {
   pipelines: Pipeline[];

@@ -29,6 +29,9 @@
   "bin": {
     "engioscope": "dist/backend/cli.js"
   },
+  "engines": {
+    "node": ">=12.8"
+  },
   "dependencies": {
     "@zkochan/rimraf": "^2.1.1",
     "abort-controller": "^3.0.0",
@@ -109,6 +112,7 @@
     "core-js": "^3.23.5",
     "eslint": "^8.20.0",
     "eslint-config-airbnb": "^19.0.4",
+    "eslint-import-resolver-typescript": "^3.3.0",
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.26.0",

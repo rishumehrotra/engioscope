@@ -3,7 +3,7 @@ import type { RepoAnalysis } from '../../../../shared/types';
 import type { Tab } from '../Tabs';
 import { num } from '../../../helpers/utils';
 import BranchStats from './BranchStats';
-import BranchTab from '../branches/BranchTab';
+import BranchTab from './BranchTab';
 import TabContents from '../TabContents';
 import AlertMessage from '../../common/AlertMessage';
 import { Branches as BranchesIcon } from '../../common/Icons';
