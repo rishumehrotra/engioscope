@@ -3,6 +3,7 @@ import type { RequestInfo, RequestInit } from 'node-fetch';
 import fetch from 'node-fetch';
 import https from 'https';
 import pLimit from 'p-limit';
+import { constants } from 'node:crypto';
 
 const limit = pLimit(35);
 
@@ -16,7 +17,10 @@ export default (url: RequestInfo, init?: RequestInit & { timeout?: number; verif
       ...restInit,
       signal: controller.signal,
       agent: verifySsl === false
-        ? new https.Agent({ rejectUnauthorized: false })
+        ? new https.Agent({
+          rejectUnauthorized: false,
+          secureOptions: constants.SSL_OP_LEGACY_SERVER_CONNECT
+        })
         : undefined
     })
       .catch(err => {
