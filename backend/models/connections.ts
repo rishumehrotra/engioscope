@@ -15,7 +15,7 @@ export type SonarConnection = {
   verifySsl: boolean;
 };
 
-export type Connection = { _id: ObjectId } & (
+export type Connection = (
   | AzurePATConnection
   | SonarConnection
 );
@@ -33,7 +33,7 @@ export const createNewConnection = (connection: Omit<Connection, '_id'>) => (
   (new DBConnection(connection)).save()
 );
 
-export const modifyConnection = (connection: Connection) => (
+export const modifyConnection = (connection: Connection & { _id: ObjectId }) => (
   DBConnection.replaceOne({ _id: connection._id }, connection).lean()
 );
 
