@@ -2,12 +2,12 @@ import prettyMilliseconds from 'pretty-ms';
 import {
   add, adjust, identity, inc, pipe, prop, replace
 } from 'rambda';
-import { parse } from 'yaml';
-import type { Build, BuildDefinitionReference } from '../types-azure';
-import type { UIBuildPipeline, UIBuilds } from '../../../shared/types';
-import { isMaster, weeks } from '../../utils';
-import { asc, byDate, desc } from '../../../shared/sort-utils';
-import type parseBuildReports from '../parse-build-reports';
+import yaml from 'yaml';
+import type { Build, BuildDefinitionReference } from '../types-azure.js';
+import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
+import { isMaster, weeks } from '../../utils.js';
+import { asc, byDate, desc } from '../../../shared/sort-utils.js';
+import type parseBuildReports from '../parse-build-reports.js';
 
 type BuildStats = {
   count: number;
@@ -97,7 +97,7 @@ const templateNameByBuildId = (
       .then(reports => reports.find(report => report.buildDefinitionId === buildDefinitionId)?.buildScript)
       .then(buildScript => {
         if (!buildScript) return undefined;
-        const parsed = parse(buildScript);
+        const parsed = yaml.parse(buildScript);
         const possibleTemplate = parsed.template
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           || parsed.stages?.find((s: any) => s.template)?.template as string | undefined;

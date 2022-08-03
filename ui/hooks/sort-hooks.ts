@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import createContextState from '../helpers/create-context-state';
-import useQueryParam, { asString } from './use-query-param';
+import createContextState from '../helpers/create-context-state.js';
+import useQueryParam, { asString } from './use-query-param.js';
 
 type SortContext = {
   sortKeys: string[];

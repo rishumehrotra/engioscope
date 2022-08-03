@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import type { UIChangeProgram } from '../../shared/types';
-import { organizeBy } from '../components/change-program/change-program-utils';
-import GroupedListing from '../components/change-program/GroupedListing';
-import ChangeProgramNavBar from '../components/ChangeProgramNavBar';
-import Switcher from '../components/common/Switcher';
-import Loading from '../components/Loading';
-import { useSetHeaderDetails } from '../hooks/header-hooks';
-import useQueryParam, { asString } from '../hooks/use-query-param';
-import { changeProgramDetails } from '../network';
+import type { UIChangeProgram } from '../../shared/types.js';
+import { organizeBy } from '../components/change-program/change-program-utils.js';
+import GroupedListing from '../components/change-program/GroupedListing.js';
+import ChangeProgramNavBar from '../components/ChangeProgramNavBar.js';
+import Switcher from '../components/common/Switcher.js';
+import Loading from '../components/Loading.js';
+import { useSetHeaderDetails } from '../hooks/header-hooks.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import { changeProgramDetails } from '../network.js';
 
 const ChangeProgram: React.FC = () => {
   const [changeProgram, setChangeProgram] = useState<UIChangeProgram | null>(null);

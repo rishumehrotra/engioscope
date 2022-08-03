@@ -3,7 +3,7 @@ import type {
   ProjectWorkItemAnalysis, UIWorkItemRevision, ProjectOverviewAnalysis,
   AnalyticsItem, PipelineDefinitions, SummaryMetrics, AnalysedProjects,
   UIChangeProgram, Tracks
-} from '../shared/types';
+} from '../shared/types.js';
 
 const json = (res: Response) => res.json();
 

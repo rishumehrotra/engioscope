@@ -2,13 +2,13 @@ import prettyMs from 'pretty-ms';
 import {
   equals, head, isNil, last, pipe, prop, T
 } from 'rambda';
-import { count, incrementBy } from '../../../shared/reducer-utils';
-import { asc, byDate, desc } from '../../../shared/sort-utils';
-import type { UITests, UIPipelineTest } from '../../../shared/types';
-import { unique, weeks } from '../../utils';
+import { count, incrementBy } from '../../../shared/reducer-utils.js';
+import { asc, byDate, desc } from '../../../shared/sort-utils.js';
+import type { UITests, UIPipelineTest } from '../../../shared/types.js';
+import { unique, weeks } from '../../utils.js';
 import type {
   Build, CodeCoverageData, CodeCoverageSummary, TestRun
-} from '../types-azure';
+} from '../types-azure.js';
 
 type TestStats = {
   success: number;

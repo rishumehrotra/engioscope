@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import type { RepoAnalysis } from '../../../../shared/types';
-import type { Tab } from '../Tabs';
-import { num } from '../../../helpers/utils';
-import BranchStats from './BranchStats';
-import BranchTab from './BranchTab';
-import TabContents from '../TabContents';
-import AlertMessage from '../../common/AlertMessage';
-import { Branches as BranchesIcon } from '../../common/Icons';
+import type { RepoAnalysis } from '../../../../shared/types.js';
+import type { Tab } from '../Tabs.js';
+import { num } from '../../../helpers/utils.js';
+import BranchStats from './BranchStats.js';
+import BranchTab from './BranchTab.js';
+import TabContents from '../TabContents.js';
+import AlertMessage from '../../common/AlertMessage.js';
+import { Branches as BranchesIcon } from '../../common/Icons.js';
 
 const Branches: React.FC<{
   branchStats: RepoAnalysis['branches'];

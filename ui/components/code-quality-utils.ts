@@ -1,4 +1,4 @@
-import type { QualityGateStatus, UICodeQuality } from '../../shared/types';
+import type { QualityGateStatus, UICodeQuality } from '../../shared/types.js';
 
 export const combinedQualityGateStatus = (codeQuality: UICodeQuality): QualityGateStatus => {
   if (!codeQuality) return 'unknown';

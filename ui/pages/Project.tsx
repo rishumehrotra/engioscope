@@ -2,19 +2,19 @@ import React, { useEffect } from 'react';
 import {
   Routes, Route, useParams, useLocation
 } from 'react-router-dom';
-import NavBar from '../components/common/NavBar';
-import Repos from './Repos';
-import ReleasePipelines from './ReleasePipelines';
-import WorkItems from './WorkItems';
-import SortControls from '../components/SortControls';
-import Devs from './Devs';
-import SearchInput from '../components/common/SearchInput';
-import AdvancedFilters from '../components/AdvancedFilters';
-import { useProjectDetails } from '../hooks/project-details-hooks';
-import usePageName from '../hooks/use-page-name';
-import Overview from './Overview';
-import { useSetHeaderDetails } from '../hooks/header-hooks';
-import type { UIProjectAnalysis } from '../../shared/types';
+import NavBar from '../components/common/NavBar.js';
+import Repos from './Repos.js';
+import ReleasePipelines from './ReleasePipelines.js';
+import WorkItems from './WorkItems.js';
+import SortControls from '../components/SortControls.js';
+import Devs from './Devs.js';
+import SearchInput from '../components/common/SearchInput.js';
+import AdvancedFilters from '../components/AdvancedFilters.js';
+import { useProjectDetails } from '../hooks/project-details-hooks.js';
+import usePageName from '../hooks/use-page-name.js';
+import Overview from './Overview.js';
+import { useSetHeaderDetails } from '../hooks/header-hooks.js';
+import type { UIProjectAnalysis } from '../../shared/types.js';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>

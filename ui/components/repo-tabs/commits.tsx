@@ -2,14 +2,14 @@ import React from 'react';
 import { add, sum } from 'rambda';
 import type { Location } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import type { RepoAnalysis } from '../../../shared/types';
-import AlertMessage from '../common/AlertMessage';
-import type { Tab } from './Tabs';
-import TabContents from './TabContents';
-import CommitTimeline from '../commits/CommitTimeline';
-import { ProfilePic } from '../common/ProfilePic';
-import Changes from '../commits/Changes';
-import type { Dev } from '../../types';
+import type { RepoAnalysis } from '../../../shared/types.js';
+import AlertMessage from '../common/AlertMessage.js';
+import type { Tab } from './Tabs.js';
+import TabContents from './TabContents.js';
+import CommitTimeline from '../commits/CommitTimeline.js';
+import { ProfilePic } from '../common/ProfilePic.js';
+import Changes from '../commits/Changes.js';
+import type { Dev } from '../../types.js';
 
 export default (
   repo: RepoAnalysis,

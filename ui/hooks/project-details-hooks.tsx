@@ -1,5 +1,5 @@
-import createContextState from '../helpers/create-context-state';
-import type { UIProjectAnalysis } from '../../shared/types';
+import createContextState from '../helpers/create-context-state.js';
+import type { UIProjectAnalysis } from '../../shared/types.js';
 
 const [
   ProjectDetailsProvider,

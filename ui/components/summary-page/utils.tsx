@@ -3,8 +3,8 @@ import {
 } from 'rambda';
 import type { ReactNode } from 'react';
 import React from 'react';
-import type { SummaryMetrics, UIWorkItemType } from '../../../shared/types';
-import { ExternalLink } from '../common/Icons';
+import type { SummaryMetrics, UIWorkItemType } from '../../../shared/types.js';
+import { ExternalLink } from '../common/Icons.js';
 
 type SummaryGroups = SummaryMetrics['groups'][number]['workItems'][string];
 

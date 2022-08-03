@@ -1,23 +1,23 @@
 import React, { useMemo } from 'react';
-import AlertMessage from '../components/common/AlertMessage';
-import RepoHealth from '../components/RepoHealth';
-import AppliedFilters from '../components/AppliedFilters';
-import { repoMetrics } from '../network';
-import { dontFilter, filterBySearch } from '../helpers/utils';
-import type { RepoAnalysis } from '../../shared/types';
-import useFetchForProject from '../hooks/use-fetch-for-project';
-import type { SortMap } from '../hooks/sort-hooks';
-import { useSort } from '../hooks/sort-hooks';
-import Loading from '../components/Loading';
-import { aggregateDevs } from '../helpers/aggregate-devs';
-import RepoSummary from '../components/RepoSummary';
-import InfiniteScrollList from '../components/common/InfiniteScrollList';
-import { combinedQualityGateStatus } from '../components/code-quality-utils';
-import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
-import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils';
+import AlertMessage from '../components/common/AlertMessage.js';
+import RepoHealth from '../components/RepoHealth.js';
+import AppliedFilters from '../components/AppliedFilters.js';
+import { repoMetrics } from '../network.js';
+import { dontFilter, filterBySearch } from '../helpers/utils.js';
+import type { RepoAnalysis } from '../../shared/types.js';
+import useFetchForProject from '../hooks/use-fetch-for-project.js';
+import type { SortMap } from '../hooks/sort-hooks.js';
+import { useSort } from '../hooks/sort-hooks.js';
+import Loading from '../components/Loading.js';
+import { aggregateDevs } from '../helpers/aggregate-devs.js';
+import RepoSummary from '../components/RepoSummary.js';
+import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
+import { combinedQualityGateStatus } from '../components/code-quality-utils.js';
+import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
+import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
 import useQueryParam, {
   asBoolean, asNumber, asString, asStringArray
-} from '../hooks/use-query-param';
+} from '../hooks/use-query-param.js';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;

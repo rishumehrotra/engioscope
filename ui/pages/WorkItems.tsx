@@ -2,17 +2,17 @@ import React, {
   useCallback, useMemo, useState
 } from 'react';
 import { useParams } from 'react-router-dom';
-import type { ProjectWorkItemAnalysis, UIWorkItem, UIWorkItemRevision } from '../../shared/types';
-import { workItemMetrics, workItemRevisions } from '../network';
-import { createPalette, dontFilter } from '../helpers/utils';
-import WorkItem from '../components/WorkItemHealth';
-import useFetchForProject from '../hooks/use-fetch-for-project';
-import type { SortMap } from '../hooks/sort-hooks';
-import { useSort } from '../hooks/sort-hooks';
-import AppliedFilters from '../components/AppliedFilters';
-import Loading from '../components/Loading';
-import InfiniteScrollList from '../components/common/InfiniteScrollList';
-import useQueryParam, { asString } from '../hooks/use-query-param';
+import type { ProjectWorkItemAnalysis, UIWorkItem, UIWorkItemRevision } from '../../shared/types.js';
+import { workItemMetrics, workItemRevisions } from '../network.js';
+import { createPalette, dontFilter } from '../helpers/utils.js';
+import WorkItem from '../components/WorkItemHealth.js';
+import useFetchForProject from '../hooks/use-fetch-for-project.js';
+import type { SortMap } from '../hooks/sort-hooks.js';
+import { useSort } from '../hooks/sort-hooks.js';
+import AppliedFilters from '../components/AppliedFilters.js';
+import Loading from '../components/Loading.js';
+import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
 
 const colorForStage = createPalette([
   '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',

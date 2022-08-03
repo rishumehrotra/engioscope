@@ -1,9 +1,9 @@
 import { head, multiply, prop } from 'rambda';
-import { byNum, desc } from './sort-utils';
+import { byNum, desc } from './sort-utils.js';
 import type {
   BranchPolicies, Pipeline, PipelineCount, PipelineStage
-} from './types';
-import { combineColumnsInArray, divide, exists } from './utils';
+} from './types.js';
+import { combineColumnsInArray, divide, exists } from './utils.js';
 
 export type PipelineStageWithCounts = PipelineStage & PipelineCount;
 

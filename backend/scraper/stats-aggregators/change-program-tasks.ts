@@ -1,9 +1,9 @@
 import { prop } from 'rambda';
-import type { UIChangeProgramTask } from '../../../shared/types';
-import type azure from '../network/azure';
-import type { ParsedCollection } from '../parse-config';
-import { getChangeProgramTasks } from '../queries/change-program-tasks';
-import type { WorkItem, WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azure';
+import type { UIChangeProgramTask } from '../../../shared/types.js';
+import type azure from '../network/azure.js';
+import type { ParsedCollection } from '../parse-config.js';
+import { getChangeProgramTasks } from '../queries/change-program-tasks.js';
+import type { WorkItem, WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azure.js';
 
 const createChangeProgramTask = (collectionConfig: ParsedCollection) => (wi: WorkItem): UIChangeProgramTask => ({
   id: wi.id,

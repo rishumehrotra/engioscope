@@ -1,5 +1,5 @@
 import { add } from 'rambda';
-import { maybe } from './maybe';
+import { maybe } from './maybe.js';
 
 export const oneSecondInMs = 1000;
 export const oneMinuteInMs = 60 * oneSecondInMs;

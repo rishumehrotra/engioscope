@@ -1,8 +1,8 @@
 import type { ChangeEvent } from 'react';
 import React from 'react';
-import useQueryParam, { asString } from '../../hooks/use-query-param';
-import { useTabs } from '../../hooks/use-tabs';
-import { Search } from './Icons';
+import useQueryParam, { asString } from '../../hooks/use-query-param.js';
+import { useTabs } from '../../hooks/use-tabs.js';
+import { Search } from './Icons.js';
 
 const SearchInput: React.FC = () => {
   const [selectedTab] = useTabs();

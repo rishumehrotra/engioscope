@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import type { Tab } from '../types';
+import type { Tab } from '../types.js';
 
 export const useTabs = () => {
   const location = useLocation();

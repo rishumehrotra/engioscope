@@ -1,5 +1,5 @@
 import ms from 'ms';
-import { pastDate } from '../utils';
+import { pastDate } from '../utils.js';
 
 type ReleasePipelineConfig = {
   stagesToHighlight: string[];

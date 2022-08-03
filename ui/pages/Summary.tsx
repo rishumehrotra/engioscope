@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import type { SummaryMetrics } from '../../shared/types';
-import ChangeProgramNavBar from '../components/ChangeProgramNavBar';
-import Switcher from '../components/common/Switcher';
-import Loading from '../components/Loading';
-import SummaryByMetric from '../components/summary-page/SummaryByMetric';
-import SummaryByTeam from '../components/summary-page/SummaryByTeam';
-import { dontFilter, filterBySearch, shortDate } from '../helpers/utils';
-import { useSetHeaderDetails } from '../hooks/header-hooks';
-import useQueryParam, { asString } from '../hooks/use-query-param';
-import { metricsSummary } from '../network';
+import type { SummaryMetrics } from '../../shared/types.js';
+import ChangeProgramNavBar from '../components/ChangeProgramNavBar.js';
+import Switcher from '../components/common/Switcher.js';
+import Loading from '../components/Loading.js';
+import SummaryByMetric from '../components/summary-page/SummaryByMetric.js';
+import SummaryByTeam from '../components/summary-page/SummaryByTeam.js';
+import { dontFilter, filterBySearch, shortDate } from '../helpers/utils.js';
+import { useSetHeaderDetails } from '../hooks/header-hooks.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import { metricsSummary } from '../network.js';
 
 const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) => filterBySearch(search, group.groupName);
 

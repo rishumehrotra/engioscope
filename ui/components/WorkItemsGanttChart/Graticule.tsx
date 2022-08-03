@@ -1,8 +1,8 @@
 import React from 'react';
-import { mediumDate } from '../../helpers/utils';
+import { mediumDate } from '../../helpers/utils.js';
 import {
   textWidth, barStartPadding, axisLabelsHeight, axisLabelsWidth
-} from './helpers';
+} from './helpers.js';
 
 type GraticuleProps = {
   height: number;

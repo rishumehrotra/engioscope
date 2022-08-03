@@ -2,17 +2,17 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type {
   Pipeline as TPipeline, PipelineStage
-} from '../../shared/types';
-import AlertMessage from './common/AlertMessage';
-import Card from './common/ExpandingCard';
-import Flair from './common/Flair';
-import { Branches } from './common/Icons';
-import type { NormalizedPolicies } from '../../shared/pipeline-utils';
+} from '../../shared/types.js';
+import AlertMessage from './common/AlertMessage.js';
+import Card from './common/ExpandingCard.js';
+import Flair from './common/Flair.js';
+import { Branches } from './common/Icons.js';
+import type { NormalizedPolicies } from '../../shared/pipeline-utils.js';
 import {
   mergeStagesAndCounts,
   fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
-} from '../../shared/pipeline-utils';
-import PipelineDiagram from './PipelineDiagram';
+} from '../../shared/pipeline-utils.js';
+import PipelineDiagram from './PipelineDiagram.js';
 
 const policyColorClass = (policy: NormalizedPolicies, key: keyof NormalizedPolicies) => {
   const status = policyStatus(policy, key);

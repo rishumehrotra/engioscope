@@ -1,7 +1,7 @@
-import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { exists } from '../../../shared/utils';
-import type { ParsedCollection, ParsedConfig } from '../parse-config';
-import type { WorkItem, WorkItemType } from '../types-azure';
+import type { Overview, UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
+import { exists } from '../../../shared/utils.js';
+import type { ParsedCollection, ParsedConfig } from '../parse-config.js';
+import type { WorkItem, WorkItemType } from '../types-azure.js';
 
 const getMinDate = (fields: string[], workItem: WorkItem) => {
   const possibleEndDates = fields

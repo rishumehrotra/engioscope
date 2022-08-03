@@ -1,6 +1,6 @@
 import { range } from 'rambda';
-import type { UIWorkItem } from '../../../../shared/types';
-import type { OrganizedWorkItems, WorkItemAccessors } from './helpers';
+import type { UIWorkItem } from '../../../../shared/types.js';
+import type { OrganizedWorkItems, WorkItemAccessors } from './helpers.js';
 
 export type WorkItemPoint = {
   date: Date;

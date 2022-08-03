@@ -1,14 +1,14 @@
 import React from 'react';
 import { multiply } from 'rambda';
-import type { RepoAnalysis } from '../../../shared/types';
-import { num } from '../../helpers/utils';
-import AlertMessage from '../common/AlertMessage';
-import type { Tab } from './Tabs';
-import TabContents from './TabContents';
-import { LabelWithSparkline } from '../graphs/Sparkline';
-import { increaseIsBetter } from '../summary-page/utils';
-import { numberOfTests } from '../../../shared/repo-utils';
-import { divide, toPercentage } from '../../../shared/utils';
+import type { RepoAnalysis } from '../../../shared/types.js';
+import { num } from '../../helpers/utils.js';
+import AlertMessage from '../common/AlertMessage.js';
+import type { Tab } from './Tabs.js';
+import TabContents from './TabContents.js';
+import { LabelWithSparkline } from '../graphs/Sparkline.js';
+import { increaseIsBetter } from '../summary-page/utils.js';
+import { numberOfTests } from '../../../shared/repo-utils.js';
+import { divide, toPercentage } from '../../../shared/utils.js';
 
 export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
   title: 'Tests',

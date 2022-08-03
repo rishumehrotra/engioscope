@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { divide, toPercentage } from '../../../shared/utils';
-import { Sparkline } from './Sparkline';
-import type { Renderer } from './sparkline-renderers';
+import { divide, toPercentage } from '../../../shared/utils.js';
+import { Sparkline } from './Sparkline.js';
+import type { Renderer } from './sparkline-renderers.js';
 
 type PreviousMonthStats = {
   value: number;

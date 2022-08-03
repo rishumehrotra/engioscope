@@ -1,14 +1,14 @@
 import qs from 'qs';
 import { head, map } from 'rambda';
-import fetch from './fetch-with-extras';
-import { requiredMetrics } from '../stats-aggregators/code-quality';
-import fetchWithDiskCache from './fetch-with-disk-cache';
-import createPaginatedGetter from './create-paginated-getter';
-import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-sonar';
-import type { ParsedConfig, SonarConfig } from '../parse-config';
-import { pastDate, unique } from '../../utils';
-import parseBuildReports from '../parse-build-reports';
-import { byDate, desc } from '../../../shared/sort-utils';
+import fetch from './fetch-with-extras.js';
+import { requiredMetrics } from '../stats-aggregators/code-quality.js';
+import fetchWithDiskCache from './fetch-with-disk-cache.js';
+import createPaginatedGetter from './create-paginated-getter.js';
+import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-sonar.js';
+import type { ParsedConfig, SonarConfig } from '../parse-config.js';
+import { pastDate, unique } from '../../utils.js';
+import parseBuildReports from '../parse-build-reports.js';
+import { byDate, desc } from '../../../shared/sort-utils.js';
 
 export type SonarProject = SonarConfig & {
   organization: string;

@@ -1,18 +1,22 @@
-import AwaitLock from 'await-lock';
+import AL from 'await-lock';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import debug from 'debug';
-import { singular } from 'pluralize';
+import pluralize from 'pluralize';
 import type {
   AnalysedProjects, GlobalUIConfig, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
   Tracks, TrackwiseData, UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis
-} from '../../shared/types';
-import { doesFileExist, queryPeriodDays } from '../utils';
-import type { ProjectAnalysis } from './types';
-import type { ParsedConfig, ParsedProjectConfig } from './parse-config';
+} from '../../shared/types.js';
+import { doesFileExist, queryPeriodDays } from '../utils.js';
+import type { ProjectAnalysis } from './types.js';
+import type { ParsedConfig, ParsedProjectConfig } from './parse-config.js';
 
 const outputFileLog = debug('write-output');
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore-error CJS interop
+const AwaitLock = AL.default as typeof AL;
 
 // Ugh OO, tainting my beautiful FP palace
 const lock = new AwaitLock();
@@ -46,7 +50,7 @@ const projectSummary = (
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.pipelines.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,
-  workItemLabel: [singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel],
+  workItemLabel: [pluralize.singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel],
   queryPeriodDays: queryPeriodDays(config)
 });
 

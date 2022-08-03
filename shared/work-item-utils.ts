@@ -1,6 +1,6 @@
 import { pipe, prop, T } from 'rambda';
-import { count, incrementBy } from './reducer-utils';
-import type { UIWorkItem, UIWorkItemType, WorkItemTimes } from './types';
+import { count, incrementBy } from './reducer-utils.js';
+import type { UIWorkItem, UIWorkItemType, WorkItemTimes } from './types.js';
 
 export const noRCAValue = '(empty)';
 export const noGroup = 'no-group';

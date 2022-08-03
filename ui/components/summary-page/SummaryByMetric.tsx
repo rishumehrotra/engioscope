@@ -5,27 +5,27 @@ import React, {
 } from 'react';
 import {
   asc, byNum, byString, desc
-} from '../../../shared/sort-utils';
-import type { SummaryMetrics } from '../../../shared/types';
-import { divide, exists, toPercentage } from '../../../shared/utils';
-import { num, prettyMS } from '../../helpers/utils';
+} from '../../../shared/sort-utils.js';
+import type { SummaryMetrics } from '../../../shared/types.js';
+import { divide, exists, toPercentage } from '../../../shared/utils.js';
+import { num, prettyMS } from '../../helpers/utils.js';
 import {
   ArrowDown, ArrowUp, ExternalLink
-} from '../common/Icons';
-import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline';
-import { LabelWithSparkline } from '../graphs/Sparkline';
-import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
+} from '../common/Icons.js';
+import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline.js';
+import { LabelWithSparkline } from '../graphs/Sparkline.js';
+import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.js';
 import {
   buildRunsSparkline, changeLeadTimeSparkline, coverageSparkline,
   cycleTimeSparkline, flowEfficiencySparkline, newBugsSparkline, newItemsSparkline,
   newSonarSetupsSparkline, testAutomationSparkline, velocitySparkline, wipTrendSparkline
-} from '../sparkline-props';
-import type { SummaryGroupKey } from './utils';
+} from '../sparkline-props.js';
+import type { SummaryGroupKey } from './utils.js';
 import {
   workItemTypeByName,
   decreaseIsBetter, increaseIsBetter, processSummary,
   flattenSummaryGroups, getMetricCategoryDefinitionId, allExceptExpectedKeys
-} from './utils';
+} from './utils.js';
 
 const renderGroupItem = (link: string) => (label: ReactNode, anchor = '') => (
   <div className="group">

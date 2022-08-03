@@ -3,7 +3,7 @@ import { join } from 'path';
 import { Transform } from 'stream';
 import split2 from 'split2';
 import { prop } from 'rambda';
-import { byNum, desc } from '../../shared/sort-utils';
+import { byNum, desc } from '../../shared/sort-utils.js';
 
 type AnalyticsItem = {
   date: Date;

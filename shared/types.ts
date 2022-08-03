@@ -1,5 +1,5 @@
-import type { SummaryMetricsType } from '../backend/scraper/summarise-results';
-import type { ReleaseCondition } from '../backend/scraper/types-azure';
+import type { SummaryMetricsType } from '../backend/scraper/summarise-results.js';
+import type { ReleaseCondition } from '../backend/scraper/types-azure.js';
 
 export type GlobalUIConfig = {
   lastUpdated: string;

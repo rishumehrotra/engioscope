@@ -1,6 +1,6 @@
 import prettyMilliseconds from 'pretty-ms';
-import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types';
-import { mediumDate } from '../../helpers/utils';
+import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types.js';
+import { mediumDate } from '../../helpers/utils.js';
 
 export const svgWidth = 1300;
 export const textWidth = 270;

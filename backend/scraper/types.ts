@@ -1,6 +1,6 @@
 import type {
   AnalysedWorkItems, Overview, ReleasePipelineStats, RepoAnalysis, TestCasesAnalysis
-} from '../../shared/types';
+} from '../../shared/types.js';
 
 export type WorkItemAnalysis = {
   analysedWorkItems: AnalysedWorkItems | null;

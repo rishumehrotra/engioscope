@@ -1,7 +1,7 @@
 import { sum } from 'rambda';
-import { byNum, desc } from '../../../shared/sort-utils';
-import type { AggregatedCommitsByDev, UICommits } from '../../../shared/types';
-import type { GitCommitRef } from '../types-azure';
+import { byNum, desc } from '../../../shared/sort-utils.js';
+import type { AggregatedCommitsByDev, UICommits } from '../../../shared/types.js';
+import type { GitCommitRef } from '../types-azure.js';
 
 const dateString = (date: Date) => date.toISOString().split('T')[0];
 

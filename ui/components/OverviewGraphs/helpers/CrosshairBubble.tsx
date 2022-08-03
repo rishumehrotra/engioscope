@@ -1,11 +1,11 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import type { UIWorkItem } from '../../../../shared/types';
-import { contrastColour, shortDate } from '../../../helpers/utils';
-import { lineColor } from './helpers';
-import type { WorkItemAccessors } from './helpers';
-import type { WorkItemLine } from './day-wise-line-graph-helpers';
-import { getMatchingAtIndex } from './day-wise-line-graph-helpers';
+import type { UIWorkItem } from '../../../../shared/types.js';
+import { contrastColour, shortDate } from '../../../helpers/utils.js';
+import { lineColor } from './helpers.js';
+import type { WorkItemAccessors } from './helpers.js';
+import type { WorkItemLine } from './day-wise-line-graph-helpers.js';
+import { getMatchingAtIndex } from './day-wise-line-graph-helpers.js';
 
 type CrosshairBubbleProps = {
   data: WorkItemLine[];

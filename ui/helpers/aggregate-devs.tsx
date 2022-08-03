@@ -1,5 +1,5 @@
-import type { ProjectRepoAnalysis } from '../../shared/types';
-import type { Dev } from '../types';
+import type { ProjectRepoAnalysis } from '../../shared/types.js';
+import type { Dev } from '../types.js';
 
 export const aggregateDevs = (projectAnalysis: ProjectRepoAnalysis) => (
   projectAnalysis.repos.flatMap(repo => (

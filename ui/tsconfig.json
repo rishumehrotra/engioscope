@@ -15,7 +15,6 @@
     "types": [
       "vite/client",
       "jest"
-    ],
-    "module": "esnext",
+    ]
   }
 }

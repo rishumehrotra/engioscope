@@ -2,19 +2,19 @@ import React, {
   memo, useCallback, useMemo, useState
 } from 'react';
 import prettyMilliseconds from 'pretty-ms';
-import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types';
+import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types.js';
 import {
   textWidth, textHeight, rowPadding, svgWidth, makeTransparent, barYCoord,
   barHeight, barWidthUsing, makeDarker, barStartPadding, revisionTooltip,
   rowItemTooltip
-} from './helpers';
-import { TreeNodeButton } from './TreeNodeButton';
-import type { Row } from './use-gantt-rows';
+} from './helpers.js';
+import { TreeNodeButton } from './TreeNodeButton.js';
+import type { Row } from './use-gantt-rows.js';
 import {
   isProjectRow, isWorkItemEnvironmentRow, isWorkItemTypeRow, isWorkItemRow
-} from './use-gantt-rows';
-import { Minus, Plus } from '../common/Icons';
-import { contrastColour } from '../../helpers/utils';
+} from './use-gantt-rows.js';
+import { Minus, Plus } from '../common/Icons.js';
+import { contrastColour } from '../../helpers/utils.js';
 
 const revisionTitle = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => (
   <>

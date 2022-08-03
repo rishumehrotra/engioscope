@@ -1,6 +1,6 @@
-import type { UIWorkItem } from '../../../../shared/types';
-import type { WorkItemAccessors } from './helpers';
-import { workItemStateUsing } from './helpers';
+import type { UIWorkItem } from '../../../../shared/types.js';
+import type { WorkItemAccessors } from './helpers.js';
+import { workItemStateUsing } from './helpers.js';
 
 export const closedWorkItemsCSV = (workItems: UIWorkItem[], accessors: WorkItemAccessors) => (
   workItems.length === 0 ? undefined : [

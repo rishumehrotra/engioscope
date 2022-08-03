@@ -1,7 +1,7 @@
 import { allPass } from 'rambda';
 import { useCallback, useMemo } from 'react';
-import type { UIWorkItem } from '../../../../shared/types';
-import useQueryParam, { asString } from '../../../hooks/use-query-param';
+import type { UIWorkItem } from '../../../../shared/types.js';
+import useQueryParam, { asString } from '../../../hooks/use-query-param.js';
 
 export type Filter = { label: string; tags: string[] };
 

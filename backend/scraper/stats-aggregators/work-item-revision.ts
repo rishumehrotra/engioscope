@@ -1,5 +1,5 @@
-import type { UIWorkItemRevision } from '../../../shared/types';
-import type { WorkItemRevision } from '../types-azure';
+import type { UIWorkItemRevision } from '../../../shared/types.js';
+import type { WorkItemRevision } from '../types-azure.js';
 
 const transformRevision = (revision: WorkItemRevision): UIWorkItemRevision => ({
   state: revision.fields['System.State'],

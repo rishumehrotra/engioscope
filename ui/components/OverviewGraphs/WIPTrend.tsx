@@ -2,26 +2,26 @@ import {
   allPass, always, last, length, pipe, prop, T
 } from 'rambda';
 import React, { useMemo, useState } from 'react';
-import type { UIWorkItem } from '../../../shared/types';
-import { num, shortDate } from '../../helpers/utils';
-import type { LineGraphProps } from '../graphs/LineGraph';
-import LineGraph from '../graphs/LineGraph';
-import { wipWorkItemsCSV } from './helpers/create-csv-content';
-import { CrosshairBubble } from './helpers/CrosshairBubble';
-import type { WorkItemLine, WorkItemPoint } from './helpers/day-wise-line-graph-helpers';
-import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-line-graph-helpers';
-import GraphCard from './helpers/GraphCard';
-import type { WorkItemAccessors } from './helpers/helpers';
+import type { UIWorkItem } from '../../../shared/types.js';
+import { num, shortDate } from '../../helpers/utils.js';
+import type { LineGraphProps } from '../graphs/LineGraph.js';
+import LineGraph from '../graphs/LineGraph.js';
+import { wipWorkItemsCSV } from './helpers/create-csv-content.js';
+import { CrosshairBubble } from './helpers/CrosshairBubble.js';
+import type { WorkItemLine, WorkItemPoint } from './helpers/day-wise-line-graph-helpers.js';
+import { getMatchingAtIndex, splitByDateForLineGraph } from './helpers/day-wise-line-graph-helpers.js';
+import GraphCard from './helpers/GraphCard.js';
+import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
   stringifyDateField, noGroup, useSidebarCheckboxState,
   lineColor, getSidebarStatByKey, getSidebarHeadlineStats
-} from './helpers/helpers';
-import type { LegendSidebarProps } from './helpers/LegendSidebar';
-import { LegendSidebar } from './helpers/LegendSidebar';
-import type { ModalArgs } from './helpers/modal-helpers';
-import { WorkItemFlatList, WorkItemsNested, workItemSubheading } from './helpers/modal-helpers';
-import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
-import { createWIPWorkItemTooltip } from './helpers/tooltips';
+} from './helpers/helpers.js';
+import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
+import { LegendSidebar } from './helpers/LegendSidebar.js';
+import type { ModalArgs } from './helpers/modal-helpers.js';
+import { WorkItemFlatList, WorkItemsNested, workItemSubheading } from './helpers/modal-helpers.js';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
+import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
 
 const isWIPToday = (dayStart: Date, accessors: WorkItemAccessors) => {
   const dayEnd = new Date(dayStart);

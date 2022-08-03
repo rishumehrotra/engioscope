@@ -1,22 +1,22 @@
 import { add } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import type { UIWorkItem } from '../../../shared/types';
-import { exists, prettyMS, shortDate } from '../../helpers/utils';
-import GraphCard from './helpers/GraphCard';
-import type { WorkItemAccessors } from './helpers/helpers';
+import type { UIWorkItem } from '../../../shared/types.js';
+import { exists, prettyMS, shortDate } from '../../helpers/utils.js';
+import GraphCard from './helpers/GraphCard.js';
+import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
   listFormat, stringifyDateField,
   lineColor, noGroup,
   getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey
-} from './helpers/helpers';
-import { timeDifference } from '../../../shared/work-item-utils';
-import type { LegendSidebarProps } from './helpers/LegendSidebar';
-import { LegendSidebar } from './helpers/LegendSidebar';
-import type { ModalArgs } from './helpers/modal-helpers';
-import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
-import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
-import { createWIPWorkItemTooltip } from './helpers/tooltips';
-import { byNum, desc } from '../../../shared/sort-utils';
+} from './helpers/helpers.js';
+import { timeDifference } from '../../../shared/work-item-utils.js';
+import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
+import { LegendSidebar } from './helpers/LegendSidebar.js';
+import type { ModalArgs } from './helpers/modal-helpers.js';
+import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
+import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
+import { byNum, desc } from '../../../shared/sort-utils.js';
 
 const workCenterTimeInQueryPeriodUsing = (
   workItemTimes: WorkItemAccessors['workItemTimes'],

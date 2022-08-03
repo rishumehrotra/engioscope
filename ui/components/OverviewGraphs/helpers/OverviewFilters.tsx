@@ -1,8 +1,8 @@
 import React, {
   useEffect, useMemo, useRef, useState
 } from 'react';
-import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown';
-import type { Filter } from './use-global-filters';
+import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown.js';
+import type { Filter } from './use-global-filters.js';
 
 type FiltersProps = {
   filters: Filter[];

@@ -4,9 +4,12 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import type { ParsedConfig } from '../scraper/parse-config';
-import api from './api';
+import { fileURLToPath } from 'url';
+import type { ParsedConfig } from '../scraper/parse-config.js';
+import api from './api.js';
 
+// eslint-disable-next-line no-underscore-dangle
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const uiFolder = path.join(__dirname, '..', '..', 'ui');
 const app = express();
 

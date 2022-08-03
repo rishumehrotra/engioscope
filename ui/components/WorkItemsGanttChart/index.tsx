@@ -4,16 +4,16 @@ import React, {
 } from 'react';
 import type {
   AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
-} from '../../../shared/types';
-import DragZoom from './DragZoom';
-import { GanttRow } from './GanttRow';
-import { Graticule } from './Graticule';
+} from '../../../shared/types.js';
+import DragZoom from './DragZoom.js';
+import { GanttRow } from './GanttRow.js';
+import { Graticule } from './Graticule.js';
 import {
   svgWidth, svgHeight, xCoordConverterWithin, bottomScaleHeight, textHeight, rowPadding, textWidth, barStartPadding
-} from './helpers';
-import VerticalCrosshair from './VerticalCrosshair';
-import useGanttRows, { isProjectRow } from './use-gantt-rows';
-import BottomScale from './BottomScale';
+} from './helpers.js';
+import VerticalCrosshair from './VerticalCrosshair.js';
+import useGanttRows, { isProjectRow } from './use-gantt-rows.js';
+import BottomScale from './BottomScale.js';
 
 const showBottomScale = false;
 const workItemIdFromRowPath = (rowPath: string) => Number(rowPath.split('/').pop());

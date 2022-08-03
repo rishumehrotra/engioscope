@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { last, T } from 'rambda';
 import type {
   ProjectOverviewAnalysis, UIWorkItem, UIWorkItemType, WorkItemTimes
-} from '../../../../shared/types';
-import { createPalette } from '../../../helpers/utils';
-import type { LegendSidebarProps } from './LegendSidebar';
+} from '../../../../shared/types.js';
+import { createPalette } from '../../../helpers/utils.js';
+import type { LegendSidebarProps } from './LegendSidebar.js';
 import {
   cycleTime, isNewInTimeRange, isWIPInTimeRange, totalCycleTime, totalWorkCenterTime, workCenterTime
-} from '../../../../shared/work-item-utils';
+} from '../../../../shared/work-item-utils.js';
 
 export type GroupLabel = { witId: string; groupName: string };
 export type OrganizedWorkItems = Record<string, Record<string, UIWorkItem[]>>;

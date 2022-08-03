@@ -1,11 +1,15 @@
 import fetch from 'node-fetch';
-import { parse } from 'yaml';
+import yaml from 'yaml';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+
+// eslint-disable-next-line no-underscore-dangle
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const run = async () => {
   const response = await fetch('https://raw.githubusercontent.com/github/linguist/master/lib/linguist/languages.yml');
-  const data = parse(await response.text());
+  const data = yaml.parse(await response.text());
   const result = Object.entries(data as Record<string, { color?: string}>)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .filter(([_, o]) => (o).color)

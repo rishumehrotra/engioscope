@@ -1,8 +1,8 @@
-import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azure';
+import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azure.js';
 import {
   automatedTestCases, automatedTestCasesOfPriority,
   notAutomatedTestCases, notAutomatedTestCasesOfPriority, priorities
-} from '../queries/test-cases';
+} from '../queries/test-cases.js';
 
 export default async (
   getIds: (query: string) => Promise<WorkItemQueryResult<WorkItemQueryFlatResult>>,

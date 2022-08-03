@@ -1,10 +1,10 @@
 import React from 'react';
-import type { RepoAnalysis } from '../../../shared/types';
-import { num, shortDate } from '../../helpers/utils';
-import AlertMessage from '../common/AlertMessage';
-import type { Tab } from './Tabs';
-import TabContents from './TabContents';
-import { divide, toPercentage } from '../../../shared/utils';
+import type { RepoAnalysis } from '../../../shared/types.js';
+import { num, shortDate } from '../../helpers/utils.js';
+import AlertMessage from '../common/AlertMessage.js';
+import type { Tab } from './Tabs.js';
+import TabContents from './TabContents.js';
+import { divide, toPercentage } from '../../../shared/utils.js';
 
 export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab => ({
   title: 'Builds',

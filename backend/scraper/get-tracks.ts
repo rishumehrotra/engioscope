@@ -1,6 +1,6 @@
-import type { TrackwiseData, UIWorkItemType, WorkItemTimes } from '../../shared/types';
-import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
-import type { ProjectAnalysis } from './types';
+import type { TrackwiseData, UIWorkItemType, WorkItemTimes } from '../../shared/types.js';
+import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config.js';
+import type { ProjectAnalysis } from './types.js';
 
 type Result = {
   collectionConfig: ParsedCollection;

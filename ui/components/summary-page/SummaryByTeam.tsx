@@ -2,27 +2,27 @@ import { prop } from 'rambda';
 import React, {
   Fragment, useRef, useState
 } from 'react';
-import { maybe } from '../../../shared/maybe';
-import { asc, byString } from '../../../shared/sort-utils';
-import type { SummaryMetrics } from '../../../shared/types';
-import { divide, exists, toPercentage } from '../../../shared/utils';
-import { prettyMS } from '../../helpers/utils';
-import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline';
-import { LabelWithSparkline } from '../graphs/Sparkline';
-import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers';
+import { maybe } from '../../../shared/maybe.js';
+import { asc, byString } from '../../../shared/sort-utils.js';
+import type { SummaryMetrics } from '../../../shared/types.js';
+import { divide, exists, toPercentage } from '../../../shared/utils.js';
+import { prettyMS } from '../../helpers/utils.js';
+import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline.js';
+import { LabelWithSparkline } from '../graphs/Sparkline.js';
+import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.js';
 import {
   buildRunsSparkline,
   changeLeadTimeSparkline, coverageSparkline, cycleTimeSparkline,
   flowEfficiencySparkline, newBugsSparkline, newItemsSparkline, newSonarSetupsSparkline,
   testAutomationSparkline, velocitySparkline, wipTrendSparkline
-} from '../sparkline-props';
-import UsageByEnv from '../UsageByEnv';
-import type { SummaryGroupKey, SummaryItemProps } from './utils';
+} from '../sparkline-props.js';
+import UsageByEnv from '../UsageByEnv.js';
+import type { SummaryGroupKey, SummaryItemProps } from './utils.js';
 import {
   decreaseIsBetter, increaseIsBetter,
   getMetricCategoryDefinitionId, flattenSummaryGroups, allExceptExpectedKeys,
   renderGroupItem, processSummary
-} from './utils';
+} from './utils.js';
 
 type CardProps = {
   title: React.ReactNode;

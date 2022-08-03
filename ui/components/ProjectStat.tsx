@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
-import usePopover from '../hooks/use-popover';
-import { DownChevron, ExternalLink } from './common/Icons';
-import { useModalHelper } from './OverviewGraphs/helpers/modal-helpers';
+import usePopover from '../hooks/use-popover.js';
+import { DownChevron, ExternalLink } from './common/Icons.js';
+import { useModalHelper } from './OverviewGraphs/helpers/modal-helpers.js';
 
 type Stat = {
   title: string;

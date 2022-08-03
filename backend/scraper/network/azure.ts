@@ -1,18 +1,18 @@
 import qs from 'qs';
 import md5 from 'md5';
 import { filter } from 'rambda';
-import fetch from './fetch-with-extras';
-import { chunkArray } from '../../utils';
+import fetch from './fetch-with-extras.js';
+import { chunkArray } from '../../utils.js';
 import type {
   Build, BuildDefinitionReference, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestRun,
   WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
   WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
-} from '../types-azure';
-import createPaginatedGetter from './create-paginated-getter';
-import type { FetchResponse } from './fetch-with-disk-cache';
-import fetchWithDiskCache from './fetch-with-disk-cache';
-import type { ParsedConfig } from '../parse-config';
+} from '../types-azure.js';
+import createPaginatedGetter from './create-paginated-getter.js';
+import type { FetchResponse } from './fetch-with-disk-cache.js';
+import fetchWithDiskCache from './fetch-with-disk-cache.js';
+import type { ParsedConfig } from '../parse-config.js';
 
 const apiVersion = { 'api-version': '5.1' };
 

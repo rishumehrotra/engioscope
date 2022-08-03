@@ -1,10 +1,10 @@
 import React from 'react';
-import { Filters } from './common/Icons';
-import Checkbox from './common/Checkbox';
-import TextCheckboxCombo from './common/TextCheckboxCombo';
-import { useTabs } from '../hooks/use-tabs';
-import usePopover from '../hooks/use-popover';
-import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param';
+import { Filters } from './common/Icons.js';
+import Checkbox from './common/Checkbox.js';
+import TextCheckboxCombo from './common/TextCheckboxCombo.js';
+import { useTabs } from '../hooks/use-tabs.js';
+import usePopover from '../hooks/use-popover.js';
+import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param.js';
 
 const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam('commitsGreaterThanZero', asBoolean);

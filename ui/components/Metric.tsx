@@ -1,5 +1,5 @@
 import React from 'react';
-import { num } from '../helpers/utils';
+import { num } from '../helpers/utils.js';
 
 type MetricProps = {
   name: string;

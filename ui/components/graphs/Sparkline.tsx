@@ -3,10 +3,10 @@ import {
 } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useCallback, useMemo } from 'react';
-import { exists, shortDate } from '../../helpers/utils';
-import useHover from '../../hooks/use-hover';
-import type { Renderer } from './sparkline-renderers';
-import { pathRenderer } from './sparkline-renderers';
+import { exists, shortDate } from '../../helpers/utils.js';
+import useHover from '../../hooks/use-hover.js';
+import type { Renderer } from './sparkline-renderers.js';
+import { pathRenderer } from './sparkline-renderers.js';
 
 const popoverSvgConfig = {
   width: 350,

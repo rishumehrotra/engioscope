@@ -1,7 +1,7 @@
 import React, {
   useCallback, useEffect, useRef
 } from 'react';
-import { mediumDate } from '../../helpers/utils';
+import { mediumDate } from '../../helpers/utils.js';
 import {
   xCoordConverterWithin,
   axisLabelsHeight,
@@ -9,7 +9,7 @@ import {
   bottomScaleHeight,
   svgWidth,
   xCoordToDate
-} from './helpers';
+} from './helpers.js';
 
 type DragHandleProps = {
   onSelect: React.Dispatch<React.SetStateAction<[number, number] | null>>;

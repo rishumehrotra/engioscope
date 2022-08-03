@@ -7,6 +7,8 @@
   "editor.tabSize": 2,
   "typescript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifier": "relative",
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+  "typescript.preferences.importModuleSpecifierEnding": "js",
   "eslint.validate": [
     "javascript",
     "javascriptreact",

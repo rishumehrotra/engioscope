@@ -1,5 +1,5 @@
 import React from 'react';
-import { Done, Alert, Danger } from './Icons';
+import { Done, Alert, Danger } from './Icons.js';
 
 type RatingIconProps = {
   rating: number;

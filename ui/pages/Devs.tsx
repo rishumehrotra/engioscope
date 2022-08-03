@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
-import AppliedFilters from '../components/AppliedFilters';
-import Developer from '../components/Dev';
-import Loading from '../components/Loading';
-import { dontFilter, filterBySearch } from '../helpers/utils';
-import type { SortMap } from '../hooks/sort-hooks';
-import { useSort } from '../hooks/sort-hooks';
-import useFetchForProject from '../hooks/use-fetch-for-project';
-import { repoMetrics } from '../network';
-import type { Dev } from '../types';
-import { aggregateDevs } from '../helpers/aggregate-devs';
-import useQueryParam, { asString } from '../hooks/use-query-param';
+import AppliedFilters from '../components/AppliedFilters.js';
+import Developer from '../components/Dev.js';
+import Loading from '../components/Loading.js';
+import { dontFilter, filterBySearch } from '../helpers/utils.js';
+import type { SortMap } from '../hooks/sort-hooks.js';
+import { useSort } from '../hooks/sort-hooks.js';
+import useFetchForProject from '../hooks/use-fetch-for-project.js';
+import { repoMetrics } from '../network.js';
+import type { Dev } from '../types.js';
+import { aggregateDevs } from '../helpers/aggregate-devs.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
 
 const sorters: SortMap<Dev> = {
   'Name': (a, b) => b.name.toLowerCase().replace(/["“”]/gi, '').localeCompare(

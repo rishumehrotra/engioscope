@@ -1,4 +1,4 @@
-import type { ParsedCollection } from '../parse-config';
+import type { ParsedCollection } from '../parse-config.js';
 
 const join = (ss: string[]) => ss.map(s => `'${s}'`).join(', ');
 

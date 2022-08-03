@@ -1,9 +1,9 @@
 import React from 'react';
-import type { RepoAnalysis } from '../../../shared/types';
-import { num } from '../../helpers/utils';
-import type { Tab } from './Tabs';
-import Metric from '../Metric';
-import TabContents from './TabContents';
+import type { RepoAnalysis } from '../../../shared/types.js';
+import { num } from '../../helpers/utils.js';
+import type { Tab } from './Tabs.js';
+import Metric from '../Metric.js';
+import TabContents from './TabContents.js';
 
 export default (prs: RepoAnalysis['prs']): Tab => ({
   title: 'Pull requests',

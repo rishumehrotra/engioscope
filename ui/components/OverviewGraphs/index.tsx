@@ -1,23 +1,23 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
-import type { ProjectOverviewAnalysis, TestCaseAggregateStats } from '../../../shared/types';
-import OverviewFilters from './helpers/OverviewFilters';
-import { useRemoveSort } from '../../hooks/sort-hooks';
-import useGlobalFilters from './helpers/use-global-filters';
-import { CycleTimeGraph } from './CycleTime';
-import { workItemAccessors } from './helpers/helpers';
-import { useModalHelper } from './helpers/modal-helpers';
-import VelocityGraph from './Velocity';
-import FlowEfficiencyGraph from './FlowEfficiency';
-import BugLeakageAndRCAGraph from './BugLeakageAndRCA';
-import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState';
-import WIPTrendGraph from './WIPTrend';
-import { AgeOfWIPItemsGraph } from './AgeOfWIPItems';
-import { ChangeLeadTimeGraph } from './ChangeLeadTime';
-import ProjectStats from '../ProjectStats';
-import { createPalette, num } from '../../helpers/utils';
-import ProjectStat from '../ProjectStat';
-import NewGraph from './New';
-import TimeSpentGraph from './TimeSpentGraph';
+import type { ProjectOverviewAnalysis, TestCaseAggregateStats } from '../../../shared/types.js';
+import OverviewFilters from './helpers/OverviewFilters.js';
+import { useRemoveSort } from '../../hooks/sort-hooks.js';
+import useGlobalFilters from './helpers/use-global-filters.js';
+import { CycleTimeGraph } from './CycleTime.js';
+import { workItemAccessors } from './helpers/helpers.js';
+import { useModalHelper } from './helpers/modal-helpers.js';
+import VelocityGraph from './Velocity.js';
+import FlowEfficiencyGraph from './FlowEfficiency.js';
+import BugLeakageAndRCAGraph from './BugLeakageAndRCA.js';
+import AgeOfWorkItemsByStatus from './AgeOfWorkItemsByState.js';
+import WIPTrendGraph from './WIPTrend.js';
+import { AgeOfWIPItemsGraph } from './AgeOfWIPItems.js';
+import { ChangeLeadTimeGraph } from './ChangeLeadTime.js';
+import ProjectStats from '../ProjectStats.js';
+import { createPalette, num } from '../../helpers/utils.js';
+import ProjectStat from '../ProjectStat.js';
+import NewGraph from './New.js';
+import TimeSpentGraph from './TimeSpentGraph.js';
 
 const palette = createPalette([
   '#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9'

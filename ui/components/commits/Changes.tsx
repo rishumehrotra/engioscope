@@ -1,6 +1,6 @@
 import React from 'react';
-import { num } from '../../helpers/utils';
-import type { Dev } from '../../types';
+import { num } from '../../helpers/utils.js';
+import type { Dev } from '../../types.js';
 
 const Changes: React.FC<{changes: Dev['repos'][number]['changes']}> = ({ changes }) => (
   <div className="grid grid-cols-3 gap-5">

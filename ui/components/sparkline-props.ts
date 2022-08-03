@@ -3,11 +3,11 @@ import {
   equals,
   identity, last, not, prop, sum
 } from 'rambda';
-import { divide, exists, toPercentage } from '../../shared/utils';
-import { num, prettyMS } from '../helpers/utils';
-import type { ExtendedLabelWithSparklineProps } from './graphs/ExtendedLabelWithSparkline';
-import { pathRendererSkippingUndefineds } from './graphs/sparkline-renderers';
-import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils';
+import { divide, exists, toPercentage } from '../../shared/utils.js';
+import { num, prettyMS } from '../helpers/utils.js';
+import type { ExtendedLabelWithSparklineProps } from './graphs/ExtendedLabelWithSparkline.js';
+import { pathRendererSkippingUndefineds } from './graphs/sparkline-renderers.js';
+import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils.js';
 
 type SparklinePropsWithoutData<T> = Omit<ExtendedLabelWithSparklineProps<T>, 'data'>;
 

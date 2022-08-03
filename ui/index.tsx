@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 import './tailwind.output.css';
 import './index.css';
 import ReactModal from 'react-modal';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import * as serviceWorker from './serviceWorker.js';
+import App from './App.js';
 
 ReactModal.setAppElement('#root');
 

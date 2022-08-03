@@ -1,8 +1,8 @@
 import { identity, prop } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
-import { asc, byNum } from '../../../../shared/sort-utils';
-import type { UIWorkItem } from '../../../../shared/types';
-import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown';
+import { asc, byNum } from '../../../../shared/sort-utils.js';
+import type { UIWorkItem } from '../../../../shared/types.js';
+import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown.js';
 
 type FilterProps = {
   workItems: UIWorkItem[];

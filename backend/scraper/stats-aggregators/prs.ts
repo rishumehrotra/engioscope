@@ -1,7 +1,7 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add } from 'rambda';
-import type { GitPullRequest, PullRequestStatus } from '../types-azure';
-import type { UIPullRequests } from '../../../shared/types';
+import type { GitPullRequest, PullRequestStatus } from '../types-azure.js';
+import type { UIPullRequests } from '../../../shared/types.js';
 
 const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) => pr.status === status;
 const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (

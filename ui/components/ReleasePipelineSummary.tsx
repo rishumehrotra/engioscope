@@ -1,21 +1,21 @@
 import React, { Fragment } from 'react';
 import { last } from 'rambda';
-import type { Pipeline } from '../../shared/types';
-import { exists, num } from '../helpers/utils';
-import type { NormalizedPolicies } from '../../shared/pipeline-utils';
+import type { Pipeline } from '../../shared/types.js';
+import { exists, num } from '../helpers/utils.js';
+import type { NormalizedPolicies } from '../../shared/pipeline-utils.js';
 import {
   masterOnlyReleasesByWeek, pipelineHasStartingArtifact,
   totalUsageByEnvironment, masterDeploysCount, pipelineHasStageNamed,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed
-} from '../../shared/pipeline-utils';
-import ProjectStat from './ProjectStat';
-import ProjectStats from './ProjectStats';
-import { count, incrementIf } from '../../shared/reducer-utils';
-import UsageByEnv from './UsageByEnv';
-import { divide, toPercentage } from '../../shared/utils';
-import { LabelWithSparkline } from './graphs/Sparkline';
-import { increaseIsBetter } from './summary-page/utils';
-import { pathRendererSkippingUndefineds } from './graphs/sparkline-renderers';
+} from '../../shared/pipeline-utils.js';
+import ProjectStat from './ProjectStat.js';
+import ProjectStats from './ProjectStats.js';
+import { count, incrementIf } from '../../shared/reducer-utils.js';
+import UsageByEnv from './UsageByEnv.js';
+import { divide, toPercentage } from '../../shared/utils.js';
+import { LabelWithSparkline } from './graphs/Sparkline.js';
+import { increaseIsBetter } from './summary-page/utils.js';
+import { pathRendererSkippingUndefineds } from './graphs/sparkline-renderers.js';
 
 type ReleasePipelineSummaryProps = {
   pipelines: Pipeline[];

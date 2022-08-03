@@ -1,22 +1,22 @@
 import { pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import { asc, byNum } from '../../../shared/sort-utils';
-import type { UIWorkItem } from '../../../shared/types';
-import { flowEfficiency } from '../../../shared/work-item-utils';
-import GraphCard from './helpers/GraphCard';
-import type { WorkItemAccessors } from './helpers/helpers';
+import { asc, byNum } from '../../../shared/sort-utils.js';
+import type { UIWorkItem } from '../../../shared/types.js';
+import { flowEfficiency } from '../../../shared/work-item-utils.js';
+import GraphCard from './helpers/GraphCard.js';
+import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
   listFormat,
   stringifyDateField,
   lineColor, noGroup, getSidebarHeadlineStats, getSidebarItemStats, getSidebarStatByKey
-} from './helpers/helpers';
-import type { LegendSidebarProps } from './helpers/LegendSidebar';
-import { LegendSidebar } from './helpers/LegendSidebar';
-import type { ModalArgs } from './helpers/modal-helpers';
-import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
-import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
-import { createCompletedWorkItemTooltip } from './helpers/tooltips';
-import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails';
+} from './helpers/helpers.js';
+import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
+import { LegendSidebar } from './helpers/LegendSidebar.js';
+import type { ModalArgs } from './helpers/modal-helpers.js';
+import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
+import { createCompletedWorkItemTooltip } from './helpers/tooltips.js';
+import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails.js';
 
 type FlowEfficiencyProps = {
   workItems: UIWorkItem[];

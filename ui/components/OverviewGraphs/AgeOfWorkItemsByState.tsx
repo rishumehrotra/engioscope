@@ -1,25 +1,25 @@
 import { allPass, pipe, prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import { asc, byDate } from '../../../shared/sort-utils';
-import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { divide } from '../../../shared/utils';
+import { asc, byDate } from '../../../shared/sort-utils.js';
+import type { UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
+import { divide } from '../../../shared/utils.js';
 import {
   num, prettyMS, priorityBasedColor
-} from '../../helpers/utils';
-import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown';
-import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
-import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import { wipWorkItemsCSV } from './helpers/create-csv-content';
-import GraphCard from './helpers/GraphCard';
-import type { OrganizedWorkItems, WorkItemAccessors } from './helpers/helpers';
-import { workItemStateUsing } from './helpers/helpers';
-import type { LegendSidebarProps } from './helpers/LegendSidebar';
-import { LegendSidebar } from './helpers/LegendSidebar';
-import type { ModalArgs } from './helpers/modal-helpers';
-import { WorkItemFlatList } from './helpers/modal-helpers';
-import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
-import type { TooltipSection } from './helpers/tooltips';
-import { createWIPWorkItemTooltip } from './helpers/tooltips';
+} from '../../helpers/utils.js';
+import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown.js';
+import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph.js';
+import ScatterLineGraph from '../graphs/ScatterLineGraph.js';
+import { wipWorkItemsCSV } from './helpers/create-csv-content.js';
+import GraphCard from './helpers/GraphCard.js';
+import type { OrganizedWorkItems, WorkItemAccessors } from './helpers/helpers.js';
+import { workItemStateUsing } from './helpers/helpers.js';
+import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
+import { LegendSidebar } from './helpers/LegendSidebar.js';
+import type { ModalArgs } from './helpers/modal-helpers.js';
+import { WorkItemFlatList } from './helpers/modal-helpers.js';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
+import type { TooltipSection } from './helpers/tooltips.js';
+import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
 
 const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => {
   if (stateLabel.startsWith('Before ')) return 0;

@@ -3,8 +3,8 @@ import type { MutableRefObject } from 'react';
 import React, {
   useState, useCallback, Fragment, useRef
 } from 'react';
-import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
-import useSvgEvent from '../../hooks/use-svg-event';
+import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
+import useSvgEvent from '../../hooks/use-svg-event.js';
 
 const yAxisItemSpacing = 12;
 const yAxisLeftPadding = 70;

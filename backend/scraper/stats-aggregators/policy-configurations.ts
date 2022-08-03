@@ -1,9 +1,9 @@
-import type { BranchPolicies } from '../../../shared/types';
-import type { PolicyConfiguration } from '../types-azure';
+import type { BranchPolicies } from '../../../shared/types.js';
+import type { PolicyConfiguration } from '../types-azure.js';
 import {
   isRequireMergeStrategyPolicy, isCommentRequirementsPolicy, isBuildPolicy,
   isWorkItemLinkingPolicy, isMinimumNumberOfReviewersPolicy
-} from '../types-azure';
+} from '../types-azure.js';
 
 export default (policyConfigurations: PolicyConfiguration[]) => {
   const policyConfigByRepoAndBranch = policyConfigurations.reduce<Record<string /* repoId */, Record<string /* branch */, BranchPolicies>>>(

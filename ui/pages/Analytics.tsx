@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { AnalyticsItem } from '../../shared/types';
-import Loading from '../components/Loading';
-import { num } from '../helpers/utils';
-import { useSetHeaderDetails } from '../hooks/header-hooks';
-import { fetchAnalytics } from '../network';
+import type { AnalyticsItem } from '../../shared/types.js';
+import Loading from '../components/Loading.js';
+import { num } from '../helpers/utils.js';
+import { useSetHeaderDetails } from '../hooks/header-hooks.js';
+import { fetchAnalytics } from '../network.js';
 
 const Analytics: React.FC = () => {
   const [analytics, setAnalytics] = useState<AnalyticsItem[] | undefined>();

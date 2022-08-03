@@ -1,8 +1,8 @@
 import { add, range } from 'rambda';
 import React, { useMemo } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { exists } from '../helpers/utils';
-import type { PipelineStageWithCounts } from '../../shared/pipeline-utils';
+import { exists } from '../helpers/utils.js';
+import type { PipelineStageWithCounts } from '../../shared/pipeline-utils.js';
 
 type Grid = (PipelineStageWithCounts | undefined)[][];
 

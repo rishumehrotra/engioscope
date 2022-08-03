@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import React, { useMemo, useCallback, useState } from 'react';
-import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types';
-import { contrastColour } from '../../../helpers/utils';
-import { modalHeading, useModal } from '../../common/Modal';
-import type { WorkItemAccessors } from './helpers';
-import { noGroup } from './helpers';
+import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types.js';
+import { contrastColour } from '../../../helpers/utils.js';
+import { modalHeading, useModal } from '../../common/Modal.js';
+import type { WorkItemAccessors } from './helpers.js';
+import { noGroup } from './helpers.js';
 
 export type ModalArgs = {
   heading: ReactNode;

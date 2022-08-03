@@ -1,4 +1,4 @@
-import type workItemIconSvgs from '../work-item-icon-svgs';
+import type workItemIconSvgs from '../work-item-icon-svgs.js';
 
 export type ProjectState = 'all' | 'createPending' | 'deleted' | 'deleting' | 'new' | 'unchanged' | 'wellFormed';
 export type ProjectVisibility = 'private' | 'public';

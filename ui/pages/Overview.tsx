@@ -1,8 +1,8 @@
 import React from 'react';
-import { overview } from '../network';
-import useFetchForProject from '../hooks/use-fetch-for-project';
-import Loading from '../components/Loading';
-import OverviewGraphs from '../components/OverviewGraphs';
+import { overview } from '../network.js';
+import useFetchForProject from '../hooks/use-fetch-for-project.js';
+import Loading from '../components/Loading.js';
+import OverviewGraphs from '../components/OverviewGraphs/index.js';
 
 const Overview: React.FC = () => {
   const projectAnalysis = useFetchForProject(overview);

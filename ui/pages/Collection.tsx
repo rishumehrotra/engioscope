@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { AnalysedProjects } from '../../shared/types';
-import Loading from '../components/Loading';
-import { useSetHeaderDetails } from '../hooks/header-hooks';
-import { useSetProjectDetails } from '../hooks/project-details-hooks';
-import { fetchCollections } from '../network';
+import type { AnalysedProjects } from '../../shared/types.js';
+import Loading from '../components/Loading.js';
+import { useSetHeaderDetails } from '../hooks/header-hooks.js';
+import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
+import { fetchCollections } from '../network.js';
 
 const Project: React.FC<{
   projectName: string;

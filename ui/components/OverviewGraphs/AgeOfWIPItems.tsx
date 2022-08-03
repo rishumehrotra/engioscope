@@ -1,22 +1,22 @@
 import { prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import type { UIWorkItem } from '../../../shared/types';
-import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph';
-import ScatterLineGraph from '../graphs/ScatterLineGraph';
-import type { LegendSidebarProps } from './helpers/LegendSidebar';
-import { LegendSidebar } from './helpers/LegendSidebar';
-import GraphCard from './helpers/GraphCard';
-import { prettyMS, priorityBasedColor, shortDate } from '../../helpers/utils';
-import type { WorkItemAccessors } from './helpers/helpers';
+import type { UIWorkItem } from '../../../shared/types.js';
+import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph.js';
+import ScatterLineGraph from '../graphs/ScatterLineGraph.js';
+import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
+import { LegendSidebar } from './helpers/LegendSidebar.js';
+import GraphCard from './helpers/GraphCard.js';
+import { prettyMS, priorityBasedColor, shortDate } from '../../helpers/utils.js';
+import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
   stringifyDateField, getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats
-} from './helpers/helpers';
-import { createWIPWorkItemTooltip } from './helpers/tooltips';
-import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
-import type { ModalArgs } from './helpers/modal-helpers';
-import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
-import { wipWorkItemsCSV } from './helpers/create-csv-content';
-import { byNum, desc } from '../../../shared/sort-utils';
+} from './helpers/helpers.js';
+import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
+import type { ModalArgs } from './helpers/modal-helpers.js';
+import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
+import { wipWorkItemsCSV } from './helpers/create-csv-content.js';
+import { byNum, desc } from '../../../shared/sort-utils.js';
 
 type AgeOfWIPItemsGraphProps = {
   workItems: UIWorkItem[];

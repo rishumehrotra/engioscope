@@ -1,9 +1,9 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
-import usePageName from '../hooks/use-page-name';
-import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param';
-import type { Tab } from '../types';
-import { Close } from './common/Icons';
+import usePageName from '../hooks/use-page-name.js';
+import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param.js';
+import type { Tab } from '../types.js';
+import { Close } from './common/Icons.js';
 
 const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({ label, onClose }) => (
   <span className="ml-1 py-1 pl-3 pr-2 border border-gray-300 rounded-full flex bg-white text-sm">

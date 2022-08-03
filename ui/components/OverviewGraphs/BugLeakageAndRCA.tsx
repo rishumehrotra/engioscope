@@ -1,26 +1,26 @@
 import { length, not, pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import { count, incrementBy } from '../../../shared/reducer-utils';
-import { asc, byNum, desc } from '../../../shared/sort-utils';
-import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { noRCAValue } from '../../../shared/work-item-utils';
-import { num } from '../../helpers/utils';
-import { DownChevron, UpChevron } from '../common/Icons';
-import Switcher from '../common/Switcher';
-import ExpandableBarGraph from '../graphs/ExpandableBarGraph';
-import { bugLeakageCSV } from './helpers/create-csv-content';
-import GraphCard from './helpers/GraphCard';
-import type { WorkItemAccessors } from './helpers/helpers';
+import { count, incrementBy } from '../../../shared/reducer-utils.js';
+import { asc, byNum, desc } from '../../../shared/sort-utils.js';
+import type { UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
+import { noRCAValue } from '../../../shared/work-item-utils.js';
+import { num } from '../../helpers/utils.js';
+import { DownChevron, UpChevron } from '../common/Icons.js';
+import Switcher from '../common/Switcher.js';
+import ExpandableBarGraph from '../graphs/ExpandableBarGraph.js';
+import { bugLeakageCSV } from './helpers/create-csv-content.js';
+import GraphCard from './helpers/GraphCard.js';
+import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
   listFormat, noGroup, useSidebarCheckboxState, lineColor,
   getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
-} from './helpers/helpers';
-import type { LegendSidebarProps } from './helpers/LegendSidebar';
-import { LegendSidebar } from './helpers/LegendSidebar';
-import type { ModalArgs } from './helpers/modal-helpers';
-import { WorkItemLinkForModal, WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers';
-import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters';
-import { createWIPWorkItemTooltip } from './helpers/tooltips';
+} from './helpers/helpers.js';
+import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
+import { LegendSidebar } from './helpers/LegendSidebar.js';
+import type { ModalArgs } from './helpers/modal-helpers.js';
+import { WorkItemLinkForModal, WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
+import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
+import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
 
 type GraphItem = {
   rca: string;

@@ -4,29 +4,29 @@ import {
 } from 'rambda';
 import type {
   Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
-} from '../../shared/types';
+} from '../../shared/types.js';
 import {
   isAfter, queryPeriodDays, weekLimits, weeks
-} from '../utils';
-import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config';
-import type { ProjectAnalysis } from './types';
-import type { WorkItemTimesGetter } from '../../shared/work-item-utils';
+} from '../utils.js';
+import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config.js';
+import type { ProjectAnalysis } from './types.js';
+import type { WorkItemTimesGetter } from '../../shared/work-item-utils.js';
 import {
   noGroup, isNewInTimeRange, isWIP, isWIPInTimeRange, timeDifference,
   totalCycleTime, totalWorkCenterTime
-} from '../../shared/work-item-utils';
-import { incrementBy, incrementIf, count } from '../../shared/reducer-utils';
+} from '../../shared/work-item-utils.js';
+import { incrementBy, incrementIf, count } from '../../shared/reducer-utils.js';
 import {
   isPipelineInGroup, masterDeploysCount, masterOnlyReleasesByWeek, normalizePolicy, pipelineHasStageNamed,
   pipelineHasStartingArtifact,
   pipelineMeetsBranchPolicyRequirements, pipelineUsesStageNamed, totalUsageByEnvironment
-} from '../../shared/pipeline-utils';
+} from '../../shared/pipeline-utils.js';
 import {
   buildPipelines, healthyBranches, isInactive, isYmlPipeline, newSonarSetupsByWeek, reposWithPipelines,
   sonarCountsByWeek, totalBuilds, totalBuildsByWeek, totalCoverage,
   totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek, totalUsingCentralTemplate
-} from '../../shared/repo-utils';
-import { divide, exists, toPercentage } from '../../shared/utils';
+} from '../../shared/repo-utils.js';
+import { divide, exists, toPercentage } from '../../shared/utils.js';
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
 type RelevantResults = {

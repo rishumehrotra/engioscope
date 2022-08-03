@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest';
-import { filterTree, reduceTree } from '../tree-traversal';
+import { filterTree, reduceTree } from '../tree-traversal.js';
 
 const tree = {
   id: 'root',

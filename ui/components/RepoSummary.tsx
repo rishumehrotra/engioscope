@@ -5,16 +5,16 @@ import {
   reposWithPipelines, sonarCountsByWeek, totalBuilds, totalBuildsByWeek,
   totalCoverage, totalCoverageByWeek, totalSuccessfulBuildsByWeek,
   totalTests, totalTestsByWeek, totalUsingCentralTemplate
-} from '../../shared/repo-utils';
+} from '../../shared/repo-utils.js';
 import type {
   RepoAnalysis, UIBuildPipeline, QualityGateStatus, UICodeQuality
-} from '../../shared/types';
-import { divide, toPercentage } from '../../shared/utils';
-import { num, shortDate } from '../helpers/utils';
-import { LabelWithSparkline } from './graphs/Sparkline';
-import ProjectStat from './ProjectStat';
-import ProjectStats from './ProjectStats';
-import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils';
+} from '../../shared/types.js';
+import { divide, toPercentage } from '../../shared/utils.js';
+import { num, shortDate } from '../helpers/utils.js';
+import { LabelWithSparkline } from './graphs/Sparkline.js';
+import ProjectStat from './ProjectStat.js';
+import ProjectStats from './ProjectStats.js';
+import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils.js';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos

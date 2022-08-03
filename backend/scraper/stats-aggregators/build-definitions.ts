@@ -1,4 +1,4 @@
-import type { BuildDefinitionReference } from '../types-azure';
+import type { BuildDefinitionReference } from '../types-azure.js';
 
 export default (buildDefinitions: BuildDefinitionReference[]) => {
   const buildDefinitionsByRepoId = (

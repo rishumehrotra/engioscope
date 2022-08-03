@@ -1,12 +1,12 @@
 import { sum } from 'rambda';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { byNum, desc } from '../../shared/sort-utils';
-import type { Dev } from '../types';
-import Changes from './commits/Changes';
-import CommitTimeline from './commits/CommitTimeline';
-import { DownChevron, UpChevron } from './common/Icons';
-import { ProfilePic } from './common/ProfilePic';
+import { byNum, desc } from '../../shared/sort-utils.js';
+import type { Dev } from '../types.js';
+import Changes from './commits/Changes.js';
+import CommitTimeline from './commits/CommitTimeline.js';
+import { DownChevron, UpChevron } from './common/Icons.js';
+import { ProfilePic } from './common/ProfilePic.js';
 
 type DeveloperProps = {
   dev: Dev;

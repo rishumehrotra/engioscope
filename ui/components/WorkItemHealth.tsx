@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo } from 'react';
 import type {
   AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
-} from '../../shared/types';
-import WorkItemsGanttChart from './WorkItemsGanttChart';
-import { Revisions } from './WorkItemsGanttChart/GanttRow';
+} from '../../shared/types.js';
+import { Revisions } from './WorkItemsGanttChart/GanttRow.js';
 import {
   barHeight,
   barWidthUsing, getMaxDateTime, getMinDateTime, rowPadding, svgWidth
-} from './WorkItemsGanttChart/helpers';
+} from './WorkItemsGanttChart/helpers.js';
+import WorkItemsGanttChart from './WorkItemsGanttChart/index.js';
 
 const titleTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => `
   <div class="max-w-xs">

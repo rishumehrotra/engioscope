@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import useResizeObserver from '@react-hook/resize-observer';
 import { not } from 'rambda';
 import { useHotkeys } from 'react-hotkeys-hook';
-import useOnClickOutside from '../../hooks/on-click-outside';
+import useOnClickOutside from '../../hooks/on-click-outside.js';
 
 export type NavItem<T extends string> = {
   key: T;

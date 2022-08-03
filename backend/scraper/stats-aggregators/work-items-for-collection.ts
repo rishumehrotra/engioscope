@@ -1,19 +1,19 @@
 import pluralize from 'pluralize';
 import { reduce } from 'rambda';
-import type { UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { exists } from '../../../shared/utils';
-import { noRCAValue } from '../../../shared/work-item-utils';
-import { unique } from '../../utils';
-import workItemIconSvgs from '../../work-item-icon-svgs';
-import azure from '../network/azure';
-import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config';
-import type { WorkItemAnalysis } from '../types';
+import type { UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
+import { exists } from '../../../shared/utils.js';
+import { noRCAValue } from '../../../shared/work-item-utils.js';
+import { unique } from '../../utils.js';
+import workItemIconSvgs from '../../work-item-icon-svgs.js';
+import azure from '../network/azure.js';
+import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config.js';
+import type { WorkItemAnalysis } from '../types.js';
 import type {
   WorkItem, WorkItemField, WorkItemQueryHierarchialResult, WorkItemQueryResult, WorkItemType
-} from '../types-azure';
-import { queryForCollectionWorkItems } from '../queries/collection-work-items';
-import { getOverviewData } from './work-item-overview';
-import { workItemTypeId, workItemTypeIconColor } from './work-item-utils';
+} from '../types-azure.js';
+import { queryForCollectionWorkItems } from '../queries/collection-work-items.js';
+import { getOverviewData } from './work-item-overview.js';
+import { workItemTypeId, workItemTypeIconColor } from './work-item-utils.js';
 
 type WorkItemIDTree = WorkItemQueryResult<WorkItemQueryHierarchialResult>;
 type ProjectName = string;

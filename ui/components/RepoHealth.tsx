@@ -3,23 +3,23 @@ import React, {
 } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { prop } from 'rambda';
-import type { RepoAnalysis } from '../../shared/types';
-import { num } from '../helpers/utils';
-import Card from './common/ExpandingCard';
-import Flair from './common/Flair';
-import builds from './repo-tabs/builds';
-import branches from './repo-tabs/branches';
-import commits from './repo-tabs/commits';
-import prs from './repo-tabs/prs';
-import tests from './repo-tabs/tests';
-import codeQuality from './repo-tabs/codeQuality';
-import type { Tab } from './repo-tabs/Tabs';
-import { TopLevelTab } from './repo-tabs/Tabs';
-import { useSortParams } from '../hooks/sort-hooks';
-import usePageName from '../hooks/use-page-name';
-import type { Dev } from '../types';
-import { isInactive } from '../../shared/repo-utils';
-import { byNum, desc } from '../../shared/sort-utils';
+import type { RepoAnalysis } from '../../shared/types.js';
+import { num } from '../helpers/utils.js';
+import Card from './common/ExpandingCard.js';
+import Flair from './common/Flair.js';
+import builds from './repo-tabs/builds.js';
+import commits from './repo-tabs/commits.js';
+import prs from './repo-tabs/prs.js';
+import tests from './repo-tabs/tests.js';
+import codeQuality from './repo-tabs/codeQuality.js';
+import type { Tab } from './repo-tabs/Tabs.js';
+import { TopLevelTab } from './repo-tabs/Tabs.js';
+import { useSortParams } from '../hooks/sort-hooks.js';
+import usePageName from '../hooks/use-page-name.js';
+import type { Dev } from '../types.js';
+import { isInactive } from '../../shared/repo-utils.js';
+import { byNum, desc } from '../../shared/sort-utils.js';
+import branches from './repo-tabs/branches/index.js';
 
 // eslint-disable-next-line default-param-last
 const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?: RepoAnalysis['defaultBranch']) => {

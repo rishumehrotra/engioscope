@@ -1,4 +1,4 @@
-import type { ReleasePipelineStats, RepoAnalysis } from '../../../shared/types';
+import type { ReleasePipelineStats, RepoAnalysis } from '../../../shared/types.js';
 
 export default (releaseAnalysis: ReleasePipelineStats, repoAnalysis: RepoAnalysis[]): RepoAnalysis[] => {
   const pipelinesByRepoName = releaseAnalysis.pipelines.reduce<Record<string, string[]>>((acc, releasePipeline) => {

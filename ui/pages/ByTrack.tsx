@@ -2,17 +2,17 @@ import {
   always, head, identity, last, map
 } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
-import { asc, byDate, byNum } from '../../shared/sort-utils';
-import type { Tracks, UIWorkItem } from '../../shared/types';
-import { divide } from '../../shared/utils';
-import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
-import Switcher from '../components/common/Switcher';
-import Loading from '../components/Loading';
-import type { TimeInArea } from '../components/OverviewGraphs/helpers/helpers';
-import { timeSpent } from '../components/OverviewGraphs/helpers/helpers';
-import { prettyMS, shortDate } from '../helpers/utils';
-import { useSetHeaderDetails } from '../hooks/header-hooks';
-import { byTrack } from '../network';
+import { asc, byDate, byNum } from '../../shared/sort-utils.js';
+import type { Tracks, UIWorkItem } from '../../shared/types.js';
+import { divide } from '../../shared/utils.js';
+import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
+import Switcher from '../components/common/Switcher.js';
+import Loading from '../components/Loading.js';
+import type { TimeInArea } from '../components/OverviewGraphs/helpers/helpers.js';
+import { timeSpent } from '../components/OverviewGraphs/helpers/helpers.js';
+import { prettyMS, shortDate } from '../helpers/utils.js';
+import { useSetHeaderDetails } from '../hooks/header-hooks.js';
+import { byTrack } from '../network.js';
 
 type GanttBarProps = {
   maxTime: number;

@@ -13,7 +13,6 @@
       "jest",
       "node"
     ],
-    "module": "commonjs",
     "noEmit": false,
     "outDir": "../dist"
   },

@@ -1,14 +1,14 @@
 import {
   add, applySpec, identity, multiply
 } from 'rambda';
-import { count, incrementBy } from './reducer-utils';
-import { asc, byString } from './sort-utils';
+import { count, incrementBy } from './reducer-utils.js';
+import { asc, byString } from './sort-utils.js';
 import type {
   QualityGateStatus, RepoAnalysis, UIBuildPipeline
 } from './types';
 import {
   addColumnsInArray, combineColumnsInArray, divide, exists
-} from './utils';
+} from './utils.js';
 
 export const isInactive = (repo: RepoAnalysis) => (
   ((repo.builds?.count || 0) === 0)

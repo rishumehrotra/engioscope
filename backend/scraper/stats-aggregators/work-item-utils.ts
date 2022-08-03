@@ -1,6 +1,6 @@
 import md5 from 'md5';
 import { URL } from 'url';
-import type { WorkItem, WorkItemType } from '../types-azure';
+import type { WorkItem, WorkItemType } from '../types-azure.js';
 
 const iconColorCache = new Map<string, string>();
 export const workItemTypeIconColor = (workItemType: WorkItemType) => {

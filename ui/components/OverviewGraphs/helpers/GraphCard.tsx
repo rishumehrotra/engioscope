@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import React, { useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
-import useDownloadLinkProps from '../../../hooks/use-download-link-props';
-import { sidebarWidth } from './LegendSidebar';
+import useDownloadLinkProps from '../../../hooks/use-download-link-props.js';
+import { sidebarWidth } from './LegendSidebar.js';
 
 type GraphCardProps = {
   title: string;

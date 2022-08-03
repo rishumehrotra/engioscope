@@ -3,10 +3,10 @@ import { join } from 'path';
 import yargs from 'yargs';
 import chalk from 'chalk';
 import { promises as fs } from 'fs';
-import getAllTheThings from './scraper/get-all-the-things';
-import startServer from './server/express';
-import { doesFileExist } from './utils';
-import parseConfig from './scraper/parse-config';
+import getAllTheThings from './scraper/get-all-the-things.js';
+import startServer from './server/express.js';
+import { doesFileExist } from './utils.js';
+import parseConfig from './scraper/parse-config.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const addConfigOption = (yargs: yargs.Argv<{}>): void => {

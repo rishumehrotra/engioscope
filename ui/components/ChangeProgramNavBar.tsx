@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import NavBar from './common/NavBar';
+import NavBar from './common/NavBar.js';
 
 const navItems = [
   { key: 'metrics', label: 'Metrics', linkTo: '/summary' },

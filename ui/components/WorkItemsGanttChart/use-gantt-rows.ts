@@ -2,11 +2,11 @@ import { last } from 'rambda';
 import {
   useCallback, useEffect, useMemo, useState
 } from 'react';
-import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types';
-import { exists } from '../../helpers/utils';
-import { useProjectDetails } from '../../hooks/project-details-hooks';
-import { filterTree, mapTree } from './tree-traversal';
-import type { ExpandedState } from './types';
+import type { AnalysedWorkItems, UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
+import { exists } from '../../helpers/utils.js';
+import { useProjectDetails } from '../../hooks/project-details-hooks.js';
+import { filterTree, mapTree } from './tree-traversal.js';
+import type { ExpandedState } from './types.js';
 
 type NodeCommonProps = {
   path: string;

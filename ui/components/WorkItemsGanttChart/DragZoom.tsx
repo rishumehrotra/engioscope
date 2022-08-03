@@ -2,7 +2,7 @@ import type { MutableRefObject } from 'react';
 import React, { useEffect, useCallback, useRef } from 'react';
 import {
   axisLabelsHeight, barStartPadding, svgWidth, textWidth, xCoordToDate
-} from './helpers';
+} from './helpers.js';
 
 const minMaxSelection = (items: [number, number]) => (
   [Math.min(...items), Math.max(...items)] as [number, number]

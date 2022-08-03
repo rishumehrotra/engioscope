@@ -1,6 +1,6 @@
 import type React from 'react';
-import createContextState from '../helpers/create-context-state';
-import type { GlobalUIConfig } from '../../shared/types';
+import createContextState from '../helpers/create-context-state.js';
+import type { GlobalUIConfig } from '../../shared/types.js';
 
 type HeaderContext = Partial<{
   globalSettings: GlobalUIConfig | null;

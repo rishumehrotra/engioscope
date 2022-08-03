@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
-import { AlertTriangle } from './common/Icons';
-import { envRowTooltip } from './OverviewGraphs/helpers/tooltips';
+import { AlertTriangle } from './common/Icons.js';
+import { envRowTooltip } from './OverviewGraphs/helpers/tooltips.js';
 
 type UsageByEnvProps = {
   perEnvUsage: Record<string, {

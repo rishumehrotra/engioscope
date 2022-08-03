@@ -1,15 +1,15 @@
 import { not, prop, range } from 'rambda';
 import React, { useCallback, useState } from 'react';
-import { count, incrementBy } from '../../../shared/reducer-utils';
-import type { UIChangeProgramTask } from '../../../shared/types';
+import { count, incrementBy } from '../../../shared/reducer-utils.js';
+import type { UIChangeProgramTask } from '../../../shared/types.js';
 import {
   CircularAlert, CircularCheckmark, Minus, Plus
-} from '../common/Icons';
+} from '../common/Icons.js';
 import type {
   OrganizedTasks, RollupTaskState, TaskState
-} from './change-program-utils';
-import { rollupTooltip, taskTooltip } from './change-program-utils';
-import useHover from '../../hooks/use-hover';
+} from './change-program-utils.js';
+import { rollupTooltip, taskTooltip } from './change-program-utils.js';
+import useHover from '../../hooks/use-hover.js';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {

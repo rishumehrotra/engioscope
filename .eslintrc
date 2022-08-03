@@ -161,7 +161,6 @@
     "no-nested-ternary": "warn",
     "jsx-a11y/click-events-have-key-events": "warn",
     "react/no-array-index-key": "warn",
-    "import/extensions": "off",
     "jsx-a11y/control-has-associated-label": "warn",
     "react/no-unescaped-entities": "off",
     "jsx-props-no-spreading": "off",
@@ -216,6 +215,14 @@
         "allow": [
           "_id"
         ]
+      }
+    ],
+    "import/extensions": [
+      "error",
+      "always",
+      {
+        "ts": "never",
+        "tsx": "never"
       }
     ]
   },

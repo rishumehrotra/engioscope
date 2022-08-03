@@ -1,12 +1,12 @@
 import type { MutableRefObject } from 'react';
 import React, { useCallback, useRef } from 'react';
-import { mediumDate } from '../../helpers/utils';
+import { mediumDate } from '../../helpers/utils.js';
 import {
   axisLabelsHeight, axisLabelsWidth, barStartPadding,
   svgWidth, textWidth, xCoordToDate
-} from './helpers';
-import useRequestAnimationFrame from '../../hooks/use-request-animation-frame';
-import useSvgEvent from '../../hooks/use-svg-event';
+} from './helpers.js';
+import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
+import useSvgEvent from '../../hooks/use-svg-event.js';
 
 const useCrosshair = (
   svgRef: MutableRefObject<SVGSVGElement | null>,

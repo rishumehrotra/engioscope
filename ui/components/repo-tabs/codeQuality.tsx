@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { pipe } from 'rambda';
-import type { RepoAnalysis, UICodeQuality } from '../../../shared/types';
-import { formatDebt, num, shortDate } from '../../helpers/utils';
-import AlertMessage from '../common/AlertMessage';
-import type { Tab } from './Tabs';
-import TabContents from './TabContents';
-import { combinedQualityGateStatus } from '../code-quality-utils';
+import type { RepoAnalysis, UICodeQuality } from '../../../shared/types.js';
+import { formatDebt, num, shortDate } from '../../helpers/utils.js';
+import AlertMessage from '../common/AlertMessage.js';
+import type { Tab } from './Tabs.js';
+import TabContents from './TabContents.js';
+import { combinedQualityGateStatus } from '../code-quality-utils.js';
 
 // https://docs.sonarqube.org/latest/user-guide/metric-definitions/
 

@@ -5,9 +5,9 @@ import {
 import React, {
   Fragment, useCallback, useMemo
 } from 'react';
-import { asc, byNum } from '../../../shared/sort-utils';
-import hexToHsl from '../../helpers/hex-to-hsl';
-import { prettyMS } from '../../helpers/utils';
+import { asc, byNum } from '../../../shared/sort-utils.js';
+import hexToHsl from '../../helpers/hex-to-hsl.js';
+import { prettyMS } from '../../helpers/utils.js';
 
 const xAxisLabelAreaHeight = 80;
 const xAxisLabelHeight = 50;

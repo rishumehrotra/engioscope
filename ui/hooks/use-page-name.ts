@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import type { Tab } from '../types';
-import { useProjectDetails } from './project-details-hooks';
+import type { Tab } from '../types.js';
+import { useProjectDetails } from './project-details-hooks.js';
 
 export default () => {
   const projectDetails = useProjectDetails();

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { shortDate } from '../helpers/utils';
-import { useProjectDetails } from '../hooks/project-details-hooks';
-import usePageName from '../hooks/use-page-name';
+import { shortDate } from '../helpers/utils.js';
+import { useProjectDetails } from '../hooks/project-details-hooks.js';
+import usePageName from '../hooks/use-page-name.js';
 
 const renderIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>

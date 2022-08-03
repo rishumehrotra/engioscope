@@ -3,11 +3,11 @@ import { decode } from 'html-entities';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
-import { glob } from 'glob';
-import { normalizeBranchName } from '../utils';
-import { exists } from '../../shared/utils';
+import glob from 'glob';
+import { normalizeBranchName } from '../utils.js';
+import { exists } from '../../shared/utils.js';
 
-const globAsync = promisify(glob);
+const globAsync = promisify(glob.glob);
 
 const parseReport = async (fileName: string) => {
   let htmlContent: string;

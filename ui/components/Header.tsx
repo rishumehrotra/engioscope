@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { shortDate } from '../helpers/utils';
-import { useHeaderDetails } from '../hooks/header-hooks';
+import { shortDate } from '../helpers/utils.js';
+import { useHeaderDetails } from '../hooks/header-hooks.js';
 import logo from '../images/engioscope.png';
 
 const navItems = (changeProgramName?: string) => [

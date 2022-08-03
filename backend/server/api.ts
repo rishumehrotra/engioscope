@@ -2,14 +2,14 @@ import Router from 'express-promise-router';
 import { join } from 'path';
 import { promises as fs, createWriteStream, createReadStream } from 'fs';
 import uaParser from 'ua-parser-js';
-import { doesFileExist } from '../utils';
-import type { ParsedConfig } from '../scraper/parse-config';
-import azure from '../scraper/network/azure';
-import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision';
-import type { PipelineDefinitions, UIWorkItemRevision } from '../../shared/types';
-import analytics from './analytics';
-import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases';
-import saveBuildReport from './save-build-report';
+import { doesFileExist } from '../utils.js';
+import type { ParsedConfig } from '../scraper/parse-config.js';
+import azure from '../scraper/network/azure.js';
+import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision.js';
+import type { PipelineDefinitions, UIWorkItemRevision } from '../../shared/types.js';
+import analytics from './analytics.js';
+import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases.js';
+import saveBuildReport from './save-build-report.js';
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions, getReleaseDefinition } = azure(config);

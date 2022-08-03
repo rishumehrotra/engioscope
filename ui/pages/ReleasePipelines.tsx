@@ -3,26 +3,26 @@ import React, {
 } from 'react';
 import { not, pipe } from 'rambda';
 import { useParams } from 'react-router-dom';
-import type { Pipeline as TPipeline, PipelineStage } from '../../shared/types';
-import AlertMessage from '../components/common/AlertMessage';
-import AppliedFilters from '../components/AppliedFilters';
-import Pipeline from '../components/ReleasePipelineHealth';
-import { pipelineMetrics, releaseDefinitions } from '../network';
-import useFetchForProject from '../hooks/use-fetch-for-project';
-import { useRemoveSort } from '../hooks/sort-hooks';
-import { filterBySearch, getSearchTerm } from '../helpers/utils';
-import Loading from '../components/Loading';
-import ReleasePipelineSummary from '../components/ReleasePipelineSummary';
-import type { NormalizedPolicies } from '../../shared/pipeline-utils';
+import type { Pipeline as TPipeline, PipelineStage } from '../../shared/types.js';
+import AlertMessage from '../components/common/AlertMessage.js';
+import AppliedFilters from '../components/AppliedFilters.js';
+import Pipeline from '../components/ReleasePipelineHealth.js';
+import { pipelineMetrics, releaseDefinitions } from '../network.js';
+import useFetchForProject from '../hooks/use-fetch-for-project.js';
+import { useRemoveSort } from '../hooks/sort-hooks.js';
+import { filterBySearch, getSearchTerm } from '../helpers/utils.js';
+import Loading from '../components/Loading.js';
+import ReleasePipelineSummary from '../components/ReleasePipelineSummary.js';
+import type { NormalizedPolicies } from '../../shared/pipeline-utils.js';
 import {
   isPipelineInGroup,
   normalizePolicy,
   pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed,
   pipelineMeetsBranchPolicyRequirements
-} from '../../shared/pipeline-utils';
-import InfiniteScrollList from '../components/common/InfiniteScrollList';
-import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown';
-import useQueryParam, { asBoolean, asString, asStringArray } from '../hooks/use-query-param';
+} from '../../shared/pipeline-utils.js';
+import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
+import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
+import useQueryParam, { asBoolean, asString, asStringArray } from '../hooks/use-query-param.js';
 
 const dontFilter = (x: unknown) => Boolean(x);
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (

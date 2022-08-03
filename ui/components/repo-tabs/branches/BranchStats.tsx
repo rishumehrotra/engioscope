@@ -1,6 +1,6 @@
 import React from 'react';
-import type { UIBranchStats } from '../../../../shared/types';
-import { mediumDate, num } from '../../../helpers/utils';
+import type { UIBranchStats } from '../../../../shared/types.js';
+import { mediumDate, num } from '../../../helpers/utils.js';
 
 const BranchStats: React.FC<{
   branchStats: UIBranchStats;

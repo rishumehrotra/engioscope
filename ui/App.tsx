@@ -1,18 +1,18 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ReactTooltip from 'react-tooltip';
-import Project from './pages/Project';
-import Collection from './pages/Collection';
-import { ProjectDetailsProvider } from './hooks/project-details-hooks';
-import { SortContextProvider } from './hooks/sort-hooks';
-import RecordAnalytics from './components/RecordAnalytics';
-import Analytics from './pages/Analytics';
-import Summary from './pages/Summary';
-import ChangeProgram from './pages/ChangeProgram';
-import Header from './components/Header';
-import { HeaderProvider } from './hooks/header-hooks';
-import RefreshIfUpdated from './components/RefreshIfUpdated';
-import ByTrack from './pages/ByTrack';
+import Project from './pages/Project.js';
+import Collection from './pages/Collection.js';
+import { ProjectDetailsProvider } from './hooks/project-details-hooks.js';
+import { SortContextProvider } from './hooks/sort-hooks.js';
+import RecordAnalytics from './components/RecordAnalytics.js';
+import Analytics from './pages/Analytics.js';
+import Summary from './pages/Summary.js';
+import ChangeProgram from './pages/ChangeProgram.js';
+import Header from './components/Header.js';
+import { HeaderProvider } from './hooks/header-hooks.js';
+import RefreshIfUpdated from './components/RefreshIfUpdated.js';
+import ByTrack from './pages/ByTrack.js';
 
 const App: React.FC = () => {
   useEffect(() => {

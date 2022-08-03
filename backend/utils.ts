@@ -5,7 +5,7 @@
 import { promises as fs } from 'fs';
 import ms from 'ms';
 import { allPass, compose, not } from 'rambda';
-import type { ParsedConfig } from './scraper/parse-config';
+import type { ParsedConfig } from './scraper/parse-config.js';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
