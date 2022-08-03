@@ -85,11 +85,11 @@ export default (config: ParsedConfig) => {
       const branchStats = r.size === 0
         ? Promise.resolve([])
         : forProject(getBranchesStats)(r.id)
-          .catch(e => {
-            if (!(e instanceof Error)) throw e;
-            if (!e.message.startsWith('HTTP error')) throw e;
-            if (e.message.includes('400')) return [] as GitBranchStats[];
-            throw e;
+          .catch(error => {
+            if (!(error instanceof Error)) throw error;
+            if (!error.message.startsWith('HTTP error')) throw error;
+            if (error.message.includes('400')) return [] as GitBranchStats[];
+            throw error;
           });
 
       const [

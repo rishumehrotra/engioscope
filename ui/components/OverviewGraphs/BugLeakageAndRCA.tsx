@@ -299,7 +299,9 @@ type BugLeakageByWitProps = {
 const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   witId, workItems, accessors, openModal
 }) => {
-  const { workItemType, organizeByWorkItemType, workItemGroup } = accessors;
+  const {
+    workItemType, organizeByWorkItemType, workItemGroup, queryPeriodDays
+  } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const filter = useCallback(
@@ -382,7 +384,7 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   return (
     <GraphCard
       title={`${workItemType(witId).name[0]} leakage with root cause`}
-      subtitle={`${workItemType(witId).name[1]} leaked over the last ${accessors.queryPeriodDays} days with their root cause`}
+      subtitle={`${workItemType(witId).name[1]} leaked over the last ${queryPeriodDays} days with their root cause`}
       hasData={workItems.length > 0}
       csvData={csvData}
       left={(
@@ -448,8 +450,8 @@ type BugLeakageAndRCAGraphProps = {
 const BugLeakageAndRCAGraph: React.FC<BugLeakageAndRCAGraphProps> = ({
   workItems, accessors, openModal
 }) => {
-  const { workItemType, lastUpdated } = accessors;
-  const hasLeakedInQueryPeriod = bugsLeakedInQueryPeriod(lastUpdated, accessors.queryPeriodDays);
+  const { workItemType, lastUpdated, queryPeriodDays } = accessors;
+  const hasLeakedInQueryPeriod = bugsLeakedInQueryPeriod(lastUpdated, queryPeriodDays);
 
   const witIdAndWorkItems = useMemo(
     () => workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {

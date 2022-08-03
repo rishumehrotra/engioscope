@@ -46,7 +46,7 @@ type Result = {
 
 const groupType = (group: Group): [string, string] | 'project' => {
   const remainingKey = Object.entries(group)
-    .filter(([key]) => key !== 'collection' && key !== 'project')[0];
+    .find(([key]) => key !== 'collection' && key !== 'project');
 
   return remainingKey || 'project';
 };
@@ -329,6 +329,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
 
   return summaryPageGroups
     .map(group => {
+      // eslint-disable-next-line unicorn/consistent-destructuring
       const projectConfig = config.azure.collections
         .find(c => c.name === group.collection)
         ?.projects.find(p => p.name === group.project);

@@ -26,6 +26,7 @@ const TextCheckboxCombo: React.FC<TextCheckboxComboProps> = ({
 
   const onCheckboxChange = (v: boolean) => {
     if (!value && !textValue) setTextValue(defaultText || ' ');
+    // eslint-disable-next-line unicorn/no-useless-undefined
     if (!v) onChange(undefined);
     else onChange(getNewValue(textValue, type));
   };

@@ -146,7 +146,7 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
         from: pastDate('182 days').toISOString().split('T')[0]
       })
     })
-      .then(responses => responses.map(response => response.data.measures.map(m => m.history).flat()))
+      .then(responses => responses.map(response => response.data.measures.flatMap(m => m.history)))
       .then(history => history.flat())
       .then(history => history.map(item => ({ value: item.value as SonarQualityGate, date: new Date(item.date) })))
   );

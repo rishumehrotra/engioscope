@@ -1,6 +1,6 @@
 import AL from 'await-lock';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
 import debug from 'debug';
 import pluralize from 'pluralize';
 import type {
@@ -139,7 +139,7 @@ const matchingProject = (projectSpec: readonly [string, string | ParsedProjectCo
 const readOverallSummaryFile = async (): Promise<AnalysedProjects> => {
   await createDataFolder;
   return (await doesFileExist(overallSummaryFilePath))
-    ? JSON.parse(await fs.readFile(overallSummaryFilePath, 'utf-8'))
+    ? JSON.parse(await fs.readFile(overallSummaryFilePath, 'utf8'))
     : { projects: [], lastUpdated: null, hasSummary: false };
 };
 

@@ -45,7 +45,7 @@ const TestCaseStats: React.FC<{
                 <span
                   className="w-20 text-sm self-center text-right text-gray-800"
                 >
-                  {`Priority ${priority.substring(1)}`}
+                  {`Priority ${priority.slice(1)}`}
                 </span>
                 <div
                   className="ml-2 flex flex-1 items-center"
@@ -158,6 +158,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
             value: totalTestCases === 0
               ? '0%'
               : `${((totalAutomated * 100) / totalTestCases).toFixed(0)}%`,
+            // eslint-disable-next-line unicorn/consistent-destructuring
             tooltip: `${num(projectAnalysis.testCases.automated.total)} automated test cases`
           }]}
           onClick={totalTestCases ? {

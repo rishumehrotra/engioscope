@@ -1,10 +1,10 @@
-import path from 'path';
+import path from 'node:path';
 import express from 'express';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import api from './api.js';
 
@@ -21,8 +21,8 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
   if (req.cookies.c === undefined) {
     // Set a new cookie
     let randomNumber = Math.random().toString();
-    randomNumber = randomNumber.substring(2, randomNumber.length);
-    res.cookie('c', randomNumber, { maxAge: 31622400, httpOnly: true });
+    randomNumber = randomNumber.slice(2);
+    res.cookie('c', randomNumber, { maxAge: 31_622_400, httpOnly: true });
   } else {
     // Cookie was already present
   }

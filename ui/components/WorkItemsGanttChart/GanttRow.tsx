@@ -129,9 +129,9 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
     // eslint-disable-next-line no-nested-ternary
     const color = isWorkItemRow(row)
       ? workItemType(row.workItem).color
-      : (isWorkItemEnvironmentRow(row) || isWorkItemTypeRow(row))
+      : ((isWorkItemEnvironmentRow(row) || isWorkItemTypeRow(row))
         ? row.color
-        : 'ffffff';
+        : 'ffffff');
 
     const baseColor = makeTransparent(`#${color}`);
     return isHighlighted ? makeDarker(baseColor) : baseColor;

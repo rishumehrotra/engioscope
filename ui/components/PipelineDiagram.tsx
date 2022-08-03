@@ -63,6 +63,7 @@ const stagesGrid = (stages: PipelineStageWithCounts[]): Grid => {
   const totalHeight = tree.root.map(getHeight).reduce(add, 0);
 
   const grid: Grid = range(0, totalHeight)
+    // eslint-disable-next-line unicorn/no-useless-undefined
     .map(() => range(0, maxDepth).map(() => undefined));
 
   const gridContains = (rank: number) => (

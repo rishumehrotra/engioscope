@@ -98,11 +98,13 @@ export const createCompletedWorkItemTooltip = ({
   const sections: (TooltipSection | undefined)[] = [
     ...standardSections(workItem, wit, wig?.name),
     { label: 'Cycle time', value: prettyMS(ct) },
+    // eslint-disable-next-line unicorn/no-useless-undefined
     clt ? { label: 'Change lead time', value: prettyMS(clt), graphValue: divide(clt, ct).getOr(undefined) } : undefined,
     worstOffender
       ? {
         label: 'Longest time',
         value: `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`,
+        // eslint-disable-next-line unicorn/no-useless-undefined
         graphValue: divide(worstOffender.timeDiff, ct).getOr(undefined)
       } : undefined,
     { label: 'Efficiency', value: `${efficiency}%`, graphValue: efficiency / 100 },
@@ -134,6 +136,7 @@ export const createWIPWorkItemTooltip = ({
       ? {
         label: 'Longest time so far',
         value: `${worstOffender.label} (${prettyMS(worstOffender.timeDiff)})`,
+        // eslint-disable-next-line unicorn/no-useless-undefined
         graphValue: divide(worstOffender.timeDiff, Date.now() - new Date(workItem.created.on).getTime()).getOr(undefined)
       }
       : undefined,

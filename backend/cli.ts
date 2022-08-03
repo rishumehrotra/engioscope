@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { join } from 'path';
+import { join } from 'node:path';
 import yargs from 'yargs';
 import chalk from 'chalk';
-import { promises as fs } from 'fs';
+import { promises as fs } from 'node:fs';
 import getAllTheThings from './scraper/get-all-the-things.js';
 import startServer from './server/express.js';
 import { doesFileExist } from './utils.js';
@@ -32,7 +32,7 @@ const ensureConfigExists = async (argv: Record<string, unknown>) => {
 
 const readConfig = async (argv: Record<string, unknown>) => {
   const configPath = await ensureConfigExists(argv);
-  return parseConfig(JSON.parse(await fs.readFile(configPath, { encoding: 'utf-8' })));
+  return parseConfig(JSON.parse(await fs.readFile(configPath, { encoding: 'utf8' })));
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

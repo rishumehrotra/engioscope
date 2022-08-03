@@ -171,6 +171,7 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
             [{
               label: 'This stage',
               value: `${label.replace('In ', '')} (${prettyMS(timeTaken)})`,
+              // eslint-disable-next-line unicorn/no-useless-undefined
               graphValue: divide(timeTaken, Date.now() - new Date(wi.created.on).getTime()).getOr(undefined)
             }]
           )

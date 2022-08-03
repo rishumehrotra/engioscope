@@ -40,7 +40,8 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
   workItems, accessors, openModal
 }) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, queryPeriodDays
+    isWorkItemClosed, organizeByWorkItemType, workItemType, queryPeriodDays,
+    groupLabel
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -82,7 +83,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
     points: prop('workItemPoints'),
     pointToValue: pipe(prop('workItems'), length),
     yAxisLabel: num,
-    lineLabel: accessors.groupLabel,
+    lineLabel: groupLabel,
     xAxisLabel: pipe(prop('date'), shortDate),
     lineColor,
     crosshairBubble: (pointIndex: number) => (
@@ -118,7 +119,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, isChecked, openModal, workItemTooltip]);
+  }), [accessors, dataByDay, groupLabel, isChecked, openModal, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;

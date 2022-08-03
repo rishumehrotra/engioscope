@@ -29,7 +29,7 @@ const exaggerateTrendLine = (data: (number | undefined)[]) => {
   const diff = max - min;
 
   const exaggerated = data.map(val => {
-    if (val === undefined) return undefined;
+    if (val === undefined) return;
     return val - (max - diff) + (diff * 1);
   });
 
@@ -212,7 +212,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
     const yCoord = (value: number) => height - lineStrokeWidth - ((value / maxDataToRender) * (height - lineStrokeWidth));
     const xCoord = (index: number) => index * spacing;
     const addOffsetIfNeeded = ((value: number | undefined) => {
-      if (value === undefined) return undefined;
+      if (value === undefined) return;
       return addOffset ? value + 2 : value;
     });
 

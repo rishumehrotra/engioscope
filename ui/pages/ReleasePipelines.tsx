@@ -24,7 +24,7 @@ import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
 import useQueryParam, { asBoolean, asString, asStringArray } from '../hooks/use-query-param.js';
 
-const dontFilter = (x: unknown) => Boolean(x);
+const dontFilter = Boolean;
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
   Object.values(pipeline.repos).some((r => r.name === getSearchTerm(search)))
 );

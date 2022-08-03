@@ -1,6 +1,6 @@
 import Router from 'express-promise-router';
-import { join } from 'path';
-import { promises as fs, createWriteStream, createReadStream } from 'fs';
+import { join } from 'node:path';
+import { promises as fs, createWriteStream, createReadStream } from 'node:fs';
 import uaParser from 'ua-parser-js';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
@@ -35,9 +35,9 @@ export default (config: ParsedConfig) => {
         ua.os.name,
         ua.os.version
       ].join(', ')}\n`);
-    } catch (e) {
+    } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error writing analytics ping', e);
+      console.error('Error writing analytics ping', error);
     }
 
     res.status(200).send('all your base are belong to us');
@@ -109,7 +109,7 @@ export default (config: ParsedConfig) => {
 
     res.status(200);
     res.setHeader('Content-type', 'application/json');
-    res.send(await fs.readFile(filePath, { encoding: 'utf-8' }));
+    res.send(await fs.readFile(filePath, { encoding: 'utf8' }));
   });
 
   return router;

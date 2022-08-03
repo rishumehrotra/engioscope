@@ -170,8 +170,8 @@ export const renderGroupItem = (link: string) => (label: ReactNode, anchor = '')
 export type SummaryGroupKey = keyof SummaryItemProps['group'];
 
 export const allExceptExpectedKeys = (group: SummaryItemProps['group']) => {
-  const expectedKeys: SummaryGroupKey[] = ['collection', 'groupName', 'portfolioProject', 'project', 'workItems'];
-  return Object.keys(group).filter(k => !expectedKeys.includes(k as SummaryGroupKey));
+  const expectedKeys: Set<SummaryGroupKey> = new Set(['collection', 'groupName', 'portfolioProject', 'project', 'workItems']);
+  return Object.keys(group).filter(k => !expectedKeys.has(k as SummaryGroupKey));
 };
 
 export const increaseIsBetter = (data: number[]) => {
@@ -182,9 +182,9 @@ export const increaseIsBetter = (data: number[]) => {
     // eslint-disable-next-line no-nested-ternary
     end - start > 0
       ? '#009966'
-      : end - start === 0
+      : (end - start === 0
         ? 'grey'
-        : '#dd0000'
+        : '#dd0000')
   );
 };
 
@@ -196,9 +196,9 @@ export const decreaseIsBetter = (data: number[]) => {
     // eslint-disable-next-line no-nested-ternary
     end - start < 0
       ? '#009966'
-      : end - start === 0
+      : (end - start === 0
         ? 'grey'
-        : '#dd0000'
+        : '#dd0000')
   );
 };
 

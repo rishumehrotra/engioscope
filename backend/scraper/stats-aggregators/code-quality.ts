@@ -56,7 +56,7 @@ const formatLoc = (loc?: string): AggregatedCodeQuality['languages'] => {
 
 const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof formatLoc> => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const filtered = locs.filter(Boolean).map(x => x!).flat();
+  const filtered = locs.filter(Boolean).flatMap(x => x!);
   const combinedSet = new Map<string, number>();
   filtered.forEach(({ lang, loc }) => {
     if (!combinedSet.has(lang)) {
@@ -97,7 +97,7 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
   const qualityGateMetric = (metricName: string) => {
     const metric = qualityGateDetails.conditions?.find(({ metric }) => metric === metricName);
 
-    if (!metric) return undefined;
+    if (!metric) return;
 
     return {
       value: metric?.actual ? Number(metric.actual) : undefined,

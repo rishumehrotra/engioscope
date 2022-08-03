@@ -80,20 +80,20 @@ const LabelWithSparkline2 = <T extends {}>({
           {/* eslint-disable-next-line no-nested-ternary */}
           {previousMonthStats.trendDirection === 'up'
             ? '▲'
-            : previousMonthStats.trendDirection === 'same'
+            : (previousMonthStats.trendDirection === 'same'
               ? ' '
-              : '▼'}
+              : '▼')}
           {' '}
           {thisMonthValue - previousMonthStats.value === 0
             ? '-'
             : valueToLabel(Math.abs(thisMonthValue - previousMonthStats.value))}
           {' '}
-          {parseInt(previousMonthStats.changePercentage, 10) === 0
+          {Number.parseInt(previousMonthStats.changePercentage, 10) === 0
             ? null
             : (
               <span className="text-xs">
                 (
-                {parseInt(previousMonthStats.changePercentage, 10) > 0 ? '+' : null}
+                {Number.parseInt(previousMonthStats.changePercentage, 10) > 0 ? '+' : null}
                 {previousMonthStats.changePercentage}
                 )
               </span>

@@ -51,6 +51,7 @@ export const velocitySparkline = newItemsSparkline;
 
 export const cycleTimeSparkline: SparklinePropsWithoutData<number[]> = {
   colorBy: decreaseIsBetterStrippingZerosAndUndefineds,
+  // eslint-disable-next-line unicorn/no-useless-undefined
   toValue: x => averageOfTimes(x).getOr(undefined),
   combineValues: excludeUndefinedsAndAverage,
   valueToLabel: x => (x === 0 ? '-' : prettyMS(x)),

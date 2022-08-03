@@ -1,4 +1,4 @@
-import { identity, prop } from 'rambda';
+import { always, identity, prop } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
 import { asc, byNum } from '../../../../shared/sort-utils.js';
 import type { UIWorkItem } from '../../../../shared/types.js';
@@ -26,8 +26,9 @@ export const PriorityFilter: React.FC<FilterProps> = ({ workItems, setFilter }) 
 
   useEffect(() => {
     if (priorityState.length === 0) {
-      setFilter(() => () => true);
+      setFilter(() => always(true));
     } else {
+      // eslint-disable-next-line unicorn/consistent-function-scoping
       setFilter(() => (wi: UIWorkItem) => priorityState.includes(String(wi.priority)));
     }
   }, [priorityState, setFilter]);
@@ -84,8 +85,9 @@ export const SizeFilter: React.FC<FilterProps> = ({ workItems, setFilter }) => {
 
   useEffect(() => {
     if (sizeFilter.length === 0) {
-      setFilter(() => () => true);
+      setFilter(() => always(true));
     } else {
+      // eslint-disable-next-line unicorn/consistent-function-scoping
       setFilter(() => (wi: UIWorkItem) => {
         const size = getSize(wi);
         if (!size) return false;

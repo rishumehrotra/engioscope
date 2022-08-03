@@ -3,8 +3,8 @@ import chalk from 'chalk';
 import debug from 'debug';
 import { tap, zip } from 'rambda';
 import tar from 'tar';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
 import aggregationWriter, { writeChangeProgramFile, writeSummaryMetricsFile, writeTracks } from './aggregation-writer.js';
 import azure from './network/azure.js';
 import type { ParsedConfig } from './parse-config.js';
@@ -76,12 +76,12 @@ const scrape = async (config: ParsedConfig) => {
     console.log('Fetching data for the following projects failed: \n');
     failed.forEach(failure => {
       console.log(
-        `  ${chalk.red('×')} ${failure[0][0].name}/${failure[0][1].name} - Reason: `,
+        `  ${chalk.red('×')} ${failure[0][0].name}/${failure[0][1].name} - Reason:`,
         failure[1].status === 'rejected' && failure[1].reason
       );
     });
     console.log('\nRe-run this script to re-fetch the failed data. Data already fetched won\'t be refetched.');
-    process.exit(1);
+    throw new Error('Exiting with non-zero error, see above for details');
   }
   console.log('\n');
 

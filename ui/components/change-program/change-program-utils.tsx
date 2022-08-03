@@ -24,9 +24,9 @@ export type RollupTaskState = TaskState | 'no-tasks';
 const rollUpTaskStates = (states: TaskState[]): RollupTaskState => {
   if (states.length === 0) return 'no-tasks';
   if (states.every(state => state === 'unplanned')) return 'unplanned';
-  if (states.some(state => state === 'planned')) return 'planned';
+  if (states.includes('planned')) return 'planned';
   if (states.every(state => state === 'completed-on-time')) return 'completed-on-time';
-  if (states.some(state => state === 'overdue')) return 'overdue';
+  if (states.includes('overdue')) return 'overdue';
   return 'completed-late';
 };
 
@@ -35,17 +35,16 @@ const rollUpGroupStates = (states: RollupTaskState[]) => {
   return rollUpTaskStates(uniq(states).filter(state => state !== 'no-tasks') as TaskState[]);
 };
 
-export const taskTooltip = (task: UIChangeProgramTask) => {
-  const showStatus = (className: string, label: string) => `
-  <div class="flex items-center">
-    <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
-    <span class="pl-2">
-      ${label}
-    </span>
-  </div>
-  `;
+const showStatus = (className: string, label: string) => `
+<div class="flex items-center">
+  <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
+  <span class="pl-2">
+    ${label}
+  </span>
+</div>
+`;
 
-  return `
+export const taskTooltip = (task: UIChangeProgramTask) => `
     <div class="w-64">
       ${task.id}: <strong>${task.title}</strong><br />
       Status: <strong>${task.state}</strong><br />
@@ -64,7 +63,19 @@ export const taskTooltip = (task: UIChangeProgramTask) => {
   })()}
     </div>
   `;
-};
+
+const showCount = (count: number, label: string, className: string) => (
+  count !== 0
+    ? (`
+        <div class="flex items-center">
+          <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
+          <span class="pl-2">
+            <strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}
+          </span>
+        </div>
+      `)
+    : ''
+);
 
 export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks['weeks'][number]) => {
   const states = tasks.map(task => taskState(new Date())(task));
@@ -74,19 +85,6 @@ export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks
   const completedOnTimeCount = getCountOf('completed-on-time');
   const plannedCount = getCountOf('planned');
   const unplannedCount = getCountOf('unplanned');
-
-  const showCount = (count: number, label: string, className: string) => (
-    count !== 0
-      ? (`
-        <div class="flex items-center">
-          <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
-          <span class="pl-2">
-            <strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}
-          </span>
-        </div>
-      `)
-      : ''
-  );
 
   return `
     Week: <strong>${week.label}</strong><br />

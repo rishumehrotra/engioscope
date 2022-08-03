@@ -42,7 +42,9 @@ type WIPTrendGraphProps = {
 const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
   workItems, accessors, openModal
 }) => {
-  const { organizeByWorkItemType, workItemType, queryPeriodDays } = accessors;
+  const {
+    organizeByWorkItemType, workItemType, queryPeriodDays, groupLabel
+  } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(always(T));
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(always(T));
 
@@ -80,7 +82,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
     points: prop('workItemPoints'),
     pointToValue: pipe(prop('workItems'), length),
     yAxisLabel: num,
-    lineLabel: accessors.groupLabel,
+    lineLabel: groupLabel,
     xAxisLabel: pipe(prop('date'), shortDate),
     lineColor,
     crosshairBubble: (pointIndex: number) => (
@@ -116,7 +118,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, isChecked, openModal, workItemTooltip]);
+  }), [accessors, dataByDay, groupLabel, isChecked, openModal, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;
@@ -137,8 +139,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
           dataByDay
             .filter(item => item.witId === witId)
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .map(item => last(item.workItemPoints)!.workItems)
-            .flat()
+            .flatMap(item => last(item.workItemPoints)!.workItems)
             .length
         )
       ), 'today'

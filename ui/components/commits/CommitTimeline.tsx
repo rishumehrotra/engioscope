@@ -13,7 +13,7 @@ const barSpacing = 2;
 const svgHeight = 50;
 
 const dateString = (date: Date) => date.toISOString().split('T')[0];
-const range = (max: number) => [...Array(max).keys()];
+const range = (max: number) => [...Array.from({ length: max }).keys()];
 
 const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max, queryPeriodDays }) => {
   const startDate = new Date();

@@ -368,11 +368,17 @@ const HealthMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   queryPeriodDays: number;
 }> = ({ group, queryPeriodDays }) => {
-  const { repoStats, pipelineStats } = group;
-  const { codeQuality } = repoStats;
+  const {
+    repoStats, pipelineStats, collection, project
+  } = group;
+  const {
+    codeQuality, repos, excluded, testsByWeek, coverageByWeek,
+    newSonarSetupsByWeek, sonarCountsByWeek, healthyBranches, builds,
+    ymlPipelines, usesCentralTemplate, hasPipelines
+  } = repoStats;
   const [filterKey] = allExceptExpectedKeys(group);
   const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
-  const baseProjectLink = `/${group.collection}/${group.project}`;
+  const baseProjectLink = `/${collection}/${project}`;
   const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
   const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
 
@@ -384,15 +390,15 @@ const HealthMetrics: React.FC<{
         </h2>
         <p className="justify-self-end mt-8 mr-1 text-xs">
           {'Analysed '}
-          <b>{repoStats.repos}</b>
-          {repoStats.repos === 1 ? ' repo' : ' repos'}
-          {repoStats.excluded
+          <b>{repos}</b>
+          {repos === 1 ? ' repo' : ' repos'}
+          {excluded
             ? (
               <>
                 {', excluded '}
-                <b>{repoStats.excluded}</b>
+                <b>{excluded}</b>
                 {' inactive'}
-                {repoStats.excluded === 1 ? ' repo' : ' repos'}
+                {excluded === 1 ? ' repo' : ' repos'}
               </>
             )
             : null}
@@ -409,7 +415,7 @@ const HealthMetrics: React.FC<{
               <div className="font-semibold text-xl">
                 {reposMetric(
                   <ExtendedLabelWithSparkline
-                    data={repoStats.testsByWeek}
+                    data={testsByWeek}
                     {...testAutomationSparkline}
                   />
                 )}
@@ -424,7 +430,7 @@ const HealthMetrics: React.FC<{
                 <div className="text-lg">
                   {reposMetric(
                     <ExtendedLabelWithSparkline
-                      data={repoStats.coverageByWeek}
+                      data={coverageByWeek}
                       {...coverageSparkline}
                     />
                   )}
@@ -478,15 +484,15 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div
                   className="font-semibold text-xl mb-2"
-                  data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}
+                  data-tip={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}
                 >
-                  {repoStats.repos
+                  {repos
                     ? (
                       <>
                         {reposMetric(
                           <ExtendedLabelWithSparkline
-                            data={repoStats.newSonarSetupsByWeek}
-                            {...newSonarSetupsSparkline(repoStats.repos)}
+                            data={newSonarSetupsByWeek}
+                            {...newSonarSetupsSparkline(repos)}
                           />
                         )}
                       </>
@@ -511,8 +517,8 @@ const HealthMetrics: React.FC<{
                       ? (
                         <LabelWithSparkline
                           label={divide(codeQuality.pass, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                          data={repoStats.sonarCountsByWeek.pass}
-                          lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                          data={sonarCountsByWeek.pass}
+                          lineColor={increaseIsBetter(sonarCountsByWeek.pass)}
                           yAxisLabel={n => `${n}%`}
                         />
                       )
@@ -534,8 +540,8 @@ const HealthMetrics: React.FC<{
                       ? (
                         <LabelWithSparkline
                           label={divide(codeQuality.warn, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                          data={repoStats.sonarCountsByWeek.warn}
-                          lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                          data={sonarCountsByWeek.warn}
+                          lineColor={decreaseIsBetter(sonarCountsByWeek.warn)}
                           yAxisLabel={n => `${n}%`}
                         />
                       )
@@ -557,8 +563,8 @@ const HealthMetrics: React.FC<{
                       ? (
                         <LabelWithSparkline
                           label={divide(codeQuality.fail, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                          data={repoStats.sonarCountsByWeek.fail}
-                          lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                          data={sonarCountsByWeek.fail}
+                          lineColor={decreaseIsBetter(sonarCountsByWeek.fail)}
                           yAxisLabel={n => `${n}%`}
                         />
                       )
@@ -593,7 +599,7 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {reposMetric(
-                    divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
+                    divide(healthyBranches.count, healthyBranches.total)
                       .map(toPercentage)
                       .getOr('-')
                   )}
@@ -614,7 +620,7 @@ const HealthMetrics: React.FC<{
                 <div className="font-semibold text-xl mb-2">
                   {reposMetric(
                     <ExtendedLabelWithSparkline
-                      data={repoStats.builds.byWeek}
+                      data={builds.byWeek}
                       {...buildRunsSparkline}
                     />
                   )}
@@ -632,12 +638,12 @@ const HealthMetrics: React.FC<{
                 {reposMetric(
                   <LabelWithSparkline
                     label={
-                      divide(repoStats.builds.successful, repoStats.builds.total)
+                      divide(builds.successful, builds.total)
                         .map(toPercentage)
                         .getOr('-')
                     }
-                    data={repoStats.builds.successfulByWeek}
-                    lineColor={increaseIsBetter(repoStats.builds.successfulByWeek)}
+                    data={builds.successfulByWeek}
+                    lineColor={increaseIsBetter(builds.successfulByWeek)}
                     yAxisLabel={x => `${x}%`}
                   />
                 )}
@@ -652,7 +658,7 @@ const HealthMetrics: React.FC<{
               </div>
               <div className="text-xl font-semibold">
                 {reposMetric(
-                  divide(repoStats.ymlPipelines.count, repoStats.ymlPipelines.total)
+                  divide(ymlPipelines.count, ymlPipelines.total)
                     .map(toPercentage)
                     .getOr('-')
                 )}
@@ -667,7 +673,7 @@ const HealthMetrics: React.FC<{
               </div>
               <div className="text-xl font-semibold">
                 {reposMetric(
-                  divide(repoStats.usesCentralTemplate.count, repoStats.usesCentralTemplate.total)
+                  divide(usesCentralTemplate.count, usesCentralTemplate.total)
                     .map(toPercentage)
                     .getOr('-')
                 )}
@@ -726,7 +732,7 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {reposMetric(
-                    divide(repoStats.hasPipelines, repoStats.repos)
+                    divide(hasPipelines, repos)
                       .map(toPercentage)
                       .getOr('-')
                   )}

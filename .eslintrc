@@ -3,6 +3,7 @@
   "extends": [
     "plugin:@typescript-eslint/recommended",
     "plugin:eslint-comments/recommended",
+    "plugin:unicorn/recommended",
     "airbnb"
   ],
   "env": {
@@ -224,7 +225,25 @@
         "ts": "never",
         "tsx": "never"
       }
-    ]
+    ],
+    "unicorn/import-style": [
+      "error",
+      {
+        "styles": {
+          "path": false
+        }
+      }
+    ],
+    "unicorn/no-null": "off",
+    "unicorn/explicit-length-check": "off",
+    "unicorn/prevent-abbreviations": "off",
+    "unicorn/no-array-for-each": "off",
+    "unicorn/no-array-reduce": "off",
+    "unicorn/prefer-object-from-entries": "off",
+    "unicorn/no-await-expression-member": "off",
+    "unicorn/no-array-callback-reference": "off",
+    "unicorn/prefer-spread": "off",
+    "unicorn/filename-case": "off"
   },
   "settings": {
     "react": {

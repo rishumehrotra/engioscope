@@ -101,11 +101,11 @@ export const wipWorkItemsCSV = (workItems: UIWorkItem[], accessors: WorkItemAcce
         wi.title,
         start ? start.split('T')[0] : '-',
         start
-          ? Math.round((new Date().getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))
+          ? Math.round((Date.now() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))
           : '-',
         wi.state,
         state.state,
-        Math.round((new Date().getTime() - new Date(state.since).getTime()) / (1000 * 60 * 60 * 24)),
+        Math.round((Date.now() - new Date(state.since).getTime()) / (1000 * 60 * 60 * 24)),
         wi.priority || 'unknown',
         wi.url
       ];

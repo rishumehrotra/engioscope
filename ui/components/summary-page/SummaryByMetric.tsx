@@ -310,7 +310,7 @@ const QualityMetrics: React.FC<{
     const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
     if (!bugsDefinitionId) return null;
 
-    const allEnvironments = [...new Set(groups.map(group => Object.keys(group.workItems[bugsDefinitionId] || {})).flat())]
+    const allEnvironments = [...new Set(groups.flatMap(group => Object.keys(group.workItems[bugsDefinitionId] || {})))]
       .sort((a, b) => {
         if (!groups[0].environments) return 0;
         return groups[0].environments.indexOf(a) - groups[0].environments.indexOf(b);
@@ -521,17 +521,17 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
       ])
     ],
     rows: groups.map(group => {
-      const { repoStats, pipelineStats } = group;
+      const { repoStats, pipelineStats, groupName } = group;
       const { reposMetric, pipelinesMetric } = metricsFormatters(group);
 
       return {
-        key: group.groupName,
+        key: groupName,
         values: [
           {
-            value: group.groupName,
+            value: groupName,
             content: (
               <>
-                {group.groupName}
+                {groupName}
                 <RepoAnalysisDetails repoStats={repoStats} />
               </>
             )
@@ -546,7 +546,7 @@ const TestAutomationMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
             ))
           },
           {
-            value: repoStats.coverage === '-' ? 0 : parseInt(repoStats.coverage, 10),
+            value: repoStats.coverage === '-' ? 0 : Number.parseInt(repoStats.coverage, 10),
             content: reposMetric(
               <ExtendedLabelWithSparkline
                 data={repoStats.coverageByWeek}
@@ -597,31 +597,33 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
       { label: 'Healthy branches', tooltip: 'Percentage of healthy branches' }
     ],
     rows: groups.map(group => {
-      const { repoStats, pipelineStats } = group;
-      const { codeQuality } = repoStats;
+      const { repoStats, pipelineStats, groupName } = group;
+      const {
+        codeQuality, repos, newSonarSetupsByWeek, sonarCountsByWeek, healthyBranches
+      } = repoStats;
       const { reposMetric } = metricsFormatters(group);
 
       return {
-        key: group.groupName,
+        key: groupName,
         values: [
           {
-            value: group.groupName,
+            value: groupName,
             content: (
               <>
-                {group.groupName}
+                {groupName}
                 <RepoAnalysisDetails repoStats={repoStats} />
               </>
             )
           },
           {
-            value: divide(codeQuality.configured, repoStats.repos).getOr(0),
+            value: divide(codeQuality.configured, repos).getOr(0),
             content: (
-              <div data-tip={`${codeQuality.configured} of ${repoStats.repos} repos have SonarQube configured`}>
-                {repoStats.repos
+              <div data-tip={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}>
+                {repos
                   ? reposMetric(
                     <ExtendedLabelWithSparkline
-                      data={repoStats.newSonarSetupsByWeek}
-                      {...newSonarSetupsSparkline(repoStats.repos)}
+                      data={newSonarSetupsByWeek}
+                      {...newSonarSetupsSparkline(repos)}
                     />
                   )
                   : '-'}
@@ -636,8 +638,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   ? (
                     <LabelWithSparkline
                       label={divide(codeQuality.pass, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                      data={repoStats.sonarCountsByWeek.pass}
-                      lineColor={increaseIsBetter(repoStats.sonarCountsByWeek.pass)}
+                      data={sonarCountsByWeek.pass}
+                      lineColor={increaseIsBetter(sonarCountsByWeek.pass)}
                       yAxisLabel={x => `${x}%`}
                     />
                   )
@@ -653,8 +655,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   ? (
                     <LabelWithSparkline
                       label={divide(codeQuality.warn, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                      data={repoStats.sonarCountsByWeek.warn}
-                      lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.warn)}
+                      data={sonarCountsByWeek.warn}
+                      lineColor={decreaseIsBetter(sonarCountsByWeek.warn)}
                       yAxisLabel={x => `${x}%`}
                     />
                   )
@@ -670,8 +672,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
                   ? (
                     <LabelWithSparkline
                       label={divide(codeQuality.fail, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                      data={repoStats.sonarCountsByWeek.fail}
-                      lineColor={decreaseIsBetter(repoStats.sonarCountsByWeek.fail)}
+                      data={sonarCountsByWeek.fail}
+                      lineColor={decreaseIsBetter(sonarCountsByWeek.fail)}
                       yAxisLabel={x => `${x}%`}
                     />
                   )
@@ -688,11 +690,11 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ gr
             )
           },
           {
-            value: divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
+            value: divide(healthyBranches.count, healthyBranches.total)
               .map(toPercentage)
               .getOr('-'),
             content: reposMetric(
-              divide(repoStats.healthyBranches.count, repoStats.healthyBranches.total)
+              divide(healthyBranches.count, healthyBranches.total)
                 .map(toPercentage)
                 .getOr('-')
             )
@@ -725,17 +727,17 @@ const CIBuilds: React.FC<CIBuildsProps> = ({ groups, queryPeriodDays }) => {
       { label: 'Uses central template', tooltip: 'Pipelines using the standard template' }
     ],
     rows: groups.map(group => {
-      const { repoStats } = group;
+      const { repoStats, groupName } = group;
       const { reposMetric } = metricsFormatters(group);
 
       return {
-        key: group.groupName,
+        key: groupName,
         values: [
           {
-            value: group.groupName,
+            value: groupName,
             content: (
               <>
-                {group.groupName}
+                {groupName}
                 <RepoAnalysisDetails repoStats={repoStats} />
               </>
             )
@@ -802,17 +804,17 @@ const Releases: React.FC<{ groups: SummaryMetrics['groups'] }> = ({ groups }) =>
       { label: 'Repos with release pipelines', tooltip: 'Number of repos having release pipelines' }
     ],
     rows: groups.map(group => {
-      const { pipelineStats, repoStats } = group;
+      const { pipelineStats, repoStats, groupName } = group;
       const { reposMetric, pipelinesMetric } = metricsFormatters(group);
 
       return {
-        key: group.groupName,
+        key: groupName,
         values: [
           {
-            value: group.groupName,
+            value: groupName,
             content: (
               <>
-                {group.groupName}
+                {groupName}
                 <RepoAnalysisDetails repoStats={repoStats} />
               </>
             )

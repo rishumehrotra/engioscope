@@ -1,10 +1,10 @@
 import type { Response } from 'node-fetch';
-import { createWriteStream, createReadStream, promises as fs } from 'fs';
-import readline from 'readline';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
+import { createWriteStream, createReadStream, promises as fs } from 'node:fs';
+import readline from 'node:readline';
+import { pipeline } from 'node:stream';
+import { promisify } from 'node:util';
 import debug from 'debug';
-import { join } from 'path';
+import { join } from 'node:path';
 import rimraf from '@zkochan/rimraf';
 import { doesFileExist, retry } from '../../utils.js';
 
@@ -56,7 +56,7 @@ const getFrontMatter = async (filePath: string) => (
 );
 
 const looksLikeDate = (value: string) => (
-  /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(.*Z)/.test(value)
+  /\d{4}-[01]\d-[0-3]\dT[0-2](?:\d:[0-5]){2}\d(.*Z)/.test(value)
 );
 
 const parseDate = (_: string, value: unknown) => {
@@ -120,7 +120,7 @@ export default (diskCacheTimeMs: number) => ({
       }
 
       logDisk(`Reading ${fileNameForLogs(filePath)}`);
-      const fileContents = await fs.readFile(filePath, 'utf-8');
+      const fileContents = await fs.readFile(filePath, 'utf8');
       const [frontMatterString, dataString] = fileContents.split('\n');
 
       try {
@@ -129,10 +129,10 @@ export default (diskCacheTimeMs: number) => ({
           fromCache,
           data: JSON.parse(dataString, parseDate)
         };
-      } catch (e) {
+      } catch (error) {
         await fs.unlink(filePath);
-        (e as Error).message += ` reading ${filePath}`;
-        throw e;
+        (error as Error).message += ` reading ${filePath}`;
+        throw error;
       }
     })
   ),

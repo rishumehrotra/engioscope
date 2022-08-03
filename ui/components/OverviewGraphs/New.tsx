@@ -55,7 +55,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
 }) => {
   const {
     wasWorkItemOpenedInLastThreeMonths, organizeByWorkItemType, workItemType,
-    isBug, workItemTimes, queryPeriodDays
+    isBug, workItemTimes, queryPeriodDays, groupLabel
   } = accessors;
   const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
   const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
@@ -97,7 +97,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
     points: prop('workItemPoints'),
     pointToValue: pipe(prop('workItems'), length),
     yAxisLabel: num,
-    lineLabel: accessors.groupLabel,
+    lineLabel: groupLabel,
     xAxisLabel: pipe(prop('date'), shortDate),
     lineColor,
     crosshairBubble: (pointIndex: number) => (
@@ -139,7 +139,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, isBug, isChecked, openModal, workItemTimes, workItemTooltip]);
+  }), [accessors, dataByDay, groupLabel, isBug, isChecked, openModal, workItemTimes, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;

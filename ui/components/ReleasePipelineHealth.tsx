@@ -188,7 +188,7 @@ const Pipeline: React.FC<{
           <Flair
             key={stageToHighlight}
             // eslint-disable-next-line no-nested-ternary
-            colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : doesStageExist ? 'bg-yellow-400' : 'bg-gray-400'}
+            colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : (doesStageExist ? 'bg-yellow-400' : 'bg-gray-400')}
             label={`${stageToHighlight}: ${doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"}`}
           />
         );

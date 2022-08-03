@@ -15,9 +15,9 @@ const RecordAnalytics: React.FC = () => {
 
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       navigator.sendBeacon('/api/log', blob);
-    } catch (e) {
+    } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error sending beacon', e);
+      console.error('Error sending beacon', error);
     }
   }, [location.pathname, location.search]);
 

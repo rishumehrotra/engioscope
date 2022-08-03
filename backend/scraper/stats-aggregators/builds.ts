@@ -96,12 +96,12 @@ const templateNameByBuildId = (
     return reportsByRepoId[repoId]
       .then(reports => reports.find(report => report.buildDefinitionId === buildDefinitionId)?.buildScript)
       .then(buildScript => {
-        if (!buildScript) return undefined;
+        if (!buildScript) return;
         const parsed = yaml.parse(buildScript);
         const possibleTemplate = parsed.template
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           || parsed.stages?.find((s: any) => s.template)?.template as string | undefined;
-        if (!possibleTemplate) return undefined;
+        if (!possibleTemplate) return;
 
         const parts = possibleTemplate.split('@');
         if (parts.length > 1) return parts[1];
@@ -197,7 +197,7 @@ export default (
       const pipelinesWithUnused = buildDefinitionsByRepoId(id)
         ? pipelines.concat(
           buildDefinitionsByRepoId(id)
-            .filter(d => !pipelines.find(p => p.definitionId === d.id.toString()))
+            .filter(d => !pipelines.some(p => p.definitionId === d.id.toString()))
             .sort(asc(byDate(x => x.latestBuild?.startTime || new Date(0))))
             .map<UIBuildPipeline>(d => ({
               count: 0,

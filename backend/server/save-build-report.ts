@@ -1,7 +1,7 @@
 import type expresss from 'express';
 import { parse as parseHtml } from 'node-html-parser';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
 
 const getReportOutputPath = (html: string) => {
   const root = parseHtml(html);
@@ -39,13 +39,13 @@ export default async (req: expresss.Request, res: expresss.Response) => {
     await fs.writeFile(join(...directory, `${fileName}.html`), html, 'utf8');
 
     res.sendStatus(200);
-  } catch (e) {
-    if (e instanceof Error && e.message.startsWith('400')) {
-      res.status(400).send(e.message.replace('400 - ', ''));
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('400')) {
+      res.status(400).send(error.message.replace('400 - ', ''));
       return;
     }
     // eslint-disable-next-line no-console
-    console.error('Error saving build report html', e);
-    res.status(500).send(e);
+    console.error('Error saving build report html', error);
+    res.status(500).send(error);
   }
 };

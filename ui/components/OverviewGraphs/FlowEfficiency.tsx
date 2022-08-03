@@ -78,17 +78,17 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
       workItemsToDisplay, workItemType, pipe(efficiency, stringifyEfficiency), 'avg'
     );
 
+    const flairs = (workItem: UIWorkItem) => {
+      const total = cycleTime(workItem);
+      if (!total) return [];
+      return [`${Math.round((workCenterTime(workItem) * 100) / total)}%`];
+    };
+
     return {
       headlineStats,
       items,
       onItemClick: key => {
         const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
-        const flairs = (workItem: UIWorkItem) => {
-          const total = cycleTime(workItem);
-          if (!total) return [];
-          return [`${Math.round((workCenterTime(workItem) * 100) / total)}%`];
-        };
-
         return openModal({
           heading: 'Flow efficiency',
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),

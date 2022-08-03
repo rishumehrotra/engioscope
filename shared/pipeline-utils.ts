@@ -118,7 +118,7 @@ export const fullPolicyStatus = (policy: NormalizedPolicies) => {
   if (states.every(c => c === 'pass')) {
     return 'pass';
   }
-  if (states.some(c => c === 'fail')) {
+  if (states.includes('fail')) {
     return 'fail';
   }
   return 'warn';
@@ -160,7 +160,7 @@ export const isPipelineInGroup = (groupName: string, repos: string[]) => (
 );
 
 export const usageByEnvironment = (environments?: string[]) => (pipeline: Pipeline) => {
-  if (!environments) return undefined;
+  if (!environments) return;
 
   return environments.reduce<Record<string, { successful: number; total: number}>>((acc, env) => {
     const matchingStage = head(
@@ -213,7 +213,8 @@ export const masterOnlyReleasesByWeek = (pipelines: Pipeline[]) => (
       .flatMap(p => p.attempts)
       .map(a => a.byWeek)
   ).map(a => {
-    if (!a) return undefined;
+    if (!a) return;
+    // eslint-disable-next-line unicorn/no-useless-undefined
     return divide(a.master, a.total).map(multiply(100)).map(Math.round).getOr(undefined);
   })
 );

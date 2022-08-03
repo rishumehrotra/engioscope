@@ -22,10 +22,10 @@ export const formatDebt = (debtInMins: number) => {
 };
 
 export const generateId = () => (
-  Math.random().toString(36).replace(/[^a-z]+/g, '').substr(2, 10)
+  Math.random().toString(36).replace(/[^a-z]+/g, '').slice(2, 10)
 );
 
-export const dontFilter = (x: unknown) => Boolean(x);
+export const dontFilter = Boolean;
 
 const isWrappedAroundQuotes = (search: string) => search.startsWith('"') && search.endsWith('"');
 export const getSearchTerm = (search: string) => search.split('"')[1];
@@ -52,9 +52,9 @@ export const createPalette = (colors: string[]) => {
 };
 
 export const contrastColour = (hex: string) => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
 
   const contrast = (Math.round(r * 299) + Math.round(g * 587) + Math.round(b * 114)) / 1000;
 

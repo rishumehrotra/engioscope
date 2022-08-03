@@ -16,6 +16,7 @@ export const pathRenderer: Renderer = ({ lineColor, lineStrokeWidth }: { lineCol
     yCoord: (value: number) => number;
     xCoord: (index: number) => number;
   }) => {
+    // eslint-disable-next-line unicorn/prefer-includes
     if (data.some(i => i === undefined)) { throw new Error('pathRenderer can\'t handle undefined values'); }
 
     return (
@@ -32,12 +33,12 @@ export const pathRenderer: Renderer = ({ lineColor, lineStrokeWidth }: { lineCol
   }
 );
 
+const mustSkip = (item: number | undefined | null): item is undefined | null => (
+  item === undefined || item === null
+);
+
 export const pathRendererSkippingUndefineds: Renderer = ({ lineColor, lineStrokeWidth, strokeDasharray }) => (
   ({ data, yCoord, xCoord }) => {
-    const mustSkip = (item: number | undefined | null): item is undefined | null => (
-      item === undefined || item === null
-    );
-
     type Point = [xCoord: number, yCoord: number];
 
     const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) => (

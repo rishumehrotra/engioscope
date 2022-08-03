@@ -177,8 +177,7 @@ const ByTrack: React.FC = () => {
     organisedByTrack
       ? Math.max(
         ...Object.values(organisedByTrack)
-          .map(x => Object.values(x.timeSpentById))
-          .flat()
+          .flatMap(x => Object.values(x.timeSpentById))
           .map(ts => {
             const f = head(ts);
             const l = last(ts);

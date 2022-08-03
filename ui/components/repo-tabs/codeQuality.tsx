@@ -138,7 +138,6 @@ const ratingClassName = (ratingValue: ReturnType<typeof rating>) => {
     case 'E':
       return 'text-white bg-red-500';
     default:
-      return undefined;
   }
 };
 
@@ -151,7 +150,6 @@ const gateClassName = (gate: NonNullable<RepoAnalysis['codeQuality']>[number]['q
     case 'warn':
       return 'text-yellow-800 bg-yellow-100';
     default:
-      return undefined;
   }
 };
 

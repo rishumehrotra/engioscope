@@ -155,8 +155,8 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
             key={index}
             // eslint-disable-next-line no-nested-ternary
             className={`sticky z-10 left-0 text-center ${isHovered(index)
-              ? weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100'
-              : weeks[index].highlight ? 'bg-blue-100' : ''
+              ? (weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100')
+              : (weeks[index].highlight ? 'bg-blue-100' : '')
             }`}
             {...mouseEvents(index)}
             data-tip={rollupTooltip(subgroup.tasks
@@ -233,8 +233,8 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             key={index}
             // eslint-disable-next-line no-nested-ternary
             className={`text-center ${isHovered(index)
-              ? weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100'
-              : weeks[index].highlight ? 'bg-blue-100' : ''
+              ? (weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100')
+              : (weeks[index].highlight ? 'bg-blue-100' : '')
             }`}
             {...mouseEvents(index)}
             data-tip={rollupTooltip(group.subgroups

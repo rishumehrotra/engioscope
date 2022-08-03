@@ -1,6 +1,6 @@
-import { createReadStream } from 'fs';
-import { join } from 'path';
-import { Transform } from 'stream';
+import { createReadStream } from 'node:fs';
+import { join } from 'node:path';
+import { Transform } from 'node:stream';
 import split2 from 'split2';
 import { prop } from 'rambda';
 import { byNum, desc } from '../../shared/sort-utils.js';
@@ -35,8 +35,8 @@ const reduceStream = <T, U>(fn: (acc: T, value: U) => T, acc: T, options = {}) =
     transform(chunk, encoding, callback) {
       try {
         internalAcc = fn(internalAcc, chunk);
-      } catch (e) {
-        return callback(e as Error);
+      } catch (error) {
+        return callback(error as Error);
       }
       return callback();
     },

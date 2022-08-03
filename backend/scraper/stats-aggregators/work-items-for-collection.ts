@@ -120,13 +120,13 @@ const filterTags = (collectionConfig: ParsedCollection, workItem: WorkItem) => {
   if ((collectionConfig.workitems.filterBy || []).length === 0) return;
 
   const filterBy = collectionConfig.workitems.filterBy?.map(filter => {
-    const tags = filter.fields.map(field => {
+    const tags = filter.fields.flatMap(field => {
       const fieldValue = workItem.fields[field];
       if (fieldValue && filter.delimiter) {
         return fieldValue.split(filter.delimiter);
       }
       return fieldValue;
-    }).flat().filter(exists).filter(x => x.length);
+    }).filter(exists).filter(x => x.length);
 
     if (tags.length === 0) return;
 
@@ -193,15 +193,17 @@ const fireOffCollectionAPICalls = (config: ParsedConfig, collection: ParsedColle
 
     const { workItemRelations } = workItemTreeForCollection;
 
-    const reducedWorkItemIds = unique(
-      workItemRelations.flatMap(
-        wir => [wir.source?.id, wir.target?.id]
-      )
-    ).filter(exists);
+    const reducedWorkItemIds = new Set(
+      workItemRelations
+        .flatMap(
+          wir => [wir.source?.id, wir.target?.id]
+        )
+        .filter(exists)
+    );
 
     const reducedWorkItems = Object.entries(workItems)
       .reduce<typeof workItems>((acc, [workItemId, workItem]) => {
-        if (reducedWorkItemIds.includes(Number(workItemId))) {
+        if (reducedWorkItemIds.has(Number(workItemId))) {
           acc[Number(workItemId)] = workItem;
         }
         return acc;

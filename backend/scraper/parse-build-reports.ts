@@ -1,8 +1,8 @@
 import { parse as parseHtml } from 'node-html-parser';
 import { decode } from 'html-entities';
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { promisify } from 'util';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
 import glob from 'glob';
 import { normalizeBranchName } from '../utils.js';
 import { exists } from '../../shared/utils.js';
@@ -13,10 +13,10 @@ const parseReport = async (fileName: string) => {
   let htmlContent: string;
 
   try {
-    htmlContent = await fs.readFile(fileName, 'utf-8');
-  } catch (e) {
+    htmlContent = await fs.readFile(fileName, 'utf8');
+  } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('error parsing build report', e);
+    console.error('error parsing build report', error);
     return null;
   }
 

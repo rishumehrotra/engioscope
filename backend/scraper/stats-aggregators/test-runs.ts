@@ -111,7 +111,7 @@ const getDefinitionIdsWithoutBuildsInFirstWeek = (
   return unique(
     Object.keys(allMasterBuilds)
       .filter(repoId => latestBuilds(masterBuilds(repoId))(T).length !== 0)
-      .map(repoId => {
+      .flatMap(repoId => {
         const withoutBuilds = Object.entries(masterBuilds(repoId))
           .filter(([, builds]) => (
             (builds || []).filter(b => weeks[0](b.startTime)).length === 0
@@ -119,7 +119,6 @@ const getDefinitionIdsWithoutBuildsInFirstWeek = (
 
         return withoutBuilds.map(([definitionId]) => Number(definitionId));
       })
-      .flat()
   );
 };
 

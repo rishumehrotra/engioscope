@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../node_modules/@types/node/fs.d.ts" />
 
-import { promises as fs } from 'fs';
+import { promises as fs } from 'node:fs';
 import ms from 'ms';
 import { allPass, compose, not } from 'rambda';
 import type { ParsedConfig } from './scraper/parse-config.js';
@@ -41,12 +41,12 @@ export const doesFileExist = async (filePath: string) => {
   try {
     await fs.access(filePath);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
 
-export const range = (num: number) => [...Array(num).keys()];
+export const range = (num: number) => [...Array.from({ length: num }).keys()];
 
 export const chunkArray = <T>(array: T[], chunkSize: number) => (
   range(Math.ceil(array.length / chunkSize))
@@ -83,7 +83,7 @@ export const mapSettleSeries = <T, U>(xs: T[], fn: (x: T) => Promise<U>) => (
     acc.then(accArr => (
       fn(x)
         .then(value => ({ status: 'fulfilled', value } as const))
-        .catch(err => ({ status: 'rejected', reason: err } as const))
+        .catch(error => ({ status: 'rejected', reason: error } as const))
         .then(result => [...accArr, result])
     ))
   ), Promise.resolve([]))
@@ -101,8 +101,8 @@ export const queryPeriodDays = (config: ParsedConfig) => Math.round(
 export const wait = (ms: number) => new Promise(resolve => { setTimeout(resolve, ms); });
 
 export const retry = <T>(fn: () => Promise<T>, { retryCount = 10, waitTime = 1 } = {}): Promise<T> => (
-  fn().catch(async err => {
-    if (retryCount <= 0) throw err;
+  fn().catch(async error => {
+    if (retryCount <= 0) throw error;
     await wait(waitTime * 1000);
     return retry(fn, { retryCount: retryCount - 1, waitTime });
   })

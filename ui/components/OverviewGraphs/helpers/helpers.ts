@@ -48,9 +48,7 @@ export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes
         start: index === 0 ? new Date(times.start!) : acc[acc.length - 1].end!,
         end: new Date(matchingTime.start),
         isWorkCenter: false
-      });
-
-      acc.push({
+      }, {
         label: `In ${wc.label}`,
         start: new Date(matchingTime.start),
         end: matchingTime.end ? new Date(matchingTime.end) : undefined,
@@ -71,7 +69,9 @@ export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes
 );
 
 export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
-  const { overview } = projectAnalysis;
+  const {
+    overview, lastUpdated, queryPeriodDays, ignoreForWIP, environments
+  } = projectAnalysis;
 
   const workItemTimes = (wi: UIWorkItem) => overview.times[wi.id];
 
@@ -80,15 +80,15 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
 
   const isBug = (witId: string) => workItemType(witId).name[0].toLowerCase().includes('bug');
 
-  const startOfQueryPeriod = queryPeriodStart(projectAnalysis.lastUpdated, projectAnalysis.queryPeriodDays);
+  const startOfQueryPeriod = queryPeriodStart(lastUpdated, queryPeriodDays);
 
-  const isWIPIn = isWIPInTimeRange(workItemTimes, projectAnalysis.ignoreForWIP);
+  const isWIPIn = isWIPInTimeRange(workItemTimes, ignoreForWIP);
 
   return {
-    queryPeriodDays: projectAnalysis.queryPeriodDays,
+    queryPeriodDays,
     allWorkItems: Object.values(overview.byId),
-    lastUpdated: new Date(projectAnalysis.lastUpdated),
-    ignoreForWIP: projectAnalysis.ignoreForWIP,
+    lastUpdated: new Date(lastUpdated),
+    ignoreForWIP,
     workItemType,
     workItemTimes,
     workItemGroup,
@@ -100,14 +100,14 @@ export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
     isWIPInTimeRange: isWIPIn,
     isWIP: isWIPIn(T),
     timeSpent: (wi: UIWorkItem) => timeSpent(workItemType(wi.typeId))(workItemTimes(wi)),
-    environments: projectAnalysis.environments,
+    environments,
     sortByEnvironment: ((environments?: string[]) => {
       const envs = environments?.map(e => e.toLowerCase());
       return (a: string, b: string) => {
         if (!envs) { return 0; }
         return envs.indexOf(a.toLowerCase()) - envs.indexOf(b.toLowerCase());
       };
-    })(projectAnalysis.environments),
+    })(environments),
     isWorkItemClosed: (wi: UIWorkItem) => {
       const wiTimes = workItemTimes(wi);
       if (!wiTimes.end) return false;
