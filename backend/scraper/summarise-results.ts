@@ -228,7 +228,7 @@ const analyseWorkItems = (
   results: { workItems: UIWorkItemWithGroup[]; workItemTypes: Record<string, UIWorkItemType>; workItemTimes: Overview['times'] },
   isInQueryPeriod: (d: Date) => boolean,
   projectConfig?: ParsedProjectConfig
-) => {
+): Summary['workItems'] => {
   const workItemTimes = (wi: UIWorkItem) => results.workItemTimes[wi.id];
   const workItemType = (witId: string) => results.workItemTypes[witId];
 
@@ -266,7 +266,7 @@ const analyseWorkItems = (
   return pipe(
     filter(anyPass([isOfType('Feature'), isOfType('Bug'), isOfType('User Story')])),
     organiseWorkItemsIntoGroups,
-    processItemsInGroup(
+    processItemsInGroup<UIWorkItemWithGroup[], Summary['workItems'][string][string]>(
       applySpec({
         count: length,
         velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
