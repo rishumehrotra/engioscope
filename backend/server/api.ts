@@ -53,6 +53,12 @@ export default (config: ParsedConfig) => {
     res.send(process.env.npm_package_version);
   });
 
+  router.post('/api/ft', async (req, res) => {
+    req.pipe(createWriteStream(join(process.cwd(), 'ft.json')));
+    req.on('end', () => { res.send(202); });
+    req.on('error', () => { res.send(598); });
+  });
+
   router.get('/api/cache', async (req, res) => {
     const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
     res.setHeader('Content-type', 'application/gzip');
