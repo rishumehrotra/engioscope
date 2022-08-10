@@ -1,5 +1,5 @@
 import type {
-  AnalysedWorkItems, Overview, ReleasePipelineStats, RepoAnalysis, TestCasesAnalysis
+  AnalysedWorkItems, FeatureToggle, Overview, ReleasePipelineStats, RepoAnalysis, TestCasesAnalysis
 } from '../../shared/types.js';
 
 export type WorkItemAnalysis = {
@@ -13,4 +13,5 @@ export type ProjectAnalysis = {
   workItemAnalysis: WorkItemAnalysis;
   workItemLabel: string;
   testCasesAnalysis: TestCasesAnalysis;
+  featureToggles: FeatureToggle[];
 };

@@ -1,4 +1,5 @@
 import debug from 'debug';
+import { prop } from 'rambda';
 import azure from './network/azure.js';
 import aggregateBuilds from './stats-aggregators/builds.js';
 import aggregateBranches from './stats-aggregators/branches.js';
@@ -19,6 +20,7 @@ import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
 import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import parseBuildReports from './parse-build-reports.js';
+import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -36,6 +38,7 @@ export default (config: ParsedConfig) => {
     getProjectWorkItemIdsForQuery, getBuildDefinitions,
     getOneBuildBeforeQueryPeriod
   } = azure(config);
+
   return async (
     collection: ParsedCollection,
     projectConfig: ParsedProjectConfig,
@@ -128,7 +131,8 @@ export default (config: ParsedConfig) => {
       releaseAnalysis,
       workItemAnalysis,
       workItemLabel: projectConfig.workitems.label,
-      testCasesAnalysis
+      testCasesAnalysis,
+      featureToggles: await featureTogglesForRepos(repos.map(prop('id')))
     };
 
     analyserLog(`Took ${time()} to analyse ${collection.name}/${projectConfig.name}.`);

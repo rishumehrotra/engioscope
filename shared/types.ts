@@ -344,6 +344,7 @@ export type TestCasesAnalysis = {
 
 export type ProjectRepoAnalysis = UIProjectAnalysis & {
   repos: RepoAnalysis[];
+  featureToggles: FeatureToggle[];
   groups?: {
     label: string;
     groups: Record<string, string[]>;
@@ -401,4 +402,13 @@ export type UIChangeProgram = GlobalUIConfig & {
     doneState: string;
     tasks: UIChangeProgramTask[];
   };
+};
+
+export type FeatureToggle = {
+  featureId: string;
+  toggleName: string;
+  created: Date;
+  updated?: Date;
+  expired?: Date;
+  repoIds: string[];
 };
