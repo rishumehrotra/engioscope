@@ -119,6 +119,9 @@ const Repos: React.FC = () => {
             aggregatedDevs={aggregatedDevs}
             isFirst={index === 0}
             queryPeriodDays={projectAnalysis.queryPeriodDays}
+            featureToggles={projectAnalysis.featureToggles.filter(
+              ft => ft.repoIds.includes(repo.id)
+            )}
           />
         )}
       />

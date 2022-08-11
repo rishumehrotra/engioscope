@@ -1,11 +1,12 @@
+import type { MouseEventHandler } from 'react';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useRef, useCallback, useEffect, useMemo, useState
 } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { prop } from 'rambda';
-import type { RepoAnalysis } from '../../shared/types.js';
+import { not, prop } from 'rambda';
+import { useHotkeys } from 'react-hotkeys-hook';
+import type { FeatureToggle, RepoAnalysis } from '../../shared/types.js';
 import { num } from '../helpers/utils.js';
-import Card from './common/ExpandingCard.js';
 import Flair from './common/Flair.js';
 import builds from './repo-tabs/builds.js';
 import commits from './repo-tabs/commits.js';
@@ -20,42 +21,54 @@ import type { Dev } from '../types.js';
 import { isInactive } from '../../shared/repo-utils.js';
 import { byNum, desc } from '../../shared/sort-utils.js';
 import branches from './repo-tabs/branches/index.js';
+import { DownChevron } from './common/Icons.jsx';
+import useOnClickOutside from '../hooks/on-click-outside.js';
+import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 
-// eslint-disable-next-line default-param-last
-const repoSubtitle = (languages: RepoAnalysis['languages'] = [], defaultBranch?: RepoAnalysis['defaultBranch']) => {
-  if (!languages.length && !defaultBranch) return;
+const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
+  featureToggles
+}) => {
+  const [isFeatureToggleExpanded, setFeatureToggleExpanded] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  const totalLoc = languages.reduce((acc, lang) => acc + lang.loc, 0);
+  const onButtonClick: MouseEventHandler<HTMLButtonElement> = useCallback(event => {
+    event.stopPropagation();
+    setFeatureToggleExpanded(not);
+  }, []);
+
+  useOnClickOutside(ref, () => { setFeatureToggleExpanded(false); });
+  useHotkeys('esc', () => setFeatureToggleExpanded(false));
+
+  if (featureToggles.length === 0) return null;
 
   return (
-    <span className="flex flex-1 justify-between">
-      <span>
-        {
-          [...languages]
-            .sort(desc(byNum(prop('loc'))))
-            .map(l => (
-              <Flair
-                key={l.lang}
-                flairColor={l.color}
-                title={`${num(l.loc)} lines of code`}
-                label={`${Math.round((l.loc * 100) / totalLoc)}% ${l.lang}`}
-              />
-            ))
-        }
-      </span>
-      {
-        defaultBranch
-          ? (
-            <span className="italic text-sm text-gray-400" style={{ lineHeight: 'inherit' }}>
-              Default branch
-              {' '}
-              <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
-                {defaultBranch}
-              </code>
-            </span>
-          ) : null
-      }
-    </span>
+    <div className="relative" ref={ref}>
+      <button
+        className={`border px-3 py-0.5 rounded-lg text-sm ${
+          isFeatureToggleExpanded
+            ? 'bg-gray-100 border-gray-400'
+            : 'bg-gray-50 border-gray-300'
+        } hover:bg-gray-100 hover:border-gray-400`}
+        onClick={onButtonClick}
+      >
+        {'Uses '}
+        <strong>{featureToggles.length}</strong>
+        {` feature ${featureToggles.length === 1 ? 'toggle' : 'toggles'}`}
+        <DownChevron className="inline-block w-4 h-4 -m-1 ml-2" />
+      </button>
+      {isFeatureToggleExpanded
+        ? (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
+          <div
+            className="absolute top-8 py-2 px-5 rounded-lg text-left right-0 bg-black text-white shadow-md cursor-default"
+            style={{ width: '500px' }}
+            onClick={event => event.stopPropagation()}
+          >
+            Content
+          </div>
+        )
+        : null}
+    </div>
   );
 };
 
@@ -64,10 +77,11 @@ type RepoHealthProps = {
   aggregatedDevs: Record<string, Dev>;
   isFirst?: boolean;
   queryPeriodDays: number;
+  featureToggles: FeatureToggle[];
 };
 
 const RepoHealth: React.FC<RepoHealthProps> = ({
-  repo, isFirst, aggregatedDevs, queryPeriodDays
+  repo, isFirst, aggregatedDevs, queryPeriodDays, featureToggles
 }) => {
   const pageName = usePageName();
   const location = useLocation();
@@ -83,6 +97,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
 
   const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
+  const [isFtEnabled] = useQueryParam('ft', asBoolean);
 
   useEffect(() => {
     if (sortBy) {
@@ -97,26 +112,93 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
   }, [selectedTab, tabs]);
 
   const pipelinesUrl = location.pathname.replace('/repos', `/release-pipelines?search=repo:"${repo.name}"`);
+  const isExpanded = selectedTab !== null || isFirst || false;
+
+  const languages = useMemo(() => (
+    [...(repo.languages || [])].sort(desc(byNum(prop('loc'))))
+  ), [repo.languages]);
+
+  const totalLoc = useMemo(
+    () => languages.reduce((acc, lang) => acc + lang.loc, 0),
+    [languages]
+  );
 
   return (
-    <Card
-      title={repo.name}
-      titleUrl={repo.url}
-      subtitle={repoSubtitle(repo.languages, repo.defaultBranch)}
-      onCardClick={onCardClick}
-      isExpanded={selectedTab !== null || isFirst || false}
-      className={isInactive(repo) ? 'opacity-60' : ''}
+    <div
+      className={`bg-white ease-in-out rounded-lg shadow relative ${
+        isInactive(repo) ? 'opacity-60' : ''
+      } border-l-4 p-6 mb-4 transition-colors duration-500 ${
+        isExpanded ? 'border-gray-500' : ''
+      }`}
     >
-      {repo.pipelineCount ? (
-        <div className="mx-6 flex flex-wrap items-baseline">
-          <Link
-            to={pipelinesUrl}
-            className="link-text"
-          >
-            {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount).toLowerCase()}`}
-          </Link>
+      <div className="grid grid-flow-row mt-2">
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+        <div
+          className="w-full cursor-pointer"
+          role="button"
+          onClick={onCardClick}
+          tabIndex={0}
+        >
+          <div className="grid mx-6 grid-flow-col items-stretch">
+            <div>
+              <div>
+                <a
+                  href={repo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="link-text font-bold text-lg truncate max-width-full"
+                  onClick={event => event.stopPropagation()}
+                >
+                  {repo.name}
+                </a>
+                <span className="inline-block ml-4">
+                  {
+                    languages
+                      .map(l => (
+                        <Flair
+                          key={l.lang}
+                          flairColor={l.color}
+                          title={`${num(l.loc)} lines of code`}
+                          label={`${Math.round((l.loc * 100) / totalLoc)}% ${l.lang}`}
+                        />
+                      ))
+                  }
+                </span>
+              </div>
+              {repo.pipelineCount ? (
+                <div>
+                  <Link
+                    to={pipelinesUrl}
+                    className="link-text"
+                  >
+                    {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount).toLowerCase()}`}
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+            <div
+              className="text-gray-600 font-semibold text-right"
+              style={{ lineHeight: '27px' }}
+            >
+              {
+                repo.defaultBranch
+                  ? (
+                    <div className="italic text-sm text-gray-400" style={{ lineHeight: 'inherit' }}>
+                      Default branch
+                      {' '}
+                      <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
+                        {repo.defaultBranch}
+                      </code>
+                    </div>
+                  ) : null
+              }
+              {isFtEnabled
+                ? <FeatureToggleDropdown featureToggles={featureToggles} />
+                : null}
+            </div>
+          </div>
         </div>
-      ) : null}
+      </div>
 
       {isInactive(repo) ? (
         <p className="pl-5">
@@ -143,7 +225,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
         ))}
       </div>
       <span role="region">{selectedTab ? selectedTab.content() : null}</span>
-    </Card>
+    </div>
   );
 };
 
