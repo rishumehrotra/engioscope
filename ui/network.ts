@@ -47,6 +47,6 @@ export const changeProgramDetails = (): Promise<UIChangeProgram> => (
   fetch('/api/change-program.json').then(json)
 );
 
-export const byTrack = (): Promise<Tracks> => (
+export const fetchTracks = (): Promise<Tracks> => (
   fetch('/api/by-track.json').then(json)
 );

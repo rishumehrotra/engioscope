@@ -12,7 +12,7 @@ import ChangeProgram from './pages/ChangeProgram.js';
 import Header from './components/Header.js';
 import { HeaderProvider } from './hooks/header-hooks.js';
 import RefreshIfUpdated from './components/RefreshIfUpdated.js';
-import Tracks from './pages/ByTrack.js';
+import Tracks from './pages/Tracks.jsx';
 
 const App: React.FC = () => {
   useEffect(() => {
