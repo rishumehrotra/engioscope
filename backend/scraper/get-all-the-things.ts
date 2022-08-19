@@ -15,7 +15,7 @@ import summariseResults from './summarise-results.js';
 import { fetchCounters } from './network/fetch-with-disk-cache.js';
 import { mapSettleSeries, startTimer } from '../utils.js';
 import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
-import getTracks from './get-tracks.js';
+import trackMetrics from './get-tracks.js';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -89,7 +89,7 @@ const scrape = async (config: ParsedConfig) => {
 
   await Promise.all([
     changeProgramWorkItems.then(writeChangeProgramFile(config)),
-    writeTracks(config, getTracks(config, results.map(r => ({
+    writeTracks(config, trackMetrics(config, results.map(r => ({
       collectionConfig: r[0][0],
       projectConfig: r[0][1],
       analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis

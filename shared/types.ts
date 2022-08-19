@@ -382,7 +382,27 @@ export type TrackwiseData = {
   groups: Record<string, { witId: string; name: string }>;
 };
 
-export type Tracks = TrackwiseData & GlobalUIConfig;
+export type TrackMetrics = {
+  project: [string, string];
+  count: number;
+  new: number;
+  newByWeek: number;
+  velocity: number;
+  velocityByWeek: number[];
+  cycleTime: number[];
+  cycleTimeByWeek: number[][];
+  changeLeadTime: number[];
+  changeLeadTimeByWeek: number[][];
+  flowEfficiency: { total: number; wcTime: number };
+  flowEfficiencyByWeek: { total: number; wcTime: number }[];
+  wipTrend: number[];
+  wipCount: number;
+  wipAge: number[];
+};
+
+export type TrackMetricsByTrack = Record<string, TrackMetrics>;
+
+export type Tracks = { tracks: TrackMetricsByTrack } & GlobalUIConfig;
 
 export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
   collection: string;

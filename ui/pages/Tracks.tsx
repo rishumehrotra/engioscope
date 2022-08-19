@@ -6,7 +6,8 @@ import Loading from '../components/Loading.jsx';
 import { shortDate } from '../helpers/utils.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { fetchTracks } from '../network.js';
-import { WorkItemsList } from '../components/tracks-page/WorkItemsList';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import FlowMetrics from '../components/tracks-page/FlowMetrics.jsx';
 
 const navItems = [
   { key: 'metrics', label: 'Flow metrics', linkTo: '/tracks' },
@@ -25,14 +26,15 @@ const TrackNavBar: React.FC = () => {
   );
 };
 
-const threeMonthsAgo = (date: string) => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() - 3);
+const fromDate = (refDate: string, daysAgo: number) => {
+  const d = new Date(refDate);
+  d.setDate(d.getDate() - daysAgo);
   return d;
 };
 
 const Tracks: React.FC = () => {
   const [tracks, setTracks] = useState<TTracks | null>(null);
+  const [show] = useQueryParam('show', asString);
 
   useEffect(() => { fetchTracks().then(setTracks); }, []);
   const setHeaderDetails = useSetHeaderDetails();
@@ -44,7 +46,7 @@ const Tracks: React.FC = () => {
       subtitle: tracks
         ? (
           <div className="text-base mt-2 font-normal text-gray-200">
-            <span className="text-lg font-bold">{shortDate(threeMonthsAgo(tracks.lastUpdated))}</span>
+            <span className="text-lg font-bold">{shortDate(fromDate(tracks.lastUpdated, tracks.queryPeriodDays))}</span>
             {' to '}
             <span className="text-lg font-bold">{shortDate(new Date(tracks.lastUpdated))}</span>
           </div>
@@ -63,9 +65,14 @@ const Tracks: React.FC = () => {
           ? <Loading />
           : (
             <div className="mt-8 bg-gray-50">
-              {!tracks.workItems.length
-                ? 'Tracks not configured'
-                : <WorkItemsList tracks={tracks} />}
+              {
+                // eslint-disable-next-line no-nested-ternary
+                !Object.keys(tracks).length
+                  ? 'Tracks not configured'
+                  : (show === 'listing'
+                    ? null // <WorkItemsList tracks={tracks} />
+                    : <FlowMetrics tracks={tracks} />)
+              }
             </div>
           )}
       </div>

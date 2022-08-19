@@ -26,7 +26,9 @@ import {
   sonarCountsByWeek, totalBuilds, totalBuildsByWeek, totalCoverage,
   totalCoverageByWeek, totalSuccessfulBuildsByWeek, totalTests, totalTestsByWeek, totalUsingCentralTemplate
 } from '../../shared/repo-utils.js';
-import { divide, exists, toPercentage } from '../../shared/utils.js';
+import {
+  divide, exists, mapObj, toPercentage
+} from '../../shared/utils.js';
 
 type Group = NonNullable<ParsedConfig['azure']['summaryPageGroups']>[number];
 type RelevantResults = {
@@ -136,14 +138,7 @@ const organiseWorkItemsIntoGroups = (workItems: UIWorkItemWithGroup[]) => (
     }, {})
 );
 
-const mapObjectValues = <T, U>(mapFn: (v: T) => U) => (obj: Record<string, T>) => (
-  Object.entries(obj).reduce<Record<string, U>>((acc, [key, value]) => {
-    acc[key] = mapFn(value);
-    return acc;
-  }, {})
-);
-
-const processItemsInGroup = pipe(mapObjectValues, mapObjectValues);
+const processItemsInGroup = pipe(mapObj, mapObj);
 
 const computeTimeDifference = (workItemTimes: WorkItemTimesGetter) => (
   (start: keyof Omit<Overview['times'][number], 'workCenters'>, end?: keyof Omit<Overview['times'][number], 'workCenters'>) => (
