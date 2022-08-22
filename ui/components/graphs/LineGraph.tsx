@@ -1,6 +1,7 @@
 import { range } from 'rambda';
 import type { MutableRefObject } from 'react';
 import React, {
+  useMemo,
   useState, useCallback, Fragment, useRef
 } from 'react';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
@@ -42,19 +43,34 @@ const Axes: React.FC<{ width: number }> = ({ width }) => (
 );
 
 type GridLinesProps<Point> = {
+  svgRef: MutableRefObject<SVGSVGElement | null>;
   yAxisMax: number;
   yCoord: (value: number) => number;
   width: number;
   yAxisLabel: (value: number) => string;
   xAxisLabel: (point: Point) => string;
   points: Point[];
+  closestPointIndex: (xCoord: number) => number;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 const GridLines = <Point extends unknown>({
-  yAxisMax, yCoord, width, yAxisLabel, xAxisLabel, points
+  svgRef, yAxisMax, yCoord, width, yAxisLabel, xAxisLabel, points, closestPointIndex
 }: GridLinesProps<Point>) => {
   const gridLinesGap = Math.ceil(yAxisMax / (numberOfHorizontalGridLines + 1));
+
+  const labelForVerticalGridline = useMemo(() => {
+    const svgDimensions = svgRef.current?.getBoundingClientRect();
+    return (gridLineIndex: number) => {
+      if (!svgDimensions) return;
+      return xAxisLabel(
+        points[closestPointIndex(
+          (gridLineIndex * (svgDimensions.width - ((yAxisLeftPadding * svgDimensions.width) / width))) / (numberOfVerticalGridLines - 1)
+        )]
+      );
+    };
+  }, [closestPointIndex, points, svgRef, width, xAxisLabel]);
+
   return (
     <>
       <g>
@@ -102,7 +118,7 @@ const GridLines = <Point extends unknown>({
                   height={xAxisLabelHeight}
                 >
                   <div className="flex text-gray-500 justify-center text-sm w-full items-center">
-                    {xAxisLabel(points[Math.round(i * (points.length / (numberOfVerticalGridLines + 1)))])}
+                    {labelForVerticalGridline(i)}
                   </div>
                 </foreignObject>
               )}
@@ -258,15 +274,17 @@ const LineGraph = <L, P>({
     Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing)
   ), []);
 
+  const width = ((points(lines[0]).length - 1) * yAxisItemSpacing) + yAxisLeftPadding;
+
   const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (!onClick) return;
-    const index = closestPointIndex(e.nativeEvent.offsetX);
+    const svgDimensions = svgRef.current?.getBoundingClientRect();
+    if (!svgDimensions) return;
+    const index = closestPointIndex((e.nativeEvent.offsetX / svgDimensions.width) * width);
     if (index !== null && index >= 0) onClick(index);
-  }, [closestPointIndex, onClick]);
+  }, [closestPointIndex, onClick, width]);
 
   if (lines.length === 0) return <div>Couldn't find any matching workitems</div>;
-
-  const width = ((points(lines[0]).length - 1) * yAxisItemSpacing) + yAxisLeftPadding;
 
   return (
     <svg
@@ -279,12 +297,14 @@ const LineGraph = <L, P>({
     >
       <Axes width={width} />
       <GridLines
+        svgRef={svgRef}
         yAxisMax={yAxisMax}
         yCoord={yCoord}
         width={width}
         yAxisLabel={yAxisLabel}
         xAxisLabel={xAxisLabel}
         points={points(lines[0])}
+        closestPointIndex={closestPointIndex}
       />
       {lines.map(line => (
         <path
