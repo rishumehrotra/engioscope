@@ -38,7 +38,7 @@ export type ExtendedLabelWithSparklineProps<T> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-const LabelWithSparkline2 = <T extends {}>({
+const ExtendedLabelWithSparkline = <T extends {}>({
   data, toValue, colorBy, valueToLabel, renderer, combineValues, tooltipLabel
 }: ExtendedLabelWithSparklineProps<T>) => {
   const thisMonthValue = useMemo(() => combineValues(data.slice(-4)), [combineValues, data]);
@@ -104,4 +104,4 @@ const LabelWithSparkline2 = <T extends {}>({
   );
 };
 
-export default LabelWithSparkline2;
+export default ExtendedLabelWithSparkline;

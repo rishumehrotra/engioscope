@@ -47,7 +47,7 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
               value: trackMetrics.new,
               content: withLink(
                 <ExtendedLabelWithSparkline
-                  data={trackMetrics.velocityByWeek}
+                  data={trackMetrics.newByWeek}
                   {...newItemsSparkline}
                 />,
                 '#new-work-items'
@@ -91,7 +91,7 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
             {
               value: divide(trackMetrics.flowEfficiency.wcTime, trackMetrics.flowEfficiency.total).getOr(0),
               content: withLink(
-                trackMetrics.flowEfficiency
+                trackMetrics.flowEfficiencyByWeek.some(f => f.total !== 0)
                   ? (
                     <ExtendedLabelWithSparkline
                       data={trackMetrics.flowEfficiencyByWeek}
@@ -133,7 +133,7 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
       <thead>
         <tr>
           {table.columns.map(col => (
-            <th key={col?.label}>
+            <th key={col?.label || 'Title'}>
               {col?.label}
             </th>
           ))}
@@ -142,8 +142,9 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
       <tbody>
         {table.rows.map(row => (
           <tr key={row.key}>
-            {row.values.map(val => (
-              <td key={val.value} className="font-semibold text-xl py-3">
+            {row.values.map((val, index) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <td key={`${row.key} ${val.value} ${index}`} className="font-semibold text-xl py-3">
                 {val.content}
               </td>
             ))}

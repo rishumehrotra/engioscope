@@ -386,7 +386,7 @@ export type TrackMetrics = {
   project: [string, string];
   count: number;
   new: number;
-  newByWeek: number;
+  newByWeek: number[];
   velocity: number;
   velocityByWeek: number[];
   cycleTime: number[];

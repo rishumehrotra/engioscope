@@ -7,7 +7,8 @@ import type {
 import { mapObj } from '../../shared/utils.js';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils.js';
 import {
-  isWIP, isWIPInTimeRange, flowEfficiency, timeDifference
+  totalCycleTime, totalWorkCenterTime,
+  isWIP, isWIPInTimeRange, timeDifference
 } from '../../shared/work-item-utils.js';
 import {
   isAfter, queryPeriodDays, weekLimits, weeks
@@ -50,8 +51,13 @@ const computeTimeDifference = (workItemTimes: WorkItemTimesGetter) => (
   )
 );
 
-export const isNewIn = (isWithinTimeRange: (d: Date) => boolean) => (
-  (wi: UIWorkItem) => isWithinTimeRange(new Date(wi.created.on))
+export const isNewWithTimes = (workItemTimes: (wi: UIWorkItem) => WorkItemTimes) => (
+  (isWithinTimeRange: (d: Date) => boolean) => (
+    (wi: UIWorkItem) => {
+      const { start } = workItemTimes(wi);
+      return Boolean(start && isWithinTimeRange(new Date(start)));
+    }
+  )
 );
 
 export const organiseWorkItemsByTracks = (wis: UIWorkItem[]) => (
@@ -85,7 +91,20 @@ const trackMetrics = (config: ParsedConfig, results: Result[]) => {
     })
   );
 
+  const flowEfficiency = (() => {
+    const tct = totalCycleTime(workItemTimes);
+    const wct = totalWorkCenterTime(workItemTimes);
+
+    return (wis: UIWorkItem[]) => {
+      const total = tct(wis);
+      if (total === 0) { return { total: 0, wcTime: 0 }; }
+      const wcTime = wct(wis);
+      return { total, wcTime };
+    };
+  })();
+
   const wipWorkItems = isWIP(workItemTimes, ignoreList);
+  const isNewIn = isNewWithTimes(workItemTimes);
 
   return pipe(
     organiseWorkItemsByTracks,
@@ -127,9 +146,9 @@ const trackMetrics = (config: ParsedConfig, results: Result[]) => {
               .map(computeTimeDifferenceBetween('devComplete', 'end'))
           ))
         ),
-        flowEfficiency: pipe(filter(wasWorkItemCompletedInQueryPeriod), flowEfficiency(workItemTimes)),
+        flowEfficiency: pipe(filter(wasWorkItemCompletedInQueryPeriod), flowEfficiency),
         flowEfficiencyByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(week => flowEfficiency(workItemTimes)(
+          weeks.map(week => flowEfficiency(
             wis.filter(wasWorkItemCompletedIn(week))
           ))
         ),
