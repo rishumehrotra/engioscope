@@ -1,10 +1,13 @@
-import { head, sum } from 'rambda';
+import { head, last, sum } from 'rambda';
 import type { ReactNode } from 'react';
-import React, { useMemo } from 'react';
-import { asc, byString } from '../../../shared/sort-utils.js';
+import React, { useCallback, useState, useMemo } from 'react';
+import {
+  asc, byNum, byString, desc
+} from '../../../shared/sort-utils.js';
 import type { TrackMetrics, Tracks } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';
+import { ArrowDown, ArrowUp } from '../common/Icons.jsx';
 import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline.jsx';
 import {
   changeLeadTimeSparkline, cycleTimeSparkline, flowEfficiencySparkline, newItemsSparkline, velocitySparkline, wipTrendSparkline
@@ -38,6 +41,8 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
       .sort(asc(byString(head)))
       .map(([trackName, trackMetrics]) => {
         const withLink = createLinkWrapper(trackName, trackMetrics);
+        const cycleTimeValue: number = sum(trackMetrics.cycleTimeByWeek.slice(-4).flat()) / trackMetrics.velocityByWeek.slice(-4).length;
+        const cltValue = sum(trackMetrics.changeLeadTimeByWeek.slice(-4).flat()) / trackMetrics.velocityByWeek.slice(-4).length;
 
         return ({
           key: trackName,
@@ -64,29 +69,24 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
               )
             },
             {
-              value: trackMetrics.cycleTimeByWeek.join('.'),
+              value: cycleTimeValue,
               content: withLink(
-                trackMetrics.cycleTime
-                  ? (
-                    <ExtendedLabelWithSparkline
-                      data={trackMetrics.cycleTimeByWeek}
-                      {...cycleTimeSparkline}
-                    />
-                  ) : '-',
+                <ExtendedLabelWithSparkline
+                  data={trackMetrics.cycleTimeByWeek}
+                  {...cycleTimeSparkline}
+                />,
                 '#cycle-time'
               )
             },
             {
-              value: trackMetrics.changeLeadTime.join(','),
-              content: withLink(trackMetrics.changeLeadTime
-                ? (
-                  <ExtendedLabelWithSparkline
-                    data={trackMetrics.changeLeadTimeByWeek}
-                    {...changeLeadTimeSparkline}
-                  />
-                )
-                : '-',
-              '#change-lead-time')
+              value: cltValue,
+              content: withLink(
+                <ExtendedLabelWithSparkline
+                  data={trackMetrics.changeLeadTimeByWeek}
+                  {...changeLeadTimeSparkline}
+                />,
+                '#change-lead-time'
+              )
             },
             {
               value: divide(trackMetrics.flowEfficiency.wcTime, trackMetrics.flowEfficiency.total).getOr(0),
@@ -103,7 +103,8 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
               )
             },
             {
-              value: trackMetrics.wipCount,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              value: last(trackMetrics.wipTrend)!,
               content: withLink(
                 trackMetrics.wipCount
                   ? (
@@ -117,7 +118,7 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
               )
             },
             {
-              value: trackMetrics.wipAge.join(','),
+              value: sum(trackMetrics.wipAge.slice(-4)) / trackMetrics.wipCount,
               content: withLink(
                 divide(sum(trackMetrics.wipAge), trackMetrics.wipCount).map(prettyMS).getOr('-'),
                 '#age-of-work-in-progress-items'
@@ -128,28 +129,77 @@ const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
       })
   }), [tracks]);
 
+  const [sort, setSort] = useState<{
+    byIndex: number;
+    direction: 'asc' | 'desc';
+  }>({ byIndex: 0, direction: 'asc' });
+
+  const onColumnClick = useCallback((index: number) => () => {
+    setSort(sort => {
+      const newSort: typeof sort = ({
+        byIndex: index,
+        // eslint-disable-next-line no-nested-ternary
+        direction: sort.byIndex === index
+          ? (sort.direction === 'asc' ? 'desc' : 'asc')
+          : 'asc'
+      });
+
+      return newSort;
+    });
+  }, []);
+
   return (
     <table className="summary-table">
       <thead>
         <tr>
-          {table.columns.map(col => (
-            <th key={col?.label || 'Title'}>
-              {col?.label}
+          {table.columns.map((col, index) => (
+            <th key={col?.label || 'Name'} data-tip={col?.tooltip}>
+              {col?.label && (
+                <button
+                  onClick={onColumnClick(index)}
+                >
+                  {col.label}
+                  <span className="ml-2 inline-block text-white">
+                    {
+                    // eslint-disable-next-line no-nested-ternary
+                      sort.byIndex === index
+                        ? (
+                          sort.direction === 'asc'
+                            ? <ArrowUp className="w-4" />
+                            : <ArrowDown className="w-4" />
+                        )
+                        : (
+                          <div className="h-6" />
+                        )
+                    }
+                  </span>
+                </button>
+              )}
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {table.rows.map(row => (
-          <tr key={row.key}>
-            {row.values.map((val, index) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <td key={`${row.key} ${val.value} ${index}`} className="font-semibold text-xl py-3">
-                {val.content}
-              </td>
-            ))}
-          </tr>
-        ))}
+        {table.rows
+          .sort(
+            (sort.direction === 'asc' ? asc : desc)(
+              (sort.byIndex === 0
+                ? byString(row => row.values[sort.byIndex].value as string)
+                : byNum(row => row.values[sort.byIndex].value as number)
+              )
+            )
+          )
+          .map(row => (
+            <tr key={row.key}>
+              {row.values
+                .map((val, index) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <td key={`${row.key} ${val.value} ${index}`} className="font-semibold py-3">
+                    {val.content}
+                  </td>
+                ))}
+            </tr>
+          ))}
       </tbody>
     </table>
   );
