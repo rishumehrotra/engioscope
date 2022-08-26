@@ -4,7 +4,7 @@ import React, { useCallback, useState, useMemo } from 'react';
 import {
   asc, byNum, byString, desc
 } from '../../../shared/sort-utils.js';
-import type { TrackMetrics, Tracks } from '../../../shared/types.js';
+import type { TrackMetrics, TrackFlowMetrics } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';
 import { ArrowDown, ArrowUp } from '../common/Icons.jsx';
@@ -25,7 +25,7 @@ const createLinkWrapper = (trackName: string, trackMetrics: TrackMetrics) => (co
   </a>
 );
 
-const FlowMetrics: React.FC<{ tracks: Tracks }> = ({ tracks }) => {
+const FlowMetrics: React.FC<{ tracks: TrackFlowMetrics }> = ({ tracks }) => {
   const table = useMemo(() => ({
     columns: [
       null,

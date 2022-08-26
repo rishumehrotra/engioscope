@@ -6,9 +6,8 @@ import pluralize from 'pluralize';
 import type {
   AnalysedProjects, GlobalUIConfig, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
-  TrackMetricsByTrack,
-  Tracks,
-  UIChangeProgram, UIChangeProgramTask, UIProjectAnalysis
+  TrackMetricsByTrack, TrackFlowMetrics, UIChangeProgram, UIChangeProgramTask,
+  UIProjectAnalysis, TrackwiseData, TrackFeatures
 } from '../../shared/types.js';
 import { doesFileExist, queryPeriodDays } from '../utils.js';
 import type { ProjectAnalysis } from './types.js';
@@ -206,8 +205,8 @@ export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<Summ
   );
 };
 
-export const writeTracks = (config: ParsedConfig, tracks: TrackMetricsByTrack) => {
-  const tracksWorkItems: Tracks = {
+export const writeTrackFlowMetrics = (config: ParsedConfig, tracks: TrackMetricsByTrack) => {
+  const tracksWorkItems: TrackFlowMetrics = {
     tracks,
     lastUpdated: new Date().toISOString(),
     hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
@@ -216,7 +215,21 @@ export const writeTracks = (config: ParsedConfig, tracks: TrackMetricsByTrack) =
   };
 
   return (
-    writeFile(['./'], 'by-track.json', JSON.stringify(tracksWorkItems))
+    writeFile(['./'], 'track-flow-metrics.json', JSON.stringify(tracksWorkItems))
+  );
+};
+
+export const writeTrackFeatures = (config: ParsedConfig, tracks: TrackwiseData) => {
+  const tracksWorkItems: TrackFeatures = {
+    tracks,
+    lastUpdated: new Date().toISOString(),
+    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
+    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
+    queryPeriodDays: queryPeriodDays(config)
+  };
+
+  return (
+    writeFile(['./'], 'track-features.json', JSON.stringify(tracksWorkItems))
   );
 };
 

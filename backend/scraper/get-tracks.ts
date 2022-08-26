@@ -70,7 +70,7 @@ export const organiseWorkItemsByTracks = (wis: UIWorkItem[]) => (
   }, {})
 );
 
-const trackMetrics = (config: ParsedConfig, results: Result[]) => {
+export const trackMetrics = (config: ParsedConfig, results: Result[]) => {
   const resultsBy = mergeProp(results);
   const times = resultsBy('times');
   const workItemsWithTracks = Object.values(resultsBy('byId')).filter(prop('track'));
@@ -162,7 +162,7 @@ const trackMetrics = (config: ParsedConfig, results: Result[]) => {
   )(workItemsWithTracks);
 };
 
-export const byTrack = (config: ParsedConfig, results: Result[]): TrackwiseData => {
+export const trackFeatures = (config: ParsedConfig, results: Result[]): TrackwiseData => {
   const resultsBy = mergeProp(results);
   const workItemsWithTracks = Object.values(resultsBy('byId')).filter(prop('track'));
 
@@ -204,5 +204,3 @@ export const byTrack = (config: ParsedConfig, results: Result[]): TrackwiseData 
     workItems: workItemsWithTracks, times: workItemTimes, types: workItemTypes, groups
   };
 };
-
-export default trackMetrics;

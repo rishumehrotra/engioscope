@@ -402,7 +402,9 @@ export type TrackMetrics = {
 
 export type TrackMetricsByTrack = Record<string, TrackMetrics>;
 
-export type Tracks = { tracks: TrackMetricsByTrack } & GlobalUIConfig;
+export type TrackFeatures = { tracks: TrackwiseData } & GlobalUIConfig;
+
+export type TrackFlowMetrics = { tracks: TrackMetricsByTrack } & GlobalUIConfig;
 
 export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
   collection: string;

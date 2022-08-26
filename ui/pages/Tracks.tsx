@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { Tracks as TTracks } from '../../shared/types.js';
+import type { TrackFeatures, TrackFlowMetrics } from '../../shared/types.js';
 import NavBar from '../components/common/NavBar.jsx';
 import Loading from '../components/Loading.jsx';
 import { shortDate } from '../helpers/utils.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
-import { fetchTracks } from '../network.js';
+import { fetchTrackFeatures, fetchTrackFlowMetrics } from '../network.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import FlowMetrics from '../components/tracks-page/FlowMetrics.jsx';
+import FeaturesList from '../components/tracks-page/FeaturesList.jsx';
 
 const navItems = [
   { key: 'metrics', label: 'Flow metrics', linkTo: '/tracks' },
@@ -33,27 +34,33 @@ const fromDate = (refDate: string, daysAgo: number) => {
 };
 
 const Tracks: React.FC = () => {
-  const [tracks, setTracks] = useState<TTracks | null>(null);
+  const [trackFlowMetrics, setTrackFlowMetrics] = useState<TrackFlowMetrics | null>(null);
+  const [trackFeatures, setTrackFeatures] = useState<TrackFeatures | null>(null);
   const [show] = useQueryParam('show', asString);
 
-  useEffect(() => { fetchTracks().then(setTracks); }, []);
+  useEffect(() => { if (show !== 'listing') fetchTrackFlowMetrics().then(setTrackFlowMetrics); }, [show]);
+  useEffect(() => { if (show === 'listing') fetchTrackFeatures().then(setTrackFeatures); }, [show]);
   const setHeaderDetails = useSetHeaderDetails();
 
   useEffect(() => {
+    const headerInfo = trackFlowMetrics || trackFeatures;
+
     setHeaderDetails({
-      globalSettings: tracks,
+      globalSettings: headerInfo,
       title: 'Tracks',
-      subtitle: tracks
+      subtitle: headerInfo
         ? (
           <div className="text-base mt-2 font-normal text-gray-200">
-            <span className="text-lg font-bold">{shortDate(fromDate(tracks.lastUpdated, tracks.queryPeriodDays))}</span>
+            <span className="text-lg font-bold">{shortDate(fromDate(headerInfo.lastUpdated, headerInfo.queryPeriodDays))}</span>
             {' to '}
-            <span className="text-lg font-bold">{shortDate(new Date(tracks.lastUpdated))}</span>
+            <span className="text-lg font-bold">{shortDate(new Date(headerInfo.lastUpdated))}</span>
           </div>
         )
         : null
     });
-  }, [tracks, setHeaderDetails]);
+  }, [trackFlowMetrics, setHeaderDetails, trackFeatures]);
+
+  const loadedData = trackFlowMetrics || trackFeatures;
 
   return (
     <>
@@ -61,17 +68,18 @@ const Tracks: React.FC = () => {
         <TrackNavBar />
       </div>
       <div className="mx-32">
-        {!tracks
+        {!loadedData
           ? <Loading />
           : (
             <div className="mt-8 bg-gray-50">
               {
                 // eslint-disable-next-line no-nested-ternary
-                !Object.keys(tracks).length
+                !Object.keys(loadedData.tracks).length
                   ? 'Tracks not configured'
                   : (show === 'listing'
-                    ? null // <WorkItemsList tracks={tracks} />
-                    : <FlowMetrics tracks={tracks} />)
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    ? trackFeatures && <FeaturesList tracks={trackFeatures!.tracks} />
+                    : trackFlowMetrics && <FlowMetrics tracks={trackFlowMetrics} />)
               }
             </div>
           )}

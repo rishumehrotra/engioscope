@@ -5,7 +5,9 @@ import { tap, zip } from 'rambda';
 import tar from 'tar';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
-import aggregationWriter, { writeChangeProgramFile, writeSummaryMetricsFile, writeTracks } from './aggregation-writer.js';
+import aggregationWriter, {
+  writeChangeProgramFile, writeSummaryMetricsFile, writeTrackFeatures, writeTrackFlowMetrics
+} from './aggregation-writer.js';
 import azure from './network/azure.js';
 import type { ParsedConfig } from './parse-config.js';
 import projectAnalyser from './project-analyser.js';
@@ -15,7 +17,7 @@ import summariseResults from './summarise-results.js';
 import { fetchCounters } from './network/fetch-with-disk-cache.js';
 import { mapSettleSeries, startTimer } from '../utils.js';
 import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
-import trackMetrics from './get-tracks.js';
+import { trackFeatures, trackMetrics } from './get-tracks.js';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -89,7 +91,12 @@ const scrape = async (config: ParsedConfig) => {
 
   await Promise.all([
     changeProgramWorkItems.then(writeChangeProgramFile(config)),
-    writeTracks(config, trackMetrics(config, results.map(r => ({
+    writeTrackFlowMetrics(config, trackMetrics(config, results.map(r => ({
+      collectionConfig: r[0][0],
+      projectConfig: r[0][1],
+      analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
+    })))),
+    writeTrackFeatures(config, trackFeatures(config, results.map(r => ({
       collectionConfig: r[0][0],
       projectConfig: r[0][1],
       analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis

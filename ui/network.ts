@@ -2,7 +2,7 @@ import type {
   ProjectReleasePipelineAnalysis, ProjectRepoAnalysis,
   ProjectWorkItemAnalysis, UIWorkItemRevision, ProjectOverviewAnalysis,
   AnalyticsItem, PipelineDefinitions, SummaryMetrics, AnalysedProjects,
-  UIChangeProgram, Tracks
+  UIChangeProgram, TrackFlowMetrics, TrackFeatures
 } from '../shared/types.js';
 
 const json = (res: Response) => res.json();
@@ -47,6 +47,10 @@ export const changeProgramDetails = (): Promise<UIChangeProgram> => (
   fetch('/api/change-program.json').then(json)
 );
 
-export const fetchTracks = (): Promise<Tracks> => (
-  fetch('/api/by-track.json').then(json)
+export const fetchTrackFlowMetrics = (): Promise<TrackFlowMetrics> => (
+  fetch('/api/track-flow-metrics.json').then(json)
+);
+
+export const fetchTrackFeatures = (): Promise<TrackFeatures> => (
+  fetch('/api/track-features.json').then(json)
 );
