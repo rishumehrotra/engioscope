@@ -3,18 +3,18 @@ import {
 } from 'rambda';
 import type {
   TrackwiseData, UIWorkItemType, WorkItemTimes, Overview, UIWorkItem, TrackMetrics
-} from '../../shared/types.js';
-import { mapObj } from '../../shared/utils.js';
-import type { WorkItemTimesGetter } from '../../shared/work-item-utils.js';
+} from '../../../shared/types.js';
+import { mapObj } from '../../../shared/utils.js';
+import type { WorkItemTimesGetter } from '../../../shared/work-item-utils.js';
 import {
   totalCycleTime, totalWorkCenterTime,
   isWIP, isWIPInTimeRange, timeDifference
-} from '../../shared/work-item-utils.js';
+} from '../../../shared/work-item-utils.js';
 import {
   isAfter, queryPeriodDays, weekLimits, weeks
-} from '../utils.js';
-import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config.js';
-import type { ProjectAnalysis } from './types.js';
+} from '../../utils.js';
+import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config.js';
+import type { ProjectAnalysis } from '../types.js';
 
 type Result = {
   collectionConfig: ParsedCollection;

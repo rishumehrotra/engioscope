@@ -10,7 +10,8 @@ import { prettyMS } from '../../helpers/utils.js';
 import { ArrowDown, ArrowUp } from '../common/Icons.jsx';
 import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline.jsx';
 import {
-  changeLeadTimeSparkline, cycleTimeSparkline, flowEfficiencySparkline, newItemsSparkline, velocitySparkline, wipTrendSparkline
+  changeLeadTimeSparkline, cycleTimeSparkline, flowEfficiencySparkline, newItemsSparkline,
+  velocitySparkline, wipTrendSparkline
 } from '../sparkline-props.js';
 
 const createLinkWrapper = (trackName: string, trackMetrics: TrackMetrics) => (contents: ReactNode, stub: string) => (

@@ -17,7 +17,7 @@ import summariseResults from './summarise-results.js';
 import { fetchCounters } from './network/fetch-with-disk-cache.js';
 import { mapSettleSeries, startTimer } from '../utils.js';
 import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
-import { trackFeatures, trackMetrics } from './get-tracks.js';
+import { trackFeatures, trackMetrics } from './stats-aggregators/tracks.js';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);

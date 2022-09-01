@@ -90,20 +90,22 @@ export const organiseByTrack = (
       }, {}),
       timeSpentByCenter: workItems
         .flatMap(wi => timeSpent(tracks.types[wi.typeId])(tracks.times[wi.id]))
-        .reduce<Record<string, { time: number; count: number; isWorkCenter: boolean }>>((acc, times) => {
-          acc[times.label] = acc[times.label] || { time: 0, count: 0, isWorkCenter: false };
-          if (times.end) {
-            acc[times.label].time += times.end.getTime() - times.start.getTime();
-            acc[times.label].count += 1;
-          } else {
-            // Last stage hasn't completed
-            if (wipHandling === 'ignore-last-state') { return acc; }
-            acc[times.label].time += Date.now() - times.start.getTime();
-            acc[times.label].count += 1;
-          }
-          acc[times.label].isWorkCenter = times.isWorkCenter;
-          return acc;
-        }, {})
+        .reduce<Record<string, { time: number; count: number; isWorkCenter: boolean }>>(
+          (acc, times) => {
+            acc[times.label] = acc[times.label] || { time: 0, count: 0, isWorkCenter: false };
+            if (times.end) {
+              acc[times.label].time += times.end.getTime() - times.start.getTime();
+              acc[times.label].count += 1;
+            } else {
+              // Last stage hasn't completed
+              if (wipHandling === 'ignore-last-state') { return acc; }
+              acc[times.label].time += Date.now() - times.start.getTime();
+              acc[times.label].count += 1;
+            }
+            acc[times.label].isWorkCenter = times.isWorkCenter;
+            return acc;
+          }, {}
+        )
     };
   }, workItemsByTrack);
 };
