@@ -4,7 +4,7 @@ import React, { useCallback, useState, useMemo } from 'react';
 import {
   asc, byNum, byString, desc
 } from '../../../shared/sort-utils.js';
-import type { TrackMetrics, TrackFlowMetrics } from '../../../shared/types.js';
+import type { TrackFlowMetrics, TrackMetricsByTrack } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';
 import { ArrowDown, ArrowUp } from '../common/Icons.jsx';
@@ -14,36 +14,43 @@ import {
   velocitySparkline, wipTrendSparkline
 } from '../sparkline-props.js';
 
-const createLinkWrapper = (trackName: string, trackMetrics: TrackMetrics) => (contents: ReactNode, stub: string) => (
-  <a
-    href={`/${trackMetrics.project[0]}/${trackMetrics.project[1]}/?filter=${
-      encodeURIComponent(`Delivery track:${trackName}`)
-    }${stub}`}
-    target="_blank"
-    rel="noreferrer"
-  >
-    {contents}
-  </a>
+const createLinkWrapper = (collectionName: string, projectName: string, filterLabel: string | undefined, trackName: string) => (
+  (contents: ReactNode, stub: string) => (
+    <a
+      href={`/${collectionName}/${projectName}/?filter=${
+        encodeURIComponent(`${filterLabel}:${trackName}`)
+      }${stub}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {contents}
+    </a>
+  )
 );
 
-const FlowMetrics: React.FC<{ tracks: TrackFlowMetrics }> = ({ tracks }) => {
+type FlowMetricsInnerProps = {
+  tracks: TrackMetricsByTrack[number];
+  queryPeriodDays: number;
+};
+
+const FlowMetricsInner: React.FC<FlowMetricsInnerProps> = ({ tracks, queryPeriodDays }) => {
   const table = useMemo(() => ({
     columns: [
       null,
-      { label: 'New', tooltip: `Number of new work items added in the last ${tracks.queryPeriodDays} days` },
-      { label: 'Velocity', tooltip: `Number of work items completed in the last ${tracks.queryPeriodDays} days` },
-      { label: 'Cycle time', tooltip: `Average time taken to complete a work item over the last ${tracks.queryPeriodDays} days` },
+      { label: 'New', tooltip: `Number of new work items added in the last ${queryPeriodDays} days` },
+      { label: 'Velocity', tooltip: `Number of work items completed in the last ${queryPeriodDays} days` },
+      { label: 'Cycle time', tooltip: `Average time taken to complete a work item over the last ${queryPeriodDays} days` },
       { label: 'CLT', tooltip: 'Average time taken to take a work item to production after development is complete' },
       { label: 'Flow efficiency', tooltip: 'Fraction of overall time that work items spend in work centers on average' },
-      { label: 'WIP trend', tooltip: `WIP items over the last ${tracks.queryPeriodDays} days` },
+      { label: 'WIP trend', tooltip: `WIP items over the last ${queryPeriodDays} days` },
       { label: 'WIP age', tooltip: 'Average age of work items in progress' }
     ],
-    rows: Object.entries(tracks.tracks)
+    rows: Object.entries(tracks.byTrack)
       .sort(asc(byString(head)))
       .map(([trackName, trackMetrics]) => {
-        const withLink = createLinkWrapper(trackName, trackMetrics);
+        const withLink = createLinkWrapper(tracks.collection, tracks.project, tracks.filterLabel, trackName);
         const cycleTimeValue: number = sum(trackMetrics.cycleTimeByWeek.slice(-4).flat()) / trackMetrics.velocityByWeek.slice(-4).length;
-        const cltValue = sum(trackMetrics.changeLeadTimeByWeek.slice(-4).flat()) / trackMetrics.velocityByWeek.slice(-4).length;
+        const cltValue: number = sum(trackMetrics.changeLeadTimeByWeek.slice(-4).flat()) / trackMetrics.velocityByWeek.slice(-4).length;
 
         return ({
           key: trackName,
@@ -128,7 +135,7 @@ const FlowMetrics: React.FC<{ tracks: TrackFlowMetrics }> = ({ tracks }) => {
           ]
         });
       })
-  }), [tracks]);
+  }), [queryPeriodDays, tracks.byTrack, tracks.collection, tracks.filterLabel, tracks.project]);
 
   const [sort, setSort] = useState<{
     byIndex: number;
@@ -205,5 +212,22 @@ const FlowMetrics: React.FC<{ tracks: TrackFlowMetrics }> = ({ tracks }) => {
     </table>
   );
 };
+
+const FlowMetrics: React.FC<{ tracks: TrackFlowMetrics }> = ({ tracks }) => (
+  <>
+    {tracks.tracks.map(group => (
+      <details
+        key={`${group.collection}/${group.project}`}
+        open={tracks.tracks.length === 1}
+      >
+        <summary className="text-xl font-semibold mb-4 cursor-pointer">
+          {`${group.collection} / ${group.project}`}
+        </summary>
+
+        <FlowMetricsInner tracks={group} queryPeriodDays={tracks.queryPeriodDays} />
+      </details>
+    ))}
+  </>
+);
 
 export default FlowMetrics;

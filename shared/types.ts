@@ -400,7 +400,12 @@ export type TrackMetrics = {
   wipAge: number[];
 };
 
-export type TrackMetricsByTrack = Record<string, TrackMetrics>;
+export type TrackMetricsByTrack = {
+  collection: string;
+  project: string;
+  filterLabel?: string;
+  byTrack: Record<string, TrackMetrics>;
+}[];
 
 export type TrackFeatures = { tracks: TrackwiseData } & GlobalUIConfig;
 

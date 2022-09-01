@@ -4,7 +4,7 @@ import {
 import type {
   TrackwiseData, UIWorkItemType, WorkItemTimes, Overview, UIWorkItem, TrackMetrics
 } from '../../../shared/types.js';
-import { mapObj } from '../../../shared/utils.js';
+import { exists, mapObj } from '../../../shared/utils.js';
 import type { WorkItemTimesGetter } from '../../../shared/work-item-utils.js';
 import {
   totalCycleTime, totalWorkCenterTime,
@@ -70,22 +70,23 @@ export const organiseWorkItemsByTracks = (wis: UIWorkItem[]) => (
   }, {})
 );
 
-export const trackMetrics = (config: ParsedConfig, results: Result[]) => {
-  const resultsBy = mergeProp(results);
-  const times = resultsBy('times');
-  const workItemsWithTracks = Object.values(resultsBy('byId')).filter(prop('track'));
-  const isInQueryPeriod = isAfter(`${queryPeriodDays(config)} days`);
+const metricsForResult = (isInQueryPeriod: (date: Date) => boolean) => (result: Result) => {
+  const configWorkItemsWithTracks = result.collectionConfig.workitems.types?.filter(wit => wit.track);
+  if (!configWorkItemsWithTracks) return;
+
+  const { times, byId } = result.analysisResult.workItemAnalysis.overview;
+
+  const workItemsWithTracks = Object.values(byId).filter(prop('track'));
+  if (workItemsWithTracks.length === 0) return;
 
   const workItemTimes = (wi: UIWorkItem) => times[wi.id];
   const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
   const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
   const wasWorkItemCompletedInQueryPeriod = wasWorkItemCompletedIn(isInQueryPeriod);
-
-  // FIXME: This is obviously wrong. Use results.projectConfig instead
-  const ignoreList = config.azure.collections.flatMap(c => c.projects.flatMap(p => p.workitems.ignoreForWIP || []));
+  const { ignoreForWIP } = result.projectConfig.workitems;
 
   const isWIPIn = ([, weekEnd]: readonly [Date, Date]) => (
-    isWIPInTimeRange(workItemTimes, ignoreList)((d, type) => {
+    isWIPInTimeRange(workItemTimes, ignoreForWIP)((d, type) => {
       if (type === 'start') return d <= weekEnd;
       return d < weekEnd;
     })
@@ -103,64 +104,73 @@ export const trackMetrics = (config: ParsedConfig, results: Result[]) => {
     };
   })();
 
-  const wipWorkItems = isWIP(workItemTimes, ignoreList);
+  const wipWorkItems = isWIP(workItemTimes, ignoreForWIP);
   const isNewIn = isNewWithTimes(workItemTimes);
 
-  return pipe(
-    organiseWorkItemsByTracks,
-    mapObj<UIWorkItem[], TrackMetrics>(
-      applySpec({
-        project: () => {
-          const matchingCollection = config.azure.collections.find(c => c.workitems.types?.find(t => t.track));
-          const matchingProject = matchingCollection?.projects.find(p => p.name.toLowerCase().includes('portfolio'));
-          return [matchingCollection?.name, matchingProject?.name] as const;
-        },
-        count: length,
-        new: pipe(filter(isNewIn(isInQueryPeriod)), length),
-        newByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(week => wis.filter(isNewIn(week)).length)
-        ),
-        velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
-        velocityByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(week => wis.filter(wasWorkItemCompletedIn(week)).length)
-        ),
-        cycleTime: pipe(
-          filter(wasWorkItemCompletedInQueryPeriod),
-          map(computeTimeDifferenceBetween('start', 'end'))
-        ),
-        cycleTimeByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(week => (
-            wis
-              .filter(wasWorkItemCompletedIn(week))
-              .map(computeTimeDifferenceBetween('start', 'end'))
-          ))
-        ),
-        changeLeadTime: pipe(
-          filter(wasWorkItemCompletedInQueryPeriod),
-          map(computeTimeDifferenceBetween('devComplete', 'end'))
-        ),
-        changeLeadTimeByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(week => (
-            wis
-              .filter(wasWorkItemCompletedIn(week))
-              .map(computeTimeDifferenceBetween('devComplete', 'end'))
-          ))
-        ),
-        flowEfficiency: pipe(filter(wasWorkItemCompletedInQueryPeriod), flowEfficiency),
-        flowEfficiencyByWeek: (wis: UIWorkItem[]) => (
-          weeks.map(week => flowEfficiency(
-            wis.filter(wasWorkItemCompletedIn(week))
-          ))
-        ),
-        wipTrend: (wis: UIWorkItem[]) => (
-          weekLimits.map(limit => wis.filter(isWIPIn(limit)).length)
-        ),
-        wipCount: pipe(filter(wipWorkItems), length),
-        wipAge: pipe(filter(wipWorkItems), map(computeTimeDifferenceBetween('start')))
-      })
-    )
-  )(workItemsWithTracks);
+  return {
+    collection: result.collectionConfig.name,
+    project: result.projectConfig.name,
+    filterLabel: result.collectionConfig.workitems.filterBy
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      ?.find(f => f.fields.some(f => configWorkItemsWithTracks.map(w => w.track!).includes(f)))
+      ?.label,
+    byTrack: pipe(
+      organiseWorkItemsByTracks,
+      mapObj<UIWorkItem[], TrackMetrics>(
+        applySpec({
+          count: length,
+          new: pipe(filter(isNewIn(isInQueryPeriod)), length),
+          newByWeek: (wis: UIWorkItem[]) => (
+            weeks.map(week => wis.filter(isNewIn(week)).length)
+          ),
+          velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
+          velocityByWeek: (wis: UIWorkItem[]) => (
+            weeks.map(week => wis.filter(wasWorkItemCompletedIn(week)).length)
+          ),
+          cycleTime: pipe(
+            filter(wasWorkItemCompletedInQueryPeriod),
+            map(computeTimeDifferenceBetween('start', 'end'))
+          ),
+          cycleTimeByWeek: (wis: UIWorkItem[]) => (
+            weeks.map(week => (
+              wis
+                .filter(wasWorkItemCompletedIn(week))
+                .map(computeTimeDifferenceBetween('start', 'end'))
+            ))
+          ),
+          changeLeadTime: pipe(
+            filter(wasWorkItemCompletedInQueryPeriod),
+            map(computeTimeDifferenceBetween('devComplete', 'end'))
+          ),
+          changeLeadTimeByWeek: (wis: UIWorkItem[]) => (
+            weeks.map(week => (
+              wis
+                .filter(wasWorkItemCompletedIn(week))
+                .map(computeTimeDifferenceBetween('devComplete', 'end'))
+            ))
+          ),
+          flowEfficiency: pipe(filter(wasWorkItemCompletedInQueryPeriod), flowEfficiency),
+          flowEfficiencyByWeek: (wis: UIWorkItem[]) => (
+            weeks.map(week => flowEfficiency(
+              wis.filter(wasWorkItemCompletedIn(week))
+            ))
+          ),
+          wipTrend: (wis: UIWorkItem[]) => (
+            weekLimits.map(limit => wis.filter(isWIPIn(limit)).length)
+          ),
+          wipCount: pipe(filter(wipWorkItems), length),
+          wipAge: pipe(filter(wipWorkItems), map(computeTimeDifferenceBetween('start')))
+        })
+      )
+    )(workItemsWithTracks)
+  };
 };
+
+export const trackMetrics = (config: ParsedConfig, results: Result[]) => (
+  results
+    .map(metricsForResult(isAfter(`${queryPeriodDays(config)} days`)))
+    .filter(exists)
+);
 
 export const trackFeatures = (config: ParsedConfig, results: Result[]): TrackwiseData => {
   const resultsBy = mergeProp(results);
