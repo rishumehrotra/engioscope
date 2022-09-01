@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import type { TrackFeatures, TrackFlowMetrics } from '../../shared/types.js';
 import NavBar from '../components/common/NavBar.jsx';
 import Loading from '../components/Loading.jsx';
@@ -16,12 +15,12 @@ const navItems = [
 ];
 
 const TrackNavBar: React.FC = () => {
-  const location = useLocation();
+  const [show] = useQueryParam('show', asString);
 
   return (
     <NavBar
       navItems={navItems}
-      selectedTab={navItems.find(n => n.linkTo.startsWith(location.pathname))?.key || navItems[0].key}
+      selectedTab={show === 'listing' ? navItems[1].key : navItems[0].key}
       right={null}
     />
   );
