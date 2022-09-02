@@ -376,6 +376,9 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
 export type SummaryMetrics = SummaryMetricsType & GlobalUIConfig;
 
 export type TrackwiseData = {
+  collection: string;
+  project: string;
+  filterLabel?: string;
   workItems: UIWorkItem[];
   times: Record<number, WorkItemTimes>;
   types: Record<string, UIWorkItemType>;
@@ -407,7 +410,7 @@ export type TrackMetricsByTrack = {
   byTrack: Record<string, TrackMetrics>;
 }[];
 
-export type TrackFeatures = { tracks: TrackwiseData } & GlobalUIConfig;
+export type TrackFeatures = { tracks: TrackwiseData[] } & GlobalUIConfig;
 
 export type TrackFlowMetrics = { tracks: TrackMetricsByTrack } & GlobalUIConfig;
 

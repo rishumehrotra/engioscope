@@ -1,5 +1,5 @@
 import {
-  applySpec, filter, length, map, mergeLeft, pipe, prop
+  applySpec, filter, length, map, pipe, prop
 } from 'rambda';
 import type {
   TrackwiseData, UIWorkItemType, WorkItemTimes, Overview, UIWorkItem, TrackMetrics
@@ -21,14 +21,6 @@ type Result = {
   projectConfig: ParsedProjectConfig;
   analysisResult: ProjectAnalysis;
 };
-
-const overview = (result: Result) => result.analysisResult.workItemAnalysis.overview;
-const mergeProp = (results: Result[]) => <T extends keyof Overview>(propName: T): Overview[T] => (
-  results
-    .map(overview)
-    .map(prop(propName))
-    .reduce(mergeLeft, {})
-);
 
 const hasWorkItemCompleted = (workItemTimes: WorkItemTimesGetter) => (
   (isMatchingDate: (d: Date) => boolean) => (
@@ -172,45 +164,59 @@ export const trackMetrics = (config: ParsedConfig, results: Result[]) => (
     .filter(exists)
 );
 
-export const trackFeatures = (config: ParsedConfig, results: Result[]): TrackwiseData => {
-  const resultsBy = mergeProp(results);
-  const workItemsWithTracks = Object.values(resultsBy('byId')).filter(prop('track'));
+export const trackFeatures = (config: ParsedConfig, results: Result[]): TrackwiseData[] => (
+  results
+    .map(result => {
+      const configWorkItemsWithTracks = result.collectionConfig.workitems.types?.filter(wit => wit.track);
+      if (!configWorkItemsWithTracks) return;
 
-  const times = resultsBy('times');
+      const {
+        times, byId, types, groups: allGroups
+      } = result.analysisResult.workItemAnalysis.overview;
 
-  const workItemTimes = workItemsWithTracks
-    .reduce<Record<number, WorkItemTimes>>((acc, workItem) => {
-      acc[workItem.id] = times[workItem.id];
-      return acc;
-    }, {});
+      const workItemsWithTracks = Object.values(byId).filter(prop('track'));
+      if (workItemsWithTracks.length === 0) return;
 
-  const allWorkItemTypes = resultsBy('types');
+      const workItemTimes = workItemsWithTracks
+        .reduce<Record<number, WorkItemTimes>>((acc, workItem) => {
+          acc[workItem.id] = times[workItem.id];
+          return acc;
+        }, {});
 
-  const workItemTypes = [
-    ...workItemsWithTracks
-      .reduce((acc, workItem) => {
-        acc.add(workItem.typeId);
-        return acc;
-      }, new Set<string>())
-  ].reduce<Record<string, UIWorkItemType>>(
-    (acc, curr) => ({ ...acc, [curr]: allWorkItemTypes[curr] }),
-    {}
-  );
+      const workItemTypes = [
+        ...workItemsWithTracks
+          .reduce((acc, workItem) => {
+            acc.add(workItem.typeId);
+            return acc;
+          }, new Set<string>())
+      ].reduce<Record<string, UIWorkItemType>>(
+        (acc, curr) => ({ ...acc, [curr]: types[curr] }),
+        {}
+      );
 
-  const allGroups = resultsBy('groups');
+      const groups = [
+        ...workItemsWithTracks
+          .reduce((acc, workItem) => {
+            if (workItem.groupId) acc.add(workItem.groupId);
+            return acc;
+          }, new Set<string>())
+      ].reduce<Record<string, { witId: string; name: string}>>(
+        (acc, curr) => ({ ...acc, [curr]: allGroups[curr] }),
+        {}
+      );
 
-  const groups = [
-    ...workItemsWithTracks
-      .reduce((acc, workItem) => {
-        if (workItem.groupId) acc.add(workItem.groupId);
-        return acc;
-      }, new Set<string>())
-  ].reduce<Record<string, { witId: string; name: string}>>(
-    (acc, curr) => ({ ...acc, [curr]: allGroups[curr] }),
-    {}
-  );
-
-  return {
-    workItems: workItemsWithTracks, times: workItemTimes, types: workItemTypes, groups
-  };
-};
+      return {
+        collection: result.collectionConfig.name,
+        project: result.projectConfig.name,
+        workItems: workItemsWithTracks,
+        filterLabel: result.collectionConfig.workitems.filterBy
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ?.find(f => f.fields.some(f => configWorkItemsWithTracks.map(w => w.track!).includes(f)))
+          ?.label,
+        times: workItemTimes,
+        types: workItemTypes,
+        groups
+      };
+    })
+    .filter(exists)
+);

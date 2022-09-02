@@ -1,6 +1,6 @@
-import { always, map } from 'rambda';
+import { always, map, sum } from 'rambda';
 import { asc, byDate } from '../../../shared/sort-utils.js';
-import type { TrackFeatures, UIWorkItem } from '../../../shared/types.js';
+import type { TrackwiseData, UIWorkItem } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { timeSpent } from '../OverviewGraphs/helpers/helpers.js';
 import type { TimeInArea } from '../OverviewGraphs/helpers/helpers.js';
@@ -8,7 +8,7 @@ import { prettyMS, shortDate } from '../../helpers/utils.js';
 
 export const tooltipFor = (item: UIWorkItem, times: TimeInArea[]) => `
 <div class="w-96">
-  <span class="font-semibold">${item.title}</span>
+  <div class="font-semibold mb-2">${item.title}</div>
   <ul>
     ${times.map(t => {
   // eslint-disable-next-line no-nested-ternary
@@ -21,6 +21,7 @@ export const tooltipFor = (item: UIWorkItem, times: TimeInArea[]) => `
         > </span>
         ${t.label}
         <span class="text-gray-300">
+          - 
           ${t.end
     ? `${
       `${shortDate(t.start)}, ${t.start.getFullYear()}`
@@ -36,30 +37,35 @@ export const tooltipFor = (item: UIWorkItem, times: TimeInArea[]) => `
 </div>
 `;
 
-export const aggregateTooltiip = (times: Record<string, {
+export const aggregateTooltip = (track: string, times: Record<string, {
   time: number;
   count: number;
   isWorkCenter: boolean;
 }>) => `
-  <ul>
+<div>
+  <div class="mb-2 text-sm">
+    Average time spent in the <span class="font-bold">${track}</span> track
+  </div>
+  <ul class="mb-1">
     ${Object.entries(times)
     .map(([label, { time, isWorkCenter, count }]) => `
       <li>
         <span
           class="w-2 h-2 inline-block mr-1"
-          style="background: ${isWorkCenter ? '#0f8c' : '#f009'}"
+          style="background: ${isWorkCenter ? '#1ED609' : '#faa'}"
         > </span>
         ${label}
-        <span class="text-gray-300">
-          ${prettyMS(divide(time, count).getOr(0))}
+        <span class="text-gray-400">
+          - ${prettyMS(divide(time, count).getOr(0))}
         </span>
       </li>
     `).join('')}
   </ul>
+</div>
 `;
 
 export const organiseByTrack = (
-  tracks: TrackFeatures['tracks'],
+  tracks: TrackwiseData,
   inclusions: 'live' | 'live+wip',
   wipHandling: 'ignore-last-state' | 'use-today-as-end-date',
   groupId: string[],
@@ -81,6 +87,18 @@ export const organiseByTrack = (
       .filter(inclusions === 'live' ? (wi => tracks.times[wi.id].end) : always(true))
       .filter(groupId.length === 0 ? always(true) : (wi => wi.groupId && groupId.includes(wi.groupId)))
       .filter(priority.length === 0 ? always(true) : (wi => wi.priority && priority.includes(String(wi.priority))));
+
+    const allTimes = workItems
+      .map(wi => timeSpent(tracks.types[wi.typeId])(tracks.times[wi.id]))
+      .map(times => (
+        times.reduce((acc, time) => {
+          if (time.end) {
+            return acc + time.end.getTime() - time.start.getTime();
+          }
+          if (wipHandling === 'ignore-last-state') { return acc; }
+          return acc + Date.now() - time.start.getTime();
+        }, 0)
+      ));
 
     return {
       workItems: workItems.sort(asc(byDate(x => new Date(x.updated.on)))),
@@ -105,7 +123,8 @@ export const organiseByTrack = (
             acc[times.label].isWorkCenter = times.isWorkCenter;
             return acc;
           }, {}
-        )
+        ),
+      averageTime: divide(sum(allTimes), allTimes.length)
     };
   }, workItemsByTrack);
 };

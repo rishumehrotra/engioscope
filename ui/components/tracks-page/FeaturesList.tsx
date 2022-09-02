@@ -1,14 +1,15 @@
 import { head, identity, last } from 'rambda';
 import React, { useMemo, useState } from 'react';
 import { asc, byNum } from '../../../shared/sort-utils.js';
-import type { TrackFeatures } from '../../../shared/types.js';
+import type { TrackwiseData } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
+import { prettyMS } from '../../helpers/utils.js';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown.jsx';
 import Switcher from '../common/Switcher.jsx';
 import { GanttBar } from './GanttBar';
-import { organiseByTrack, aggregateTooltiip, tooltipFor } from './helpers';
+import { organiseByTrack, aggregateTooltip, tooltipFor } from './helpers';
 
-const FeaturesList: React.FC<{ tracks: TrackFeatures['tracks'] }> = ({ tracks }) => {
+const FeaturesListInner: React.FC<{ tracks: TrackwiseData }> = ({ tracks }) => {
   const [inclusions, setInclusions] = useState<'live' | 'live+wip'>('live');
   const [wipHandling, setWipHandling] = useState<'ignore-last-state' | 'use-today-as-end-date'>('ignore-last-state');
   const [groupId, setGroupId] = useState<string[]>([]);
@@ -62,14 +63,19 @@ const FeaturesList: React.FC<{ tracks: TrackFeatures['tracks'] }> = ({ tracks })
           />
         )}
 
-        <Switcher
-          onChange={setInclusions}
-          options={[
-            { label: 'Live', value: 'live' },
-            { label: 'Live + WIP', value: 'live+wip' }
-          ]}
-          value={inclusions}
-        />
+        <div>
+          <span className="inline-block mr-2">
+            Show:
+          </span>
+          <Switcher
+            onChange={setInclusions}
+            options={[
+              { label: 'Live only', value: 'live' },
+              { label: 'Live and WIP', value: 'live+wip' }
+            ]}
+            value={inclusions}
+          />
+        </div>
 
         {inclusions === 'live+wip' && (
           <Switcher
@@ -88,26 +94,27 @@ const FeaturesList: React.FC<{ tracks: TrackFeatures['tracks'] }> = ({ tracks })
         Object.entries(organisedByTrack!)
           .filter(([, { workItems }]) => workItems.length > 0)
           .map(([track, {
-            workItems, timeSpentById: timeSpent, timeSpentByCenter: ts
+            workItems, timeSpentById: timeSpent, timeSpentByCenter: ts, averageTime
           }]) => (
             <details key={track} className="my-6">
-              <summary>
-                <span className="text-2xl font-bold mb-4">{track}</span>
-                <span>{` ${workItems.length} features`}</span>
+              <summary className="cursor-pointer">
+                <span className="text-lg font-semibold mb-4">{track}</span>
+                <span>{` ${workItems.length} features, `}</span>
+                <span>{` ${averageTime.map(prettyMS).getOr('-')} `}</span>
                 <GanttBar
                   maxTime={maxTime}
-                  className="ml-4"
+                  className="ml-3 mt-1"
                   stages={Object.entries(ts).map(([label, { time, count, isWorkCenter }]) => ({
                     label,
                     time: divide(time, count).getOr(0),
-                    color: isWorkCenter ? '#0f8a' : '#f006'
+                    color: isWorkCenter ? '#1ED609' : '#faa'
                   }))}
-                  tooltip={aggregateTooltiip(ts)}
+                  tooltip={aggregateTooltip(track, ts)}
                 />
               </summary>
-              <ul className="ml-4">
+              <ul className="ml-8">
                 {workItems.map(item => (
-                  <li key={item.id} className="mt-4 mb-4">
+                  <li key={item.id} className="mt-4 mb-7">
                     <a
                       href={item.url}
                       className="link-text inline-flex mb-2 font-semibold gap-1 items-center"
@@ -138,7 +145,7 @@ const FeaturesList: React.FC<{ tracks: TrackFeatures['tracks'] }> = ({ tracks })
                     </a>
                     <GanttBar
                       maxTime={maxTime}
-                      className="ml-6"
+                      className="ml-6 -mt-1"
                       stages={timeSpent[item.id]
                         .filter(x => (!(!x.end && wipHandling === 'ignore-last-state')))
                         .map(({
@@ -160,5 +167,22 @@ const FeaturesList: React.FC<{ tracks: TrackFeatures['tracks'] }> = ({ tracks })
     </>
   );
 };
+
+const FeaturesList: React.FC<{ tracks: TrackwiseData[] }> = ({ tracks }) => (
+  <>
+    {tracks.map(track => (
+      <details
+        key={`${track.collection}/${track.project}`}
+        open={tracks.length === 1}
+      >
+        <summary className="text-xl font-semibold mb-4 cursor-pointer">
+          {`${track.collection} / ${track.project}`}
+        </summary>
+
+        <FeaturesListInner tracks={track} />
+      </details>
+    ))}
+  </>
+);
 
 export default FeaturesList;

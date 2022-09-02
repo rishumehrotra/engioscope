@@ -219,7 +219,7 @@ export const writeTrackFlowMetrics = (config: ParsedConfig, tracks: TrackMetrics
   );
 };
 
-export const writeTrackFeatures = (config: ParsedConfig, tracks: TrackwiseData) => {
+export const writeTrackFeatures = (config: ParsedConfig, tracks: TrackwiseData[]) => {
   const tracksWorkItems: TrackFeatures = {
     tracks,
     lastUpdated: new Date().toISOString(),

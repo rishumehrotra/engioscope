@@ -6,6 +6,7 @@ type GanttBarProps = {
   tooltip: string;
   className?: string;
 };
+
 export const GanttBar: React.FC<GanttBarProps> = ({
   maxTime, stages, tooltip, className
 }) => (
@@ -20,7 +21,7 @@ export const GanttBar: React.FC<GanttBarProps> = ({
     {stages.map(({ label, time, color }) => (
       <li
         key={label}
-        className="inline-block overflow-hidden whitespace-nowrap text-gray-700 py-0.5 px-1 rounded"
+        className="inline-block overflow-hidden whitespace-nowrap overflow-ellipsis text-gray-700 py-0.5 px-1 rounded"
         style={{ width: `${(time / maxTime) * 100}%`, backgroundColor: color }}
       >
         {label}
