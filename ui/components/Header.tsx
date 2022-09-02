@@ -6,14 +6,16 @@ import logo from '../images/engioscope.png';
 
 const navItems = (changeProgramName?: string) => [
   { url: '/', name: 'Projects' },
+  { url: '/tracks', name: 'Tracks' },
   { url: '/summary', name: changeProgramName || 'Change program' }
 ];
 
-const isSelectedForPath = (pathName: string) => (url: string) => (
-  (pathName.startsWith('/summary') || pathName.startsWith('/change-program'))
-    ? url !== '/'
-    : url === '/'
-);
+const isSelectedForPath = (pathName: string) => (url: string) => {
+  if (pathName.startsWith('/summary')) return url.startsWith('/summary') || url.startsWith('/change-program');
+  if (pathName.startsWith('/change-program')) return url.startsWith('/change-program') || url.startsWith('/summary');
+  if (pathName.startsWith('/tracks')) return url.startsWith('/tracks');
+  return url === '/';
+};
 
 const Header: React.FC = () => {
   const location = useLocation();
