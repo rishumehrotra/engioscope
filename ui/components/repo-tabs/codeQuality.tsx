@@ -205,7 +205,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                 if (!match) return null;
                 return (
                   <tr key={key} className={index % 2 === 0 ? '' : 'bg-gray-100'}>
-                    <td valign="top" className="p-1">
+                    <td className="p-1 align-top">
                       {label}
                       {match.op && match.level && (
                         <div className="text-gray-600 text-xs">
@@ -213,8 +213,8 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                         </div>
                       )}
                     </td>
-                    <td valign="middle" align="right" className="p-1 pr-3 font-semibold">{formatter(match.value || 0)}</td>
-                    <td valign="middle" align="right" className="p-1">
+                    <td className="p-1 pr-3 font-semibold align-middle text-right">{formatter(match.value || 0)}</td>
+                    <td className="p-1 align-middle text-right">
                       <div className={`py-1 text-xs rounded-md text-center ${gateClassName(match.status)}`}>
                         {match.status.toUpperCase()}
                       </div>
@@ -244,7 +244,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                   return (
                     <tr key={key}>
                       <td className="p-1">{label}</td>
-                      <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
                     </tr>
                   );
                 })}
@@ -266,7 +266,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                   return (
                     <tr key={key}>
                       <td className="p-1">{label}</td>
-                      <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
                     </tr>
                   );
                 })}
@@ -288,7 +288,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                   return (
                     <tr key={key}>
                       <td className="p-1">{label}</td>
-                      <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
                     </tr>
                   );
                 })}
@@ -364,7 +364,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                   return (
                     <tr key={key}>
                       <td className="p-1">{label}</td>
-                      <td align="right" className="p-1 font-semibold">{formatter(match)}</td>
+                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
                     </tr>
                   );
                 })}

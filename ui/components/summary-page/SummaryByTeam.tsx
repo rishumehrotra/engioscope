@@ -122,7 +122,7 @@ const FlowMetrics: React.FC<{
 
             return (
               <tr key={typeName}>
-                <td className="font-semibold text-sm py-3" valign="middle">
+                <td className="font-semibold text-sm py-3 align-middle">
                   <span className="inline-flex items-center">
                     <img
                       src={workItemTypes[definitionId].icon}
@@ -280,7 +280,7 @@ const QualityMetrics: React.FC<{
 
               return (
                 <tr key={environment}>
-                  <td className="font-semibold text-sm py-3" valign="middle">
+                  <td className="font-semibold text-sm py-3 align-middle">
                     <span className="inline-flex items-center">
                       { bugsDefinitionId ? (
                         <img
