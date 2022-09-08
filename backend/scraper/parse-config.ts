@@ -99,6 +99,7 @@ export type SonarConfig = {
 
 export type Config = Readonly<{
   port: number;
+  mongoUrl: string;
   cacheToDiskFor: string;
   azure: AzureConfig;
   sonar?: SonarConfig | SonarConfig[];
@@ -183,6 +184,7 @@ export type ParsedCollection = Readonly<{
 export type ParsedConfig = Readonly<{
   port: number;
   cacheTimeMs: number;
+  mongoUrl: string;
   azure: {
     host: string;
     token: string;
@@ -318,6 +320,7 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
 
 export default (config: Config): ParsedConfig => ({
   port: config.port,
+  mongoUrl: config.mongoUrl,
   cacheTimeMs: ms(config.cacheToDiskFor),
   azure: {
     host: config.azure.host,
