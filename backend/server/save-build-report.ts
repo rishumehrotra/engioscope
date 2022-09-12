@@ -2,6 +2,8 @@ import type expresss from 'express';
 import { parse as parseHtml } from 'node-html-parser';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
+import { saveBuildReport } from '../db/build-reports.js';
+import { parseReport } from '../scraper/parse-build-reports.js';
 
 const getReportOutputPath = (html: string) => {
   const root = parseHtml(html);
@@ -30,7 +32,20 @@ const getReportOutputPath = (html: string) => {
   ] as const;
 };
 
+const saveBuildReportToMongo = async (html: string) => {
+  const report = await parseReport(html);
+  if (!report) return;
+  const { collection, repoName, ...rest } = report;
+  return saveBuildReport({
+    ...rest,
+    collectionName: collection,
+    repo: repoName
+  });
+};
+
 export default async (req: expresss.Request, res: expresss.Response) => {
+  saveBuildReportToMongo(req.body);
+
   try {
     const html = req.body;
     const [directory, fileName] = getReportOutputPath(html);

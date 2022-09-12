@@ -6,10 +6,11 @@ import { promisify } from 'node:util';
 import glob from 'glob';
 import { normalizeBranchName } from '../utils.js';
 import { exists } from '../../shared/utils.js';
+import type { AzureBuildReport } from '../db/build-reports.js';
 
 const globAsync = promisify(glob.glob);
 
-const parseReport = async (fileName: string) => {
+export const parseReport = async (fileName: string) => {
   let htmlContent: string;
 
   try {
@@ -24,22 +25,23 @@ const parseReport = async (fileName: string) => {
   const read = (selector: string) => root.querySelector(`#${selector}`)?.innerText;
   const buildScript = read('buildScript');
 
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
   return {
     sonarHost: read('sonarHost'),
     sonarProjectKey: read('sonarProjectKey'),
-    collection: read('SYSTEM_COLLECTIONURI')?.split('/')[3],
-    collectionId: read('SYSTEM_COLLECTIONID'),
-    project: read('SYSTEM_TEAMPROJECT'),
-    repoName: read('BUILD_REPOSITORY_NAME'),
-    repoId: read('BUILD_REPOSITORY_ID'),
-    branch: read('BUILD_SOURCEBRANCH'),
-    branchName: read('BUILD_SOURCEBRANCHNAME'),
-    agentName: read('AGENT_NAME'),
-    buildId: read('BUILD_BUILDID'),
-    buildDefinitionId: read('SYSTEM_DEFINITIONID'),
-    buildReason: read('BUILD_REASON'),
+    collection: read('SYSTEM_COLLECTIONURI')!.split('/')[3],
+    collectionId: read('SYSTEM_COLLECTIONID')!,
+    project: read('SYSTEM_TEAMPROJECT')!,
+    repoName: read('BUILD_REPOSITORY_NAME')!,
+    repoId: read('BUILD_REPOSITORY_ID')!,
+    branch: read('BUILD_SOURCEBRANCH')!,
+    branchName: read('BUILD_SOURCEBRANCHNAME')!,
+    buildId: read('BUILD_BUILDID')!,
+    buildDefinitionId: read('SYSTEM_DEFINITIONID')!,
+    buildReason: read('BUILD_REASON')! as AzureBuildReport['buildReason'],
     buildScript: buildScript ? decode(buildScript) : undefined
   };
+  /* eslint-enable */
 };
 
 export default (collectionName: string, projectName: string) => (
