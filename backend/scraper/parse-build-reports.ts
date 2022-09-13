@@ -10,17 +10,7 @@ import type { AzureBuildReport } from '../db/build-reports.js';
 
 const globAsync = promisify(glob.glob);
 
-export const parseReport = async (fileName: string) => {
-  let htmlContent: string;
-
-  try {
-    htmlContent = await fs.readFile(fileName, 'utf8');
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('error parsing build report', error);
-    return null;
-  }
-
+export const htmlReportToObj = (htmlContent: string) => {
   const root = parseHtml(htmlContent);
   const read = (selector: string) => root.querySelector(`#${selector}`)?.innerText;
   const buildScript = read('buildScript');
@@ -42,6 +32,20 @@ export const parseReport = async (fileName: string) => {
     buildScript: buildScript ? decode(buildScript) : undefined
   };
   /* eslint-enable */
+};
+
+const parseReport = async (fileName: string) => {
+  let htmlContent: string;
+
+  try {
+    htmlContent = await fs.readFile(fileName, 'utf8');
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('error parsing build report', error);
+    return null;
+  }
+
+  return htmlReportToObj(htmlContent);
 };
 
 export default (collectionName: string, projectName: string) => (

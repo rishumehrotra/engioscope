@@ -3,7 +3,7 @@ import { parse as parseHtml } from 'node-html-parser';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { saveBuildReport } from '../db/build-reports.js';
-import { parseReport } from '../scraper/parse-build-reports.js';
+import { htmlReportToObj } from '../scraper/parse-build-reports.js';
 
 const getReportOutputPath = (html: string) => {
   const root = parseHtml(html);
@@ -33,7 +33,7 @@ const getReportOutputPath = (html: string) => {
 };
 
 const saveBuildReportToMongo = async (html: string) => {
-  const report = await parseReport(html);
+  const report = await htmlReportToObj(html);
   if (!report) return;
   const { collection, repoName, ...rest } = report;
   return saveBuildReport({
@@ -44,7 +44,9 @@ const saveBuildReportToMongo = async (html: string) => {
 };
 
 export default async (req: expresss.Request, res: expresss.Response) => {
-  saveBuildReportToMongo(req.body);
+  saveBuildReportToMongo(req.body)
+    .then(x => console.log('successfully posted', x))
+    .catch(error => console.log('error when posting', error));
 
   try {
     const html = req.body;
