@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import yaml from 'yaml';
-import { configForProject } from '../config.js';
 
 const { Schema, model } = mongoose;
 
@@ -18,7 +17,7 @@ export type AzureBuildReport = {
   | 'Manual' | 'IndividualCI' | 'BatchedCI' | 'Schedule' | 'ValidateShelveset'
   | 'CheckInShelveset' | 'PullRequest' | 'ResourceTrigger';
   buildScript?: string;
-  usesCentralTemplate?: boolean;
+  templateRepo?: string;
   sonarHost?: string;
   sonarProjectKey?: string;
 };
@@ -35,7 +34,7 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>({
   buildDefinitionId: { type: String, required: true },
   buildReason: { type: String, required: true },
   buildScript: { type: String },
-  usesCentralTemplate: Boolean,
+  templateRepo: String,
   sonarHost: String,
   sonarProjectKey: String
 }, {
@@ -64,34 +63,30 @@ const templateRepo = (buildScript: AzureBuildReport['buildScript']) => {
   return possibleTemplate;
 };
 
-export const saveBuildReport = (report: Omit<AzureBuildReport, 'usesCentralTemplate'>) => {
-  const templateRepoName = configForProject(report.collectionName, report.project)?.templateRepoName;
-
-  return (
-    AzureBuildReportModel.updateOne(
-      {
-        collectionName: report.collectionName,
-        project: report.project,
-        buildId: report.buildId
-      },
-      {
-        $set: {
-          repo: report.repo,
-          branch: report.branch,
-          branchName: report.branchName,
-          buildDefinitionId: report.buildDefinitionId,
-          buildReason: report.buildReason,
-          buildScript: report.buildScript,
-          ...(templateRepoName && report.buildScript ? {
-            usesCentralTemplate: templateRepo(report.buildScript) === templateRepoName
-          } : {}),
-          ...(report.sonarHost ? {
-            sonarHost: report.sonarHost,
-            sonarProjectKey: report.sonarProjectKey
-          } : {})
-        }
-      },
-      { upsert: true }
-    )
-  );
-};
+export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) => (
+  AzureBuildReportModel.updateOne(
+    {
+      collectionName: report.collectionName,
+      project: report.project,
+      buildId: report.buildId
+    },
+    {
+      $set: {
+        repo: report.repo,
+        branch: report.branch,
+        branchName: report.branchName,
+        buildDefinitionId: report.buildDefinitionId,
+        buildReason: report.buildReason,
+        buildScript: report.buildScript,
+        ...(report.buildScript ? {
+          templateRepo: templateRepo(report.buildScript)
+        } : {}),
+        ...(report.sonarHost ? {
+          sonarHost: report.sonarHost,
+          sonarProjectKey: report.sonarProjectKey
+        } : {})
+      }
+    },
+    { upsert: true }
+  )
+);
