@@ -19,8 +19,8 @@ import type { RepoAnalysis } from '../../shared/types.js';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
 import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
-import parseBuildReports from './parse-build-reports.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
+import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -74,7 +74,11 @@ export default (config: ParsedConfig) => {
     const repoNameById = (id: string) => repos.find(r => r.id === id)?.name;
 
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
-      builds, buildDefinitionsByRepoId, repoNameById, forProject(parseBuildReports), projectConfig.templateRepoName
+      builds,
+      buildDefinitionsByRepoId,
+      repoNameById,
+      forProject(latestBuildReportsForRepoAndBranch),
+      projectConfig.templateRepoName
     );
 
     const getTestsByRepoId = aggregateTestRuns(

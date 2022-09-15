@@ -2,12 +2,13 @@ import prettyMilliseconds from 'pretty-ms';
 import {
   add, adjust, identity, inc, pipe, prop, replace
 } from 'rambda';
-import yaml from 'yaml';
 import type { Build, BuildDefinitionReference } from '../types-azure.js';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
 import { isMaster, weeks } from '../../utils.js';
 import { asc, byDate, desc } from '../../../shared/sort-utils.js';
-import type parseBuildReports from '../parse-build-reports.js';
+import type { latestBuildReportsForRepoAndBranch } from '../../models/build-reports.js';
+
+type BuildReportsForRepoAndBranch = ReturnType<typeof latestBuildReportsForRepoAndBranch>;
 
 type BuildStats = {
   count: number;
@@ -79,9 +80,9 @@ const buildDefinitionWebUrl = pipe(
 
 const templateNameByBuildId = (
   repoNameById: (id: string) => string | undefined,
-  buildReports: ReturnType<typeof parseBuildReports>
+  buildReports: BuildReportsForRepoAndBranch
 ) => {
-  const reportsByRepoId: Record<string, ReturnType<ReturnType<typeof parseBuildReports>>> = {};
+  const reportsByRepoId: Record<string, ReturnType<BuildReportsForRepoAndBranch>> = {};
 
   return (repoId: string, buildDefinitionId: string) => {
     const repoName = repoNameById(repoId);
@@ -94,19 +95,11 @@ const templateNameByBuildId = (
     }
 
     return reportsByRepoId[repoId]
-      .then(reports => reports.find(report => report.buildDefinitionId === buildDefinitionId)?.buildScript)
-      .then(buildScript => {
-        if (!buildScript) return;
-        const parsed = yaml.parse(buildScript);
-        const possibleTemplate = parsed.template
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          || parsed.stages?.find((s: any) => s.template)?.template as string | undefined;
-        if (!possibleTemplate) return;
-
-        const parts = possibleTemplate.split('@');
-        if (parts.length > 1) return parts[1];
-        return possibleTemplate;
-      });
+      .then(
+        reports => reports
+          .find(report => report.buildDefinitionId === buildDefinitionId)
+          ?.templateRepo
+      );
   };
 };
 
@@ -114,7 +107,7 @@ export default (
   builds: Build[],
   buildDefinitionsByRepoId: (repoId: string) => BuildDefinitionReference[],
   repoNameById: (id: string) => string | undefined,
-  buildReports: ReturnType<typeof parseBuildReports>,
+  buildReports: BuildReportsForRepoAndBranch,
   templateRepoName: string | undefined
 ) => {
   type AggregatedBuilds = {

@@ -2,7 +2,7 @@ import type expresss from 'express';
 import { parse as parseHtml } from 'node-html-parser';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
-import { saveBuildReport } from '../db/build-reports.js';
+import { saveBuildReport } from '../models/build-reports.js';
 import { htmlReportToObj } from '../scraper/parse-build-reports.js';
 
 const getReportOutputPath = (html: string) => {

@@ -16,10 +16,10 @@ export type AzureBuildReport = {
   buildReason:
   | 'Manual' | 'IndividualCI' | 'BatchedCI' | 'Schedule' | 'ValidateShelveset'
   | 'CheckInShelveset' | 'PullRequest' | 'ResourceTrigger';
-  buildScript?: string;
-  templateRepo?: string;
-  sonarHost?: string;
-  sonarProjectKey?: string;
+  buildScript: string | undefined;
+  templateRepo: string | undefined;
+  sonarHost: string | undefined;
+  sonarProjectKey: string | undefined;
 };
 
 const azureBuildReportSchema = new Schema<AzureBuildReport>({
@@ -88,5 +88,26 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
       }
     },
     { upsert: true }
+  )
+);
+
+export const latestBuildReportsForRepoAndBranch = (collectionName: string, project: string) => (
+  async (repo: string, branchName: string) => (
+    AzureBuildReportModel
+      .find({
+        buildId: {
+          $in: await AzureBuildReportModel
+            .find({
+              collectionName,
+              project,
+              repo,
+              branchName
+            })
+            .sort({ updatedAt: -1 })
+            .distinct('buildId')
+            .exec()
+        }
+      })
+      .exec()
   )
 );

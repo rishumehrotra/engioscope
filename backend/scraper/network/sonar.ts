@@ -6,9 +6,9 @@ import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import createPaginatedGetter from './create-paginated-getter.js';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-sonar.js';
 import type { ParsedConfig, SonarConfig } from '../parse-config.js';
-import { pastDate, unique } from '../../utils.js';
-import parseBuildReports from '../parse-build-reports.js';
+import { normalizeBranchName, pastDate, unique } from '../../utils.js';
 import { byDate, desc } from '../../../shared/sort-utils.js';
+import { latestBuildReportsForRepoAndBranch } from '../../models/build-reports.js';
 
 export type SonarProject = SonarConfig & {
   organization: string;
@@ -188,13 +188,12 @@ const attemptMatchFromBuildReports = async (
   repoName: string,
   defaultBranch: string | undefined,
   sonarProjects: SonarProject[],
-  parseReports: ReturnType<typeof parseBuildReports>
+  parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
 ) => {
   if (!defaultBranch) return null;
 
-  const sonarConfigs = await parseReports(repoName, defaultBranch);
-
-  const projectKeys = unique(sonarConfigs.map(({ sonarProjectKey }) => sonarProjectKey));
+  const buildReports = await parseReports(repoName, defaultBranch ? normalizeBranchName(defaultBranch) : 'master');
+  const projectKeys = unique(buildReports.map(({ sonarProjectKey }) => sonarProjectKey));
   const matchingSonarProjects = sonarProjects.filter(({ key }) => projectKeys.includes(key));
 
   return matchingSonarProjects.length ? matchingSonarProjects : null;
@@ -209,7 +208,7 @@ const getMatchingSonarProjects = async (
   repoName: string,
   defaultBranch: string | undefined,
   sonarProjects: SonarProject[],
-  parseReports: ReturnType<typeof parseBuildReports>
+  parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
 ) => {
   const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
     repoName, defaultBranch, sonarProjects, parseReports
@@ -264,7 +263,7 @@ export default (config: ParsedConfig) => {
       repoName,
       defaultBranch,
       await sonarProjects,
-      parseBuildReports(collectionName, projectName)
+      latestBuildReportsForRepoAndBranch(collectionName, projectName)
     );
 
     if (!matchingSonarProjects) return null;

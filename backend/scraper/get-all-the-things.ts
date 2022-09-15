@@ -5,6 +5,7 @@ import { tap, zip } from 'rambda';
 import tar from 'tar';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
+import mongoose from 'mongoose';
 import aggregationWriter, {
   writeChangeProgramFile, writeSummaryMetricsFile, writeTrackFeatures, writeTrackFlowMetrics
 } from './aggregation-writer.js';
@@ -18,6 +19,7 @@ import { fetchCounters } from './network/fetch-with-disk-cache.js';
 import { mapSettleSeries, startTimer } from '../utils.js';
 import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
 import { trackFeatures, trackMetrics } from './stats-aggregators/tracks.js';
+import { setConfig } from '../config.js';
 
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
@@ -145,9 +147,14 @@ const saveToArchive = async () => {
 export default (config: ParsedConfig) => {
   const time = startTimer();
 
+  // TODO: This belongs at a higher layer, maybe
+  setConfig(config);
+  mongoose.connect(config.mongoUrl);
+
   return scrape(config)
     .then(tap(printFetchCounters))
     .then(createTarGz)
     .then(saveToArchive)
-    .then(() => debug('done')(`in ${time()}.`));
+    .then(() => debug('done')(`in ${time()}.`))
+    .then(() => mongoose.disconnect());
 };

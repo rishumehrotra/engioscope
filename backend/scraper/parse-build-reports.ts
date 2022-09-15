@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import glob from 'glob';
 import { normalizeBranchName } from '../utils.js';
 import { exists } from '../../shared/utils.js';
-import type { AzureBuildReport } from '../db/build-reports.js';
+import type { AzureBuildReport } from '../models/build-reports.js';
 
 const globAsync = promisify(glob.glob);
 
