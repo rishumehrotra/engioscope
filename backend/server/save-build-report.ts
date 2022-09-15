@@ -43,18 +43,18 @@ const saveBuildReportToMongo = async (html: string) => {
   });
 };
 
+const saveToDisk = async (html: string) => {
+  const [directory, fileName] = getReportOutputPath(html);
+
+  await fs.mkdir(join(...directory), { recursive: true });
+  await fs.writeFile(join(...directory, `${fileName}.html`), html, 'utf8');
+};
+
 export default async (req: expresss.Request, res: expresss.Response) => {
-  saveBuildReportToMongo(req.body)
-    .then(x => console.log('successfully posted', x))
-    .catch(error => console.log('error when posting', error));
+  saveToDisk(req.body);
 
   try {
-    const html = req.body;
-    const [directory, fileName] = getReportOutputPath(html);
-
-    await fs.mkdir(join(...directory), { recursive: true });
-    await fs.writeFile(join(...directory, `${fileName}.html`), html, 'utf8');
-
+    await saveBuildReportToMongo(req.body);
     res.sendStatus(200);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('400')) {
