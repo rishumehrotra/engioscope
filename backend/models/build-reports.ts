@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { map } from 'rambda';
 import yaml from 'yaml';
 
 const { Schema, model } = mongoose;
@@ -92,22 +93,25 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
 );
 
 export const latestBuildReportsForRepoAndBranch = (collectionName: string, project: string) => (
-  async (repo: string, branchName: string) => (
-    AzureBuildReportModel
-      .find({
-        buildId: {
-          $in: await AzureBuildReportModel
-            .find({
-              collectionName,
-              project,
-              repo,
-              branchName
-            })
-            .sort({ updatedAt: -1 })
-            .distinct('buildId')
-            .exec()
+  (repo: string, branchName: string) => (
+    AzureBuildReportModel.aggregate([
+      {
+        $match: {
+          collectionName, project, repo, branchName
         }
-      })
+      },
+      {
+        $group: {
+          _id: '$buildId',
+          latestDate: {
+            $max: {
+              $mergeObjects: [{ updatedAt: '$updatedAt' }, '$$ROOT']
+            }
+          }
+        }
+      }
+    ])
       .exec()
+      .then(map(r => r.latestDate as AzureBuildReport))
   )
 );
