@@ -131,7 +131,8 @@ const constructTree = (
   const childIdsOf = (workItemId: number) => workItemsIdTree[workItemId];
   const byWorkItemType = groupByWorkItemType(workItemById, workItemType);
 
-  const buildForAncestor = (ancestors: WithoutChildren<WorkItemNode>[]): WorkItemNode['children'] => {
+  const buildForAncestor = (ancestors: WithoutChildren<WorkItemNode>[], currentDepth = 0): WorkItemNode['children'] => {
+    if (currentDepth >= 3) return [];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const parent = last(ancestors)!;
 
@@ -170,7 +171,7 @@ const constructTree = (
               return {
                 ...workItemNode,
                 expandedState: (childIdsOf(workItem.id) || []).length === 0 ? 'no-children' : 'collapsed',
-                children: buildForAncestor([...ancestors, workItemNode])
+                children: buildForAncestor([...ancestors, workItemNode], currentDepth + 1)
               };
             });
 
