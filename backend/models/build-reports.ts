@@ -1,3 +1,4 @@
+import type { ObjectId } from 'mongoose';
 import mongoose from 'mongoose';
 import { map } from 'rambda';
 import yaml from 'yaml';
@@ -112,6 +113,6 @@ export const latestBuildReportsForRepoAndBranch = (collectionName: string, proje
       }
     ])
       .exec()
-      .then(map(r => r.latestDate as AzureBuildReport))
+      .then(map(r => r.latestDate as AzureBuildReport & { _id: ObjectId }))
   )
 );

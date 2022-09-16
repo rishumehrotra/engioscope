@@ -57,6 +57,13 @@ export default (config: ParsedConfig) => {
   );
 
   return {
+    getCollections: () => (
+      list<{ id: string; name: string; url: string }>({
+        url: `${config.azure.host}/_apis/projectCollections?$top=1000`,
+        cacheFile: ['collections']
+      })
+    ),
+
     getProjects: (collectionName: string) => (
       list<TeamProjectReference>({
         url: `${config.azure.host}${collectionName}/_apis/projects`,
