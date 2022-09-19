@@ -54,11 +54,11 @@ export const getConnectionById = (id: ObjectId | string) => (
   ConnectionModel.findOne({ _id: id }).lean()
 );
 
-export const createAzurePATConnection = (connection: AzurePATConnection) => (
+export const createAzurePATConnection = (connection: Omit<AzurePATConnection, 'type'>) => (
   AzurePATConnectionModel.create(connection)
 );
 
-export const createSonarConnection = (connection: SonarConnection) => (
+export const createSonarConnection = (connection: Omit<SonarConnection, 'type'>) => (
   SonarConnectionModel.create(connection)
 );
 
