@@ -652,3 +652,50 @@ export const isRequiredReviewersPolicy = (policy: PolicyConfiguration): policy i
 export const isRequireMergeStrategyPolicy = (policy: PolicyConfiguration): policy is RequireMergeStrategyPolicy => (
   policy.type.displayName === 'Require a merge strategy'
 );
+
+export type TimelineRecord = {
+  attempt: number;
+  changeId: number;
+  currentOperation: string | null;
+  errorCount: number;
+  finishTime: Date;
+  id: string;
+  identifier: string;
+  log: null | {
+    id: number;
+    type: string;
+    url: string;
+  };
+  name: string;
+  order: number;
+  parentId: string;
+  percentComplete: number;
+  previousAttempts: {
+    attempt: number;
+    recordId: string;
+    timelineId: string;
+  }[];
+  queueId: number;
+  result: 'abandoned' | 'canceled' | 'failed' | 'skipped' | 'succeeded' | 'succeededWithIssues';
+  resultCode: string;
+  startTime: Date;
+  state: 'completed' | 'inProgress' | 'pending';
+  task: null | {
+    id: string;
+    name: string;
+    version: string;
+  };
+  type: 'Task' | 'Job' | 'Task' | 'Checkpoint' | 'Phase' | 'Stage';
+  url: string | null;
+  warningCount: number;
+  workerName: string;
+};
+
+export type Timeline = {
+  changeId: number;
+  id: string;
+  lastChangedBy: Date;
+  lastChangedOn: Date;
+  url: string;
+  records: TimelineRecord[];
+};
