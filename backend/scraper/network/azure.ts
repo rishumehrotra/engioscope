@@ -6,6 +6,7 @@ import { chunkArray } from '../../utils.js';
 import type {
   Build, BuildDefinitionReference, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
   GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestRun,
+  Timeline,
   WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
   WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
 } from '../types-azure.js';
@@ -143,6 +144,18 @@ export default (config: ParsedConfig) => {
         },
         cacheFile: [collectionName, projectName, 'build-definitions']
       })
+    ),
+
+    getBuildTimeline: (collectionName: string, projectName: string) => (buildId: number) => (
+      usingDiskCache<Timeline>(
+        [collectionName, projectName, 'timeline', buildId.toString()],
+        () => fetch(
+          url(collectionName, projectName, `/build/builds/${buildId}/timeline?${
+            qs.stringify(apiVersion)
+          }`),
+          { headers: authHeader, ...otherFetchParams }
+        )
+      ).then(res => res.data)
     ),
 
     getPRs: (collectionName: string, projectName: string) => (

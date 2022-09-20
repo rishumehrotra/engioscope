@@ -677,7 +677,7 @@ export type TimelineRecord = {
   }[];
   queueId: number;
   result: 'abandoned' | 'canceled' | 'failed' | 'skipped' | 'succeeded' | 'succeededWithIssues';
-  resultCode: string;
+  resultCode: string | null;
   startTime: Date;
   state: 'completed' | 'inProgress' | 'pending';
   task: null | {

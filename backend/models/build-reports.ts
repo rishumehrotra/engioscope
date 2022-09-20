@@ -44,7 +44,7 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>({
 });
 
 azureBuildReportSchema.index({
-  collection: 1,
+  collectionName: 1,
   project: 1,
   buildId: 1
 });
