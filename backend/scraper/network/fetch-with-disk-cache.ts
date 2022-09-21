@@ -1,7 +1,7 @@
 import type { Response } from 'node-fetch';
 import { createWriteStream, createReadStream, promises as fs } from 'node:fs';
 import readline from 'node:readline';
-import { pipeline } from 'node:stream';
+import { pipeline, Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import debug from 'debug';
 import { join } from 'node:path';
@@ -75,7 +75,7 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
     throw new Error(`HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`);
   }
 
-  if (!response.body) {
+  if (!response.body && response.status !== 204) {
     logNetwork(`HTTP error: Stream is empty. ${response.url}`);
     throw new Error(`HTTP error: Stream is empty. ${response.url}`);
   }
@@ -91,7 +91,10 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
     headers: Object.fromEntries(response.headers.entries())
   } as FrontMatter));
   fileStream.write('\n');
-  await streamPipeline(response.body, fileStream);
+
+  const readStream = response.body || Readable.from([]);
+
+  await streamPipeline(readStream, fileStream);
 
   logDisk(`Wrote ${fileNameForLogs(filePath)}`);
 };

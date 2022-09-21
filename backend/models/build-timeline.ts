@@ -19,8 +19,8 @@ export type BuildTimeline = {
   buildId: number;
   records: BuildTimelineRecord[];
   // TODO: Remove followinng fields once https://github.com/Automattic/mongoose/issues/12069 is closed
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 const buildTimelineRecordSchema = new Schema<BuildTimelineRecord>({
@@ -51,17 +51,21 @@ buildTimelineSchema.index({
 
 const BuildTimelineModel = model<BuildTimeline>('BuildTimeline', buildTimelineSchema);
 
-export const saveBuildTimeline = (buildTimeline: BuildTimeline) => (
-  BuildTimelineModel
-    .updateOne(
-      {
-        collectionName: buildTimeline.collectionName,
-        project: buildTimeline.project,
-        buildId: buildTimeline.buildId
-      },
-      { $set: buildTimeline },
-      { upsert: true }
-    )
+export const saveBuildTimeline = (collectionName: string, project: string) => (
+  (buildTimeline: Omit<BuildTimeline, 'collectionName' | 'project'>) => (
+    BuildTimelineModel
+      .updateOne(
+        {
+          collectionName,
+          project,
+          buildId: buildTimeline.buildId
+        },
+        { $set: buildTimeline },
+        { upsert: true }
+      )
+      .lean()
+      .then(result => result.upsertedId)
+  )
 );
 
 export const latestBuildTimelineDate = (collectionName: string, project: string) => (
@@ -72,12 +76,14 @@ export const latestBuildTimelineDate = (collectionName: string, project: string)
     .then(bt => bt?.updatedAt)
 );
 
-export const missingTimelines = async (collectionName: string, project: string, buildIds: number[]) => {
+export const missingTimelines = (collectionName: string, project: string) => async (buildIds: number[]) => {
   const existingBuildTimelines = await BuildTimelineModel
     .find({ collectionName, project, buildId: { $in: buildIds } }, { buildId: 1 })
     .lean();
 
   const existingBuildIds = new Set(existingBuildTimelines.map(bt => bt.buildId));
 
-  return buildIds.filter(b => !existingBuildIds.has(b));
+  const missing = buildIds.filter(b => !existingBuildIds.has(b));
+  console.log({ existing: existingBuildIds.size, missing: missing.length });
+  return missing;
 };

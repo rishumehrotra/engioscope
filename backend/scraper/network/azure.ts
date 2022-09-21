@@ -147,7 +147,7 @@ export default (config: ParsedConfig) => {
     ),
 
     getBuildTimeline: (collectionName: string, projectName: string) => (buildId: number) => (
-      usingDiskCache<Timeline>(
+      usingDiskCache<Timeline | null>(
         [collectionName, projectName, 'timeline', buildId.toString()],
         () => fetch(
           url(collectionName, projectName, `/build/builds/${buildId}/timeline?${

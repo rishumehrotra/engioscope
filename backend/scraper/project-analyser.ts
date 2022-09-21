@@ -21,6 +21,8 @@ import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
+// import { missingTimelines, saveBuildTimeline } from '../models/build-timeline.js';
+// import buildTimelines from './stats-aggregators/build-timelines.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -36,7 +38,7 @@ export default (config: ParsedConfig) => {
     getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
     getProjectWorkItemIdsForQuery, getBuildDefinitions,
-    getOneBuildBeforeQueryPeriod
+    getOneBuildBeforeQueryPeriod // , getBuildTimeline
   } = azure(config);
 
   return async (
@@ -72,6 +74,13 @@ export default (config: ParsedConfig) => {
     ]);
 
     const repoNameById = (id: string) => repos.find(r => r.id === id)?.name;
+
+    // const writeTimelinesToDb = buildTimelines(
+    //   builds,
+    //   forProject(missingTimelines),
+    //   forProject(getBuildTimeline),
+    //   forProject(saveBuildTimeline)
+    // );
 
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
       builds,
@@ -139,6 +148,7 @@ export default (config: ParsedConfig) => {
       featureToggles: await featureTogglesForRepos(repos.map(prop('id')))
     };
 
+    // await writeTimelinesToDb;
     analyserLog(`Took ${time()} to analyse ${collection.name}/${projectConfig.name}.`);
 
     return analysisResults;
