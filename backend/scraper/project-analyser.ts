@@ -75,6 +75,19 @@ export default (config: ParsedConfig) => {
 
     const repoNameById = (id: string) => repos.find(r => r.id === id)?.name;
 
+    // await Promise.all(builds.map(build => {
+    //   const {
+    //     definition, project, repository, ...rest
+    //   } = build;
+    //   return saveBuild({
+    //     collectionName: collection.name,
+    //     project: project.name,
+    //     repository: repository.name,
+    //     definitionId: definition.id,
+    //     ...rest
+    //   });
+    // }));
+
     // const writeTimelinesToDb = buildTimelines(
     //   builds,
     //   forProject(missingTimelines),
