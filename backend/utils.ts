@@ -5,6 +5,7 @@
 import { promises as fs } from 'node:fs';
 import ms from 'ms';
 import { allPass, compose, not } from 'rambda';
+import AL from 'await-lock';
 import type { ParsedConfig } from './scraper/parse-config.js';
 
 export const pastDate = (past?: string) => {
@@ -107,3 +108,13 @@ export const retry = <T>(fn: () => Promise<T>, { retryCount = 10, waitTime = 1 }
     return retry(fn, { retryCount: retryCount - 1, waitTime });
   })
 );
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore-error CJS interop
+const AwaitLock = AL.default as typeof AL;
+export const lock = () => {
+  const lock = new AwaitLock();
+  const acquireLock = lock.acquireAsync.bind(lock);
+  const releaseLock = lock.release.bind(lock);
+  return [acquireLock, releaseLock] as const;
+};

@@ -76,14 +76,14 @@ export const latestBuildTimelineDate = (collectionName: string, project: string)
     .then(bt => bt?.updatedAt)
 );
 
-export const missingTimelines = (collectionName: string, project: string) => async (buildIds: number[]) => {
-  const existingBuildTimelines = await BuildTimelineModel
-    .find({ collectionName, project, buildId: { $in: buildIds } }, { buildId: 1 })
-    .lean();
+export const missingTimelines = (collectionName: string, project: string) => (
+  async (buildIds: number[]) => {
+    const existingBuildTimelines = await BuildTimelineModel
+      .find({ collectionName, project, buildId: { $in: buildIds } }, { buildId: 1 })
+      .lean();
 
-  const existingBuildIds = new Set(existingBuildTimelines.map(bt => bt.buildId));
+    const existingBuildIds = new Set(existingBuildTimelines.map(bt => bt.buildId));
 
-  const missing = buildIds.filter(b => !existingBuildIds.has(b));
-  console.log({ existing: existingBuildIds.size, missing: missing.length });
-  return missing;
-};
+    return buildIds.filter(b => !existingBuildIds.has(b));
+  }
+);

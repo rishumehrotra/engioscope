@@ -12,3 +12,11 @@ export const configForCollection = (collection: string) => (
 export const configForProject = (collection: string, project: string) => (
   configForCollection(collection)?.projects.find(p => p.name === project)
 );
+
+export const collectionsAndProjects = () => (
+  getConfig().azure.collections.flatMap(collection => (
+    collection.projects.map(project => (
+      [collection, project] as const
+    ))
+  ))
+);

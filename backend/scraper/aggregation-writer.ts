@@ -1,4 +1,3 @@
-import AL from 'await-lock';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import debug from 'debug';
@@ -9,20 +8,13 @@ import type {
   TrackMetricsByTrack, TrackFlowMetrics, UIChangeProgram, UIChangeProgramTask,
   UIProjectAnalysis, TrackwiseData, TrackFeatures
 } from '../../shared/types.js';
-import { doesFileExist, queryPeriodDays } from '../utils.js';
+import { doesFileExist, lock, queryPeriodDays } from '../utils.js';
 import type { ProjectAnalysis } from './types.js';
 import type { ParsedConfig, ParsedProjectConfig } from './parse-config.js';
 
 const outputFileLog = debug('write-output');
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore-error CJS interop
-const AwaitLock = AL.default as typeof AL;
-
-// Ugh OO, tainting my beautiful FP palace
-const lock = new AwaitLock();
-const acquireLock = lock.acquireAsync.bind(lock);
-const releaseLock = lock.release.bind(lock);
+const [acquireLock, releaseLock] = lock();
 
 const dataFolderPath = join(process.cwd(), 'data');
 const overallSummaryFilePath = join(dataFolderPath, 'index.json');

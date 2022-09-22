@@ -14,7 +14,8 @@
       "node"
     ],
     "noEmit": false,
-    "outDir": "../dist"
+    "outDir": "../dist",
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
     "server/cache"

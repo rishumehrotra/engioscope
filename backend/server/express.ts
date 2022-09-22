@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import api from './api.js';
 import { setConfig } from '../config.js';
+import '../crons/index.js';
 
 // eslint-disable-next-line no-underscore-dangle
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
