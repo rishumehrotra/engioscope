@@ -130,7 +130,7 @@ export default (diskCacheTimeMs: number) => ({
         return {
           ...JSON.parse(frontMatterString) as FrontMatter,
           fromCache,
-          data: JSON.parse(dataString, parseDate)
+          data: dataString ? JSON.parse(dataString, parseDate) : null
         };
       } catch (error) {
         await fs.unlink(filePath);
