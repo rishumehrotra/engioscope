@@ -53,19 +53,21 @@ buildTimelineSchema.index({
 const BuildTimelineModel = model<BuildTimeline>('BuildTimeline', buildTimelineSchema);
 
 export const saveBuildTimeline = (collectionName: string, project: string) => (
-  (buildId: number, buildTimeline: Timeline) => (
-    BuildTimelineModel
-      .updateOne(
-        {
-          collectionName,
-          project,
-          buildId
-        },
-        { $set: buildTimeline },
-        { upsert: true }
-      )
-      .lean()
-      .then(result => result.upsertedId)
+  async (buildId: number, buildTimeline: Timeline | null) => (
+    buildTimeline
+      ? BuildTimelineModel
+        .updateOne(
+          {
+            collectionName,
+            project,
+            buildId
+          },
+          { $set: buildTimeline },
+          { upsert: true }
+        )
+        .lean()
+        .then(result => result.upsertedId)
+      : null
   )
 );
 

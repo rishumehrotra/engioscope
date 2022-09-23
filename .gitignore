@@ -23,7 +23,7 @@ tsconfig.tsbuildinfo
 ui/tailwind.output.css
 cache
 config.json
-backend/scratch.ts
+backend/scratch*.ts
 data
 /build-reports
 

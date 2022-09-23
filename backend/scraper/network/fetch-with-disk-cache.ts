@@ -127,10 +127,11 @@ export default (diskCacheTimeMs: number) => ({
       const [frontMatterString, dataString] = fileContents.split('\n');
 
       try {
+        const frontMatter = JSON.parse(frontMatterString) as FrontMatter;
         return {
-          ...JSON.parse(frontMatterString) as FrontMatter,
+          ...frontMatter,
           fromCache,
-          data: dataString ? JSON.parse(dataString, parseDate) : null
+          data: frontMatter.status === 204 ? null : JSON.parse(dataString, parseDate)
         };
       } catch (error) {
         await fs.unlink(filePath);
