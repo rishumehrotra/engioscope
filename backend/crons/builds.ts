@@ -7,46 +7,22 @@ import type { ParsedCollection } from '../scraper/parse-config.js';
 import type { Build, Timeline } from '../scraper/types-azure.js';
 import { runJob } from './utils';
 
-const putBuildInDb = (
-  collection: ParsedCollection,
-  project: string, build: Build
-) => {
+const putBuildInDb = (collection: ParsedCollection, build: Build) => {
   const {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     definition, project: discarded, repository, ...rest
   } = build;
 
-  return Promise.all([
-    saveBuild({
-      collectionName: collection.name,
-      project,
-      definitionId: definition.id,
-      repository: repository.name,
-      ...rest
-    })
-  ]);
+  return saveBuild(collection.name)(build);
 };
 
 const putBuildTimelineInDb = (
   collection: string,
   project: string,
   buildId: number
-) => (buildTimeline: Timeline | null) => (
+) => async (buildTimeline: Timeline | null) => (
   buildTimeline
-    ? saveBuildTimeline(collection, project)({
-      buildId,
-      ...buildTimeline,
-      records: buildTimeline.records.map(r => ({
-        errorCount: r.errorCount,
-        finishTime: r.finishTime,
-        name: r.name,
-        order: r.order,
-        result: r.result,
-        startTime: r.startTime,
-        type: r.type,
-        warningCount: r.warningCount
-      }))
-    })
+    ? saveBuildTimeline(collection, project)(buildId, buildTimeline)
     : null
 );
 
@@ -62,7 +38,7 @@ const getBuildsAndTimelines = async () => {
       await setLastBuildUpdateDate(collection.name, project.name);
 
       await Promise.all([
-        ...builds.map(build => putBuildInDb(collection, project.name, build)),
+        ...builds.map(build => putBuildInDb(collection, build)),
         missingTimelines(collection.name, project.name)(builds.map(b => b.id))
           .then(buildIds => Promise.all(
             buildIds.map(async buildId => (

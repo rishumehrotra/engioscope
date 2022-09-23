@@ -21,8 +21,6 @@ import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
-// import { missingTimelines, saveBuildTimeline } from '../models/build-timeline.js';
-// import buildTimelines from './stats-aggregators/build-timelines.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -75,18 +73,7 @@ export default (config: ParsedConfig) => {
 
     const repoNameById = (id: string) => repos.find(r => r.id === id)?.name;
 
-    // await Promise.all(builds.map(build => {
-    //   const {
-    //     definition, project, repository, ...rest
-    //   } = build;
-    //   return saveBuild({
-    //     collectionName: collection.name,
-    //     project: project.name,
-    //     repository: repository.name,
-    //     definitionId: definition.id,
-    //     ...rest
-    //   });
-    // }));
+    // await Promise.all(builds.map(saveBuild(collection.name)));
 
     // const writeTimelinesToDb = buildTimelines(
     //   builds,

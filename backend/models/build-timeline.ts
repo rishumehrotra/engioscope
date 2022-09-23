@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import type { Timeline } from '../scraper/types-azure.js';
 
 const { Schema, model } = mongoose;
 
@@ -52,13 +53,13 @@ buildTimelineSchema.index({
 const BuildTimelineModel = model<BuildTimeline>('BuildTimeline', buildTimelineSchema);
 
 export const saveBuildTimeline = (collectionName: string, project: string) => (
-  (buildTimeline: Omit<BuildTimeline, 'collectionName' | 'project'>) => (
+  (buildId: number, buildTimeline: Timeline) => (
     BuildTimelineModel
       .updateOne(
         {
           collectionName,
           project,
-          buildId: buildTimeline.buildId
+          buildId
         },
         { $set: buildTimeline },
         { upsert: true }

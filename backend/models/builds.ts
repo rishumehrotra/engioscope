@@ -1,6 +1,8 @@
 import { model, Schema } from 'mongoose';
 import { getConfig } from '../config.js';
-import type { BuildReason, BuildResult, BuildStatus } from '../scraper/types-azure.js';
+import type {
+  Build as AzureBuild, BuildReason, BuildResult, BuildStatus
+} from '../scraper/types-azure.js';
 
 export type Build = {
   id: number;
@@ -11,7 +13,11 @@ export type Build = {
   startTime: Date;
   finishTime: Date;
   url: string;
-  definitionId: number;
+  definition: {
+    id: number;
+    name: string;
+    url: string;
+  };
   buildNumberRevision: number;
   collectionName: string;
   project: string;
@@ -24,7 +30,10 @@ export type Build = {
   lastChangeDate: Date;
   lastChangedById?: string;
   parameters?: string;
-  repository: string;
+  repository: {
+    id: string;
+    name: string;
+  };
   keepForever?: boolean;
   retainedByRelease?: boolean;
   triggeredByBuildId?: number;
@@ -39,7 +48,11 @@ const buildSchema = new Schema<Build>({
   startTime: { type: Date, required: true },
   finishTime: { type: Date, required: true },
   url: { type: String, required: true },
-  definitionId: { type: Number, required: true },
+  definition: {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    url: { type: String, required: true }
+  },
   buildNumberRevision: { type: Number, required: true },
   collectionName: { type: String, required: true },
   project: { type: String, required: true },
@@ -52,7 +65,10 @@ const buildSchema = new Schema<Build>({
   lastChangeDate: { type: Date, required: true },
   lastChangedById: { type: String },
   parameters: { type: String },
-  repository: { type: String, required: true },
+  repository: {
+    id: { type: String, required: true },
+    name: { type: String, required: true }
+  },
   keepForever: { type: Boolean },
   retainedByRelease: { type: Boolean },
   triggeredByBuildId: { type: Number }
@@ -66,14 +82,14 @@ buildSchema.index({
 
 const BuildModel = model<Build>('Build', buildSchema);
 
-export const saveBuild = (build: Build) => (
+export const saveBuild = (collectionName: string) => (build: AzureBuild) => (
   BuildModel
     .updateOne(
       {
-        collectionName: build.collectionName,
-        project: build.project,
-        repository: build.repository,
-        id: build.id
+        'collectionName': collectionName,
+        'project': build.project.name,
+        'repo.id': build.repository.id,
+        'id': build.id
       },
       { $set: build },
       { upsert: true }
