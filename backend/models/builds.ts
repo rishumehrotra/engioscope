@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose';
+import { getConfig } from '../config.js';
 import type { BuildReason, BuildResult, BuildStatus } from '../scraper/types-azure.js';
 
 export type Build = {
@@ -79,13 +80,12 @@ export const saveBuild = (build: Build) => (
     )
 );
 
-export const latestBuildTime = (collectionName: string, project: string) => (
+export const getBuilds = (
+  collectionName: string, project: string,
+  queryFrom = getConfig().azure.queryFrom
+) => (
   BuildModel
-    .findOne(
-      { collectionName, project },
-      { finishTime: 1 }
-    )
-    .sort({ finishTime: -1 })
+    .find({ collectionName, project })
+    .where({ startTime: { $gt: queryFrom } })
     .lean()
-    .then(build => build?.finishTime)
 );
