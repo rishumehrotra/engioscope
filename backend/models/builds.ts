@@ -75,9 +75,9 @@ const buildSchema = new Schema<Build>({
 }, { timestamps: true });
 
 buildSchema.index({
-  collectionName: 1,
-  project: 1,
-  repository: 1
+  'collectionName': 1,
+  'project': 1,
+  'repository.id': 1
 });
 
 const BuildModel = model<Build>('Build', buildSchema);
@@ -88,7 +88,7 @@ export const saveBuild = (collectionName: string) => (build: AzureBuild) => (
       {
         'collectionName': collectionName,
         'project': build.project.name,
-        'repo.id': build.repository.id,
+        'repository.id': build.repository.id,
         'id': build.id
       },
       { $set: build },
