@@ -156,5 +156,5 @@ export default (config: ParsedConfig) => {
     .then(createTarGz)
     .then(saveToArchive)
     .then(() => debug('done')(`in ${time()}.`))
-    .then(() => mongoose.disconnect());
+    .finally(() => mongoose.disconnect());
 };
