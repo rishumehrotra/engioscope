@@ -5,7 +5,7 @@ import { saveBuild } from '../models/builds.js';
 import azure from '../scraper/network/azure.js';
 import type { ParsedCollection } from '../scraper/parse-config.js';
 import type { Build, Timeline } from '../scraper/types-azure.js';
-import { runJob } from './utils';
+import { runJob } from './utils.js';
 
 const putBuildInDb = (collection: ParsedCollection, build: Build) => {
   const {
@@ -26,7 +26,7 @@ const putBuildTimelineInDb = (
     : null
 );
 
-const getBuildsAndTimelines = async () => {
+export const getBuildsAndTimelines = async () => {
   const { getBuildsSince, getBuildTimeline } = azure(getConfig());
 
   await Promise.all(
