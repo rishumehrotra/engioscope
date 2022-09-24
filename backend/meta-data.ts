@@ -66,5 +66,10 @@ export const setLastBuildUpdateDate = (collection: string, project: string) => (
 );
 
 export const getLastBuildUpdateDate = (collection: string, project: string) => (
-  getProject(collection, project).then(p => p?.lastBuildUpdateDate)
+  getProject(collection, project)
+    .then(p => (
+      p?.lastBuildUpdateDate
+        ? new Date(p.lastBuildUpdateDate)
+        : undefined
+    ))
 );
