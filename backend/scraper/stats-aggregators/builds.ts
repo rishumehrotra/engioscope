@@ -2,11 +2,12 @@ import prettyMilliseconds from 'pretty-ms';
 import {
   add, adjust, identity, inc, pipe, prop, replace
 } from 'rambda';
-import type { Build, BuildDefinitionReference } from '../types-azure.js';
+import type { BuildDefinitionReference } from '../types-azure.js';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
 import { isMaster, weeks } from '../../utils.js';
 import { asc, byDate, desc } from '../../../shared/sort-utils.js';
 import type { latestBuildReportsForRepoAndBranch } from '../../models/build-reports.js';
+import type { Build } from '../../models/builds.js';
 
 type BuildReportsForRepoAndBranch = ReturnType<typeof latestBuildReportsForRepoAndBranch>;
 

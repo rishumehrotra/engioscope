@@ -12,8 +12,12 @@ export const runJob = (name: string, when: (time: typeof cronTime) => string, on
     timePattern,
     async () => {
       cronLog('Starting cron for', name);
-      await onTick();
-      cronLog('Done cron for', name);
+      try {
+        await onTick();
+        cronLog('Done cron for', name);
+      } catch (error) {
+        cronLog('Cron for ', name, 'FAILED', error);
+      }
     }
   );
   j.start();

@@ -5,9 +5,10 @@ import {
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
 import { asc, byDate, desc } from '../../../shared/sort-utils.js';
 import type { UITests, UIPipelineTest } from '../../../shared/types.js';
+import type { Build } from '../../models/builds.js';
 import { unique, weeks } from '../../utils.js';
 import type {
-  Build, CodeCoverageData, CodeCoverageSummary, TestRun
+  CodeCoverageData, CodeCoverageSummary, TestRun
 } from '../types-azure.js';
 
 type TestStats = {

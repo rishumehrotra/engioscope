@@ -97,6 +97,8 @@ export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
         { $set: rest },
         { upsert: true }
       )
+      .lean()
+      .then(result => result.upsertedId)
   );
 };
 
@@ -107,5 +109,11 @@ export const getBuilds = (
   BuildModel
     .find({ collectionName, project })
     .where({ startTime: { $gt: queryFrom } })
+    .lean()
+);
+
+export const buildsByBuildIds = (collectionName: string, project: string) => (buildIds: number[]) => (
+  BuildModel
+    .find({ collectionName, project, buildId: { $in: buildIds } })
     .lean()
 );
