@@ -51,4 +51,4 @@ const getBuildsAndTimelines = async () => {
   );
 };
 
-runJob('fetching builds', t => t.every(20).minutes(), getBuildsAndTimelines);
+runJob('fetching builds', t => t.everyDayAt(23, 30), getBuildsAndTimelines);
