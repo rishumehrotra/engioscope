@@ -82,19 +82,23 @@ buildSchema.index({
 
 const BuildModel = model<Build>('Build', buildSchema);
 
-export const saveBuild = (collectionName: string) => (build: AzureBuild) => (
-  BuildModel
-    .updateOne(
-      {
-        'collectionName': collectionName,
-        'project': build.project.name,
-        'repository.id': build.repository.id,
-        'id': build.id
-      },
-      { $set: build },
-      { upsert: true }
-    )
-);
+export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
+  const { project, ...rest } = build;
+
+  return (
+    BuildModel
+      .updateOne(
+        {
+          'collectionName': collectionName,
+          'project': project.name,
+          'repository.id': build.repository.id,
+          'id': build.id
+        },
+        { $set: rest },
+        { upsert: true }
+      )
+  );
+};
 
 export const getBuilds = (
   collectionName: string, project: string,
