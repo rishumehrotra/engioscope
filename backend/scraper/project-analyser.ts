@@ -95,6 +95,7 @@ export default (config: ParsedConfig) => {
       projectConfig.templateRepoName
     );
 
+    // TODO: This doesn't belong here
     const getBuildBefore = async (buildDefinitionIds: number[]) => {
       const builds = await forProject(getOneBuildBeforeQueryPeriod)(buildDefinitionIds);
       await Promise.all(builds.map(saveBuild(collection.name)));
