@@ -21,9 +21,6 @@ import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
-import {
-  buildsByBuildIds, getBuilds, saveBuild
-} from '../models/builds.js';
 // import { missingTimelines, saveBuildTimeline } from '../models/build-timeline.js';
 // import buildTimelines from './stats-aggregators/build-timelines.js';
 
@@ -38,7 +35,7 @@ const analyserLog = debug('analyser');
 
 export default (config: ParsedConfig) => {
   const {
-    getRepositories, getBranchesStats, getPRs, getCommits,
+    getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
     getProjectWorkItemIdsForQuery, getBuildDefinitions,
     getOneBuildBeforeQueryPeriod // , getBuildTimeline
@@ -95,17 +92,10 @@ export default (config: ParsedConfig) => {
       projectConfig.templateRepoName
     );
 
-    // TODO: This doesn't belong here
-    const getBuildBefore = async (buildDefinitionIds: number[]) => {
-      const builds = await forProject(getOneBuildBeforeQueryPeriod)(buildDefinitionIds);
-      await Promise.all(builds.map(saveBuild(collection.name)));
-      return forProject(buildsByBuildIds)(builds.map(b => b.id));
-    };
-
     const getTestsByRepoId = aggregateTestRuns(
       forProject(getTestRuns),
       forProject(getTestCoverage),
-      getBuildBefore,
+      forProject(getOneBuildBeforeQueryPeriod),
       allMasterBuilds
     );
 

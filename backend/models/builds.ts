@@ -111,9 +111,3 @@ export const getBuilds = (
     .where({ startTime: { $gt: queryFrom } })
     .lean()
 );
-
-export const buildsByBuildIds = (collectionName: string, project: string) => (buildIds: number[]) => (
-  BuildModel
-    .find({ collectionName, project, buildId: { $in: buildIds } })
-    .lean()
-);
