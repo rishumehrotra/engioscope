@@ -3,9 +3,13 @@ import chalk from 'chalk';
 import debug from 'debug';
 import { tap, zip } from 'rambda';
 import tar from 'tar';
-import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
 import mongoose from 'mongoose';
+import { promisify } from 'node:util';
+import { exec as cpsExec } from 'node:child_process';
+import {
+  rename, access, mkdir, copyFile
+} from 'node:fs/promises';
+import { join } from 'node:path';
 import aggregationWriter, {
   writeChangeProgramFile, writeSummaryMetricsFile, writeTrackFeatures, writeTrackFlowMetrics
 } from './aggregation-writer.js';
@@ -21,10 +25,39 @@ import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
 import { trackFeatures, trackMetrics } from './stats-aggregators/tracks.js';
 import { setConfig } from '../config.js';
 
+const exec = promisify(cpsExec);
+
 process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
 
 const logStep = debug('step');
+
+const fileExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const restoreFromMongo = async () => {
+  logStep('Checking if restoring mongodump is possible');
+  if (process.platform !== 'darwin' && process.platform !== 'win32') {
+    // Skip restore if prod, since this might lead to data-loss.
+    logStep('Probably running on linux. Skipping restore.');
+    return;
+  }
+
+  if (!await fileExists(join(process.cwd(), 'cache', 'dump.gz'))) {
+    logStep('Couldn\'t find mongodump. Skipping');
+    return;
+  }
+
+  await exec('mongosh engioscope --eval "db.dropDatabase()"');
+  await exec('mongorestore --gzip --archive=cache/dump.gz');
+  logStep('Mongodb restored');
+};
 
 const scrape = async (config: ParsedConfig) => {
   logStep('Starting scrape...');
@@ -130,13 +163,21 @@ const createTarGz = async () => {
   logStep(`Created data/cache.tar.gz in ${time()}`);
 };
 
+const dumpMongo = async () => {
+  logStep('Creating a mongodump...');
+  const time = startTimer();
+  await exec('mongodump --archive=dump.gz --gzip --db=engioscope');
+  await rename(join(process.cwd(), 'dump.gz'), join(process.cwd(), 'cache', 'dump.gz'));
+  logStep(`Mongodump done in ${time()}`);
+};
+
 const saveToArchive = async () => {
   logStep('Saving to archive...');
   const time = startTimer();
 
-  await fs.mkdir(join(process.cwd(), 'archive'), { recursive: true });
+  await mkdir(join(process.cwd(), 'archive'), { recursive: true });
   const fileName = `cache-${new Date().toISOString().split('T')[0]}.tar.gz`;
-  await fs.copyFile(
+  await copyFile(
     join(process.cwd(), 'data', 'cache.tar.gz'),
     join(process.cwd(), 'archive', fileName)
   );
@@ -154,8 +195,10 @@ export default (config: ParsedConfig) => {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   mongoose.connect(config.mongoUrl);
 
-  return scrape(config)
+  return restoreFromMongo()
+    .then(() => scrape(config))
     .then(tap(printFetchCounters))
+    .then(dumpMongo)
     .then(createTarGz)
     .then(saveToArchive)
     .then(() => debug('done')(`in ${time()}.`))
