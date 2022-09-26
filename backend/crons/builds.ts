@@ -19,10 +19,11 @@ const putBuildInDb = (collection: ParsedCollection, build: Build) => {
 const putBuildTimelineInDb = (
   collection: string,
   project: string,
-  buildId: number
+  buildId: number,
+  buildDefinitionId: number
 ) => async (buildTimeline: Timeline | null) => (
   buildTimeline
-    ? saveBuildTimeline(collection, project)(buildId, buildTimeline)
+    ? saveBuildTimeline(collection, project)(buildId, buildDefinitionId, buildTimeline)
     : null
 );
 
@@ -51,7 +52,13 @@ export const getBuildsAndTimelines = async () => {
           .then(buildIds => Promise.all(
             buildIds.map(async buildId => (
               getBuildTimeline(collection.name, project.name)(buildId)
-                .then(putBuildTimelineInDb(collection.name, project.name, buildId))
+                .then(putBuildTimelineInDb(
+                  collection.name,
+                  project.name,
+                  buildId,
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  builds.find(b => b.id === buildId)!.definition.id
+                ))
             ))
           ))
       ]);

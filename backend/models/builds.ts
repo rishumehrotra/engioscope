@@ -111,3 +111,6 @@ export const getBuilds = (
     .where({ startTime: { $gt: queryFrom } })
     .lean()
 );
+
+// eslint-disable-next-line no-underscore-dangle
+export const __BuildModelDONOTUSE = BuildModel;

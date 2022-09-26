@@ -16,6 +16,11 @@ export default async (
   return Promise.all(missingBuildIds.map(async buildId => {
     const timeline = await getBuildTimeline(buildId);
     if (!timeline) return;
-    return saveBuildTimeline(buildId, timeline);
+    return saveBuildTimeline(
+      buildId,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      builds.find(b => b.id === buildId)!.definition.id,
+      timeline
+    );
   }));
 };
