@@ -37,8 +37,20 @@ const Tracks: React.FC = () => {
   const [trackFeatures, setTrackFeatures] = useState<TrackFeatures | null>(null);
   const [show] = useQueryParam('show', asString);
 
-  useEffect(() => { if (show !== 'listing') fetchTrackFlowMetrics().then(setTrackFlowMetrics); }, [show]);
-  useEffect(() => { if (show === 'listing') fetchTrackFeatures().then(setTrackFeatures); }, [show]);
+  useEffect(() => {
+    if (show !== 'listing') {
+      // TODO: Error handling
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      fetchTrackFlowMetrics().then(setTrackFlowMetrics);
+    }
+  }, [show]);
+  useEffect(() => {
+    if (show === 'listing') {
+      // TODO: Error handling
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      fetchTrackFeatures().then(setTrackFeatures);
+    }
+  }, [show]);
   const setHeaderDetails = useSetHeaderDetails();
 
   useEffect(() => {

@@ -11,7 +11,11 @@ import { changeProgramDetails } from '../network.js';
 
 const ChangeProgram: React.FC = () => {
   const [changeProgram, setChangeProgram] = useState<UIChangeProgram | null>(null);
-  useEffect(() => { changeProgramDetails().then(setChangeProgram); }, []);
+  useEffect(() => {
+    // TODO: Error handling
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    changeProgramDetails().then(setChangeProgram);
+  }, []);
   const [show, setShow] = useQueryParam('show', asString);
   const setHeaderDetails = useSetHeaderDetails();
 

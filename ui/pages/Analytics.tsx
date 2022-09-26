@@ -10,7 +10,11 @@ const Analytics: React.FC = () => {
   const [analytics, setAnalytics] = useState<AnalyticsItem[] | undefined>();
   const setHeaderDetails = useSetHeaderDetails();
 
-  useEffect(() => { fetchAnalytics().then(setAnalytics); }, []);
+  useEffect(() => {
+    // TODO: Error handling
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    fetchAnalytics().then(setAnalytics);
+  }, []);
   useEffect(() => {
     analytics && setHeaderDetails({
       globalSettings: {

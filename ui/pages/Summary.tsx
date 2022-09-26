@@ -20,7 +20,11 @@ const threeMonthsAgo = (date: string) => {
 
 const Summary: React.FC = () => {
   const [metrics, setMetrics] = useState<SummaryMetrics | undefined>();
-  useEffect(() => { metricsSummary().then(setMetrics); }, []);
+  useEffect(() => {
+    // TODO: Error handling
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    metricsSummary().then(setMetrics);
+  }, []);
   const [search] = useQueryParam('search', asString);
   const [show, setShow] = useQueryParam('show', asString);
   const setHeaderDetails = useSetHeaderDetails();

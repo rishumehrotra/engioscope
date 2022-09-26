@@ -28,7 +28,11 @@ const Collection: React.FC = () => {
   const setProjectDetails = useSetProjectDetails();
   const setHeaderDetails = useSetHeaderDetails();
 
-  useEffect(() => { fetchCollections().then(setAnalysedProjects); }, []);
+  useEffect(() => {
+    // TODO: Error handling
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    fetchCollections().then(setAnalysedProjects);
+  }, []);
   useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
   useEffect(() => {
     setHeaderDetails({

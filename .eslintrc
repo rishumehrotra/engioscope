@@ -226,6 +226,7 @@
         "tsx": "never"
       }
     ],
+    "@typescript-eslint/no-floating-promises": "error",
     "unicorn/import-style": [
       "error",
       {

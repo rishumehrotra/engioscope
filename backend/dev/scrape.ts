@@ -6,4 +6,4 @@ import config from '../../config.json' assert { type: 'json' };
 import type { Config } from '../scraper/parse-config.js';
 import parseConfig from '../scraper/parse-config.js';
 
-scrape(parseConfig(config as unknown as Config));
+await scrape(parseConfig(config as unknown as Config));

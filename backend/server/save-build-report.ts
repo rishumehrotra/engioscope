@@ -51,6 +51,8 @@ const saveToDisk = async (html: string) => {
 };
 
 export default async (req: expresss.Request, res: expresss.Response) => {
+  // TODO: Remove the code to write the build report to disk
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   saveToDisk(req.body);
 
   try {

@@ -27,4 +27,4 @@ export default ${JSON.stringify(result, null, 2)} as const;
   console.log(`Wrote ${join(__dirname, 'language-colors.ts')}`);
 };
 
-run();
+await run();
