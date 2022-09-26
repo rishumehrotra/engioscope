@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { lock } from './utils.js';
 
 const [acquireLock, releaseLock] = lock();
+
 type Project = {
   name: string;
   lastBuildUpdateDate?: Date;
@@ -17,13 +18,15 @@ type MetaData = {
   collections: Collection[];
 };
 
+const metaDataFilePath = join(process.cwd(), 'meta-data.json');
+
 const loadMetaData = () => (
-  readFile(join(process.cwd(), 'meta-data.json'), 'utf8')
+  readFile(metaDataFilePath, 'utf8')
     .then(m => JSON.parse(m) as MetaData)
     .catch(() => ({ collections: [] }) as MetaData)
 );
 const saveMetaData = (metadata: MetaData) => (
-  writeFile(join(process.cwd(), 'meta-data.json'), JSON.stringify(metadata))
+  writeFile(metaDataFilePath, JSON.stringify(metadata))
 );
 
 const getProject = (collection: string, project: string) => (
@@ -56,7 +59,7 @@ const modifyProject = (collection: string, project: string, modifier: (proj: Pro
       }
 
       modifier(proj);
-      saveMetaData(metadata);
+      return saveMetaData(metadata);
     })
     .finally(releaseLock);
 };

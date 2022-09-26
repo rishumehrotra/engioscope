@@ -31,10 +31,18 @@ export const getBuildsAndTimelines = async () => {
 
   await Promise.all(
     collectionsAndProjects().map(async ([collection, project]) => {
-      const builds = await getBuildsSince(collection.name, project.name)(
+      const lastBuildUpdateDate = (
         await getLastBuildUpdateDate(collection.name, project.name)
         || getConfig().azure.queryFrom
       );
+
+      console.log('Fetching builds', {
+        collection: collection.name,
+        project: project.name,
+        lastBuildUpdateDate
+      });
+
+      const builds = await getBuildsSince(collection.name, project.name)(lastBuildUpdateDate);
       await setLastBuildUpdateDate(collection.name, project.name);
 
       await Promise.all([
@@ -51,4 +59,6 @@ export const getBuildsAndTimelines = async () => {
   );
 };
 
-runJob('fetching builds', t => t.everyDayAt(23, 30), getBuildsAndTimelines);
+export default () => (
+  runJob('fetching builds', t => t.everyHourAt(45), getBuildsAndTimelines)
+);

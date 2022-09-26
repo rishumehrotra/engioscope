@@ -6,7 +6,7 @@
     "watch:tailwind": "tailwind -c ui/tailwind.config.cjs build -i ui/tailwind.css -o ui/tailwind.output.css --watch",
     "start:vite": "vite --open",
     "start:ui": "npm-run-all --parallel watch:tailwind start:vite",
-    "start:server": "nodemon --watch 'backend/**' --ext 'ts,json' --exec 'DEBUG=* ts-node --esm backend/dev/start-server.ts'",
+    "start:server": "nodemon --watch 'backend/**' --ext 'ts,json' --exec 'DEBUG=cron,fetch* ts-node --esm backend/dev/start-server.ts'",
     "start": "npm-run-all --parallel start:server start:ui",
     "build:server": "tsc --build backend",
     "prebuild:ui": "NODE_ENV=production tailwind -c ui/tailwind.config.cjs build -i ui/tailwind.css -o ui/tailwind.output.css",

@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import api from './api.js';
 import { setConfig } from '../config.js';
-import '../crons/index.js';
+import setupCrons from '../crons/index.js';
 
 // eslint-disable-next-line no-underscore-dangle
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -60,7 +60,10 @@ const configureExpress = (config: ParsedConfig) => {
 export default (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
   setConfig(config);
+
   mongoose.connect(config.mongoUrl);
+
+  setupCrons();
 
   const app = configureExpress(config);
   const port = config.port || 1337;
