@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+import { prop } from 'rambda';
+import { byNum, desc } from '../../shared/sort-utils.js';
+import { getConfig } from '../config.js';
 import type { Timeline } from '../scraper/types-azure.js';
 
 const { Schema, model } = mongoose;
@@ -6,7 +9,7 @@ const { Schema, model } = mongoose;
 export type BuildTimelineRecord = {
   name: string;
   order: number;
-  type: 'Task' | 'Job' | 'Task' | 'Checkpoint' | 'Phase' | 'Stage';
+  type: 'Task' | 'Job' | 'Checkpoint' | 'Phase' | 'Stage' | 'Step';
   result: 'abandoned' | 'canceled' | 'failed' | 'skipped' | 'succeeded' | 'succeededWithIssues';
   errorCount: number;
   warningCount: number;
@@ -90,6 +93,72 @@ export const missingTimelines = (collectionName: string, project: string) => (
     return buildIds.filter(b => !existingBuildIds.has(b));
   }
 );
+
+export const aggregateBuildTimelineStats = async (
+  collectionName: string,
+  project: string,
+  buildDefinitionId: number,
+  queryFrom = getConfig().azure.queryFrom
+) => {
+  type Result = {
+    _id: string;
+    averageTime: number;
+    errorCount: number;
+  };
+
+  const results: Result[] = await BuildTimelineModel
+    .aggregate([
+      {
+        $match: {
+          collectionName,
+          project,
+          buildDefinitionId,
+          createdAt: { $gt: queryFrom }
+        }
+      },
+      { $unwind: '$records' },
+      { $match: { 'records.type': 'Task' } },
+      {
+        $group: {
+          _id: {
+            $arrayElemAt: [{
+              $split: [
+                {
+                  $arrayElemAt: [{ $split: ['$records.name', '@'] }, 0]
+                }, '/']
+            }, 0]
+          },
+          averageTime: {
+            $avg: {
+              $dateDiff: {
+                startDate: '$records.startTime',
+                endDate: '$records.finishTime',
+                unit: 'millisecond'
+              }
+            }
+          },
+          errorCount: { $avg: '$records.errorCount' },
+          warningCount: { $avg: '$records.warningCount' }
+        }
+      }
+    ]);
+
+  const formatItem = (resultItem: Result) => {
+    const { _id, ...rest } = resultItem;
+    return { name: _id, ...rest };
+  };
+
+  return {
+    worstTime: results
+      .sort(desc(byNum(prop('averageTime'))))
+      .slice(7)
+      .map(formatItem),
+    worstErrors: results
+      .sort(desc(byNum(prop('errorCount'))))
+      .slice(7)
+      .map(formatItem)
+  };
+};
 
 // eslint-disable-next-line no-underscore-dangle
 export const __BuildTimelineModelDONOTUSE = BuildTimelineModel;
