@@ -531,7 +531,7 @@ const tabLabel = (codeQuality: RepoAnalysis['codeQuality']) => {
 export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   title: 'Code quality',
   count: tabLabel(codeQuality),
-  content: () => (
+  Component: () => (
     codeQuality ? (
       <TabContents gridCols={1}>
         {codeQuality.length === 1 ? (

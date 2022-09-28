@@ -8,7 +8,7 @@ import TabContents from './TabContents.js';
 export default (prs: RepoAnalysis['prs']): Tab => ({
   title: 'Pull requests',
   count: prs.total,
-  content: () => (
+  Component: () => (
     <TabContents gridCols={4}>
       <Metric name="Active" value={num(prs.active)} position="first" />
       <Metric name="Abandoned" value={num(prs.abandoned)} />

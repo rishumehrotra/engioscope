@@ -224,7 +224,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
           />
         ))}
       </div>
-      <span role="region">{selectedTab ? selectedTab.content() : null}</span>
+      <span role="region">{selectedTab ? <selectedTab.Component /> : null}</span>
     </div>
   );
 };

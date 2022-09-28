@@ -30,7 +30,7 @@ export default (
   return {
     title: 'Commits',
     count: commits.count,
-    content: () => (
+    Component: () => (
       <TabContents gridCols={1}>
         {commits.count === 0
           ? (

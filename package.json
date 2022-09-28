@@ -6,7 +6,7 @@
     "watch:tailwind": "tailwind -c ui/tailwind.config.cjs build -i ui/tailwind.css -o ui/tailwind.output.css --watch",
     "start:vite": "vite --open",
     "start:ui": "npm-run-all --parallel watch:tailwind start:vite",
-    "start:server": "nodemon --watch 'backend/**' --ext 'ts,json' --exec 'DEBUG=cron,fetch* ts-node --esm backend/dev/start-server.ts'",
+    "start:server": "nodemon --watch 'backend/**' --ext 'ts,json' --exec 'DEBUG=* ts-node --esm backend/dev/start-server.ts'",
     "start": "npm-run-all --parallel start:server start:ui",
     "build:server": "tsc --build backend",
     "prebuild:ui": "NODE_ENV=production tailwind -c ui/tailwind.config.cjs build -i ui/tailwind.css -o ui/tailwind.output.css",
@@ -34,6 +34,7 @@
     "node": ">=12.8"
   },
   "dependencies": {
+    "@trpc/server": "^10.0.0-proxy-beta.8",
     "@zkochan/rimraf": "^2.1.1",
     "abort-controller": "^3.0.0",
     "await-lock": "^2.2.2",
@@ -64,7 +65,8 @@
     "tar": "^6.1.11",
     "ua-parser-js": "^1.0.2",
     "yaml": "^2.1.1",
-    "yargs": "^17.5.1"
+    "yargs": "^17.5.1",
+    "zod": "^3.19.1"
   },
   "browserslist": {
     "production": [
@@ -84,9 +86,12 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@react-hook/resize-observer": "^1.2.6",
+    "@tanstack/react-query": "^4.6.1",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
+    "@trpc/client": "^10.0.0-proxy-beta.8",
+    "@trpc/react": "^10.0.0-proxy-beta.8",
     "@types/compression": "^1.7.1",
     "@types/cookie-parser": "^1.4.3",
     "@types/cron": "^2.0.0",

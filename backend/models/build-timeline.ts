@@ -151,11 +151,11 @@ export const aggregateBuildTimelineStats = async (
   return {
     worstTime: results
       .sort(desc(byNum(prop('averageTime'))))
-      .slice(7)
+      .slice(0, 7)
       .map(formatItem),
     worstErrors: results
       .sort(desc(byNum(prop('errorCount'))))
-      .slice(7)
+      .slice(0, 7)
       .map(formatItem)
   };
 };

@@ -13,7 +13,7 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
   title: 'Tests',
   count: numberOfTests(repo),
-  content: () => (
+  Component: () => (
     <TabContents gridCols={1}>
       {repo.tests?.length ? (
         <>
