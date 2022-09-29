@@ -210,5 +210,5 @@ const Branches: React.FC<{
 export default (branches: RepoAnalysis['branches'], defaultBranch: RepoAnalysis['defaultBranch']): Tab => ({
   title: 'Branches',
   count: branches.total,
-  content: () => (<Branches branchStats={branches} defaultBranch={defaultBranch} />)
+  Component: () => (<Branches branchStats={branches} defaultBranch={defaultBranch} />)
 });
