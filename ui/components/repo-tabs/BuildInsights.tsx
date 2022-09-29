@@ -99,6 +99,44 @@ const BuildInsightsInternal: React.FC<{
 
           )}
       </div>
+      <div>
+        <h3 className="font-semibold text-lg">Frequently skipped</h3>
+        <p className="text-gray-500 text-sm mb-2">Items that are skipped frequently</p>
+        {timelineStats.data?.skipped.length === 0
+          ? (
+            <div className="italic text-gray-500">
+              Couldn't find builds in the last
+              {' '}
+              {queryPeriodDays}
+              {' '}
+              days
+            </div>
+          )
+          : (
+            <table>
+              <thead>
+                <tr>
+                  <th> </th>
+                  <th className="text-center">Skip rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timelineStats.data?.skipped.map(task => (
+                  <tr key={task.name}>
+                    <td>
+                      {task.name}
+                    </td>
+                    <td>
+                      {(task.skippedPercentage * 100).toFixed(2)}
+                      %
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+          )}
+      </div>
     </div>
   );
 };

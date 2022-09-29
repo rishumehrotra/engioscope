@@ -178,10 +178,8 @@ const getFailing = async (
           errorCount: {
             $avg: {
               $cond: {
-                if: { $gte: ['$records.errorCount', 1] },
                 // eslint-disable-next-line unicorn/no-thenable
-                then: 1,
-                else: 0
+                if: { $gte: ['$records.errorCount', 1] }, then: 1, else: 0
               }
             }
           },
@@ -214,31 +212,76 @@ const getFailing = async (
   }));
 };
 
+const getSkipped = async (
+  collectionName: string,
+  project: string,
+  buildDefinitionId: number,
+  queryFrom = getConfig().azure.queryFrom
+) => {
+  type Result = {
+    _id: string;
+    skippedPercentage: number;
+    type: string[];
+  };
+
+  const results: Result[] = await BuildTimelineModel
+    .aggregate([
+      {
+        $match: {
+          collectionName,
+          project,
+          buildDefinitionId,
+          createdAt: { $gt: queryFrom }
+        }
+      },
+      { $unwind: '$records' },
+      {
+        $group: {
+          _id: formatName,
+          type: { $addToSet: '$records.type' },
+          skippedPercentage: {
+            $avg: {
+              // eslint-disable-next-line unicorn/no-thenable
+              $cond: { if: { $eq: ['$records.result', 'skipped'] }, then: 1, else: 0 }
+            }
+          }
+        }
+      },
+      { $sort: { skippedPercentage: -1 } },
+      { $match: { skippedPercentage: { $gt: 0.01 } } },
+      { $limit: 7 }
+    ]);
+
+  return results.map(r => ({
+    name: r._id,
+    skippedPercentage: r.skippedPercentage,
+    type: r.type[0]
+  }));
+};
+
 export const aggregateBuildTimelineStats = async (
   collectionName: string,
   project: string,
   buildDefinitionId: number,
   queryFrom = getConfig().azure.queryFrom
 ) => {
-  try {
-    const [count, slowest, failing] = await Promise.all([
-      BuildTimelineModel
-        .find({
-          collectionName,
-          project,
-          buildDefinitionId,
-          queryFrom: { $gt: queryFrom }
-        })
-        .count(),
-      getSlowestTasks(collectionName, project, buildDefinitionId, queryFrom),
-      getFailing(collectionName, project, buildDefinitionId, queryFrom)
-    ]);
+  const [count, slowest, failing, skipped] = await Promise.all([
+    BuildTimelineModel
+      .find({
+        collectionName,
+        project,
+        buildDefinitionId,
+        queryFrom: { $gt: queryFrom }
+      })
+      .count(),
+    getSlowestTasks(collectionName, project, buildDefinitionId, queryFrom),
+    getFailing(collectionName, project, buildDefinitionId, queryFrom),
+    getSkipped(collectionName, project, buildDefinitionId, queryFrom)
+  ]);
 
-    return { count, slowest, failing };
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
+  return {
+    count, slowest, failing, skipped
+  };
 };
 
 // eslint-disable-next-line no-underscore-dangle
