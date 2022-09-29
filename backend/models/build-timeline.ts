@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { prop } from 'rambda';
-import { byNum, desc } from '../../shared/sort-utils.js';
+import { or } from 'rambda';
+import { oneSecondInMs } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import type { Timeline } from '../scraper/types-azure.js';
 
@@ -94,7 +94,16 @@ export const missingTimelines = (collectionName: string, project: string) => (
   }
 );
 
-export const aggregateBuildTimelineStats = async (
+const formatName = {
+  $arrayElemAt: [{
+    $split: [
+      {
+        $arrayElemAt: [{ $split: ['$records.name', '@'] }, 0]
+      }, '/']
+  }, 0]
+};
+
+const getSlowestTasks = async (
   collectionName: string,
   project: string,
   buildDefinitionId: number,
@@ -103,7 +112,6 @@ export const aggregateBuildTimelineStats = async (
   type Result = {
     _id: string;
     averageTime: number;
-    errorCount: number;
   };
 
   const results: Result[] = await BuildTimelineModel
@@ -120,14 +128,7 @@ export const aggregateBuildTimelineStats = async (
       { $match: { 'records.type': 'Task' } },
       {
         $group: {
-          _id: {
-            $arrayElemAt: [{
-              $split: [
-                {
-                  $arrayElemAt: [{ $split: ['$records.name', '@'] }, 0]
-                }, '/']
-            }, 0]
-          },
+          _id: formatName,
           averageTime: {
             $avg: {
               $dateDiff: {
@@ -136,28 +137,108 @@ export const aggregateBuildTimelineStats = async (
                 unit: 'millisecond'
               }
             }
-          },
-          errorCount: { $avg: '$records.errorCount' },
-          warningCount: { $avg: '$records.warningCount' }
+          }
         }
-      }
+      },
+      { $sort: { averageTime: -1 } },
+      { $match: { averageTime: { $gt: oneSecondInMs * 30 } } },
+      { $limit: 7 }
     ]);
 
-  const formatItem = (resultItem: Result) => {
-    const { _id, ...rest } = resultItem;
-    return { name: _id, ...rest };
+  return results.map(r => ({ name: r._id, time: r.averageTime }));
+};
+
+const getFailing = async (
+  collectionName: string,
+  project: string,
+  buildDefinitionId: number,
+  queryFrom = getConfig().azure.queryFrom
+) => {
+  type Result = {
+    _id: string;
+    errorCount: number;
+    continueOnError: boolean[];
   };
 
-  return {
-    worstTime: results
-      .sort(desc(byNum(prop('averageTime'))))
-      .slice(0, 7)
-      .map(formatItem),
-    worstErrors: results
-      .sort(desc(byNum(prop('errorCount'))))
-      .slice(0, 7)
-      .map(formatItem)
-  };
+  const results: Result[] = await BuildTimelineModel
+    .aggregate([
+      {
+        $match: {
+          collectionName,
+          project,
+          buildDefinitionId,
+          createdAt: { $gt: queryFrom }
+        }
+      },
+      { $unwind: '$records' },
+      { $match: { 'records.type': 'Task' } },
+      {
+        $group: {
+          _id: formatName,
+          errorCount: {
+            $avg: {
+              $cond: {
+                if: { $gte: ['$records.errorCount', 1] },
+                // eslint-disable-next-line unicorn/no-thenable
+                then: 1,
+                else: 0
+              }
+            }
+          },
+          continueOnError: {
+            $addToSet: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $gte: ['$records.errorCount', 1] },
+                    { $eq: ['$records.result', 'succeeded'] }
+                  ]
+                },
+                // eslint-disable-next-line unicorn/no-thenable
+                then: true,
+                else: false
+              }
+            }
+          }
+        }
+      },
+      { $sort: { errorCount: -1 } },
+      { $match: { errorCount: { $gt: 0.05 } } },
+      { $limit: 7 }
+    ]);
+
+  return results.map(r => ({
+    name: r._id,
+    errorCount: r.errorCount,
+    continueOnError: r.continueOnError.flat().reduce(or, false)
+  }));
+};
+
+export const aggregateBuildTimelineStats = async (
+  collectionName: string,
+  project: string,
+  buildDefinitionId: number,
+  queryFrom = getConfig().azure.queryFrom
+) => {
+  try {
+    const [count, slowest, failing] = await Promise.all([
+      BuildTimelineModel
+        .find({
+          collectionName,
+          project,
+          buildDefinitionId,
+          queryFrom: { $gt: queryFrom }
+        })
+        .count(),
+      getSlowestTasks(collectionName, project, buildDefinitionId, queryFrom),
+      getFailing(collectionName, project, buildDefinitionId, queryFrom)
+    ]);
+
+    return { count, slowest, failing };
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };
 
 // eslint-disable-next-line no-underscore-dangle

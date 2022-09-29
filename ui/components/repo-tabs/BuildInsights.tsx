@@ -19,13 +19,14 @@ const BuildInsightsInternal: React.FC<{
   if (timelineStats.isLoading) return <Loading />;
 
   return (
-    <div className="grid grid-flow-col gap-5 p-5">
+    <div className="grid grid-flow-col gap-5 p-5 bg-gray-100">
       <div>
-        <h3 className="font-semibold text-lg mb-2">🐢 Slowest tasks</h3>
-        {timelineStats.data?.worstTime.length === 0
+        <h3 className="font-semibold text-lg">Slowest tasks</h3>
+        <p className="text-gray-500 text-sm mb-2">Slowest tasks that have taken longer than 30 seconds</p>
+        {timelineStats.data?.slowest.length === 0
           ? (
             <div className="italic text-gray-500">
-              Couldn't find any data in the last
+              Couldn't find builds in the last
               {' '}
               {queryPeriodDays}
               {' '}
@@ -37,14 +38,14 @@ const BuildInsightsInternal: React.FC<{
               <thead>
                 <tr>
                   <th> </th>
-                  <th className="text-center w-1">Average time</th>
+                  <th className="text-center">Average time</th>
                 </tr>
               </thead>
               <tbody>
-                {timelineStats.data?.worstTime.map(items => (
-                  <tr key={items.name}>
-                    <td>{items.name}</td>
-                    <td>{prettyMilliseconds(items.averageTime)}</td>
+                {timelineStats.data?.slowest.map(task => (
+                  <tr key={task.name}>
+                    <td>{task.name}</td>
+                    <td>{prettyMilliseconds(task.time)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -53,11 +54,12 @@ const BuildInsightsInternal: React.FC<{
           )}
       </div>
       <div>
-        <h3 className="font-semibold text-lg mb-2">💣 Frequently failing tasks</h3>
-        {timelineStats.data?.worstTime.length === 0
+        <h3 className="font-semibold text-lg">Frequently failing tasks</h3>
+        <p className="text-gray-500 text-sm mb-2">Tasks that have a failure rate greater than 5%</p>
+        {timelineStats.data?.failing.length === 0
           ? (
             <div className="italic text-gray-500">
-              Couldn't find any data in the last
+              Couldn't find builds in the last
               {' '}
               {queryPeriodDays}
               {' '}
@@ -69,15 +71,25 @@ const BuildInsightsInternal: React.FC<{
               <thead>
                 <tr>
                   <th> </th>
-                  <th className="text-center w-1">Failure rate</th>
+                  <th className="text-center">Failure rate</th>
                 </tr>
               </thead>
               <tbody>
-                {timelineStats.data?.worstErrors.map(items => (
-                  <tr key={items.name}>
-                    <td>{items.name}</td>
+                {timelineStats.data?.failing.map(task => (
+                  <tr key={task.name}>
                     <td>
-                      {(items.errorCount * 100).toFixed(2)}
+                      {task.name}
+                      {task.continueOnError
+                        ? (
+                          <span
+                            className="bg-orange-500 rounded-full w-2 h-2 inline-block ml-2"
+                            data-tip="This task is configured to continue on error"
+                          />
+                        )
+                        : null}
+                    </td>
+                    <td>
+                      {(task.errorCount * 100).toFixed(2)}
                       %
                     </td>
                   </tr>

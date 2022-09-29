@@ -5,7 +5,6 @@ import AlertMessage from '../common/AlertMessage.js';
 import type { Tab } from './Tabs.js';
 import TabContents from './TabContents.js';
 import { divide, toPercentage } from '../../../shared/utils.js';
-import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import BuildInsights from './BuildInsights.jsx';
 
 export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab => ({
@@ -13,7 +12,6 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
   count: builds?.count || 0,
   Component: () => {
     const [expandedRows, setExpandedRows] = useState<string[]>([]);
-    const [showBuildDetails] = useQueryParam('build-details', asString);
 
     const toggleExpanded = useCallback((url: string) => {
       if (expandedRows.includes(url)) return setExpandedRows(e => e.filter(u => u !== url));
@@ -47,19 +45,15 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                       <tr className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}>
                         <td>
                           <div className="flex">
-                            {showBuildDetails
-                              ? (
-                                <button
-                                  onClick={() => toggleExpanded(pipeline.url)}
-                                  className="mr-2"
-                                >
-                                  <span
-                                    className="list-item"
-                                    style={{ listStyleType: isExpanded(pipeline.url) ? 'disclosure-open' : 'disclosure-closed' }}
-                                  />
-                                </button>
-                              )
-                              : null}
+                            <button
+                              onClick={() => toggleExpanded(pipeline.url)}
+                              className="mr-2"
+                            >
+                              <span
+                                className="list-item"
+                                style={{ listStyleType: isExpanded(pipeline.url) ? 'disclosure-open' : 'disclosure-closed' }}
+                              />
+                            </button>
                             <a
                               href={pipeline.url}
                               target="_blank"
@@ -97,7 +91,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                               </span>
                             )}
                         </td>
-                        <td>{pipeline.status.type === 'unused' ? '-' : pipeline.success}</td>
+                        <td>{pipeline.status.type === 'unused' ? '-' : num(pipeline.success)}</td>
                         <td>{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>
                         <td>
                           {pipeline.status.type === 'unused'
@@ -152,7 +146,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                       {isExpanded(pipeline.url)
                         ? (
                           <tr>
-                            <td colSpan={7}>
+                            <td colSpan={7} style={{ padding: 0 }}>
                               <BuildInsights url={pipeline.url} />
                             </td>
                           </tr>
