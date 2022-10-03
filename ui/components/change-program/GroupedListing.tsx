@@ -13,22 +13,22 @@ import useHover from '../../hooks/use-hover.js';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
-    case 'completed-on-time': return 'bg-green-600 border-green-600 text-white completed-on-time';
-    case 'completed-late': return 'bg-amber-400 border-amber-400 completed-late';
-    case 'overdue': return 'bg-red-600 border-red-600 text-white overdue';
-    case 'planned': return 'border-black planned';
-    case 'unplanned': return 'border-black unplanned';
-    default: return 'border-transparent';
+    case 'completed-on-time': { return 'bg-green-600 border-green-600 text-white completed-on-time'; }
+    case 'completed-late': { return 'bg-amber-400 border-amber-400 completed-late'; }
+    case 'overdue': { return 'bg-red-600 border-red-600 text-white overdue'; }
+    case 'planned': { return 'border-black planned'; }
+    case 'unplanned': { return 'border-black unplanned'; }
+    default: { return 'border-transparent'; }
   }
 };
 
 const styleForTask = (state: TaskState) => {
   switch (state) {
-    case 'completed-on-time': return 'text-green-600';
-    case 'completed-late': return 'text-amber-500 completed-late';
-    case 'overdue': return 'text-red-700 overdue';
-    case 'planned': return 'text-gray-500';
-    default: return '';
+    case 'completed-on-time': { return 'text-green-600'; }
+    case 'completed-late': { return 'text-amber-500 completed-late'; }
+    case 'overdue': { return 'text-red-700 overdue'; }
+    case 'planned': { return 'text-gray-500'; }
+    default: { return ''; }
   }
 };
 

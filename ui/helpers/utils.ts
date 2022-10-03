@@ -63,14 +63,18 @@ export const contrastColour = (hex: string) => {
 
 export const priorityBasedColor = (priority: number) => {
   switch (priority) {
-    case 1:
+    case 1: {
       return '#F00505';
-    case 2:
+    }
+    case 2: {
       return '#FD6104';
-    case 3:
+    }
+    case 3: {
       return '#FFCE03';
-    default:
+    }
+    default: {
       return '#FEF001';
+    }
   }
 };
 

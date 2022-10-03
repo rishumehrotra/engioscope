@@ -71,14 +71,18 @@ const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof for
 
 const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
   switch (gateLabel) {
-    case 'OK':
+    case 'OK': {
       return 'pass';
-    case 'WARN':
+    }
+    case 'WARN': {
       return 'warn';
-    case 'ERROR':
+    }
+    case 'ERROR': {
       return 'fail';
-    default:
+    }
+    default: {
       return 'unknown';
+    }
   }
 };
 

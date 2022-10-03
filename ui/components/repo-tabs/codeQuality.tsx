@@ -129,26 +129,32 @@ const securityRatingMeaning = {
 
 const ratingClassName = (ratingValue: ReturnType<typeof rating>) => {
   switch (ratingValue) {
-    case 'A':
+    case 'A': {
       return 'text-white bg-green-700';
+    }
     case 'B':
-    case 'C':
+    case 'C': {
       return 'text-white bg-yellow-600';
+    }
     case 'D':
-    case 'E':
+    case 'E': {
       return 'text-white bg-red-500';
+    }
     default:
   }
 };
 
 const gateClassName = (gate: NonNullable<RepoAnalysis['codeQuality']>[number]['quality']['gate']) => {
   switch (gate) {
-    case 'pass':
+    case 'pass': {
       return 'text-green-800 bg-green-200';
-    case 'fail':
+    }
+    case 'fail': {
       return 'text-red-800 bg-red-100';
-    case 'warn':
+    }
+    case 'warn': {
       return 'text-yellow-800 bg-yellow-100';
+    }
     default:
   }
 };

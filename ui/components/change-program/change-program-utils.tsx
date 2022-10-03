@@ -54,11 +54,11 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
       ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
       ${(() => {
     switch (taskState(new Date())(task)) {
-      case 'completed-on-time': return showStatus('bg-green-600', 'Completed on time');
-      case 'completed-late': return showStatus('bg-amber-500', 'Completed, delayed');
-      case 'overdue': return showStatus('bg-red-600', 'Overdue');
-      case 'planned': return showStatus('bg-gray-600', 'Planned');
-      default: return showStatus('bg-gray-600', 'Unplanned');
+      case 'completed-on-time': { return showStatus('bg-green-600', 'Completed on time'); }
+      case 'completed-late': { return showStatus('bg-amber-500', 'Completed, delayed'); }
+      case 'overdue': { return showStatus('bg-red-600', 'Overdue'); }
+      case 'planned': { return showStatus('bg-gray-600', 'Planned'); }
+      default: { return showStatus('bg-gray-600', 'Unplanned'); }
     }
   })()}
     </div>
