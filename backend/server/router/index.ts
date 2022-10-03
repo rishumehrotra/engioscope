@@ -1,4 +1,4 @@
-import t from './trpc.js';
+import { t } from './trpc.js';
 import builds from './builds.js';
 
 export const appRouter = t.router({

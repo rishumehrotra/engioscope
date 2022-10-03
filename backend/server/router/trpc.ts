@@ -1,3 +1,5 @@
 import { initTRPC } from '@trpc/server';
 
-export default initTRPC.create();
+export const t = initTRPC.create();
+
+export const passInputTo = <T, U>(fn: (x: T) => U) => ({ input }: { input: T }) => fn(input);

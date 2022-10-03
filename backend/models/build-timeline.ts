@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { or } from 'rambda';
+import { z } from 'zod';
 import { oneSecondInMs } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import type { Timeline } from '../scraper/types-azure.js';
@@ -259,12 +260,19 @@ const getSkipped = async (
   }));
 };
 
-export const aggregateBuildTimelineStats = async (
-  collectionName: string,
-  project: string,
-  buildDefinitionId: number,
+export const aggregateBuildTimelineStatsInputParser = z.object({
+  collectionName: z.string(),
+  project: z.string(),
+  buildDefinitionId: z.number(),
+  queryFrom: z.date().optional()
+});
+
+export const aggregateBuildTimelineStats = async ({
+  collectionName,
+  project,
+  buildDefinitionId,
   queryFrom = getConfig().azure.queryFrom
-) => {
+}: z.infer<typeof aggregateBuildTimelineStatsInputParser>) => {
   const [count, slowest, failing, skipped] = await Promise.all([
     BuildTimelineModel
       .find({
