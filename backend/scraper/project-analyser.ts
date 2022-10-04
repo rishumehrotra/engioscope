@@ -21,6 +21,7 @@ import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
+import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -33,10 +34,9 @@ const analyserLog = debug('analyser');
 
 export default (config: ParsedConfig) => {
   const {
-    getRepositories, getBuilds, getBranchesStats, getPRs, getCommits,
+    getRepositories, getBranchesStats, getPRs, getCommits,
     getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
-    getProjectWorkItemIdsForQuery, getBuildDefinitions,
-    getOneBuildBeforeQueryPeriod // , getBuildTimeline
+    getProjectWorkItemIdsForQuery, getBuildDefinitions
   } = azure(config);
 
   return async (

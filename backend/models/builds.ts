@@ -1,5 +1,7 @@
 import { model, Schema } from 'mongoose';
+import { exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
+import azure from '../scraper/network/azure.js';
 import type {
   Build as AzureBuild, BuildReason, BuildResult, BuildStatus
 } from '../scraper/types-azure.js';
@@ -110,6 +112,50 @@ export const getBuilds = (
     .find({ collectionName, project })
     .where({ startTime: { $gt: queryFrom } })
     .lean()
+);
+
+const getOneBuildPerDefinitionId = async (
+  collectionName: string,
+  project: string,
+  buildDefinitionIds: number[],
+  queryBefore = getConfig().azure.queryFrom
+) => {
+  const builds = await Promise.all(buildDefinitionIds.map(buildDefinitionId => (
+    BuildModel
+      .findOne({ collectionName, project, 'definition.id': buildDefinitionId })
+      .where({ startTime: { $lte: queryBefore } })
+      .sort({ startTime: -1 })
+      .lean()
+  )));
+
+  return builds.filter(exists);
+};
+
+export const getOneBuildBeforeQueryPeriod = (collectionName: string, project: string) => (
+  async (buildDefinitionIds: number[], queryBefore = getConfig().azure.queryFrom) => {
+    const foundBuilds = await getOneBuildPerDefinitionId(
+      collectionName, project, buildDefinitionIds, queryBefore
+    );
+
+    const foundBuildDefinitionIds = foundBuilds.reduce((acc, build) => {
+      acc.add(build.definition.id);
+      return acc;
+    }, new Set<number>());
+
+    const missingBuildIds = buildDefinitionIds.filter(bdi => !foundBuildDefinitionIds.has(bdi));
+
+    const { getOneBuildBeforeQueryPeriod } = azure(getConfig());
+
+    const additionalBuilds = await getOneBuildBeforeQueryPeriod(collectionName, project)(missingBuildIds);
+
+    await Promise.all(additionalBuilds.map(saveBuild(collectionName)));
+
+    const refetchedAdditionalBuilds = await getOneBuildPerDefinitionId(
+      collectionName, project, additionalBuilds.map(b => b.definition.id), queryBefore
+    );
+
+    return [...foundBuilds, ...refetchedAdditionalBuilds];
+  }
 );
 
 // eslint-disable-next-line no-underscore-dangle
