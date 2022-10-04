@@ -31,7 +31,7 @@
     "engioscope": "dist/backend/cli.js"
   },
   "engines": {
-    "node": ">=12.8"
+    "node": ">=16.16"
   },
   "dependencies": {
     "@trpc/server": "10.0.0-proxy-beta.9",
