@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import ReactTooltip from 'react-tooltip';
 import { httpBatchLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Project from './pages/Project.js';
@@ -25,14 +24,6 @@ const App: React.FC = () => {
     ]
   }));
 
-  useEffect(() => {
-    const observer = new MutationObserver(mutations => {
-      if (mutations.every(m => m.addedNodes.length === 0)) return;
-      ReactTooltip.rebuild();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }, []);
-
   return (
     <BrowserRouter>
       <RefreshIfUpdated>
@@ -42,7 +33,6 @@ const App: React.FC = () => {
               <SortContextProvider>
                 <HeaderProvider>
                   <div className="pb-64 transition duration-500 ease-in-out">
-                    <ReactTooltip />
                     <RecordAnalytics />
                     <Header />
                     <Routes>
