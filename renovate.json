@@ -3,6 +3,8 @@
   "extends": [
     "config:base"
   ],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
   "packageRules": [
     {
       "matchUpdateTypes": [
