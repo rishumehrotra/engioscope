@@ -1,4 +1,6 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react';
+import React, {
+  useLayoutEffect, useMemo, useRef
+} from 'react';
 import type { ProjectOverviewAnalysis, TestCaseAggregateStats } from '../../../shared/types.js';
 import OverviewFilters from './helpers/OverviewFilters.js';
 import { useRemoveSort } from '../../hooks/sort-hooks.js';
@@ -95,15 +97,16 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   useRemoveSort();
 
   useLayoutEffect(() => {
-    if (window.location.hash) {
-      const element = document.querySelector(window.location.hash);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        window.scrollTo({
-          top: rect.top - (document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0)
-        });
-      }
-    }
+    if (!window.location.hash) return;
+    const element = document.querySelector(window.location.hash);
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+    setTimeout(() => {
+      window.scrollTo({
+        top: rect.top - (document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0)
+      });
+    }, 10);
 
     // The root node has a margin-bottom of 100vh so that the location
     // hash jump and lazy loading don't interfere with each other.
