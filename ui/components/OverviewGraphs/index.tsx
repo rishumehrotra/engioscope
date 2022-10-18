@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   useLayoutEffect, useMemo, useRef
 } from 'react';
 import type { ProjectOverviewAnalysis, TestCaseAggregateStats } from '../../../shared/types.js';
@@ -138,7 +139,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
   const totalTestCases = totalAutomated + totalNotAutomated;
 
-  const popup = useMemo(() => () => (
+  const popup = useCallback(() => (
     <TestCaseStats
       testCasesByPriority={testCasesByPriority}
       title="Percentage of automated test cases"
