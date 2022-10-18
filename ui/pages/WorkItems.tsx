@@ -91,6 +91,18 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
     getRevisions(workItems.map(({ id }) => id));
   }, [getRevisions]);
 
+  const showWorkItem = useCallback((workItem: UIWorkItem) => (
+    <WorkItem
+      workItemId={workItem.id}
+      workItemsById={workItems.byId}
+      workItemsIdTree={workItems.ids}
+      workItemType={workItemType}
+      colorForStage={colorForStage}
+      revisions={revisions}
+      getRevisions={getRevisions}
+    />
+  ), [getRevisions, revisions, workItemType, workItems.byId, workItems.ids]);
+
   return (
     <>
       <div className="flex justify-between items-center my-3 w-full -mt-5">
@@ -101,17 +113,7 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
         items={filteredWorkItems}
         itemKey={({ id }) => id}
         onRenderItems={setRenderedWorkItems}
-        itemRenderer={workItem => (
-          <WorkItem
-            workItemId={workItem.id}
-            workItemsById={workItems.byId}
-            workItemsIdTree={workItems.ids}
-            workItemType={workItemType}
-            colorForStage={colorForStage}
-            revisions={revisions}
-            getRevisions={getRevisions}
-          />
-        )}
+        itemRenderer={showWorkItem}
       />
     </>
   );

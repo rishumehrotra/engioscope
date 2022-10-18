@@ -91,6 +91,16 @@ const NewGraph: React.FC<NewGraphProps> = ({
 
   const [onCheckboxClick, isChecked] = useSidebarCheckboxState(workItemsToDisplay);
 
+  const showCrosshairBubble = useCallback((pointIndex: number) => (
+    <CrosshairBubble
+      data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
+      index={pointIndex}
+      title="New work items"
+      itemStat={pipe(length, num)}
+      accessors={accessors}
+    />
+  ), [accessors, dataByDay, isChecked]);
+
   const lineGraphProps = useMemo<LineGraphProps<WorkItemLine, WorkItemPoint>>(() => ({
     className: 'max-w-full',
     lines: dataByDay.filter(x => isChecked(x.witId + x.groupName)),
@@ -100,15 +110,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
     lineLabel: groupLabel,
     xAxisLabel: pipe(prop('date'), shortDate),
     lineColor,
-    crosshairBubble: (pointIndex: number) => (
-      <CrosshairBubble
-        data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
-        index={pointIndex}
-        title="New work items"
-        itemStat={pipe(length, num)}
-        accessors={accessors}
-      />
-    ),
+    crosshairBubble: showCrosshairBubble,
     onClick: pointIndex => {
       const matchingDate = getMatchingAtIndex(dataByDay, pointIndex);
 
@@ -139,7 +141,7 @@ const NewGraph: React.FC<NewGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, groupLabel, isBug, isChecked, openModal, workItemTimes, workItemTooltip]);
+  }), [accessors, dataByDay, groupLabel, isBug, isChecked, openModal, showCrosshairBubble, workItemTimes, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;

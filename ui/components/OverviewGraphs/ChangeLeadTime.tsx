@@ -75,8 +75,15 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
     [clt]
   );
 
+  const showWorkItemTimeDetails = useCallback((workItem: UIWorkItem) => (
+    <WorkItemTimeDetails
+      workItem={workItem}
+      workItemTimes={workItemTimes}
+    />
+  ), [workItemTimes]);
+
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
-    const { workItemTimes, workItemType } = accessors;
+    const { workItemType } = accessors;
 
     const aggregator = (workItems: UIWorkItem[]) => (
       workItems.length ? prettyMS(totalClt(workItems) / workItems.length) : '-'
@@ -99,18 +106,13 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}
               flairs={workItem => [`CLT: ${prettyMS(clt(workItem))}`]}
-              extra={workItem => (
-                <WorkItemTimeDetails
-                  workItem={workItem}
-                  workItemTimes={workItemTimes}
-                />
-              )}
+              extra={showWorkItemTimeDetails}
             />
           )
         });
       }
     };
-  }, [accessors, clt, openModal, totalClt, workItemTooltip, workItemsToDisplay]);
+  }, [accessors, clt, openModal, showWorkItemTimeDetails, totalClt, workItemTooltip, workItemsToDisplay]);
 
   const graphWidthRatio = useMemo(
     () => Object.values(workItemsToDisplay)

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import AlertMessage from '../components/common/AlertMessage.js';
 import RepoHealth from '../components/RepoHealth.js';
 import AppliedFilters from '../components/AppliedFilters.js';
@@ -87,6 +87,22 @@ const Repos: React.FC = () => {
     selectedGroupLabels, sorter, techDebtMoreThanDays, withFailingLastBuilds
   ]);
 
+  const showRepo = useCallback((repo: RepoAnalysis, index: number) => {
+    if (aggregatedDevs === 'loading' || projectAnalysis === 'loading') return null;
+
+    return (
+      <RepoHealth
+        repo={repo}
+        aggregatedDevs={aggregatedDevs}
+        isFirst={index === 0}
+        queryPeriodDays={projectAnalysis.queryPeriodDays}
+        featureToggles={projectAnalysis.featureToggles.filter(
+          ft => ft.repoIds.includes(repo.id)
+        )}
+      />
+    );
+  }, [aggregatedDevs, projectAnalysis]);
+
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
   return repos.length ? (
@@ -113,17 +129,7 @@ const Repos: React.FC = () => {
       <InfiniteScrollList
         items={repos}
         itemKey={repo => repo.id}
-        itemRenderer={(repo, index) => (
-          <RepoHealth
-            repo={repo}
-            aggregatedDevs={aggregatedDevs}
-            isFirst={index === 0}
-            queryPeriodDays={projectAnalysis.queryPeriodDays}
-            featureToggles={projectAnalysis.featureToggles.filter(
-              ft => ft.repoIds.includes(repo.id)
-            )}
-          />
-        )}
+        itemRenderer={showRepo}
       />
     </>
   ) : <AlertMessage message="No repos found" />;

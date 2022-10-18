@@ -37,12 +37,6 @@ export const getBuildsAndTimelines = async () => {
         || getConfig().azure.queryFrom
       );
 
-      console.log('Fetching builds', {
-        collection: collection.name,
-        project: project.name,
-        lastBuildUpdateDate
-      });
-
       const builds = await getBuildsSince(collection.name, project.name)(lastBuildUpdateDate);
       await setLastBuildUpdateDate(collection.name, project.name);
 

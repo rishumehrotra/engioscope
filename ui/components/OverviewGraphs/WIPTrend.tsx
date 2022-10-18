@@ -1,7 +1,7 @@
 import {
   allPass, always, last, length, pipe, prop, T
 } from 'rambda';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem } from '../../../shared/types.js';
 import { num, shortDate } from '../../helpers/utils.js';
 import type { LineGraphProps } from '../graphs/LineGraph.js';
@@ -76,6 +76,16 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
 
   const [onCheckboxClick, isChecked] = useSidebarCheckboxState(workItemsToDisplay);
 
+  const showCrosshairBubble = useCallback((pointIndex: number) => (
+    <CrosshairBubble
+      data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
+      index={pointIndex}
+      title="Work in progress"
+      itemStat={pipe(length, num)}
+      accessors={accessors}
+    />
+  ), [accessors, dataByDay, isChecked]);
+
   const lineGraphProps = useMemo<LineGraphProps<WorkItemLine, WorkItemPoint>>(() => ({
     className: 'max-w-full',
     lines: dataByDay.filter(x => isChecked(x.witId + x.groupName)),
@@ -85,15 +95,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
     lineLabel: groupLabel,
     xAxisLabel: pipe(prop('date'), shortDate),
     lineColor,
-    crosshairBubble: (pointIndex: number) => (
-      <CrosshairBubble
-        data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
-        index={pointIndex}
-        title="Work in progress"
-        itemStat={pipe(length, num)}
-        accessors={accessors}
-      />
-    ),
+    crosshairBubble: showCrosshairBubble,
     onClick: pointIndex => {
       const matchingDate = getMatchingAtIndex(dataByDay, pointIndex);
 
@@ -118,7 +120,7 @@ const WIPTrendGraph: React.FC<WIPTrendGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, groupLabel, isChecked, openModal, workItemTooltip]);
+  }), [accessors, dataByDay, groupLabel, isChecked, openModal, showCrosshairBubble, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;

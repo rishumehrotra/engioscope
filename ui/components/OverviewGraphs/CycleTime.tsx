@@ -28,7 +28,7 @@ type CycleTimeGraphProps = {
 export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors, openModal }) => {
   const {
     isWorkItemClosed, organizeByWorkItemType, workItemType, cycleTime: cTime,
-    sortByEnvironment
+    sortByEnvironment, workItemTimes
   } = accessors;
 
   const cycleTime = useCallback(
@@ -65,9 +65,16 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     [organizeByWorkItemType, preFilteredWorkItems, filter]
   );
 
+  const showWorkItemTimeDetails = useCallback((workItem: UIWorkItem) => (
+    <WorkItemTimeDetails
+      workItem={workItem}
+      workItemTimes={workItemTimes}
+    />
+  ), [workItemTimes]);
+
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const {
-      totalCycleTime, workItemTimes, workItemType
+      totalCycleTime, workItemType
     } = accessors;
 
     const aggregator = (workItems: UIWorkItem[]) => (
@@ -91,18 +98,13 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}
               flairs={workItem => [prettyMS(cycleTime(workItem))]}
-              extra={workItem => (
-                <WorkItemTimeDetails
-                  workItem={workItem}
-                  workItemTimes={workItemTimes}
-                />
-              )}
+              extra={showWorkItemTimeDetails}
             />
           )
         });
       }
     };
-  }, [accessors, cycleTime, openModal, workItemTooltip, workItemsToDisplay]);
+  }, [accessors, cycleTime, openModal, showWorkItemTimeDetails, workItemTooltip, workItemsToDisplay]);
 
   const graphBlocks = useMemo(
     () => (

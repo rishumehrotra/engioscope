@@ -113,6 +113,19 @@ const ReleasePipelines: React.FC = () => {
     getReleaseDefinitions(renderedPipelines.map(p => p.id));
   }, [getReleaseDefinitions]);
 
+  const showPipeline = useCallback((pipeline: TPipeline) => {
+    if (releaseAnalysis === 'loading') return null;
+    return (
+      <Pipeline
+        pipeline={pipeline}
+        stagesToHighlight={releaseAnalysis.stagesToHighlight}
+        policyForBranch={policyForBranch}
+        ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+        releaseDefinition={releaseDefinitions[pipeline.id]}
+      />
+    );
+  }, [policyForBranch, releaseAnalysis, releaseDefinitions]);
+
   if (releaseAnalysis === 'loading') return <Loading />;
   if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
 
@@ -146,15 +159,7 @@ const ReleasePipelines: React.FC = () => {
         items={pipelines}
         itemKey={pipeline => pipeline.id}
         onRenderItems={setRenderedPipelines}
-        itemRenderer={pipeline => (
-          <Pipeline
-            pipeline={pipeline}
-            stagesToHighlight={releaseAnalysis.stagesToHighlight}
-            policyForBranch={policyForBranch}
-            ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
-            releaseDefinition={releaseDefinitions[pipeline.id]}
-          />
-        )}
+        itemRenderer={showPipeline}
       />
     </>
   );

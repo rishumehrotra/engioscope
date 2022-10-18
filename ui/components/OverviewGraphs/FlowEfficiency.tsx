@@ -69,6 +69,13 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     []
   );
 
+  const workItemTimeDetails = useCallback((workItem: UIWorkItem) => (
+    <WorkItemTimeDetails
+      workItem={workItem}
+      workItemTimes={workItemTimes}
+    />
+  ), [workItemTimes]);
+
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const items = getSidebarItemStats(
       workItemsToDisplay, accessors, pipe(efficiency, stringifyEfficiency)
@@ -100,12 +107,7 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
                 .sort(asc(byNum(x => workCenterTime(x) / cycleTime(x)!)))}
               tooltip={workItemTooltip}
               flairs={flairs}
-              extra={workItem => (
-                <WorkItemTimeDetails
-                  workItem={workItem}
-                  workItemTimes={workItemTimes}
-                />
-              )}
+              extra={workItemTimeDetails}
             />
           )
         });
@@ -113,7 +115,8 @@ const FlowEfficiencyGraph: React.FC<FlowEfficiencyProps> = ({
     };
   }, [
     accessors, cycleTime, efficiency, openModal, stringifyEfficiency,
-    workCenterTime, workItemTimes, workItemTooltip, workItemType, workItemsToDisplay
+    workCenterTime, workItemTimeDetails, workItemTooltip, workItemType,
+    workItemsToDisplay
   ]);
 
   return (

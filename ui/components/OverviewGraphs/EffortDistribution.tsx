@@ -148,6 +148,26 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
     [effortDistribution.byGroup, effortDistribution.total]
   );
 
+  const effortDistributionSplitup = useCallback((workItem: UIWorkItem) => (
+    <div className="text-gray-500 text-sm ml-6 mb-2">
+      {workItemTimes(workItem).workCenters
+        .map(wc => {
+          if (!wc.end || new Date(wc.end) < queryPeriodStart) { return null; }
+          if (new Date(wc.start) > queryPeriodStart) { return wc; }
+          return {
+            ...wc,
+            start: queryPeriodStart.toISOString()
+          };
+        })
+        .filter(exists)
+        .map(
+          wc => `${wc.label} time ${prettyMS(timeDifference(wc))} (${
+            shortDate(new Date(wc.start))
+          } to ${shortDate(new Date(wc.end || new Date().toISOString()))})`
+        ).join(' + ')}
+    </div>
+  ), [queryPeriodStart, workItemTimes]);
+
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;
 
@@ -174,34 +194,16 @@ const EffortDistributionGraph: React.FC<EffortDistributionProps> = ({
               workItems={workItems.sort(desc(byNum(workCenterTimeInQueryPeriod)))}
               tooltip={workItemTooltip}
               flairs={workItem => [prettyMS(workCenterTimeInQueryPeriod(workItem))]}
-              extra={workItem => (
-                <div className="text-gray-500 text-sm ml-6 mb-2">
-                  {workItemTimes(workItem).workCenters
-                    .map(wc => {
-                      if (!wc.end || new Date(wc.end) < queryPeriodStart) return null;
-                      if (new Date(wc.start) > queryPeriodStart) return wc;
-                      return {
-                        ...wc,
-                        start: queryPeriodStart.toISOString()
-                      };
-                    })
-                    .filter(exists)
-                    .map(
-                      wc => `${wc.label} time ${
-                        prettyMS(timeDifference(wc))
-                      } (${shortDate(new Date(wc.start))} to ${shortDate(new Date(wc.end || new Date().toISOString()))})`
-                    ).join(' + ')}
-                </div>
-
-              )}
+              extra={effortDistributionSplitup}
             />
           )
         });
       }
     };
   }, [
-    accessors, openModal, workItemTooltip, workItemsToDisplay, workCenterTimeInQueryPeriod,
-    effortDistributionStringifiedForGroup, effortDistributionStringifiedForWit, queryPeriodStart, workItemTimes
+    accessors, workItemsToDisplay, effortDistributionStringifiedForGroup,
+    effortDistributionStringifiedForWit, openModal, workCenterTimeInQueryPeriod,
+    workItemTooltip, effortDistributionSplitup
   ]);
 
   return (

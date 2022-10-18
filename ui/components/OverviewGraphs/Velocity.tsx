@@ -77,6 +77,16 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
 
   const [onCheckboxClick, isChecked] = useSidebarCheckboxState(workItemsToDisplay);
 
+  const showCrosshairBubble = useCallback((pointIndex: number) => (
+    <CrosshairBubble
+      data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
+      index={pointIndex}
+      title="Velocity"
+      itemStat={pipe(length, num)}
+      accessors={accessors}
+    />
+  ), [accessors, dataByDay, isChecked]);
+
   const lineGraphProps = useMemo<LineGraphProps<WorkItemLine, WorkItemPoint>>(() => ({
     className: 'max-w-full',
     lines: dataByDay.filter(x => isChecked(x.witId + x.groupName)),
@@ -86,15 +96,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
     lineLabel: groupLabel,
     xAxisLabel: pipe(prop('date'), shortDate),
     lineColor,
-    crosshairBubble: (pointIndex: number) => (
-      <CrosshairBubble
-        data={dataByDay.filter(x => isChecked(x.witId + x.groupName))}
-        index={pointIndex}
-        title="Velocity"
-        itemStat={pipe(length, num)}
-        accessors={accessors}
-      />
-    ),
+    crosshairBubble: showCrosshairBubble,
     onClick: pointIndex => {
       const matchingDate = getMatchingAtIndex(dataByDay, pointIndex);
 
@@ -119,7 +121,7 @@ const VelocityGraph: React.FC<VelocityGraphProps> = ({
         )
       });
     }
-  }), [accessors, dataByDay, groupLabel, isChecked, openModal, workItemTooltip]);
+  }), [accessors, dataByDay, groupLabel, isChecked, openModal, showCrosshairBubble, workItemTooltip]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;

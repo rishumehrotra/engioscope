@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useCallback } from 'react';
 import { last } from 'rambda';
 import type { Pipeline } from '../../shared/types.js';
 import { exists, num } from '../helpers/utils.js';
@@ -39,6 +39,16 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
   const perEnvUsage = totalUsageByEnvironment(environments)(pipelines);
   const lastStage = last(Object.entries(perEnvUsage));
 
+  const showReleasePipelineUsage = useCallback(() => (
+    <div className="w-96">
+      <UsageByEnv
+        perEnvUsage={perEnvUsage}
+        pipelineCount={pipelines.length}
+        queryPeriodDays={queryPeriodDays}
+      />
+    </div>
+  ), [perEnvUsage, pipelines.length, queryPeriodDays]);
+
   return (
     <ProjectStats>
       {environments && lastStage && (
@@ -60,15 +70,7 @@ const ReleasePipelineSummary: React.FC<ReleasePipelineSummaryProps> = ({
           }]}
           onClick={{
             open: 'popup',
-            contents: () => (
-              <div className="w-96">
-                <UsageByEnv
-                  perEnvUsage={perEnvUsage}
-                  pipelineCount={pipelines.length}
-                  queryPeriodDays={queryPeriodDays}
-                />
-              </div>
-            )
+            contents: showReleasePipelineUsage
           }}
         />
       )}
