@@ -13,6 +13,7 @@ import {
   fullPolicyStatus, pipelineHasStageNamed, pipelineUsesStageNamed, policyStatus
 } from '../../shared/pipeline-utils.js';
 import PipelineDiagram from './PipelineDiagram.js';
+import { useProjectDetails } from '../hooks/project-details-hooks.jsx';
 
 const policyColorClass = (policy: NormalizedPolicies, key: keyof NormalizedPolicies) => {
   const status = policyStatus(policy, key);
@@ -74,57 +75,29 @@ const Artefacts: React.FC<{
   pipeline: TPipeline;
   policyForBranch: (repoId: string, branch: string) => NormalizedPolicies;
   ignoreStagesBefore?: string;
-}> = ({ pipeline, policyForBranch, ignoreStagesBefore }) => (
-  <div className="my-4">
-    <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts from repos</div>
-    {Object.keys(pipeline.repos).length ? (
-      <ol className="grid grid-flow-col justify-start">
-        {Object.entries(pipeline.repos).map(([repoId, { name, branches, additionalBranches }]) => (
-          <div
-            className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
-            key={repoId}
-          >
-            <Link
-              to={`repos?search="${name}"`}
-              className="font-semibold flex items-center mb-1 text-blue-600 artifact-title"
-            >
-              {name}
-            </Link>
-            {branches.length ? (
-              <ol className="flex flex-wrap">
-                {branches.map(branch => {
-                  const policy = policyForBranch(repoId, branch);
-                  const policyClassName = aggregatePolicyColorClass(policy);
+}> = ({ pipeline, policyForBranch, ignoreStagesBefore }) => {
+  const projectDetails = useProjectDetails();
+  if (!projectDetails) return null;
 
-                  return (
-                    <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
-                      <Branches className="h-4 mr-1" />
-                      {branch.replace('refs/heads/', '')}
-                      <span
-                        className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
-                        data-tip={policyTooltip(policy)}
-                        data-html
-                      >
-                        Policies
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            ) : (
-              <div className="text-sm mb-2">
-                {`No branches went to ${ignoreStagesBefore}.`}
-              </div>
-            )}
-            {additionalBranches?.length && (
-              <details>
-                <summary className="text-gray-500 text-xs pl-1 mt-1 cursor-pointer">
-                  {`${additionalBranches.length} additional ${
-                    additionalBranches.length === 1 ? 'branch' : 'branches'
-                  } that didn't go to ${ignoreStagesBefore}`}
-                </summary>
-                <ol className="flex flex-wrap mt-2">
-                  {additionalBranches.map(branch => {
+  return (
+    <div className="my-4">
+      <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mb-2">Artifacts from repos</div>
+      {Object.keys(pipeline.repos).length ? (
+        <ol className="grid grid-flow-col justify-start">
+          {Object.entries(pipeline.repos).map(([repoId, { name, branches, additionalBranches }]) => (
+            <div
+              className="bg-gray-100 pt-3 pb-3 px-4 rounded mb-2 self-start mr-3 artifact"
+              key={repoId}
+            >
+              <Link
+                to={`/${projectDetails.name[0]}/${projectDetails.name[1]}/repos?search="${name}"`}
+                className="font-semibold flex items-center mb-1 text-blue-600 artifact-title"
+              >
+                {name}
+              </Link>
+              {branches.length ? (
+                <ol className="flex flex-wrap">
+                  {branches.map(branch => {
                     const policy = policyForBranch(repoId, branch);
                     const policyClassName = aggregatePolicyColorClass(policy);
 
@@ -143,21 +116,54 @@ const Artefacts: React.FC<{
                     );
                   })}
                 </ol>
-              </details>
-            )}
-          </div>
-        ))}
-      </ol>
-    ) : (
-      <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
-        <AlertMessage
-          message="No starting artifact found"
-          type="info"
-        />
-      </div>
-    )}
-  </div>
-);
+              ) : (
+                <div className="text-sm mb-2">
+                  {`No branches went to ${ignoreStagesBefore}.`}
+                </div>
+              )}
+              {additionalBranches?.length && (
+                <details>
+                  <summary className="text-gray-500 text-xs pl-1 mt-1 cursor-pointer">
+                    {`${additionalBranches.length} additional ${
+                      additionalBranches.length === 1 ? 'branch' : 'branches'
+                    } that didn't go to ${ignoreStagesBefore}`}
+                  </summary>
+                  <ol className="flex flex-wrap mt-2">
+                    {additionalBranches.map(branch => {
+                      const policy = policyForBranch(repoId, branch);
+                      const policyClassName = aggregatePolicyColorClass(policy);
+
+                      return (
+                        <li key={branch} className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm">
+                          <Branches className="h-4 mr-1" />
+                          {branch.replace('refs/heads/', '')}
+                          <span
+                            className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${policyClassName}`}
+                            data-tip={policyTooltip(policy)}
+                            data-html
+                          >
+                            Policies
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </details>
+              )}
+            </div>
+          ))}
+        </ol>
+      ) : (
+        <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
+          <AlertMessage
+            message="No starting artifact found"
+            type="info"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Pipeline: React.FC<{
   pipeline: TPipeline;
