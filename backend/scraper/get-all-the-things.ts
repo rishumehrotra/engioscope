@@ -54,6 +54,7 @@ const restoreFromMongo = async () => {
     return;
   }
 
+  logStep('Starting mongorestore...');
   await exec('mongosh engioscope --eval "db.dropDatabase()"');
   await exec('mongorestore --gzip --archive=cache/dump.gz');
   logStep('Mongodb restored');
@@ -195,7 +196,8 @@ export default (config: ParsedConfig) => {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   mongoose.connect(config.mongoUrl);
 
-  return restoreFromMongo()
+  return Promise.resolve()
+    .then(restoreFromMongo)
     .then(() => scrape(config))
     .then(tap(printFetchCounters))
     .then(dumpMongo)
