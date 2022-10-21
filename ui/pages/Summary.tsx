@@ -8,6 +8,7 @@ import SummaryByTeam from '../components/summary-page/SummaryByTeam.js';
 import { dontFilter, filterBySearch, shortDate } from '../helpers/utils.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { metricsSummary } from '../network.js';
 
 const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) => filterBySearch(search, group.groupName);
@@ -19,6 +20,7 @@ const threeMonthsAgo = (date: string) => {
 };
 
 const Summary: React.FC = () => {
+  const [queryPeriodDays] = useQueryPeriodDays();
   const [metrics, setMetrics] = useState<SummaryMetrics | undefined>();
   useEffect(() => {
     // TODO: Error handling
@@ -74,13 +76,13 @@ const Summary: React.FC = () => {
                 <SummaryByMetric
                   groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
                   workItemTypes={metrics.workItemTypes}
-                  queryPeriodDays={metrics.queryPeriodDays}
+                  queryPeriodDays={queryPeriodDays}
                 />
               ) : (
                 <SummaryByTeam
                   groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
                   workItemTypes={metrics.workItemTypes}
-                  queryPeriodDays={metrics.queryPeriodDays}
+                  queryPeriodDays={queryPeriodDays}
                 />
               )
           )

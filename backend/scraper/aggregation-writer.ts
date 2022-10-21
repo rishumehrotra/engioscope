@@ -8,7 +8,7 @@ import type {
   TrackMetricsByTrack, TrackFlowMetrics, UIChangeProgram, UIChangeProgramTask,
   UIProjectAnalysis, TrackwiseData, TrackFeatures
 } from '../../shared/types.js';
-import { doesFileExist, lock, queryPeriodDays } from '../utils.js';
+import { doesFileExist, lock } from '../utils.js';
 import type { ProjectAnalysis } from './types.js';
 import type { ParsedConfig, ParsedProjectConfig } from './parse-config.js';
 
@@ -38,13 +38,10 @@ const projectSummary = (
 ): UIProjectAnalysis => ({
   name: [collectionName, projectConfig.name],
   lastUpdated: new Date().toISOString(),
-  hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-  changeProgramName: config.azure.collections.find(c => c.name === collectionName)?.changeProgram?.name,
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.pipelines.length,
   workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,
-  workItemLabel: [pluralize.singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel],
-  queryPeriodDays: queryPeriodDays(config)
+  workItemLabel: [pluralize.singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel]
 });
 
 const writeRepoAnalysisFile = async (
@@ -186,10 +183,7 @@ export default (config: ParsedConfig) => (collectionName: string, projectConfig:
 export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<SummaryMetrics, keyof GlobalUIConfig>) => {
   const summaryMetrics: SummaryMetrics = {
     ...summary,
-    lastUpdated: new Date().toISOString(),
-    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
-    queryPeriodDays: queryPeriodDays(config)
+    lastUpdated: new Date().toISOString()
   };
 
   return (
@@ -200,10 +194,7 @@ export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<Summ
 export const writeTrackFlowMetrics = (config: ParsedConfig, tracks: TrackMetricsByTrack) => {
   const tracksWorkItems: TrackFlowMetrics = {
     tracks,
-    lastUpdated: new Date().toISOString(),
-    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
-    queryPeriodDays: queryPeriodDays(config)
+    lastUpdated: new Date().toISOString()
   };
 
   return (
@@ -214,10 +205,7 @@ export const writeTrackFlowMetrics = (config: ParsedConfig, tracks: TrackMetrics
 export const writeTrackFeatures = (config: ParsedConfig, tracks: TrackwiseData[]) => {
   const tracksWorkItems: TrackFeatures = {
     tracks,
-    lastUpdated: new Date().toISOString(),
-    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
-    queryPeriodDays: queryPeriodDays(config)
+    lastUpdated: new Date().toISOString()
   };
 
   return (
@@ -230,9 +218,6 @@ export const writeChangeProgramFile = (config: ParsedConfig) => (tasks: UIChange
 
   const changeProgram: UIChangeProgram = {
     lastUpdated: new Date().toISOString(),
-    changeProgramName: config.azure.collections[0]?.changeProgram?.name,
-    queryPeriodDays: queryPeriodDays(config),
-    hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
     details: someCollectionWithChangeProgram
       ? {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

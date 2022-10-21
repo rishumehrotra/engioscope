@@ -10,6 +10,7 @@ import { repoMetrics } from '../network.js';
 import type { Dev } from '../types.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
 const sorters: SortMap<Dev> = {
   'Name': (a, b) => b.name.toLowerCase().replace(/["“”]/gi, '').localeCompare(
@@ -20,23 +21,19 @@ const sorters: SortMap<Dev> = {
 const bySearch = (search: string) => (d: Dev) => filterBySearch(search, d.name);
 
 const Devs: React.FC = () => {
+  const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
   const [search] = useQueryParam('search', asString);
 
   const sorter = useSort(sorters, 'Name');
-  const processed = useMemo(() => {
+  const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
-    return {
-      devs: Object.values(aggregateDevs(projectAnalysis))
-        .filter(search === undefined ? dontFilter : bySearch(search))
-        .sort(sorter),
-      queryPeriodDays: projectAnalysis.queryPeriodDays
-    };
+    return Object.values(aggregateDevs(projectAnalysis))
+      .filter(search === undefined ? dontFilter : bySearch(search))
+      .sort(sorter);
   }, [projectAnalysis, search, sorter]);
 
-  if (processed === 'loading') return <Loading />;
-
-  const { devs, queryPeriodDays } = processed;
+  if (devs === 'loading') return <Loading />;
 
   return (
     <>

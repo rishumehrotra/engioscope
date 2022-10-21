@@ -18,6 +18,7 @@ import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
 import useQueryParam, {
   asBoolean, asNumber, asString, asStringArray
 } from '../hooks/use-query-param.js';
+import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -52,6 +53,7 @@ const sorters: SortMap<RepoAnalysis> = {
 };
 
 const Repos: React.FC = () => {
+  const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
   const sorter = useSort(sorters, 'Builds');
   const [search] = useQueryParam('search', asString);
@@ -95,13 +97,13 @@ const Repos: React.FC = () => {
         repo={repo}
         aggregatedDevs={aggregatedDevs}
         isFirst={index === 0}
-        queryPeriodDays={projectAnalysis.queryPeriodDays}
+        queryPeriodDays={queryPeriodDays}
         featureToggles={projectAnalysis.featureToggles.filter(
           ft => ft.repoIds.includes(repo.id)
         )}
       />
     );
-  }, [aggregatedDevs, projectAnalysis]);
+  }, [aggregatedDevs, projectAnalysis, queryPeriodDays]);
 
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
@@ -125,7 +127,7 @@ const Repos: React.FC = () => {
         )
         : null}
       <AppliedFilters type="repos" count={repos.length} />
-      <RepoSummary repos={repos} queryPeriodDays={projectAnalysis.queryPeriodDays} />
+      <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
       <InfiniteScrollList
         items={repos}
         itemKey={repo => repo.id}

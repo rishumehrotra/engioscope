@@ -68,9 +68,9 @@ export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes
     }, []).slice(1)
 );
 
-export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis) => {
+export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis, queryPeriodDays: number) => {
   const {
-    overview, lastUpdated, queryPeriodDays, ignoreForWIP, environments
+    overview, lastUpdated, ignoreForWIP, environments
   } = projectAnalysis;
 
   const workItemTimes = (wi: UIWorkItem) => overview.times[wi.id];

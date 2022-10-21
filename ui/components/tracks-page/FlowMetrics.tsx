@@ -7,6 +7,7 @@ import {
 import type { TrackFlowMetrics, TrackMetricsByTrack } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';
+import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { ArrowDown, ArrowUp } from '../common/Icons.jsx';
 import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline.jsx';
 import {
@@ -30,10 +31,11 @@ const createLinkWrapper = (collectionName: string, projectName: string, filterLa
 
 type FlowMetricsInnerProps = {
   tracks: TrackMetricsByTrack[number];
-  queryPeriodDays: number;
 };
 
-const FlowMetricsInner: React.FC<FlowMetricsInnerProps> = ({ tracks, queryPeriodDays }) => {
+const FlowMetricsInner: React.FC<FlowMetricsInnerProps> = ({ tracks }) => {
+  const [queryPeriodDays] = useQueryPeriodDays();
+
   const table = useMemo(() => ({
     columns: [
       null,
@@ -224,7 +226,7 @@ const FlowMetrics: React.FC<{ tracks: TrackFlowMetrics }> = ({ tracks }) => (
           {`${group.collection} / ${group.project}`}
         </summary>
 
-        <FlowMetricsInner tracks={group} queryPeriodDays={tracks.queryPeriodDays} />
+        <FlowMetricsInner tracks={group} />
       </details>
     ))}
   </>

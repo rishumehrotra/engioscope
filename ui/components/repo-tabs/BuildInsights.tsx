@@ -3,18 +3,19 @@ import React from 'react';
 import { trpc } from '../../helpers/trpc.js';
 import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
 import Loading from '../Loading.jsx';
+import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
 const BuildInsightsInternal: React.FC<{
   collectionName: string;
   project: string;
   buildDefinitionId: number;
-  queryPeriodDays: number;
 }> = ({
-  collectionName, project, buildDefinitionId, queryPeriodDays
+  collectionName, project, buildDefinitionId
 }) => {
   const timelineStats = trpc.builds.timelineStats.useQuery({
     collectionName, project, buildDefinitionId
   });
+  const [queryPeriodDays] = useQueryPeriodDays();
 
   if (timelineStats.isLoading) return <Loading />;
 
@@ -151,7 +152,6 @@ const BuildInsights: React.FC<{url: string}> = ({ url }) => {
       collectionName={projectDetails.name[0]}
       project={projectDetails.name[1]}
       buildDefinitionId={Number(url.split('=')[1])}
-      queryPeriodDays={projectDetails.queryPeriodDays}
     />
   );
 };

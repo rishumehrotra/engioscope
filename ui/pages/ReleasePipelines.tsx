@@ -23,6 +23,7 @@ import {
 import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
 import useQueryParam, { asBoolean, asString, asStringArray } from '../hooks/use-query-param.js';
+import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
 const dontFilter = Boolean;
 const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
@@ -72,6 +73,7 @@ const useReleaseDefinitions = () => {
 };
 
 const ReleasePipelines: React.FC = () => {
+  const [queryPeriodDays] = useQueryPeriodDays();
   const releaseAnalysis = useFetchForProject(pipelineMetrics);
   const [search] = useQueryParam('search', asString);
   const [nonMasterReleases] = useQueryParam('nonMasterReleases', asBoolean);
@@ -153,7 +155,7 @@ const ReleasePipelines: React.FC = () => {
         policyForBranch={policyForBranch}
         ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
         environments={releaseAnalysis.environments}
-        queryPeriodDays={releaseAnalysis.queryPeriodDays}
+        queryPeriodDays={queryPeriodDays}
       />
       <InfiniteScrollList
         items={pipelines}

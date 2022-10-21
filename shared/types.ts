@@ -3,9 +3,6 @@ import type { ReleaseCondition } from '../backend/scraper/types-azure.js';
 
 export type GlobalUIConfig = {
   lastUpdated: string;
-  hasSummary: boolean;
-  changeProgramName?: string;
-  queryPeriodDays: number;
 };
 
 export type ScrapedProject = {

@@ -1,3 +1,4 @@
+import { oneDayInMs } from '../shared/utils.js';
 import type { ParsedConfig } from './scraper/parse-config.js';
 
 let conf: ParsedConfig;
@@ -19,4 +20,8 @@ export const collectionsAndProjects = () => (
       [collection, project] as const
     ))
   ))
+);
+
+export const queryPeriodDays = () => (
+  (Date.now() - getConfig().azure.queryFrom.getTime()) / oneDayInMs
 );

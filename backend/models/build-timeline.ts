@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { oneSecondInMs } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import type { Timeline } from '../scraper/types-azure.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
 const { Schema, model } = mongoose;
 
@@ -261,8 +262,7 @@ const getSkipped = async (
 };
 
 export const aggregateBuildTimelineStatsInputParser = z.object({
-  collectionName: z.string(),
-  project: z.string(),
+  ...collectionAndProjectInputs,
   buildDefinitionId: z.number(),
   queryFrom: z.date().optional()
 });

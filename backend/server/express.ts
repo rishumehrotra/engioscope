@@ -4,16 +4,14 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import api from './api.js';
 import { setConfig } from '../config.js';
 import setupCrons from '../crons/index.js';
+import { dirname } from '../utils.js';
 
-// eslint-disable-next-line no-underscore-dangle
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const uiFolder = path.join(__dirname, '..', '..', 'ui');
+const uiFolder = path.join(dirname(import.meta.url), '..', '..', 'ui');
 
 const configureExpress = (config: ParsedConfig) => {
   const app = express();

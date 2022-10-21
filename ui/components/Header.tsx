@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { shortDate } from '../helpers/utils.js';
+import useUIConfig from '../hooks/use-ui-config.js';
 import { useHeaderDetails } from '../hooks/header-hooks.js';
 import logo from '../images/engioscope.png';
 
@@ -20,6 +21,7 @@ const isSelectedForPath = (pathName: string) => (url: string) => {
 const Header: React.FC = () => {
   const location = useLocation();
   const headerDetails = useHeaderDetails();
+  const uiConfig = useUIConfig();
   const isSelected = useMemo(() => isSelectedForPath(location.pathname), [location.pathname]);
 
   return (
@@ -29,9 +31,9 @@ const Header: React.FC = () => {
           <img src={logo} alt="Logo" className="w-36" />
         </Link>
         <ul>
-          {(headerDetails.globalSettings?.changeProgramName || headerDetails.globalSettings?.hasSummary)
+          {(uiConfig.changeProgramName || uiConfig.hasSummary)
             ? (
-              navItems(headerDetails.globalSettings?.changeProgramName).map(({ url, name }) => (
+              navItems(uiConfig.changeProgramName).map(({ url, name }) => (
                 <li
                   key={url}
                   className="inline-block mr-4"

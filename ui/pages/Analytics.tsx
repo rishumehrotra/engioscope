@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import type { AnalyticsItem } from '../../shared/types.js';
 import Loading from '../components/Loading.js';
 import { num } from '../helpers/utils.js';
+import useUIConfig from '../hooks/use-ui-config.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { fetchAnalytics } from '../network.js';
 
 const Analytics: React.FC = () => {
+  const uiConfig = useUIConfig();
   const [analytics, setAnalytics] = useState<AnalyticsItem[] | undefined>();
   const setHeaderDetails = useSetHeaderDetails();
 
@@ -19,12 +21,11 @@ const Analytics: React.FC = () => {
     analytics && setHeaderDetails({
       globalSettings: {
         lastUpdated: new Date().toISOString(),
-        hasSummary: false,
-        queryPeriodDays: 0 // unused
+        ...uiConfig
       },
       title: 'Analytics'
     });
-  }, [analytics, setHeaderDetails]);
+  }, [analytics, setHeaderDetails, uiConfig]);
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>

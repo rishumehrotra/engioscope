@@ -6,6 +6,7 @@ import { promises as fs } from 'node:fs';
 import ms from 'ms';
 import { allPass, compose, not } from 'rambda';
 import AL from 'await-lock';
+import { fileURLToPath } from 'node:url';
 import type { ParsedConfig } from './scraper/parse-config.js';
 
 export const pastDate = (past?: string) => {
@@ -118,3 +119,5 @@ export const lock = () => {
   const releaseLock = lock.release.bind(lock);
   return [acquireLock, releaseLock] as const;
 };
+
+export const dirname = (importMetaUrl: string) => fileURLToPath(new URL('.', importMetaUrl));
