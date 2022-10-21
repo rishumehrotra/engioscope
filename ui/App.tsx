@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { httpBatchLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import superjson from 'superjson';
 import Project from './pages/Project.js';
 import Collection from './pages/Collection.js';
 import { ProjectDetailsProvider } from './hooks/project-details-hooks.js';
@@ -16,6 +18,7 @@ import RefreshIfUpdated from './components/RefreshIfUpdated.js';
 import Tracks from './pages/Tracks.jsx';
 import { trpc } from './helpers/trpc';
 import { oneMinuteInMs } from '../shared/utils.js';
+import Status from './pages/Status.jsx';
 
 const App: React.FC = () => {
   const [queryClient] = useState(() => new QueryClient({
@@ -33,7 +36,8 @@ const App: React.FC = () => {
   const [trpcClient] = useState(() => trpc.createClient({
     links: [
       httpBatchLink({ url: '/api/rpc' })
-    ]
+    ],
+    transformer: superjson
   }));
 
   return (
@@ -52,6 +56,7 @@ const App: React.FC = () => {
                       <Route path="/summary" element={<Summary />} />
                       <Route path="/change-program" element={<ChangeProgram />} />
                       <Route path="/tracks" element={<Tracks />} />
+                      <Route path="/status" element={<Status />} />
                       <Route path="/:collection/:project/*" element={<Project />} />
                       <Route path="/" element={<Collection />} />
                     </Routes>
@@ -59,6 +64,7 @@ const App: React.FC = () => {
                 </HeaderProvider>
               </SortContextProvider>
             </ProjectDetailsProvider>
+            <ReactQueryDevtools initialIsOpen={false} />
           </QueryClientProvider>
         </trpc.Provider>
       </RefreshIfUpdated>

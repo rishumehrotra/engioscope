@@ -34,6 +34,7 @@
     "node": ">=16.16"
   },
   "dependencies": {
+    "@tanstack/react-query-devtools": "^4.12.0",
     "@trpc/server": "10.0.0-proxy-beta.20",
     "@zkochan/rimraf": "2.1.2",
     "abort-controller": "3.0.0",
@@ -62,6 +63,7 @@
     "rambda": "7.3.0",
     "react-hotkeys-hook": "3.4.7",
     "split2": "4.1.0",
+    "superjson": "^1.11.0",
     "tar": "6.1.11",
     "ua-parser-js": "1.0.32",
     "yaml": "2.1.3",
