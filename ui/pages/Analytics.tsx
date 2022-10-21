@@ -19,11 +19,8 @@ const Analytics: React.FC = () => {
   }, []);
   useEffect(() => {
     analytics && setHeaderDetails({
-      globalSettings: {
-        lastUpdated: new Date().toISOString(),
-        ...uiConfig
-      },
-      title: 'Analytics'
+      title: 'Analytics',
+      lastUpdated: new Date().toISOString()
     });
   }, [analytics, setHeaderDetails, uiConfig]);
 

@@ -33,7 +33,6 @@ const Summary: React.FC = () => {
 
   useEffect(() => {
     setHeaderDetails({
-      globalSettings: metrics,
       title: 'Metrics',
       subtitle: metrics
         ? (
@@ -43,7 +42,8 @@ const Summary: React.FC = () => {
             <span className="text-lg font-bold">{shortDate(new Date(metrics.lastUpdateDate))}</span>
           </div>
         )
-        : null
+        : null,
+      lastUpdated: metrics?.lastUpdateDate
     });
   }, [metrics, setHeaderDetails]);
 

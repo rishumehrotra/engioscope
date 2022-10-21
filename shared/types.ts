@@ -1,15 +1,11 @@
 import type { SummaryMetricsType } from '../backend/scraper/summarise-results.js';
 import type { ReleaseCondition } from '../backend/scraper/types-azure.js';
 
-export type GlobalUIConfig = {
-  lastUpdated: string;
-};
-
 export type ScrapedProject = {
   name: [collection: string, project: string];
 };
 
-export type AnalysedProjects = GlobalUIConfig & {
+export type AnalysedProjects = {
   projects: ScrapedProject[];
   lastUpdated: string;
   hasSummary: boolean;
@@ -316,8 +312,9 @@ export type Overview = {
   relations: Record<number, number[]>;
 };
 
-export type UIProjectAnalysis = GlobalUIConfig & {
+export type UIProjectAnalysis = {
   name: [collection: string, project: string];
+  lastUpdated: string;
   reposCount: number;
   releasePipelineCount: number;
   workItemCount: number;
@@ -370,7 +367,7 @@ export type ProjectOverviewAnalysis = UIProjectAnalysis & {
   environments?: string[];
 };
 
-export type SummaryMetrics = SummaryMetricsType & GlobalUIConfig;
+export type SummaryMetrics = SummaryMetricsType;
 
 export type TrackwiseData = {
   collection: string;
@@ -407,9 +404,15 @@ export type TrackMetricsByTrack = {
   byTrack: Record<string, TrackMetrics>;
 }[];
 
-export type TrackFeatures = { tracks: TrackwiseData[] } & GlobalUIConfig;
+export type TrackFeatures = {
+  tracks: TrackwiseData[];
+  lastUpdated: string;
+};
 
-export type TrackFlowMetrics = { tracks: TrackMetricsByTrack } & GlobalUIConfig;
+export type TrackFlowMetrics = {
+  tracks: TrackMetricsByTrack;
+  lastUpdated: string;
+};
 
 export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
   collection: string;
@@ -421,7 +424,8 @@ export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 
   actualCompletion?: string;
 };
 
-export type UIChangeProgram = GlobalUIConfig & {
+export type UIChangeProgram = {
+  lastUpdated: string;
   details: null | {
     taskName: string;
     name: string;

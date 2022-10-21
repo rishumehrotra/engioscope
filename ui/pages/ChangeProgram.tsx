@@ -21,8 +21,8 @@ const ChangeProgram: React.FC = () => {
 
   useEffect(() => {
     setHeaderDetails({
-      globalSettings: changeProgram,
-      title: 'Progress'
+      title: 'Progress',
+      lastUpdated: changeProgram?.lastUpdated
     });
   }, [changeProgram, setHeaderDetails]);
 

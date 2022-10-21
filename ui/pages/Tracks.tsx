@@ -59,7 +59,6 @@ const Tracks: React.FC = () => {
     const headerInfo = trackFlowMetrics || trackFeatures;
 
     setHeaderDetails({
-      globalSettings: headerInfo,
       title: 'Tracks',
       subtitle: headerInfo
         ? (
@@ -71,7 +70,8 @@ const Tracks: React.FC = () => {
             <span className="text-lg font-bold">{shortDate(new Date(headerInfo.lastUpdated))}</span>
           </div>
         )
-        : null
+        : null,
+      lastUpdated: headerInfo?.lastUpdated
     });
   }, [trackFlowMetrics, setHeaderDetails, trackFeatures, queryPeriodDays]);
 

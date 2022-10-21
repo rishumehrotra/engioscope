@@ -71,8 +71,8 @@ const Header: React.FC = () => {
           <div className="text-sm text-gray-300 justify-self-end place-self-end">
             Last updated on
             <span className="font-semibold ml-1">
-              {headerDetails.globalSettings?.lastUpdated
-                ? shortDate(new Date(headerDetails.globalSettings.lastUpdated))
+              {headerDetails.lastUpdated
+                ? shortDate(new Date(headerDetails.lastUpdated))
                 : '...'}
             </span>
           </div>

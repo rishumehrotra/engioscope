@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import debug from 'debug';
 import pluralize from 'pluralize';
 import type {
-  AnalysedProjects, GlobalUIConfig, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
+  AnalysedProjects, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
   TrackMetricsByTrack, TrackFlowMetrics, UIChangeProgram, UIChangeProgramTask,
   UIProjectAnalysis, TrackwiseData, TrackFeatures
@@ -180,16 +180,9 @@ export default (config: ParsedConfig) => (collectionName: string, projectConfig:
   ])
 );
 
-export const writeSummaryMetricsFile = (config: ParsedConfig, summary: Omit<SummaryMetrics, keyof GlobalUIConfig>) => {
-  const summaryMetrics: SummaryMetrics = {
-    ...summary,
-    lastUpdated: new Date().toISOString()
-  };
-
-  return (
-    writeFile(['./'], 'summary-metrics.json', JSON.stringify(summaryMetrics))
-  );
-};
+export const writeSummaryMetricsFile = (config: ParsedConfig, summary: SummaryMetrics) => (
+  writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
+);
 
 export const writeTrackFlowMetrics = (config: ParsedConfig, tracks: TrackMetricsByTrack) => {
   const tracksWorkItems: TrackFlowMetrics = {

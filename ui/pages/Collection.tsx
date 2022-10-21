@@ -35,10 +35,7 @@ const Collection: React.FC = () => {
   }, []);
   useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
   useEffect(() => {
-    setHeaderDetails({
-      globalSettings: analysedProjects,
-      title: 'Projects'
-    });
+    setHeaderDetails({ title: 'Projects', lastUpdated: analysedProjects?.lastUpdated });
   }, [analysedProjects, setHeaderDetails]);
 
   return (

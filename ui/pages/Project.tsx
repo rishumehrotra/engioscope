@@ -59,7 +59,6 @@ const Project: React.FC = () => {
 
   useEffect(() => {
     projectDetails && setHeaderDetails({
-      globalSettings: projectDetails,
       title: projectName || '',
       subtitle: (
         <div className="text-base mt-2 font-normal text-gray-200">
@@ -73,7 +72,8 @@ const Project: React.FC = () => {
             </>
           ) : <span className="font-bold text-lg">&nbsp;</span>}
         </div>
-      )
+      ),
+      lastUpdated: projectDetails.lastUpdated
     });
   }, [pageName, project, projectDetails, projectName, setHeaderDetails]);
 
