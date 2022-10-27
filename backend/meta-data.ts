@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { mapObj } from '../shared/utils.js';
 import { lock } from './utils.js';
 
 const [acquireLock, releaseLock] = lock();
@@ -12,6 +13,7 @@ type Project = {
 type Collection = {
   name: string;
   projects: Project[];
+  workItemUpdateDates: Record<string, Date>;
 };
 
 export type MetaData = {
@@ -28,6 +30,7 @@ const loadMetaData = () => (
         ...parsed,
         collections: parsed.collections.map(c => ({
           ...c,
+          workItemUpdateDates: mapObj<string | Date, Date>(date => new Date(date))(c.workItemUpdateDates || {}),
           projects: c.projects.map(p => ({
             ...p,
             lastBuildUpdateDate: p.lastBuildUpdateDate
@@ -46,50 +49,61 @@ const saveMetaData = (metadata: MetaData) => (
 
 export const getAllMetaData = loadMetaData;
 
-const getProject = (collection: string, project: string) => (
-  loadMetaData()
-    .then(metadata => (
-      metadata
-        .collections
-        .find(c => c.name === collection))
-      ?.projects
-      .find(p => p.name === project))
+const getCollection = async (collection: string) => (
+  (await loadMetaData()).collections.find(c => c.name === collection)
 );
 
-const modifyProject = (collection: string, project: string, modifier: (proj: Project) => void) => (
+const modifyCollection = async (collection: string, modifier: (coll: Collection) => void) => {
   acquireLock()
     .then(loadMetaData)
     .then(metadata => {
-      let col = metadata
-        .collections
-        .find(c => c.name === collection);
-
+      let col = metadata.collections.find(c => c.name === collection);
       if (!col) {
-        col = { name: collection, projects: [] };
+        col = { name: collection, projects: [], workItemUpdateDates: {} };
         metadata.collections.push(col);
       }
+      // TODO: This line is to tide over type issues, and won't be necessary after a few days
+      if (!col.workItemUpdateDates) col.workItemUpdateDates = {};
 
-      let proj = col.projects.find(p => p.name === project);
-      if (!proj) {
-        proj = { name: project };
-        col.projects.push(proj);
-      }
-
-      modifier(proj);
+      modifier(col);
       return saveMetaData(metadata);
     })
-    .finally(releaseLock)
+    .finally(releaseLock);
+};
+
+const getProject = async (collection: string, project: string) => (
+  (await getCollection(collection))?.projects.find(p => p.name === project)
+);
+
+const modifyProject = (collection: string, project: string, modifier: (proj: Project) => void) => (
+  modifyCollection(collection, col => {
+    let proj = col.projects.find(p => p.name === project);
+    if (!proj) {
+      proj = { name: project };
+      col.projects.push(proj);
+    }
+
+    modifier(proj);
+  })
 );
 
 export const setLastBuildUpdateDate = (collection: string, project: string) => (
   modifyProject(collection, project, proj => { proj.lastBuildUpdateDate = new Date(); })
 );
 
-export const getLastBuildUpdateDate = (collection: string, project: string) => (
-  getProject(collection, project)
-    .then(p => (
-      p?.lastBuildUpdateDate
-        ? new Date(p.lastBuildUpdateDate)
-        : undefined
-    ))
+export const getLastBuildUpdateDate = async (collection: string, project: string) => (
+  (await getProject(collection, project))?.lastBuildUpdateDate
+);
+
+export const getWorkItemUpdateDate = async (collection: string) => (
+  (await getCollection(collection))?.workItemUpdateDates || {}
+);
+
+export const setWorkItemUpdateDate = async (collection: string) => (
+  (workItemTypes: string[]) => (
+    modifyCollection(
+      collection, col => workItemTypes
+        .forEach(wit => { col.workItemUpdateDates[wit] = new Date(); })
+    )
+  )
 );
