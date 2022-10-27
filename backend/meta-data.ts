@@ -1,6 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { mapObj } from '../shared/utils.js';
 import { lock } from './utils.js';
 
 const [acquireLock, releaseLock] = lock();
@@ -13,7 +12,7 @@ type Project = {
 type Collection = {
   name: string;
   projects: Project[];
-  workItemUpdateDates: Record<string, Date>;
+  workItemUpdateDate?: Date;
 };
 
 export type MetaData = {
@@ -30,7 +29,9 @@ const loadMetaData = () => (
         ...parsed,
         collections: parsed.collections.map(c => ({
           ...c,
-          workItemUpdateDates: mapObj<string | Date, Date>(date => new Date(date))(c.workItemUpdateDates || {}),
+          workItemUpdateDate: c.workItemUpdateDate
+            ? new Date(c.workItemUpdateDate)
+            : undefined,
           projects: c.projects.map(p => ({
             ...p,
             lastBuildUpdateDate: p.lastBuildUpdateDate
@@ -59,11 +60,9 @@ const modifyCollection = async (collection: string, modifier: (coll: Collection)
     .then(metadata => {
       let col = metadata.collections.find(c => c.name === collection);
       if (!col) {
-        col = { name: collection, projects: [], workItemUpdateDates: {} };
+        col = { name: collection, projects: [] };
         metadata.collections.push(col);
       }
-      // TODO: This line is to tide over type issues, and won't be necessary after a few days
-      if (!col.workItemUpdateDates) col.workItemUpdateDates = {};
 
       modifier(col);
       return saveMetaData(metadata);
@@ -96,14 +95,9 @@ export const getLastBuildUpdateDate = async (collection: string, project: string
 );
 
 export const getWorkItemUpdateDate = async (collection: string) => (
-  (await getCollection(collection))?.workItemUpdateDates || {}
+  (await getCollection(collection))?.workItemUpdateDate
 );
 
 export const setWorkItemUpdateDate = async (collection: string) => (
-  (workItemTypes: string[]) => (
-    modifyCollection(
-      collection, col => workItemTypes
-        .forEach(wit => { col.workItemUpdateDates[wit] = new Date(); })
-    )
-  )
+  modifyCollection(collection, col => { col.workItemUpdateDate = new Date(); })
 );
