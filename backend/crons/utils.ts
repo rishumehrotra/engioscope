@@ -4,7 +4,7 @@ import debug from 'debug';
 
 const cronLog = debug('cron');
 
-export const runJob = (name: string, when: (time: typeof cronTime) => string, onTick: () => Promise<void>) => {
+export const runJob = (name: string, when: (time: typeof cronTime) => string, onTick: () => Promise<unknown>) => {
   const timePattern = when(cronTime);
 
   cronLog('Setting up cron for ', name, 'with pattern', timePattern);

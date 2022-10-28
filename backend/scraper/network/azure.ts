@@ -8,7 +8,7 @@ import type {
   GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestRun,
   Timeline,
   WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
-  WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory
+  WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory, WorkItemWithRelations
 } from '../types-azure.js';
 import createPaginatedGetter from './create-paginated-getter.js';
 import type { FetchResponse } from './fetch-with-disk-cache.js';
@@ -335,12 +335,16 @@ export default (config: ParsedConfig) => {
 
     getCollectionWorkItemIdsForQuery:
       <T extends WorkItemQueryResult<WorkItemQueryHierarchialResult> | WorkItemQueryResult<WorkItemQueryFlatResult>>(
-        collectionName: string, query: string, queryName: string
+        // TODO: Remove the `usePreciseTime` arg (set it to true) once moved over completely to the DB
+        collectionName: string, query: string, queryName: string, usePreciseTime?: boolean
       ) => (
         usingDiskCache<T>(
           [collectionName, 'work-items', 'work-items', `ids_${md5(query)}`],
           () => fetch(
-            url(collectionName, null, `/wit/wiql?${qs.stringify(apiVersion)}`),
+            url(collectionName, null, `/wit/wiql?${qs.stringify({
+              ...apiVersion,
+              timePrecision: usePreciseTime || false
+            })}`),
             {
               headers: { ...authHeader, 'Content-Type': 'application/json' },
               method: 'post',
@@ -376,6 +380,23 @@ export default (config: ParsedConfig) => {
 
       return workItemIds.map(wid => workItemsById[wid]);
     },
+
+    getCollectionWorkItemsAndRelationsChunks: (collectionName: string, workItemIds: number[], queryName: string) => (
+      chunkArray(workItemIds, 200)
+        .map((chunk, index) => (
+          usingDiskCache<{ count: number; value: WorkItemWithRelations[] }>(
+            [collectionName, 'work-items', 'by-id', queryName, String(index)],
+            () => fetch(
+              url(collectionName, null, `/wit/workitems/?${qs.stringify({
+                ...apiVersion,
+                $expand: 'all',
+                ids: chunk.join(',')
+              })}`),
+              { headers: authHeader, ...otherFetchParams }
+            )
+          ).then(res => res.data.value)
+        ))
+    ),
 
     getCollectionWorkItemFields: (collectionName: string) => (
       usingDiskCache<{count: number; value: WorkItemField[]}>(

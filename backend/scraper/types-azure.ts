@@ -482,6 +482,30 @@ export type WorkItem = {
   url: string;
 };
 
+export type WorkItemWithRelations = WorkItem & {
+  relations: {
+    rel:
+    | 'Microsoft.VSTS.Common.Affects-Forward'
+    | 'Microsoft.VSTS.Common.Affects-Reverse'
+    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
+    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse'
+    | 'Microsoft.VSTS.Common.TestedBy-Forward'
+    | 'Microsoft.VSTS.Common.TestedBy-Reverse'
+    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Forward'
+    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Reverse'
+    | 'System.LinkTypes.Duplicate-Forward'
+    | 'System.LinkTypes.Duplicate-Reverse'
+    | 'System.LinkTypes.Dependency-Forward'
+    | 'System.LinkTypes.Dependency-Reverse'
+    | 'System.LinkTypes.Hierarchy-Forward'
+    | 'System.LinkTypes.Hierarchy-Reverse'
+    | 'System.LinkTypes.Related'
+    | string;
+    url: string;
+    attributes: Record<string, unknown>;
+  }[];
+};
+
 export type WorkItemLink = {
   rel: 'System.LinkTypes.Hierarchy'
   | 'System.LinkTypes.Related'

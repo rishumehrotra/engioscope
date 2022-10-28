@@ -27,10 +27,10 @@ const putBuildTimelineInDb = (
     : null
 );
 
-export const getBuildsAndTimelines = async () => {
+export const getBuildsAndTimelines = () => {
   const { getBuildsSince, getBuildTimeline } = azure(getConfig());
 
-  await Promise.all(
+  return Promise.all(
     collectionsAndProjects().map(async ([collection, project]) => {
       const lastBuildUpdateDate = (
         await getLastBuildUpdateDate(collection.name, project.name)
@@ -40,7 +40,7 @@ export const getBuildsAndTimelines = async () => {
       const builds = await getBuildsSince(collection.name, project.name)(lastBuildUpdateDate);
       await setLastBuildUpdateDate(collection.name, project.name);
 
-      await Promise.all([
+      return Promise.all([
         ...builds.map(build => putBuildInDb(collection, build)),
         missingTimelines(collection.name, project.name)(builds.map(b => b.id))
           .then(buildIds => Promise.all(

@@ -35,3 +35,5 @@ export const mapObj = <T, U>(xform: (x: T) => U) => (obj: Record<string, T>) => 
       .map(([key, value]) => [key, xform(value)])
   )
 );
+
+export const merge = <T>(obj1: T, obj2: T) => ({ ...obj1, ...obj2 });
