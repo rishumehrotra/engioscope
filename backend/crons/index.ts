@@ -1,5 +1,7 @@
 import buildCron from './builds.js';
+import workItemsCron from './workitems.js';
 
 export default () => [
-  buildCron
+  buildCron,
+  workItemsCron
 ].forEach(fn => fn());

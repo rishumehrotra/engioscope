@@ -52,4 +52,4 @@ export const getWorkItems = () => {
   );
 };
 
-export default runJob('fetching workitems', t => t.everyHourAt(55), getWorkItems);
+export default () => runJob('fetching workitems', t => t.everyHourAt(55), getWorkItems);
