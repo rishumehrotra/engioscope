@@ -43,12 +43,12 @@ export const getWorkItems = () => {
       const queryResult: WorkItemQueryResult<WorkItemQueryFlatResult> = (
         (await getCollectionWorkItemIdsForQuery(collection.name, query, 'work-items-cron', true))
       );
+      await setWorkItemUpdateDate(collection.name);
 
       const workItemIds = queryResult.workItems.map(wi => wi.id);
       const workItemsPromises = getCollectionWorkItemsAndRelationsChunks(collection.name, workItemIds, 'work-items-cron');
 
-      await Promise.all(workItemsPromises.map(p => p.then(bulkUpsertWorkItems(collection.name))));
-      return setWorkItemUpdateDate(collection.name);
+      return Promise.all(workItemsPromises.map(p => p.then(bulkUpsertWorkItems(collection.name))));
     })
   );
 };

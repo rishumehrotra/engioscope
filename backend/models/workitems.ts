@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose';
+import { configForCollection } from '../config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
 
 type WorkItem = {
@@ -63,6 +64,9 @@ const workItemSchema = new Schema<WorkItem>({
 });
 
 workItemSchema.index({ collectionName: 1, id: 1 }, { unique: true }); // Used for writes
+workItemSchema.index({
+  collectionName: 1, project: 1, workItemType: 1, state: 1
+});
 
 const WorkItemModel = model<WorkItem>('WorkItem', workItemSchema);
 
@@ -98,3 +102,68 @@ export const bulkUpsertWorkItems = (collectionName: string) => (workItems: WorkI
     }
   })))
 );
+
+const field = (fieldName: string) => ({
+  $getField: {
+    field: { $literal: fieldName },
+    input: '$fields'
+  }
+});
+
+export const newWorkItemsForWorkItemType = ({
+  collectionName, project, workItemType, queryPeriod
+}: {
+  collectionName: string;
+  project: string;
+  workItemType: string;
+  queryPeriod: [Date, Date, string];
+}) => {
+  const collectionConfig = configForCollection(collectionName);
+  const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
+  const startDateFields = workItemTypeConfig?.startDate.map(field);
+
+  return (
+    WorkItemModel
+      .aggregate([
+        {
+          $match: {
+            collectionName,
+            project,
+            workItemType,
+            state: { $nin: collectionConfig?.workitems.ignoreStates || [] },
+            stateChangeDate: { $gte: queryPeriod[0] }
+            // $expr: { $eq: [field('Jio.Common.FeatureType'), 'New Feature'] }
+          }
+        },
+        // Get the start date based on the config's start date fields
+        { $addFields: { startDate: { $min: startDateFields || [] } } },
+        // Ensure it's within range
+        { $match: { startDate: { $gte: queryPeriod[0], $lt: queryPeriod[1] } } },
+        {
+          $group: {
+            _id: {
+              group: workItemTypeConfig?.groupByField
+                ? field(workItemTypeConfig?.groupByField)
+                : 'No group',
+              date: {
+                $dateToString: {
+                  date: '$startDate', timezone: queryPeriod[2], format: '%Y-%m-%d'
+                }
+              }
+            },
+            count: { $sum: 1 }
+          }
+        }, {
+          $group: {
+            _id: '$_id.group',
+            count: { $push: { k: '$_id.date', v: '$count' } }
+          }
+        }, {
+          $project: { _id: 1, counts: { $arrayToObject: '$count' } }
+        }
+      ])
+      .then(result => result.map(r => (
+        { group: r._id, counts: r.counts } as { group: string; counts: Record<string, number> }
+      )))
+  );
+};
