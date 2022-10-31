@@ -1,6 +1,9 @@
 import { model, Schema } from 'mongoose';
+import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
+import type { QueryRange } from './helpers.js';
+import { timezone, queryRangeFilter } from './helpers.js';
 
 type WorkItem = {
   id: number;
@@ -116,7 +119,7 @@ export const newWorkItemsForWorkItemType = ({
   collectionName: string;
   project: string;
   workItemType: string;
-  queryPeriod: [Date, Date, string];
+  queryPeriod: QueryRange;
 }) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
@@ -132,38 +135,41 @@ export const newWorkItemsForWorkItemType = ({
             workItemType,
             state: { $nin: collectionConfig?.workitems.ignoreStates || [] },
             stateChangeDate: { $gte: queryPeriod[0] }
-            // $expr: { $eq: [field('Jio.Common.FeatureType'), 'New Feature'] }
           }
         },
-        // Get the start date based on the config's start date fields
+        // Get the start date based on the config's startDateFields
         { $addFields: { startDate: { $min: startDateFields || [] } } },
         // Ensure it's within range
-        { $match: { startDate: { $gte: queryPeriod[0], $lt: queryPeriod[1] } } },
+        { $match: { startDate: queryRangeFilter(queryPeriod) } },
         {
           $group: {
             _id: {
+              // Group by the groupByField in config...
               group: workItemTypeConfig?.groupByField
                 ? field(workItemTypeConfig?.groupByField)
-                : 'No group',
+                : noGroup,
+              // ...and the startDate
               date: {
                 $dateToString: {
-                  date: '$startDate', timezone: queryPeriod[2], format: '%Y-%m-%d'
+                  date: '$startDate', timezone: timezone(queryPeriod), format: '%Y-%m-%d'
                 }
               }
             },
             count: { $sum: 1 }
           }
         }, {
+          // Nest the startDate inside the group
           $group: {
             _id: '$_id.group',
             count: { $push: { k: '$_id.date', v: '$count' } }
           }
         }, {
+          // And convert to object to reduce size
           $project: { _id: 1, counts: { $arrayToObject: '$count' } }
         }
       ])
-      .then(result => result.map(r => (
-        { group: r._id, counts: r.counts } as { group: string; counts: Record<string, number> }
-      )))
+      .then(result => Object.fromEntries(
+        result.map(r => ([r._id, r.counts] as [string, Record<string, number> ]))
+      ))
   );
 };
