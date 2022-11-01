@@ -121,7 +121,7 @@ const sanitizeFieldName = (field: string) => field
 
 const applyAdditionalFilters = (
   collectionName: string,
-  additionalFilters?: Record<string, string>
+  additionalFilters?: Record<string, string[]>
 ) => {
   if (!additionalFilters) return [];
 
@@ -136,7 +136,7 @@ const applyAdditionalFilters = (
       if (configForField.fields.length === 1 && !configForField.delimiter) {
         // Single field, no delimiter, so exact match is sufficient
         return [
-          { $match: { $expr: { $eq: [field(configForField.fields[0]), value] } } }
+          { $match: { $expr: { $in: [field(configForField.fields[0]), value] } } }
         ];
       }
 
@@ -173,7 +173,7 @@ const applyAdditionalFilters = (
           }
         },
         // Check if value exists
-        { $match: { [sanitizeFieldName(label)]: { $eq: value } } }
+        { $match: { [sanitizeFieldName(label)]: { $in: value } } }
       ];
     });
 };
@@ -185,7 +185,7 @@ export const newWorkItemsForWorkItemType = ({
   project: string;
   workItemType: string;
   queryPeriod: QueryRange;
-  additionalFilters?: Record<string, string>;
+  additionalFilters?: Record<string, string[]>;
 }) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
