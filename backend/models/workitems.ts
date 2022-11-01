@@ -1,3 +1,4 @@
+import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
@@ -113,61 +114,129 @@ const field = (fieldName: string) => ({
   }
 });
 
+const sanitizeFieldName = (field: string) => field
+  .replace(/\s/g, '_')
+  .replace(/\./g, '_')
+  .replace(/\$/g, '_');
+
+const applyAdditionalFilters = (
+  collectionName: string,
+  additionalFilters?: Record<string, string>
+) => {
+  if (!additionalFilters) return [];
+
+  return Object.entries(additionalFilters)
+    .flatMap(([label, value]): PipelineStage[] => {
+      const configForField = configForCollection(collectionName)
+        ?.workitems.filterBy
+        ?.find(f => f.label === label);
+
+      if (!configForField) return [];
+
+      if (configForField.fields.length === 1 && !configForField.delimiter) {
+        // Single field, no delimiter, so exact match is sufficient
+        return [
+          { $match: { $expr: { $eq: [field(configForField.fields[0]), value] } } }
+        ];
+      }
+
+      return [
+        // Concat the fields
+        {
+          $addFields: {
+            [`${sanitizeFieldName(label)}-temp-1`]: {
+              $concat: configForField.fields.flatMap(f => [
+                { $ifNull: [field(f), ''] },
+                ';'
+              ])
+            }
+          }
+        },
+        // Split by the delimiter
+        {
+          $addFields: {
+            [`${sanitizeFieldName(label)}-temp-2`]: {
+              $split: [`$${sanitizeFieldName(label)}-temp-1`, configForField.delimiter]
+            }
+          }
+        },
+        // Filter out empty fields
+        {
+          $addFields: {
+            [`${sanitizeFieldName(label)}`]: {
+              $filter: {
+                input: `$${sanitizeFieldName(label)}-temp-2`,
+                as: 'part',
+                cond: { $ne: ['$$part', ''] }
+              }
+            }
+          }
+        },
+        // Check if value exists
+        { $match: { [sanitizeFieldName(label)]: { $eq: value } } }
+      ];
+    });
+};
+
 export const newWorkItemsForWorkItemType = ({
-  collectionName, project, workItemType, queryPeriod
+  collectionName, project, workItemType, queryPeriod, additionalFilters
 }: {
   collectionName: string;
   project: string;
   workItemType: string;
   queryPeriod: QueryRange;
+  additionalFilters?: Record<string, string>;
 }) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
   const startDateFields = workItemTypeConfig?.startDate.map(field);
 
-  return (
-    WorkItemModel
-      .aggregate([
-        {
-          $match: {
-            collectionName,
-            project,
-            workItemType,
-            state: { $nin: collectionConfig?.workitems.ignoreStates || [] },
-            stateChangeDate: { $gte: queryPeriod[0] }
+  const pipeline = [
+    {
+      $match: {
+        collectionName,
+        project,
+        workItemType,
+        state: { $nin: collectionConfig?.workitems.ignoreStates || [] },
+        stateChangeDate: { $gte: queryPeriod[0] }
+      }
+    },
+    // Get the start date based on the config's startDateFields
+    { $addFields: { startDate: { $min: startDateFields || [] } } },
+    // Ensure it's within range
+    { $match: { startDate: queryRangeFilter(queryPeriod) } },
+    ...applyAdditionalFilters(collectionName, additionalFilters),
+    {
+      $group: {
+        _id: {
+          // Group by the groupByField in config...
+          group: workItemTypeConfig?.groupByField
+            ? field(workItemTypeConfig?.groupByField)
+            : noGroup,
+          // ...and the startDate
+          date: {
+            $dateToString: {
+              date: '$startDate', timezone: timezone(queryPeriod), format: '%Y-%m-%d'
+            }
           }
         },
-        // Get the start date based on the config's startDateFields
-        { $addFields: { startDate: { $min: startDateFields || [] } } },
-        // Ensure it's within range
-        { $match: { startDate: queryRangeFilter(queryPeriod) } },
-        {
-          $group: {
-            _id: {
-              // Group by the groupByField in config...
-              group: workItemTypeConfig?.groupByField
-                ? field(workItemTypeConfig?.groupByField)
-                : noGroup,
-              // ...and the startDate
-              date: {
-                $dateToString: {
-                  date: '$startDate', timezone: timezone(queryPeriod), format: '%Y-%m-%d'
-                }
-              }
-            },
-            count: { $sum: 1 }
-          }
-        }, {
-          // Nest the startDate inside the group
-          $group: {
-            _id: '$_id.group',
-            count: { $push: { k: '$_id.date', v: '$count' } }
-          }
-        }, {
-          // And convert to object to reduce size
-          $project: { _id: 1, counts: { $arrayToObject: '$count' } }
-        }
-      ])
+        count: { $sum: 1 }
+      }
+    }, {
+      // Nest the startDate inside the group
+      $group: {
+        _id: '$_id.group',
+        count: { $push: { k: '$_id.date', v: '$count' } }
+      }
+    }, {
+      // And convert to object to reduce size
+      $project: { _id: 1, counts: { $arrayToObject: '$count' } }
+    }
+  ];
+
+  return (
+    WorkItemModel
+      .aggregate(pipeline)
       .then(result => Object.fromEntries(
         result.map(r => ([r._id, r.counts] as [string, Record<string, number> ]))
       ))
