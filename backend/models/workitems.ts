@@ -1,10 +1,12 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
+import { z } from 'zod';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
-import type { QueryRange } from './helpers.js';
-import { timezone, queryRangeFilter } from './helpers.js';
+import {
+  collectionAndProjectInputs, queryRangeInputParser, timezone, queryRangeFilter
+} from './helpers.js';
 
 type WorkItem = {
   id: number;
@@ -178,15 +180,15 @@ const applyAdditionalFilters = (
     });
 };
 
-export const newWorkItemsForWorkItemType = ({
+export const newWorkItemsInputParser = z.object({
+  ...collectionAndProjectInputs,
+  queryPeriod: queryRangeInputParser,
+  additionalFilters: z.record(z.string(), z.array(z.string()))
+});
+
+const newWorkItemsForWorkItemType = ({
   collectionName, project, workItemType, queryPeriod, additionalFilters
-}: {
-  collectionName: string;
-  project: string;
-  workItemType: string;
-  queryPeriod: QueryRange;
-  additionalFilters?: Record<string, string[]>;
-}) => {
+}: z.infer<typeof newWorkItemsInputParser> & { workItemType: string }) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
   const startDateFields = workItemTypeConfig?.startDate.map(field);
@@ -240,5 +242,24 @@ export const newWorkItemsForWorkItemType = ({
       .then(result => Object.fromEntries(
         result.map(r => ([r._id, r.counts] as [string, Record<string, number> ]))
       ))
+  );
+};
+
+export const newWorkItems = async (options: z.infer<typeof newWorkItemsInputParser>) => {
+  const collConfig = configForCollection('JioMobilityAndEnterprise');
+  if (!collConfig) return {};
+
+  const { types } = collConfig.workitems;
+  if (!types) return {};
+
+  return (
+    Promise.all(types.map(type => (
+      newWorkItemsForWorkItemType({ ...options, workItemType: type.type })
+        .then(result => {
+          if (Object.keys(result).length === 0) return {};
+          return ({ [type.type]: result });
+        })
+    )))
+      .then(result => result.reduce((a, b) => ({ ...a, ...b }), {}))
   );
 };
