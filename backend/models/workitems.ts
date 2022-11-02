@@ -1,6 +1,8 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
 import { z } from 'zod';
+import { asc, byNum } from '../../shared/sort-utils.js';
+import { merge } from '../../shared/utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
@@ -226,10 +228,7 @@ const newWorkItemsForWorkItemType = ({
       }
     }, {
       // Nest the startDate inside the group
-      $group: {
-        _id: '$_id.group',
-        count: { $push: { k: '$_id.date', v: '$count' } }
-      }
+      $group: { _id: '$_id.group', count: { $push: { k: '$_id.date', v: '$count' } } }
     }, {
       // And convert to object to reduce size
       $project: { _id: 1, counts: { $arrayToObject: '$count' } }
@@ -240,7 +239,9 @@ const newWorkItemsForWorkItemType = ({
     WorkItemModel
       .aggregate(pipeline)
       .then(result => Object.fromEntries(
-        result.map(r => ([r._id, r.counts] as [string, Record<string, number> ]))
+        result
+          .sort(asc(byNum(r => collectionConfig?.projects[0].environments?.indexOf(r._id) || -1)))
+          .map(r => ([r._id, r.counts] as [string, Record<string, number> ]))
       ))
   );
 };
@@ -260,6 +261,6 @@ export const newWorkItems = async (options: z.infer<typeof newWorkItemsInputPars
           return ({ [type.type]: result });
         })
     )))
-      .then(result => result.reduce((a, b) => ({ ...a, ...b }), {}))
+      .then(result => result.reduce(merge, {}))
   );
 };

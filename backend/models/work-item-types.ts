@@ -1,6 +1,11 @@
 import { model, Schema } from 'mongoose';
+import pluralize from 'pluralize';
+import type { z } from 'zod';
+import { exists } from '../../shared/utils.js';
+import { configForCollection } from '../config.js';
 import type { WorkItemType as AzureWorkItemType } from '../scraper/types-azure.js';
-import type workItemIconSvgs from '../work-item-icon-svgs.js';
+import workItemIconSvgs from '../work-item-icon-svgs.js';
+import type { collectionAndProjectInputParser } from './helpers.js';
 
 export type WorkItemType = {
   collectionName: string;
@@ -75,3 +80,45 @@ export const bulkUpsertWorkItemTypes = (collectionName: string, project: string)
     })))
   )
 );
+
+const iconSvg = ({ id, url }: WorkItemType['icon']) => {
+  const { searchParams } = new URL(url);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return workItemIconSvgs[id](searchParams.get('color')!);
+};
+
+export const getWorkItemTypes = async ({ collectionName, project }: z.infer<typeof collectionAndProjectInputParser>) => {
+  const collectionConfig = configForCollection(collectionName);
+  const wits = collectionConfig?.workitems.types || [];
+
+  const workItemTypes = await WorkItemTypeModel
+    .find({
+      collectionName,
+      project,
+      referenceName: { $in: wits.map(t => t.type) }
+    }, { name: 1, icon: 1, fields: 1 })
+    .lean();
+
+  return workItemTypes.map(wit => {
+    const matchingWitConfig = wits.find(w => w.type === wit.name);
+    const fields = (fieldNames?: string[]) => (
+      fieldNames
+        ?.map(field => wit.fields.find(f => f.referenceName === field)?.name)
+        .filter(exists)
+    );
+
+    return ({
+      name: [wit.name, pluralize(wit.name)],
+      icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(wit.icon))}`,
+      startDateFields: fields(matchingWitConfig?.startDate),
+      endDateFields: fields(matchingWitConfig?.endDate),
+      devCompleteFields: fields(matchingWitConfig?.devCompletionDate),
+      workCenters: (matchingWitConfig?.workCenters || []).map(wc => ({
+        label: wc.label,
+        startDateFields: fields(wc.startDate),
+        endDateFields: fields(wc.endDate)
+      })),
+      rootCauseFields: fields(matchingWitConfig?.rootCause)
+    });
+  });
+};
