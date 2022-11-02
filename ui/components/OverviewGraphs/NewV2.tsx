@@ -1,5 +1,7 @@
 import { prop, range, sum } from 'rambda';
-import React, { useMemo } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState
+} from 'react';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { trpc } from '../../helpers/trpc.js';
 import { num, shortDate } from '../../helpers/utils.js';
@@ -65,6 +67,32 @@ const dataByDay = (
   }));
 };
 
+const useSidebarCheckboxState = () => {
+  const [checkboxState, setCheckboxState] = useState<Record<string, boolean>>({});
+
+  const onCheckboxClick = useCallback((key: string) => {
+    setCheckboxState(s => ({ ...s, [key]: !s[key] }));
+  }, []);
+
+  const isChecked = useCallback((key: string) => Boolean(checkboxState[key]), [checkboxState]);
+
+  const setSummary = useCallback((workItemSummary: Record<string, Record<string, Record<string, number>>>) => {
+    setCheckboxState(() => Object.entries(workItemSummary)
+      .reduce<Record<string, boolean>>((acc, [workItemTypeName, groups]) => {
+        Object.keys(groups).forEach(groupName => {
+          const key = groupName === noGroup
+            ? workItemTypeName
+            : (`${workItemTypeName}-${groupName}`);
+
+          acc[key] = true;
+        });
+        return acc;
+      }, {}));
+  }, []);
+
+  return [onCheckboxClick, isChecked, setSummary] as const;
+};
+
 const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
   const cnp = useCollectionAndProject();
   const qp = useQueryPeriod();
@@ -75,6 +103,19 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
   });
 
   const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
+
+  const [onCheckboxClick, isChecked, setSummary] = useSidebarCheckboxState();
+
+  useEffect(() => {
+    if (workItemSummary.data) setSummary(workItemSummary.data);
+  }, [setSummary, workItemSummary.data]);
+
+  const dataToShow = useMemo(() => (
+    dataByDay(workItemSummary.data || {}, workItemTypes.data || [], queryPeriodDays)
+      .filter(line => isChecked(`${line.workItemTypeName}${
+        line.groupName === noGroup ? '' : `-${line.groupName}`
+      }`))
+  ), [isChecked, queryPeriodDays, workItemSummary.data, workItemTypes.data]);
 
   const legendSidebarProps = useMemo((): LegendSidebarProps => ({
     headlineStats: Object.entries(workItemSummary.data || {}).map(([workItemTypeName, groups]) => ({
@@ -93,7 +134,8 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
             label: matchingWit?.name[1] || workItemTypeName,
             value: num(sum(Object.values(groups).flatMap(g => Object.values(g)))),
             key: workItemTypeName,
-            color: lineColor({ groupName: noGroup, witId: workItemTypeName })
+            color: lineColor({ groupName: noGroup, witId: workItemTypeName }),
+            isChecked: isChecked(workItemTypeName)
           }];
         }
         return Object.entries(groups).flatMap(([groupName, byDate]) => ({
@@ -101,15 +143,17 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
           label: groupName,
           value: num(sum(Object.values(byDate))),
           key: `${workItemTypeName}-${groupName}`,
-          color: lineColor({ groupName, witId: workItemTypeName })
+          color: lineColor({ groupName, witId: workItemTypeName }),
+          isChecked: isChecked(`${workItemTypeName}-${groupName}`)
         }));
       }),
-    onItemClick: key => console.log(key)
-  }), [workItemSummary.data, workItemTypes.data]);
+    onItemClick: key => console.log(key),
+    onCheckboxClick
+  }), [isChecked, onCheckboxClick, workItemSummary.data, workItemTypes.data]);
 
   const lineGraphProps = useMemo<LineGraphProps<Line, Point>>(() => ({
     className: 'max-w-full',
-    lines: dataByDay(workItemSummary.data || {}, workItemTypes.data || [], queryPeriodDays),
+    lines: dataToShow,
     points: prop('points'),
     pointToValue: point => point.value,
     yAxisLabel: num,
@@ -120,7 +164,7 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
     onClick: pointIndex => {
       console.log(pointIndex);
     }
-  }), [queryPeriodDays, workItemSummary.data, workItemTypes.data]);
+  }), [dataToShow]);
 
   if (workItemSummary.isLoading) return <Loading />;
 

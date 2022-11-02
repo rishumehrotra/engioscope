@@ -274,7 +274,9 @@ const LineGraph = <L, P>({
     Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing)
   ), []);
 
-  const width = ((points(lines[0]).length - 1) * yAxisItemSpacing) + yAxisLeftPadding;
+  const width = lines.length === 0
+    ? 0
+    : ((points(lines[0]).length - 1) * yAxisItemSpacing) + yAxisLeftPadding;
 
   const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (!onClick) return;
