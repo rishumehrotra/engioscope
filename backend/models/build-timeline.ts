@@ -7,6 +7,7 @@ import type { Timeline } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
 
 const { Schema, model } = mongoose;
+const resultCount = 7;
 
 export type BuildTimelineRecord = {
   name: string;
@@ -144,7 +145,7 @@ const getSlowestTasks = async (
       },
       { $sort: { averageTime: -1 } },
       { $match: { averageTime: { $gt: oneSecondInMs * 30 } } },
-      { $limit: 7 }
+      { $limit: resultCount }
     ]);
 
   return results.map(r => ({ name: r._id, time: r.averageTime }));
@@ -204,7 +205,7 @@ const getFailing = async (
       },
       { $sort: { errorCount: -1 } },
       { $match: { errorCount: { $gt: 0.05 } } },
-      { $limit: 7 }
+      { $limit: resultCount }
     ]);
 
   return results.map(r => ({
@@ -251,7 +252,7 @@ const getSkipped = async (
       },
       { $sort: { skippedPercentage: -1 } },
       { $match: { skippedPercentage: { $gt: 0.01 } } },
-      { $limit: 7 }
+      { $limit: resultCount }
     ]);
 
   return results.map(r => ({
