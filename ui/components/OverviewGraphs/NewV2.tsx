@@ -10,6 +10,7 @@ import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import type { LineGraphProps } from '../graphs/LineGraph.jsx';
 import LineGraph from '../graphs/LineGraph.jsx';
 import Loading from '../Loading.jsx';
+import { CrosshairBubble } from './helpers/CrosshairBubble-v2.jsx';
 import GraphCard from './helpers/GraphCard.jsx';
 import { lineColor, stringifyDateField } from './helpers/helpers.js';
 import type { LegendSidebarProps } from './helpers/LegendSidebar.jsx';
@@ -151,6 +152,25 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
     onCheckboxClick
   }), [isChecked, onCheckboxClick, workItemSummary.data, workItemTypes.data]);
 
+  const showCrosshairBubble = useCallback((pointIndex: number) => (
+    <CrosshairBubble
+      title="New work items"
+      date={dataToShow[0].points[pointIndex].date}
+      items={dataToShow
+        .map(line => {
+          const matchingWit = workItemTypes.data?.find(wit => wit.name[0] === line.workItemTypeName);
+
+          return {
+            workItemType: matchingWit!,
+            label: line.label,
+            lineColor: lineColor({ witId: line.workItemTypeName, groupName: line.groupName }),
+            value: num(line.points[pointIndex].value)
+          };
+        })
+        .filter(x => x.value !== '0')}
+    />
+  ), [dataToShow, workItemTypes.data]);
+
   const lineGraphProps = useMemo<LineGraphProps<Line, Point>>(() => ({
     className: 'max-w-full',
     lines: dataToShow,
@@ -163,11 +183,13 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
     // crosshairBubble: showCrosshairBubble,
     onClick: pointIndex => {
       console.log(pointIndex);
-    }
-  }), [dataToShow]);
+    },
+    crosshairBubble: showCrosshairBubble
+  }), [dataToShow, showCrosshairBubble]);
 
   if (workItemSummary.isLoading) return <Loading />;
 
+  console.log(dataToShow);
   return (
     <GraphCard
       title="New work items"

@@ -1,7 +1,8 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
+import { sum } from 'rambda';
 import { z } from 'zod';
-import { asc, byNum } from '../../shared/sort-utils.js';
+import { asc, byNum, desc } from '../../shared/sort-utils.js';
 import { merge } from '../../shared/utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
@@ -240,8 +241,9 @@ const newWorkItemsForWorkItemType = ({
       .aggregate(pipeline)
       .then(result => Object.fromEntries(
         result
+          .sort(desc(byNum(r => sum(Object.values(r.counts)))))
           .sort(asc(byNum(r => collectionConfig?.projects[0].environments?.indexOf(r._id) || -1)))
-          .map(r => ([r._id, r.counts] as [string, Record<string, number> ]))
+          .map((r): [string, Record<string, number> ] => ([r._id, r.counts]))
       ))
   );
 };

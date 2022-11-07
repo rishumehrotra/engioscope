@@ -107,7 +107,7 @@ export const getWorkItemTypes = async ({ collectionName, project }: z.infer<type
         .filter(exists)
     );
 
-    return ({
+    return {
       name: [wit.name, pluralize(wit.name)],
       icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(wit.icon))}`,
       startDateFields: fields(matchingWitConfig?.startDate),
@@ -119,6 +119,8 @@ export const getWorkItemTypes = async ({ collectionName, project }: z.infer<type
         endDateFields: fields(wc.endDate)
       })),
       rootCauseFields: fields(matchingWitConfig?.rootCause)
-    });
+    };
   });
 };
+
+export type UIWorkItemType = Awaited<ReturnType<typeof getWorkItemTypes>>[number];
