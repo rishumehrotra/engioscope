@@ -152,7 +152,7 @@ const applyAdditionalFilters = (
             [`${sanitizeFieldName(label)}-temp-1`]: {
               $concat: configForField.fields.flatMap(f => [
                 { $ifNull: [field(f), ''] },
-                ';'
+                configForField.delimiter
               ])
             }
           }

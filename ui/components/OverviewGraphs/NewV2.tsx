@@ -6,6 +6,7 @@ import { noGroup } from '../../../shared/work-item-utils.js';
 import { trpc } from '../../helpers/trpc.js';
 import { num, shortDate } from '../../helpers/utils.js';
 import { useCollectionAndProject, useQueryPeriod } from '../../hooks/query-hooks.js';
+import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import type { LineGraphProps } from '../graphs/LineGraph.jsx';
 import LineGraph from '../graphs/LineGraph.jsx';
@@ -98,9 +99,21 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
   const cnp = useCollectionAndProject();
   const qp = useQueryPeriod();
   const [queryPeriodDays] = useQueryPeriodDays();
+  const [filters] = useQueryParam<string>('filter', asString);
+
+  const additionalFilters = useMemo(() => (
+    !filters
+      ? {}
+      : Object.fromEntries(
+        filters
+          .split(';')
+          .map(part => part.split(':'))
+          .map(([label, tags]) => ([label, tags.split(',')]))
+      )
+  ), [filters]);
 
   const workItemSummary = trpc.workItems.newWorkItems.useQuery({
-    ...cnp, ...qp, additionalFilters: {}
+    ...cnp, ...qp, additionalFilters
   });
 
   const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
@@ -158,10 +171,11 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
       date={dataToShow[0].points[pointIndex].date}
       items={dataToShow
         .map(line => {
-          const matchingWit = workItemTypes.data?.find(wit => wit.name[0] === line.workItemTypeName);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const matchingWit = (workItemTypes.data || []).find(wit => wit.name[0] === line.workItemTypeName)!;
 
           return {
-            workItemType: matchingWit!,
+            workItemType: matchingWit,
             label: line.label,
             lineColor: lineColor({ witId: line.workItemTypeName, groupName: line.groupName }),
             value: num(line.points[pointIndex].value)
