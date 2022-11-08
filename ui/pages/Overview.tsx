@@ -12,12 +12,7 @@ const Overview: React.FC = () => {
 
   return (
     <>
-      {
-        v2
-          ? <NewV2 />
-          : null
-
-      }
+      {v2 ? <NewV2 /> : null}
       {
         projectAnalysis === 'loading'
           ? <Loading />

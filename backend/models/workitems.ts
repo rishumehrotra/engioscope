@@ -7,6 +7,7 @@ import { merge } from '../../shared/utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
+import type { QueryRange } from './helpers.js';
 import {
   collectionAndProjectInputs, queryRangeInputParser, timezone, queryRangeFilter
 } from './helpers.js';
@@ -183,6 +184,34 @@ const applyAdditionalFilters = (
     });
 };
 
+const getWorkItemsOfType = (collectionName: string, project: string, workItemTypeName: string) => [{
+  $match: {
+    collectionName,
+    project,
+    workItemType: workItemTypeName,
+    state: { $nin: configForCollection(collectionName)?.workitems.ignoreStates || [] }
+  }
+}];
+
+const ensureDateInRange = (newFieldName: string, fields: string[] | undefined, queryPeriod: QueryRange) => ([
+  // Get the min date based on the fields
+  { $addFields: { [newFieldName]: { $min: (fields || []).map(field) } } },
+  // Ensure it's within range
+  { $match: { [newFieldName]: queryRangeFilter(queryPeriod) } }
+]);
+
+const groupByField = (workItemTypeConfig?: { groupByField?: string }) => (
+  workItemTypeConfig?.groupByField
+    ? field(workItemTypeConfig?.groupByField)
+    : noGroup
+);
+
+const groupByDate = (dateField: string, queryPeriod: QueryRange) => ({
+  $dateToString: {
+    date: `$${dateField}`, timezone: timezone(queryPeriod), format: '%Y-%m-%d'
+  }
+});
+
 export const newWorkItemsInputParser = z.object({
   ...collectionAndProjectInputs,
   queryPeriod: queryRangeInputParser,
@@ -194,36 +223,16 @@ const newWorkItemsForWorkItemType = ({
 }: z.infer<typeof newWorkItemsInputParser> & { workItemType: string }) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
-  const startDateFields = workItemTypeConfig?.startDate.map(field);
 
   const pipeline = [
-    {
-      $match: {
-        collectionName,
-        project,
-        workItemType,
-        state: { $nin: collectionConfig?.workitems.ignoreStates || [] },
-        stateChangeDate: { $gte: queryPeriod[0] }
-      }
-    },
-    // Get the start date based on the config's startDateFields
-    { $addFields: { startDate: { $min: startDateFields || [] } } },
-    // Ensure it's within range
-    { $match: { startDate: queryRangeFilter(queryPeriod) } },
+    ...getWorkItemsOfType(collectionName, project, workItemType),
+    ...ensureDateInRange('startDate', workItemTypeConfig?.startDate, queryPeriod),
     ...applyAdditionalFilters(collectionName, additionalFilters),
     {
       $group: {
         _id: {
-          // Group by the groupByField in config...
-          group: workItemTypeConfig?.groupByField
-            ? field(workItemTypeConfig?.groupByField)
-            : noGroup,
-          // ...and the startDate
-          date: {
-            $dateToString: {
-              date: '$startDate', timezone: timezone(queryPeriod), format: '%Y-%m-%d'
-            }
-          }
+          group: groupByField(workItemTypeConfig),
+          date: groupByDate('startDate', queryPeriod)
         },
         count: { $sum: 1 }
       }
