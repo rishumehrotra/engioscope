@@ -9,7 +9,7 @@ import { configForCollection } from '../config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
 import type { QueryRange } from './helpers.js';
 import {
-  collectionAndProjectInputs, queryRangeInputParser, timezone, queryRangeFilter
+  collectionAndProjectInputs, queryPeriodInputParser, timezone, queryRangeFilter
 } from './helpers.js';
 
 type WorkItem = {
@@ -212,10 +212,14 @@ const groupByDate = (dateField: string, queryPeriod: QueryRange) => ({
   }
 });
 
-const newWorkItemsSummaryInput = {
+const newWorkItemsBaseInput = {
   ...collectionAndProjectInputs,
-  queryPeriod: queryRangeInputParser,
   additionalFilters: z.record(z.string(), z.array(z.string()))
+};
+
+const newWorkItemsSummaryInput = {
+  ...newWorkItemsBaseInput,
+  queryPeriod: queryPeriodInputParser
 };
 export const newWorkItemsSummaryInputParser = z.object(newWorkItemsSummaryInput);
 
@@ -277,15 +281,16 @@ export const newWorkItemsSummary = async (options: z.infer<typeof newWorkItemsSu
   );
 };
 
-export const newWorkitemsListForGroupInputParser = z.object({
-  ...newWorkItemsSummaryInput,
+export const newWorkItemsListForGroupInputParser = z.object({
+  ...newWorkItemsBaseInput,
+  queryPeriod: queryPeriodInputParser,
   workItemType: z.string(),
   groupName: z.string()
 });
 
-export const newWorkitemsListForGroup = async ({
+export const newWorkItemsListForGroup = async ({
   collectionName, project, workItemType, groupName, additionalFilters, queryPeriod
-}: z.infer<typeof newWorkitemsListForGroupInputParser>) => {
+}: z.infer<typeof newWorkItemsListForGroupInputParser>) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
 
@@ -307,4 +312,44 @@ export const newWorkitemsListForGroup = async ({
 
   return WorkItemModel.aggregate(pipeline)
     .then(wis => wis.map(omit('_id')) as { id: number; title: string; date: Date; url: string }[]);
+};
+
+export const newWorkItemsListForDateInputParser = z.object({
+  ...newWorkItemsBaseInput,
+  date: z.date(),
+  timeZone: z.string()
+});
+
+export const newWorkItemsListForDate = async ({
+  collectionName, project, additionalFilters, date, timeZone
+}: z.infer<typeof newWorkItemsListForDateInputParser>) => {
+  const collectionConfig = configForCollection(collectionName);
+
+  const startOfRange = new Date(date);
+  startOfRange.setHours(0, 0, 0, 0);
+  const endOfRange = new Date(startOfRange);
+  endOfRange.setDate(startOfRange.getDate() + 1);
+  const queryPeriod: QueryRange = [startOfRange, endOfRange, timeZone];
+
+  const results = await Promise.all((collectionConfig?.workitems.types || []).map(workItemType => {
+    const pipeline = [
+      ...getWorkItemsOfType(collectionName, project, workItemType.type),
+      ...ensureDateInRange('startDate', workItemType.startDate, queryPeriod),
+      ...applyAdditionalFilters(collectionName, additionalFilters),
+      {
+        $project: {
+          id: 1,
+          title: 1,
+          date: '$startDate',
+          url: 1,
+          type: '$workItemType',
+          group: workItemType.groupByField ? field(workItemType.groupByField) : noGroup
+        }
+      }
+    ];
+
+    return WorkItemModel.aggregate(pipeline);
+  }));
+
+  return results.flat().map(omit('_id')) as { id: number; title: string; url: string; date: Date; type: string; group: string }[];
 };

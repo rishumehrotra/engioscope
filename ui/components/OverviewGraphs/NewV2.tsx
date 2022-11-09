@@ -17,7 +17,7 @@ import { lineColor, stringifyDateField } from './helpers/helpers.js';
 import type { LegendSidebarProps } from './helpers/LegendSidebar.jsx';
 import { LegendSidebar } from './helpers/LegendSidebar.jsx';
 import type { ModalArgs } from './helpers/modal-helpers.jsx';
-import { WorkItemsByDate } from './helpers/modal-helpers.jsx';
+import { WorkItemsByGroup, WorkItemsByDate } from './helpers/modal-helpers.jsx';
 
 type Point = {
   date: Date;
@@ -118,7 +118,7 @@ const NewWorkItemsByGroup: React.FC<NewWorkItemsByGroupProps> = ({ workItemTypeN
   const qp = useQueryPeriod();
   const additionalFilters = useAdditionalFilters();
 
-  const workItems = trpc.workItems.newWorkitemsListForGroup.useQuery({
+  const workItems = trpc.workItems.newWorkItemsListForGroup.useQuery({
     ...cnp, ...qp, additionalFilters, workItemType: workItemTypeName, groupName
   });
 
@@ -130,6 +130,26 @@ const NewWorkItemsByGroup: React.FC<NewWorkItemsByGroupProps> = ({ workItemTypeN
       groupName={groupName}
       workItems={workItems.data}
     />
+  );
+};
+
+type NewWorkItemsByDateProps = {
+  date: Date;
+};
+
+const NewWorkItemsByDate: React.FC<NewWorkItemsByDateProps> = ({ date }) => {
+  const cnp = useCollectionAndProject();
+  const qp = useQueryPeriod();
+  const additionalFilters = useAdditionalFilters();
+
+  const workItems = trpc.workItems.nenwWorkItemsListForDate.useQuery({
+    ...cnp, additionalFilters, date, timeZone: qp.queryPeriod[2]
+  });
+
+  if (!workItems.data) return <Loading />;
+
+  return (
+    <WorkItemsByGroup workItems={workItems.data} />
   );
 };
 
@@ -177,7 +197,7 @@ const NewGraph: React.FC<NewGraphProps> = ({ openModal }) => {
           return [{
             iconUrl: matchingWit?.icon || '',
             label: matchingWit?.name[1] || workItemTypeName,
-            value: num(sum(Object.values(groups).flatMap(g => Object.values(g)))),
+            value: num(sum(Object.values(groups).flatMap(Object.values))),
             key: workItemTypeName,
             color: lineColor({ groupName: noGroup, witId: workItemTypeName }),
             isChecked: isChecked(workItemTypeName)
@@ -242,9 +262,15 @@ const NewGraph: React.FC<NewGraphProps> = ({ openModal }) => {
     lineColor: line => lineColor({ groupName: line.groupName, witId: line.workItemTypeName }),
     crosshairBubble: showCrosshairBubble,
     onClick: pointIndex => {
-      console.log(pointIndex);
+      const { date } = dataToShow[0].points[pointIndex];
+
+      return openModal({
+        heading: 'New work items',
+        subheading: shortDate(date),
+        body: <NewWorkItemsByDate date={date} />
+      });
     }
-  }), [dataToShow, showCrosshairBubble]);
+  }), [dataToShow, openModal, showCrosshairBubble]);
 
   if (workItemSummary.isLoading) return <Loading />;
 

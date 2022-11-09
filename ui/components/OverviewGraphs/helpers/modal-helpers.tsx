@@ -159,11 +159,10 @@ type WorkItemsByDateProps = {
   workItems: {title: string; id: number; date: Date; url: string}[];
   workItemTypeName: string;
   groupName: string;
-  tooltip?: (workItem: UIWorkItem, additionalSections?: { label: string; value: string | number }[]) => string;
 };
 
 export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
-  workItems, workItemTypeName, groupName, tooltip
+  workItems, workItemTypeName, groupName
 }) => {
   const cnp = useCollectionAndProject();
   const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
@@ -207,8 +206,6 @@ export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
                   className="text-blue-800 hover:underline inline-flex items-start"
                   target="_blank"
                   rel="noreferrer"
-                  data-html
-                  data-tip={tooltip}
                 >
                   <img
                     className="inline-block mr-2 mt-1"
@@ -224,6 +221,91 @@ export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
                 </a>
               </li>
             ))}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+type WorkItemsByGroupProps = {
+  workItems: {
+    id: number;
+    title: string;
+    url: string;
+    date: Date;
+    type: string;
+    group: string;
+  }[];
+};
+
+const groupLabel = (workItem: WorkItemsByGroupProps['workItems'][number]) => (
+  workItem.group === noGroup ? workItem.type : (`${workItem.type} - ${workItem.group}`)
+);
+
+export const WorkItemsByGroup: React.FC<WorkItemsByGroupProps> = ({ workItems }) => {
+  const cnp = useCollectionAndProject();
+  const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
+
+  const groupedByGroup = useMemo(() => (
+    workItems
+      .reduce<Record<string, { color: string; workItems: typeof workItems }>>((acc, workItem) => {
+        const label = groupLabel(workItem);
+        acc[label] = acc[label] || {
+          color: lineColor({ witId: workItem.type, groupName: workItem.group }),
+          workItems: []
+        };
+
+        acc[label].workItems.push(workItem);
+        return acc;
+      }, {})
+  ), [workItems]);
+
+  if (!workItemTypes.data) return <Loading />;
+
+  return (
+    <ul>
+      {Object.entries(groupedByGroup || {}).map(([label, { color, workItems }]) => (
+        <li key={label} className="my-3">
+          <h3 className="font-semibold text-lg">
+            {label}
+            <span
+              className="text-base inline-block ml-2 px-3 rounded-full"
+              style={{
+                color: contrastColour(color),
+                backgroundColor: color
+              }}
+            >
+              {workItems.length}
+            </span>
+          </h3>
+          <ul>
+            {workItems.map(workItem => {
+              const matchingWit = workItemTypes.data.find(wit => wit.name[0] === workItem.type);
+
+              return (
+                <li key={workItem.id} className="py-2">
+                  <a
+                    href={workItem.url}
+                    className="text-blue-800 hover:underline inline-flex items-start"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img
+                      className="inline-block mr-2 mt-1"
+                      alt={`Icon for ${matchingWit?.name[1] || workItem.type}`}
+                      src={matchingWit?.icon || ''}
+                      width="16"
+                    />
+                    <span>
+                      {workItem.id}
+                      {': '}
+                      {workItem.title}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </li>
       ))}
