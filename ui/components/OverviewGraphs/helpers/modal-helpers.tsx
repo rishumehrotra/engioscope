@@ -1,10 +1,15 @@
+import { prop } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useMemo, useCallback, useState } from 'react';
+import { asc, byDate } from '../../../../shared/sort-utils.js';
 import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types.js';
-import { contrastColour } from '../../../helpers/utils.js';
+import { trpc } from '../../../helpers/trpc.js';
+import { contrastColour, shortDate } from '../../../helpers/utils.js';
+import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
 import { modalHeading, useModal } from '../../common/Modal.js';
+import Loading from '../../Loading.jsx';
 import type { WorkItemAccessors } from './helpers.js';
-import { noGroup } from './helpers.js';
+import { lineColor, noGroup } from './helpers.js';
 
 export type ModalArgs = {
   heading: ReactNode;
@@ -149,3 +154,79 @@ export const workItemSubheading = (
 ) => (
   `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `/ ${groupName}`} (${workItems.length})`
 );
+
+type WorkItemsByDateProps = {
+  workItems: {title: string; id: number; date: Date; url: string}[];
+  workItemTypeName: string;
+  groupName: string;
+  tooltip?: (workItem: UIWorkItem, additionalSections?: { label: string; value: string | number }[]) => string;
+};
+
+export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
+  workItems, workItemTypeName, groupName, tooltip
+}) => {
+  const cnp = useCollectionAndProject();
+  const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
+
+  const groupedByDate = useMemo(() => (
+    workItems
+      .sort(asc(byDate(prop('date'))))
+      .reduce<Record<string, typeof workItems>>((acc, workItem) => {
+        const dateString = shortDate(workItem.date);
+        acc[dateString] = acc[dateString] || [];
+        acc[dateString].push(workItem);
+        return acc;
+      }, {})
+  ), [workItems]);
+
+  if (!workItemTypes.data) return <Loading />;
+
+  const matchingWit = workItemTypes.data.find(wit => wit.name[0] === workItemTypeName);
+
+  return (
+    <ul>
+      {Object.entries(groupedByDate || {}).map(([dateString, workItems]) => (
+        <li key={dateString} className="my-3">
+          <h3 className="font-semibold text-lg">
+            {dateString}
+            <span
+              className="text-base inline-block ml-2 px-3 rounded-full"
+              style={{
+                color: contrastColour(lineColor({ witId: workItemTypeName, groupName })),
+                backgroundColor: lineColor({ witId: workItemTypeName, groupName })
+              }}
+            >
+              {workItems.length}
+            </span>
+          </h3>
+          <ul>
+            {workItems.map(workItem => (
+              <li key={workItem.id} className="py-2">
+                <a
+                  href={workItem.url}
+                  className="text-blue-800 hover:underline inline-flex items-start"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-html
+                  data-tip={tooltip}
+                >
+                  <img
+                    className="inline-block mr-2 mt-1"
+                    alt={`Icon for ${matchingWit?.name[1] || workItemTypeName}`}
+                    src={matchingWit?.icon || ''}
+                    width="16"
+                  />
+                  <span>
+                    {workItem.id}
+                    {': '}
+                    {workItem.title}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  );
+};

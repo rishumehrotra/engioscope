@@ -16,6 +16,8 @@ import GraphCard from './helpers/GraphCard.jsx';
 import { lineColor, stringifyDateField } from './helpers/helpers.js';
 import type { LegendSidebarProps } from './helpers/LegendSidebar.jsx';
 import { LegendSidebar } from './helpers/LegendSidebar.jsx';
+import type { ModalArgs } from './helpers/modal-helpers.jsx';
+import { WorkItemsByDate } from './helpers/modal-helpers.jsx';
 
 type Point = {
   date: Date;
@@ -27,10 +29,6 @@ type Line = {
   workItemTypeName: string;
   groupName: string;
   points: Point[];
-};
-
-type NewGraphProps = {
-  // openModal: (x: ModalArgs) => void;
 };
 
 const dataByDay = (
@@ -69,6 +67,21 @@ const dataByDay = (
   }));
 };
 
+const useAdditionalFilters = () => {
+  const [filters] = useQueryParam<string>('filter', asString);
+
+  return useMemo(() => (
+    !filters
+      ? {}
+      : Object.fromEntries(
+        filters
+          .split(';')
+          .map(part => part.split(':'))
+          .map(([label, tags]) => ([label, tags.split(',')]))
+      )
+  ), [filters]);
+};
+
 const useSidebarCheckboxState = () => {
   const [checkboxState, setCheckboxState] = useState<Record<string, boolean>>({});
 
@@ -95,22 +108,40 @@ const useSidebarCheckboxState = () => {
   return [onCheckboxClick, isChecked, setSummary] as const;
 };
 
-const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
+type NewWorkItemsByGroupProps = {
+  workItemTypeName: string;
+  groupName: string;
+};
+
+const NewWorkItemsByGroup: React.FC<NewWorkItemsByGroupProps> = ({ workItemTypeName, groupName }) => {
+  const cnp = useCollectionAndProject();
+  const qp = useQueryPeriod();
+  const additionalFilters = useAdditionalFilters();
+
+  const workItems = trpc.workItems.newWorkitemsListForGroup.useQuery({
+    ...cnp, ...qp, additionalFilters, workItemType: workItemTypeName, groupName
+  });
+
+  if (!workItems.data) return <Loading />;
+
+  return (
+    <WorkItemsByDate
+      workItemTypeName={workItemTypeName}
+      groupName={groupName}
+      workItems={workItems.data}
+    />
+  );
+};
+
+type NewGraphProps = {
+  openModal: (x: ModalArgs) => void;
+};
+
+const NewGraph: React.FC<NewGraphProps> = ({ openModal }) => {
   const cnp = useCollectionAndProject();
   const qp = useQueryPeriod();
   const [queryPeriodDays] = useQueryPeriodDays();
-  const [filters] = useQueryParam<string>('filter', asString);
-
-  const additionalFilters = useMemo(() => (
-    !filters
-      ? {}
-      : Object.fromEntries(
-        filters
-          .split(';')
-          .map(part => part.split(':'))
-          .map(([label, tags]) => ([label, tags.split(',')]))
-      )
-  ), [filters]);
+  const additionalFilters = useAdditionalFilters();
 
   const workItemSummary = trpc.workItems.newWorkItems.useQuery({
     ...cnp, ...qp, additionalFilters
@@ -161,9 +192,24 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
           isChecked: isChecked(`${workItemTypeName}-${groupName}`)
         }));
       }),
-    onItemClick: key => console.log(key),
+    onItemClick: key => {
+      const wit = (workItemTypes.data || []).find(wit => (
+        key.startsWith(`${wit.name[0]}-`) || key === wit.name[0]
+      ));
+
+      if (!wit) return;
+
+      const groupName = key === wit.name[0] ? noGroup : key.replace(`${wit.name[0]}-`, '');
+      const groupCount = sum(Object.values(workItemSummary.data?.[wit.name[0]][groupName] || {}));
+
+      return openModal({
+        heading: 'New work items',
+        subheading: `${wit.name[1]} ${groupName === noGroup ? '' : `/ ${groupName}`} (${groupCount})`,
+        body: <NewWorkItemsByGroup workItemTypeName={wit.name[0]} groupName={groupName} />
+      });
+    },
     onCheckboxClick
-  }), [isChecked, onCheckboxClick, workItemSummary.data, workItemTypes.data]);
+  }), [isChecked, onCheckboxClick, openModal, workItemSummary.data, workItemTypes.data]);
 
   const showCrosshairBubble = useCallback((pointIndex: number) => (
     <CrosshairBubble
@@ -194,16 +240,14 @@ const NewGraph: React.FC<NewGraphProps> = (/* { openModal } */) => {
     lineLabel: line => line.label,
     xAxisLabel: point => shortDate(point.date),
     lineColor: line => lineColor({ groupName: line.groupName, witId: line.workItemTypeName }),
-    // crosshairBubble: showCrosshairBubble,
+    crosshairBubble: showCrosshairBubble,
     onClick: pointIndex => {
       console.log(pointIndex);
-    },
-    crosshairBubble: showCrosshairBubble
+    }
   }), [dataToShow, showCrosshairBubble]);
 
   if (workItemSummary.isLoading) return <Loading />;
 
-  console.log(dataToShow);
   return (
     <GraphCard
       title="New work items"

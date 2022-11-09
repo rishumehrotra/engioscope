@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
-import { map, omit, sum } from 'rambda';
+import { omit, sum } from 'rambda';
 import { z } from 'zod';
 import { asc, byNum, desc } from '../../shared/sort-utils.js';
 import { merge } from '../../shared/utils.js';
@@ -305,5 +305,6 @@ export const newWorkitemsListForGroup = async ({
     }
   ];
 
-  return WorkItemModel.aggregate(pipeline).then(map(omit(['_id'])));
+  return WorkItemModel.aggregate(pipeline)
+    .then(wis => wis.map(omit('_id')) as { id: number; title: string; date: Date; url: string }[]);
 };
