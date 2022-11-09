@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
-import { sum } from 'rambda';
+import { map, omit, sum } from 'rambda';
 import { z } from 'zod';
 import { asc, byNum, desc } from '../../shared/sort-utils.js';
 import { merge } from '../../shared/utils.js';
@@ -212,15 +212,16 @@ const groupByDate = (dateField: string, queryPeriod: QueryRange) => ({
   }
 });
 
-export const newWorkItemsInputParser = z.object({
+const newWorkItemsSummaryInput = {
   ...collectionAndProjectInputs,
   queryPeriod: queryRangeInputParser,
   additionalFilters: z.record(z.string(), z.array(z.string()))
-});
+};
+export const newWorkItemsSummaryInputParser = z.object(newWorkItemsSummaryInput);
 
 const newWorkItemsForWorkItemType = ({
   collectionName, project, workItemType, queryPeriod, additionalFilters
-}: z.infer<typeof newWorkItemsInputParser> & { workItemType: string }) => {
+}: z.infer<typeof newWorkItemsSummaryInputParser> & { workItemType: string }) => {
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
 
@@ -257,7 +258,7 @@ const newWorkItemsForWorkItemType = ({
   );
 };
 
-export const newWorkItems = async (options: z.infer<typeof newWorkItemsInputParser>) => {
+export const newWorkItemsSummary = async (options: z.infer<typeof newWorkItemsSummaryInputParser>) => {
   const collConfig = configForCollection('JioMobilityAndEnterprise');
   if (!collConfig) return {};
 
@@ -274,4 +275,35 @@ export const newWorkItems = async (options: z.infer<typeof newWorkItemsInputPars
     )))
       .then(result => result.reduce(merge, {}))
   );
+};
+
+export const newWorkitemsListForGroupInputParser = z.object({
+  ...newWorkItemsSummaryInput,
+  workItemType: z.string(),
+  groupName: z.string()
+});
+
+export const newWorkitemsListForGroup = async ({
+  collectionName, project, workItemType, groupName, additionalFilters, queryPeriod
+}: z.infer<typeof newWorkitemsListForGroupInputParser>) => {
+  const collectionConfig = configForCollection(collectionName);
+  const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
+
+  const pipeline = [
+    ...getWorkItemsOfType(collectionName, project, workItemType),
+    ...ensureDateInRange('startDate', workItemTypeConfig?.startDate, queryPeriod),
+    ...applyAdditionalFilters(collectionName, additionalFilters),
+    ...((groupName === noGroup || !workItemTypeConfig?.groupByField)
+      ? []
+      : [
+        { $match: { $expr: { $eq: [field(workItemTypeConfig?.groupByField), groupName] } } }
+      ]),
+    {
+      $project: {
+        id: 1, title: 1, date: '$startDate', url: 1
+      }
+    }
+  ];
+
+  return WorkItemModel.aggregate(pipeline).then(map(omit(['_id'])));
 };
