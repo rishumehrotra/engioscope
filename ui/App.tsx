@@ -28,7 +28,7 @@ const App: React.FC = () => {
         refetchOnReconnect: false,
         refetchInterval: false,
         refetchOnWindowFocus: false,
-        cacheTime: 15 * oneMinuteInMs
+        staleTime: 15 * oneMinuteInMs
       }
     }
   }));
