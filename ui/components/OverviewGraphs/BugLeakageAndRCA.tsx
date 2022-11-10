@@ -1,7 +1,7 @@
 import { length, not, pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
+import { asc, byNum, desc } from 'sort-lib';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
-import { asc, byNum, desc } from '../../../shared/sort-utils.js';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
 import { noRCAValue } from '../../../shared/work-item-utils.js';
 import { num } from '../../helpers/utils.js';

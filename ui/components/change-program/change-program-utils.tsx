@@ -1,8 +1,8 @@
 import {
   add, allPass, compose, identity, length, not, pipe, prop, range, uniq
 } from 'rambda';
+import { asc, byString } from 'sort-lib';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
-import { asc, byString } from '../../../shared/sort-utils.js';
 import type { UIChangeProgram, UIChangeProgramTask } from '../../../shared/types.js';
 import { shortDate } from '../../helpers/utils.js';
 

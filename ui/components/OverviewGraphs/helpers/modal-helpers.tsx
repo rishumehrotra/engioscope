@@ -1,7 +1,7 @@
 import { prop } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useMemo, useCallback, useState } from 'react';
-import { asc, byDate } from '../../../../shared/sort-utils.js';
+import { asc, byDate } from 'sort-lib';
 import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types.js';
 import { trpc } from '../../../helpers/trpc.js';
 import { contrastColour, shortDate } from '../../../helpers/utils.js';

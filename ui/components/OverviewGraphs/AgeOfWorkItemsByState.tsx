@@ -1,6 +1,6 @@
 import { allPass, pipe, prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import { asc, byDate } from '../../../shared/sort-utils.js';
+import { asc, byDate } from 'sort-lib';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import {

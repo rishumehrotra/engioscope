@@ -1,5 +1,5 @@
 import { head, multiply, prop } from 'rambda';
-import { byNum, desc } from './sort-utils.js';
+import { byNum, desc } from 'sort-lib';
 import type {
   BranchPolicies, Pipeline, PipelineCount, PipelineStage
 } from './types.js';

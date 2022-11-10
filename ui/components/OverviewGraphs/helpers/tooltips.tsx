@@ -1,10 +1,10 @@
 import { head, prop } from 'rambda';
+import { byNum, desc } from 'sort-lib';
 import type { UIWorkItem, UIWorkItemType, WorkItemTimes } from '../../../../shared/types.js';
 import { num, prettyMS, priorityBasedColor } from '../../../helpers/utils.js';
 import type { WorkItemAccessors } from './helpers.js';
 import { timeSpent } from './helpers.js';
 import { timeDifference } from '../../../../shared/work-item-utils.js';
-import { byNum, desc } from '../../../../shared/sort-utils.js';
 import { divide, exists } from '../../../../shared/utils.js';
 
 export const envRowTooltip = (env: string, successful: number, total: number, pipelineCount: number) => `

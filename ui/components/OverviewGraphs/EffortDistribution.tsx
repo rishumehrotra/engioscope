@@ -1,5 +1,6 @@
 import { add } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
+import { byNum, desc } from 'sort-lib';
 import type { UIWorkItem } from '../../../shared/types.js';
 import { exists, prettyMS, shortDate } from '../../helpers/utils.js';
 import GraphCard from './helpers/GraphCard.js';
@@ -16,7 +17,6 @@ import type { ModalArgs } from './helpers/modal-helpers.js';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
 import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
-import { byNum, desc } from '../../../shared/sort-utils.js';
 
 const workCenterTimeInQueryPeriodUsing = (
   workItemTimes: WorkItemAccessors['workItemTimes'],

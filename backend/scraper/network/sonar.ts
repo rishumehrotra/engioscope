@@ -1,5 +1,6 @@
 import qs from 'qs';
 import { head, map } from 'rambda';
+import { byDate, desc } from 'sort-lib';
 import fetch from './fetch-with-extras.js';
 import { requiredMetrics } from '../stats-aggregators/code-quality.js';
 import fetchWithDiskCache from './fetch-with-disk-cache.js';
@@ -7,7 +8,6 @@ import createPaginatedGetter from './create-paginated-getter.js';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-sonar.js';
 import type { ParsedConfig, SonarConfig } from '../parse-config.js';
 import { normalizeBranchName, pastDate, unique } from '../../utils.js';
-import { byDate, desc } from '../../../shared/sort-utils.js';
 import { latestBuildReportsForRepoAndBranch } from '../../models/build-reports.js';
 
 export type SonarProject = SonarConfig & {

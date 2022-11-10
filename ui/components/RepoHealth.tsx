@@ -5,6 +5,7 @@ import React, {
 import { Link, useLocation } from 'react-router-dom';
 import { not, prop } from 'rambda';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { byNum, desc } from 'sort-lib';
 import type { FeatureToggle, RepoAnalysis } from '../../shared/types.js';
 import { num } from '../helpers/utils.js';
 import Flair from './common/Flair.js';
@@ -19,7 +20,6 @@ import { useSortParams } from '../hooks/sort-hooks.js';
 import usePageName from '../hooks/use-page-name.js';
 import type { Dev } from '../types.js';
 import { isInactive } from '../../shared/repo-utils.js';
-import { byNum, desc } from '../../shared/sort-utils.js';
 import branches from './repo-tabs/branches/index.js';
 import { DownChevron } from './common/Icons.jsx';
 import useOnClickOutside from '../hooks/on-click-outside.js';

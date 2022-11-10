@@ -5,7 +5,7 @@ import {
 import React, {
   Fragment, useCallback, useMemo
 } from 'react';
-import { asc, byNum } from '../../../shared/sort-utils.js';
+import { asc, byNum } from 'sort-lib';
 import hexToHsl from '../../helpers/hex-to-hsl.js';
 import { prettyMS } from '../../helpers/utils.js';
 

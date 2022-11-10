@@ -1,6 +1,6 @@
 import { pipe } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
-import { asc, byNum } from '../../../shared/sort-utils.js';
+import { asc, byNum } from 'sort-lib';
 import type { UIWorkItem } from '../../../shared/types.js';
 import { flowEfficiency } from '../../../shared/work-item-utils.js';
 import GraphCard from './helpers/GraphCard.js';

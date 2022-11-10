@@ -1,6 +1,6 @@
 import { always, identity, prop } from 'rambda';
 import React, { useEffect, useMemo, useState } from 'react';
-import { asc, byNum } from '../../../../shared/sort-utils.js';
+import { asc, byNum } from 'sort-lib';
 import type { UIWorkItem } from '../../../../shared/types.js';
 import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown.js';
 

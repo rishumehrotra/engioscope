@@ -1,11 +1,11 @@
 import {
   allPass, anyPass, complement, compose, filter, not, pipe
 } from 'rambda';
-import type { UIBranches } from '../../../shared/types.js';
-import type { GitBranchStats } from '../types-azure.js';
 import {
   asc, byDate, byNum, desc
-} from '../../../shared/sort-utils.js';
+} from 'sort-lib';
+import type { UIBranches } from '../../../shared/types.js';
+import type { GitBranchStats } from '../types-azure.js';
 import { oneFortnightInMs } from '../../../shared/utils.js';
 
 const branchPageLimit = 20;

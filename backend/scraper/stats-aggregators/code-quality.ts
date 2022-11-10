@@ -1,8 +1,8 @@
 import { head, prop } from 'rambda';
+import { byDate, desc } from 'sort-lib';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGateDetails } from '../types-sonar.js';
 import type { QualityGateStatus, UICodeQuality } from '../../../shared/types.js';
 import { pastDate } from '../../utils.js';
-import { byDate, desc } from '../../../shared/sort-utils.js';
 
 // Get list of available metrics at <sonar-host>/api/metrics/search
 export const requiredMetrics = [

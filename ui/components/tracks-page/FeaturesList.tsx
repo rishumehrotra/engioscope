@@ -1,6 +1,6 @@
 import { head, identity, last } from 'rambda';
 import React, { useMemo, useState } from 'react';
-import { asc, byNum } from '../../../shared/sort-utils.js';
+import { asc, byNum } from 'sort-lib';
 import type { TrackwiseData } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';

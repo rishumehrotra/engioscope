@@ -1,5 +1,5 @@
 import { always, map, sum } from 'rambda';
-import { asc, byDate } from '../../../shared/sort-utils.js';
+import { asc, byDate } from 'sort-lib';
 import type { TrackwiseData, UIWorkItem } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { timeSpent } from '../OverviewGraphs/helpers/helpers.js';

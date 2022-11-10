@@ -1,5 +1,5 @@
 import { sum } from 'rambda';
-import { byNum, desc } from '../../../shared/sort-utils.js';
+import { byNum, desc } from 'sort-lib';
 import type { AggregatedCommitsByDev, UICommits } from '../../../shared/types.js';
 import type { GitCommitRef } from '../types-azure.js';
 

@@ -5,7 +5,7 @@ import React, {
 } from 'react';
 import {
   asc, byNum, byString, desc
-} from '../../../shared/sort-utils.js';
+} from 'sort-lib';
 import type { SummaryMetrics } from '../../../shared/types.js';
 import { divide, exists, toPercentage } from '../../../shared/utils.js';
 import { num, prettyMS } from '../../helpers/utils.js';

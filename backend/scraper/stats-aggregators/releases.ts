@@ -1,7 +1,7 @@
 import {
   always, head, last, pipe, prop
 } from 'rambda';
-import { asc, byNum } from '../../../shared/sort-utils.js';
+import { asc, byNum } from 'sort-lib';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types.js';
 import { exists } from '../../../shared/utils.js';
 import { isMaster, weeks } from '../../utils.js';

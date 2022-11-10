@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import React, { useCallback, useState, useMemo } from 'react';
 import {
   asc, byNum, byString, desc
-} from '../../../shared/sort-utils.js';
+} from 'sort-lib';
 import type { TrackFlowMetrics, TrackMetricsByTrack } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';

@@ -2,8 +2,8 @@ import prettyMs from 'pretty-ms';
 import {
   equals, head, isNil, last, pipe, prop, T
 } from 'rambda';
+import { asc, byDate, desc } from 'sort-lib';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
-import { asc, byDate, desc } from '../../../shared/sort-utils.js';
 import type { UITests, UIPipelineTest } from '../../../shared/types.js';
 import type { Build } from '../../models/builds.js';
 import { unique, weeks } from '../../utils.js';

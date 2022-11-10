@@ -2,8 +2,8 @@ import { prop } from 'rambda';
 import React, {
   Fragment, useRef, useState
 } from 'react';
+import { asc, byString } from 'sort-lib';
 import { maybe } from '../../../shared/maybe.js';
-import { asc, byString } from '../../../shared/sort-utils.js';
 import type { SummaryMetrics } from '../../../shared/types.js';
 import { divide, exists, toPercentage } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';

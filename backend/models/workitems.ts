@@ -2,7 +2,7 @@ import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
 import { omit, sum } from 'rambda';
 import { z } from 'zod';
-import { asc, byNum, desc } from '../../shared/sort-utils.js';
+import { asc, byNum, desc } from 'sort-lib';
 import { merge } from '../../shared/utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';

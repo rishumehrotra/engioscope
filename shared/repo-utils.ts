@@ -1,8 +1,8 @@
 import {
   add, applySpec, identity, multiply
 } from 'rambda';
+import { asc, byString } from 'sort-lib';
 import { count, incrementBy } from './reducer-utils.js';
-import { asc, byString } from './sort-utils.js';
 import type {
   QualityGateStatus, RepoAnalysis, UIBuildPipeline
 } from './types';

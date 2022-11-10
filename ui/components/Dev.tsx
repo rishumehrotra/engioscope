@@ -1,7 +1,7 @@
 import { sum } from 'rambda';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { byNum, desc } from '../../shared/sort-utils.js';
+import { byNum, desc } from 'sort-lib';
 import type { Dev } from '../types.js';
 import Changes from './commits/Changes.js';
 import CommitTimeline from './commits/CommitTimeline.js';

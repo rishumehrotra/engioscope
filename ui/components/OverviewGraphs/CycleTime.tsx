@@ -1,5 +1,6 @@
 import { prop } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
+import { byNum, desc } from 'sort-lib';
 import type { UIWorkItem } from '../../../shared/types.js';
 import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph.js';
 import ScatterLineGraph from '../graphs/ScatterLineGraph.js';
@@ -17,7 +18,6 @@ import type { ModalArgs } from './helpers/modal-helpers.js';
 import { WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
 import { WorkItemTimeDetails } from './helpers/WorkItemTimeDetails.js';
 import { closedWorkItemsCSV } from './helpers/create-csv-content.js';
-import { byNum, desc } from '../../../shared/sort-utils.js';
 
 type CycleTimeGraphProps = {
   workItems: UIWorkItem[];
