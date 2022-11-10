@@ -6,6 +6,7 @@ import { asc, byNum, desc } from '../../shared/sort-utils.js';
 import { merge } from '../../shared/utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
+import type { ParsedCollection } from '../scraper/parse-config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
 import type { QueryRange } from './helpers.js';
 import {
@@ -120,6 +121,10 @@ const field = (fieldName: string) => ({
   }
 });
 
+const formatUrl = <T extends { url: string }>(wi: T) => ({
+  ...wi, url: wi.url.replace('_apis/wit/workItems/', '_workitems/edit/')
+});
+
 const sanitizeFieldName = (field: string) => field
   .replace(/\s/g, '_')
   .replace(/\./g, '_')
@@ -193,6 +198,12 @@ const getWorkItemsOfType = (collectionName: string, project: string, workItemTyp
   }
 }];
 
+const startDateFieldForNew = (workItemTypeConfig?: NonNullable<ParsedCollection['workitems']['types']>[number]) => (
+  workItemTypeConfig?.type.toLowerCase().includes('bug')
+    ? ['System.CreatedDate']
+    : workItemTypeConfig?.startDate
+);
+
 const ensureDateInRange = (newFieldName: string, fields: string[] | undefined, queryPeriod: QueryRange) => ([
   // Get the min date based on the fields
   { $addFields: { [newFieldName]: { $min: (fields || []).map(field) } } },
@@ -231,7 +242,7 @@ const newWorkItemsForWorkItemType = ({
 
   const pipeline = [
     ...getWorkItemsOfType(collectionName, project, workItemType),
-    ...ensureDateInRange('startDate', workItemTypeConfig?.startDate, queryPeriod),
+    ...ensureDateInRange('startDate', startDateFieldForNew(workItemTypeConfig), queryPeriod),
     ...applyAdditionalFilters(collectionName, additionalFilters),
     {
       $group: {
@@ -296,7 +307,7 @@ export const newWorkItemsListForGroup = async ({
 
   const pipeline = [
     ...getWorkItemsOfType(collectionName, project, workItemType),
-    ...ensureDateInRange('startDate', workItemTypeConfig?.startDate, queryPeriod),
+    ...ensureDateInRange('startDate', startDateFieldForNew(workItemTypeConfig), queryPeriod),
     ...applyAdditionalFilters(collectionName, additionalFilters),
     ...((groupName === noGroup || !workItemTypeConfig?.groupByField)
       ? []
@@ -310,8 +321,8 @@ export const newWorkItemsListForGroup = async ({
     }
   ];
 
-  return WorkItemModel.aggregate(pipeline)
-    .then(wis => wis.map(omit('_id')) as { id: number; title: string; date: Date; url: string }[]);
+  return WorkItemModel.aggregate<{ id: number; title: string; date: Date; url: string }>(pipeline)
+    .then(wis => wis.map(omit(['_id'])).map(formatUrl));
 };
 
 export const newWorkItemsListForDateInputParser = z.object({
@@ -334,7 +345,7 @@ export const newWorkItemsListForDate = async ({
   const results = await Promise.all((collectionConfig?.workitems.types || []).map(workItemType => {
     const pipeline = [
       ...getWorkItemsOfType(collectionName, project, workItemType.type),
-      ...ensureDateInRange('startDate', workItemType.startDate, queryPeriod),
+      ...ensureDateInRange('startDate', startDateFieldForNew(workItemType), queryPeriod),
       ...applyAdditionalFilters(collectionName, additionalFilters),
       {
         $project: {
@@ -348,8 +359,8 @@ export const newWorkItemsListForDate = async ({
       }
     ];
 
-    return WorkItemModel.aggregate(pipeline);
+    return WorkItemModel.aggregate<{ id: number; title: string; url: string; date: Date; type: string; group: string }>(pipeline);
   }));
 
-  return results.flat().map(omit('_id')) as { id: number; title: string; url: string; date: Date; type: string; group: string }[];
+  return results.flat().map(omit(['_id'])).map(formatUrl);
 };
