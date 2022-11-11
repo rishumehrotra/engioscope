@@ -1,6 +1,8 @@
 import { model, Schema } from 'mongoose';
 import pluralize from 'pluralize';
 import type { z } from 'zod';
+import { asc, byNum } from 'sort-lib';
+import { prop } from 'rambda';
 import { exists } from '../../shared/utils.js';
 import { configForCollection } from '../config.js';
 import type { WorkItemType as AzureWorkItemType } from '../scraper/types-azure.js';
@@ -99,28 +101,31 @@ export const getWorkItemTypes = async ({ collectionName, project }: z.infer<type
     }, { name: 1, icon: 1, fields: 1 })
     .lean();
 
-  return workItemTypes.map(wit => {
-    const matchingWitConfig = wits.find(w => w.type === wit.name);
-    const fields = (fieldNames?: string[]) => (
-      fieldNames
-        ?.map(field => wit.fields.find(f => f.referenceName === field)?.name)
-        .filter(exists)
-    );
+  return workItemTypes
+    // Sort by the sequence of work item types in the config
+    .sort(asc(byNum(wit => wits.map(prop('type')).indexOf(wit.name))))
+    .map(wit => {
+      const matchingWitConfig = wits.find(w => w.type === wit.name);
+      const fields = (fieldNames?: string[]) => (
+        fieldNames
+          ?.map(field => wit.fields.find(f => f.referenceName === field)?.name)
+          .filter(exists)
+      );
 
-    return {
-      name: [wit.name, pluralize(wit.name)],
-      icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(wit.icon))}`,
-      startDateFields: fields(matchingWitConfig?.startDate),
-      endDateFields: fields(matchingWitConfig?.endDate),
-      devCompleteFields: fields(matchingWitConfig?.devCompletionDate),
-      workCenters: (matchingWitConfig?.workCenters || []).map(wc => ({
-        label: wc.label,
-        startDateFields: fields(wc.startDate),
-        endDateFields: fields(wc.endDate)
-      })),
-      rootCauseFields: fields(matchingWitConfig?.rootCause)
-    };
-  });
+      return {
+        name: [wit.name, pluralize(wit.name)],
+        icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(wit.icon))}`,
+        startDateFields: fields(matchingWitConfig?.startDate),
+        endDateFields: fields(matchingWitConfig?.endDate),
+        devCompleteFields: fields(matchingWitConfig?.devCompletionDate),
+        workCenters: (matchingWitConfig?.workCenters || []).map(wc => ({
+          label: wc.label,
+          startDateFields: fields(wc.startDate),
+          endDateFields: fields(wc.endDate)
+        })),
+        rootCauseFields: fields(matchingWitConfig?.rootCause)
+      };
+    });
 };
 
 export type UIWorkItemType = Awaited<ReturnType<typeof getWorkItemTypes>>[number];
