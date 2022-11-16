@@ -247,7 +247,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
 
   return (
     <GraphCard
-      title={`Time spent - ${workItemType.name[1].toLowerCase()}`}
+      title={`Time spent - closed ${workItemType.name[1].toLowerCase()}`}
       subtitle={`Where did the ${
         workItemType.name[1].toLowerCase()
       } that closed in the last ${

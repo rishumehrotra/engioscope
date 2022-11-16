@@ -251,7 +251,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
 
           {tooltipData.data ? (
             <div className="grid grid-cols-2 gap-4 my-3">
-              {matchingWit?.groupLabel ? (
+              {matchingWit?.groupLabel && tooltipData.data.group ? (
                 <TooltipSection
                   label={matchingWit.groupLabel}
                   value={tooltipData.data.group || noGroup}
@@ -319,7 +319,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
               {/* TODO: Missing: Worst offender, efficiency */}
             </div>
           ) : (
-            <div className="h-44">
+            <div className="h-44 my-3">
               <Loading />
             </div>
           )}
