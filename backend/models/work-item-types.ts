@@ -118,6 +118,7 @@ export const getWorkItemTypes = async ({ collectionName, project }: z.infer<type
         startDateFields: fields(matchingWitConfig?.startDate),
         endDateFields: fields(matchingWitConfig?.endDate),
         devCompleteFields: fields(matchingWitConfig?.devCompletionDate),
+        groupLabel: matchingWitConfig?.groupLabel,
         workCenters: (matchingWitConfig?.workCenters || []).map(wc => ({
           label: wc.label,
           startDateFields: fields(wc.startDate),

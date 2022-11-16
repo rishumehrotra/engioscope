@@ -3,7 +3,7 @@ import { model, Schema } from 'mongoose';
 import { omit, sum } from 'rambda';
 import { z } from 'zod';
 import { asc, byNum, desc } from 'sort-lib';
-import { merge } from '../../shared/utils.js';
+import { exists, merge } from '../../shared/utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { configForCollection } from '../config.js';
 import type { ParsedCollection } from '../scraper/parse-config.js';
@@ -204,9 +204,13 @@ const startDateFieldForNew = (workItemTypeConfig?: NonNullable<ParsedCollection[
     : workItemTypeConfig?.startDate
 );
 
+const createDateField = (fieldName: string, fields: string[] | undefined) => (
+  { $addFields: { [fieldName]: { $min: (fields || []).map(field) } } }
+);
+
 const ensureDateInRange = (newFieldName: string, fields: string[] | undefined, queryPeriod: QueryRange) => ([
   // Get the min date based on the fields
-  { $addFields: { [newFieldName]: { $min: (fields || []).map(field) } } },
+  createDateField(newFieldName, fields),
   // Ensure it's within range
   { $match: { [newFieldName]: queryRangeFilter(queryPeriod) } }
 ]);
@@ -363,4 +367,64 @@ export const newWorkItemsListForDate = async ({
   }));
 
   return results.flat().map(omit(['_id'])).map(formatUrl);
+};
+
+export const workItemForTooltipInputParser = z.object({
+  ...collectionAndProjectInputs,
+  id: z.number()
+});
+
+type WorkItemForTooltip = {
+  id: number;
+  title: string;
+  state: string;
+  group?: string;
+  priority?: number;
+  severity?: string;
+  rca?: string[];
+  cycleTime?: number;
+  clt?: number;
+  startDate?: Date;
+};
+
+const getDateFieldValue = (fields: string[] | undefined, wi: WorkItem) => {
+  if (!fields) return;
+  return new Date(
+    Math.min(
+      ...fields
+        .map(f => wi.fields[f] as string)
+        .filter(exists)
+        .map(d => new Date(d).getTime())
+    )
+  );
+};
+
+export const workItemForTooltip = async (
+  { collectionName, project, id }: z.infer<typeof workItemForTooltipInputParser>
+): Promise<WorkItemForTooltip | undefined> => {
+  const match = await WorkItemModel.findOne({ collectionName, project, id }).lean();
+  const collectionConfig = configForCollection(collectionName);
+  const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === match?.workItemType);
+
+  if (!match) return;
+
+  const startDate = getDateFieldValue(workItemTypeConfig?.startDate, match);
+  const endDate = getDateFieldValue(workItemTypeConfig?.endDate, match);
+  const devDoneDate = getDateFieldValue(workItemTypeConfig?.devCompletionDate, match);
+
+  const cycleTime = startDate && endDate && (endDate.getTime() - startDate.getTime());
+  const clt = devDoneDate && endDate && (endDate.getTime() - devDoneDate.getTime());
+
+  return {
+    id: match.id,
+    title: match.title,
+    state: match.state,
+    group: workItemTypeConfig?.groupByField ? match.fields[workItemTypeConfig.groupByField] as string : undefined,
+    priority: match.fields['Microsoft.VSTS.Common.Priority'] as number | undefined,
+    severity: match.fields['Microsoft.VSTS.Common.Severity'] as string | undefined,
+    rca: workItemTypeConfig?.rootCause.map(rcaField => match.fields[rcaField] as string).filter(exists),
+    cycleTime,
+    clt,
+    startDate
+  };
 };

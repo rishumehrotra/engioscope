@@ -1,10 +1,16 @@
 import { prop } from 'rambda';
 import type { ReactNode } from 'react';
-import React, { useMemo, useCallback, useState } from 'react';
+import React, {
+  useMemo, useCallback, useState
+} from 'react';
+import ReactTooltip from 'react-tooltip';
 import { asc, byDate } from 'sort-lib';
 import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types.js';
+import { divide } from '../../../../shared/utils.js';
 import { trpc } from '../../../helpers/trpc.js';
-import { contrastColour, shortDate } from '../../../helpers/utils.js';
+import {
+  contrastColour, prettyMS, priorityBasedColor, shortDate
+} from '../../../helpers/utils.js';
 import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
 import { modalHeading, useModal } from '../../common/Modal.js';
 import Loading from '../../Loading.jsx';
@@ -155,6 +161,174 @@ export const workItemSubheading = (
   `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `/ ${groupName}`} (${workItems.length})`
 );
 
+const useWorkItemType = (workItemType: string) => {
+  const cnp = useCollectionAndProject();
+  const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
+  return workItemTypes.data?.find(wit => wit.name[0] === workItemType);
+};
+
+type TooltipSectionProps = {
+  label: string;
+  value: ReactNode;
+  graphValue?: number;
+  width?: 1 | 2;
+};
+
+const TooltipSection: React.FC<TooltipSectionProps> = ({
+  label, value, graphValue, width
+}) => (
+  <div className={width === 2 ? 'col-span-2' : ''}>
+    {label}
+    <div className="font-semibold">
+      {value}
+    </div>
+    {graphValue !== undefined && graphValue <= 1
+      ? (
+        <div className="rounded-md bg-gray-500 mt-1 h-1.5 w-full">
+          <div className="bg-gray-300 h-1.5 rounded-md" style={{ width: `${graphValue * 100}%` }} />
+        </div>
+      )
+      : ''}
+  </div>
+);
+
+type WorkItemLinkForModalv2Props = {
+  url: string;
+  id: number;
+  workItemType: string;
+  title: string;
+};
+
+const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
+  id, url, workItemType, title
+}) => {
+  const domId = `wi-${id}`;
+  const cnp = useCollectionAndProject();
+  const matchingWit = useWorkItemType(workItemType);
+  const [hasHovered, setHasHovered] = useState(false);
+  const tooltipData = trpc.workItems.workItemForTooltip.useQuery(
+    { ...cnp, id },
+    {
+      enabled: hasHovered
+    }
+  );
+
+  const onHover = useCallback(() => { setHasHovered(true); }, []);
+
+  return (
+    <>
+      <a
+        href={url}
+        className="text-blue-800 hover:underline inline-flex items-start"
+        target="_blank"
+        rel="noreferrer"
+        data-for={domId}
+        data-tip
+        onMouseOver={onHover}
+        onFocus={onHover}
+        // {...tooltipProps}
+      >
+        <img
+          className="inline-block mr-2 mt-1"
+          alt={`Icon for ${matchingWit?.name[1] || workItemType}`}
+          src={matchingWit?.icon || ''}
+          width="16"
+        />
+        <span>{`${id}: ${title}`}</span>
+      </a>
+      <ReactTooltip id={domId}>
+        <div className="w-72 pt-2">
+          <img
+            src={matchingWit?.icon || ''}
+            alt={`Icon fro ${matchingWit?.name[1] || workItemType}`}
+            width="14"
+            height="14"
+            className="inline -mt-1 mr-2"
+          />
+          <strong>
+            {`${id}: ${title}`}
+          </strong>
+
+          {tooltipData.data ? (
+            <div className="grid grid-cols-2 gap-4 my-3">
+              {matchingWit?.groupLabel ? (
+                <TooltipSection
+                  label={matchingWit.groupLabel}
+                  value={tooltipData.data.group || noGroup}
+                />
+              ) : null}
+              {tooltipData.data.state ? (
+                <TooltipSection
+                  label="Currently"
+                  value={tooltipData.data.state}
+                />
+              ) : null}
+              {tooltipData.data.priority !== undefined ? (
+                <TooltipSection
+                  label="Priority"
+                  value={(
+                    <>
+                      <span
+                        className="inline-block w-2 h-2 mr-1"
+                        style={{ background: priorityBasedColor(tooltipData.data.priority) }}
+                      />
+                      {tooltipData.data.priority}
+                    </>
+                  )}
+                />
+              ) : null}
+              {tooltipData.data.severity !== undefined ? (
+                <TooltipSection
+                  label="Severity"
+                  value={tooltipData.data.severity}
+                />
+              ) : null}
+              {tooltipData.data.rca?.length ? (
+                <TooltipSection
+                  label="RCA"
+                  value={tooltipData.data.rca.join(' / ')}
+                  width={2}
+                />
+              ) : null}
+              {
+                // eslint-disable-next-line no-nested-ternary
+                tooltipData.data.cycleTime ? (
+                  <TooltipSection
+                    label="Cycle time"
+                    value={prettyMS(tooltipData.data.cycleTime)}
+                  />
+                ) : (tooltipData.data.startDate ? (
+                  <TooltipSection
+                    label="Age"
+                    value={prettyMS(Date.now() - tooltipData.data.startDate.getTime())}
+                  />
+                ) : null)
+              }
+              {tooltipData.data.clt ? (
+                <TooltipSection
+                  label="Change lead time"
+                  value={prettyMS(tooltipData.data.clt)}
+                  graphValue={
+                    tooltipData.data.cycleTime
+                      // eslint-disable-next-line unicorn/no-useless-undefined
+                      ? divide(tooltipData.data.clt, tooltipData.data.cycleTime).getOr(undefined)
+                      : undefined
+                  }
+                />
+              ) : null}
+              {/* TODO: Missing: Worst offender, efficiency */}
+            </div>
+          ) : (
+            <div className="h-44">
+              <Loading />
+            </div>
+          )}
+        </div>
+      </ReactTooltip>
+    </>
+  );
+};
+
 type WorkItemsByDateProps = {
   workItems: {title: string; id: number; date: Date; url: string}[];
   workItemTypeName: string;
@@ -180,8 +354,6 @@ export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
 
   if (!workItemTypes.data) return <Loading />;
 
-  const matchingWit = workItemTypes.data.find(wit => wit.name[0] === workItemTypeName);
-
   return (
     <ul>
       {Object.entries(groupedByDate || {}).map(([dateString, workItems]) => (
@@ -201,24 +373,12 @@ export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
           <ul>
             {workItems.map(workItem => (
               <li key={workItem.id} className="py-2">
-                <a
-                  href={workItem.url}
-                  className="text-blue-800 hover:underline inline-flex items-start"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <img
-                    className="inline-block mr-2 mt-1"
-                    alt={`Icon for ${matchingWit?.name[1] || workItemTypeName}`}
-                    src={matchingWit?.icon || ''}
-                    width="16"
-                  />
-                  <span>
-                    {workItem.id}
-                    {': '}
-                    {workItem.title}
-                  </span>
-                </a>
+                <WorkItemLinkForModalv2
+                  id={workItem.id}
+                  title={workItem.title}
+                  url={workItem.url}
+                  workItemType={workItemTypeName}
+                />
               </li>
             ))}
           </ul>
@@ -280,32 +440,16 @@ export const WorkItemsByGroup: React.FC<WorkItemsByGroupProps> = ({ workItems })
             </span>
           </h3>
           <ul>
-            {workItems.map(workItem => {
-              const matchingWit = workItemTypes.data.find(wit => wit.name[0] === workItem.type);
-
-              return (
-                <li key={workItem.id} className="py-2">
-                  <a
-                    href={workItem.url}
-                    className="text-blue-800 hover:underline inline-flex items-start"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <img
-                      className="inline-block mr-2 mt-1"
-                      alt={`Icon for ${matchingWit?.name[1] || workItem.type}`}
-                      src={matchingWit?.icon || ''}
-                      width="16"
-                    />
-                    <span>
-                      {workItem.id}
-                      {': '}
-                      {workItem.title}
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
+            {workItems.map(workItem => (
+              <li key={workItem.id} className="py-2">
+                <WorkItemLinkForModalv2
+                  id={workItem.id}
+                  title={workItem.title}
+                  url={workItem.url}
+                  workItemType={workItem.type}
+                />
+              </li>
+            ))}
           </ul>
         </li>
       ))}
