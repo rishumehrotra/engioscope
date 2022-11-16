@@ -24,6 +24,11 @@ export type DeploymentOperationStatus = 'All' | 'Approved' | 'Canceled' | 'Cance
 export type PullRequestStatus = 'abandoned' | 'active' | 'all' | 'completed' | 'notSet';
 export type PullRequestAsyncStatus = 'conflicts' | 'failure' | 'notSet' | 'queued' | 'rejectedByPolicy' | 'succeeded';
 export type GitPullRequestMergeStrategy = 'noFastForward' | 'rebase' | 'rebaseMerge' | 'squash';
+export type TestCaseResultOutcome = 'Unspecified' | 'None' | 'Passed'
+| 'Failed' | 'Inconclusive' | 'Timeout' | 'Aborted' | 'Blocked'
+| 'NotExecuted' | 'Warning' | 'Error' | 'NotApplicable' | 'Paused'
+| 'InProgress' | 'NotImpacted';
+export type TestCaseResultFailureType = 'Known Issue' | 'New Issue' | 'Regression' | 'Unknown' | 'None';
 
 export type TeamProjectReference = {
   id: string;
@@ -321,6 +326,38 @@ export type TestRun = {
   revision: number;
   release: ReleaseReference;
   webAccessUrl: string;
+  runStatistics: { state: string; outcome: TestCaseResultOutcome; count: number }[];
+};
+
+// TODO: This was put together in haste. Cleanup.
+export type TestCaseResult = {
+  id: number;
+  startedDate: Date;
+  completedDate: Date;
+  durationInMs: number;
+  outcome: TestCaseResultOutcome;
+  revision: number;
+  state: string;
+  testCase: {
+    id?: string;
+    name: string;
+    url?: string;
+  };
+  testRun: { /* TODO */};
+  lastUpdatedDate: Date;
+  createdDate: Date;
+  url: string;
+  failureType: TestCaseResultFailureType;
+  automatedTestStorage: string;
+  automatedTestType: string;
+  area: { /* TODO */};
+  testCaseTitle: string;
+  customFields: []; // TODO
+  releaseReference: { /* TODO */};
+  testCaseReferenceId: number;
+  lastUpdatedBy: IdentityRef;
+  automatedTestName: string;
+  errorMessage?: string;
 };
 
 export type CodeCoverageData = {

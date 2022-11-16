@@ -5,7 +5,7 @@ import fetch from './fetch-with-extras.js';
 import { chunkArray } from '../../utils.js';
 import type {
   Build, BuildDefinitionReference, CodeCoverageSummary, GitBranchStats, GitCommitRef, GitPullRequest,
-  GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestRun,
+  GitRepository, PolicyConfiguration, Release, ReleaseDefinition, TeamProjectReference, TestCaseResult, TestRun,
   Timeline,
   WorkItem, WorkItemField, WorkItemQueryFlatResult, WorkItemQueryHierarchialResult,
   WorkItemQueryResult, WorkItemRevision, WorkItemType, WorkItemTypeCategory, WorkItemWithRelations
@@ -221,6 +221,47 @@ export default (config: ParsedConfig) => {
         qsParams: { includeRunDetails: 'true', buildUri },
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         cacheFile: [collectionName, projectName, 'testruns', buildUri.split('/').pop()!]
+      })
+    ),
+
+    getTestRunsByReleaseDefnIdAndBranch: (collectionName: string, projectName: string) => (
+      (since: Date, releaseDefIds: number, branchName: string) => {
+        const weeks: Date[] = [];
+        let currentDate = new Date();
+
+        while (currentDate >= since) {
+          weeks.push(currentDate);
+          currentDate = new Date(currentDate);
+          currentDate.setDate(currentDate.getDate() - 7);
+        }
+        weeks.push(since);
+
+        return Promise.all(
+          weeks.slice(1).map((weekStart, index) => {
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 7);
+
+            return (
+              list<TestRun>({
+                url: url(collectionName, projectName, '/test/runs'),
+                qsParams: {
+                  releaseDefIds: String(releaseDefIds),
+                  branchName,
+                  minLastUpdatedDate: weekStart.toISOString(),
+                  maxLastUpdatedDate: weekEnd.toISOString()
+                },
+                cacheFile: [collectionName, projectName, 'testruns-temp', `${String(releaseDefIds)}_${index}`]
+              })
+            );
+          })
+        ).then(x => x.flat());
+      }
+    ),
+
+    getTestRunResults: (collectionName: string, projectName: string) => (runId: number) => (
+      list<TestCaseResult>({
+        url: url(collectionName, projectName, `/test/runs/${runId}/results`),
+        cacheFile: [collectionName, projectName, 'testruns', 'results', String(runId)]
       })
     ),
 
