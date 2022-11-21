@@ -225,7 +225,7 @@ export default (config: ParsedConfig) => {
     ),
 
     getTestRunsByReleaseDefnIdAndBranch: (collectionName: string, projectName: string) => (
-      (since: Date, releaseDefIds: number, branchName: string) => {
+      (since: Date, releaseDefIds: number, branchName: string, buildDefnIds?: number, envDefnIds?: number[]) => {
         const weeks: Date[] = [];
         let currentDate = new Date();
 
@@ -247,6 +247,8 @@ export default (config: ParsedConfig) => {
                 qsParams: {
                   releaseDefIds: String(releaseDefIds),
                   branchName,
+                  ...(buildDefnIds ? { buildDefIds: String(buildDefnIds) } : {}),
+                  ...(envDefnIds ? { releaseEnvDefIds: envDefnIds.join(',') } : {}),
                   minLastUpdatedDate: weekStart.toISOString(),
                   maxLastUpdatedDate: weekEnd.toISOString()
                 },

@@ -358,6 +358,24 @@ export type TestCaseResult = {
   lastUpdatedBy: IdentityRef;
   automatedTestName: string;
   errorMessage?: string;
+  stackTrace?: string;
+  failingSince?: {
+    date: Date;
+    build: {
+      id: number;
+      definitionId: number;
+      branchName: string;
+    };
+    release: {
+      id: number;
+      name: string;
+      environmentId: number;
+      environmentName: string | null;
+      definitionId: number;
+      environmentDefinitionId: number;
+      environmentDefinitionName: string | null;
+    };
+  };
 };
 
 export type CodeCoverageData = {
