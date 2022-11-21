@@ -370,7 +370,7 @@ export const newWorkItemsListForDate = async ({
 };
 
 export const workItemForTooltipInputParser = z.object({
-  ...collectionAndProjectInputs,
+  collectionName: z.string(),
   id: z.number()
 });
 
@@ -400,9 +400,9 @@ const getDateFieldValue = (fields: string[] | undefined, wi: WorkItem) => {
 };
 
 export const workItemForTooltip = async (
-  { collectionName, project, id }: z.infer<typeof workItemForTooltipInputParser>
+  { collectionName, id }: z.infer<typeof workItemForTooltipInputParser>
 ): Promise<WorkItemForTooltip | undefined> => {
-  const match = await WorkItemModel.findOne({ collectionName, project, id }).lean();
+  const match = await WorkItemModel.findOne({ collectionName, id }).lean();
   const collectionConfig = configForCollection(collectionName);
   const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === match?.workItemType);
 

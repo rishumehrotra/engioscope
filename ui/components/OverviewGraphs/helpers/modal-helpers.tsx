@@ -203,11 +203,11 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
   id, url, workItemType, title
 }) => {
   const domId = `wi-${id}`;
-  const cnp = useCollectionAndProject();
+  const { collectionName } = useCollectionAndProject();
   const matchingWit = useWorkItemType(workItemType);
   const [hasHovered, setHasHovered] = useState(false);
   const tooltipData = trpc.workItems.workItemForTooltip.useQuery(
-    { ...cnp, id },
+    { collectionName, id },
     {
       enabled: hasHovered
     }
