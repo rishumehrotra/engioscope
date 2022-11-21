@@ -24,7 +24,7 @@ const queryName = 'features-and-bugs';
 
 const workItemTypesByType = reduce<WorkItemType, WorkItemTypeByTypeName>(
   (acc, workItemType) => {
-    acc[workItemType.name] = workItemType;
+    acc[workItemType.name.toLowerCase()] = workItemType;
     return acc;
   }, {}
 );
@@ -102,7 +102,7 @@ const createWorkItemTypeGetter = (workItemTypesForCollection: Record<ProjectName
   (workItem: WorkItem) => {
     const projectName = workItem.fields['System.TeamProject'];
     const workItemTypeName = workItem.fields['System.WorkItemType'];
-    return workItemTypesForCollection[projectName.toLowerCase()][workItemTypeName];
+    return workItemTypesForCollection[projectName.toLowerCase()][workItemTypeName.toLowerCase()];
   }
 );
 
