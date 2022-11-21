@@ -10,6 +10,7 @@ import api from './api.js';
 import { setConfig } from '../config.js';
 import setupCrons from '../crons/index.js';
 import { dirname } from '../utils.js';
+import { oneYearInMs } from '../../shared/utils.js';
 
 const uiFolder = path.join(dirname(import.meta.url), '..', '..', 'ui');
 
@@ -25,9 +26,10 @@ const configureExpress = (config: ParsedConfig) => {
       // Set a new cookie
       let randomNumber = Math.random().toString();
       randomNumber = randomNumber.slice(2);
-      res.cookie('c', randomNumber, { maxAge: 31_622_400, httpOnly: true });
+      res.cookie('c', randomNumber, { maxAge: oneYearInMs, httpOnly: true });
     } else {
-      // Cookie was already present
+      // Cookie was already present, just reset its maxage
+      res.cookie('c', req.cookies.c, { maxAge: oneYearInMs, httpOnly: true });
     }
     next();
   });
