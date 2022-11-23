@@ -130,7 +130,7 @@ export type ParsedCollectionWorkItemConfig = Readonly<{
   types?: {
     type: string;
     groupByField?: string;
-    groupLabel: string;
+    groupLabel?: string;
     startDate: string[];
     endDate: string[];
     devCompletionDate: string[];
@@ -218,7 +218,7 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
     types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(type => ({
       type: type.type,
       groupByField: type.groupByField,
-      groupLabel: type.groupLabel || 'Unlabelled group',
+      groupLabel: type.groupLabel,
       startDate: Array.isArray(type.startDate) ? type.startDate : [type.startDate || 'System.CreatedDate'],
       endDate: Array.isArray(type.endDate) ? type.endDate : [type.endDate || 'Microsoft.VSTS.Common.ClosedDate'],
       // eslint-disable-next-line no-nested-ternary
