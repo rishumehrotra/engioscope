@@ -344,6 +344,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                                   codeQuality.coverage[toCover] === undefined
 
                                     ? ''
+                                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                     : ` of ${num(codeQuality.coverage[toCover]!)}`
                                 } to be covered`}
                               </td>

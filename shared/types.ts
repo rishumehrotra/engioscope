@@ -94,7 +94,10 @@ export type UIBuildPipeline = {
   type: 'ui' | 'yml';
   buildsByWeek?: number[];
   successesByWeek?: number[];
-  usesTemplate: boolean | undefined;
+  /** @deprecated Migrate to `centralTemplate` */
+  usesTemplate?: boolean;
+  /** TODO: Remove the 'boolean' bit from centralTemplate - it's there for backwards compatibility */
+  centralTemplate?: Record<string, string> | boolean;
 };
 
 export type UIBuilds = null | {

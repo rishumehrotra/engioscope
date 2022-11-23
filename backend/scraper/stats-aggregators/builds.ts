@@ -79,7 +79,7 @@ const buildDefinitionWebUrl = pipe(
   replace(/\?revision=.*/, '')
 );
 
-const templateNameByBuildId = (
+const latestReport = (
   repoNameById: (id: string) => string | undefined,
   buildReports: BuildReportsForRepoAndBranch
 ) => {
@@ -97,7 +97,6 @@ const templateNameByBuildId = (
       .then(
         reports => reports
           .find(report => report.buildDefinitionId === buildDefinitionId)
-          ?.templateRepo
       );
   };
 };
@@ -114,7 +113,7 @@ export default (
     allMasterBuilds: Record<string, Record<number, Build[] | undefined>>;
   };
 
-  const templateRepo = templateNameByBuildId(repoNameById, buildReports);
+  const latestMasterReport = latestReport(repoNameById, buildReports);
 
   const { buildStats, allMasterBuilds } = [...builds]
     .sort(desc(byDate(prop('finishTime'))))
@@ -159,32 +158,38 @@ export default (
       if (!buildStats[id]) return null;
 
       const pipelines: UIBuildPipeline[] = await Promise.all(Object.entries(buildStats[id])
-        .map(async ([definitionId, buildStats]) => ({
-          count: buildStats.count,
-          name: buildStats.name,
-          url: buildStats.url,
-          success: buildStats.success,
-          definitionId,
-          duration: {
-            average: prettyMilliseconds(
-              buildStats.duration.reduce(add, 0) / buildStats.duration.length
-            ),
-            min: prettyMilliseconds(Math.min(...buildStats.duration)),
-            max: prettyMilliseconds(Math.max(...buildStats.duration))
-          },
-          status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
-            ? buildStats.status
-            : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status'],
-          type: buildDefinitionsByRepoId(id)
-            .find(bd => bd.id === Number(definitionId))
-            ?.process.type === 1 ? 'ui' : 'yml',
-          buildsByWeek: buildStats.buildsByWeek,
-          successesByWeek: buildStats.successesByWeek,
-          // eslint-disable-next-line no-nested-ternary
-          usesTemplate: templateRepoName
-            ? ((await templateRepo(id, definitionId)) === templateRepoName ? true : undefined)
-            : undefined
-        })));
+        .map(async ([definitionId, buildStats]): Promise<UIBuildPipeline> => {
+          const report = await latestMasterReport(id, definitionId);
+
+          return {
+            count: buildStats.count,
+            name: buildStats.name,
+            url: buildStats.url,
+            success: buildStats.success,
+            definitionId,
+            duration: {
+              average: prettyMilliseconds(
+                buildStats.duration.reduce(add, 0) / buildStats.duration.length
+              ),
+              min: prettyMilliseconds(Math.min(...buildStats.duration)),
+              max: prettyMilliseconds(Math.max(...buildStats.duration))
+            },
+            status: buildStats.status.type === 'succeeded' || buildStats.status.type === 'unknown'
+              ? buildStats.status
+              : { type: 'failed', since: buildStats.status.since } as UIBuildPipeline['status'],
+            type: buildDefinitionsByRepoId(id)
+              .find(bd => bd.id === Number(definitionId))
+              ?.process.type === 1 ? 'ui' : 'yml',
+            buildsByWeek: buildStats.buildsByWeek,
+            successesByWeek: buildStats.successesByWeek,
+            usesTemplate: templateRepoName && report?.templateRepo === templateRepoName
+              ? true : undefined,
+            centralTemplate: report?.centralTemplate || (
+              templateRepoName && report?.templateRepo === templateRepoName
+                ? true : undefined
+            )
+          };
+        }));
 
       const pipelinesWithUnused = buildDefinitionsByRepoId(id)
         ? pipelines.concat(
@@ -200,8 +205,7 @@ export default (
               duration: { average: '0', min: '0', max: '0' },
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               status: { type: 'unused', since: d.latestBuild!.startTime },
-              type: d.process.type === 1 ? 'ui' : 'yml',
-              usesTemplate: undefined
+              type: d.process.type === 1 ? 'ui' : 'yml'
             }))
         )
         : pipelines;

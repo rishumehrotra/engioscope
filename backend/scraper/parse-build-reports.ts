@@ -15,6 +15,13 @@ export const htmlReportToObj = (htmlContent: string) => {
   const read = (selector: string) => root.querySelector(`#${selector}`)?.innerText;
   const buildScript = read('buildScript');
 
+  const centralTemplate: Record<string, string> = Object.fromEntries(
+    [...root.querySelectorAll('#central_template [data-key]')]
+      // eslint-disable-next-line unicorn/prefer-dom-node-dataset, unicorn/prefer-dom-node-text-content
+      .map(el => [decode(el.getAttribute('data-key')), decode(el.innerText)] as const)
+      .filter(([key, value]) => key?.trim() !== '' && value?.trim() !== '')
+  );
+
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   return {
     sonarHost: read('sonarHost'),
@@ -29,7 +36,8 @@ export const htmlReportToObj = (htmlContent: string) => {
     buildId: read('BUILD_BUILDID')!,
     buildDefinitionId: read('SYSTEM_DEFINITIONID')!,
     buildReason: read('BUILD_REASON')! as AzureBuildReport['buildReason'],
-    buildScript: buildScript ? decode(buildScript) : undefined
+    buildScript: buildScript ? decode(buildScript) : undefined,
+    centralTemplate: Object.keys(centralTemplate).length ? centralTemplate : undefined
   };
   /* eslint-enable */
 };

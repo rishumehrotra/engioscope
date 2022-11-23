@@ -22,6 +22,7 @@ export type AzureBuildReport = {
   templateRepo: string | undefined;
   sonarHost: string | undefined;
   sonarProjectKey: string | undefined;
+  centralTemplate: Record<string, string> | undefined;
 };
 
 const azureBuildReportSchema = new Schema<AzureBuildReport>({
@@ -38,7 +39,8 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>({
   buildScript: { type: String },
   templateRepo: String,
   sonarHost: String,
-  sonarProjectKey: String
+  sonarProjectKey: String,
+  centralTemplate: Schema.Types.Mixed
 }, {
   timestamps: true
 });
@@ -86,7 +88,8 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
         ...(report.sonarHost ? {
           sonarHost: report.sonarHost,
           sonarProjectKey: report.sonarProjectKey
-        } : {})
+        } : {}),
+        centralTemplate: report.centralTemplate
       }
     },
     { upsert: true }
