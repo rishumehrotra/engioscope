@@ -100,7 +100,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
           />
         ))}
 
-        {!showBottomScale ? (
+        {showBottomScale ? null : (
           <DragZoom
             svgRef={svgRef}
             svgHeight={height}
@@ -109,7 +109,7 @@ const WorkItemsGanttChart: React.FC<WorkItemsGanttChartProps> = memo(({
             maxDate={maxDate}
             onSelect={setZoom}
           />
-        ) : null}
+        )}
         <VerticalCrosshair
           svgRef={svgRef}
           svgHeight={height}

@@ -305,7 +305,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
       <div className="col-span-2 grid grid-cols-3 gap-4">
         <SubCard
           heading="Coverage"
-          rating={codeQuality.coverage.byTests !== undefined ? percent(codeQuality.coverage.byTests) : undefined}
+          rating={codeQuality.coverage.byTests === undefined ? undefined : percent(codeQuality.coverage.byTests)}
         >
           {(codeQuality.coverage.line === undefined && codeQuality.coverage.branch === undefined)
             ? (
@@ -332,7 +332,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                       return (
                         <React.Fragment key={stat}>
                           <tr>
-                            <td className={`px-1 pt-1 ${codeQuality.coverage[uncovered] !== undefined ? '' : 'pb-1'}`}>{label}</td>
+                            <td className={`px-1 pt-1 ${codeQuality.coverage[uncovered] === undefined ? 'pb-1' : ''}`}>{label}</td>
                             {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                             <td className="text-right p-1 font-semibold">{percent(codeQuality.coverage[stat]!)}</td>
                           </tr>
@@ -341,10 +341,10 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                               <td colSpan={2} className="px-1 pb-1 text-xs text-gray-600">
                                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                                 {`${num(codeQuality.coverage[uncovered]!)} ${
-                                  codeQuality.coverage[toCover] !== undefined
-                                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                    ? ` of ${num(codeQuality.coverage[toCover]!)}`
-                                    : ''
+                                  codeQuality.coverage[toCover] === undefined
+
+                                    ? ''
+                                    : ` of ${num(codeQuality.coverage[toCover]!)}`
                                 } to be covered`}
                               </td>
                             </tr>
@@ -358,7 +358,7 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
         </SubCard>
         <SubCard
           heading="Duplications"
-          rating={codeQuality.duplication.linesDensity !== undefined ? percent(codeQuality.duplication.linesDensity) : undefined}
+          rating={codeQuality.duplication.linesDensity === undefined ? undefined : percent(codeQuality.duplication.linesDensity)}
         >
           <table className="w-full">
             <tbody>
@@ -498,14 +498,14 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ c
                 <span
                   className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold"
                 >
-                  {codeQualityItem.coverage.byTests !== undefined ? percent(codeQualityItem.coverage.byTests) : 'unknown'}
+                  {codeQualityItem.coverage.byTests === undefined ? 'unknown' : percent(codeQualityItem.coverage.byTests)}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span
                   className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold"
                 >
-                  {codeQualityItem.duplication.linesDensity !== undefined ? percent(codeQualityItem.duplication.linesDensity) : 'unknown'}
+                  {codeQualityItem.duplication.linesDensity === undefined ? 'unknown' : percent(codeQualityItem.duplication.linesDensity)}
                 </span>
               </td>
             </tr>

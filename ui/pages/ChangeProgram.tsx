@@ -47,19 +47,19 @@ const ChangeProgram: React.FC = () => {
       </div>
 
       <div className="mx-32">
-        {!changeProgram
-          ? <Loading />
-          : (
+        {changeProgram
+          ? (
             <div className="mt-8 bg-gray-50">
-              {!changeProgram.details
-                ? 'Change program not configured'
-                : (
+              {changeProgram.details
+                ? (
                   <GroupedListing
                     groups={organizeBy(show ? 'theme' : 'team')(changeProgram.details.tasks)}
                   />
-                )}
+                )
+                : 'Change program not configured'}
             </div>
-          )}
+          )
+          : <Loading />}
       </div>
     </>
   );

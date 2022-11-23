@@ -88,11 +88,9 @@ const templateNameByBuildId = (
   return (repoId: string, buildDefinitionId: string) => {
     const repoName = repoNameById(repoId);
     if (!reportsByRepoId[repoId]) {
-      if (repoName) {
-        reportsByRepoId[repoId] = buildReports(repoName, 'master');
-      } else {
-        reportsByRepoId[repoId] = Promise.resolve([]);
-      }
+      reportsByRepoId[repoId] = repoName
+        ? buildReports(repoName, 'master')
+        : Promise.resolve([]);
     }
 
     return reportsByRepoId[repoId]
@@ -132,11 +130,11 @@ export default (
               count: 1,
               name: build.definition.name,
               url: buildDefinitionWebUrl(build.definition.url),
-              success: build.result !== 'failed' ? 1 : 0,
+              success: build.result === 'failed' ? 0 : 1,
               duration: [(new Date(build.finishTime)).getTime() - (new Date(build.startTime).getTime())],
-              status: build.result !== 'failed'
-                ? { type: 'succeeded', latest: build.finishTime }
-                : { type: 'failed', since: build.finishTime },
+              status: build.result === 'failed'
+                ? { type: 'failed', since: build.finishTime }
+                : { type: 'succeeded', latest: build.finishTime },
               date: build.finishTime
             }, acc.buildStats[rId]?.[build.definition.id] || undefined)
           }

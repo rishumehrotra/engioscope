@@ -26,9 +26,8 @@ const Analytics: React.FC = () => {
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      {!analytics
-        ? <Loading />
-        : (
+      {analytics
+        ? (
           <ul className="grid grid-flow-row gap-8 grid-col-1 grid-cols-2 auto-rows-auto">
             {analytics.map(({
               label, pageLoads, uniques, pages
@@ -69,7 +68,8 @@ const Analytics: React.FC = () => {
               </li>
             ))}
           </ul>
-        )}
+        )
+        : <Loading />}
     </div>
   );
 };

@@ -219,7 +219,7 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
           colorForStage={colorForStage}
         />
       ) : null}
-      {!isLast ? (
+      {isLast ? null : (
         <line
           x1="0"
           y1={(textHeight + (rowPadding * 2)) * rowIndex - rowPadding}
@@ -228,7 +228,7 @@ export const GanttRow: React.FC<GanttRowProps> = memo(({
           strokeWidth="1"
           stroke="#ddd"
         />
-      ) : null}
+      )}
     </g>
   );
 });

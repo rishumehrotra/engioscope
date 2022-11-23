@@ -63,7 +63,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                             >
                               <span className="truncate w-96 block">
                                 {pipeline.name}
-                                {pipeline.type !== 'yml' ? (
+                                {pipeline.type === 'yml' ? null : (
                                   <span
                                     className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
                                 rounded-sm text-red-700 border font-semibold no-underline`}
@@ -71,7 +71,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                                   >
                                     UI
                                   </span>
-                                ) : null}
+                                )}
                               </span>
                             </a>
                           </div>

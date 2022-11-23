@@ -41,11 +41,11 @@ const TestCaseStats: React.FC<{
     <div className="w-72">
       <div className="mt-2 flex">
         <div className="flex-1">
-          {Object.keys(testCasesByPriority).map((priority, index) => {
+          {Object.keys(testCasesByPriority).map(priority => {
             const { automated, total } = testCasesByPriority[priority as TestPriority];
 
             return (
-              <div className={`flex ${index !== 0 ? '' : ''}`} key={priority}>
+              <div className="flex" key={priority}>
                 <span
                   className="w-20 text-sm self-center text-right text-gray-800"
                 >

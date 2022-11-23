@@ -108,7 +108,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
   }, [sortBy, tabs, isFirst]);
 
   const onCardClick = useCallback(() => {
-    setSelectedTab(!selectedTab ? tabs[0] : null);
+    setSelectedTab(selectedTab ? null : tabs[0]);
   }, [selectedTab, tabs]);
 
   const pipelinesUrl = location.pathname.replace('/repos', `/release-pipelines?search=repo:"${repo.name}"`);

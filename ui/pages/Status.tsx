@@ -36,9 +36,8 @@ const Status: React.FC = () => {
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      {!metaData.data
-        ? <Loading />
-        : (
+      {metaData.data
+        ? (
           <>
             <h1 className="text-3xl text-center p-20">
               Overall status:
@@ -78,7 +77,8 @@ const Status: React.FC = () => {
               </table>
             </details>
           </>
-        )}
+        )
+        : <Loading />}
     </div>
   );
 };

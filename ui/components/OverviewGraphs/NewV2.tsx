@@ -71,14 +71,14 @@ const useAdditionalFilters = () => {
   const [filters] = useQueryParam<string>('filter', asString);
 
   return useMemo(() => (
-    !filters
-      ? {}
-      : Object.fromEntries(
+    filters
+      ? Object.fromEntries(
         filters
           .split(';')
           .map(part => part.split(':'))
           .map(([label, tags]) => ([label, tags.split(',')]))
       )
+      : {}
   ), [filters]);
 };
 

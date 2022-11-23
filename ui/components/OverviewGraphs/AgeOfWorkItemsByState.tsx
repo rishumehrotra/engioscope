@@ -127,12 +127,9 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
     () => (
       Object.entries(states).reduce<typeof states>(
         (acc, [state, wis]) => {
-          if (checkboxStatesForSidebar[state]) {
-            acc[state] = wis.filter(pipe(prop('wi'), showWorkItem));
-          } else {
-            acc[state] = [];
-          }
-
+          acc[state] = checkboxStatesForSidebar[state]
+            ? wis.filter(pipe(prop('wi'), showWorkItem))
+            : [];
           return acc;
         },
         {}
@@ -248,13 +245,13 @@ const AgeOfWorkItemsByStatusInner: React.FC<AgeOfWorkItemsByStatusInnerProps> = 
             <summary className="cursor-pointer">How is this computed?</summary>
             <ul className="list-disc pl-8">
               {workItemType.workCenters.flatMap((wc, index, wcs) => ([
-                index !== 0 ? (
+                index === 0 ? undefined : (
                   <li key={`waiting for ${wc.label}`}>
                     {`A ${workItemType.name[0].toLowerCase()} is in the 'Waiting for ${wc.label}' state
                     if it has a ${fieldName(wcs[index - 1].endDateField)} but doesn't have
                     a ${fieldName(wc.startDateField)}.`}
                   </li>
-                ) : undefined,
+                ),
                 <li key={`in ${wc.label}`}>
                   {`A ${workItemType.name[0].toLowerCase()} is in the 'In ${wc.label}' state
                   if it has a ${fieldName(wc.startDateField)} but doesn't have

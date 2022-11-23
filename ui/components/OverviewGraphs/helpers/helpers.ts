@@ -35,9 +35,8 @@ const queryPeriodStart = (lastUpdated: string, queryPeriodDays: number) => {
 };
 
 export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes) => (
-  !times.start
-    ? []
-    : workItemType.workCenters.reduce<TimeInArea[]>((acc, wc, index) => {
+  times.start
+    ? workItemType.workCenters.reduce<TimeInArea[]>((acc, wc, index) => {
       const matchingTime = times.workCenters.find(c => c.label === wc.label);
 
       if (!matchingTime) return acc;
@@ -66,6 +65,7 @@ export const timeSpent = (workItemType: UIWorkItemType) => (times: WorkItemTimes
 
       return acc;
     }, []).slice(1)
+    : []
 );
 
 export const workItemAccessors = (projectAnalysis: ProjectOverviewAnalysis, queryPeriodDays: number) => {

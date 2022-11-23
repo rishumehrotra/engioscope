@@ -286,13 +286,13 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
             <summary className="cursor-pointer">How is this computed?</summary>
             <ul className="list-disc pl-8">
               {workItemType.workCenters.flatMap((wc, index, wcs) => ([
-                index !== 0 ? (
+                index === 0 ? undefined : (
                   <li key={`waiting for ${wc.label}`}>
                     {`The 'Waiting for ${wc.label}' duration is computed from the ${
                       fieldName(wcs[index - 1].endDateField)
                     } to the ${fieldName(wc.startDateField)}.`}
                   </li>
-                ) : undefined,
+                ),
                 <li key={`in ${wc.label}`}>
                   {`The 'In ${wc.label}' duration is computed from the ${
                     fieldName(wc.startDateField)

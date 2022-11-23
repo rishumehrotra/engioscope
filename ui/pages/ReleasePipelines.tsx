@@ -95,8 +95,8 @@ const ReleasePipelines: React.FC = () => {
 
     return releaseAnalysis.pipelines
       .filter(search === undefined ? dontFilter : bySearch(search))
-      .filter(!nonMasterReleases ? dontFilter : byNonMasterReleases)
-      .filter(!notStartsWithArtifact ? dontFilter : byNotStartsWithArtifact)
+      .filter(nonMasterReleases ? byNonMasterReleases : dontFilter)
+      .filter(notStartsWithArtifact ? byNotStartsWithArtifact : dontFilter)
       .filter(stageNameExists === undefined ? dontFilter : pipelineHasStageNamed(stageNameExists))
       .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed))
       .filter(nonPolicyConforming === undefined ? dontFilter : byNonPolicyConforming(policyForBranch))

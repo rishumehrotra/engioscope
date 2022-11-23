@@ -68,10 +68,10 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
                               : '-'
                           )}
                           data={(pipeline.coverageByWeek || []).map(c => (
-                            !c ? 0 : divide(c.covered, c.total).map(multiply(100)).getOr(0)
+                            c ? divide(c.covered, c.total).map(multiply(100)).getOr(0) : 0
                           ))}
                           lineColor={increaseIsBetter((pipeline.coverageByWeek || []).map(c => (
-                            !c ? 0 : divide(c.covered, c.total).getOr(0)
+                            c ? divide(c.covered, c.total).getOr(0) : 0
                           )))}
                           yAxisLabel={x => `${x}%`}
                         />

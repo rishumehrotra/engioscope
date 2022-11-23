@@ -54,12 +54,12 @@ const toUrlFilter = (filter: Filter[]) => (
 );
 
 const fromUrlFilter = (urlParam = '') => (
-  !urlParam
-    ? []
-    : urlParam
+  urlParam
+    ? urlParam
       .split(';')
       .map(part => part.split(':'))
       .map(([label, tags]) => ({ label, tags: tags.split(',') }))
+    : []
 );
 
 export default (workItems: UIWorkItem[]) => {

@@ -263,7 +263,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
                   value={tooltipData.data.state}
                 />
               ) : null}
-              {tooltipData.data.priority !== undefined ? (
+              {tooltipData.data.priority === undefined ? null : (
                 <TooltipSection
                   label="Priority"
                   value={(
@@ -276,13 +276,13 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
                     </>
                   )}
                 />
-              ) : null}
-              {tooltipData.data.severity !== undefined ? (
+              )}
+              {tooltipData.data.severity === undefined ? null : (
                 <TooltipSection
                   label="Severity"
                   value={tooltipData.data.severity}
                 />
-              ) : null}
+              )}
               {tooltipData.data.rca?.length ? (
                 <TooltipSection
                   label="RCA"

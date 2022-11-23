@@ -65,16 +65,16 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
   `;
 
 const showCount = (count: number, label: string, className: string) => (
-  count !== 0
-    ? (`
-        <div class="flex items-center">
-          <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
-          <span class="pl-2">
-            <strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}
-          </span>
-        </div>
-      `)
-    : ''
+  count === 0
+    ? ''
+    : `
+      <div class="flex items-center">
+        <span class="${className} inline-block w-3 h-3 rounded-sm"> </span>
+        <span class="pl-2">
+          <strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}
+        </span>
+      </div>
+    `
 );
 
 export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks['weeks'][number]) => {

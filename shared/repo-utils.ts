@@ -60,9 +60,9 @@ export const totalSuccessfulBuildsByWeek = (repos: RepoAnalysis[]) => (
       ))
       .filter(exists)
   ).map(r => (
-    !r
-      ? 0
-      : divide(r.success, r.total).map(multiply(100)).map(Math.round).getOr(0)
+    r
+      ? divide(r.success, r.total).map(multiply(100)).map(Math.round).getOr(0)
+      : 0
   ))
 );
 
@@ -101,7 +101,7 @@ const sonarCountByWeek = (value: QualityGateStatus) => (repos: RepoAnalysis[]) =
         } else if (val === null && index > 0 && row[index - 1] === value) {
           acc[index].count += 1;
         }
-        acc[index].total += val !== null ? 1 : 0;
+        acc[index].total += val === null ? 0 : 1;
       });
       return acc;
     }, [])

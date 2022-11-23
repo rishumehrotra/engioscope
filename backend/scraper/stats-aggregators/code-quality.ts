@@ -59,12 +59,12 @@ const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof for
   const filtered = locs.filter(Boolean).flatMap(x => x!);
   const combinedSet = new Map<string, number>();
   filtered.forEach(({ lang, loc }) => {
-    if (!combinedSet.has(lang)) {
-      combinedSet.set(lang, loc);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      combinedSet.set(lang, combinedSet.get(lang)! + loc);
-    }
+    combinedSet.set(lang, (
+      combinedSet.has(lang)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ? combinedSet.get(lang)! + loc
+        : loc
+    ));
   });
   return Array.from(combinedSet.entries()).map(([lang, loc]) => ({ lang, loc }));
 };

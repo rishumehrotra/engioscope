@@ -83,21 +83,21 @@ const Tracks: React.FC = () => {
         <TrackNavBar />
       </div>
       <div className="mx-32">
-        {!loadedData
-          ? <Loading />
-          : (
+        {loadedData
+          ? (
             <div className="mt-8 bg-gray-50">
               {
                 // eslint-disable-next-line no-nested-ternary
-                !Object.keys(loadedData.tracks).length
-                  ? 'Tracks not configured'
-                  : (show === 'listing'
+                Object.keys(loadedData.tracks).length
+                  ? (show === 'listing'
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     ? trackFeatures && <FeaturesList tracks={trackFeatures!.tracks} />
                     : trackFlowMetrics && <FlowMetrics tracks={trackFlowMetrics} />)
+                  : 'Tracks not configured'
               }
             </div>
-          )}
+          )
+          : <Loading />}
       </div>
     </>
   );

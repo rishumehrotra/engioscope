@@ -73,9 +73,9 @@ const Repos: React.FC = () => {
 
     return projectAnalysis.repos
       .filter(search === undefined ? dontFilter : bySearch(search))
-      .filter(!commitsGreaterThanZero ? dontFilter : byCommitsGreaterThanZero)
-      .filter(!buildsGreaterThanZero ? dontFilter : byBuildsGreaterThanZero)
-      .filter(!withFailingLastBuilds ? dontFilter : byFailingLastBuilds)
+      .filter(commitsGreaterThanZero ? byCommitsGreaterThanZero : dontFilter)
+      .filter(buildsGreaterThanZero ? byBuildsGreaterThanZero : dontFilter)
+      .filter(withFailingLastBuilds ? byFailingLastBuilds : dontFilter)
       .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
       .filter(
         (!selectedGroupLabels || selectedGroupLabels?.length === 0 || !projectAnalysis.groups?.groups)
