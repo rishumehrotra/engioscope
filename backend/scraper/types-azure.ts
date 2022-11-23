@@ -343,7 +343,7 @@ export type TestCaseResult = {
     name: string;
     url?: string;
   };
-  testRun: { /* TODO */};
+  testRun: { id?: string; name: string; url?: string};
   lastUpdatedDate: Date;
   createdDate: Date;
   url: string;
