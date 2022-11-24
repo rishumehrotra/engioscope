@@ -1,7 +1,7 @@
 import { allPass } from 'rambda';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { UIWorkItem, UIWorkItemType } from '../../../shared/types.js';
-import { divide, mapObj } from '../../../shared/utils.js';
+import { divide, mapObj, oneDayInMs } from '../../../shared/utils.js';
 import { totalCycleTime } from '../../../shared/work-item-utils.js';
 import {
   num, prettyMS, priorityBasedColor
@@ -10,7 +10,7 @@ import type { ScatterLineGraphProps } from '../graphs/ScatterLineGraph.js';
 import ScatterLineGraph from '../graphs/ScatterLineGraph.js';
 import GraphCard from './helpers/GraphCard.js';
 import type { OrganizedWorkItems, TimeInArea, WorkItemAccessors } from './helpers/helpers.js';
-import { getSidebarItemStats } from './helpers/helpers.js';
+import { timeSpent, getSidebarItemStats } from './helpers/helpers.js';
 import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
 import { LegendSidebar } from './helpers/LegendSidebar.js';
 import type { ModalArgs } from './helpers/modal-helpers.js';
@@ -150,6 +150,23 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
     [showWorkItem, states]
   );
 
+  const csvArray = useMemo(
+    () => [
+      ['ID', 'Type', 'Title', ...Object.keys(statesToRender).map(x => `${x} (days)`), 'URL'],
+      ...allWorkItems.map(wi => [
+        wi.id,
+        wi.groupId ? accessors.workItemGroup(wi.groupId).name : '',
+        wi.title,
+        ...timeSpent(accessors.workItemType(wi.typeId))(accessors.workItemTimes(wi))
+          .map(ts => (ts.end
+            ? Math.round((ts.end.getTime() - ts.start.getTime()) / oneDayInMs)
+            : 0)),
+        wi.url
+      ])
+    ],
+    [accessors, allWorkItems, statesToRender]
+  );
+
   const scatterLineGraphProps = useMemo(
     (): ScatterLineGraphProps<{ wi: UIWorkItem; timeSpent: TimeInArea }> => ({
       className: 'max-w-full',
@@ -254,6 +271,7 @@ const TimeSpentGraphInner: React.FC<TimeSpentGraphInnerProps> = ({
         accessors.queryPeriodDays
       } days spend their time?`}
       hasData={allWorkItems.length > 0}
+      csvData={csvArray}
       left={(
         <>
           <div className="mb-8 flex justify-end mr-4 gap-2">
