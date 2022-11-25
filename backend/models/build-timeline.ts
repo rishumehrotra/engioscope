@@ -170,7 +170,7 @@ const getFailing = async (
           collectionName,
           project,
           buildDefinitionId,
-          createdAt: { $gt: queryFrom }
+          'records.startTime': { $gt: queryFrom }
         }
       },
       { $unwind: '$records' },
@@ -234,7 +234,7 @@ const getSkipped = async (
           collectionName,
           project,
           buildDefinitionId,
-          createdAt: { $gt: queryFrom }
+          'records.startTime': { $gt: queryFrom }
         }
       },
       { $unwind: '$records' },
