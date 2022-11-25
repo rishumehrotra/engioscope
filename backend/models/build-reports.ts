@@ -22,7 +22,7 @@ export type AzureBuildReport = {
   templateRepo: string | undefined;
   sonarHost: string | undefined;
   sonarProjectKey: string | undefined;
-  centralTemplate: Record<string, string> | undefined;
+  centralTemplate: boolean | Record<string, string> | undefined; // boolean is for backwards compatibility
 };
 
 const azureBuildReportSchema = new Schema<AzureBuildReport>({

@@ -184,10 +184,12 @@ export default (
             successesByWeek: buildStats.successesByWeek,
             usesTemplate: templateRepoName && report?.templateRepo === templateRepoName
               ? true : undefined,
-            centralTemplate: report?.centralTemplate || (
-              templateRepoName && report?.templateRepo === templateRepoName
-                ? true : undefined
-            )
+            centralTemplate: report?.centralTemplate
+              ? Object.fromEntries(
+                Object.entries(report.centralTemplate)
+                  .map(([key, value]) => [key.trim().replace(/_/g, ' '), value.trim()])
+              )
+              : ((templateRepoName && report?.templateRepo === templateRepoName) || undefined)
           };
         }));
 
