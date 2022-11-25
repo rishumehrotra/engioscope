@@ -157,7 +157,7 @@ export const sonarCountsByWeek = applySpec({
 
 export const totalUsingCentralTemplate = (repos: RepoAnalysis[]) => {
   const pipelines = repos.flatMap(r => r.builds?.pipelines);
-  const usingCentralTemplate = pipelines.filter(p => p?.usesTemplate);
+  const usingCentralTemplate = pipelines.filter(p => p?.centralTemplate);
 
   return {
     count: usingCentralTemplate.length,

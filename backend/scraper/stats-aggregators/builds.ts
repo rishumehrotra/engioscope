@@ -182,8 +182,6 @@ export default (
               ?.process.type === 1 ? 'ui' : 'yml',
             buildsByWeek: buildStats.buildsByWeek,
             successesByWeek: buildStats.successesByWeek,
-            usesTemplate: templateRepoName && report?.templateRepo === templateRepoName
-              ? true : undefined,
             centralTemplate: report?.centralTemplate
               ? Object.fromEntries(
                 Object.entries(report.centralTemplate)
