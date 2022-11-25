@@ -124,7 +124,7 @@ const getSlowestTasks = async (
           collectionName,
           project,
           buildDefinitionId,
-          createdAt: { $gt: queryFrom }
+          'records.startTime': { $gt: queryFrom }
         }
       },
       { $unwind: '$records' },
