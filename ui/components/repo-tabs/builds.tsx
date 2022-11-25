@@ -17,16 +17,14 @@ const centralPipelineTooltip = (centralPipeline: boolean | Record<string, string
       <ul>
         ${Object.entries(centralPipeline).map(([key, value]) => `
           <li>
-            <strong>
-              ${key
-    .trim()
-    .replace(/_/g, ' ')
-    .replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase())
-}:
-</strong>
-              ${value.trim() === 'true'
+            <strong>${key.trim().replace(/_/g, ' ')}:</strong>
+            ${
+  // eslint-disable-next-line no-nested-ternary
+  value.trim() === 'true'
     ? '<span class="text-green-500">✔</span>'
-    : value.trim()}
+    : (value.trim() === 'true'
+      ? '<span class="text-red-500">✖</span>'
+      : value.trim())}
           </li>
         `).join('')}
       </ul>
