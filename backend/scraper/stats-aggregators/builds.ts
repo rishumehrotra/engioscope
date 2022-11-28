@@ -6,10 +6,10 @@ import { asc, byDate, desc } from 'sort-lib';
 import type { BuildDefinitionReference } from '../types-azure.js';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
 import { isMaster, weeks } from '../../utils.js';
-import type { latestBuildReportsForRepoAndBranch } from '../../models/build-reports.js';
+import type { centralBuildTemplateBuildCount } from '../../models/build-reports.js';
 import type { Build } from '../../models/builds.js';
 
-type BuildReportsForRepoAndBranch = ReturnType<typeof latestBuildReportsForRepoAndBranch>;
+type CentralTemplateBuildCountForPipeline = ReturnType<typeof centralBuildTemplateBuildCount>;
 
 type BuildStats = {
   count: number;
@@ -79,41 +79,15 @@ const buildDefinitionWebUrl = pipe(
   replace(/\?revision=.*/, '')
 );
 
-const latestReport = (
-  repoNameById: (id: string) => string | undefined,
-  buildReports: BuildReportsForRepoAndBranch
-) => {
-  const reportsByRepoId: Record<string, ReturnType<BuildReportsForRepoAndBranch>> = {};
-
-  return (repoId: string, buildDefinitionId: string) => {
-    const repoName = repoNameById(repoId);
-    if (!reportsByRepoId[repoId]) {
-      reportsByRepoId[repoId] = repoName
-        ? buildReports(repoName, 'master')
-        : Promise.resolve([]);
-    }
-
-    return reportsByRepoId[repoId]
-      .then(
-        reports => reports
-          .find(report => report.buildDefinitionId === buildDefinitionId)
-      );
-  };
-};
-
 export default (
   builds: Build[],
   buildDefinitionsByRepoId: (repoId: string) => BuildDefinitionReference[],
-  repoNameById: (id: string) => string | undefined,
-  buildReports: BuildReportsForRepoAndBranch,
-  templateRepoName: string | undefined
+  centralTemplateBuildCount: CentralTemplateBuildCountForPipeline
 ) => {
   type AggregatedBuilds = {
     buildStats: Record<string, Record<number, BuildStats>>;
     allMasterBuilds: Record<string, Record<number, Build[] | undefined>>;
   };
-
-  const latestMasterReport = latestReport(repoNameById, buildReports);
 
   const { buildStats, allMasterBuilds } = [...builds]
     .sort(desc(byDate(prop('finishTime'))))
@@ -159,7 +133,7 @@ export default (
 
       const pipelines: UIBuildPipeline[] = await Promise.all(Object.entries(buildStats[id])
         .map(async ([definitionId, buildStats]): Promise<UIBuildPipeline> => {
-          const report = await latestMasterReport(id, definitionId);
+          const centralTemplateRuns = await centralTemplateBuildCount(definitionId);
 
           return {
             count: buildStats.count,
@@ -182,12 +156,7 @@ export default (
               ?.process.type === 1 ? 'ui' : 'yml',
             buildsByWeek: buildStats.buildsByWeek,
             successesByWeek: buildStats.successesByWeek,
-            centralTemplate: report?.centralTemplate
-              ? Object.fromEntries(
-                Object.entries(report.centralTemplate)
-                  .map(([key, value]) => [key.trim().replace(/_/g, ' '), value.trim()])
-              )
-              : ((templateRepoName && report?.templateRepo === templateRepoName) || undefined)
+            centralTemplateRuns
           };
         }));
 
@@ -205,7 +174,8 @@ export default (
               duration: { average: '0', min: '0', max: '0' },
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               status: { type: 'unused', since: d.latestBuild!.startTime },
-              type: d.process.type === 1 ? 'ui' : 'yml'
+              type: d.process.type === 1 ? 'ui' : 'yml',
+              centralTemplateRuns: 0
             }))
         )
         : pipelines;

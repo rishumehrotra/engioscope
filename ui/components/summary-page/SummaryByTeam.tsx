@@ -667,7 +667,7 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Number of pipelines using the central template"
+                data-tip="Number of build runs that used the central template"
               >
                 Uses central template
               </div>

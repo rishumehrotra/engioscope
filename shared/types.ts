@@ -94,8 +94,7 @@ export type UIBuildPipeline = {
   type: 'ui' | 'yml';
   buildsByWeek?: number[];
   successesByWeek?: number[];
-  /** TODO: Remove the 'boolean' bit from centralTemplate - it's there for backwards compatibility */
-  centralTemplate?: Record<string, string> | boolean;
+  centralTemplateRuns: number;
 };
 
 export type UIBuilds = null | {

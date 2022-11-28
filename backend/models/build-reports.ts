@@ -2,6 +2,7 @@ import type { ObjectId } from 'mongoose';
 import mongoose from 'mongoose';
 import { map } from 'rambda';
 import yaml from 'yaml';
+import { configForProject, getConfig } from '../config.js';
 
 const { Schema, model } = mongoose;
 
@@ -119,3 +120,35 @@ export const latestBuildReportsForRepoAndBranch = (collectionName: string, proje
       .then(map(r => r.latestDate as AzureBuildReport & { _id: ObjectId }))
   )
 );
+
+export const centralBuildTemplateBuildCount = (collectionName: string, project: string) => (
+  async (buildDefinitionId: string, queryFrom = getConfig().azure.queryFrom) => {
+    const projectConfig = configForProject(collectionName, project);
+    const result: ({ centralTemplateUsageCount: number })[] = await AzureBuildReportModel.aggregate([
+      {
+        $match: {
+          collectionName, project, buildDefinitionId, createdAt: { $gt: queryFrom }
+        }
+      },
+      {
+        $project: {
+          usesCentralTemplate: {
+            $or: [
+              { $eq: ['$centralTemplate', true] },
+              { $ne: ['$centralTemplate', undefined] },
+              (projectConfig?.templateRepoName
+                ? { $eq: ['$templateRepo', projectConfig.templateRepoName] }
+                : {})
+            ]
+          }
+        }
+      },
+      { $match: { usesCentralTemplate: true } },
+      { $count: 'centralTemplateUsageCount' }
+    ]);
+    return result[0]?.centralTemplateUsageCount ?? 0;
+  }
+);
+
+// eslint-disable-next-line no-underscore-dangle
+export const __AzureBuildReportModelDONOTUSE = AzureBuildReportModel;

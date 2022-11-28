@@ -1,5 +1,5 @@
 import {
-  add, applySpec, identity, multiply
+  add, applySpec, identity, multiply, sum
 } from 'rambda';
 import { asc, byString } from 'sort-lib';
 import { count, incrementBy } from './reducer-utils.js';
@@ -157,11 +157,11 @@ export const sonarCountsByWeek = applySpec({
 
 export const totalUsingCentralTemplate = (repos: RepoAnalysis[]) => {
   const pipelines = repos.flatMap(r => r.builds?.pipelines);
-  const usingCentralTemplate = pipelines.filter(p => p?.centralTemplate);
+  const usingCentralTemplate = sum(pipelines.filter(exists).map(p => p.centralTemplateRuns));
 
   return {
-    count: usingCentralTemplate.length,
-    total: pipelines.length
+    count: usingCentralTemplate,
+    total: sum(pipelines.filter(exists).map(p => p?.count))
   };
 };
 

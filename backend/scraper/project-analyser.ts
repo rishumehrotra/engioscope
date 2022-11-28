@@ -20,7 +20,7 @@ import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
 import type { GitBranchStats, WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
-import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
+import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
 import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
 
 const getLanguageColor = (lang: string) => {
@@ -71,14 +71,10 @@ export default (config: ParsedConfig) => {
       aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name)
     ]);
 
-    const repoNameById = (id: string) => repos.find(r => r.id === id)?.name;
-
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
       builds,
       buildDefinitionsByRepoId,
-      repoNameById,
-      forProject(latestBuildReportsForRepoAndBranch),
-      projectConfig.templateRepoName
+      forProject(centralBuildTemplateBuildCount)
     );
 
     const getTestsByRepoId = aggregateTestRuns(

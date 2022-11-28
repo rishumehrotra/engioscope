@@ -7,31 +7,6 @@ import TabContents from './TabContents.js';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
 
-const centralPipelineTooltip = (centralPipeline: boolean | Record<string, string>) => {
-  if (typeof centralPipeline === 'boolean') return {};
-
-  return {
-    'data-html': 'true',
-    'data-tip': `
-      <strong class="block mb-2">Central build template details</strong>
-      <ul>
-        ${Object.entries(centralPipeline).map(([key, value]) => `
-          <li>
-            <strong>${key.trim().replace(/_/g, ' ')}:</strong>
-            ${
-  // eslint-disable-next-line no-nested-ternary
-  value.trim() === 'true'
-    ? '<span class="text-green-500">✔</span>'
-    : (value.trim() === 'true'
-      ? '<span class="text-red-500">✖</span>'
-      : value.trim())}
-          </li>
-        `).join('')}
-      </ul>
-    `
-  };
-};
-
 export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab => ({
   title: 'Builds',
   count: builds?.count || 0,
@@ -102,12 +77,11 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                           </div>
                         </td>
                         <td>
-                          {pipeline.centralTemplate
+                          {pipeline.centralTemplateRuns > 0
                             ? (
                               <span
                                 className={`uppercase text-xs px-1 border bg-green-100 border-green-700
                                   rounded-sm text-green-700 font-semibold`}
-                                {...(centralPipelineTooltip(pipeline.centralTemplate))}
                               >
                                 Yes
                               </span>

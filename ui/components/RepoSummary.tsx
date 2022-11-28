@@ -321,7 +321,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             num(stats.usingCentralTemplate.count)
           } out of ${
             num(stats.usingCentralTemplate.total)
-          } pipeliines are using the central template`
+          } build runs used the central template`
         }]}
       />
       <ProjectStat
