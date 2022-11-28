@@ -236,7 +236,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
         />
         <span>{`${id}: ${title}`}</span>
       </a>
-      <ReactTooltip id={domId}>
+      <ReactTooltip id={domId} place="bottom">
         <div className="w-72 pt-2">
           <img
             src={matchingWit?.icon || ''}
@@ -319,7 +319,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
               {/* TODO: Missing: Worst offender, efficiency */}
             </div>
           ) : (
-            <div className="h-44 my-3">
+            <div className="my-3">
               <Loading />
             </div>
           )}
