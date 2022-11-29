@@ -1,4 +1,5 @@
 import React, { Fragment, useCallback, useState } from 'react';
+import ReactTooltip from 'react-tooltip';
 import type { RepoAnalysis } from '../../../shared/types.js';
 import { num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.js';
@@ -6,6 +7,90 @@ import type { Tab } from './Tabs.js';
 import TabContents from './TabContents.js';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
+import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
+import { trpc } from '../../helpers/trpc.js';
+
+type CentralTemplateUsageProps = {
+  centralTemplateRuns: number;
+  totalRuns: number;
+  buildDefinitionId: string;
+};
+
+const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = (
+  ({ centralTemplateRuns, totalRuns, buildDefinitionId }) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const projectDetails = useProjectDetails()!;
+    const domId = `bdi-${buildDefinitionId}`;
+    const [hasHovered, setHasHovered] = useState(false);
+    const centralTemplateOptions = trpc.builds.centralTemplateOptions.useQuery({
+      collectionName: projectDetails.name[0], project: projectDetails.name[1], buildDefinitionId
+    }, { enabled: hasHovered });
+
+    if (centralTemplateRuns === 0) {
+      return (
+        <span
+          className="uppercase text-xs px-1 border-red-300 bg-red-100 rounded-sm text-red-500 border"
+          data-tip="None of the builds used the central build template"
+          data-place="bottom"
+        >
+          No
+        </span>
+      );
+    }
+    return (
+      <>
+        <span
+          className={`uppercase text-xs px-1 border rounded-sm font-semibold ${
+            centralTemplateRuns >= totalRuns
+              ? 'text-green-700 bg-green-100 border-green-700'
+              : 'text-amber-600 bg-amber-50 border-amber-600'
+          }`}
+          onMouseOver={() => setHasHovered(true)}
+          onFocus={() => setHasHovered(true)}
+          data-tip
+          data-for={domId}
+        >
+          Yes
+        </span>
+        <ReactTooltip id={domId} place="bottom">
+          <div className="w-72 pt-2 text-left whitespace-normal">
+            <div className="mb-2 leading-snug">
+              {centralTemplateRuns >= totalRuns ? <strong>All</strong> : (
+                <>
+                  <strong>{num(Math.min(centralTemplateRuns, totalRuns))}</strong>
+                  {' out of the '}
+                  <strong>{num(totalRuns)}</strong>
+                </>
+              )}
+              {` build ${totalRuns === 1 ? 'run' : 'runs'} used the central build template.`}
+            </div>
+            {centralTemplateOptions.data ? (
+              <>
+                <strong>Template options:</strong>
+                <ul>
+                  {Object.entries(centralTemplateOptions.data).map(([key, value]) => (
+                    <li key={key} className="leading-normal">
+                      {`${key}: `}
+                      {typeof value === 'boolean'
+                        ? (
+                          <span className={value ? 'text-green-500' : 'text-red-500'}>
+                            {value ? '✔' : '✖'}
+                          </span>
+                        )
+                        : (
+                          <strong>{value}</strong>
+                        )}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
+        </ReactTooltip>
+      </>
+    );
+  }
+);
 
 export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab => ({
   title: 'Builds',
@@ -77,20 +162,11 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
                           </div>
                         </td>
                         <td>
-                          {pipeline.centralTemplateRuns > 0
-                            ? (
-                              <span
-                                className={`uppercase text-xs px-1 border bg-green-100 border-green-700
-                                  rounded-sm text-green-700 font-semibold`}
-                              >
-                                Yes
-                              </span>
-                            )
-                            : (
-                              <span className="uppercase text-xs px-1 border-red-300 bg-red-100 rounded-sm text-red-500 border">
-                                No
-                              </span>
-                            )}
+                          <CentralTemplateUsage
+                            buildDefinitionId={pipeline.definitionId}
+                            centralTemplateRuns={pipeline.centralTemplateRuns}
+                            totalRuns={pipeline.count}
+                          />
                         </td>
                         <td>{pipeline.status.type === 'unused' ? '-' : num(pipeline.success)}</td>
                         <td>{pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}</td>

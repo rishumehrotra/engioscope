@@ -2,7 +2,9 @@ import type { ObjectId } from 'mongoose';
 import mongoose from 'mongoose';
 import { map } from 'rambda';
 import yaml from 'yaml';
+import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
 const { Schema, model } = mongoose;
 
@@ -135,7 +137,7 @@ export const centralBuildTemplateBuildCount = (collectionName: string, project: 
           usesCentralTemplate: {
             $or: [
               { $eq: ['$centralTemplate', true] },
-              { $ne: ['$centralTemplate', undefined] },
+              { $eq: [{ $type: '$centralTemplate' }, 'object'] },
               (projectConfig?.templateRepoName
                 ? { $eq: ['$templateRepo', projectConfig.templateRepoName] }
                 : {})
@@ -147,6 +149,47 @@ export const centralBuildTemplateBuildCount = (collectionName: string, project: 
       { $count: 'centralTemplateUsageCount' }
     ]);
     return result[0]?.centralTemplateUsageCount ?? 0;
+  }
+);
+
+export const centralTemplateOptionsInputParser = z.object({
+  ...collectionAndProjectInputs,
+  buildDefinitionId: z.string()
+});
+
+export const centralTemplateOptions = (
+  async ({ collectionName, project, buildDefinitionId }: z.infer<typeof centralTemplateOptionsInputParser>) => {
+    const result: ({ centralTemplate: Record<string, string> })[] = await AzureBuildReportModel.aggregate([
+      {
+        $match: {
+          collectionName, project, buildDefinitionId
+        }
+      },
+      {
+        $addFields: {
+          hasCentralTemplateData: {
+            $or: [
+              { $eq: ['$centralTemplate', true] },
+              { $eq: [{ $type: '$centralTemplate' }, 'object'] }
+            ]
+          }
+        }
+      },
+      { $sort: { 'createdAt': -1 } },
+      { $limit: 1 },
+      { $project: { 'centralTemplate': 1 } }
+    ]);
+    if (!result.length) return null;
+
+    return Object.fromEntries(Object.entries(result[0].centralTemplate).map(([key, value]) => (
+      [
+        key.trim().replace(/_/g, ' '),
+        // eslint-disable-next-line no-nested-ternary
+        value.trim() === 'true'
+          ? true
+          : (value.trim() === 'false' ? false : value.trim())
+      ]
+    )));
   }
 );
 
