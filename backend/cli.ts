@@ -7,6 +7,7 @@ import getAllTheThings from './scraper/get-all-the-things.js';
 import startServer from './server/express.js';
 import { doesFileExist } from './utils.js';
 import parseConfig from './scraper/parse-config.js';
+import onboarding from './onboarding/index.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const addConfigOption = (yargs: yargs.Argv<{}>): void => {
@@ -38,9 +39,13 @@ const readConfig = async (argv: Record<string, unknown>) => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { argv } = yargs(process.argv.slice(2))
   .scriptName('npx engioscope')
-  .command('scrape', 'Scrape Azure DevOps', addConfigOption, async argv => (
+  .command('scrape', 'Scrape Azure DevOps', addConfigOption, argv => (
     readConfig(argv).then(getAllTheThings)
   ))
   .command('serve', 'Serve the engioscope UI', addConfigOption, argv => (
     readConfig(argv).then(startServer)
+  ))
+  .command('onboard', 'Onboard new projects', addConfigOption, argv => (
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    readConfig(argv).then(config => { onboarding(config); })
   ));

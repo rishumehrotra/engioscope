@@ -20,6 +20,7 @@
     "test": "vitest --dom",
     "parallelised-ci-tasks": "npm-run-all --parallel test:ci tsc lint build",
     "scrape": "DEBUG=* ts-node --esm ./backend/dev/scrape.ts",
+    "onboard": "DEBUG=* ts-node --esm ./backend/dev/onboard.ts",
     "scrape:profiler": "DEBUG=* node --max-old-space-size=10240 -r ts-node/register --prof ./backend/dev/scrape.ts",
     "tsc": "tsc --build backend ui",
     "lint": "eslint \"./**/*.ts\" \"./**/*.tsx\" --cache",
