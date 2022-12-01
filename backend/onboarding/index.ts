@@ -4,6 +4,7 @@ import type { ParsedConfig } from '../scraper/parse-config.js';
 import { getWorkItems } from '../crons/workitems.js';
 import { getWorkItemTypes } from '../crons/work-item-types.js';
 import { getBuildsAndTimelines } from '../crons/builds.js';
+import { getRepositories } from '../crons/repos.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -16,6 +17,7 @@ export default async (config: ParsedConfig) => {
   return Promise.all([
     getWorkItems(),
     getWorkItemTypes(),
-    getBuildsAndTimelines()
+    getBuildsAndTimelines(),
+    getRepositories()
   ]);
 };
