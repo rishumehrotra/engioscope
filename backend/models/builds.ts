@@ -104,6 +104,25 @@ export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   );
 };
 
+export const bulkSaveBuild = (collectionName: string) => (builds: AzureBuild[]) => (
+  BuildModel.bulkWrite(builds.map(build => {
+    const { project, ...rest } = build;
+
+    return {
+      updateOne: {
+        filter: {
+          collectionName,
+          'project': project.name,
+          'repository.id': build.repository.id,
+          'id': build.id
+        },
+        update: { $set: rest },
+        upsert: true
+      }
+    };
+  }))
+);
+
 export const getBuilds = (
   collectionName: string, project: string,
   queryFrom = getConfig().azure.queryFrom
