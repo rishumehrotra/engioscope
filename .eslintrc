@@ -112,8 +112,10 @@
       "error",
       {
         "devDependencies": [
+          "**/__tests__/*",
           "ui/**/*",
-          "vite.config.js"
+          "vite.config.js",
+          "vitest.config.ts"
         ]
       }
     ],

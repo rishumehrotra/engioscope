@@ -1,6 +1,8 @@
 import { add } from 'rambda';
 import { maybe } from './maybe.js';
 
+export type NonEmptyArray<T> = [T, ...T[]];
+
 export const oneSecondInMs = 1000;
 export const oneMinuteInMs = 60 * oneSecondInMs;
 export const oneHourInMs = 60 * oneMinuteInMs;
