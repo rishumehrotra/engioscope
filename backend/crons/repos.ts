@@ -6,11 +6,13 @@ import { runJob } from './utils.js';
 export const getRepositories = async () => {
   const { getRepositories } = azure(getConfig());
 
-  await collectionsAndProjects()
-    .map(([collection, project]) => (
-      getRepositories(collection.name, project.name)
-        .then(bulkSaveRepositories(collection.name))
-    ));
+  await Promise.all(
+    collectionsAndProjects()
+      .map(([collection, project]) => (
+        getRepositories(collection.name, project.name)
+          .then(bulkSaveRepositories(collection.name))
+      ))
+  );
 };
 
 export default () => (

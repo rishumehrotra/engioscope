@@ -33,7 +33,7 @@ const getReportOutputPath = (html: string) => {
 };
 
 const saveBuildReportToMongo = async (html: string) => {
-  const report = await htmlReportToObj(html);
+  const report = htmlReportToObj(html);
   if (!report) return;
   const { collection, repoName, ...rest } = report;
   return saveBuildReport({
