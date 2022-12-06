@@ -17,7 +17,6 @@ describe('createSchedule', () => {
         s`For the first ${1 * oneDayInMs}, check every ${oneHourInMs}.`,
         s`Then till ${3 * oneDayInMs}, check every ${3 * oneHourInMs}.`,
         s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
-        s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
         s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
         s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
         s`Then till ${60 * oneDayInMs}, check every ${6 * oneDayInMs}.`,
