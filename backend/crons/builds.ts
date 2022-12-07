@@ -20,35 +20,34 @@ const putBuildTimelineInDb = (
 export const getBuildsAndTimelines = () => {
   const { getBuildsSince, getBuildTimeline } = azure(getConfig());
 
-  return Promise.all(
-    collectionsAndProjects().map(async ([collection, project]) => {
-      const lastBuildUpdateDate = (
-        await getLastBuildUpdateDate(collection.name, project.name)
-        || getConfig().azure.queryFrom
-      );
+  return collectionsAndProjects().reduce<Promise<void>>(async (acc, [collection, project]) => {
+    await acc;
+    const lastBuildUpdateDate = (
+      await getLastBuildUpdateDate(collection.name, project.name)
+      || getConfig().azure.queryFrom
+    );
 
-      const builds = await getBuildsSince(collection.name, project.name)(lastBuildUpdateDate);
+    const builds = await getBuildsSince(collection.name, project.name)(lastBuildUpdateDate);
 
-      await Promise.all([
-        bulkSaveBuild(collection.name)(builds),
-        missingTimelines(collection.name, project.name)(builds.map(b => b.id))
-          .then(buildIds => Promise.all(
-            buildIds.map(async buildId => (
-              getBuildTimeline(collection.name, project.name)(buildId)
-                .then(putBuildTimelineInDb(
-                  collection.name,
-                  project.name,
-                  buildId,
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  builds.find(b => b.id === buildId)!.definition.id
-                ))
-            ))
+    await Promise.all([
+      bulkSaveBuild(collection.name)(builds),
+      missingTimelines(collection.name, project.name)(builds.map(b => b.id))
+        .then(buildIds => Promise.all(
+          buildIds.map(async buildId => (
+            getBuildTimeline(collection.name, project.name)(buildId)
+              .then(putBuildTimelineInDb(
+                collection.name,
+                project.name,
+                buildId,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                builds.find(b => b.id === buildId)!.definition.id
+              ))
           ))
-      ]);
+        ))
+    ]);
 
-      await setLastBuildUpdateDate(collection.name, project.name);
-    })
-  );
+    await setLastBuildUpdateDate(collection.name, project.name);
+  }, Promise.resolve());
 };
 
 export default () => (
