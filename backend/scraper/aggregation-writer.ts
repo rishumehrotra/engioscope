@@ -180,7 +180,7 @@ export default (config: ParsedConfig) => (collectionName: string, projectConfig:
   ])
 );
 
-export const writeSummaryMetricsFile = (config: ParsedConfig, summary: SummaryMetrics) => (
+export const writeSummaryMetricsFile = (summary: SummaryMetrics) => (
   writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
 );
 

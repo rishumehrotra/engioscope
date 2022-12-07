@@ -76,7 +76,7 @@ const isBeforeEndOfWeekFilters = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 export const newSonarSetupsByWeek = (repos: RepoAnalysis[]) => (
   repos
     .map(r => r.codeQuality
-      ?.map(q => q?.oldestFoundSample)
+      ?.map(q => q?.oldestFoundSample?.toString())
       .filter(exists)
       .sort(asc(byString(identity)))[0])
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

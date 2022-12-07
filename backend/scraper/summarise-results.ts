@@ -2,14 +2,16 @@ import {
   always, anyPass, applySpec, compose, filter, length, map, not,
   pipe, prop, subtract, T
 } from 'rambda';
+import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import type {
-  Overview, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
+  Overview, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
+  ProjectRepoAnalysis, RepoAnalysis, UIBuildPipeline, UIWorkItem, UIWorkItemType
 } from '../../shared/types.js';
 import {
   isAfter, queryPeriodDays, weekLimits, weeks
 } from '../utils.js';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config.js';
-import type { ProjectAnalysis } from './types.js';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils.js';
 import {
   noGroup, isNewInTimeRange, isWIP, isWIPInTimeRange, timeDifference,
@@ -43,8 +45,42 @@ type RelevantResults = {
 type Result = {
   collectionConfig: ParsedCollection;
   projectConfig: ParsedProjectConfig;
-  analysisResult: ProjectAnalysis;
 };
+
+const looksLikeDate = (value: string) => (
+  /\d{4}-[01]\d-[0-3]\dT[0-2](?:\d:[0-5]){2}\d(.*Z)/.test(value)
+);
+
+const parseDate = (_: string, value: unknown) => {
+  if (typeof value !== 'string') return value;
+  if (!looksLikeDate(value)) return value;
+  return new Date(value);
+};
+
+const parseFile = async <T>(collection: string, project: string, file: string) => (
+  JSON.parse(
+    await readFile(join(
+      process.cwd(),
+      'data',
+      collection,
+      project,
+      file
+    ), 'utf8'),
+    parseDate
+  ) as T
+);
+
+const getOverview = async (collection: string, project: string) => (
+  (await parseFile<ProjectOverviewAnalysis>(collection, project, 'overview.json')).overview
+);
+
+const getRepoAnalysis = async (collection: string, project: string) => (
+  (await parseFile<ProjectRepoAnalysis>(collection, project, 'repos.json')).repos
+);
+
+const getReleaseAnalysis = async (collection: string, project: string) => (
+  parseFile<ProjectReleasePipelineAnalysis>(collection, project, 'releases.json')
+);
 
 const groupType = (group: Group): [string, string] | 'project' => {
   const remainingKey = Object.entries(group)
@@ -57,27 +93,32 @@ const matchingResults = (group: Group, results: Result[]) => {
   const gt = groupType(group);
 
   return (
-    results.reduce<RelevantResults[]>((acc, result) => {
-      if (result.collectionConfig.name !== group.collection) return acc;
+    results.reduce<Promise<RelevantResults[]>>(async (pAcc, result) => {
+      if (result.collectionConfig.name !== group.collection) return pAcc;
       if (
         result.projectConfig.name === group.project
         || result.projectConfig.name === group.portfolioProject
       ) {
+        const acc = await pAcc;
+        const overview = await getOverview(result.collectionConfig.name, result.projectConfig.name);
+
         acc.push({
           collection: result.collectionConfig.name,
           project: result.projectConfig.name,
-          workItems: Object.values(result.analysisResult.workItemAnalysis.overview.byId)
+          workItems: Object.values(overview.byId)
             .filter(workItem => workItem.filterBy?.some(
               filter => filter.label === gt[0] && filter.tags.includes(gt[1])
             )),
-          workItemTypes: result.analysisResult.workItemAnalysis.overview.types,
-          groups: result.analysisResult.workItemAnalysis.overview.groups,
-          workItemTimes: result.analysisResult.workItemAnalysis.overview.times
+          workItemTypes: overview.types,
+          groups: overview.groups,
+          workItemTimes: overview.times
         });
+
+        return acc;
       }
 
-      return acc;
-    }, [])
+      return pAcc;
+    }, Promise.resolve([]))
   );
 };
 
@@ -312,7 +353,7 @@ const analyseWorkItems = (
   )(results.workItems);
 };
 
-const summariseResults = (config: ParsedConfig, results: Result[]) => {
+const summariseResults = async (config: ParsedConfig, results: Result[]) => {
   const { summaryPageGroups } = config.azure;
   if (!summaryPageGroups) {
     return {
@@ -322,14 +363,14 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
     };
   }
 
-  return summaryPageGroups
-    .map(group => {
+  const summarised = await Promise.all(summaryPageGroups
+    .map(async group => {
       // eslint-disable-next-line unicorn/consistent-destructuring
       const projectConfig = config.azure.collections
         .find(c => c.name === group.collection)
         ?.projects.find(p => p.name === group.project);
 
-      const match = matchingResults(group, results);
+      const match = await matchingResults(group, results);
       if (!match.length) return null;
 
       const mergedResults = mergeResults(match);
@@ -339,10 +380,23 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         && r.projectConfig.name === group.project
       ));
 
+      if (!resultsForThisProject) return null;
+
+      const [repoAnalysis, releaseAnalysis] = await Promise.all([
+        getRepoAnalysis(
+          resultsForThisProject.collectionConfig.name,
+          resultsForThisProject.projectConfig.name
+        ),
+        getReleaseAnalysis(
+          resultsForThisProject.collectionConfig.name,
+          resultsForThisProject.projectConfig.name
+        )
+      ]);
+
       const repoNames = projectConfig?.groupRepos?.groups[groupType(group)[1]] || [];
 
       const matchingRepos = (repoNames: string[]) => {
-        const allRepos = resultsForThisProject?.analysisResult.repoAnalysis || [];
+        const allRepos = repoAnalysis || [];
 
         return repoNames.length === 0
           ? allRepos
@@ -397,7 +451,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
       };
 
       const pipelineStats = (): Summary['pipelineStats'] => {
-        const matchingPipelines = (resultsForThisProject?.analysisResult.releaseAnalysis.pipelines || [])
+        const matchingPipelines = (releaseAnalysis.pipelines || [])
           .filter(
             repoNames.length === 0 ? T : isPipelineInGroup(groupType(group)[1], repoNames)
           );
@@ -412,7 +466,7 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
           masterOnlyPipelines: masterDeploysCount(matchingPipelines),
           startsWithArtifact: count(incrementIf(pipelineHasStartingArtifact))(matchingPipelines),
           conformsToBranchPolicies: count(incrementIf(pipelineMeetsBranchPolicyRequirements(
-            (repoId, branch) => normalizePolicy(resultsForThisProject?.analysisResult.releaseAnalysis.policies[repoId]?.[branch] || {})
+            (repoId, branch) => normalizePolicy(releaseAnalysis.policies[repoId]?.[branch] || {})
           )))(matchingPipelines),
           usageByEnvironment: totalUsageByEnvironment(projectConfig?.environments)(matchingPipelines),
           masterOnlyReleasesByWeek: masterOnlyReleasesByWeek(matchingPipelines)
@@ -428,7 +482,9 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
         workItemTypes: mergedResults.workItemTypes,
         environments: projectConfig?.environments
       };
-    })
+    }));
+
+  return summarised
     .filter(exists)
     .reduce<{
       groups: Summary[];
@@ -457,4 +513,4 @@ const summariseResults = (config: ParsedConfig, results: Result[]) => {
 };
 
 export default summariseResults;
-export type SummaryMetricsType = ReturnType<typeof summariseResults>;
+export type SummaryMetricsType = Awaited<ReturnType<typeof summariseResults>>;

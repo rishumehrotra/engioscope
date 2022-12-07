@@ -17,13 +17,13 @@ import azure from './network/azure.js';
 import type { ParsedConfig } from './parse-config.js';
 import projectAnalyser from './project-analyser.js';
 import workItemsForCollection from './stats-aggregators/work-items-for-collection.js';
-import type { ProjectAnalysis } from './types.js';
 import summariseResults from './summarise-results.js';
 import { fetchCounters } from './network/fetch-with-disk-cache.js';
 import { mapSettleSeries, startTimer } from '../utils.js';
 import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
 import { trackFeatures, trackMetrics } from './stats-aggregators/tracks.js';
 import { setConfig } from '../config.js';
+import { exists } from '../../shared/utils.js';
 
 const exec = promisify(cpsExec);
 
@@ -96,7 +96,10 @@ const scrape = async (config: ParsedConfig) => {
     projects,
     await mapSettleSeries(
       projects,
-      args => analyseProject(...args).then(tap(writeToFile(args[0].name, args[1])))
+      async args => {
+        const analysed = await analyseProject(...args);
+        await writeToFile(args[0].name, args[1])(analysed);
+      }
     )
   );
 
@@ -127,25 +130,22 @@ const scrape = async (config: ParsedConfig) => {
 
   await Promise.all([
     changeProgramWorkItems.then(writeChangeProgramFile(config)),
-    writeTrackFlowMetrics(config, trackMetrics(config, results.map(r => ({
+    trackMetrics(config, results.map(r => ({
       collectionConfig: r[0][0],
-      projectConfig: r[0][1],
-      analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
-    })))),
-    writeTrackFeatures(config, trackFeatures(config, results.map(r => ({
+      projectConfig: r[0][1]
+    }))).then(t => writeTrackFlowMetrics(config, t.filter(exists))),
+    trackFeatures(config, results.map(r => ({
       collectionConfig: r[0][0],
-      projectConfig: r[0][1],
-      analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
-    })))),
-    writeSummaryMetricsFile(config, summariseResults(
+      projectConfig: r[0][1]
+    }))).then(t => writeTrackFeatures(config, t)),
+    summariseResults(
       config,
       results
         .map(r => ({
           collectionConfig: r[0][0],
-          projectConfig: r[0][1],
-          analysisResult: (r[1].status === 'fulfilled' && r[1].value) as ProjectAnalysis
+          projectConfig: r[0][1]
         }))
-    ))
+    ).then(writeSummaryMetricsFile)
   ]);
 };
 

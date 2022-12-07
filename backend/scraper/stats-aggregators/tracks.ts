@@ -1,8 +1,10 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   applySpec, filter, length, map, pipe, prop
 } from 'rambda';
 import type {
-  TrackwiseData, UIWorkItemType, WorkItemTimes, Overview, UIWorkItem, TrackMetrics
+  TrackwiseData, UIWorkItemType, WorkItemTimes, Overview, UIWorkItem, TrackMetrics, ProjectOverviewAnalysis
 } from '../../../shared/types.js';
 import { exists, mapObj } from '../../../shared/utils.js';
 import type { WorkItemTimesGetter } from '../../../shared/work-item-utils.js';
@@ -14,12 +16,33 @@ import {
   isAfter, queryPeriodDays, weekLimits, weeks
 } from '../../utils.js';
 import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from '../parse-config.js';
-import type { ProjectAnalysis } from '../types.js';
+
+const looksLikeDate = (value: string) => (
+  /\d{4}-[01]\d-[0-3]\dT[0-2](?:\d:[0-5]){2}\d(.*Z)/.test(value)
+);
+
+const parseDate = (_: string, value: unknown) => {
+  if (typeof value !== 'string') return value;
+  if (!looksLikeDate(value)) return value;
+  return new Date(value);
+};
+
+const getOverview = async (collection: string, project: string) => (
+  (JSON.parse(
+    await readFile(join(
+      process.cwd(),
+      'data',
+      collection,
+      project,
+      'overview.json'
+    ), 'utf8'),
+    parseDate
+  ) as ProjectOverviewAnalysis).overview
+);
 
 type Result = {
   collectionConfig: ParsedCollection;
   projectConfig: ParsedProjectConfig;
-  analysisResult: ProjectAnalysis;
 };
 
 const hasWorkItemCompleted = (workItemTimes: WorkItemTimesGetter) => (
@@ -62,11 +85,11 @@ export const organiseWorkItemsByTracks = (wis: UIWorkItem[]) => (
   }, {})
 );
 
-const metricsForResult = (isInQueryPeriod: (date: Date) => boolean) => (result: Result) => {
+const metricsForResult = (isInQueryPeriod: (date: Date) => boolean) => async (result: Result) => {
   const configWorkItemsWithTracks = result.collectionConfig.workitems.types?.filter(wit => wit.track);
   if (!configWorkItemsWithTracks) return;
 
-  const { times, byId } = result.analysisResult.workItemAnalysis.overview;
+  const { times, byId } = await getOverview(result.collectionConfig.name, result.projectConfig.name);
 
   const workItemsWithTracks = Object.values(byId).filter(prop('track'));
   if (workItemsWithTracks.length === 0) return;
@@ -159,20 +182,20 @@ const metricsForResult = (isInQueryPeriod: (date: Date) => boolean) => (result: 
 };
 
 export const trackMetrics = (config: ParsedConfig, results: Result[]) => (
-  results
+  Promise.all(results
     .map(metricsForResult(isAfter(`${queryPeriodDays(config)} days`)))
-    .filter(exists)
+    .filter(exists))
 );
 
-export const trackFeatures = (config: ParsedConfig, results: Result[]): TrackwiseData[] => (
-  results
-    .map(result => {
+export const trackFeatures = (config: ParsedConfig, results: Result[]): Promise<TrackwiseData[]> => (
+  Promise.all(results
+    .map(async result => {
       const configWorkItemsWithTracks = result.collectionConfig.workitems.types?.filter(wit => wit.track);
       if (!configWorkItemsWithTracks) return;
 
       const {
         times, byId, types, groups: allGroups
-      } = result.analysisResult.workItemAnalysis.overview;
+      } = await getOverview(result.collectionConfig.name, result.projectConfig.name);
 
       const workItemsWithTracks = Object.values(byId).filter(prop('track'));
       if (workItemsWithTracks.length === 0) return;
@@ -217,6 +240,6 @@ export const trackFeatures = (config: ParsedConfig, results: Result[]): Trackwis
         types: workItemTypes,
         groups
       };
-    })
-    .filter(exists)
+    }))
+    .then(x => x.filter(exists))
 );

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { AnalysedProjects } from '../../shared/types.js';
+import { asc, byString } from 'sort-lib';
+import type { AnalysedProjects, ScrapedProject } from '../../shared/types.js';
 import Loading from '../components/Loading.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
@@ -9,17 +10,27 @@ import { fetchCollections } from '../network.js';
 const Project: React.FC<{
   projectName: string;
   route: string;
-  collectionName: string;
 }> = ({
-  projectName, route, collectionName
+  projectName, route
 }) => (
-  <Link to={route}>
-    <div className="flex flex-col justify-center p-8 bg-white border border-gray-100 rounded-lg h-full shadow">
-      <p className="overflow-ellipsis overflow-hidden ... text-2xl text-center font-semibold text-gray-700">{projectName}</p>
-      <div className="text-sm flex justify-center w-full mt-4 text-gray-600">
-        {collectionName}
-      </div>
-    </div>
+  <Link
+    to={route}
+    key={route}
+    className={[
+      'inline-block group link-text text-lg py-3 px-4 hover:bg-gray-200 rounded-xl',
+      'hover:no-underline border border-transparent hover:border-gray-300'
+    ].join(' ')}
+  >
+    <span
+      className={[
+        'inline-grid self-center bg-gray-300 w-8 text-center rounded-lg mr-2 text-white',
+        'group-hover:bg-gray-900 font-semibold'
+      ].join(' ')}
+    >
+      {projectName.charAt(0).toUpperCase()}
+
+    </span>
+    {projectName}
   </Link>
 );
 
@@ -38,22 +49,41 @@ const Collection: React.FC = () => {
     setHeaderDetails({ title: 'Projects', lastUpdated: analysedProjects?.lastUpdated });
   }, [analysedProjects, setHeaderDetails]);
 
+  const grouped = useMemo(() => {
+    if (!analysedProjects) return null;
+
+    return Object.entries(analysedProjects.projects.reduce<Record<string, ScrapedProject[]>>((acc, p) => {
+      acc[p.name[0]] = acc[p.name[0]] || [];
+      acc[p.name[0]].push(p);
+      return acc;
+    }, {}));
+  }, [analysedProjects]);
+
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      <div className="grid grid-flow-row gap-8 grid-col-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-        {
-          analysedProjects
-            ? analysedProjects.projects.map(collection => (
-              <Project
-                key={collection.name[1]}
-                projectName={collection.name[1]}
-                route={`/${collection.name.join('/')}/`}
-                collectionName={collection.name[0]}
-              />
+      {
+        grouped
+          ? (
+            grouped.map(([collection, projects]) => (
+              <div
+                key={collection}
+                className="bg-gray-100 mb-14 rounded-xl border border-gray-300 overflow-hidden"
+              >
+                <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">{collection}</h2>
+                <div className="grid grid-flow-row grid-cols-3 gap-4 p-10">
+                  {projects.sort(asc(byString(p => p.name[1]))).map(p => (
+                    <Project
+                      key={p.name[1]}
+                      projectName={p.name[1]}
+                      route={`/${p.name.join('/')}/`}
+                    />
+                  ))}
+                </div>
+              </div>
             ))
-            : <Loading />
-        }
-      </div>
+          )
+          : <Loading />
+      }
     </div>
   );
 };
