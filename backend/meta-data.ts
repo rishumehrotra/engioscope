@@ -54,7 +54,7 @@ const getCollection = async (collection: string) => (
   (await loadMetaData()).collections.find(c => c.name === collection)
 );
 
-const modifyCollection = async (collection: string, modifier: (coll: Collection) => void) => {
+const modifyCollection = (collection: string, modifier: (coll: Collection) => void) => (
   acquireLock()
     .then(loadMetaData)
     .then(metadata => {
@@ -67,8 +67,8 @@ const modifyCollection = async (collection: string, modifier: (coll: Collection)
       modifier(col);
       return saveMetaData(metadata);
     })
-    .finally(releaseLock);
-};
+    .finally(releaseLock)
+);
 
 const getProject = async (collection: string, project: string) => (
   (await getCollection(collection))?.projects.find(p => p.name === project)
@@ -98,6 +98,6 @@ export const getWorkItemUpdateDate = async (collection: string) => (
   (await getCollection(collection))?.workItemUpdateDate
 );
 
-export const setWorkItemUpdateDate = async (collection: string) => (
+export const setWorkItemUpdateDate = (collection: string) => (
   modifyCollection(collection, col => { col.workItemUpdateDate = new Date(); })
 );

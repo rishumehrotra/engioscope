@@ -28,7 +28,7 @@ export default (config: ParsedConfig) => {
     createContext: () => ({})
   }));
 
-  router.post('/api/log', async (req, res) => {
+  router.post('/api/log', (req, res) => {
     try {
       const { event, pathname, search } = req.body;
       const ua = uaParser(req.headers['user-agent']);
@@ -53,21 +53,21 @@ export default (config: ParsedConfig) => {
 
   router.post('/api/azure-build-report', saveBuildReport);
 
-  router.get('/api/an', async (req, res) => {
+  router.get('/api/an', (req, res) => {
     analytics().pipe(res);
   });
 
-  router.get('/api/ui-version', async (req, res) => {
+  router.get('/api/ui-version', (req, res) => {
     res.send(process.env.npm_package_version);
   });
 
-  router.post('/api/ft', async (req, res) => {
+  router.post('/api/ft', (req, res) => {
     req.pipe(createWriteStream(join(process.cwd(), 'ft.json')));
     req.on('end', () => { res.send(202); });
     req.on('error', () => { res.send(598); });
   });
 
-  router.get('/api/cache', async (req, res) => {
+  router.get('/api/cache', (req, res) => {
     const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
     res.setHeader('Content-type', 'application/gzip');
     createReadStream(filePath).pipe(res);
