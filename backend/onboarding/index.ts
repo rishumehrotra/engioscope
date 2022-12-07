@@ -14,10 +14,8 @@ export default async (config: ParsedConfig) => {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   mongoose.connect(config.mongoUrl);
 
-  return Promise.all([
-    getWorkItems(),
-    getWorkItemTypes(),
-    getBuildsAndTimelines(),
-    getRepositories()
-  ]);
+  await getWorkItems();
+  await getWorkItemTypes();
+  await getBuildsAndTimelines();
+  await getRepositories();
 };
