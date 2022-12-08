@@ -32,18 +32,17 @@ export const getBuildsAndTimelines = () => {
     await Promise.all([
       bulkSaveBuild(collection.name)(builds),
       missingTimelines(collection.name, project.name)(builds.map(b => b.id))
-        .then(buildIds => Promise.all(
-          buildIds.map(async buildId => (
-            getBuildTimeline(collection.name, project.name)(buildId)
-              .then(putBuildTimelineInDb(
-                collection.name,
-                project.name,
-                buildId,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                builds.find(b => b.id === buildId)!.definition.id
-              ))
-          ))
-        ))
+        .then(buildIds => buildIds.reduce(async (acc, buildId) => {
+          await acc;
+          await getBuildTimeline(collection.name, project.name)(buildId)
+            .then(putBuildTimelineInDb(
+              collection.name,
+              project.name,
+              buildId,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              builds.find(b => b.id === buildId)!.definition.id
+            ));
+        }, Promise.resolve()))
     ]);
 
     await setLastBuildUpdateDate(collection.name, project.name);
