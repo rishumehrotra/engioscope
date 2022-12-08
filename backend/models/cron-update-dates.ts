@@ -37,13 +37,10 @@ const createHandler = <T extends (...x: any[]) => string>(keyCreator: T): [
   )
 ]);
 
-export const [getLastBuildUpdateDate, setLastBuildUpdateDate] = createHandler(
-  (collection: string, project: string) => `${collection}:${project}:builds`
-);
-
 export const [getWorkItemUpdateDate, setWorkItemUpdateDate] = createHandler(
   (collection: string) => `${collection}:work-items`
 );
 
-// eslint-disable-next-line no-underscore-dangle
-export const __CronUpdateDatesDONOTUSE = CronUpdateDatesModel;
+export const [getLastBuildUpdateDate, setLastBuildUpdateDate] = createHandler(
+  (collection: string, project: string) => `${collection}:${project}:builds`
+);
