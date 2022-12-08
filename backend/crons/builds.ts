@@ -1,7 +1,7 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
-import { getLastBuildUpdateDate, setLastBuildUpdateDate } from '../meta-data.js';
 import { missingTimelines, saveBuildTimeline } from '../models/build-timeline.js';
 import { bulkSaveBuild } from '../models/builds.js';
+import { getLastBuildUpdateDate, setLastBuildUpdateDate } from '../models/cron-update-dates.js';
 import azure from '../scraper/network/azure.js';
 import type { Timeline } from '../scraper/types-azure.js';
 import { runJob } from './utils.js';
@@ -29,24 +29,20 @@ export const getBuildsAndTimelines = () => {
 
     const builds = await getBuildsSince(collection.name, project.name)(lastBuildUpdateDate);
 
-    await Promise.all([
-      bulkSaveBuild(collection.name)(builds),
-      missingTimelines(collection.name, project.name)(builds.map(b => b.id))
-        .then(buildIds => Promise.all(
-          buildIds.map(async buildId => (
-            getBuildTimeline(collection.name, project.name)(buildId)
-              .then(putBuildTimelineInDb(
-                collection.name,
-                project.name,
-                buildId,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                builds.find(b => b.id === buildId)!.definition.id
-              ))
-          ))
-        ))
-    ]);
-
+    await bulkSaveBuild(collection.name)(builds);
     await setLastBuildUpdateDate(collection.name, project.name);
+
+    const missingBuildIds = await missingTimelines(collection.name, project.name)(builds.map(b => b.id));
+    await Promise.all(missingBuildIds.map(async buildId => (
+      getBuildTimeline(collection.name, project.name)(buildId)
+        .then(putBuildTimelineInDb(
+          collection.name,
+          project.name,
+          buildId,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          builds.find(b => b.id === buildId)!.definition.id
+        ))
+    )));
   }, Promise.resolve());
 };
 

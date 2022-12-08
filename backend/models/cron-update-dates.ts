@@ -1,0 +1,49 @@
+import { model, Schema } from 'mongoose';
+
+export type CronUpdateDates = {
+  key: string;
+  date: Date;
+};
+
+const cronUpdateDatesSchema = new Schema<CronUpdateDates>({
+  key: { type: String, required: true, unique: true },
+  date: { type: Date, required: true }
+});
+
+cronUpdateDatesSchema.index({ key: 1 });
+
+const CronUpdateDatesModel = model<CronUpdateDates>('CronUpdateDates', cronUpdateDatesSchema);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const createHandler = <T extends (...x: any[]) => string>(keyCreator: T): [
+  (...x: Parameters<T>) => Promise<Date | undefined>,
+  (...x: Parameters<T>) => Promise<unknown>
+] => ([
+  (...x) => (
+    CronUpdateDatesModel
+      .findOne({ key: keyCreator(...x) })
+      .lean()
+      .then(x => x?.date)
+  ),
+  (...x) => (
+    CronUpdateDatesModel
+      .updateOne(
+        { key: keyCreator(...x) },
+        { $set: { date: new Date() } },
+        { upsert: true }
+      )
+      .lean()
+      .then(x => x.upsertedId)
+  )
+]);
+
+export const [getLastBuildUpdateDate, setLastBuildUpdateDate] = createHandler(
+  (collection: string, project: string) => `${collection}:${project}:builds`
+);
+
+export const [getWorkItemUpdateDate, setWorkItemUpdateDate] = createHandler(
+  (collection: string) => `${collection}:work-items`
+);
+
+// eslint-disable-next-line no-underscore-dangle
+export const __CronUpdateDatesDONOTUSE = CronUpdateDatesModel;

@@ -1,5 +1,5 @@
 import { collections, configForCollection, getConfig } from '../config.js';
-import { getWorkItemUpdateDate, setWorkItemUpdateDate } from '../meta-data.js';
+import { getWorkItemUpdateDate, setWorkItemUpdateDate } from '../models/cron-update-dates.js';
 import { bulkUpsertWorkItems } from '../models/workitems.js';
 import azure from '../scraper/network/azure.js';
 import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../scraper/types-azure.js';
