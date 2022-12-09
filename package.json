@@ -41,7 +41,7 @@
     "@zkochan/rimraf": "2.1.2",
     "abort-controller": "3.0.0",
     "await-lock": "2.2.2",
-    "chalk": "5.1.2",
+    "chalk": "5.2.0",
     "compression": "1.7.4",
     "cookie-parser": "1.4.6",
     "cron": "2.1.0",
