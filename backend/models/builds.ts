@@ -104,7 +104,7 @@ export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   );
 };
 
-export const bulkSaveBuild = (collectionName: string) => (builds: AzureBuild[]) => (
+export const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) => (
   BuildModel.bulkWrite(builds.map(build => {
     const { project, ...rest } = build;
 

@@ -16,21 +16,24 @@ const Project: React.FC<{
   <Link
     to={route}
     key={route}
+    title={projectName}
     className={[
-      'inline-block group link-text text-lg py-3 px-4 hover:bg-gray-200 rounded-xl',
-      'hover:no-underline border border-transparent hover:border-gray-300'
+      'grid grid-flow-col justify-start group link-text text-lg py-3 px-4',
+      'hover:bg-gray-200 rounded-xl hover:no-underline border border-transparent',
+      'hover:border-gray-300'
     ].join(' ')}
   >
     <span
       className={[
-        'inline-grid self-center bg-gray-300 w-8 text-center rounded-lg mr-2 text-white',
+        'inline-grid self-center bg-gray-400 w-8 text-center rounded-lg mr-2 text-white',
         'group-hover:bg-gray-900 font-semibold'
       ].join(' ')}
     >
       {projectName.charAt(0).toUpperCase()}
-
     </span>
-    {projectName}
+    <span className="truncate w-full inline-block">
+      {projectName}
+    </span>
   </Link>
 );
 
@@ -69,7 +72,10 @@ const Collection: React.FC = () => {
                 key={collection}
                 className="bg-gray-100 mb-14 rounded-xl border border-gray-300 overflow-hidden"
               >
-                <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">{collection}</h2>
+                <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">
+                  {collection}
+                  <span className="inline-block pl-4 text-base text-gray-400 pb-2">{`${projects.length} projects`}</span>
+                </h2>
                 <div className="grid grid-flow-row grid-cols-3 gap-4 p-10">
                   {projects.sort(asc(byString(p => p.name[1]))).map(p => (
                     <Project
