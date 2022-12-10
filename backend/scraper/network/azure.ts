@@ -213,6 +213,10 @@ export default (config: ParsedConfig) => {
         url: url(collectionName, projectName, `/git/repositories/${repoId}/stats/branches`),
         cacheFile: [collectionName, projectName, 'repos', repoId, 'branches']
       })
+        .catch(error => {
+          if (error instanceof Error && error.message.includes('404')) return [];
+          throw error;
+        })
     ),
 
     getTestRuns: (collectionName: string, projectName: string) => ({ uri: buildUri }: Pick<Build, 'uri'>) => (
