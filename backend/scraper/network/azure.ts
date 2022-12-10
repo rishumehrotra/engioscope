@@ -334,7 +334,12 @@ export default (config: ParsedConfig) => {
         hasAnotherPage: previousResponse => previousResponse.data.count === 1000,
         headers: () => authHeader,
         cacheFile: pageIndex => [collectionName, projectName, 'repos', repoId, `commits_${pageIndex}`]
-      }).then(flattenToValues)
+      })
+        .then(flattenToValues)
+        .catch(error => {
+          if (error instanceof Error && error.message.includes('404')) return [];
+          throw error;
+        })
     ),
 
     getWorkItemTypes: (collectionName: string, projectName: string) => (

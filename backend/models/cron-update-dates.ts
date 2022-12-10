@@ -17,7 +17,7 @@ const CronUpdateDatesModel = model<CronUpdateDates>('CronUpdateDates', cronUpdat
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const createHandler = <T extends (...x: any[]) => string>(keyCreator: T): [
   (...x: Parameters<T>) => Promise<Date | undefined>,
-  (...x: Parameters<T>) => Promise<unknown>
+  (...x: Parameters<T>) => Promise<void>
 ] => ([
   (...x) => (
     CronUpdateDatesModel
@@ -33,7 +33,8 @@ const createHandler = <T extends (...x: any[]) => string>(keyCreator: T): [
         { upsert: true }
       )
       .lean()
-      .then(x => x.upsertedId)
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      .then(() => {})
   )
 ]);
 
