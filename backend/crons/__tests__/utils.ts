@@ -14,7 +14,7 @@ describe('createSchedule', () => {
     const shouldUpdate = createSchedule({
       frequency: oneHourInMs,
       schedule: s => [
-        s`For the first ${1 * oneDayInMs}, check every ${oneHourInMs}.`,
+        s`For the first ${oneDayInMs}, check every ${oneHourInMs}.`,
         s`Then till ${3 * oneDayInMs}, check every ${3 * oneHourInMs}.`,
         s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
         s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
