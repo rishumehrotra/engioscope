@@ -18,7 +18,6 @@ import RefreshIfUpdated from './components/RefreshIfUpdated.js';
 import Tracks from './pages/Tracks.jsx';
 import { trpc } from './helpers/trpc';
 import { oneMinuteInMs } from '../shared/utils.js';
-import Status from './pages/Status.jsx';
 
 const App: React.FC = () => {
   const [queryClient] = useState(() => new QueryClient({
@@ -56,7 +55,6 @@ const App: React.FC = () => {
                       <Route path="/summary" element={<Summary />} />
                       <Route path="/change-program" element={<ChangeProgram />} />
                       <Route path="/tracks" element={<Tracks />} />
-                      <Route path="/status" element={<Status />} />
                       <Route path="/:collection/:project/*" element={<Project />} />
                       <Route path="/" element={<Collection />} />
                     </Routes>
