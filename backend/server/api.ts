@@ -13,9 +13,10 @@ import analytics from './analytics.js';
 import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases.js';
 import saveBuildReport from './save-build-report.js';
 import { appRouter } from './router/index.js';
+import { getReleaseEnvironments } from '../models/release-definitions.js';
 
 export default (config: ParsedConfig) => {
-  const { getWorkItemRevisions, getReleaseDefinition } = azure(config);
+  const { getWorkItemRevisions } = azure(config);
   const router = Router();
 
   const analyticsStream = createWriteStream(join(process.cwd(), 'analytics.csv'), {
@@ -104,7 +105,7 @@ export default (config: ParsedConfig) => {
       ids
         .split(',')
         .map(async id => ({
-          [id]: formatReleaseDefinition(await getReleaseDefinition(collectionName, projectName, Number(id)))
+          [id]: formatReleaseDefinition((await getReleaseEnvironments(collectionName, projectName, Number(id))) || [])
         }))
     )).reduce<PipelineDefinitions>((acc, curr) => ({ ...acc, ...curr }), {});
 

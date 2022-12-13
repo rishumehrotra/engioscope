@@ -94,3 +94,10 @@ export const bulkSaveReleaseDefinitions = (collectionName: string, project: stri
       }))
   )
 );
+
+export const getReleaseEnvironments = (collectionName: string, project: string, definitionId: number) => (
+  ReleaseDefinitionModel
+    .findOne({ collectionName, project, id: definitionId }, { environments: 1 })
+    .lean()
+    .then(r => r?.environments)
+);
