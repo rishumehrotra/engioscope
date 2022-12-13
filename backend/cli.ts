@@ -7,7 +7,7 @@ import getAllTheThings from './scraper/get-all-the-things.js';
 import startServer from './server/express.js';
 import { doesFileExist } from './utils.js';
 import parseConfig from './scraper/parse-config.js';
-import onboarding from './onboarding/index.js';
+import onboarding from './onboarding.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const addConfigOption = (yargs: yargs.Argv<{}>): void => {
