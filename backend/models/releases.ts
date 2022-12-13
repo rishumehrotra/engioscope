@@ -1,4 +1,6 @@
 import { model, Schema } from 'mongoose';
+import { oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
+import { getConfig } from '../config.js';
 import type {
   Artifact as AzureArtifact, ArtifactType, DeploymentOperationStatus, DeploymentReason,
   DeploymentStatus, EnvironmentStatus, ReleaseReason, ReleaseStatus,
@@ -68,7 +70,7 @@ export type Release = {
   artifacts: Artifact[];
   releaseDefinitionId: number;
   releaseDefinitionRevision: number;
-  description: string;
+  description?: string;
   reason: ReleaseReason;
   releaseNameFormat: string;
   keepForever: boolean;
@@ -106,7 +108,35 @@ const releaseSchema = new Schema<Release>({
       lastModifiedOn: { type: Date, required: true },
       hasStarted: { type: Boolean, required: true }
     }]
-  }]
+  }],
+  artifacts: [{
+    sourceId: { type: String, required: true },
+    type: { type: String, required: true },
+    alias: { type: String, required: true },
+    isPrimary: { type: Boolean, required: true },
+    definition: {
+      isTriggeringArtifact: { type: Boolean },
+      buildPipelineUrl: { type: String },
+      buildUri: { type: String },
+      buildDefinitionId: { type: Number },
+      branch: { type: String },
+      pullRequestId: { type: String },
+      pullRequestSourceBranch: { type: String },
+      pullRequestSourceBranchCommitId: { type: String },
+      pullRequestMergeCommitId: { type: String },
+      pullRequestTargetBranch: { type: String },
+      requestedForId: { type: String }
+    }
+  }],
+  releaseDefinitionRevision: { type: Number, required: true },
+  releaseDefinitionId: { type: Number, required: true },
+  description: { type: String },
+  reason: { type: String, required: true },
+  releaseNameFormat: { type: String, required: true },
+  keepForever: { type: Boolean, required: true },
+  definitionSnapshotRevision: { type: Number, required: true },
+  logsContainerUrl: { type: String, required: true },
+  url: { type: String, required: true }
 });
 
 releaseSchema.index({ collectionName: 1, project: 1, id: 1 });
@@ -142,8 +172,13 @@ const artifactFromAPI = (artifact: AzureArtifact): Artifact => ({
       : undefined,
     buildPipelineUrl: artifact.definitionReference.artifactSourceDefinitionUrl?.id || undefined,
     buildUri: artifact.definitionReference.buildUri?.id || undefined,
+    // eslint-disable-next-line no-nested-ternary
     buildDefinitionId: artifact.definitionReference.definition?.id
-      ? Number(artifact.definitionReference.definition.id)
+      ? (
+        Number.isNaN(Number(artifact.definitionReference.definition.id))
+          ? undefined
+          : Number(artifact.definitionReference.definition.id)
+      )
       : undefined,
     branch: artifact.definitionReference.branch?.id || undefined,
     pullRequestId: artifact.definitionReference.pullRequestId?.id || undefined,
@@ -155,7 +190,7 @@ const artifactFromAPI = (artifact: AzureArtifact): Artifact => ({
   }
 });
 
-export const bulkSaveRepositories = (collectionName: string) => (releases: AzureRelease[]) => (
+export const bulkSaveReleases = (collectionName: string) => (releases: AzureRelease[]) => (
   ReleaseModel.bulkWrite(releases.map(release => {
     const {
       projectReference, environments, artifacts, ...rest
@@ -184,13 +219,41 @@ export const bulkSaveRepositories = (collectionName: string) => (releases: Azure
 
 export const getReleaseUpdateDates = (collectionName: string, project: string) => (
   ReleaseModel
-    .aggregate([
-      { $match: { collectionName, project } },
+    .aggregate<{ date: Date; id: number }>([
+      { $match: { collectionName, project, modifiedOn: { $gt: new Date(oneDayInMs * 30 * 6) } } },
       {
         $project: {
-          maxDate: { $max: '$environments.deploySteps.lastModifiedOn' },
+          date: {
+            $max: [
+              '$environments.deploySteps.lastModifiedOn',
+              '$modifiedOn',
+              '$createdOn'
+            ]
+          },
           id: '$id'
         }
       }
+    ])
+);
+
+export const getReleases = (
+  collectionName: string, project: string,
+  queryFrom = getConfig().azure.queryFrom
+) => (
+  ReleaseModel
+    .aggregate<Release>([
+      { $match: { collectionName, project, modifiedOn: { $gt: new Date(queryFrom.getTime() - oneMonthInMs) } } },
+      {
+        $addFields: {
+          computedLastUpdate: {
+            $max: [
+              '$environments.deploySteps.lastModifiedOn',
+              '$modifiedOn',
+              '$createdOn'
+            ]
+          }
+        }
+      },
+      { $match: { computedLastUpdate: { $gt: queryFrom } } }
     ])
 );

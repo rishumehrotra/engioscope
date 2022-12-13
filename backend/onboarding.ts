@@ -6,6 +6,7 @@ import { getWorkItemTypes } from './crons/work-item-types.js';
 import { getBuildsAndTimelines } from './crons/builds.js';
 import { getRepositories } from './crons/repos.js';
 import { getReleaseDefinitions } from './crons/release-definitions.js';
+import { getReleases } from './crons/releases.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -20,6 +21,7 @@ export default async (config: ParsedConfig) => {
   await getBuildsAndTimelines();
   await getRepositories();
   await getReleaseDefinitions();
+  await getReleases();
 
   // eslint-disable-next-line no-console
   console.log('Done.');

@@ -14,6 +14,7 @@ import createPaginatedGetter from './create-paginated-getter.js';
 import type { FetchResponse } from './fetch-with-disk-cache.js';
 import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import type { ParsedConfig } from '../parse-config.js';
+import createChunkedPaginatedGetter from './create-chunked-paginated-getter.js';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -40,6 +41,7 @@ export default (config: ParsedConfig) => {
     verifySsl: config.azure.verifySsl
   };
   const paginatedGet = createPaginatedGetter(config.cacheTimeMs, config.azure.verifySsl);
+  const chunkedPaginatedGet = createChunkedPaginatedGetter(config.cacheTimeMs, config.azure.verifySsl);
   const { usingDiskCache, clearDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
   const url = (collectionName: string, projectName: string | null, path: string) => (
     `${config.azure.host}${collectionName}/${projectName === null ? '' : `${projectName}/`}_apis${path}`
@@ -55,6 +57,21 @@ export default (config: ParsedConfig) => {
       headers: () => authHeader,
       cacheFile: pageIndex => [...cacheFile.slice(0, -1), `${cacheFile[cacheFile.length - 1]}_${pageIndex}`]
     }).then(flattenToValues)
+  );
+  const chunkedList = <T>(
+    {
+      url, qsParams, cacheFile, chunkHandler
+    }:
+    { url: string; qsParams?: Record<string, string>; cacheFile: string[]; chunkHandler: (x: T[]) => Promise<unknown>}
+  ) => (
+    chunkedPaginatedGet<ListOf<T>>({
+      url,
+      qsParams: (_, prev) => ({ ...apiVersion, ...continuationToken(prev), ...qsParams }),
+      hasAnotherPage: responseHasContinuationToken,
+      headers: () => authHeader,
+      cacheFile: pageIndex => [...cacheFile.slice(0, -1), `${cacheFile[cacheFile.length - 1]}_${pageIndex}`],
+      chunkHandler: (x => chunkHandler(x.data.value))
+    })
   );
 
   return {
@@ -326,14 +343,35 @@ export default (config: ParsedConfig) => {
       )));
     },
 
-    getReleasesForReleaseIds: (collectionName: string, projectName: string, releaseIds: number[]) => (
-      list<Release>({
+    getReleasesAsChunks: (
+      collectionName: string,
+      projectName: string,
+      queryFrom: Date,
+      chunkHandler: (x: Release[]) => Promise<unknown>
+    ) => chunkedList<Release>({
+      url: url(collectionName, projectName, '/release/releases'),
+      qsParams: {
+        minCreatedTime: queryFrom.toISOString(),
+        $expand: 'environments,artifacts'
+      },
+      cacheFile: [collectionName, projectName, 'releases'],
+      chunkHandler
+    }),
+
+    getReleasesForReleaseIdsAsChunks: (
+      collectionName: string,
+      projectName: string,
+      releaseIds: number[],
+      chunkHandler: (x: Release[]) => Promise<unknown>
+    ) => (
+      chunkedList<Release>({
         url: url(collectionName, projectName, '/release/releases'),
         qsParams: {
           $expand: 'environments,artifacts',
           releaseIdFilter: releaseIds.join(',')
         },
-        cacheFile: [collectionName, projectName, 'releases-by-id']
+        cacheFile: [collectionName, projectName, 'releases-by-id'],
+        chunkHandler
       })
     ),
 

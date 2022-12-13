@@ -45,3 +45,7 @@ export const [getWorkItemUpdateDate, setWorkItemUpdateDate] = createHandler(
 export const [getLastBuildUpdateDate, setLastBuildUpdateDate] = createHandler(
   (collection: string, project: string) => `${collection}:${project}:builds`
 );
+
+export const [getLastReleaseFetchDate, setLastReleaseFetchDate] = createHandler(
+  (collection: string, project: string) => `${collection}:${project}:releases`
+);

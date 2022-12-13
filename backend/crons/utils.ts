@@ -1,6 +1,7 @@
 import { CronJob } from 'cron';
 import cronTime from 'cron-time-generator';
 import debug from 'debug';
+import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 
 const cronLog = debug('cron');
 
@@ -48,3 +49,16 @@ export const createSchedule = ({ frequency, schedule }: CreateScheduleArgs) => {
     return remainder >= 0 && remainder < frequency;
   };
 };
+
+export const shouldUpdate = createSchedule({
+  frequency: oneHourInMs,
+  schedule: s => [
+    s`For the first ${oneDayInMs}, check every ${oneHourInMs}.`,
+    s`Then till ${3 * oneDayInMs}, check every ${3 * oneHourInMs}.`,
+    s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
+    s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
+    s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
+    s`Then till ${60 * oneDayInMs}, check every ${6 * oneDayInMs}.`,
+    s`Then till ${90 * oneDayInMs}, check every ${10 * oneDayInMs}.`
+  ]
+});
