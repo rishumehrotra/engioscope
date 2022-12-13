@@ -12,6 +12,8 @@ export type BuildReason = 'all' | 'batchedCI' | 'buildCompletion' | 'checkInShel
 | 'triggered' | 'userCreated' | 'validateShelveset';
 export type ReleaseStatus = 'abandoned' | 'active' | 'draft' | 'undefined';
 export type ReleaseReason = 'continuousIntegration' | 'manual' | 'none' | 'pullRequest' | 'schedule';
+export type ArtifactType = 'Build' | 'Jenkins' | 'GitHub' | 'Nuget'
+| 'Team Build (external)' | 'ExternalTFSBuild' | 'Git' | 'TFVC' | 'ExternalTfsXamlBuild';
 export type EnvironmentStatus = 'canceled' | 'inProgress' | 'notStarted'
 | 'partiallySucceeded' | 'queued' | 'rejected' | 'scheduled' | 'succeeded' | 'undefined';
 export type DeploymentReason = 'automated' | 'manual' | 'none' | 'redeployTrigger' | 'scheduled';
@@ -174,8 +176,10 @@ export type ArtifactSourceReference = {
 
 export type Artifact = {
   sourceId: string;
-  type: string;
+  type: ArtifactType;
   alias: string;
+  isPrimary: boolean;
+  isRetained: boolean;
   definitionReference: {
     artifactSourceDefinitionUrl: ArtifactSourceReference;
     buildUri: ArtifactSourceReference;

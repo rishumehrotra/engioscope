@@ -4,11 +4,10 @@ import {
 import { asc, byNum } from 'sort-lib';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types.js';
 import { exists } from '../../../shared/utils.js';
+import type { ReleaseCondition, ReleaseDefinitionEnvironment } from '../../models/release-definitions.js';
 import { isMaster, weeks } from '../../utils.js';
 import type { ParsedProjectConfig } from '../parse-config.js';
-import type {
-  Release, ReleaseCondition, EnvironmentStatus, ReleaseDefinition
-} from '../types-azure.js';
+import type { Release, EnvironmentStatus } from '../types-azure.js';
 
 const createCondition = (condition: ReleaseCondition) => ({
   type: condition.conditionType,
@@ -254,8 +253,8 @@ export default (
   return { pipelines, policies };
 };
 
-export const formatReleaseDefinition = (releaseDefinition: ReleaseDefinition): PipelineStage[] => (
-  releaseDefinition.environments
+export const formatReleaseDefinition = (environments: ReleaseDefinitionEnvironment[]): PipelineStage[] => (
+  environments
     .sort(asc(byNum(prop('rank'))))
     .map(env => ({
       name: env.name,

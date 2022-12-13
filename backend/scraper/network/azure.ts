@@ -304,26 +304,38 @@ export default (config: ParsedConfig) => {
       ).then(res => res.data)
     ),
 
-    getReleases: (collectionName: string, projectName: string) => {
+    getReleases: (collectionName: string, projectName: string, releaseIds?: number[], queryFrom = new Date(config.azure.queryFrom)) => {
       // Taking back the querying time by a month due to #55.
-      const queryFrom = new Date(config.azure.queryFrom);
-      queryFrom.setMonth(queryFrom.getMonth() - 1);
+      const q = new Date(queryFrom);
+      q.setMonth(q.getMonth() - 1);
 
       return list<Release>({
         url: url(collectionName, projectName, '/release/releases'),
         qsParams: {
-          minCreatedTime: queryFrom.toISOString(),
-          $expand: 'environments,artifacts'
+          minCreatedTime: q.toISOString(),
+          $expand: 'environments,artifacts',
+          ...(releaseIds ? { releaseIdFilter: releaseIds.join(',') } : {})
         },
         cacheFile: [collectionName, projectName, 'releases']
       }).then(filter(release => (
         release.environments.some(
           env => env.deploySteps.some(
-            step => step.queuedOn >= config.azure.queryFrom
+            step => step.queuedOn >= queryFrom
           )
         )
       )));
     },
+
+    getReleasesForReleaseIds: (collectionName: string, projectName: string, releaseIds: number[]) => (
+      list<Release>({
+        url: url(collectionName, projectName, '/release/releases'),
+        qsParams: {
+          $expand: 'environments,artifacts',
+          releaseIdFilter: releaseIds.join(',')
+        },
+        cacheFile: [collectionName, projectName, 'releases-by-id']
+      })
+    ),
 
     getCommits: (collectionName: string, projectName: string) => (repoId: string) => (
       paginatedGet<ListOf<GitCommitRef>>({
