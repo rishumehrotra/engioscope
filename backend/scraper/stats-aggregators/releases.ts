@@ -5,9 +5,10 @@ import { asc, byNum } from 'sort-lib';
 import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types.js';
 import { exists } from '../../../shared/utils.js';
 import type { ReleaseCondition, ReleaseDefinitionEnvironment } from '../../models/release-definitions.js';
+import type { Release } from '../../models/releases.js';
 import { isMaster, weeks } from '../../utils.js';
 import type { ParsedProjectConfig } from '../parse-config.js';
-import type { Release, EnvironmentStatus } from '../types-azure.js';
+import type { EnvironmentStatus } from '../types-azure.js';
 
 const createCondition = (condition: ReleaseCondition) => ({
   type: condition.conditionType,
@@ -42,19 +43,19 @@ type PipelineDetails = {
 };
 
 const barePipeline = (release: Release): PipelineDetails => ({
-  definitionId: release.releaseDefinition.id,
-  name: release.releaseDefinition.name,
-  url: release.releaseDefinition.url.replace('_apis/Release/definitions/', '_release?definitionId='),
+  definitionId: release.releaseDefinitionId,
+  name: release.releaseDefinitionName,
+  url: release.releaseDefinitionUrl.replace('_apis/Release/definitions/', '_release?definitionId='),
   envs: {},
   attempts: []
 });
 
 const getArtifactDetails = (release: Release) => (
   release.artifacts.map(artifact => {
-    const repoName = artifact.definitionReference.repository?.name;
-    const repoId = artifact.definitionReference.repository?.id;
-    const branch = artifact.definitionReference.branch?.name;
-    if (!repoName) return;
+    const repoName = artifact.definition?.repositoryName;
+    const repoId = artifact.definition?.repositoryId;
+    const branch = artifact.definition?.branch;
+    if (!repoName || !repoId) return;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return { repoName, repoId, branchName: branch! };
   }).filter(exists)
@@ -62,9 +63,9 @@ const getArtifactDetails = (release: Release) => (
 
 export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
   const combinedReleases = releases.reduce<Record<number, PipelineDetails>>((acc, release) => {
-    acc[release.releaseDefinition.id] = acc[release.releaseDefinition.id] || barePipeline(release);
+    acc[release.releaseDefinitionId] = acc[release.releaseDefinitionId] || barePipeline(release);
 
-    acc[release.releaseDefinition.id].attempts.push({
+    acc[release.releaseDefinitionId].attempts.push({
       id: release.id,
       name: release.name,
       reposAndBranches: getArtifactDetails(release),
@@ -81,7 +82,7 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
         .sort(asc(byNum(prop('rank'))))
     });
 
-    acc[release.releaseDefinition.id].envs = release.environments
+    acc[release.releaseDefinitionId].envs = release.environments
       .reduce<Record<string, EnvDetails>>((acc, env) => {
         if (!acc[env.name]) {
           acc[env.name] = {
@@ -94,7 +95,7 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
         }
 
         return acc;
-      }, acc[release.releaseDefinition.id].envs);
+      }, acc[release.releaseDefinitionId].envs);
 
     return acc;
   }, {});

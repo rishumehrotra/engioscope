@@ -41,7 +41,7 @@ export type Artifact = {
   type: ArtifactType;
   alias: string;
   isPrimary: boolean;
-  definition: {
+  definition?: {
     isTriggeringArtifact?: boolean;
     buildPipelineUrl?: string;
     buildUri?: string;
@@ -53,6 +53,10 @@ export type Artifact = {
     pullRequestMergeCommitId?: string;
     pullRequestTargetBranch?: string;
     requestedForId?: string;
+    repositoryName?: string;
+    repositoryId?: string;
+    connectionId?: string;
+    connectionName?: string;
   };
 };
 
@@ -69,6 +73,8 @@ export type Release = {
   environments: ReleaseEnvironment[];
   artifacts: Artifact[];
   releaseDefinitionId: number;
+  releaseDefinitionName: string;
+  releaseDefinitionUrl: string;
   releaseDefinitionRevision: number;
   description?: string;
   reason: ReleaseReason;
@@ -107,6 +113,13 @@ const releaseSchema = new Schema<Release>({
       lastModifiedById: { type: String, required: true },
       lastModifiedOn: { type: Date, required: true },
       hasStarted: { type: Boolean, required: true }
+    }],
+    rank: { type: Number, required: true },
+    definitionEnvironmentId: { type: Number, required: true },
+    conditions: [{
+      conditionType: { type: String, required: true },
+      name: { type: String, required: true },
+      value: { type: String, required: true }
     }]
   }],
   artifacts: [{
@@ -125,11 +138,17 @@ const releaseSchema = new Schema<Release>({
       pullRequestSourceBranchCommitId: { type: String },
       pullRequestMergeCommitId: { type: String },
       pullRequestTargetBranch: { type: String },
-      requestedForId: { type: String }
+      requestedForId: { type: String },
+      repositoryId: { type: String },
+      repositoryName: { type: String },
+      connectionId: { type: String },
+      connectionName: { type: String }
     }
   }],
   releaseDefinitionRevision: { type: Number, required: true },
   releaseDefinitionId: { type: Number, required: true },
+  releaseDefinitionName: { type: String, required: true },
+  releaseDefinitionUrl: { type: String, required: true },
   description: { type: String },
   reason: { type: String, required: true },
   releaseNameFormat: { type: String, required: true },
@@ -146,6 +165,7 @@ const ReleaseModel = model<Release>('Release', releaseSchema);
 const environmentFromAPI = (environment: AzureReleaseEnvironment): ReleaseEnvironment => {
   const { deploySteps, ...rest } = environment;
   return {
+    ...rest,
     deploySteps: deploySteps.map(d => {
       const {
         requestedBy, requestedFor, lastModifiedBy, ...rest
@@ -156,8 +176,7 @@ const environmentFromAPI = (environment: AzureReleaseEnvironment): ReleaseEnviro
         requestedForId: requestedFor.id,
         lastModifiedById: lastModifiedBy.id
       };
-    }),
-    ...rest
+    })
   };
 };
 
@@ -186,14 +205,18 @@ const artifactFromAPI = (artifact: AzureArtifact): Artifact => ({
     pullRequestSourceBranchCommitId: artifact.definitionReference.pullRequestSourceBranchCommitId?.id || undefined,
     pullRequestMergeCommitId: artifact.definitionReference.pullRequestMergeCommitId?.id || undefined,
     pullRequestTargetBranch: artifact.definitionReference.pullRequestTargetBranch?.id || undefined,
-    requestedForId: artifact.definitionReference.requestedForId?.id || undefined
+    requestedForId: artifact.definitionReference.requestedForId?.id || undefined,
+    repositoryId: artifact.definitionReference.repository?.id || undefined,
+    repositoryName: artifact.definitionReference.repository?.name || undefined,
+    connectionName: artifact.definitionReference.connection?.name || undefined,
+    connectionId: artifact.definitionReference.connection?.id || undefined
   }
 });
 
 export const bulkSaveReleases = (collectionName: string) => (releases: AzureRelease[]) => (
   ReleaseModel.bulkWrite(releases.map(release => {
     const {
-      projectReference, environments, artifacts, ...rest
+      projectReference, environments, artifacts, releaseDefinition, ...rest
     } = release;
 
     return {
@@ -206,6 +229,9 @@ export const bulkSaveReleases = (collectionName: string) => (releases: AzureRele
         update: {
           $set: {
             ...rest,
+            releaseDefinitionId: releaseDefinition.id,
+            releaseDefinitionName: releaseDefinition.name,
+            releaseDefinitionUrl: releaseDefinition.url,
             project: projectReference.name,
             environments: environments.map(environmentFromAPI),
             artifacts: artifacts.map(artifactFromAPI)

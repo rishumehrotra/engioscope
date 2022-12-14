@@ -23,6 +23,7 @@ import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
 import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
 import { getRepositories } from '../models/repos.js';
+import { getReleases } from '../models/releases.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -36,7 +37,7 @@ const analyserLog = debug('analyser');
 export default (config: ParsedConfig) => {
   const {
     getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getReleases, getPolicyConfigurations,
+    getTestRuns, getTestCoverage, getPolicyConfigurations,
     getProjectWorkItemIdsForQuery, getBuildDefinitions
   } = azure(config);
 
