@@ -166,6 +166,44 @@ export default (config: ParsedConfig) => {
       ).then(flattenToValues);
     },
 
+    getBuildsAsChunksSince: (
+      collectionName: string, projectName: string,
+      since: Date, chunkHandler: (x: Build[]) => Promise<unknown>
+    ) => {
+      // Gosh, this one turned out to be crazy. There's something up
+      // with this API. The continuationToken thing seems utterly broken.
+      // If we hit the limit of 5000 results, any form of pagination seems broken.
+      // So, we're taking the tack of querying per week, with the hope that
+      // there wouldn't be 5000 builds run per project per week. Fingers crossed.
+
+      const weeks: Date[] = [];
+      let currentDate = new Date();
+
+      while (currentDate >= since) {
+        weeks.push(currentDate);
+        currentDate = new Date(currentDate);
+        currentDate.setDate(currentDate.getDate() - 7);
+      }
+      weeks.push(since);
+
+      return Promise.all(
+        weeks.slice(1).map((weekStart, index) => (
+          usingDiskCache<ListOf<Build>>(
+            [collectionName, projectName, `builds_${index}`],
+            () => fetch(
+              url(collectionName, projectName, `/build/builds?${qs.stringify({
+                ...apiVersion,
+                $top: 5000,
+                maxTime: weeks[index].toISOString(),
+                minTime: weekStart.toISOString()
+              })}`),
+              { headers: authHeader, ...otherFetchParams }
+            )
+          ).then(result => chunkHandler(result.data.value))
+        ))
+      );
+    },
+
     getOneBuildBeforeQueryPeriod: (collectionName: string, projectName: string) => (
       (buildDefinitionIds: number[]) => (
         Promise.all(
