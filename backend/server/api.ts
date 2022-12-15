@@ -6,7 +6,6 @@ import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';
 import toUIWorkItem from '../scraper/stats-aggregators/work-item-revision.js';
 import type { PipelineDefinitions, UIWorkItemRevision } from '../../shared/types.js';
-import analytics from './analytics.js';
 import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases.js';
 import saveBuildReport from './save-build-report.js';
 import { getReleaseEnvironments } from '../models/release-definitions.js';
@@ -19,10 +18,6 @@ export default (config: ParsedConfig) => {
   router.use('/api/rpc', trpcExpressHandler);
 
   router.post('/api/azure-build-report', saveBuildReport);
-
-  router.get('/api/an', (req, res) => {
-    analytics().pipe(res);
-  });
 
   router.get('/api/ui-version', (req, res) => {
     res.send(process.env.npm_package_version);

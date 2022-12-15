@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { recordPageView } from '../../models/analytics.js';
-import { t } from './trpc.js';
+import { getAnalyticsGroups, recordPageView } from '../../models/analytics.js';
+import { passInputTo, t } from './trpc.js';
 
 export default t.router({
   recordPageView: t.procedure
@@ -10,5 +10,8 @@ export default t.router({
         ? recordPageView(input.path, ctx.userId, ctx.userAgent)
           .then(() => 'All your base are belong to us')
         : null
-    ))
+    )),
+
+  getAnalyticsGroups: t.procedure
+    .query(passInputTo(getAnalyticsGroups))
 });
