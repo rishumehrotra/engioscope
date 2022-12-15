@@ -1,9 +1,6 @@
 import Router from 'express-promise-router';
 import { join } from 'node:path';
 import { promises as fs, createWriteStream, createReadStream } from 'node:fs';
-import uaParser from 'ua-parser-js';
-// eslint-disable-next-line import/extensions
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';
@@ -12,45 +9,14 @@ import type { PipelineDefinitions, UIWorkItemRevision } from '../../shared/types
 import analytics from './analytics.js';
 import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases.js';
 import saveBuildReport from './save-build-report.js';
-import { appRouter } from './router/index.js';
 import { getReleaseEnvironments } from '../models/release-definitions.js';
+import { trpcExpressHandler } from './router/index.js';
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
   const router = Router();
 
-  const analyticsStream = createWriteStream(join(process.cwd(), 'analytics.csv'), {
-    flags: 'a',
-    encoding: 'utf8'
-  });
-
-  router.use('/api/rpc', createExpressMiddleware({
-    router: appRouter,
-    createContext: () => ({})
-  }));
-
-  router.post('/api/log', (req, res) => {
-    try {
-      const { event, pathname, search } = req.body;
-      const ua = uaParser(req.headers['user-agent']);
-
-      analyticsStream.write(`${[
-        new Date().toISOString(),
-        req.cookies.c,
-        event,
-        pathname + search,
-        ua.browser.name,
-        ua.browser.version,
-        ua.os.name,
-        ua.os.version
-      ].join(', ')}\n`);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error writing analytics ping', error);
-    }
-
-    res.status(200).send('all your base are belong to us');
-  });
+  router.use('/api/rpc', trpcExpressHandler);
 
   router.post('/api/azure-build-report', saveBuildReport);
 
