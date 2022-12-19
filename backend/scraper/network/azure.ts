@@ -293,10 +293,9 @@ export default (config: ParsedConfig) => {
           currentDate = new Date(currentDate);
           currentDate.setDate(currentDate.getDate() - 7);
         }
-        weeks.push(since);
 
         return Promise.all(
-          weeks.slice(1).map((weekStart, index) => {
+          weeks.map((weekStart, index) => {
             const weekEnd = new Date(weekStart);
             weekEnd.setDate(weekStart.getDate() + 7);
 
