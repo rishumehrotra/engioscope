@@ -109,7 +109,7 @@ export const getAnalyticsGroups = () => {
     }
   ].map(async group => (
     AnalyticsModel
-      .aggregate([
+      .aggregate<{ _id: string; pageViews: number; uniques: string[]}>([
         {
           $match: {
             $and: [
@@ -135,7 +135,7 @@ export const getAnalyticsGroups = () => {
             .map(async uid => {
               const dates = (await datesByUserId)[uid];
               if (!dates) return false;
-              return dates.newestVisit >= group.end || dates.oldestVisit <= group.start;
+              return dates.newestVisit >= group.end && dates.oldestVisit <= group.start;
             })
         )).filter(Boolean).length,
         pages: lines

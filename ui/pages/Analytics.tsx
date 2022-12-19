@@ -30,7 +30,7 @@ const Analytics: React.FC = () => {
         ? (
           <ul className="grid grid-flow-row gap-8 grid-col-1 grid-cols-2 auto-rows-auto">
             {analytics2.data?.map(({
-              label, pageViews, uniques, pages, returning
+              label, pageViews, uniques, pages
             }) => (
               <li key={label} className="border-2 border-gray-200 rounded-xl overflow-hidden">
                 <h2 className="text-2xl mb-2 bg-gray-900 text-white py-4 px-6 shadow-sm">{label}</h2>
@@ -43,10 +43,10 @@ const Analytics: React.FC = () => {
                     {num(uniques)}
                     <div className="text-sm text-gray-600">Unique visitors</div>
                   </div>
-                  <div className="text-2xl bg-gray-200 rounded-md p-2 px-3">
+                  {/* <div className="text-2xl bg-gray-200 rounded-md p-2 px-3">
                     {num(returning)}
                     <div className="text-sm text-gray-600">Returning visitors</div>
-                  </div>
+                  </div> */}
                 </div>
                 <table className="m-4 break-all" style={{ width: 'calc(100% - 2rem)' }}>
                   <thead>
