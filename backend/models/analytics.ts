@@ -1,6 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { byNum, desc } from 'sort-lib';
 import { UAParser } from 'ua-parser-js';
+import { oneYearInMs } from '../../shared/utils.js';
 import { unique } from '../utils.js';
 
 type Base = {
@@ -64,6 +65,27 @@ export const recordPageView = (path: string, userId: string, userAgent: string) 
 export const getAnalyticsGroups = () => {
   const now = new Date();
 
+  const datesByUserId = AnalyticsModel
+    .aggregate([
+      { $match: { date: { $gt: new Date(Date.now() - oneYearInMs) } } },
+      { $group: { _id: '$userId', oldestVisit: { $min: '$date' }, newestVisit: { $max: '$date' } } },
+      {
+        $addFields: {
+          diff: {
+            $dateDiff: {
+              startDate: '$oldestVisit',
+              endDate: '$newestVisit',
+              unit: 'month'
+            }
+          }
+        }
+      },
+      { $match: { diff: { $gte: 1 }, _id: { $ne: '' } } }
+    ]).then(x => x.reduce<Record<string, { oldestVisit: Date; newestVisit: Date }>>((acc, item) => {
+      acc[item._id] = item;
+      return acc;
+    }, {}));
+
   return Promise.all([
     {
       label: 'Today',
@@ -104,10 +126,18 @@ export const getAnalyticsGroups = () => {
           }
         }
       ])
-      .then(lines => ({
+      .then(async lines => ({
         label: group.label,
         pageViews: lines.reduce((acc, line) => acc + line.pageViews, 0),
         uniques: unique(lines.flatMap(l => l.uniques)).length,
+        returning: unique(await Promise.all(
+          lines.flatMap(l => l.uniques)
+            .map(async uid => {
+              const dates = (await datesByUserId)[uid];
+              if (!dates) return false;
+              return dates.newestVisit >= group.end || dates.oldestVisit <= group.start;
+            })
+        )).filter(Boolean).length,
         pages: lines
           .sort(desc(byNum(l => l.pageViews)))
           .slice(0, 20)
