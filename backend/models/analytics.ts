@@ -128,14 +128,14 @@ export const getAnalyticsGroups = () => {
       .then(async lines => {
         const userIds = unique(lines.flatMap(line => line.userIds)).filter(Boolean);
 
-        const returning: number = await AnalyticsModel
+        const returning = await AnalyticsModel
           .aggregate([
             {
               $match: {
                 userId: { $in: userIds },
                 $and: [
-                  { date: { $lt: group.start } },
-                  { date: { $gt: new Date(group.start.getTime() - oneYearInMs) } }
+                  { date: { $lt: group.end } },
+                  { date: { $gt: new Date(group.end.getTime() - oneYearInMs) } }
                 ]
               }
             },
@@ -162,6 +162,7 @@ export const getAnalyticsGroups = () => {
           ])
           .then(result => result[0]?.count || 0);
 
+        console.log(group, returning);
         return {
           label: group.label,
           pageViews: lines.reduce((acc, line) => acc + line.pageViews, 0),
