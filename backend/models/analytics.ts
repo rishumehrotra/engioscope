@@ -158,10 +158,9 @@ export const getAnalyticsGroups = () => {
               }
             },
             { $match: { diff: { $gte: 1 } } },
-            {
-              $group: { _id: null, count: { $sum: 1 } }
-            }
-          ]).then(result => result[0]?.count || 0);
+            { $count: 'count' }
+          ])
+          .then(result => result[0]?.count || 0);
 
         return {
           label: group.label,
