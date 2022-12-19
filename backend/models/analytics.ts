@@ -66,7 +66,7 @@ export const getAnalyticsGroups = () => {
   const now = new Date();
 
   const datesByUserId = AnalyticsModel
-    .aggregate([
+    .aggregate<{ _id: string; oldestVisit: Date; newestVisit: Date; diff: number }>([
       { $match: { date: { $gt: new Date(Date.now() - oneYearInMs) } } },
       { $group: { _id: '$userId', oldestVisit: { $min: '$date' }, newestVisit: { $max: '$date' } } },
       {
@@ -75,7 +75,7 @@ export const getAnalyticsGroups = () => {
             $dateDiff: {
               startDate: '$oldestVisit',
               endDate: '$newestVisit',
-              unit: 'month'
+              unit: 'day'
             }
           }
         }
@@ -135,7 +135,7 @@ export const getAnalyticsGroups = () => {
             .map(async uid => {
               const dates = (await datesByUserId)[uid];
               if (!dates) return false;
-              return dates.newestVisit >= group.end && dates.oldestVisit <= group.start;
+              return dates.newestVisit >= group.end || dates.oldestVisit <= group.start;
             })
         )).filter(Boolean).length,
         pages: lines
