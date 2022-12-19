@@ -158,11 +158,10 @@ export const getAnalyticsGroups = () => {
               }
             },
             { $match: { diff: { $gte: 1 } } },
-            { $count: 'count' }
+            { $group: { _id: null, count: { $sum: 1 } } }
           ])
           .then(result => result[0]?.count || 0);
 
-        console.log(group, returning);
         return {
           label: group.label,
           pageViews: lines.reduce((acc, line) => acc + line.pageViews, 0),
