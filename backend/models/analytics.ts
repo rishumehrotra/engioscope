@@ -152,12 +152,12 @@ export const getAnalyticsGroups = () => {
                   $dateDiff: {
                     startDate: '$minDate',
                     endDate: '$maxDate',
-                    unit: 'day'
+                    unit: 'hour'
                   }
                 }
               }
             },
-            { $match: { diff: { $gte: 1 } } },
+            { $match: { diff: { $gte: 6 } } },
             { $group: { _id: null, count: { $sum: 1 } } }
           ])
           .then(result => result[0]?.count || 0);
@@ -165,7 +165,7 @@ export const getAnalyticsGroups = () => {
         return {
           label: group.label,
           pageViews: lines.reduce((acc, line) => acc + line.pageViews, 0),
-          uniques: unique(lines.flatMap(l => l.uniques)).length,
+          uniques: userIds.length,
           returning,
           pages: lines
             .sort(desc(byNum(l => l.pageViews)))
