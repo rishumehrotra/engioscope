@@ -65,27 +65,6 @@ export const recordPageView = (path: string, userId: string, userAgent: string) 
 export const getAnalyticsGroups = () => {
   const now = new Date();
 
-  const datesByUserId = AnalyticsModel
-    .aggregate<{ _id: string; oldestVisit: Date; newestVisit: Date; diff: number }>([
-      { $match: { date: { $gt: new Date(Date.now() - oneYearInMs) } } },
-      { $group: { _id: '$userId', oldestVisit: { $min: '$date' }, newestVisit: { $max: '$date' } } },
-      {
-        $addFields: {
-          diff: {
-            $dateDiff: {
-              startDate: '$oldestVisit',
-              endDate: '$newestVisit',
-              unit: 'day'
-            }
-          }
-        }
-      },
-      { $match: { diff: { $gte: 1 }, _id: { $ne: '' } } }
-    ]).then(x => x.reduce<Record<string, { oldestVisit: Date; newestVisit: Date }>>((acc, item) => {
-      acc[item._id] = item;
-      return acc;
-    }, {}));
-
   return Promise.all([
     {
       label: 'Today',
@@ -109,7 +88,7 @@ export const getAnalyticsGroups = () => {
     }
   ].map(async group => (
     AnalyticsModel
-      .aggregate<{ _id: string; pageViews: number; uniques: string[]}>([
+      .aggregate<{ _id: string; pageViews: number; uniques: number; userIds: string[]}>([
         {
           $match: {
             $and: [
@@ -119,34 +98,86 @@ export const getAnalyticsGroups = () => {
           }
         },
         {
-          $group: {
-            _id: '$path',
-            pageViews: { $count: {} },
-            uniques: { $addToSet: '$userId' }
+          $group: { // by path and userid
+            _id: { path: '$path', userId: '$userId' },
+            dates: { $addToSet: '$date' }
+          }
+        },
+        {
+          $group: { // back to path, but retain userId
+            _id: '$_id.path',
+            hits: {
+              $push: {
+                userId: '$_id.userId',
+                minDate: { $min: '$dates' },
+                maxDate: { $max: '$dates' },
+                count: { $size: '$dates' }
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            pageViews: { $sum: '$hits.count' },
+            uniques: { $size: '$hits' },
+            userIds: '$hits.userId'
           }
         }
       ])
-      .then(async lines => ({
-        label: group.label,
-        pageViews: lines.reduce((acc, line) => acc + line.pageViews, 0),
-        uniques: unique(lines.flatMap(l => l.uniques)).length,
-        returning: unique(await Promise.all(
-          lines.flatMap(l => l.uniques)
-            .map(async uid => {
-              const dates = (await datesByUserId)[uid];
-              if (!dates) return false;
-              return dates.newestVisit >= group.end || dates.oldestVisit <= group.start;
-            })
-        )).filter(Boolean).length,
-        pages: lines
-          .sort(desc(byNum(l => l.pageViews)))
-          .slice(0, 20)
-          .map(line => ({
-            path: line._id,
-            pageViews: line.pageViews,
-            uniques: line.uniques.length
-          }))
-      }))
+      .then(async lines => {
+        const userIds = unique(lines.flatMap(line => line.userIds)).filter(Boolean);
+
+        const returning: number = await AnalyticsModel
+          .aggregate([
+            {
+              $match: {
+                userId: { $in: userIds },
+                $and: [
+                  { date: { $lt: group.start } },
+                  { date: { $gt: new Date(group.start.getTime() - oneYearInMs) } }
+                ]
+              }
+            },
+            {
+              $group: {
+                _id: '$userId',
+                minDate: { $min: '$date' },
+                maxDate: { $max: '$date' }
+              }
+            },
+            {
+              $addFields: {
+                diff: {
+                  $dateDiff: {
+                    startDate: '$minDate',
+                    endDate: '$maxDate',
+                    unit: 'day'
+                  }
+                }
+              }
+            },
+            { $match: { diff: { $gte: 1 } } },
+            {
+              $group: { _id: null, count: { $sum: 1 } }
+            }
+          ]).then(result => result[0]?.count || 0);
+
+        return {
+          label: group.label,
+          pageViews: lines.reduce((acc, line) => acc + line.pageViews, 0),
+          uniques: unique(lines.flatMap(l => l.uniques)).length,
+          returning,
+          pages: lines
+            .sort(desc(byNum(l => l.pageViews)))
+            .slice(0, 20)
+            .map(line => ({
+              path: line._id,
+              pageViews: line.pageViews,
+              uniques: line.uniques
+            }))
+        };
+      })
   )));
 };
 
