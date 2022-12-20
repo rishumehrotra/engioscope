@@ -1,5 +1,10 @@
 import { model, Schema } from 'mongoose';
+import pMemoize from 'p-memoize';
+import { z } from 'zod';
+import ExpiryMap from 'expiry-map';
 import type { ReleaseDefinition as AzureReleaseDefinition } from '../scraper/types-azure.js';
+import { collectionAndProjectInputs } from './helpers.js';
+import { oneMinuteInMs } from '../../shared/utils.js';
 
 export type ReleaseCondition = {
   conditionType: 'artifact' | 'environmentState' | 'event' | 'undefined';
@@ -34,7 +39,6 @@ export type ReleaseDefinition = {
   id: number;
   name: string;
   path: string;
-  projectReference: null;
   url: string;
 };
 
@@ -44,12 +48,16 @@ const releaseDefinitionSchema = new Schema<ReleaseDefinition>({
   id: { type: Number, required: true },
   source: { type: String, required: true },
   revision: { type: Number, required: true },
+  name: { type: String, required: true },
+  path: { type: String, required: true },
+  url: { type: String, required: true },
   description: { type: String },
   createdById: { type: String, required: true },
   createdOn: { type: Date, required: true },
   modifiedById: { type: String },
   modifiedOn: { type: Date },
   isDeleted: { type: Boolean, required: true },
+  releaseNameFormat: { type: String, required: true },
   environments: [{
     id: { type: Number },
     name: { type: String },
@@ -100,4 +108,54 @@ export const getReleaseEnvironments = (collectionName: string, project: string, 
     .findOne({ collectionName, project, id: definitionId }, { environments: 1 })
     .lean()
     .then(r => r?.environments)
+);
+
+export const pipelineFiltersInput = {
+  ...collectionAndProjectInputs,
+  searchTerm: z.string().optional(),
+  nonMasterReleases: z.boolean().optional(),
+  notStartingWithBuildArtifact: z.boolean().optional(),
+  stageNameContaining: z.string().optional(),
+  stageNameUsed: z.string().optional(),
+  notConfirmingToBranchPolicies: z.boolean().optional(),
+  impactedSystems: z.array(z.string()).optional()
+};
+
+export const paginatedReleaseIdsInputParser = z.object({
+  ...pipelineFiltersInput,
+  cursor: z.object({
+    pageSize: z.number().optional(),
+    pageNumber: z.number().optional()
+  })
+});
+
+const getMinimalReleaseDefinitionsInner = (
+  collectionName: string, project: string,
+  searchTerm?: string, stageNameContaining?: string
+) => (
+  ReleaseDefinitionModel
+    .find({
+      collectionName,
+      project,
+      ...(searchTerm ? {
+        $or: [
+          { name: { $regex: new RegExp(searchTerm, 'i') } },
+          { 'environments.name': { $regex: new RegExp(searchTerm, 'i') } }
+        ]
+      } : {}),
+      ...(
+        stageNameContaining
+          ? { 'environments.name': { $regex: new RegExp(stageNameContaining, 'i') } }
+          : {}
+      )
+    }, { name: 1, id: 1, url: 1 })
+    .lean() as unknown as Promise<Pick<ReleaseDefinition, 'id' | 'name' | 'url'>[]>
+);
+
+const cache = new ExpiryMap(5 * oneMinuteInMs);
+export const getMinimalReleaseDefinitions = pMemoize(
+  getMinimalReleaseDefinitionsInner, {
+    cacheKey: x => JSON.stringify(x),
+    cache
+  }
 );
