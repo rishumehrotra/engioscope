@@ -396,13 +396,12 @@ const filterNonMasterReleases = (collectionName: string, project: string, nonMas
       }
     },
     { $match: { 'filteredEnvs': { $elemMatch: { status: { $ne: 'notStarted' } } } } }
-    // { $match: { id: 20_154 } }
   ];
 };
 
-const matchFilters = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const {
-    collectionName, project, /* nonMasterReleases, notConfirmingToBranchPolicies, */ searchTerm,
+    collectionName, project, nonMasterReleases, /* notConfirmingToBranchPolicies, */ searchTerm,
     notStartingWithBuildArtifact, stageNameContaining, /* stageNameUsed, */ repoGroups
   } = options;
 
@@ -410,22 +409,27 @@ const matchFilters = async (options: z.infer<typeof pipelineFiltersInputParser>)
     collectionName, project, searchTerm, stageNameContaining
   );
 
-  return {
-    $match: {
-      collectionName,
-      project,
-      modifiedOn: { $gt: getConfig().azure.queryFrom },
-      releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
-      ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
-      ...filterRepos(collectionName, project, repoGroups)
-    }
-  };
+  return [
+    {
+      $match: {
+        collectionName,
+        project,
+        modifiedOn: { $gt: getConfig().azure.queryFrom },
+        releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
+        ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
+        ...filterRepos(collectionName, project, repoGroups)
+      }
+    },
+    ...filterNonMasterReleases(collectionName, project, nonMasterReleases)
+  ];
 };
 
-export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => (
-  ReleaseModel
+export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+  const filter = await createFilter(options);
+
+  return ReleaseModel
     .aggregate([
-      await matchFilters(options),
-      ...filterNonMasterReleases(options.collectionName, options.project, options.nonMasterReleases)
-    ])
-);
+      ...filter,
+      { $group: { _id: { id: '$releaseDefinitionId' } } }
+    ]);
+};
