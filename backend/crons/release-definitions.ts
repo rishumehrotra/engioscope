@@ -4,17 +4,26 @@ import azure from '../scraper/network/azure.js';
 import { runJob } from './utils.js';
 
 export const getReleaseDefinitions = async () => {
-  const { getReleaseDefinitions } = azure(getConfig());
+  const { getReleaseDefinitions, getReleaseDefinition } = azure(getConfig());
 
   await Promise.all(
     collectionsAndProjects()
       .map(([collection, project]) => (
         getReleaseDefinitions(collection.name, project.name)
-          .then(bulkSaveReleaseDefinitions(collection.name, project.name))
+          .then(async defns => Promise.all(
+            defns.map(d => (
+              getReleaseDefinition(collection.name, project.name, d.id)
+                .then(d => bulkSaveReleaseDefinitions(collection.name, project.name)([d]))
+                .catch(error => {
+                  if (error.message?.includes('404')) return;
+                  throw error;
+                })
+            ))
+          ))
       ))
   );
 };
 
 export default () => (
-  runJob('fetching repos', t => t.everyDayAt(22, 0), getReleaseDefinitions)
+  runJob('fetching repos', t => t.everySundayAt(5, 30), getReleaseDefinitions)
 );
