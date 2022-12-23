@@ -1,9 +1,7 @@
 import { model, Schema } from 'mongoose';
 import pMemoize from 'p-memoize';
-import { z } from 'zod';
 import ExpiryMap from 'expiry-map';
 import type { ReleaseDefinition as AzureReleaseDefinition } from '../scraper/types-azure.js';
-import { collectionAndProjectInputs } from './helpers.js';
 import { oneMinuteInMs } from '../../shared/utils.js';
 
 export type ReleaseCondition = {
@@ -109,25 +107,6 @@ export const getReleaseEnvironments = (collectionName: string, project: string, 
     .lean()
     .then(r => r?.environments)
 );
-
-export const pipelineFiltersInput = {
-  ...collectionAndProjectInputs,
-  searchTerm: z.string().optional(),
-  nonMasterReleases: z.boolean().optional(),
-  notStartingWithBuildArtifact: z.boolean().optional(),
-  stageNameContaining: z.string().optional(),
-  stageNameUsed: z.string().optional(),
-  notConfirmingToBranchPolicies: z.boolean().optional(),
-  impactedSystems: z.array(z.string()).optional()
-};
-
-export const paginatedReleaseIdsInputParser = z.object({
-  ...pipelineFiltersInput,
-  cursor: z.object({
-    pageSize: z.number().optional(),
-    pageNumber: z.number().optional()
-  })
-});
 
 const getMinimalReleaseDefinitionsInner = (
   collectionName: string, project: string,

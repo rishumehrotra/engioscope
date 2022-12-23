@@ -1,12 +1,17 @@
+import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
+import { prop } from 'rambda';
+import { z } from 'zod';
 import { oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
-import { getConfig } from '../config.js';
+import { configForProject, getConfig } from '../config.js';
 import type {
   Artifact as AzureArtifact, ArtifactType, DeploymentOperationStatus, DeploymentReason,
   DeploymentStatus, EnvironmentStatus, ReleaseReason, ReleaseStatus,
   Release as AzureRelease, ReleaseEnvironment as AzureReleaseEnvironment
 } from '../scraper/types-azure.js';
+import { collectionAndProjectInputs } from './helpers.js';
 import type { ReleaseCondition } from './release-definitions.js';
+import { getMinimalReleaseDefinitions } from './release-definitions.js';
 
 export type DeploymentAttempt = {
   id: number;
@@ -159,6 +164,7 @@ const releaseSchema = new Schema<Release>({
 });
 
 releaseSchema.index({ collectionName: 1, project: 1, id: 1 });
+releaseSchema.index({ collectionName: 1, project: 1, releaseDefinitionId: 1 });
 
 const ReleaseModel = model<Release>('Release', releaseSchema);
 
@@ -281,5 +287,145 @@ export const getReleases = (
         }
       },
       { $match: { computedLastUpdate: { $gt: queryFrom } } }
+    ])
+);
+
+export const pipelineFiltersInput = {
+  ...collectionAndProjectInputs,
+  searchTerm: z.string().optional(),
+  nonMasterReleases: z.boolean().optional(),
+  notStartingWithBuildArtifact: z.boolean().optional(),
+  stageNameContaining: z.string().optional(),
+  stageNameUsed: z.string().optional(),
+  notConfirmingToBranchPolicies: z.boolean().optional(),
+  repoGroups: z.array(z.string()).optional()
+};
+
+export const paginatedReleaseIdsInputParser = z.object({
+  ...pipelineFiltersInput,
+  cursor: z.object({
+    pageSize: z.number().optional(),
+    pageNumber: z.number().optional()
+  })
+});
+
+export const paginatedReleaseIds = async (options: z.infer<typeof paginatedReleaseIdsInputParser>) => {
+  const releaseDefns = await getMinimalReleaseDefinitions(
+    options.collectionName, options.project, options.searchTerm, options.stageNameContaining
+  );
+
+  return ReleaseModel
+    .aggregate([
+      {
+        $match: {
+          releaseDefinitionId: { $in: releaseDefns.map(prop('id')) }
+        }
+      }
+    ]);
+};
+
+const pipelineFiltersInputParser = z.object(pipelineFiltersInput);
+
+const filterNotStartingWithBuildArtifact = (notStartingWithBuildArtifact?: boolean) => {
+  if (!notStartingWithBuildArtifact) return {};
+  return { 'artifacts.0': { $exists: false } };
+};
+
+const filterRepos = (collectionName: string, project: string, repoGroups: string[] | undefined) => {
+  if (!repoGroups) return {};
+  if (Object.keys(repoGroups).length === 0) return {};
+
+  const repos = Object.entries(
+    configForProject(collectionName, project)?.groupRepos?.groups || {}
+  )
+    .filter(([key]) => repoGroups.includes(key))
+    .flatMap(([, repos]) => repos);
+
+  return { 'artifacts.definition.repositoryName': { $in: repos } };
+};
+
+const filterNonMasterReleases = (collectionName: string, project: string, nonMasterReleases: boolean | undefined): PipelineStage[] => {
+  if (!nonMasterReleases) return [];
+
+  const artifactsNotMatchingMaster = {
+    $match: {
+      artifacts: { $elemMatch: { 'definition.branch': { $ne: 'refs/heads/master' } } }
+    }
+  };
+
+  const ignoreStagesBefore = configForProject(collectionName, project)?.releasePipelines.ignoreStagesBefore;
+
+  if (!ignoreStagesBefore) return [artifactsNotMatchingMaster];
+
+  return [
+    artifactsNotMatchingMaster,
+    {
+      $addFields: {
+        considerStagesAfter: {
+          $indexOfArray: [
+            {
+              $map: {
+                input: '$environments',
+                as: 'env',
+                in: { $regexMatch: { input: '$$env.name', regex: ignoreStagesBefore, options: 'i' } }
+              }
+            },
+            true
+          ]
+        }
+      }
+    },
+    {
+      $addFields: {
+        filteredEnvs: {
+          $cond: {
+            if: {
+              $or: [{ $eq: ['$considerStagesAfter', -1] }, { $eq: ['$considerStagesAfter', null] }]
+            },
+            // eslint-disable-next-line unicorn/no-thenable
+            then: '$environments',
+            else: {
+              $slice: [
+                '$environments',
+                '$considerStagesAfter',
+                { $subtract: [{ $size: '$environments' }, '$considerStagesAfter'] }
+              ]
+            }
+          }
+        }
+      }
+    },
+    { $match: { 'filteredEnvs': { $elemMatch: { status: { $ne: 'notStarted' } } } } }
+    // { $match: { id: 20_154 } }
+  ];
+};
+
+const matchFilters = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+  const {
+    collectionName, project, /* nonMasterReleases, notConfirmingToBranchPolicies, */ searchTerm,
+    notStartingWithBuildArtifact, stageNameContaining, /* stageNameUsed, */ repoGroups
+  } = options;
+
+  const releaseDefns = await getMinimalReleaseDefinitions(
+    collectionName, project, searchTerm, stageNameContaining
+  );
+
+  return {
+    $match: {
+      collectionName,
+      project,
+      modifiedOn: { $gt: getConfig().azure.queryFrom },
+      releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
+      ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
+      ...filterRepos(collectionName, project, repoGroups)
+    }
+  };
+};
+
+export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => (
+  ReleaseModel
+    .aggregate([
+      await matchFilters(options),
+      ...filterNonMasterReleases(options.collectionName, options.project, options.nonMasterReleases)
     ])
 );
