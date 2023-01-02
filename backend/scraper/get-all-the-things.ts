@@ -6,9 +6,7 @@ import tar from 'tar';
 import mongoose from 'mongoose';
 import { promisify } from 'node:util';
 import { exec as cpsExec } from 'node:child_process';
-import {
-  rename, access, mkdir, copyFile
-} from 'node:fs/promises';
+import { rename, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import aggregationWriter, {
   writeChangeProgramFile, writeSummaryMetricsFile, writeTrackFeatures, writeTrackFlowMetrics
@@ -172,20 +170,6 @@ const dumpMongo = async () => {
   logStep(`Mongodump done in ${time()}`);
 };
 
-const saveToArchive = async () => {
-  logStep('Saving to archive...');
-  const time = startTimer();
-
-  await mkdir(join(process.cwd(), 'archive'), { recursive: true });
-  const fileName = `cache-${new Date().toISOString().split('T')[0]}.tar.gz`;
-  await copyFile(
-    join(process.cwd(), 'data', 'cache.tar.gz'),
-    join(process.cwd(), 'archive', fileName)
-  );
-
-  logStep(`Saved to archive/${fileName} in ${time()}`);
-};
-
 export default (config: ParsedConfig) => {
   const time = startTimer();
 
@@ -202,7 +186,6 @@ export default (config: ParsedConfig) => {
     .then(tap(printFetchCounters))
     .then(dumpMongo)
     .then(createTarGz)
-    .then(saveToArchive)
     .then(() => debug('done')(`in ${time()}.`))
     .finally(() => mongoose.disconnect());
 };
