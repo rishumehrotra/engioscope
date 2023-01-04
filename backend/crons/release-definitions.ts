@@ -25,5 +25,5 @@ export const getReleaseDefinitions = async () => {
 };
 
 export default () => (
-  runJob('fetching repos', t => t.everySundayAt(5, 30), getReleaseDefinitions)
+  runJob('fetching release definitions', t => t.everySundayAt(5, 30), getReleaseDefinitions)
 );
