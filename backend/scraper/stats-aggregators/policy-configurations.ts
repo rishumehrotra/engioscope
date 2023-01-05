@@ -1,12 +1,15 @@
 import type { BranchPolicies } from '../../../shared/types.js';
-import type { PolicyConfiguration } from '../types-azure.js';
+import type { RepoPolicy } from '../../models/policy-configuration.js';
 import {
   isRequireMergeStrategyPolicy, isCommentRequirementsPolicy, isBuildPolicy,
   isWorkItemLinkingPolicy, isMinimumNumberOfReviewersPolicy
-} from '../types-azure.js';
+} from '../../models/policy-configuration.js';
 
-export default (policyConfigurations: PolicyConfiguration[]) => {
-  const policyConfigByRepoAndBranch = policyConfigurations.reduce<Record<string /* repoId */, Record<string /* branch */, BranchPolicies>>>(
+type RepoId = string;
+type BranchName = string;
+
+export default (policyConfigurations: RepoPolicy[]) => {
+  const policyConfigByRepoAndBranch = policyConfigurations.reduce<Record<RepoId, Record<BranchName, BranchPolicies>>>(
     (acc, policyConfiguration) => {
       if (policyConfiguration.isDeleted) return acc;
       if (!policyConfiguration.isEnabled) return acc;
@@ -19,8 +22,8 @@ export default (policyConfigurations: PolicyConfiguration[]) => {
 
       if (isMinimumNumberOfReviewersPolicy(policyConfiguration)) {
         addBranchPolicy(
-          policyConfiguration.settings.scope[0].repositoryId,
-          policyConfiguration.settings.scope[0].refName,
+          policyConfiguration.repositoryId,
+          policyConfiguration.refName,
           {
             minimumNumberOfReviewers: {
               count: policyConfiguration.settings.minimumApproverCount,
@@ -30,26 +33,26 @@ export default (policyConfigurations: PolicyConfiguration[]) => {
         );
       } else if (isWorkItemLinkingPolicy(policyConfiguration)) {
         addBranchPolicy(
-          policyConfiguration.settings.scope[0].repositoryId,
-          policyConfiguration.settings.scope[0].refName,
+          policyConfiguration.repositoryId,
+          policyConfiguration.refName,
           { workItemLinking: { isOptional: !policyConfiguration.isBlocking } }
         );
       } else if (isBuildPolicy(policyConfiguration)) {
         addBranchPolicy(
-          policyConfiguration.settings.scope[0].repositoryId,
-          policyConfiguration.settings.scope[0].refName,
+          policyConfiguration.repositoryId,
+          policyConfiguration.refName,
           { builds: { isOptional: !policyConfiguration.isBlocking } }
         );
       } else if (isCommentRequirementsPolicy(policyConfiguration)) {
         addBranchPolicy(
-          policyConfiguration.settings.scope[0].repositoryId,
-          policyConfiguration.settings.scope[0].refName,
+          policyConfiguration.repositoryId,
+          policyConfiguration.refName,
           { commentRequirements: { isOptional: !policyConfiguration.isBlocking } }
         );
       } else if (isRequireMergeStrategyPolicy(policyConfiguration)) {
         addBranchPolicy(
-          policyConfiguration.settings.scope[0].repositoryId,
-          policyConfiguration.settings.scope[0].refName,
+          policyConfiguration.repositoryId,
+          policyConfiguration.refName,
           { requireMergeStrategy: { isOptional: !policyConfiguration.isBlocking } }
         );
       }

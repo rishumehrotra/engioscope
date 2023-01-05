@@ -81,7 +81,7 @@ type RequireMergeStrategyPolicy = BranchPolicyBase & {
   allowRebase?: boolean;
 };
 
-type RepoPolicy =
+export type RepoPolicy =
   | FileSizeRestrictionPolicy
   | PathLengthRestrictionPolicy
   | ReservedNamesRestrictionPolicy
@@ -146,6 +146,7 @@ export const bulkSavePolicies = (collectionName: string, project: string) => (
               createdDate: policy.createdDate,
               isEnabled: policy.isEnabled,
               isDeleted: policy.isDeleted,
+              isBlocking: policy.isBlocking,
               refName: 'refName' in scope[0] ? scope[0].refName : undefined,
               type: policy.type.displayName,
               settings
@@ -156,4 +157,36 @@ export const bulkSavePolicies = (collectionName: string, project: string) => (
       };
     }))
   )
+);
+
+export const getPolicyConfigurations = (collectionName: string, project: string) => (
+  RepoPolicyModel.find({ collectionName, project }).lean()
+);
+
+export const isFileSizeRestrictionPolicy = (policy: RepoPolicy): policy is FileSizeRestrictionPolicy => (
+  policy.type === 'File size restriction'
+);
+export const isPathLengthRestrictionPolicy = (policy: RepoPolicy): policy is PathLengthRestrictionPolicy => (
+  policy.type === 'Path Length restriction'
+);
+export const isReservedNamesRestrictionPolicy = (policy: RepoPolicy): policy is ReservedNamesRestrictionPolicy => (
+  policy.type === 'Reserved names restriction'
+);
+export const isMinimumNumberOfReviewersPolicy = (policy: RepoPolicy): policy is MinimumNumberOfReviewersPolicy => (
+  policy.type === 'Minimum number of reviewers'
+);
+export const isCommentRequirementsPolicy = (policy: RepoPolicy): policy is CommentRequirementsPolicy => (
+  policy.type === 'Comment requirements'
+);
+export const isWorkItemLinkingPolicy = (policy: RepoPolicy): policy is WorkItemLinkingPolicy => (
+  policy.type === 'Work item linking'
+);
+export const isBuildPolicy = (policy: RepoPolicy): policy is BuildPolicy => (
+  policy.type === 'Build'
+);
+export const isRequiredReviewersPolicy = (policy: RepoPolicy): policy is RequiredReviewersPolicy => (
+  policy.type === 'Required reviewers'
+);
+export const isRequireMergeStrategyPolicy = (policy: RepoPolicy): policy is RequireMergeStrategyPolicy => (
+  policy.type === 'Require a merge strategy'
 );

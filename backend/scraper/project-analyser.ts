@@ -24,6 +24,7 @@ import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
 import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
 import { getRepositories } from '../models/repos.js';
 import { getReleases } from '../models/releases.js';
+import { getPolicyConfigurations } from '../models/policy-configuration.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -37,7 +38,7 @@ const analyserLog = debug('analyser');
 export default (config: ParsedConfig) => {
   const {
     getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage, getPolicyConfigurations,
+    getTestRuns, getTestCoverage,
     getProjectWorkItemIdsForQuery, getBuildDefinitions
   } = azure(config);
 

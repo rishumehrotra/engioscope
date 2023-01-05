@@ -54,10 +54,9 @@ const getArtifactDetails = (release: Release) => (
   release.artifacts.map(artifact => {
     const repoName = artifact.definition?.repositoryName;
     const repoId = artifact.definition?.repositoryId;
-    const branch = artifact.definition?.branch;
-    if (!repoName || !repoId) return;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return { repoName, repoId, branchName: branch! };
+    const branchName = artifact.definition?.branch;
+    if (!repoName || !repoId || !branchName) return;
+    return { repoName, repoId, branchName };
   }).filter(exists)
 );
 

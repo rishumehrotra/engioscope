@@ -54,7 +54,7 @@ const restoreFromMongo = async () => {
 
   logStep('Starting mongorestore...');
   await exec('mongosh engioscope --eval "db.dropDatabase()"');
-  await exec('mongorestore --gzip --archive=cache/dump.gz');
+  await exec('mongorestore --gzip --archive=cache/dump.gz --drop');
   logStep('Mongodb restored');
 };
 
