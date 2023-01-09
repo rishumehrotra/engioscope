@@ -344,69 +344,83 @@ const filterRepos = (collectionName: string, project: string, repoGroups: string
   return { 'artifacts.definition.repositoryName': { $in: repos } };
 };
 
-const filterNonMasterReleases = (collectionName: string, project: string, nonMasterReleases: boolean | undefined): PipelineStage[] => {
-  if (!nonMasterReleases) return [];
-
-  const artifactsNotMatchingMaster = {
-    $match: {
-      artifacts: { $elemMatch: { 'definition.branch': { $ne: 'refs/heads/master' } } }
-    }
-  };
-
-  const ignoreStagesBefore = configForProject(collectionName, project)?.releasePipelines.ignoreStagesBefore;
-
-  if (!ignoreStagesBefore) return [artifactsNotMatchingMaster];
-
-  return [
-    artifactsNotMatchingMaster,
-    {
-      $addFields: {
-        considerStagesAfter: {
-          $indexOfArray: [
-            {
-              $map: {
-                input: '$environments',
-                as: 'env',
-                in: { $regexMatch: { input: '$$env.name', regex: ignoreStagesBefore, options: 'i' } }
-              }
-            },
-            true
-          ]
-        }
-      }
-    },
-    {
-      $addFields: {
-        filteredEnvs: {
-          $cond: {
-            if: {
-              $or: [{ $eq: ['$considerStagesAfter', -1] }, { $eq: ['$considerStagesAfter', null] }]
-            },
-            // eslint-disable-next-line unicorn/no-thenable
-            then: '$environments',
-            else: {
-              $slice: [
-                '$environments',
-                '$considerStagesAfter',
-                { $subtract: [{ $size: '$environments' }, '$considerStagesAfter'] }
-              ]
+const addFilteredEnvsField = (ignoreStagesBefore: string): PipelineStage[] => [
+  {
+    $addFields: {
+      considerStagesAfter: {
+        $indexOfArray: [
+          {
+            $map: {
+              input: '$environments',
+              as: 'env',
+              in: { $regexMatch: { input: '$$env.name', regex: ignoreStagesBefore, options: 'i' } }
             }
+          },
+          true
+        ]
+      }
+    }
+  },
+  {
+    $addFields: {
+      filteredEnvs: {
+        $cond: {
+          if: {
+            $or: [{ $eq: ['$considerStagesAfter', -1] }, { $eq: ['$considerStagesAfter', null] }]
+          },
+          // eslint-disable-next-line unicorn/no-thenable
+          then: '$environments',
+          else: {
+            $slice: [
+              '$environments',
+              '$considerStagesAfter',
+              { $subtract: [{ $size: '$environments' }, '$considerStagesAfter'] }
+            ]
           }
         }
+      }
+    }
+  }
+];
+
+const filterNonMasterReleases = (nonMasterReleases: boolean | undefined): PipelineStage[] => {
+  if (!nonMasterReleases) return [];
+
+  return [
+    {
+      $match: {
+        artifacts: { $elemMatch: { 'definition.branch': { $ne: 'refs/heads/master' } } }
       }
     },
     { $match: { 'filteredEnvs': { $elemMatch: { status: { $ne: 'notStarted' } } } } }
   ];
 };
 
-const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+const filterByNotConfirmingToBranchPolicy: PipelineStage[] = [
+
+];
+
+const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>): Promise<PipelineStage[]> => {
   const {
-    collectionName, project, nonMasterReleases, /* notConfirmingToBranchPolicies, */ searchTerm,
-    notStartingWithBuildArtifact, stageNameContaining, /* stageNameUsed, */ repoGroups
+    collectionName, project, nonMasterReleases,
+    /* incomplete */ notConfirmingToBranchPolicies,
+    searchTerm, notStartingWithBuildArtifact, stageNameContaining,
+    /* stageNameUsed, */ repoGroups
   } = options;
 
   const releaseDefns = await getMinimalReleaseDefinitions(
     collectionName, project, searchTerm, stageNameContaining
+  );
+
+  const ignoreStagesBefore = configForProject(collectionName, project)?.releasePipelines.ignoreStagesBefore;
+  const useSubsetOfEnvs = ignoreStagesBefore && (
+    nonMasterReleases || notConfirmingToBranchPolicies
+  );
+  const addFilteredEnvsFieldIfNeeded = useSubsetOfEnvs
+    ? addFilteredEnvsField(ignoreStagesBefore)
+    : [];
+  const filterOutNotConfirmingToBranchPolicyIfNeeded = (
+    notConfirmingToBranchPolicies ? filterByNotConfirmingToBranchPolicy : []
   );
 
   return [
@@ -414,13 +428,15 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
       $match: {
         collectionName,
         project,
-        modifiedOn: { $gt: getConfig().azure.queryFrom },
+        modifiedOn: { $gte: getConfig().azure.queryFrom },
         releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
         ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
         ...filterRepos(collectionName, project, repoGroups)
       }
     },
-    ...filterNonMasterReleases(collectionName, project, nonMasterReleases)
+    ...addFilteredEnvsFieldIfNeeded, // This must be before non-master and branch policies
+    ...filterNonMasterReleases(nonMasterReleases), // Needs the filteredEnvs field
+    ...filterOutNotConfirmingToBranchPolicyIfNeeded // Needs the filteredEnvs field
   ];
 };
 

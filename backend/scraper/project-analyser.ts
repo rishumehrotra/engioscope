@@ -37,8 +37,7 @@ const analyserLog = debug('analyser');
 
 export default (config: ParsedConfig) => {
   const {
-    getBranchesStats, getPRs, getCommits,
-    getTestRuns, getTestCoverage,
+    getBranchesStats, getPRs, getCommits, getTestRuns, getTestCoverage,
     getProjectWorkItemIdsForQuery, getBuildDefinitions
   } = azure(config);
 
