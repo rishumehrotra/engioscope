@@ -2,8 +2,9 @@ import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
 import { prop } from 'rambda';
 import { z } from 'zod';
-import { oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
+import { exists, oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
 import { configForProject, getConfig } from '../config.js';
+import type { ParsedProjectConfig } from '../scraper/parse-config.js';
 import type {
   Artifact as AzureArtifact, ArtifactType, DeploymentOperationStatus, DeploymentReason,
   DeploymentStatus, EnvironmentStatus, ReleaseReason, ReleaseStatus,
@@ -396,9 +397,79 @@ const filterNonMasterReleases = (nonMasterReleases: boolean | undefined): Pipeli
   ];
 };
 
-const filterByNotConfirmingToBranchPolicy: PipelineStage[] = [
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const filterByNotConfirmingToBranchPolicy = (
+  notConfirmingToBranchPolicies: boolean | undefined,
+  configuredBranchPolicies: ParsedProjectConfig['branchPolicies']
+): PipelineStage[] => {
+  if (!notConfirmingToBranchPolicies) return [];
+  if (Object.keys(configuredBranchPolicies).length === 0) return [];
 
-];
+  const isPassingBranchPolicies = Object.entries(configuredBranchPolicies).flatMap(([key, value]) => ([
+    'isEnabled' in value
+      ? { [`policies.${key}.isEnabled`]: { $ne: !value.isEnabled } }
+      : undefined,
+    'isBlocking' in value
+      ? { [`policies.${key}.isBlocking`]: { $ne: !value.isBlocking } }
+      : undefined,
+    'minimumApproverCount' in value
+      ? { [`policies.${key}.minimumApproverCount`]: { $ne: !value.minimumApproverCount } }
+      : undefined
+  ]))
+    .filter(exists)
+    .reduce((acc, item) => ({ ...acc, ...item }), {});
+
+  return [
+    {
+      $lookup: {
+        from: 'repopolicies',
+        as: 'policies',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$artifacts.definition.repositoryId',
+          branches: '$artifacts.definition.branch'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $in: ['$repositoryId', '$$repositoryId'] },
+                  { $in: ['$refName', '$$branches'] },
+                  { $ne: ['$isDeleted', true] }
+                ]
+              }
+            }
+          },
+          {
+            $group: {
+              _id: {
+                repositoryId: '$repositoryId',
+                branch: '$refName'
+              },
+              policies: {
+                $push: {
+                  k: '$type',
+                  v: {
+                    isBlocking: '$isBlocking',
+                    isEnabled: '$isEnabled',
+                    minimumApproverCount: '$settings.minimumApproverCount'
+                  }
+                }
+              }
+            }
+          },
+          { $project: { policies: { $arrayToObject: '$policies' } } },
+          { $match: isPassingBranchPolicies }
+        ]
+      }
+    }
+    // { $match: {} }
+  ];
+};
 
 const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>): Promise<PipelineStage[]> => {
   const {
@@ -412,16 +483,14 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
     collectionName, project, searchTerm, stageNameContaining
   );
 
-  const ignoreStagesBefore = configForProject(collectionName, project)?.releasePipelines.ignoreStagesBefore;
+  const projectConfig = configForProject(collectionName, project);
+  const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
   const useSubsetOfEnvs = ignoreStagesBefore && (
     nonMasterReleases || notConfirmingToBranchPolicies
   );
   const addFilteredEnvsFieldIfNeeded = useSubsetOfEnvs
     ? addFilteredEnvsField(ignoreStagesBefore)
     : [];
-  const filterOutNotConfirmingToBranchPolicyIfNeeded = (
-    notConfirmingToBranchPolicies ? filterByNotConfirmingToBranchPolicy : []
-  );
 
   return [
     {
@@ -435,8 +504,7 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
       }
     },
     ...addFilteredEnvsFieldIfNeeded, // This must be before non-master and branch policies
-    ...filterNonMasterReleases(nonMasterReleases), // Needs the filteredEnvs field
-    ...filterOutNotConfirmingToBranchPolicyIfNeeded // Needs the filteredEnvs field
+    ...filterNonMasterReleases(nonMasterReleases) // Needs the filteredEnvs field
   ];
 };
 
@@ -445,7 +513,7 @@ export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInpu
 
   return ReleaseModel
     .aggregate([
-      ...filter,
-      { $group: { _id: { id: '$releaseDefinitionId' } } }
+      ...filter
+      // { $group: { _id: { id: '$releaseDefinitionId' } } }
     ]);
 };

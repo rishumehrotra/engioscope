@@ -1,6 +1,13 @@
 import ms from 'ms';
 import { pastDate } from '../utils.js';
 
+type BranchPolicyConfiguration = Partial<{
+  'Minimum number of reviewers': { isEnabled: boolean; isBlocking: boolean; minimumApproverCount: number };
+  'Comment requirements': { isEnabled: boolean; isBlocking: boolean };
+  'Work item linking': { isEnabled: boolean; isBlocking: boolean };
+  'Build': { isEnabled: boolean; isBlocking: boolean };
+}>;
+
 type ReleasePipelineConfig = {
   stagesToHighlight: string[];
   ignoreStagesBefore?: string;
@@ -59,6 +66,7 @@ type CollectionConfig = {
   environments?: string[];
   projects: (string | ProjectConfig)[];
   templateRepoName?: string;
+  branchPolicies?: BranchPolicyConfiguration;
 };
 
 type ProjectConfig = {
@@ -71,6 +79,7 @@ type ProjectConfig = {
     label: string;
     groups: Record<string, string[]>;
   };
+  branchPolicies?: BranchPolicyConfiguration;
 };
 
 type AzureConfig = {
@@ -89,6 +98,7 @@ type AzureConfig = {
     portfolioProject: string;
   } & Record<string, string>)[];
   templateRepoName?: string;
+  branchPolicies?: BranchPolicyConfiguration;
 } & Omit<ProjectConfig, 'name'>;
 
 export type SonarConfig = {
@@ -172,6 +182,7 @@ export type ParsedProjectConfig = Readonly<{
   };
   environments?: string[];
   templateRepoName?: string;
+  branchPolicies: BranchPolicyConfiguration;
 }>;
 
 export type ParsedCollection = Readonly<{
@@ -292,7 +303,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
               ?? []
           },
           environments: collection.environments ?? config.azure.environments,
-          templateRepoName: collection.templateRepoName ?? config.azure.templateRepoName
+          templateRepoName: collection.templateRepoName ?? config.azure.templateRepoName,
+          branchPolicies: collection.branchPolicies ?? config.azure.branchPolicies ?? {}
         };
       }
 
@@ -312,7 +324,8 @@ const parseCollection = (config: Config) => (collection: CollectionConfig): Pars
         },
         environments: project.environments ?? collection.environments ?? config.azure.environments,
         groupRepos: project.groupRepos,
-        templateRepoName: project.templateRepoName ?? collection.templateRepoName ?? config.azure.templateRepoName
+        templateRepoName: project.templateRepoName ?? collection.templateRepoName ?? config.azure.templateRepoName,
+        branchPolicies: project.branchPolicies ?? collection.branchPolicies ?? config.azure.branchPolicies ?? {}
       };
     })
   };
