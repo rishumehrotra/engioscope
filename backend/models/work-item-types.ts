@@ -93,6 +93,7 @@ export const getWorkItemTypes = async ({ collectionName, project }: z.infer<type
   const collectionConfig = configForCollection(collectionName);
   const wits = collectionConfig?.workitems.types || [];
 
+  // TODO: FIXME This doesn't belong here, maybe?
   const workItemTypes = await WorkItemTypeModel
     .find({
       collectionName,

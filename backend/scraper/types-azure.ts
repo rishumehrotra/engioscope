@@ -13,7 +13,11 @@ export type BuildReason = 'all' | 'batchedCI' | 'buildCompletion' | 'checkInShel
 export type ReleaseStatus = 'abandoned' | 'active' | 'draft' | 'undefined';
 export type ReleaseReason = 'continuousIntegration' | 'manual' | 'none' | 'pullRequest' | 'schedule';
 export type ArtifactType = 'Build' | 'Jenkins' | 'GitHub' | 'Nuget'
-| 'Team Build (external)' | 'ExternalTFSBuild' | 'Git' | 'TFVC' | 'ExternalTfsXamlBuild';
+| 'Team Build (external)' | 'ExternalTFSBuild' | 'Git' | 'TFVC' | 'ExternalTfsXamlBuild'
+// Following value not specified in docs at
+// https://learn.microsoft.com/en-us/rest/api/azure/devops/release/releases/list?view=azure-devops-rest-5.1&tabs=HTTP#artifact
+// But we see in responses
+| 'Artifactory';
 export type EnvironmentStatus = 'canceled' | 'inProgress' | 'notStarted'
 | 'partiallySucceeded' | 'queued' | 'rejected' | 'scheduled' | 'succeeded' | 'undefined';
 export type DeploymentReason = 'automated' | 'manual' | 'none' | 'redeployTrigger' | 'scheduled';

@@ -471,6 +471,10 @@ const filterByNotConfirmingToBranchPolicy = (
   ];
 };
 
+/**
+ * Note: This function doesn't account for options.notConfirmingToBranchPolicies!!!
+ * That parameter needs an entirely different approach, so is not implemented here.
+ */
 const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>): Promise<PipelineStage[]> => {
   const {
     collectionName, project, nonMasterReleases,
@@ -508,12 +512,46 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
   ];
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const forAllArtifacts = (inClause: any) => ({
+  $and: [
+    { $ne: [{ $size: '$artifacts' }, 0] },
+    {
+      $allElementsTrue: {
+        $map: {
+          input: '$artifacts',
+          as: 'artifact',
+          in: inClause
+        }
+      }
+    }
+  ]
+});
+
 export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const filter = await createFilter(options);
 
   return ReleaseModel
     .aggregate([
-      ...filter
+      ...filter,
+      {
+        $addFields: {
+          startsWithArtifact: forAllArtifacts(
+            { $in: ['$$artifact.type', ['Build', 'Artifactory']] }
+          ),
+          masterOnly: forAllArtifacts({
+            $and: [
+              { $eq: ['$$artifact.type', 'Build'] },
+              {
+                $or: [
+                  { $eq: ['$$artifact.definition.branch', 'refs/heads/master'] },
+                  { $eq: ['$$artifact.definition.branch', 'refs/heads/main'] }
+                ]
+              }
+            ]
+          })
+        }
+      }
       // { $group: { _id: { id: '$releaseDefinitionId' } } }
     ]);
 };
