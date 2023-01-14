@@ -51,7 +51,7 @@
     "express": "4.18.2",
     "express-promise-router": "4.1.1",
     "express-rate-limit": "6.7.0",
-    "glob": "8.0.3",
+    "glob": "8.1.0",
     "html-entities": "2.3.3",
     "md5": "2.3.0",
     "mongoose": "6.8.3",
