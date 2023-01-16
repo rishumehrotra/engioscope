@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
-import { prop } from 'rambda';
+import { last, prop } from 'rambda';
 import { z } from 'zod';
 import { exists, oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
 import { configForProject, getConfig } from '../config.js';
@@ -501,6 +501,21 @@ const isStageUsed = (stage: string) => ({
   }
 });
 
+const isStageSuccessful = (stage: string) => ({
+  $anyElementTrue: {
+    $map: {
+      input: '$environments',
+      as: 'env',
+      in: {
+        $and: [
+          { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } },
+          { $eq: ['$$env.status', 'succeeded'] }
+        ]
+      }
+    }
+  }
+});
+
 const filterStageNameUsed = (stageNameUsed: string | undefined): PipelineStage[] => (
   stageNameUsed ? [
     { $addFields: { isStageUsed: isStageUsed(stageNameUsed) } },
@@ -570,8 +585,59 @@ const addStagesToHighlight = (collectionName: string, project: string) => {
   }), {});
 };
 
+const incIfTrue = (condition: unknown) => ({ $sum: { $cond: [condition, 1, 0] } });
+const incIfNonZero = (field: string) => ({ $sum: { $cond: [{ $gt: [field, 0] }, 1, 0] } });
+
+const createSummary = (collectionName: string, project: string): PipelineStage[] => {
+  const projectConfig = configForProject(collectionName, project);
+
+  return [
+    {
+      $group: {
+        _id: '$releaseDefinitionId',
+        runCount: { $count: {} },
+        lastEnvDeploys: incIfTrue('$deployedToLastEnvironment'),
+        lastEnvSuccesfulDeploys: incIfTrue({
+          $and: [
+            '$deployedToLastEnvironment', '$successfulDeployToLastEnvironment'
+          ]
+        }),
+        startsWithArtifact: incIfTrue('$startsWithArtifact'),
+        ...(projectConfig?.releasePipelines.stagesToHighlight.reduce((acc, item) => ({
+          ...acc,
+          [`${item}:exists`]: { $sum: incIfTrue(`$${item}:exists`) },
+          [`${item}:used`]: { $sum: incIfTrue(`$${item}:used`) }
+        }), {})),
+        masterOnly: incIfTrue('$masterOnly')
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        runCount: { $sum: '$runCount' },
+        pipelineCount: { $count: {} },
+        lastEnvDeploys: { $sum: '$lastEnvDeploys' },
+        lastEnvSuccesfulDeploys: { $sum: '$lastEnvSuccesfulDeploys' },
+        startsWithArtifact: incIfNonZero('$startsWithArtifact'),
+        ...(projectConfig?.releasePipelines.stagesToHighlight.reduce((acc, item) => ({
+          ...acc,
+          [`${item}:exists`]: incIfNonZero(`$${item}:exists`),
+          [`${item}:used`]: incIfNonZero(`$${item}:used`)
+        }), {})),
+        masterOnly: { $sum: '$masterOnly' }
+      }
+    }
+  ];
+};
+
 export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const filter = await createFilter(options);
+  const projectConfig = configForProject(options.collectionName, options.project);
+  const lastEnvironmentName = projectConfig?.environments ? last(projectConfig.environments) : undefined;
+  const lastEnvironmentFields = lastEnvironmentName ? {
+    deployedToLastEnvironment: isStageUsed(lastEnvironmentName),
+    successfulDeployToLastEnvironment: isStageSuccessful(lastEnvironmentName)
+  } : {};
 
   return ReleaseModel
     .aggregate([
@@ -592,9 +658,10 @@ export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInpu
               }
             ]
           }),
-          ...addStagesToHighlight(options.collectionName, options.project)
+          ...addStagesToHighlight(options.collectionName, options.project),
+          ...lastEnvironmentFields
         }
-      }
-      // { $group: { _id: { id: '$releaseDefinitionId' } } }
+      },
+      ...createSummary(options.collectionName, options.project)
     ]);
 };
