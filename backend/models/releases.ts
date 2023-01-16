@@ -476,6 +476,38 @@ const filterByNotConfirmingToBranchPolicy = (
   ];
 };
 
+const doesStageExist = (stage: string) => ({
+  $anyElementTrue: {
+    $map: {
+      input: '$environments',
+      as: 'env',
+      in: { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } }
+    }
+  }
+});
+
+const isStageUsed = (stage: string) => ({
+  $anyElementTrue: {
+    $map: {
+      input: '$environments',
+      as: 'env',
+      in: {
+        $and: [
+          { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } },
+          { $ne: ['$$env.status', 'notStarted'] }
+        ]
+      }
+    }
+  }
+});
+
+const filterStageNameUsed = (stageNameUsed: string | undefined): PipelineStage[] => (
+  stageNameUsed ? [
+    { $addFields: { isStageUsed: isStageUsed(stageNameUsed) } },
+    { $match: { isStageUsed: true } }
+  ] : []
+);
+
 /**
  * Note: This function doesn't account for options.notConfirmingToBranchPolicies!!!
  * That parameter needs an entirely different approach, so is not implemented here.
@@ -485,7 +517,7 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
     collectionName, project, nonMasterReleases,
     /* notConfirmingToBranchPolicies, */
     searchTerm, notStartingWithBuildArtifact, stageNameContaining,
-    /* stageNameUsed, */ repoGroups
+    stageNameUsed, repoGroups
   } = options;
 
   const releaseDefns = await getMinimalReleaseDefinitions(
@@ -507,7 +539,8 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
       }
     },
     ...addFilteredEnvsField(ignoreStagesBefore),
-    ...filterNonMasterReleases(nonMasterReleases)
+    ...filterNonMasterReleases(nonMasterReleases),
+    ...filterStageNameUsed(stageNameUsed)
   ];
 };
 
@@ -532,29 +565,8 @@ const addStagesToHighlight = (collectionName: string, project: string) => {
   if (!stagesToHighlight) return {};
   return stagesToHighlight.reduce((acc, stage) => ({
     ...acc,
-    [`${stage}:exists`]: {
-      $anyElementTrue: {
-        $map: {
-          input: '$environments',
-          as: 'env',
-          in: { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } }
-        }
-      }
-    },
-    [`${stage}:used`]: {
-      $anyElementTrue: {
-        $map: {
-          input: '$environments',
-          as: 'env',
-          in: {
-            $and: [
-              { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } },
-              { $ne: ['$$env.status', 'notStarted'] }
-            ]
-          }
-        }
-      }
-    }
+    [`${stage}:exists`]: doesStageExist(stage),
+    [`${stage}:used`]: isStageUsed(stage)
   }), {});
 };
 
