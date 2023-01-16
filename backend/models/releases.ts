@@ -345,44 +345,49 @@ const filterRepos = (collectionName: string, project: string, repoGroups: string
   return { 'artifacts.definition.repositoryName': { $in: repos } };
 };
 
-const addFilteredEnvsField = (ignoreStagesBefore: string): PipelineStage[] => [
-  {
-    $addFields: {
-      considerStagesAfter: {
-        $indexOfArray: [
-          {
-            $map: {
-              input: '$environments',
-              as: 'env',
-              in: { $regexMatch: { input: '$$env.name', regex: ignoreStagesBefore, options: 'i' } }
-            }
-          },
-          true
-        ]
+const addFilteredEnvsField = (ignoreStagesBefore: string | undefined): PipelineStage[] => (
+  ignoreStagesBefore ? [
+    {
+      $addFields: {
+        considerStagesAfter: {
+          $indexOfArray: [
+            {
+              $map: {
+                input: '$environments',
+                as: 'env',
+                in: { $regexMatch: { input: '$$env.name', regex: ignoreStagesBefore, options: 'i' } }
+              }
+            },
+            true
+          ]
+        }
       }
-    }
-  },
-  {
-    $addFields: {
-      filteredEnvs: {
-        $cond: {
-          if: {
-            $or: [{ $eq: ['$considerStagesAfter', -1] }, { $eq: ['$considerStagesAfter', null] }]
-          },
-          // eslint-disable-next-line unicorn/no-thenable
-          then: '$environments',
-          else: {
-            $slice: [
-              '$environments',
-              '$considerStagesAfter',
-              { $subtract: [{ $size: '$environments' }, '$considerStagesAfter'] }
-            ]
+    },
+    {
+      $addFields: {
+        filteredEnvs: {
+          $cond: {
+            if: {
+              $or: [{ $eq: ['$considerStagesAfter', -1] }, { $eq: ['$considerStagesAfter', null] }]
+            },
+            // eslint-disable-next-line unicorn/no-thenable
+            then: '$environments',
+            else: {
+              $slice: [
+                '$environments',
+                '$considerStagesAfter',
+                { $subtract: [{ $size: '$environments' }, '$considerStagesAfter'] }
+              ]
+            }
           }
         }
       }
     }
-  }
-];
+  ]
+    : [
+      { $addFields: { filteredEnvs: '$environments' } }
+    ]
+);
 
 const filterNonMasterReleases = (nonMasterReleases: boolean | undefined): PipelineStage[] => {
   if (!nonMasterReleases) return [];
@@ -478,7 +483,7 @@ const filterByNotConfirmingToBranchPolicy = (
 const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>): Promise<PipelineStage[]> => {
   const {
     collectionName, project, nonMasterReleases,
-    /* incomplete */ notConfirmingToBranchPolicies,
+    /* notConfirmingToBranchPolicies, */
     searchTerm, notStartingWithBuildArtifact, stageNameContaining,
     /* stageNameUsed, */ repoGroups
   } = options;
@@ -489,12 +494,6 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
 
   const projectConfig = configForProject(collectionName, project);
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
-  const useSubsetOfEnvs = ignoreStagesBefore && (
-    nonMasterReleases || notConfirmingToBranchPolicies
-  );
-  const addFilteredEnvsFieldIfNeeded = useSubsetOfEnvs
-    ? addFilteredEnvsField(ignoreStagesBefore)
-    : [];
 
   return [
     {
@@ -507,8 +506,8 @@ const createFilter = async (options: z.infer<typeof pipelineFiltersInputParser>)
         ...filterRepos(collectionName, project, repoGroups)
       }
     },
-    ...addFilteredEnvsFieldIfNeeded, // This must be before non-master and branch policies
-    ...filterNonMasterReleases(nonMasterReleases) // Needs the filteredEnvs field
+    ...addFilteredEnvsField(ignoreStagesBefore),
+    ...filterNonMasterReleases(nonMasterReleases)
   ];
 };
 
@@ -527,6 +526,37 @@ const forAllArtifacts = (inClause: any) => ({
     }
   ]
 });
+
+const addStagesToHighlight = (collectionName: string, project: string) => {
+  const stagesToHighlight = configForProject(collectionName, project)?.releasePipelines.stagesToHighlight;
+  if (!stagesToHighlight) return {};
+  return stagesToHighlight.reduce((acc, stage) => ({
+    ...acc,
+    [`${stage}:exists`]: {
+      $anyElementTrue: {
+        $map: {
+          input: '$environments',
+          as: 'env',
+          in: { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } }
+        }
+      }
+    },
+    [`${stage}:used`]: {
+      $anyElementTrue: {
+        $map: {
+          input: '$environments',
+          as: 'env',
+          in: {
+            $and: [
+              { $regexMatch: { input: '$$env.name', regex: new RegExp(stage.toLowerCase(), 'gi') } },
+              { $ne: ['$$env.status', 'notStarted'] }
+            ]
+          }
+        }
+      }
+    }
+  }), {});
+};
 
 export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const filter = await createFilter(options);
@@ -549,7 +579,8 @@ export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInpu
                 ]
               }
             ]
-          })
+          }),
+          ...addStagesToHighlight(options.collectionName, options.project)
         }
       }
       // { $group: { _id: { id: '$releaseDefinitionId' } } }
