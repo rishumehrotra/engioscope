@@ -630,38 +630,43 @@ const createSummary = (collectionName: string, project: string): PipelineStage[]
   ];
 };
 
-export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
-  const filter = await createFilter(options);
-  const projectConfig = configForProject(options.collectionName, options.project);
+const addBooleanFields = (collectionName: string, project: string): PipelineStage => {
+  const projectConfig = configForProject(collectionName, project);
   const lastEnvironmentName = projectConfig?.environments ? last(projectConfig.environments) : undefined;
   const lastEnvironmentFields = lastEnvironmentName ? {
     deployedToLastEnvironment: isStageUsed(lastEnvironmentName),
     successfulDeployToLastEnvironment: isStageSuccessful(lastEnvironmentName)
   } : {};
 
+  return {
+    $addFields: {
+      startsWithArtifact: forAllArtifacts(
+        { $in: ['$$artifact.type', ['Build', 'Artifactory']] }
+      ),
+      masterOnly: forAllArtifacts({
+        $and: [
+          { $eq: ['$$artifact.type', 'Build'] },
+          {
+            $or: [
+              { $eq: ['$$artifact.definition.branch', 'refs/heads/master'] },
+              { $eq: ['$$artifact.definition.branch', 'refs/heads/main'] }
+            ]
+          }
+        ]
+      }),
+      ...addStagesToHighlight(collectionName, project),
+      ...lastEnvironmentFields
+    }
+  };
+};
+
+export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+  const filter = await createFilter(options);
+
   return ReleaseModel
     .aggregate([
       ...filter,
-      {
-        $addFields: {
-          startsWithArtifact: forAllArtifacts(
-            { $in: ['$$artifact.type', ['Build', 'Artifactory']] }
-          ),
-          masterOnly: forAllArtifacts({
-            $and: [
-              { $eq: ['$$artifact.type', 'Build'] },
-              {
-                $or: [
-                  { $eq: ['$$artifact.definition.branch', 'refs/heads/master'] },
-                  { $eq: ['$$artifact.definition.branch', 'refs/heads/main'] }
-                ]
-              }
-            ]
-          }),
-          ...addStagesToHighlight(options.collectionName, options.project),
-          ...lastEnvironmentFields
-        }
-      },
+      addBooleanFields(options.collectionName, options.project),
       ...createSummary(options.collectionName, options.project)
     ]);
 };
