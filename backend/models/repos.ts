@@ -62,3 +62,7 @@ export const bulkSaveRepositories = (collectionName: string) => (repos: GitRepos
 export const getRepositories = (collectionName: string, project: string) => (
   RepositoryModel.find({ collectionName, 'project.name': project }).lean()
 );
+
+export const repoCount = (collectionName: string, project: string) => (
+  RepositoryModel.count({ collectionName, 'project.name': project }).lean()
+);

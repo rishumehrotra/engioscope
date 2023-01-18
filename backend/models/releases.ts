@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
-import { last, prop } from 'rambda';
+import { last, omit, prop } from 'rambda';
 import { z } from 'zod';
 import { exists, oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
 import { configForProject, getConfig } from '../config.js';
@@ -302,30 +302,7 @@ export const pipelineFiltersInput = {
   repoGroups: z.array(z.string()).optional()
 };
 
-export const paginatedReleaseIdsInputParser = z.object({
-  ...pipelineFiltersInput,
-  cursor: z.object({
-    pageSize: z.number().optional(),
-    pageNumber: z.number().optional()
-  })
-});
-
-export const paginatedReleaseIds = async (options: z.infer<typeof paginatedReleaseIdsInputParser>) => {
-  const releaseDefns = await getMinimalReleaseDefinitions(
-    options.collectionName, options.project, options.searchTerm, options.stageNameContaining
-  );
-
-  return ReleaseModel
-    .aggregate([
-      {
-        $match: {
-          releaseDefinitionId: { $in: releaseDefns.map(prop('id')) }
-        }
-      }
-    ]);
-};
-
-const pipelineFiltersInputParser = z.object(pipelineFiltersInput);
+export const pipelineFiltersInputParser = z.object(pipelineFiltersInput);
 
 const filterNotStartingWithBuildArtifact = (notStartingWithBuildArtifact?: boolean) => {
   if (!notStartingWithBuildArtifact) return {};
@@ -626,6 +603,25 @@ const createSummary = (collectionName: string, project: string): PipelineStage[]
         }), {})),
         masterOnly: { $sum: '$masterOnly' }
       }
+    },
+    {
+      $project: {
+        runCount: '$runCount',
+        pipelineCount: '$pipelineCount',
+        lastEnv: projectConfig?.environments ? {
+          envName: last(projectConfig.environments),
+          deploys: '$lastEnvDeploys',
+          successful: '$lastEnvSuccesfulDeploys'
+        } : undefined,
+        startsWithArtifact: '$startsWithArtifact',
+        masterOnly: '$masterOnly',
+        stagesToHighlight: projectConfig?.releasePipelines.stagesToHighlight.map(stage => ({
+          name: stage,
+          exists: `$${stage}:exists`,
+          used: `$${stage}:used`
+        })),
+        ignoredStagesBefore: projectConfig?.releasePipelines.ignoreStagesBefore
+      }
     }
   ];
 };
@@ -660,13 +656,79 @@ const addBooleanFields = (collectionName: string, project: string): PipelineStag
   };
 };
 
-export const releaseSummary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+type Summary = {
+  runCount: number;
+  pipelineCount: number;
+  lastEnv: {
+    envName: string;
+    deploys: number;
+    successful: number;
+  };
+  startsWithArtifact: number;
+  masterOnly: number;
+  stagesToHighlight: {
+    name: string;
+    exists: number;
+    used: number;
+  }[];
+  ignoredStagesBefore?: string;
+};
+
+export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const filter = await createFilter(options);
 
-  return ReleaseModel
-    .aggregate([
+  const summary = await ReleaseModel
+    .aggregate<Summary & {_id: null}>([
       ...filter,
       addBooleanFields(options.collectionName, options.project),
       ...createSummary(options.collectionName, options.project)
     ]);
+
+  return omit(['_id'], summary[0]);
+};
+
+export const paginatedReleaseIdsInputParser = z.object({
+  ...pipelineFiltersInput,
+  cursor: z.object({
+    pageSize: z.number().optional(),
+    pageNumber: z.number().optional()
+  }).nullish()
+});
+
+export const paginatedReleaseIds = async (options: z.infer<typeof paginatedReleaseIdsInputParser>) => {
+  const filter = await createFilter(options);
+
+  const page = await ReleaseModel
+    .aggregate<{_id: number; url: string; name: string}>([
+      ...filter,
+      {
+        $group: {
+          _id: '$releaseDefinitionId',
+          releaseDefinitionUrl: { $first: '$releaseDefinitionUrl' },
+          releaseDefinitionName: { $first: '$releaseDefinitionName' },
+          lastModifiedOn: { $max: '$modifiedOn' }
+        }
+      },
+      { $sort: { lastModifiedOn: -1, _id: -1 } },
+      { $skip: (options.cursor?.pageNumber || 0) * (options.cursor?.pageSize || 5) },
+      { $limit: options.cursor?.pageSize || 5 },
+      {
+        $project: {
+          url: '$releaseDefinitionUrl',
+          name: '$releaseDefinitionName'
+        }
+      }
+    ]);
+
+  return {
+    items: page.map(pipeline => ({
+      id: pipeline._id,
+      url: pipeline.url.replace('/_apis/Release/definitions/', '/_release?definitionId='),
+      name: pipeline.name
+    })),
+    nextCursor: {
+      pageNumber: (options.cursor?.pageNumber || 0) + 1,
+      pageSize: options.cursor?.pageSize || 5
+    }
+  };
 };

@@ -15,6 +15,7 @@ import usePageName from '../hooks/use-page-name.js';
 import Overview from './Overview.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import type { UIProjectAnalysis } from '../../shared/types.js';
+import ReleasePipelines2 from './ReleasePipelines2.jsx';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) => (count ? (
   <>
@@ -96,6 +97,7 @@ const Project: React.FC = () => {
       <Routes>
         <Route path="repos" element={<Repos />} />
         <Route path="release-pipelines" element={<ReleasePipelines />} />
+        <Route path="release-pipelines2" element={<ReleasePipelines2 />} />
         <Route path="devs" element={<Devs />} />
         <Route path="workitems" element={<WorkItems />} />
         <Route path="" element={<Overview />} />

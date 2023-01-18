@@ -4,12 +4,16 @@ import builds from './builds.js';
 import workItems from './workitems.js';
 import others from './others.js';
 import analytics from './analytics.js';
+import releases from './releases.js';
+import projects from './projects.js';
 import { t, trpcContext } from './trpc.js';
 
 export const appRouter = t.router({
   builds,
   workItems,
   analytics,
+  releases,
+  projects,
   ...others
 });
 

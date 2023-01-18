@@ -110,7 +110,7 @@ const AdvancedFilters: React.FC = () => {
       </button>
       <div ref={ref}>
         {selectedTab === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
-        {selectedTab === 'release-pipelines' ? <PipelinesFilters isOpen={isOpen} /> : null}
+        {(selectedTab === 'release-pipelines' || selectedTab === 'release-pipelines2') ? <PipelinesFilters isOpen={isOpen} /> : null}
       </div>
     </span>
   );
