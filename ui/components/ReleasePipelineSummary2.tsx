@@ -37,13 +37,19 @@ const ReleasePipelineSummary2: React.FC = () => {
                 {num(Math.round(summary.lastEnv.deploys / queryPeriodDays))}
                 <span className="font-normal text-sm"> / day</span>
               </>
-            )
+            ),
+            tooltip: `${num(summary.lastEnv.deploys)} ${summary.lastEnv.envName} deploys over the last ${queryPeriodDays} days`
           }]}
           childStats={[{
             title: 'Success',
             value: divide(summary.lastEnv.successful, summary.lastEnv.deploys)
               .map(toPercentage)
-              .getOr('-')
+              .getOr('-'),
+            tooltip: `${
+              num(summary.lastEnv.successful)
+            } of ${
+              num(summary.lastEnv.deploys)
+            } deploys were successful over the last ${queryPeriodDays} days`
           }]}
           onClick={{
             open: 'popup',
@@ -57,7 +63,8 @@ const ReleasePipelineSummary2: React.FC = () => {
           value: divide(
             summary.startsWithArtifact,
             summary.pipelineCount
-          ).map(toPercentage).getOr('-')
+          ).map(toPercentage).getOr('-'),
+          tooltip: `${num(summary.startsWithArtifact)} of ${summary.pipelineCount} pipelines started with an artifact`
         }]}
       />
       {(summary.stagesToHighlight || []).map(stage => (
@@ -95,8 +102,8 @@ const ReleasePipelineSummary2: React.FC = () => {
             //   renderer={pathRendererSkippingUndefineds}
             // />
           ),
-          tooltip: `${num(summary.masterOnly)} out of ${num(summary.pipelineCount)} releases were exclusively from master.${
-            summary.ignoredStagesBefore ? `<br />Branches that didn't go to ${summary.ignoredStagesBefore} are not considered.` : ''
+          tooltip: `${num(summary.masterOnly)} out of ${num(summary.runCount)} releases were exclusively from master.${
+            summary.ignoredStagesBefore ? `<br />Pipeline runs that didn't go to ${summary.ignoredStagesBefore} are not considered.` : ''
           }`
         }]}
       />

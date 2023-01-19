@@ -1,7 +1,7 @@
-import { passInputTo, t } from './trpc.js';
 import {
   paginatedReleaseIds, paginatedReleaseIdsInputParser, pipelineFiltersInputParser, summary
-} from '../../models/releases.js';
+} from '../../models/release-listing.js';
+import { passInputTo, t } from './trpc.js';
 
 export default t.router({
   summary: t.procedure

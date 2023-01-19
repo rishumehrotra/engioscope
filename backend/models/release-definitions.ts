@@ -72,7 +72,7 @@ const releaseDefinitionSchema = new Schema<ReleaseDefinition>({
 
 releaseDefinitionSchema.index({ collectionName: 1, project: 1, id: 1 }, { unique: true });
 
-const ReleaseDefinitionModel = model<ReleaseDefinition>('ReleaseDefinition', releaseDefinitionSchema);
+export const ReleaseDefinitionModel = model<ReleaseDefinition>('ReleaseDefinition', releaseDefinitionSchema);
 
 export const bulkSaveReleaseDefinitions = (collectionName: string, project: string) => (
   (releaseDefinitions: AzureReleaseDefinition[]) => (
