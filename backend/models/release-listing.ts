@@ -433,7 +433,7 @@ export const paginatedReleaseIds = async (options: z.infer<typeof paginatedRelea
   };
 };
 
-const releasePipelineDetailsInputParser = z.object({
+export const releasePipelineDetailsInputParser = z.object({
   ...collectionAndProjectInputs,
   releaseDefnId: z.number(),
   queryFrom: z.date().optional()
@@ -448,7 +448,7 @@ export const releasePipelineDetails = async ({
     ReleaseDefinitionModel
       .find({ collectionName, project, id: releaseDefnId }),
     ReleaseModel
-      .aggregate([
+      .aggregate<{ _id: string; runs: number; successes: number }>([
         {
           $match: {
             collectionName,
@@ -486,53 +486,188 @@ export const releasePipelineDetails = async ({
           }
         }
       ]),
-    ReleaseModel.aggregate([
-      {
-        $match: {
-          collectionName,
-          project,
-          releaseDefinitionId: releaseDefnId,
-          modifiedOn: { $gt: queryFrom }
-        }
-      },
-      ...(ignoreStagesBefore ? ([
-        ...addFilteredEnvsField(ignoreStagesBefore),
-        {
-          $addFields: {
-            hasGoneAhead: {
-              $anyElementTrue: {
-                $map: {
-                  input: '$filteredEnvs',
-                  as: 'env',
-                  in: { $ne: ['$$env.status', 'notStarted'] }
+    ReleaseModel.aggregate< {
+      _id: {
+        alias: string;
+      } &({
+        type: 'Build';
+        repostitoryName: string;
+        branch: string;
+      } | {
+        type: 'Artifactory';
+      });
+      buildPipelineUrl: string;
+      isPrimary: true | null;
+      hasGoneAhead: boolean;
+    }>([
+          {
+            $match: {
+              collectionName,
+              project,
+              releaseDefinitionId: releaseDefnId,
+              modifiedOn: { $gt: queryFrom }
+            }
+          },
+          ...(ignoreStagesBefore ? ([
+            ...addFilteredEnvsField(ignoreStagesBefore),
+            {
+              $addFields: {
+                hasGoneAhead: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: '$filteredEnvs',
+                      as: 'env',
+                      in: { $ne: ['$$env.status', 'notStarted'] }
+                    }
+                  }
                 }
+              }
+            },
+            { $unset: 'filteredEnvs' }
+          ]) : []),
+          { $unwind: '$artifacts' },
+          {
+            $group: {
+              _id: {
+                type: '$artifacts.type',
+                alias: '$artifacts.alias',
+                repostitoryName: '$artifacts.definition.repositoryName',
+                branch: '$artifacts.definition.branch'
+              },
+              buildPipelineUrl: { $first: '$artifacts.definition.buildPipelineUrl' },
+              isPrimary: { $first: '$artifacts.isPrimary' },
+              hasGoneAhead: { $push: '$hasGoneAhead' }
+            }
+          },
+          {
+            $addFields: {
+              hasGoneAhead: { $anyElementTrue: '$hasGoneAhead' }
+            }
+          }
+        ]).then(results => results.map(({
+          _id, hasGoneAhead, isPrimary, buildPipelineUrl
+        }) => ({
+          ..._id,
+          buildPipelineUrl,
+          isPrimary: isPrimary || undefined,
+          hasGoneAhead
+        })))
+  ]);
+
+  return [releaseDefn, environments, artifacts] as const;
+};
+
+export const getArtifacts = async ({
+  collectionName, project, releaseDefnId, queryFrom
+}: z.infer<typeof releasePipelineDetailsInputParser>) => {
+  const projectConfig = configForProject(collectionName, project);
+  const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
+
+  type AggregateArtifact = {
+    _id: {
+      alias: string;
+    } & ({
+      type: 'Build';
+      repostitoryName: string;
+      branch: string;
+    } | {
+      type: 'Artifactory';
+    });
+    buildPipelineUrl: string;
+    isPrimary: true | null;
+    hasGoneAhead: boolean;
+  };
+
+  const results = await ReleaseModel.aggregate<AggregateArtifact>([
+    {
+      $match: {
+        collectionName,
+        project,
+        releaseDefinitionId: releaseDefnId,
+        modifiedOn: { $gt: queryFrom || getConfig().azure.queryFrom }
+      }
+    },
+    ...(ignoreStagesBefore ? ([
+      ...addFilteredEnvsField(ignoreStagesBefore),
+      {
+        $addFields: {
+          hasGoneAhead: {
+            $anyElementTrue: {
+              $map: {
+                input: '$filteredEnvs',
+                as: 'env',
+                in: { $ne: ['$$env.status', 'notStarted'] }
               }
             }
           }
-        },
-        { $unset: 'filteredEnvs' }
-      ]) : []),
-      { $unwind: '$artifacts' },
-      {
-        $group: {
-          _id: {
-            type: '$artifacts.type',
-            alias: '$artifacts.alias',
-            repostitoryName: '$artifacts.definition.repositoryName',
-            branch: '$artifacts.definition.branch'
-          },
-          buildPipelineUrl: { $first: '$artifacts.definition.buildPipelineUrl' },
-          isPrimary: { $first: '$artifacts.isPrimary' },
-          hasGoneAhead: { $push: '$hasGoneAhead' }
         }
       },
-      {
-        $addFields: {
-          hasGoneAhead: { $anyElementTrue: '$hasGoneAhead' }
-        }
+      { $unset: 'filteredEnvs' }
+    ]) : []),
+    { $unwind: '$artifacts' },
+    {
+      $group: {
+        _id: {
+          type: '$artifacts.type',
+          alias: '$artifacts.alias',
+          repostitoryName: '$artifacts.definition.repositoryName',
+          branch: '$artifacts.definition.branch'
+        },
+        buildPipelineUrl: { $first: '$artifacts.definition.buildPipelineUrl' },
+        isPrimary: { $first: '$artifacts.isPrimary' },
+        hasGoneAhead: { $push: '$hasGoneAhead' }
       }
-    ])
+    },
+    {
+      $addFields: {
+        hasGoneAhead: { $anyElementTrue: '$hasGoneAhead' }
+      }
+    }
   ]);
 
-  console.log(releaseDefn, environments, artifacts);
+  const { builds, others } = results.reduce<{
+    builds: Record<string, {
+      type: 'Build';
+      name: string;
+      isPrimary?: boolean;
+      branches: {
+        name: string;
+      }[];
+      additionalBranches: {
+        name: string;
+      }[];
+    }>;
+    others: {
+      type: 'Other';
+      source: string;
+      alias: string;
+      isPrimary?: boolean;
+    }[];
+  }>((acc, result) => {
+    if (result._id.type === 'Build') {
+      acc.builds[result.buildPipelineUrl] = acc.builds[result.buildPipelineUrl] || {
+        type: 'Build',
+        name: result._id.repostitoryName,
+        isPrimary: result.isPrimary || undefined,
+        branches: [],
+        additionalBranches: []
+      };
+
+      (result.hasGoneAhead
+        ? acc.builds[result.buildPipelineUrl].branches
+        : acc.builds[result.buildPipelineUrl].additionalBranches
+      ).push({ name: result._id.branch });
+    } else {
+      acc.others.push({
+        type: 'Other',
+        source: result._id.type,
+        alias: result._id.alias,
+        isPrimary: result.isPrimary || undefined
+      });
+    }
+
+    return acc;
+  }, { builds: {}, others: [] });
+
+  return [...others, ...Object.values(builds)];
 };

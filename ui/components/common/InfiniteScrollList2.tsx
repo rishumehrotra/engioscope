@@ -4,12 +4,12 @@ import { useInView } from 'react-intersection-observer';
 type InfiniteScrollListProps<T> = {
   items: T[];
   loadNextPage: () => void;
-  itemRenderer: React.FC<{ item: T; index: number }>;
+  itemComponent: React.FC<{ item: T; index: number }>;
   itemKey: (item: T) => string;
 };
 
 const InfiniteScrollList2 = <T, >({
-  items, itemKey, loadNextPage, itemRenderer
+  items, itemKey, loadNextPage, itemComponent: Item
 }: InfiniteScrollListProps<T>) => {
   const lastTriggerTime = useRef(Date.now());
   const [ref, inView] = useInView({
@@ -32,7 +32,7 @@ const InfiniteScrollList2 = <T, >({
           key={itemKey(item)}
           {...(index === items.length - 1 ? { ref } : {})}
         >
-          {itemRenderer({ item, index })}
+          <Item {...{ item, index }} />
         </li>
       ))}
     </ul>

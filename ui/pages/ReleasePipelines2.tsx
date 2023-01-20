@@ -1,6 +1,6 @@
 import React from 'react';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
-import { pipeline2 } from '../components/ReleasePipelineHealth.jsx';
+import { Pipeline } from '../components/ReleasePipelineHealth2.jsx';
 import ReleasePipelineSummary2 from '../components/ReleasePipelineSummary2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import { useRemoveSort } from '../hooks/sort-hooks.js';
@@ -12,8 +12,6 @@ const ReleasePipelines2: React.FC = () => {
   const query = trpc.releases.paginatedReleases.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor
   });
-
-  const Component = pipeline2();
 
   return (
     <>
@@ -37,7 +35,7 @@ const ReleasePipelines2: React.FC = () => {
       <InfiniteScrollList2
         items={query.data?.pages.flatMap(page => page.items) || []}
         itemKey={pipeline => pipeline.id.toString()}
-        itemRenderer={Component}
+        itemComponent={Pipeline}
         loadNextPage={query.fetchNextPage}
       />
     </>
