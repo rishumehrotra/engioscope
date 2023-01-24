@@ -76,14 +76,14 @@ const ReleasePipelineSummary2: React.FC = () => {
                 value: divide(stage.exists, summary.pipelineCount).map(toPercentage).getOr('-'),
                 tooltip: `${num(stage.exists)} out of ${summary.pipelineCount} release ${
                   stage.exists === 1 ? 'pipeline has' : 'pipelines have'
-                } a stage named (or containing) ${stage}.`
+                } a stage named (or containing) ${stage.name}.`
               },
               {
                 title: `${stage.name}: used`,
                 value: divide(stage.used, summary.pipelineCount).map(toPercentage).getOr('-'),
                 tooltip: `${num(stage.used)} out of ${summary.pipelineCount} release ${
                   stage.used === 1 ? 'pipeline has' : 'pipelines have'
-                } a successful deployment from ${stage}.`
+                } a successful deployment from ${stage.name}.`
               }
             ]}
           />

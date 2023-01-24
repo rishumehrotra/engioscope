@@ -445,7 +445,10 @@ export const releasePipelineStages = async ({
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
   const [releaseDefn, environments] = await Promise.all([
     ReleaseDefinitionModel
-      .findOne({ collectionName, project, id: releaseDefnId }).lean(),
+      .findOne(
+        { collectionName, project, id: releaseDefnId },
+        { environments: 1 }
+      ).lean(),
     ReleaseModel
       .aggregate<{ _id: string; runs: number; successes: number }>([
         {
@@ -596,11 +599,18 @@ export const getArtifacts = async ({
         additionalBranches: []
       };
 
-      (result.hasGoneAhead
+      const branchesList = result.hasGoneAhead
         ? acc.builds[result.buildPipelineUrl].branches
-        : acc.builds[result.buildPipelineUrl].additionalBranches
-      ).push({ name: result._id.branch });
-    } else {
+        : acc.builds[result.buildPipelineUrl].additionalBranches;
+
+      if (!branchesList.some(b => result._id.type === 'Build' && b.name === result._id.branch)) {
+        branchesList.push({ name: result._id.branch });
+      }
+    } else if (
+      !acc.others.some(artifact => (
+        artifact.type === result._id.type && artifact.alias === result._id.alias
+      ))
+    ) {
       acc.others.push({
         type: result._id.type,
         source: result._id.type,

@@ -285,3 +285,22 @@ export const getReleases = (
     ])
 );
 
+export const getPipelinesCount = (
+  collectionName: string, project: string,
+  queryFrom = getConfig().azure.queryFrom
+) => (
+  ReleaseModel
+    .aggregate<{ count: number }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          'environments.deploySteps.queuedOn': { '$gt': queryFrom }
+        }
+      }, {
+        $group: { _id: '$releaseDefinitionId' }
+      }, {
+        $count: 'count'
+      }
+    ]).then(result => result[0].count)
+);

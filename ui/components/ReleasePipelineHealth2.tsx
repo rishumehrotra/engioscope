@@ -107,7 +107,6 @@ const Artefacts: React.FC<{
                       <div className="mr-1 mb-1 px-2 py-2 mt-1 border-2 rounded-md bg-white flex items-center text-sm">
                         {artifact.type === 'Artifactory' ? (
                           <Artifactory className="h-4 mr-1" />
-
                         ) : (
                           <Git className="h-4 mr-1" />
                         )}
