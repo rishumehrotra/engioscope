@@ -1,13 +1,9 @@
-/* eslint-disable quote-props */
 import { model, Schema } from 'mongoose';
 import { exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import azure from '../scraper/network/azure.js';
 import type {
-  Build as AzureBuild,
-  BuildReason,
-  BuildResult,
-  BuildStatus
+  Build as AzureBuild, BuildReason, BuildResult, BuildStatus
 } from '../scraper/types-azure.js';
 
 export type Build = {
@@ -45,47 +41,44 @@ export type Build = {
   triggeredByBuildId?: number;
 };
 
-const buildSchema = new Schema<Build>(
-  {
+const buildSchema = new Schema<Build>({
+  id: { type: Number, required: true },
+  buildNumber: { type: String },
+  status: { type: String, required: true },
+  result: { type: String, required: true },
+  queueTime: { type: Date, required: true },
+  startTime: { type: Date, required: true },
+  finishTime: { type: Date, required: true },
+  url: { type: String, required: true },
+  definition: {
     id: { type: Number, required: true },
-    buildNumber: { type: String },
-    status: { type: String, required: true },
-    result: { type: String, required: true },
-    queueTime: { type: Date, required: true },
-    startTime: { type: Date, required: true },
-    finishTime: { type: Date, required: true },
-    url: { type: String, required: true },
-    definition: {
-      id: { type: Number, required: true },
-      name: { type: String, required: true },
-      url: { type: String, required: true }
-    },
-    buildNumberRevision: { type: Number, required: true },
-    collectionName: { type: String, required: true },
-    project: { type: String, required: true },
-    uri: { type: String, required: true },
-    sourceBranch: { type: String, required: true },
-    sourceVersion: { type: String, required: true },
-    reason: { type: String, required: true },
-    requestedForId: { type: String },
-    requestedById: { type: String },
-    lastChangeDate: { type: Date, required: true },
-    lastChangedById: { type: String },
-    parameters: { type: String },
-    repository: {
-      id: { type: String, required: true },
-      name: { type: String, required: true }
-    },
-    keepForever: { type: Boolean },
-    retainedByRelease: { type: Boolean },
-    triggeredByBuildId: { type: Number }
+    name: { type: String, required: true },
+    url: { type: String, required: true }
   },
-  { timestamps: true }
-);
+  buildNumberRevision: { type: Number, required: true },
+  collectionName: { type: String, required: true },
+  project: { type: String, required: true },
+  uri: { type: String, required: true },
+  sourceBranch: { type: String, required: true },
+  sourceVersion: { type: String, required: true },
+  reason: { type: String, required: true },
+  requestedForId: { type: String },
+  requestedById: { type: String },
+  lastChangeDate: { type: Date, required: true },
+  lastChangedById: { type: String },
+  parameters: { type: String },
+  repository: {
+    id: { type: String, required: true },
+    name: { type: String, required: true }
+  },
+  keepForever: { type: Boolean },
+  retainedByRelease: { type: Boolean },
+  triggeredByBuildId: { type: Number }
+}, { timestamps: true });
 
 buildSchema.index({
-  collectionName: 1,
-  project: 1,
+  'collectionName': 1,
+  'project': 1,
   'repository.id': 1
 });
 
@@ -94,74 +87,68 @@ const BuildModel = model<Build>('Build', buildSchema);
 export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   const { project, ...rest } = build;
 
-  return BuildModel.updateOne(
-    {
-      collectionName,
-      project: project.name,
-      'repository.id': build.repository.id,
-      id: build.id
-    },
-    { $set: rest },
-    { upsert: true }
-  )
-    .lean()
-    .then(result => result.upsertedId);
+  return (
+    BuildModel
+      .updateOne(
+        {
+          'collectionName': collectionName,
+          'project': project.name,
+          'repository.id': build.repository.id,
+          'id': build.id
+        },
+        { $set: rest },
+        { upsert: true }
+      )
+      .lean()
+      .then(result => result.upsertedId)
+  );
 };
 
-export const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) => BuildModel.bulkWrite(
-  builds.map(build => {
+export const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) => (
+  BuildModel.bulkWrite(builds.map(build => {
     const { project, ...rest } = build;
 
     return {
       updateOne: {
         filter: {
           collectionName,
-          project: project.name,
+          'project': project.name,
           'repository.id': build.repository.id,
-          id: build.id
+          'id': build.id
         },
         update: { $set: rest },
         upsert: true
       }
     };
-  })
+  }))
 );
 
 export const getBuilds = (
-  collectionName: string,
-  project: string,
+  collectionName: string, project: string,
   queryFrom = getConfig().azure.queryFrom
-) => BuildModel.find({ collectionName, project })
-  .where({ startTime: { $gt: queryFrom } })
-  .lean();
-
-// Get Builds for a specific repository
-export const getBuildsForRepository = (
-  collectionName: string,
-  project: string,
-  repositoryId: string,
-  queryFrom = getConfig().azure.queryFrom
-) => BuildModel.find({
-  collectionName,
-  project,
-  'repository.id': repositoryId
-})
-  .where({ startTime: { $gt: queryFrom } })
-  .lean();
+) => (
+  BuildModel
+    .find({ collectionName, project })
+    .where({ startTime: { $gt: queryFrom } })
+    .lean()
+);
 
 // Get Overview Stats for a specific repository
-
 export const getBuildsOverviewForRepository = async (
   collectionName: string,
   project: string,
-  repositoryId: string
+  repositoryId: string,
+  startDate: Date,
+  endDate: Date
 ) => {
+  // Make sure to send default start and end date values
   const result = await BuildModel.aggregate([
     {
       '$match': {
         'project': project,
         'collectionName': collectionName,
-        'repository.id': repositoryId
+        'repository.id': repositoryId,
+        'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) }
       }
     }, {
       '$sort': {
@@ -172,7 +159,7 @@ export const getBuildsOverviewForRepository = async (
         '_id': {
           'project': '$project',
           'collectionName': '$collectionName',
-          'repositoryId': '$repository.id'
+          'repositoryID': '$repository.id'
         },
         'totalBuilds': {
           '$sum': 1
@@ -182,20 +169,6 @@ export const getBuildsOverviewForRepository = async (
             '$cond': {
               'if': {
                 '$eq': [
-                  '$result', 'succeeded'
-                ]
-              },
-              // eslint-disable-next-line unicorn/no-thenable
-              'then': 1,
-              'else': 0
-            }
-          }
-        },
-        'totalFailedBuilds': {
-          '$sum': {
-            '$cond': {
-              'if': {
-                '$ne': [
                   '$result', 'succeeded'
                 ]
               },
@@ -216,11 +189,25 @@ export const getBuildsOverviewForRepository = async (
         },
         'minDuration': {
           '$min': {
-            '$dateDiff': {
-              'startDate': '$startTime',
-              'endDate': '$finishTime',
-              'unit': 'millisecond'
-            }
+            '$cond': [
+              {
+                '$gt': [
+                  {
+                    '$dateDiff': {
+                      'startDate': '$startTime',
+                      'endDate': '$finishTime',
+                      'unit': 'millisecond'
+                    }
+                  }, 0
+                ]
+              }, {
+                '$dateDiff': {
+                  'startDate': '$startTime',
+                  'endDate': '$finishTime',
+                  'unit': 'millisecond'
+                }
+              }, null
+            ]
           }
         },
         'maxDuration': {
@@ -243,24 +230,15 @@ export const getBuildsOverviewForRepository = async (
       '$project': {
         'totalBuilds': 1,
         'totalSuccessfulBuilds': 1,
-        'totalFailedBuilds': 1,
         'averageDuration': 1,
         'minDuration': 1,
         'maxDuration': 1,
         'lastBuildStatus': 1,
-        'lastBuildTimestamp': 1,
-        'successRate': {
-          '$multiply': [
-            {
-              '$divide': [
-                '$totalSuccessfulBuilds', '$totalBuilds'
-              ]
-            }, 100
-          ]
-        }
+        'lastBuildTimestamp': 1
       }
     }
   ]);
+
   return result;
 };
 
@@ -379,58 +357,43 @@ const getOneBuildPerDefinitionId = async (
   buildDefinitionIds: number[],
   queryBefore = getConfig().azure.queryFrom
 ) => {
-  const builds = await Promise.all(
-    buildDefinitionIds.map(buildDefinitionId => BuildModel.findOne({
-      collectionName,
-      project,
-      'definition.id': buildDefinitionId
-    })
+  const builds = await Promise.all(buildDefinitionIds.map(buildDefinitionId => (
+    BuildModel
+      .findOne({ collectionName, project, 'definition.id': buildDefinitionId })
       .where({ startTime: { $lte: queryBefore } })
       .sort({ startTime: -1 })
-      .lean())
-  );
+      .lean()
+  )));
 
   return builds.filter(exists);
 };
 
-export const getOneBuildBeforeQueryPeriod = (collectionName: string, project: string) => async (
-  buildDefinitionIds: number[],
-  queryBefore = getConfig().azure.queryFrom
-) => {
-  const foundBuilds = await getOneBuildPerDefinitionId(
-    collectionName,
-    project,
-    buildDefinitionIds,
-    queryBefore
-  );
+export const getOneBuildBeforeQueryPeriod = (collectionName: string, project: string) => (
+  async (buildDefinitionIds: number[], queryBefore = getConfig().azure.queryFrom) => {
+    const foundBuilds = await getOneBuildPerDefinitionId(
+      collectionName, project, buildDefinitionIds, queryBefore
+    );
 
-  const foundBuildDefinitionIds = foundBuilds.reduce((acc, build) => {
-    acc.add(build.definition.id);
-    return acc;
-  }, new Set<number>());
+    const foundBuildDefinitionIds = foundBuilds.reduce((acc, build) => {
+      acc.add(build.definition.id);
+      return acc;
+    }, new Set<number>());
 
-  const missingBuildIds = buildDefinitionIds.filter(
-    bdi => !foundBuildDefinitionIds.has(bdi)
-  );
+    const missingBuildIds = buildDefinitionIds.filter(bdi => !foundBuildDefinitionIds.has(bdi));
 
-  const { getOneBuildBeforeQueryPeriod } = azure(getConfig());
+    const { getOneBuildBeforeQueryPeriod } = azure(getConfig());
 
-  const additionalBuilds = await getOneBuildBeforeQueryPeriod(
-    collectionName,
-    project
-  )(missingBuildIds);
+    const additionalBuilds = await getOneBuildBeforeQueryPeriod(collectionName, project)(missingBuildIds);
 
-  await Promise.all(additionalBuilds.map(saveBuild(collectionName)));
+    await Promise.all(additionalBuilds.map(saveBuild(collectionName)));
 
-  const refetchedAdditionalBuilds = await getOneBuildPerDefinitionId(
-    collectionName,
-    project,
-    additionalBuilds.map(b => b.definition.id),
-    queryBefore
-  );
+    const refetchedAdditionalBuilds = await getOneBuildPerDefinitionId(
+      collectionName, project, additionalBuilds.map(b => b.definition.id), queryBefore
+    );
 
-  return [...foundBuilds, ...refetchedAdditionalBuilds];
-};
+    return [...foundBuilds, ...refetchedAdditionalBuilds];
+  }
+);
 
 // eslint-disable-next-line no-underscore-dangle
 export const __BuildModelDONOTUSE = BuildModel;
