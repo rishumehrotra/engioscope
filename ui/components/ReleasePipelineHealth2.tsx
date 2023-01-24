@@ -5,7 +5,8 @@ import { trpc } from '../helpers/trpc.js';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import AlertMessage from './common/AlertMessage.jsx';
 import Card from './common/ExpandingCard.jsx';
-import { Artifactory, Branches } from './common/Icons.jsx';
+import Flair from './common/Flair.jsx';
+import { Artifactory, Branches, Git } from './common/Icons.jsx';
 import Loading from './Loading.jsx';
 import PipelineDiagram from './PipelineDiagram.jsx';
 
@@ -104,7 +105,12 @@ const Artefacts: React.FC<{
                     <div className="bg-gray-100 rounded self-start artifact">
                       {artifact.alias}
                       <div className="mr-1 mb-1 px-2 py-2 mt-1 border-2 rounded-md bg-white flex items-center text-sm">
-                        <Artifactory className="h-4 mr-1" />
+                        {artifact.type === 'Artifactory' ? (
+                          <Artifactory className="h-4 mr-1" />
+
+                        ) : (
+                          <Git className="h-4 mr-1" />
+                        )}
                         <span>{artifact.source}</span>
                       </div>
                     </div>
@@ -152,16 +158,41 @@ export const Pipeline: React.FC<{
     url: string;
     name: string;
   };
-}> = ({ item: { id, name, url } }) => (
-  <Card
-    key={id}
-    title={name}
-    titleUrl={url}
-    isExpanded={false}
-  >
-    <div className="px-6">
-      <Artefacts releaseDefinitionId={id} />
-      <Stages releaseDefinitionId={id} />
-    </div>
-  </Card>
-);
+}> = ({ item: { id, name, url } }) => {
+  const { collectionName, project } = useCollectionAndProject();
+  const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
+  const stages = trpc.releases.releasePipelineStages.useQuery({
+    collectionName, project, releaseDefnId: id
+  });
+
+  const stagesToHighlight = projectConfig.data?.releasePipelines.stagesToHighlight;
+
+  return (
+    <Card
+      key={id}
+      title={name}
+      titleUrl={url}
+      isExpanded={false}
+      subtitle={stagesToHighlight?.map(stageToHighlight => {
+        const matchingStage = stages.data
+          ?.find(s => s.name.toLowerCase().includes(stageToHighlight.toLowerCase()));
+        const doesStageExist = Boolean(matchingStage);
+        const isStageUsed = Boolean((matchingStage?.total || 0) > 0);
+
+        return (
+          <Flair
+            key={stageToHighlight}
+            // eslint-disable-next-line no-nested-ternary
+            colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : (doesStageExist ? 'bg-yellow-400' : 'bg-gray-400')}
+            label={`${stageToHighlight}: ${doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"}`}
+          />
+        );
+      })}
+    >
+      <div className="px-6">
+        <Artefacts releaseDefinitionId={id} />
+        <Stages releaseDefinitionId={id} />
+      </div>
+    </Card>
+  );
+};
