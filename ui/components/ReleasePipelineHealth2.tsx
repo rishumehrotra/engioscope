@@ -6,6 +6,8 @@ import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import AlertMessage from './common/AlertMessage.jsx';
 import Card from './common/ExpandingCard.jsx';
 import { Artifactory, Branches } from './common/Icons.jsx';
+import Loading from './Loading.jsx';
+import PipelineDiagram from './PipelineDiagram.jsx';
 
 const Artefacts: React.FC<{
   releaseDefinitionId: number;
@@ -31,19 +33,16 @@ const Artefacts: React.FC<{
       <ol className="flex flex-wrap gap-2">
         {/* eslint-disable-next-line no-nested-ternary */}
         {artifacts ? (
-          artifacts.length
-            ? artifacts.filter(exists).map(artifact => (
+          artifacts.length === 0
+            ? (
+              <li>
+                <AlertMessage message="No starting artifact" />
+              </li>
+            )
+            : artifacts.map(artifact => (
               <li key={artifact.type === 'Build' ? (`build-${artifact.name}`) : (`other-${artifact.alias}`)}>
                 <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
-                  {artifact.type === 'Other' ? (
-                    <div className="bg-gray-100 rounded self-start artifact">
-                      {artifact.alias}
-                      <div className="mr-1 mb-1 px-2 py-2 mt-1 border-2 rounded-md bg-white flex items-center text-sm">
-                        <Artifactory className="h-4 mr-1" />
-                        <span>{artifact.source}</span>
-                      </div>
-                    </div>
-                  ) : (
+                  {artifact.type === 'Build' ? (
                     <div className="bg-gray-100 rounded self-start artifact">
                       <Link
                         to={`/${collectionName}/${project}/repos?search="${artifact.name}"`}
@@ -101,25 +100,49 @@ const Artefacts: React.FC<{
                         </details>
                       ) : null}
                     </div>
+                  ) : (
+                    <div className="bg-gray-100 rounded self-start artifact">
+                      {artifact.alias}
+                      <div className="mr-1 mb-1 px-2 py-2 mt-1 border-2 rounded-md bg-white flex items-center text-sm">
+                        <Artifactory className="h-4 mr-1" />
+                        <span>{artifact.source}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
               </li>
             ))
-            : (
-              <li>
-                <AlertMessage message="No starting artifact" />
-              </li>
-            )
         )
           : (
             <li>
               <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg h-4">
-                Loading...
+                <Loading />
               </div>
             </li>
           )}
       </ol>
     </div>
+  );
+};
+
+const Stages: React.FC<{ releaseDefinitionId: number }> = ({ releaseDefinitionId }) => {
+  const { collectionName, project } = useCollectionAndProject();
+  const stages = trpc.releases.releasePipelineStages.useQuery({
+    collectionName, project, releaseDefnId: releaseDefinitionId
+  });
+  return (
+    <>
+      <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
+        Stages
+      </div>
+      <div className="mt-6">
+        {stages.data ? (
+          <PipelineDiagram stages={stages.data} />
+        ) : (
+          <Loading />
+        )}
+      </div>
+    </>
   );
 };
 
@@ -138,21 +161,7 @@ export const Pipeline: React.FC<{
   >
     <div className="px-6">
       <Artefacts releaseDefinitionId={id} />
-      <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
-        Stages
-      </div>
-      <div className="mt-6">
-        {/* {formattedReleaseDefinition && (
-                  formattedReleaseDefinition === 'loading'
-                    ? (
-                      <div className="text-gray-500 text-sm mb-10">
-                        Loading...
-                      </div>
-                    ) : (
-                      <PipelineDiagram stages={formattedReleaseDefinition} />
-                    )
-                )} */}
-      </div>
+      <Stages releaseDefinitionId={id} />
     </div>
   </Card>
 );

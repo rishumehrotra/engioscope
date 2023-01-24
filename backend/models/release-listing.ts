@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { configForProject, getConfig } from '../config.js';
 import type { ParsedProjectConfig } from '../scraper/parse-config.js';
+import type { ArtifactType } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
 import { getMinimalReleaseDefinitions, ReleaseDefinitionModel } from './release-definitions.js';
 import { ReleaseModel } from './releases.js';
@@ -439,14 +440,12 @@ export const releasePipelineDetailsInputParser = z.object({
   queryFrom: z.date().optional()
 });
 
-export const releasePipelineDetails = async ({
+export const releasePipelineStages = async ({
   collectionName, project, releaseDefnId, queryFrom
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
-  const projectConfig = configForProject(collectionName, project);
-  const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
-  const [releaseDefn, environments, artifacts] = await Promise.all([
+  const [releaseDefn, environments] = await Promise.all([
     ReleaseDefinitionModel
-      .find({ collectionName, project, id: releaseDefnId }),
+      .findOne({ collectionName, project, id: releaseDefnId }).lean(),
     ReleaseModel
       .aggregate<{ _id: string; runs: number; successes: number }>([
         {
@@ -454,7 +453,7 @@ export const releasePipelineDetails = async ({
             collectionName,
             project,
             releaseDefinitionId: releaseDefnId,
-            modifiedOn: { $gt: queryFrom }
+            modifiedOn: { $gt: queryFrom || getConfig().azure.queryFrom }
           }
         },
         {
@@ -485,76 +484,20 @@ export const releasePipelineDetails = async ({
             }
           }
         }
-      ]),
-    ReleaseModel.aggregate< {
-      _id: {
-        alias: string;
-      } &({
-        type: 'Build';
-        repostitoryName: string;
-        branch: string;
-      } | {
-        type: 'Artifactory';
-      });
-      buildPipelineUrl: string;
-      isPrimary: true | null;
-      hasGoneAhead: boolean;
-    }>([
-          {
-            $match: {
-              collectionName,
-              project,
-              releaseDefinitionId: releaseDefnId,
-              modifiedOn: { $gt: queryFrom }
-            }
-          },
-          ...(ignoreStagesBefore ? ([
-            ...addFilteredEnvsField(ignoreStagesBefore),
-            {
-              $addFields: {
-                hasGoneAhead: {
-                  $anyElementTrue: {
-                    $map: {
-                      input: '$filteredEnvs',
-                      as: 'env',
-                      in: { $ne: ['$$env.status', 'notStarted'] }
-                    }
-                  }
-                }
-              }
-            },
-            { $unset: 'filteredEnvs' }
-          ]) : []),
-          { $unwind: '$artifacts' },
-          {
-            $group: {
-              _id: {
-                type: '$artifacts.type',
-                alias: '$artifacts.alias',
-                repostitoryName: '$artifacts.definition.repositoryName',
-                branch: '$artifacts.definition.branch'
-              },
-              buildPipelineUrl: { $first: '$artifacts.definition.buildPipelineUrl' },
-              isPrimary: { $first: '$artifacts.isPrimary' },
-              hasGoneAhead: { $push: '$hasGoneAhead' }
-            }
-          },
-          {
-            $addFields: {
-              hasGoneAhead: { $anyElementTrue: '$hasGoneAhead' }
-            }
-          }
-        ]).then(results => results.map(({
-          _id, hasGoneAhead, isPrimary, buildPipelineUrl
-        }) => ({
-          ..._id,
-          buildPipelineUrl,
-          isPrimary: isPrimary || undefined,
-          hasGoneAhead
-        })))
+      ])
   ]);
 
-  return [releaseDefn, environments, artifacts] as const;
+  return releaseDefn?.environments.map(env => {
+    const matchingEnvStats = environments.find(e => e._id === env.name);
+
+    return {
+      name: env.name,
+      conditions: env.conditions.map(c => ({ type: c.conditionType, name: c.name })),
+      rank: env.rank,
+      total: matchingEnvStats?.runs || 0,
+      successful: matchingEnvStats?.successes || 0
+    };
+  });
 };
 
 export const getArtifacts = async ({
@@ -564,14 +507,14 @@ export const getArtifacts = async ({
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
 
   type AggregateArtifact = {
-    _id: {
-      alias: string;
-    } & ({
+    _id: ({
       type: 'Build';
       repostitoryName: string;
       branch: string;
+      alias: string;
     } | {
-      type: 'Artifactory';
+      type: Exclude<ArtifactType, 'Build'>;
+      alias: string;
     });
     buildPipelineUrl: string;
     isPrimary: true | null;
@@ -638,7 +581,7 @@ export const getArtifacts = async ({
       }[];
     }>;
     others: {
-      type: 'Other';
+      type: Exclude<ArtifactType, 'Build'>;
       source: string;
       alias: string;
       isPrimary?: boolean;
@@ -659,7 +602,7 @@ export const getArtifacts = async ({
       ).push({ name: result._id.branch });
     } else {
       acc.others.push({
-        type: 'Other',
+        type: result._id.type,
         source: result._id.type,
         alias: result._id.alias,
         isPrimary: result.isPrimary || undefined

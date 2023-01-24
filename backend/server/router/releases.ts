@@ -1,7 +1,7 @@
 import {
   getArtifacts,
   paginatedReleaseIds, paginatedReleaseIdsInputParser, pipelineFiltersInputParser,
-  releasePipelineDetails, releasePipelineDetailsInputParser, summary
+  releasePipelineStages, releasePipelineDetailsInputParser, summary
 } from '../../models/release-listing.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -14,9 +14,9 @@ export default t.router({
     .input(paginatedReleaseIdsInputParser)
     .query(passInputTo(paginatedReleaseIds)),
 
-  releasePipelineDetails: t.procedure
+  releasePipelineStages: t.procedure
     .input(releasePipelineDetailsInputParser)
-    .query(passInputTo(releasePipelineDetails)),
+    .query(passInputTo(releasePipelineStages)),
 
   getArtifacts: t.procedure
     .input(releasePipelineDetailsInputParser)
