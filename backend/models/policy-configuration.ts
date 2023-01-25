@@ -81,16 +81,19 @@ type RequireMergeStrategyPolicy = BranchPolicyBase & {
   allowRebase?: boolean;
 };
 
-export type RepoPolicy =
-  | FileSizeRestrictionPolicy
-  | PathLengthRestrictionPolicy
-  | ReservedNamesRestrictionPolicy
+type BranchPolicy =
   | MinimumNumberOfReviewersPolicy
   | CommentRequirementsPolicy
   | WorkItemLinkingPolicy
   | BuildPolicy
   | RequiredReviewersPolicy
   | RequireMergeStrategyPolicy;
+
+export type RepoPolicy =
+  | FileSizeRestrictionPolicy
+  | PathLengthRestrictionPolicy
+  | ReservedNamesRestrictionPolicy
+  | BranchPolicy;
 
 const repoPolicySchema = new Schema<RepoPolicy>({
   collectionName: { type: String, required: true },
@@ -123,6 +126,23 @@ repoPolicySchema.index({
   repositoryId: 1,
   refName: 1
 });
+
+// type BranchPolicyMerged = {
+//   _id: {
+//     collectionName: string;
+//     project: string;
+//     repositoryId: string;
+//     refName: string;
+//   };
+//   policies: Partial<{
+//     [key in BranchPolicy['type']]: {
+//       isEnabled: boolean;
+//       isBlocking: boolean;
+//       minimumApproverCount?: number;
+//       buildDefinitionId?: number;
+//     };
+//   }>;
+// };
 
 const RepoPolicyModel = model<RepoPolicy>('RepoPolicy', repoPolicySchema);
 
