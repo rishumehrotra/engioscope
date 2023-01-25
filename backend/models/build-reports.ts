@@ -201,7 +201,10 @@ export const buildsCentralTemplateStatsInputParse = z.object({
 
 export const buildsCentralTemplateStats = async ({
   collectionName,
-  project, repoName, startDate, endDate
+  project,
+  repoName,
+  startDate,
+  endDate
 }: z.infer<typeof buildsCentralTemplateStatsInputParse >) => {
   const result = await AzureBuildReportModel.aggregate< { buildDefinitionId: string; templateUsers: number; totalAzureBuilds: number }>(
     [
