@@ -7,7 +7,7 @@ import type {
   Build as AzureBuild, BuildReason, BuildResult, BuildStatus,
   BuildOverviewStats
 } from '../scraper/types-azure.js';
-import { collectionAndProjectInputs } from './helpers.js';
+import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
 
 export type Build = {
   id: number;
@@ -138,18 +138,18 @@ export const getBuilds = (
 
 export const getBuildsOverviewForRepositoryInputParser = z.object({
   ...collectionAndProjectInputs,
-  repositoryId: z.string(),
-  startDate: z.date(),
-  endDate: z.date()
+  ...dateRangeInputs,
+  repositoryId: z.string()
 });
 
 // Get Overview Stats for a specific repository
 export const getBuildsOverviewForRepository = async ({
   collectionName,
   project,
-  repositoryId,
   startDate,
-  endDate
+  endDate,
+  repositoryId
+
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
   // Make sure to send default start and end date values
   const result = await BuildModel.aggregate<BuildOverviewStats>([

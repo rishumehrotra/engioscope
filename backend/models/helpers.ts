@@ -5,6 +5,11 @@ export const collectionAndProjectInputs = {
   project: z.string()
 };
 
+export const dateRangeInputs = {
+  startDate: z.date(),
+  endDate: z.date()
+};
+
 export const collectionAndProjectInputParser = z.object(collectionAndProjectInputs);
 
 export const queryPeriodInputParser = z.tuple([z.date(), z.date(), z.string()]);

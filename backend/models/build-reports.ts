@@ -4,7 +4,7 @@ import { map } from 'rambda';
 import yaml from 'yaml';
 import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
-import { collectionAndProjectInputs } from './helpers.js';
+import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
 
 const { Schema, model } = mongoose;
 
@@ -193,14 +193,22 @@ export const centralTemplateOptions = (
   }
 );
 
-export const buildsCentralTemplateStats = async (collectionName: string,
-  projectName: string, repoName: string, startDate: Date, endDate: Date) => {
+export const buildsCentralTemplateStatsInputParse = z.object({
+  ...collectionAndProjectInputs,
+  ...dateRangeInputs,
+  repoName: z.string()
+});
+
+export const buildsCentralTemplateStats = async ({
+  collectionName,
+  project, repoName, startDate, endDate
+}: z.infer<typeof buildsCentralTemplateStatsInputParse >) => {
   const result = await AzureBuildReportModel.aggregate< { buildDefinitionId: string; templateUsers: number; totalAzureBuilds: number }>(
     [
       {
         '$match': {
           'collectionName': collectionName,
-          'project': projectName,
+          'project': project,
           'repo': repoName,
           'createdAt': {
             '$gte': new Date(startDate),
