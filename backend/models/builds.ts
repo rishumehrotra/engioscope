@@ -3,7 +3,8 @@ import { exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import azure from '../scraper/network/azure.js';
 import type {
-  Build as AzureBuild, BuildReason, BuildResult, BuildStatus
+  Build as AzureBuild, BuildReason, BuildResult, BuildStatus,
+  BuildOverviewStats
 } from '../scraper/types-azure.js';
 
 export type Build = {
@@ -142,7 +143,7 @@ export const getBuildsOverviewForRepository = async (
   endDate: Date
 ) => {
   // Make sure to send default start and end date values
-  const result = await BuildModel.aggregate([
+  const result = await BuildModel.aggregate<BuildOverviewStats>([
     {
       '$match': {
         'project': project,
@@ -234,7 +235,11 @@ export const getBuildsOverviewForRepository = async (
         'minDuration': 1,
         'maxDuration': 1,
         'lastBuildStatus': 1,
-        'lastBuildTimestamp': 1
+        'lastBuildTimestamp': 1,
+        '_id': 0,
+        'project': '$_id.project',
+        'collectionName': '$_id.collectionName',
+        'repositoryID': '$_id.repositoryID'
       }
     }
   ]);

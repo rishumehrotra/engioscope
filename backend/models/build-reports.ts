@@ -193,5 +193,80 @@ export const centralTemplateOptions = (
   }
 );
 
+export const buildsCentralTemplateStats = async (collectionName: string,
+  projectName: string, repoName: string, startDate: Date, endDate: Date) => {
+  const result = await AzureBuildReportModel.aggregate< { buildDefinitionId: string; templateUsers: number; totalAzureBuilds: number }>(
+    [
+      {
+        '$match': {
+          'collectionName': collectionName,
+          'project': projectName,
+          'repo': repoName,
+          'createdAt': {
+            '$gte': new Date(startDate),
+            '$lt': new Date(endDate)
+          }
+        }
+      }, {
+        '$addFields': {
+          'usesCentralTemplate': {
+            '$or': [
+              {
+                '$eq': [
+                  '$centralTemplate', true
+                ]
+              }, {
+                '$eq': [
+                  {
+                    '$type': '$centralTemplate'
+                  }, 'object'
+                ]
+              }, {
+                '$eq': [
+                  '$templateRepo', 'build-pipeline-templates'
+                ]
+              }
+            ]
+          }
+        }
+      }, {
+        '$group': {
+          '_id': {
+            'collectionName': '$collectionName',
+            'project': '$project',
+            'repo': '$repo',
+            'buildDefinitionId': '$buildDefinitionId'
+          },
+          'templateUsers': {
+            '$sum': {
+              '$cond': {
+                'if': {
+                  '$eq': [
+                    '$usesCentralTemplate', true
+                  ]
+                },
+                // eslint-disable-next-line unicorn/no-thenable
+                'then': 1,
+                'else': 0
+              }
+            }
+          },
+          'totalAzureBuilds': {
+            '$sum': 1
+          }
+        }
+      }, {
+        '$project': {
+          '_id': 0,
+          'buildDefinitionId': '$_id.buildDefinitionId',
+          'templateUsers': '$templateUsers',
+          'totalAzureBuilds': '$totalAzureBuilds'
+        }
+      }
+    ]
+  );
+  return result;
+};
+
 // eslint-disable-next-line no-underscore-dangle
 export const __AzureBuildReportModelDONOTUSE = AzureBuildReportModel;

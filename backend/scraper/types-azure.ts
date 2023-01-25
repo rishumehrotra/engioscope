@@ -138,6 +138,19 @@ export type Build = {
   triggeredByBuild: Build | null;
 };
 
+export type BuildOverviewStats = {
+  project: string;
+  collectionName: string;
+  repositoryID: string;
+  totalBuilds: number;
+  totalSuccessfulBuilds: number;
+  averageDuration: 1;
+  minDuration: number;
+  maxDuration: number;
+  lastBuildStatus: string;
+  lastBuildTimestamp: Date;
+};
+
 export type DeploymentAttempt = {
   id: number;
   deploymentId: number;
