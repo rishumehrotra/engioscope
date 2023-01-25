@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose';
+import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import azure from '../scraper/network/azure.js';
@@ -6,6 +7,7 @@ import type {
   Build as AzureBuild, BuildReason, BuildResult, BuildStatus,
   BuildOverviewStats
 } from '../scraper/types-azure.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
 export type Build = {
   id: number;
@@ -134,14 +136,21 @@ export const getBuilds = (
     .lean()
 );
 
+export const getBuildsOverviewForRepositoryInputParser = z.object({
+  ...collectionAndProjectInputs,
+  repositoryId: z.string(),
+  startDate: z.date(),
+  endDate: z.date()
+});
+
 // Get Overview Stats for a specific repository
-export const getBuildsOverviewForRepository = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string,
-  startDate: Date,
-  endDate: Date
-) => {
+export const getBuildsOverviewForRepository = async ({
+  collectionName,
+  project,
+  repositoryId,
+  startDate,
+  endDate
+}: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
   // Make sure to send default start and end date values
   const result = await BuildModel.aggregate<BuildOverviewStats>([
     {
