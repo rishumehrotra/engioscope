@@ -1,12 +1,15 @@
 import type { MutableRefObject } from 'react';
 import React, { useEffect, useCallback, useRef } from 'react';
 import {
-  axisLabelsHeight, barStartPadding, svgWidth, textWidth, xCoordToDate
+  axisLabelsHeight,
+  barStartPadding,
+  svgWidth,
+  textWidth,
+  xCoordToDate,
 } from './helpers.js';
 
-const minMaxSelection = (items: [number, number]) => (
-  [Math.min(...items), Math.max(...items)] as [number, number]
-);
+const minMaxSelection = (items: [number, number]) =>
+  [Math.min(...items), Math.max(...items)] as [number, number];
 
 const showSelection = (
   selection: [number, number],
@@ -15,11 +18,10 @@ const showSelection = (
 ) => {
   const [minSelection, maxSelection] = minMaxSelection(selection);
   selectionRect.style.display = '';
+  selectionRect.setAttribute('x', timeToXCoord(new Date(minSelection)).toString());
   selectionRect.setAttribute(
-    'x', timeToXCoord(new Date(minSelection)).toString()
-  );
-  selectionRect.setAttribute(
-    'width', (
+    'width',
+    (
       timeToXCoord(new Date(maxSelection)) - timeToXCoord(new Date(minSelection))
     ).toString()
   );
@@ -35,28 +37,44 @@ const useDraggableZoom = (
   const selection = useRef<[number, number] | null>(null);
   const isDragging = useRef<boolean>(false);
 
-  const dateFromMouseEvent = useCallback((e: MouseEvent) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const rect = svgRef.current!.getBoundingClientRect();
-    return dateForCoord((svgWidth / rect.width) * e.offsetX);
-  }, [dateForCoord, svgRef]);
+  const dateFromMouseEvent = useCallback(
+    (e: MouseEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const rect = svgRef.current!.getBoundingClientRect();
+      return dateForCoord((svgWidth / rect.width) * e.offsetX);
+    },
+    [dateForCoord, svgRef]
+  );
 
-  const mouseDown = useCallback((e: MouseEvent) => {
-    if (!svgRef.current) return;
-    if (e.offsetX < textWidth + barStartPadding) return;
+  const mouseDown = useCallback(
+    (e: MouseEvent) => {
+      if (!svgRef.current) return;
+      if (e.offsetX < textWidth + barStartPadding) return;
 
-    const date = dateFromMouseEvent(e);
-    selection.current = [date, /* This second value is dummy */ date];
-    isDragging.current = true;
-  }, [dateFromMouseEvent, svgRef]);
+      const date = dateFromMouseEvent(e);
+      selection.current = [date, /* This second value is dummy */ date];
+      isDragging.current = true;
+    },
+    [dateFromMouseEvent, svgRef]
+  );
 
-  const mouseMove = useCallback((e: MouseEvent) => {
-    if (!svgRef.current || !isDragging.current || !selection.current || !selectionRef.current) return;
+  const mouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (
+        !svgRef.current ||
+        !isDragging.current ||
+        !selection.current ||
+        !selectionRef.current
+      ) {
+        return;
+      }
 
-    svgRef.current.style.cursor = 'ew-resize';
-    selection.current = [selection.current[0], dateFromMouseEvent(e)];
-    showSelection(selection.current, selectionRef.current, timeToXCoord);
-  }, [dateFromMouseEvent, selectionRef, svgRef, timeToXCoord]);
+      svgRef.current.style.cursor = 'ew-resize';
+      selection.current = [selection.current[0], dateFromMouseEvent(e)];
+      showSelection(selection.current, selectionRef.current, timeToXCoord);
+    },
+    [dateFromMouseEvent, selectionRef, svgRef, timeToXCoord]
+  );
 
   const mouseUp = useCallback(() => {
     isDragging.current = false;
@@ -96,11 +114,20 @@ type DragZoomProps = {
 };
 
 const DragZoom: React.FC<DragZoomProps> = ({
-  svgRef, svgHeight, minDate, maxDate, timeToXCoord, onSelect
+  svgRef,
+  svgHeight,
+  minDate,
+  maxDate,
+  timeToXCoord,
+  onSelect,
 }) => {
   const selectionRef = useRef<SVGRectElement | null>(null);
   useDraggableZoom(
-    svgRef, selectionRef, xCoordToDate(minDate, maxDate), timeToXCoord, onSelect
+    svgRef,
+    selectionRef,
+    xCoordToDate(minDate, maxDate),
+    timeToXCoord,
+    onSelect
   );
 
   return (

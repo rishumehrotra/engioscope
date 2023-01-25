@@ -4,13 +4,14 @@ import { shortDate } from '../helpers/utils.js';
 import { useProjectDetails } from '../hooks/project-details-hooks.js';
 import usePageName from '../hooks/use-page-name.js';
 
-const renderIfAvailable = (count: number | undefined, label: string) => (count ? (
-  <>
-    <span className="font-bold text-lg">{count}</span>
-    {' '}
-    <span>{label}</span>
-  </>
-) : '');
+const renderIfAvailable = (count: number | undefined, label: string) =>
+  count ? (
+    <>
+      <span className="font-bold text-lg">{count}</span> <span>{label}</span>
+    </>
+  ) : (
+    ''
+  );
 
 export const ProjectDetails: React.FC = () => {
   const projectDetails = useProjectDetails();
@@ -22,19 +23,28 @@ export const ProjectDetails: React.FC = () => {
   return (
     <div className="flex justify-between w-full col-span-2 items-end">
       <div>
-        <h1 className="text-5xl font-bold text-gray-200 pr-2">
-          {projectName || ' '}
-        </h1>
+        <h1 className="text-5xl font-bold text-gray-200 pr-2">{projectName || ' '}</h1>
         <div className="text-base mt-2 font-normal text-gray-200">
           {project ? (
             <>
-              {renderIfAvailable(project.reposCount, pageName('repos', project.reposCount))}
+              {renderIfAvailable(
+                project.reposCount,
+                pageName('repos', project.reposCount)
+              )}
               {project.releasePipelineCount ? ' | ' : ''}
-              {renderIfAvailable(project.releasePipelineCount, pageName('release-pipelines', project.releasePipelineCount))}
+              {renderIfAvailable(
+                project.releasePipelineCount,
+                pageName('release-pipelines', project.releasePipelineCount)
+              )}
               {project.workItemCount ? ' | ' : ''}
-              {renderIfAvailable(project.workItemCount, pageName('workitems', project.workItemCount))}
+              {renderIfAvailable(
+                project.workItemCount,
+                pageName('workitems', project.workItemCount)
+              )}
             </>
-          ) : <span className="font-bold text-lg">&nbsp;</span>}
+          ) : (
+            <span className="font-bold text-lg">&nbsp;</span>
+          )}
         </div>
       </div>
       <p className="text-sm text-gray-300 mt-2 flex items-center">
@@ -45,7 +55,9 @@ export const ProjectDetails: React.FC = () => {
               {project ? shortDate(new Date(project.lastUpdated)) : '...'}
             </span>
           </>
-        ) : <span>&nbsp;</span>}
+        ) : (
+          <span>&nbsp;</span>
+        )}
       </p>
     </div>
   );

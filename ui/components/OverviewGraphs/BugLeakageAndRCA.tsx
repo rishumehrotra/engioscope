@@ -12,13 +12,22 @@ import { bugLeakageCSV } from './helpers/create-csv-content.js';
 import GraphCard from './helpers/GraphCard.js';
 import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
-  listFormat, noGroup, useSidebarCheckboxState, lineColor,
-  getSidebarStatByKey, getSidebarHeadlineStats, getSidebarItemStats
+  listFormat,
+  noGroup,
+  useSidebarCheckboxState,
+  lineColor,
+  getSidebarStatByKey,
+  getSidebarHeadlineStats,
+  getSidebarItemStats,
 } from './helpers/helpers.js';
 import type { LegendSidebarProps } from './helpers/LegendSidebar.js';
 import { LegendSidebar } from './helpers/LegendSidebar.js';
 import type { ModalArgs } from './helpers/modal-helpers.js';
-import { WorkItemLinkForModal, WorkItemFlatList, workItemSubheading } from './helpers/modal-helpers.js';
+import {
+  WorkItemLinkForModal,
+  WorkItemFlatList,
+  workItemSubheading,
+} from './helpers/modal-helpers.js';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
 import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
 
@@ -32,20 +41,18 @@ const collapsedCount = 10;
 
 const barTooltip = (rca: string, workItems: UIWorkItem[]) => {
   const statuses = Object.entries(
-    workItems
-      .reduce<Record<string, number>>((acc, wi) => {
-        acc[wi.state] = (acc[wi.state] || 0) + 1;
-        return acc;
-      }, {})
+    workItems.reduce<Record<string, number>>((acc, wi) => {
+      acc[wi.state] = (acc[wi.state] || 0) + 1;
+      return acc;
+    }, {})
   ).map(([status, count]) => `${status} (${count})`);
 
   const priorities = Object.entries(
-    workItems
-      .reduce<Record<string, number>>((acc, wi) => {
-        const priority = wi.priority || 'Unprioritised';
-        acc[priority] = (acc[priority] || 0) + 1;
-        return acc;
-      }, {})
+    workItems.reduce<Record<string, number>>((acc, wi) => {
+      const priority = wi.priority || 'Unprioritised';
+      acc[priority] = (acc[priority] || 0) + 1;
+      return acc;
+    }, {})
   )
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([priority, count]) => `${priority} (${count})`);
@@ -54,26 +61,33 @@ const barTooltip = (rca: string, workItems: UIWorkItem[]) => {
     <div class="w-80">
       <div class="font-bold mb-2">${rca}</div>
       <dl>
-        ${statuses.length ? `
+        ${
+          statuses.length
+            ? `
           <dt class="font-bold mt-2">States:</dt>
           <dd class="ml-4">
             ${statuses.join(', ')}
           </dd>
-        ` : ''}
-        ${priorities.length ? `
+        `
+            : ''
+        }
+        ${
+          priorities.length
+            ? `
           <dt class="font-bold mt-2">Priorities:</dt>
           <dd class="ml-4">
             ${priorities.join(', ')}
           </dd>
-        ` : ''}
+        `
+            : ''
+        }
       </dl>
     </div>
   `;
 };
 
-const isBugLike = (workItemType: UIWorkItemType) => (
-  workItemType.name[0].toLowerCase().includes('bug')
-);
+const isBugLike = (workItemType: UIWorkItemType) =>
+  workItemType.name[0].toLowerCase().includes('bug');
 
 const bugsLeakedInQueryPeriod = (lastUpdated: Date, queryPeriodDays: number) => {
   const queryPeriodStart = new Date(lastUpdated);
@@ -85,20 +99,22 @@ const bugsLeakedInQueryPeriod = (lastUpdated: Date, queryPeriodDays: number) => 
   };
 };
 
-const organizeWorkItemsByRCA = (workItems: UIWorkItem[], rcaFieldIndex: number, emptyValue: string) => {
-  const fieldName = (wi: UIWorkItem) => (
-    // eslint-disable-next-line no-nested-ternary
+const organizeWorkItemsByRCA = (
+  workItems: UIWorkItem[],
+  rcaFieldIndex: number,
+  emptyValue: string
+) => {
+  const fieldName = (wi: UIWorkItem) =>
     wi.rca.length === 0
       ? 'No RCA available'
-      : (wi.rca[rcaFieldIndex] === noRCAValue ? emptyValue : wi.rca[rcaFieldIndex])
-  );
+      : wi.rca[rcaFieldIndex] === noRCAValue
+      ? emptyValue
+      : wi.rca[rcaFieldIndex];
 
-  return (
-    workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
-      acc[fieldName(wi)] = (acc[fieldName(wi)] || []).concat(wi);
-      return acc;
-    }, {})
-  );
+  return workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
+    acc[fieldName(wi)] = (acc[fieldName(wi)] || []).concat(wi);
+    return acc;
+  }, {});
 };
 
 type BugLeakageGraphBarsProps = {
@@ -106,15 +122,23 @@ type BugLeakageGraphBarsProps = {
   graphData: GraphItem[];
   accessors: WorkItemAccessors;
   openModal: (x: ModalArgs) => void;
-  workItemTooltip: (workItem: UIWorkItem, additionalSections?: {
-    label: string;
-    value: string | number;
-  }[]) => string;
+  workItemTooltip: (
+    workItem: UIWorkItem,
+    additionalSections?: {
+      label: string;
+      value: string | number;
+    }[]
+  ) => string;
   selectedSwitcherIndex: number;
 };
 
 const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
-  witId, graphData, accessors, openModal, workItemTooltip, selectedSwitcherIndex
+  witId,
+  graphData,
+  accessors,
+  openModal,
+  workItemTooltip,
+  selectedSwitcherIndex,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const total = useMemo(
@@ -137,32 +161,33 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
               <button
                 className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
                 style={{ gridTemplateColumns: '20% 85px 1fr' }}
-                onClick={() => openModal({
-                  heading: `${workItemType(witId).name[0]} leakage`,
-                  subheading: `${rca} (${wis.length})`,
-                  body: (
-                    <WorkItemFlatList
-                      workItemType={workItemType(witId)}
-                      workItems={wis.sort(asc(byNum(x => x.priority || 10)))}
-                      tooltip={workItemTooltip}
-                      flairs={workItem => [
-                        `Priority ${workItem.priority || 'unknown'}`,
-                        ...(
-                          (workItemType(witId).rootCauseFields || [])
-                            .map((f, index) => `${f}: ${workItem.rca[index] || `No ${f} provided`}`)
-                            .filter((f, index) => index !== selectedSwitcherIndex)
-                        )
-                      ]}
-                    />
-                  )
-                })}
+                onClick={() =>
+                  openModal({
+                    heading: `${workItemType(witId).name[0]} leakage`,
+                    subheading: `${rca} (${wis.length})`,
+                    body: (
+                      <WorkItemFlatList
+                        workItemType={workItemType(witId)}
+                        workItems={wis.sort(asc(byNum(x => x.priority || 10)))}
+                        tooltip={workItemTooltip}
+                        flairs={workItem => [
+                          `Priority ${workItem.priority || 'unknown'}`,
+                          ...(workItemType(witId).rootCauseFields || [])
+                            .map(
+                              (f, index) =>
+                                `${f}: ${workItem.rca[index] || `No ${f} provided`}`
+                            )
+                            .filter((f, index) => index !== selectedSwitcherIndex),
+                        ]}
+                      />
+                    ),
+                  })
+                }
                 data-tip={barTooltip(rca, wis)}
                 data-html
               >
                 <div className="flex items-center justify-end">
-                  <span className="truncate">
-                    {rca}
-                  </span>
+                  <span className="truncate">{rca}</span>
                 </div>
                 <span className="justify-self-end">
                   <b>{`${Math.round((wis.length * 100) / total)}%`}</b>
@@ -174,7 +199,7 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
                     style={{
                       width: `${(wis.length * 100) / maxValue}%`,
                       backgroundColor: color,
-                      height: '30px'
+                      height: '30px',
                     }}
                   />
                 </div>
@@ -188,7 +213,11 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
             className="text-blue-700 text-sm flex items-center hover:text-blue-900 hover:underline"
             onClick={() => setIsExpanded(not)}
           >
-            {isExpanded ? <UpChevron className="w-4 mr-1" /> : <DownChevron className="w-4 mr-1" />}
+            {isExpanded ? (
+              <UpChevron className="w-4 mr-1" />
+            ) : (
+              <DownChevron className="w-4 mr-1" />
+            )}
             {isExpanded ? 'Show less' : 'Show more'}
           </button>
         </div>
@@ -206,19 +235,24 @@ type BugLeakageGraphForModalProps = {
 };
 
 const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
-  witId, groupName, workItems, tooltip, workItemType
+  witId,
+  groupName,
+  workItems,
+  tooltip,
+  workItemType,
 }) => {
   const [selectedSwitcherIndex, setSelectedSwitcherIndex] = useState<number>(
     (workItemType.rootCauseFields || []).length - 1
   );
 
   const organized = useMemo(
-    () => organizeWorkItemsByRCA(
-      workItems,
-      selectedSwitcherIndex,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      `No ${workItemType.rootCauseFields![selectedSwitcherIndex]} provided`
-    ),
+    () =>
+      organizeWorkItemsByRCA(
+        workItems,
+        selectedSwitcherIndex,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        `No ${workItemType.rootCauseFields![selectedSwitcherIndex]} provided`
+      ),
     [selectedSwitcherIndex, workItemType.rootCauseFields, workItems]
   );
 
@@ -228,26 +262,23 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
   );
 
   const barGraphData = useMemo(
-    () => Object.entries(organized)
-      .sort(([, a], [, b]) => b.length - a.length)
-      .map(([rcaCategory, wisInCategory]) => ({
-        key: rcaCategory,
-        heading: (
-          <>
-            {`${rcaCategory} - `}
-            <strong>
-              {`${wisInCategory.length}`}
-            </strong>
-            {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
-          </>
-        ),
-        value: wisInCategory.length,
-        barColor: `${lineColor({ witId, groupName })}99`,
-        children: (
-          <ul>
-            {wisInCategory
-              .sort(asc(byNum(x => x.priority || 10)))
-              .map(wi => (
+    () =>
+      Object.entries(organized)
+        .sort(([, a], [, b]) => b.length - a.length)
+        .map(([rcaCategory, wisInCategory]) => ({
+          key: rcaCategory,
+          heading: (
+            <>
+              {`${rcaCategory} - `}
+              <strong>{`${wisInCategory.length}`}</strong>
+              {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
+            </>
+          ),
+          value: wisInCategory.length,
+          barColor: `${lineColor({ witId, groupName })}99`,
+          children: (
+            <ul>
+              {wisInCategory.sort(asc(byNum(x => x.priority || 10))).map(wi => (
                 <li key={wi.id} className="py-2">
                   <WorkItemLinkForModal
                     workItem={wi}
@@ -255,19 +286,25 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
                     tooltip={tooltip(wi)}
                     flairs={[
                       `Priority ${wi.priority || 'unknown'}`,
-                      ...(
-                        (workItemType.rootCauseFields || [])
-                          .map((f, index) => `${f}: ${wi.rca[index] || `No ${f} provided`}`)
-                          .filter((f, index) => index !== selectedSwitcherIndex)
-                      )
+                      ...(workItemType.rootCauseFields || [])
+                        .map((f, index) => `${f}: ${wi.rca[index] || `No ${f} provided`}`)
+                        .filter((f, index) => index !== selectedSwitcherIndex),
                     ]}
                   />
                 </li>
               ))}
-          </ul>
-        )
-      })),
-    [groupName, organized, selectedSwitcherIndex, tooltip, totalOfCategories, witId, workItemType]
+            </ul>
+          ),
+        })),
+    [
+      groupName,
+      organized,
+      selectedSwitcherIndex,
+      tooltip,
+      totalOfCategories,
+      witId,
+      workItemType,
+    ]
   );
 
   return (
@@ -277,7 +314,7 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
           <Switcher<number>
             options={(workItemType.rootCauseFields || []).map((rca, index) => ({
               label: rca,
-              value: index
+              value: index,
             }))}
             value={selectedSwitcherIndex}
             onChange={setSelectedSwitcherIndex}
@@ -297,20 +334,31 @@ type BugLeakageByWitProps = {
 };
 
 const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
-  witId, workItems, accessors, openModal
+  witId,
+  workItems,
+  accessors,
+  openModal,
 }) => {
-  const {
-    workItemType, organizeByWorkItemType, workItemGroup, queryPeriodDays
-  } = accessors;
-  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
+  const { workItemType, organizeByWorkItemType, workItemGroup, queryPeriodDays } =
+    accessors;
+  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
+  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
   const filter = useCallback(
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
-  const [selectedSwitcherIndex, setSelectedSwitcherIndex] = useState((workItemType(witId).rootCauseFields || []).length - 1);
+  const [selectedSwitcherIndex, setSelectedSwitcherIndex] = useState(
+    (workItemType(witId).rootCauseFields || []).length - 1
+  );
 
-  const csvData = useMemo(() => bugLeakageCSV(workItems, accessors), [accessors, workItems]);
+  const csvData = useMemo(
+    () => bugLeakageCSV(workItems, accessors),
+    [accessors, workItems]
+  );
 
   const organized = useMemo(
     () => organizeByWorkItemType(workItems, filter),
@@ -325,36 +373,47 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
   );
 
   const organizedByRCA = useMemo(
-    () => organizeWorkItemsByRCA(
-      workItems.filter(
-        x => filter(x) && isChecked(witId + (x.groupId ? workItemGroup(x.groupId).name : noGroup))
+    () =>
+      organizeWorkItemsByRCA(
+        workItems.filter(
+          x =>
+            filter(x) &&
+            isChecked(witId + (x.groupId ? workItemGroup(x.groupId).name : noGroup))
+        ),
+        selectedSwitcherIndex,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        `No ${workItemType(witId).rootCauseFields![selectedSwitcherIndex]} provided`
       ),
+    [
+      filter,
+      isChecked,
       selectedSwitcherIndex,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      `No ${workItemType(witId).rootCauseFields![selectedSwitcherIndex]} provided`
-    ),
-    [filter, isChecked, selectedSwitcherIndex, witId, workItemGroup, workItemType, workItems]
+      witId,
+      workItemGroup,
+      workItemType,
+      workItems,
+    ]
   );
 
-  const graphData: GraphItem[] = useMemo(() => (
-    Object.entries(organizedByRCA)
-      .map(([rca, wis]) => ({ rca, wis, color: '#00bcd4' }))
-      .filter(({ wis }) => wis.length > 0)
-      .sort(desc(byNum(x => x.wis.length)))
-  ), [organizedByRCA]);
-
-  const workItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(accessors),
-    [accessors]
+  const graphData: GraphItem[] = useMemo(
+    () =>
+      Object.entries(organizedByRCA)
+        .map(([rca, wis]) => ({ rca, wis, color: '#00bcd4' }))
+        .filter(({ wis }) => wis.length > 0)
+        .sort(desc(byNum(x => x.wis.length))),
+    [organizedByRCA]
   );
+
+  const workItemTooltip = useMemo(() => createWIPWorkItemTooltip(accessors), [accessors]);
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
-    const items = getSidebarItemStats(
-      organized, accessors, pipe(length, num), isChecked
-    );
+    const items = getSidebarItemStats(organized, accessors, pipe(length, num), isChecked);
 
     const headlineStats = getSidebarHeadlineStats(
-      organized, workItemType, pipe(length, num), 'total'
+      organized,
+      workItemType,
+      pipe(length, num),
+      'total'
     );
 
     return {
@@ -375,28 +434,32 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
               tooltip={workItemTooltip}
               workItemType={workItemType(witId)}
             />
-          )
+          ),
         });
-      }
+      },
     };
   }, [accessors, isChecked, openModal, organized, toggle, workItemTooltip, workItemType]);
 
   return (
     <GraphCard
       title={`${workItemType(witId).name[0]} leakage with root cause`}
-      subtitle={`${workItemType(witId).name[1]} leaked over the last ${queryPeriodDays} days with their root cause`}
+      subtitle={`${
+        workItemType(witId).name[1]
+      } leaked over the last ${queryPeriodDays} days with their root cause`}
       hasData={workItems.length > 0}
       csvData={csvData}
-      left={(
+      left={
         <>
           <div className="grid grid-cols-2 justify-between">
             <div className="pt-5">
               {isRCAMissing ? null : (
                 <Switcher<number>
-                  options={(workItemType(witId).rootCauseFields || []).map((rca, index) => ({
-                    label: rca,
-                    value: index
-                  }))}
+                  options={(workItemType(witId).rootCauseFields || []).map(
+                    (rca, index) => ({
+                      label: rca,
+                      value: index,
+                    })
+                  )}
                   value={selectedSwitcherIndex}
                   onChange={setSelectedSwitcherIndex}
                 />
@@ -407,35 +470,35 @@ const BugLeakageByWit: React.FC<BugLeakageByWitProps> = ({
               <PriorityFilter workItems={workItems} setFilter={setPriorityFilter} />
             </div>
           </div>
-          {isRCAMissing
-            ? (
-              <div className="text-gray-500 italic">
-                {`${workItemType(witId).name[1]} don't have RCAs.`}
+          {isRCAMissing ? (
+            <div className="text-gray-500 italic">
+              {`${workItemType(witId).name[1]} don't have RCAs.`}
+            </div>
+          ) : (
+            <>
+              <BugLeakageGraphBars
+                witId={witId}
+                accessors={accessors}
+                graphData={graphData}
+                openModal={openModal}
+                workItemTooltip={workItemTooltip}
+                selectedSwitcherIndex={selectedSwitcherIndex}
+              />
+              <div className="text-sm text-gray-600 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
+                {`The root cause for a ${workItemType(
+                  witId
+                ).name[0].toLowerCase()} is determined from the`}{' '}
+                {listFormat(
+                  (workItemType(witId).rootCauseFields || []).map(x => `'${x}'`)
+                )}{' '}
+                {(workItemType(witId).rootCauseFields || []).length === 1
+                  ? 'field.'
+                  : 'fields.'}
               </div>
-            )
-            : (
-              <>
-                <BugLeakageGraphBars
-                  witId={witId}
-                  accessors={accessors}
-                  graphData={graphData}
-                  openModal={openModal}
-                  workItemTooltip={workItemTooltip}
-                  selectedSwitcherIndex={selectedSwitcherIndex}
-                />
-                <div className="text-sm text-gray-600 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
-                  {`The root cause for a ${workItemType(witId).name[0].toLowerCase()} is determined from the`}
-                  {' '}
-                  {listFormat(
-                    (workItemType(witId).rootCauseFields || []).map(x => `'${x}'`)
-                  )}
-                  {' '}
-                  {(workItemType(witId).rootCauseFields || []).length === 1 ? 'field.' : 'fields.'}
-                </div>
-              </>
-            )}
+            </>
+          )}
         </>
-      )}
+      }
       right={<LegendSidebar {...legendSidebarProps} />}
     />
   );
@@ -448,19 +511,22 @@ type BugLeakageAndRCAGraphProps = {
 };
 
 const BugLeakageAndRCAGraph: React.FC<BugLeakageAndRCAGraphProps> = ({
-  workItems, accessors, openModal
+  workItems,
+  accessors,
+  openModal,
 }) => {
   const { workItemType, lastUpdated, queryPeriodDays } = accessors;
   const hasLeakedInQueryPeriod = bugsLeakedInQueryPeriod(lastUpdated, queryPeriodDays);
 
   const witIdAndWorkItems = useMemo(
-    () => workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
-      if (isBugLike(workItemType(wi.typeId)) && hasLeakedInQueryPeriod(wi)) {
-        acc[wi.typeId] = acc[wi.typeId] || [];
-        acc[wi.typeId].push(wi);
-      }
-      return acc;
-    }, {}),
+    () =>
+      workItems.reduce<Record<string, UIWorkItem[]>>((acc, wi) => {
+        if (isBugLike(workItemType(wi.typeId)) && hasLeakedInQueryPeriod(wi)) {
+          acc[wi.typeId] = acc[wi.typeId] || [];
+          acc[wi.typeId].push(wi);
+        }
+        return acc;
+      }, {}),
     [hasLeakedInQueryPeriod, workItemType, workItems]
   );
 

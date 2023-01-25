@@ -9,7 +9,9 @@ const getMinDate = (fields: string[], workItem: WorkItem) => {
     .filter(exists)
     .map(endDate => new Date(endDate).getTime());
 
-  return possibleEndDates.length > 0 ? new Date(Math.min(...possibleEndDates)) : undefined;
+  return possibleEndDates.length > 0
+    ? new Date(Math.min(...possibleEndDates))
+    : undefined;
 };
 
 const wasClosedOutsideQueryPeriod = (
@@ -39,68 +41,83 @@ export const getOverviewData = (
     groups: Overview['groups'];
     times: Overview['times'];
     relations: Record<number, number[]>;
-  }>((acc, workItem) => {
-    const wit = getWorkItemType(workItem);
+  }>(
+    (acc, workItem) => {
+      const wit = getWorkItemType(workItem);
 
-    const workItemConfig = collection.workitems.types?.find(wic => wic.type === wit.name);
-    if (!workItemConfig) return acc;
-    if (wasClosedOutsideQueryPeriod(workItem, config, workItemConfig)) return acc;
+      const workItemConfig = collection.workitems.types?.find(
+        wic => wic.type === wit.name
+      );
+      if (!workItemConfig) return acc;
+      if (wasClosedOutsideQueryPeriod(workItem, config, workItemConfig)) return acc;
 
-    acc.reducedIds[workItem.id] = byId[workItem.id];
-    acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
+      acc.reducedIds[workItem.id] = byId[workItem.id];
+      acc.types[byId[workItem.id].typeId] = types[byId[workItem.id].typeId];
 
-    acc.times[workItem.id] = {
-      start: getMinDate(workItemConfig.startDate, workItem)?.toISOString(),
-      end: getMinDate(workItemConfig.endDate, workItem)?.toISOString(),
-      devComplete: getMinDate(workItemConfig.devCompletionDate, workItem)?.toISOString(),
-      workCenters: workItemConfig.workCenters.map(wc => {
-        const wcStartDate = getMinDate(wc.startDate, workItem);
-        const wcEndDate = getMinDate(wc.endDate, workItem);
-        if (!wcStartDate) return;
+      acc.times[workItem.id] = {
+        start: getMinDate(workItemConfig.startDate, workItem)?.toISOString(),
+        end: getMinDate(workItemConfig.endDate, workItem)?.toISOString(),
+        devComplete: getMinDate(
+          workItemConfig.devCompletionDate,
+          workItem
+        )?.toISOString(),
+        workCenters: workItemConfig.workCenters
+          .map(wc => {
+            const wcStartDate = getMinDate(wc.startDate, workItem);
+            const wcEndDate = getMinDate(wc.endDate, workItem);
+            if (!wcStartDate) return;
 
-        return {
-          label: wc.label,
-          start: wcStartDate.toISOString(),
-          end: wcEndDate ? wcEndDate.toISOString() : undefined
-        };
-      }).filter(exists)
-    };
+            return {
+              label: wc.label,
+              start: wcStartDate.toISOString(),
+              end: wcEndDate ? wcEndDate.toISOString() : undefined,
+            };
+          })
+          .filter(exists),
+      };
 
-    if (workItemConfig.groupByField && workItem.fields[workItemConfig.groupByField]) {
-      const groupName = workItem.fields[workItemConfig.groupByField];
-      const groupCacheKey = wit + groupName;
+      if (workItemConfig.groupByField && workItem.fields[workItemConfig.groupByField]) {
+        const groupName = workItem.fields[workItemConfig.groupByField];
+        const groupCacheKey = wit + groupName;
 
-      if (!groupCache.has(groupCacheKey)) {
-        groupCache.set(groupCacheKey, {
-          id: groupCacheKey,
-          witId: byId[workItem.id].typeId,
-          name: groupName
-        });
+        if (!groupCache.has(groupCacheKey)) {
+          groupCache.set(groupCacheKey, {
+            id: groupCacheKey,
+            witId: byId[workItem.id].typeId,
+            name: groupName,
+          });
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { id, ...matchingGroup } = groupCache.get(groupCacheKey)!;
+        acc.groups[id] = matchingGroup;
+        acc.reducedIds[workItem.id].groupId = id;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { id, ...matchingGroup } = groupCache.get(groupCacheKey)!;
-      acc.groups[id] = matchingGroup;
-      acc.reducedIds[workItem.id].groupId = id;
-    }
+      if (wit.name === 'Feature' && relations[workItem.id]) {
+        acc.relations[workItem.id] = relations[workItem.id].filter(
+          id =>
+            byId[id]?.typeId &&
+            types[byId[id]?.typeId].name[0].toLowerCase().includes('bug')
+        );
+      }
 
-    if (wit.name === 'Feature' && relations[workItem.id]) {
-      acc.relations[workItem.id] = relations[workItem.id].filter(
-        id => byId[id]?.typeId
-          && types[byId[id]?.typeId].name[0].toLowerCase().includes('bug')
-      );
+      return acc;
+    },
+    {
+      reducedIds: {},
+      types: {},
+      groups: {},
+      times: {},
+      relations: {},
     }
-
-    return acc;
-  }, {
-    reducedIds: {}, types: {}, groups: {}, times: {}, relations: {}
-  });
+  );
 
   return {
     byId: results.reducedIds,
     types: results.types,
     groups: results.groups,
     times: results.times,
-    relations: results.relations
+    relations: results.relations,
   };
 };

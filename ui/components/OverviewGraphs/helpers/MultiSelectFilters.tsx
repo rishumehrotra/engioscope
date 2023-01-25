@@ -11,18 +11,19 @@ type FilterProps = {
 
 export const PriorityFilter: React.FC<FilterProps> = ({ workItems, setFilter }) => {
   const [priorityState, setPriorityState] = useState<string[]>([]);
-  const priorityOptions = useMemo(() => (
-    [
-      ...workItems
-        .reduce((acc, wi) => {
+  const priorityOptions = useMemo(
+    () =>
+      [
+        ...workItems.reduce((acc, wi) => {
           const { priority } = wi;
           if (priority) acc.add(priority);
           return acc;
-        }, new Set<number>())
-    ]
-      .sort(asc(byNum(identity)))
-      .map(x => ({ value: String(x), label: String(x) }))
-  ), [workItems]);
+        }, new Set<number>()),
+      ]
+        .sort(asc(byNum(identity)))
+        .map(x => ({ value: String(x), label: String(x) })),
+    [workItems]
+  );
 
   useEffect(() => {
     if (priorityState.length === 0) {
@@ -51,12 +52,15 @@ export const sizes = {
   small: { label: 'Small (1 impacted system)', sortIndex: 0, key: 'small' },
   medium: { label: 'Medium (upto 3 impacted systems)', sortIndex: 1, key: 'medium' },
   large: { label: 'Large (upto 5 impacted systems)', sortIndex: 2, key: 'large' },
-  veryLarge: { label: 'Very large (> 5 impacted systems)', sortIndex: 3, key: 'veryLarge' }
+  veryLarge: {
+    label: 'Very large (> 5 impacted systems)',
+    sortIndex: 3,
+    key: 'veryLarge',
+  },
 };
 
-export const impactedSystems = (workItem: UIWorkItem) => (
-  workItem.filterBy?.find(f => f.label === 'Impacted systems')?.tags
-);
+export const impactedSystems = (workItem: UIWorkItem) =>
+  workItem.filterBy?.find(f => f.label === 'Impacted systems')?.tags;
 
 export const getSize = (workItem: UIWorkItem) => {
   const numberOfImpactedSystems = impactedSystems(workItem)?.length || 0;
@@ -70,18 +74,19 @@ export const getSize = (workItem: UIWorkItem) => {
 
 export const SizeFilter: React.FC<FilterProps> = ({ workItems, setFilter }) => {
   const [sizeFilter, setSizeFilter] = useState<string[]>([]);
-  const sizeOptions = useMemo(() => (
-    [
-      ...workItems
-        .reduce((acc, wi) => {
+  const sizeOptions = useMemo(
+    () =>
+      [
+        ...workItems.reduce((acc, wi) => {
           const size = getSize(wi);
           if (size) acc.add(size);
           return acc;
-        }, new Set<typeof sizes['small']>())
-    ]
-      .sort(asc(byNum(prop('sortIndex'))))
-      .map(x => ({ value: x.key, label: x.label }))
-  ), [workItems]);
+        }, new Set<(typeof sizes)['small']>()),
+      ]
+        .sort(asc(byNum(prop('sortIndex'))))
+        .map(x => ({ value: x.key, label: x.label })),
+    [workItems]
+  );
 
   useEffect(() => {
     if (sizeFilter.length === 0) {

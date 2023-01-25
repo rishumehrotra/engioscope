@@ -7,11 +7,12 @@ type FlairProps = {
   title?: string;
 };
 
-const Flair: React.FC<FlairProps> = ({
-  colorClassName, label, flairColor, title
-}) => (
+const Flair: React.FC<FlairProps> = ({ colorClassName, label, flairColor, title }) => (
   <span className="rounded-full bg-gray-100 pl-2 pr-3 py-1 text-sm mr-2" data-tip={title}>
-    <span style={{ backgroundColor: flairColor }} className={`rounded-full w-3 h-3 inline-block mr-2 ${colorClassName}`}>
+    <span
+      style={{ backgroundColor: flairColor }}
+      className={`rounded-full w-3 h-3 inline-block mr-2 ${colorClassName}`}
+    >
       {' '}
     </span>
     {label}

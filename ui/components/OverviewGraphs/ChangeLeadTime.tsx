@@ -10,7 +10,10 @@ import GraphCard from './helpers/GraphCard.js';
 import { prettyMS, priorityBasedColor } from '../../helpers/utils.js';
 import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
-  stringifyDateField, getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats
+  stringifyDateField,
+  getSidebarStatByKey,
+  getSidebarItemStats,
+  getSidebarHeadlineStats,
 } from './helpers/helpers.js';
 import { createCompletedWorkItemTooltip } from './helpers/tooltips.js';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
@@ -25,14 +28,25 @@ type ChangeLeadTimeGraphProps = {
   openModal: (x: ModalArgs) => void;
 };
 
-export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workItems, accessors, openModal }) => {
+export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({
+  workItems,
+  accessors,
+  openModal,
+}) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, workItemTimes,
-    sortByEnvironment
+    isWorkItemClosed,
+    organizeByWorkItemType,
+    workItemType,
+    workItemTimes,
+    sortByEnvironment,
   } = accessors;
 
-  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
+  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
+  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
 
   const preFilteredWorkItems = useMemo(
     () => workItems.filter(wi => isWorkItemClosed(wi) && workItemTimes(wi).devComplete),
@@ -44,9 +58,10 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
     [priorityFilter, sizeFilter]
   );
 
-  const csvData = useMemo(() => (
-    closedWorkItemsCSV(preFilteredWorkItems.filter(filter), accessors)
-  ), [preFilteredWorkItems, filter, accessors]);
+  const csvData = useMemo(
+    () => closedWorkItemsCSV(preFilteredWorkItems.filter(filter), accessors),
+    [preFilteredWorkItems, filter, accessors]
+  );
 
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(accessors),
@@ -68,34 +83,39 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
   );
 
   const totalClt = useCallback(
-    (workItems: UIWorkItem[]) => workItems.reduce(
-      (acc, workItem) => acc + clt(workItem),
-      0
-    ),
+    (workItems: UIWorkItem[]) =>
+      workItems.reduce((acc, workItem) => acc + clt(workItem), 0),
     [clt]
   );
 
-  const showWorkItemTimeDetails = useCallback((workItem: UIWorkItem) => (
-    <WorkItemTimeDetails
-      workItem={workItem}
-      workItemTimes={workItemTimes}
-    />
-  ), [workItemTimes]);
+  const showWorkItemTimeDetails = useCallback(
+    (workItem: UIWorkItem) => (
+      <WorkItemTimeDetails workItem={workItem} workItemTimes={workItemTimes} />
+    ),
+    [workItemTimes]
+  );
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;
 
-    const aggregator = (workItems: UIWorkItem[]) => (
-      workItems.length ? prettyMS(totalClt(workItems) / workItems.length) : '-'
-    );
+    const aggregator = (workItems: UIWorkItem[]) =>
+      workItems.length ? prettyMS(totalClt(workItems) / workItems.length) : '-';
     const items = getSidebarItemStats(workItemsToDisplay, accessors, aggregator);
-    const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
+    const headlineStats = getSidebarHeadlineStats(
+      workItemsToDisplay,
+      workItemType,
+      aggregator,
+      'avg'
+    );
 
     return {
       headlineStats,
       items,
       onItemClick: key => {
-        const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
+        const [witId, groupName, workItems] = getSidebarStatByKey(
+          key,
+          workItemsToDisplay
+        );
 
         return openModal({
           heading: 'Change lead time',
@@ -108,35 +128,50 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
               flairs={workItem => [`CLT: ${prettyMS(clt(workItem))}`]}
               extra={showWorkItemTimeDetails}
             />
-          )
+          ),
         });
-      }
+      },
     };
-  }, [accessors, clt, openModal, showWorkItemTimeDetails, totalClt, workItemTooltip, workItemsToDisplay]);
+  }, [
+    accessors,
+    clt,
+    openModal,
+    showWorkItemTimeDetails,
+    totalClt,
+    workItemTooltip,
+    workItemsToDisplay,
+  ]);
 
   const graphWidthRatio = useMemo(
-    () => Object.values(workItemsToDisplay)
-      .map(x => `${Object.values(x).length + 1}fr`)
-      .join(' '),
+    () =>
+      Object.values(workItemsToDisplay)
+        .map(x => `${Object.values(x).length + 1}fr`)
+        .join(' '),
     [workItemsToDisplay]
   );
 
   const scatterLineGraphProps = useMemo(
-    () => Object.entries(workItemsToDisplay).map<ScatterLineGraphProps<UIWorkItem>>(
-      ([witId, group]) => ({
-        key: witId,
-        graphData: [{
-          label: workItemType(witId).name[1],
-          data: Object.fromEntries(Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))),
-          yAxisPoint: clt,
-          tooltip: wi => workItemTooltip(wi)
-        }],
-        pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
-        height: 420,
-        linkForItem: prop('url'),
-        className: 'w-full'
-      })
-    ),
+    () =>
+      Object.entries(workItemsToDisplay).map<ScatterLineGraphProps<UIWorkItem>>(
+        ([witId, group]) => ({
+          key: witId,
+          graphData: [
+            {
+              label: workItemType(witId).name[1],
+              data: Object.fromEntries(
+                Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))
+              ),
+              yAxisPoint: clt,
+              tooltip: wi => workItemTooltip(wi),
+            },
+          ],
+          pointColor: workItem =>
+            workItem.priority ? priorityBasedColor(workItem.priority) : undefined,
+          height: 420,
+          linkForItem: prop('url'),
+          className: 'w-full',
+        })
+      ),
     [clt, sortByEnvironment, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
@@ -148,22 +183,29 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
       subtitle="Time taken to take a work item to production after development is complete"
       hasData={preFilteredWorkItems.length > 0}
       csvData={csvData}
-      left={(
+      left={
         <>
           <div className="flex justify-end mb-8 gap-2">
             <SizeFilter workItems={preFilteredWorkItems} setFilter={setSizeFilter} />
-            <PriorityFilter workItems={preFilteredWorkItems} setFilter={setPriorityFilter} />
+            <PriorityFilter
+              workItems={preFilteredWorkItems}
+              setFilter={setPriorityFilter}
+            />
           </div>
           <div
             className="grid gap-4 justify-between items-center grid-cols-2"
             style={{ gridTemplateColumns: graphWidthRatio }}
           >
-            {scatterLineGraphProps.map(props => <ScatterLineGraph {...props} />)}
+            {scatterLineGraphProps.map(props => (
+              <ScatterLineGraph {...props} />
+            ))}
           </div>
           <ul className="text-sm text-gray-600 pl-8 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
             {Object.keys(workItemsToDisplay).map(witId => (
               <li key={witId}>
-                {`Change lead time for ${workItemType(witId).name[1].toLowerCase()} is computed from `}
+                {`Change lead time for ${workItemType(
+                  witId
+                ).name[1].toLowerCase()} is computed from `}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {stringifyDateField(workItemType(witId).devCompleteFields!)}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
@@ -172,10 +214,8 @@ export const ChangeLeadTimeGraph: React.FC<ChangeLeadTimeGraphProps> = ({ workIt
             ))}
           </ul>
         </>
-      )}
-      right={(
-        <LegendSidebar {...legendSidebarProps} />
-      )}
+      }
+      right={<LegendSidebar {...legendSidebarProps} />}
     />
   );
 };

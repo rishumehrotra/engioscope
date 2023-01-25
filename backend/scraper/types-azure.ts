@@ -1,40 +1,146 @@
 import type workItemIconSvgs from '../work-item-icon-svgs.js';
 
-export type ProjectState = 'all' | 'createPending' | 'deleted' | 'deleting' | 'new' | 'unchanged' | 'wellFormed';
+export type ProjectState =
+  | 'all'
+  | 'createPending'
+  | 'deleted'
+  | 'deleting'
+  | 'new'
+  | 'unchanged'
+  | 'wellFormed';
 export type ProjectVisibility = 'private' | 'public';
 export type DefinitionTypeStatus = 'disabled' | 'enabled' | 'paused';
 export type DefinitionType = 'build' | 'xaml';
-export type BuildStatus = 'all' | 'cancelling' | 'completed' | 'inProgress' | 'none' | 'notStarted' | 'postponed';
-export type BuildResult = 'canceled' | 'failed' | 'none' | 'partiallySucceeded' | 'succeeded';
+export type BuildStatus =
+  | 'all'
+  | 'cancelling'
+  | 'completed'
+  | 'inProgress'
+  | 'none'
+  | 'notStarted'
+  | 'postponed';
+export type BuildResult =
+  | 'canceled'
+  | 'failed'
+  | 'none'
+  | 'partiallySucceeded'
+  | 'succeeded';
 export type QueuePriority = 'aboveNormal' | 'belowNormal' | 'high' | 'low' | 'normal';
-export type BuildReason = 'all' | 'batchedCI' | 'buildCompletion' | 'checkInShelveset'
-| 'individualCI' | 'manual' | 'none' | 'pullRequest' | 'schedule' | 'scheduleForced'
-| 'triggered' | 'userCreated' | 'validateShelveset';
+export type BuildReason =
+  | 'all'
+  | 'batchedCI'
+  | 'buildCompletion'
+  | 'checkInShelveset'
+  | 'individualCI'
+  | 'manual'
+  | 'none'
+  | 'pullRequest'
+  | 'schedule'
+  | 'scheduleForced'
+  | 'triggered'
+  | 'userCreated'
+  | 'validateShelveset';
 export type ReleaseStatus = 'abandoned' | 'active' | 'draft' | 'undefined';
-export type ReleaseReason = 'continuousIntegration' | 'manual' | 'none' | 'pullRequest' | 'schedule';
-export type ArtifactType = 'Build' | 'Jenkins' | 'GitHub' | 'Nuget'
-| 'Team Build (external)' | 'ExternalTFSBuild' | 'Git' | 'TFVC' | 'ExternalTfsXamlBuild'
-// Following value not specified in docs at
-// https://learn.microsoft.com/en-us/rest/api/azure/devops/release/releases/list?view=azure-devops-rest-5.1&tabs=HTTP#artifact
-// But we see in responses
-| 'Artifactory';
-export type EnvironmentStatus = 'canceled' | 'inProgress' | 'notStarted'
-| 'partiallySucceeded' | 'queued' | 'rejected' | 'scheduled' | 'succeeded' | 'undefined';
-export type DeploymentReason = 'automated' | 'manual' | 'none' | 'redeployTrigger' | 'scheduled';
-export type DeploymentStatus = 'all' | 'failed' | 'inProgress' | 'notDeployed' | 'partiallySucceeded' | 'succeeded' | 'undefined';
-export type DeploymentOperationStatus = 'All' | 'Approved' | 'Canceled' | 'Cancelling'
-| 'Deferred' | 'EvaluatingGates' | 'GateFailed' | 'ManualInterventionPending'
-| 'Pending' | 'PhaseCanceled' | 'PhaseFailed' | 'PhaseInProgress'
-| 'PhasePartiallySucceeded' | 'PhaseSucceeded' | 'Queued' | 'QueuedForAgent'
-| 'QueuedForPipeline' | 'Rejected' | 'Scheduled' | 'Undefined';
+export type ReleaseReason =
+  | 'continuousIntegration'
+  | 'manual'
+  | 'none'
+  | 'pullRequest'
+  | 'schedule';
+export type ArtifactType =
+  | 'Build'
+  | 'Jenkins'
+  | 'GitHub'
+  | 'Nuget'
+  | 'Team Build (external)'
+  | 'ExternalTFSBuild'
+  | 'Git'
+  | 'TFVC'
+  | 'ExternalTfsXamlBuild'
+  // Following value not specified in docs at
+  // https://learn.microsoft.com/en-us/rest/api/azure/devops/release/releases/list?view=azure-devops-rest-5.1&tabs=HTTP#artifact
+  // But we see in responses
+  | 'Artifactory';
+export type EnvironmentStatus =
+  | 'canceled'
+  | 'inProgress'
+  | 'notStarted'
+  | 'partiallySucceeded'
+  | 'queued'
+  | 'rejected'
+  | 'scheduled'
+  | 'succeeded'
+  | 'undefined';
+export type DeploymentReason =
+  | 'automated'
+  | 'manual'
+  | 'none'
+  | 'redeployTrigger'
+  | 'scheduled';
+export type DeploymentStatus =
+  | 'all'
+  | 'failed'
+  | 'inProgress'
+  | 'notDeployed'
+  | 'partiallySucceeded'
+  | 'succeeded'
+  | 'undefined';
+export type DeploymentOperationStatus =
+  | 'All'
+  | 'Approved'
+  | 'Canceled'
+  | 'Cancelling'
+  | 'Deferred'
+  | 'EvaluatingGates'
+  | 'GateFailed'
+  | 'ManualInterventionPending'
+  | 'Pending'
+  | 'PhaseCanceled'
+  | 'PhaseFailed'
+  | 'PhaseInProgress'
+  | 'PhasePartiallySucceeded'
+  | 'PhaseSucceeded'
+  | 'Queued'
+  | 'QueuedForAgent'
+  | 'QueuedForPipeline'
+  | 'Rejected'
+  | 'Scheduled'
+  | 'Undefined';
 export type PullRequestStatus = 'abandoned' | 'active' | 'all' | 'completed' | 'notSet';
-export type PullRequestAsyncStatus = 'conflicts' | 'failure' | 'notSet' | 'queued' | 'rejectedByPolicy' | 'succeeded';
-export type GitPullRequestMergeStrategy = 'noFastForward' | 'rebase' | 'rebaseMerge' | 'squash';
-export type TestCaseResultOutcome = 'Unspecified' | 'None' | 'Passed'
-| 'Failed' | 'Inconclusive' | 'Timeout' | 'Aborted' | 'Blocked'
-| 'NotExecuted' | 'Warning' | 'Error' | 'NotApplicable' | 'Paused'
-| 'InProgress' | 'NotImpacted';
-export type TestCaseResultFailureType = 'Known Issue' | 'New Issue' | 'Regression' | 'Unknown' | 'None';
+export type PullRequestAsyncStatus =
+  | 'conflicts'
+  | 'failure'
+  | 'notSet'
+  | 'queued'
+  | 'rejectedByPolicy'
+  | 'succeeded';
+export type GitPullRequestMergeStrategy =
+  | 'noFastForward'
+  | 'rebase'
+  | 'rebaseMerge'
+  | 'squash';
+export type TestCaseResultOutcome =
+  | 'Unspecified'
+  | 'None'
+  | 'Passed'
+  | 'Failed'
+  | 'Inconclusive'
+  | 'Timeout'
+  | 'Aborted'
+  | 'Blocked'
+  | 'NotExecuted'
+  | 'Warning'
+  | 'Error'
+  | 'NotApplicable'
+  | 'Paused'
+  | 'InProgress'
+  | 'NotImpacted';
+export type TestCaseResultFailureType =
+  | 'Known Issue'
+  | 'New Issue'
+  | 'Regression'
+  | 'Unknown'
+  | 'None';
 
 export type TeamProjectReference = {
   id: string;
@@ -338,7 +444,14 @@ export type TestRun = {
   project: { id: string; name: string };
   startedDate: Date;
   completedDate: Date;
-  state: 'Unspecified' |'NotStarted' | 'InProgress' | 'Completed' | 'Waiting' | 'Aborted' | 'NeedsInvestigation';
+  state:
+    | 'Unspecified'
+    | 'NotStarted'
+    | 'InProgress'
+    | 'Completed'
+    | 'Waiting'
+    | 'Aborted'
+    | 'NeedsInvestigation';
   totalTests: number;
   incompleteTests: number;
   notApplicableTests: number;
@@ -364,17 +477,21 @@ export type TestCaseResult = {
     name: string;
     url?: string;
   };
-  testRun: { id?: string; name: string; url?: string};
+  testRun: { id?: string; name: string; url?: string };
   lastUpdatedDate: Date;
   createdDate: Date;
   url: string;
   failureType: TestCaseResultFailureType;
   automatedTestStorage: string;
   automatedTestType: string;
-  area: { /* TODO */};
+  area: {
+    /* TODO */
+  };
   testCaseTitle: string;
   customFields: []; // TODO
-  releaseReference: { /* TODO */};
+  releaseReference: {
+    /* TODO */
+  };
   testCaseReferenceId: number;
   lastUpdatedBy: IdentityRef;
   automatedTestName: string;
@@ -504,7 +621,9 @@ export type WorkItemQueryHierarchialResult = {
   }[];
 };
 
-export type WorkItemQueryResult<T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult> = {
+export type WorkItemQueryResult<
+  T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult
+> = {
   asOf: Date;
   columns: {
     name: string;
@@ -561,36 +680,37 @@ export type WorkItem = {
 export type WorkItemWithRelations = WorkItem & {
   relations: {
     rel:
-    | 'Microsoft.VSTS.Common.Affects-Forward'
-    | 'Microsoft.VSTS.Common.Affects-Reverse'
-    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
-    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse'
-    | 'Microsoft.VSTS.Common.TestedBy-Forward'
-    | 'Microsoft.VSTS.Common.TestedBy-Reverse'
-    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Forward'
-    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Reverse'
-    | 'System.LinkTypes.Duplicate-Forward'
-    | 'System.LinkTypes.Duplicate-Reverse'
-    | 'System.LinkTypes.Dependency-Forward'
-    | 'System.LinkTypes.Dependency-Reverse'
-    | 'System.LinkTypes.Hierarchy-Forward'
-    | 'System.LinkTypes.Hierarchy-Reverse'
-    | 'System.LinkTypes.Related'
-    | string;
+      | 'Microsoft.VSTS.Common.Affects-Forward'
+      | 'Microsoft.VSTS.Common.Affects-Reverse'
+      | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
+      | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse'
+      | 'Microsoft.VSTS.Common.TestedBy-Forward'
+      | 'Microsoft.VSTS.Common.TestedBy-Reverse'
+      | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Forward'
+      | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Reverse'
+      | 'System.LinkTypes.Duplicate-Forward'
+      | 'System.LinkTypes.Duplicate-Reverse'
+      | 'System.LinkTypes.Dependency-Forward'
+      | 'System.LinkTypes.Dependency-Reverse'
+      | 'System.LinkTypes.Hierarchy-Forward'
+      | 'System.LinkTypes.Hierarchy-Reverse'
+      | 'System.LinkTypes.Related'
+      | string;
     url: string;
     attributes: Record<string, unknown>;
   }[];
 };
 
 export type WorkItemLink = {
-  rel: 'System.LinkTypes.Hierarchy'
-  | 'System.LinkTypes.Related'
-  | 'Microsoft.VSTS.Common.TestedBy'
-  | 'System.LinkTypes.Duplicate'
-  | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy'
-  | 'Microsoft.VSTS.Common.Affects'
-  | 'System.LinkTypes.Dependency'
-  | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy';
+  rel:
+    | 'System.LinkTypes.Hierarchy'
+    | 'System.LinkTypes.Related'
+    | 'Microsoft.VSTS.Common.TestedBy'
+    | 'System.LinkTypes.Duplicate'
+    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy'
+    | 'Microsoft.VSTS.Common.Affects'
+    | 'System.LinkTypes.Dependency'
+    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy';
   attributes: {
     linkType: string;
     sourceId: number;
@@ -634,9 +754,21 @@ export type WorkItemField = {
   referenceName: string;
   url: string;
   description: string | null;
-  type: 'boolean' | 'dateTime' | 'double' | 'guid' | 'history' | 'html'
-  | 'identity' | 'integer' | 'picklistDouble' | 'picklistInteger'
-  | 'picklistString' | 'plainText' | 'string' | 'treePath';
+  type:
+    | 'boolean'
+    | 'dateTime'
+    | 'double'
+    | 'guid'
+    | 'history'
+    | 'html'
+    | 'identity'
+    | 'integer'
+    | 'picklistDouble'
+    | 'picklistInteger'
+    | 'picklistString'
+    | 'plainText'
+    | 'string'
+    | 'treePath';
   isDeleted: boolean;
   isIdentity: boolean;
   isPicklist: boolean;
@@ -685,34 +817,58 @@ type RepoPolicyType<TypeName extends string, AdditionalSettings> = PolicyBase & 
   };
 };
 
-type FileSizeRestrictionPolicy = RepoPolicyType<'File size restriction', {
-  maximumGitBlobSizeInBytes: number;
-  useUncompressedSize: boolean;
-}>;
-type PathLengthRestrictionPolicy = RepoPolicyType<'Path Length restriction', { maxPathLength: number }>;
-type ReservedNamesRestrictionPolicy = RepoPolicyType<'Reserved names restriction', Record<string, never>>;
-type MinimumNumberOfReviewersPolicy = BranchPolicyType<'Minimum number of reviewers', {
-  minimumApproverCount: number;
-  creatorVoteCounts: boolean;
-  allowDownvotes: boolean;
-  resetOnSourcePush: boolean;
-}>;
-type CommentRequirementsPolicy = BranchPolicyType<'Comment requirements', Record<string, never>>;
+type FileSizeRestrictionPolicy = RepoPolicyType<
+  'File size restriction',
+  {
+    maximumGitBlobSizeInBytes: number;
+    useUncompressedSize: boolean;
+  }
+>;
+type PathLengthRestrictionPolicy = RepoPolicyType<
+  'Path Length restriction',
+  { maxPathLength: number }
+>;
+type ReservedNamesRestrictionPolicy = RepoPolicyType<
+  'Reserved names restriction',
+  Record<string, never>
+>;
+type MinimumNumberOfReviewersPolicy = BranchPolicyType<
+  'Minimum number of reviewers',
+  {
+    minimumApproverCount: number;
+    creatorVoteCounts: boolean;
+    allowDownvotes: boolean;
+    resetOnSourcePush: boolean;
+  }
+>;
+type CommentRequirementsPolicy = BranchPolicyType<
+  'Comment requirements',
+  Record<string, never>
+>;
 type WorkItemLinkingPolicy = BranchPolicyType<'Work item linking', Record<string, never>>;
-type BuildPolicy = BranchPolicyType<'Build', {
-  buildDefinitionId: number;
-  queueOnSourceUpdateOnly: boolean;
-  manualQueueOnly: boolean;
-  displayName: string | null;
-  validDuration: number;
-}>;
-type RequiredReviewersPolicy = BranchPolicyType<'Required reviewers', {
-  requiredReviewerIds: string[];
-  filenamePatterns?: string[];
-}>;
-type RequireMergeStrategyPolicy = BranchPolicyType<'Require a merge strategy', {
-  allowRebase?: boolean;
-}>;
+type BuildPolicy = BranchPolicyType<
+  'Build',
+  {
+    buildDefinitionId: number;
+    queueOnSourceUpdateOnly: boolean;
+    manualQueueOnly: boolean;
+    displayName: string | null;
+    validDuration: number;
+  }
+>;
+type RequiredReviewersPolicy = BranchPolicyType<
+  'Required reviewers',
+  {
+    requiredReviewerIds: string[];
+    filenamePatterns?: string[];
+  }
+>;
+type RequireMergeStrategyPolicy = BranchPolicyType<
+  'Require a merge strategy',
+  {
+    allowRebase?: boolean;
+  }
+>;
 
 export type PolicyConfiguration =
   | FileSizeRestrictionPolicy
@@ -725,33 +881,38 @@ export type PolicyConfiguration =
   | RequiredReviewersPolicy
   | RequireMergeStrategyPolicy;
 
-export const isFileSizeRestrictionPolicy = (policy: PolicyConfiguration): policy is FileSizeRestrictionPolicy => (
-  policy.type.displayName === 'File size restriction'
-);
-export const isPathLengthRestrictionPolicy = (policy: PolicyConfiguration): policy is PathLengthRestrictionPolicy => (
-  policy.type.displayName === 'Path Length restriction'
-);
-export const isReservedNamesRestrictionPolicy = (policy: PolicyConfiguration): policy is ReservedNamesRestrictionPolicy => (
-  policy.type.displayName === 'Reserved names restriction'
-);
-export const isMinimumNumberOfReviewersPolicy = (policy: PolicyConfiguration): policy is MinimumNumberOfReviewersPolicy => (
-  policy.type.displayName === 'Minimum number of reviewers'
-);
-export const isCommentRequirementsPolicy = (policy: PolicyConfiguration): policy is CommentRequirementsPolicy => (
-  policy.type.displayName === 'Comment requirements'
-);
-export const isWorkItemLinkingPolicy = (policy: PolicyConfiguration): policy is WorkItemLinkingPolicy => (
-  policy.type.displayName === 'Work item linking'
-);
-export const isBuildPolicy = (policy: PolicyConfiguration): policy is BuildPolicy => (
-  policy.type.displayName === 'Build'
-);
-export const isRequiredReviewersPolicy = (policy: PolicyConfiguration): policy is RequiredReviewersPolicy => (
-  policy.type.displayName === 'Required reviewers'
-);
-export const isRequireMergeStrategyPolicy = (policy: PolicyConfiguration): policy is RequireMergeStrategyPolicy => (
-  policy.type.displayName === 'Require a merge strategy'
-);
+export const isFileSizeRestrictionPolicy = (
+  policy: PolicyConfiguration
+): policy is FileSizeRestrictionPolicy =>
+  policy.type.displayName === 'File size restriction';
+export const isPathLengthRestrictionPolicy = (
+  policy: PolicyConfiguration
+): policy is PathLengthRestrictionPolicy =>
+  policy.type.displayName === 'Path Length restriction';
+export const isReservedNamesRestrictionPolicy = (
+  policy: PolicyConfiguration
+): policy is ReservedNamesRestrictionPolicy =>
+  policy.type.displayName === 'Reserved names restriction';
+export const isMinimumNumberOfReviewersPolicy = (
+  policy: PolicyConfiguration
+): policy is MinimumNumberOfReviewersPolicy =>
+  policy.type.displayName === 'Minimum number of reviewers';
+export const isCommentRequirementsPolicy = (
+  policy: PolicyConfiguration
+): policy is CommentRequirementsPolicy =>
+  policy.type.displayName === 'Comment requirements';
+export const isWorkItemLinkingPolicy = (
+  policy: PolicyConfiguration
+): policy is WorkItemLinkingPolicy => policy.type.displayName === 'Work item linking';
+export const isBuildPolicy = (policy: PolicyConfiguration): policy is BuildPolicy =>
+  policy.type.displayName === 'Build';
+export const isRequiredReviewersPolicy = (
+  policy: PolicyConfiguration
+): policy is RequiredReviewersPolicy => policy.type.displayName === 'Required reviewers';
+export const isRequireMergeStrategyPolicy = (
+  policy: PolicyConfiguration
+): policy is RequireMergeStrategyPolicy =>
+  policy.type.displayName === 'Require a merge strategy';
 
 export type TimelineRecord = {
   attempt: number;
@@ -776,7 +937,13 @@ export type TimelineRecord = {
     timelineId: string;
   }[];
   queueId: number;
-  result: 'abandoned' | 'canceled' | 'failed' | 'skipped' | 'succeeded' | 'succeededWithIssues';
+  result:
+    | 'abandoned'
+    | 'canceled'
+    | 'failed'
+    | 'skipped'
+    | 'succeeded'
+    | 'succeededWithIssues';
   resultCode: string | null;
   startTime: Date;
   state: 'completed' | 'inProgress' | 'pending';

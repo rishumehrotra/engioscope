@@ -2,10 +2,11 @@ import React, { useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const hasVersionChanged = () => fetch('/api/ui-version')
-  .then(res => res.text())
-  // eslint-disable-next-line no-undef
-  .then(version => version !== APP_VERSION);
+const hasVersionChanged = () =>
+  fetch('/api/ui-version')
+    .then(res => res.text())
+    // eslint-disable-next-line no-undef
+    .then(version => version !== APP_VERSION);
 
 const RefreshIfUpdated: React.FC<{ children: ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -36,7 +37,7 @@ const RefreshIfUpdated: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   // eslint-disable-next-line react/jsx-no-useless-fragment
-  return (<>{children}</>);
+  return <>{children}</>;
 };
 
 export default RefreshIfUpdated;

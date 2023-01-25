@@ -3,9 +3,9 @@ import type { WorkItemRevision } from '../types-azure.js';
 
 const transformRevision = (revision: WorkItemRevision): UIWorkItemRevision => ({
   state: revision.fields['System.State'],
-  date: revision.fields['System.ChangedDate'].toISOString()
+  date: revision.fields['System.ChangedDate'].toISOString(),
 });
-export default (revisions: WorkItemRevision[]) => (
+export default (revisions: WorkItemRevision[]) =>
   revisions.reduce<UIWorkItemRevision[]>((acc, revision) => {
     if (acc.length === 0) {
       return [transformRevision(revision)];
@@ -16,5 +16,4 @@ export default (revisions: WorkItemRevision[]) => (
     }
 
     return acc.concat(transformRevision(revision));
-  }, [])
-);
+  }, []);

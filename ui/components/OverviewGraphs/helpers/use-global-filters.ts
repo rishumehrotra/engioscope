@@ -5,7 +5,7 @@ import useQueryParam, { asString } from '../../../hooks/use-query-param.js';
 
 export type Filter = { label: string; tags: string[] };
 
-const collectFilters = (workItems: UIWorkItem[]) => (
+const collectFilters = (workItems: UIWorkItem[]) =>
   Object.entries(
     workItems.reduce<Record<string, Set<string>>>((acc, workItem) => {
       if (!workItem.filterBy) return acc;
@@ -17,8 +17,7 @@ const collectFilters = (workItems: UIWorkItem[]) => (
 
       return acc;
     }, {})
-  ).map(([label, tags]) => ({ label, tags: [...tags].sort() }))
-);
+  ).map(([label, tags]) => ({ label, tags: [...tags].sort() }));
 
 const combinedFilter = (selectedFilters: Filter[]) => {
   const collectedFilters = selectedFilters.reduce<Record<string, string[]>>(
@@ -36,31 +35,29 @@ const combinedFilter = (selectedFilters: Filter[]) => {
       return (workItem: UIWorkItem) => {
         if (!tags.length) return true; // No filter selected
 
-        return workItem.filterBy
-          ?.find(f => f.label === label)
-          ?.tags.some(tag => filter.includes(tag))
-          || false;
+        return (
+          workItem.filterBy
+            ?.find(f => f.label === label)
+            ?.tags.some(tag => filter.includes(tag)) || false
+        );
       };
     })
   );
 };
 
-const toUrlFilter = (filter: Filter[]) => (
+const toUrlFilter = (filter: Filter[]) =>
   filter
     .filter(({ tags }) => tags.length)
     .map(({ label, tags }) => `${label}:${tags.join(',')}`)
-    .join(';')
-  || undefined
-);
+    .join(';') || undefined;
 
-const fromUrlFilter = (urlParam = '') => (
+const fromUrlFilter = (urlParam = '') =>
   urlParam
     ? urlParam
-      .split(';')
-      .map(part => part.split(':'))
-      .map(([label, tags]) => ({ label, tags: tags.split(',') }))
-    : []
-);
+        .split(';')
+        .map(part => part.split(':'))
+        .map(([label, tags]) => ({ label, tags: tags.split(',') }))
+    : [];
 
 export default (workItems: UIWorkItem[]) => {
   const [urlFilter, setUrlFilter] = useQueryParam('filter', asString);
@@ -72,14 +69,14 @@ export default (workItems: UIWorkItem[]) => {
     [urlFilter, workItems]
   );
 
-  const setSelectedFilters = useCallback((filters: Filter[]) => {
-    setUrlFilter(toUrlFilter(filters), true);
-  }, [setUrlFilter]);
-
-  const selectedFilters = useMemo(
-    () => fromUrlFilter(urlFilter),
-    [urlFilter]
+  const setSelectedFilters = useCallback(
+    (filters: Filter[]) => {
+      setUrlFilter(toUrlFilter(filters), true);
+    },
+    [setUrlFilter]
   );
+
+  const selectedFilters = useMemo(() => fromUrlFilter(urlFilter), [urlFilter]);
 
   return [filtered, filters, selectedFilters, setSelectedFilters] as const;
 };

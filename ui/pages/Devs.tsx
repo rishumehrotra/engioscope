@@ -13,9 +13,11 @@ import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
 const sorters: SortMap<Dev> = {
-  'Name': (a, b) => b.name.toLowerCase().replace(/["“”]/gi, '').localeCompare(
-    a.name.toLowerCase().replace(/["“”]/gi, '')
-  )
+  Name: (a, b) =>
+    b.name
+      .toLowerCase()
+      .replace(/["“”]/gi, '')
+      .localeCompare(a.name.toLowerCase().replace(/["“”]/gi, '')),
 };
 
 const bySearch = (search: string) => (d: Dev) => filterBySearch(search, d.name);

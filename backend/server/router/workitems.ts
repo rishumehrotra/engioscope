@@ -1,10 +1,14 @@
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
 import { getWorkItemTypes } from '../../models/work-item-types.js';
 import {
-  newWorkItemsListForDate, newWorkItemsListForDateInputParser,
-  newWorkItemsListForGroup, newWorkItemsListForGroupInputParser,
-  newWorkItemsSummary, newWorkItemsSummaryInputParser,
-  workItemForTooltip, workItemForTooltipInputParser
+  newWorkItemsListForDate,
+  newWorkItemsListForDateInputParser,
+  newWorkItemsListForGroup,
+  newWorkItemsListForGroupInputParser,
+  newWorkItemsSummary,
+  newWorkItemsSummaryInputParser,
+  workItemForTooltip,
+  workItemForTooltipInputParser,
 } from '../../models/workitems.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -27,5 +31,5 @@ export default t.router({
 
   workItemForTooltip: t.procedure
     .input(workItemForTooltipInputParser)
-    .query(passInputTo(workItemForTooltip))
+    .query(passInputTo(workItemForTooltip)),
 });

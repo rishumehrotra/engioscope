@@ -1,9 +1,6 @@
 import { range } from 'rambda';
 import type { MutableRefObject } from 'react';
-import React, {
-  useMemo,
-  useState, useCallback, Fragment, useRef
-} from 'react';
+import React, { useMemo, useState, useCallback, Fragment, useRef } from 'react';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
 import useSvgEvent from '../../hooks/use-svg-event.js';
 
@@ -55,7 +52,14 @@ type GridLinesProps<Point> = {
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 const GridLines = <Point extends unknown>({
-  svgRef, yAxisMax, yCoord, width, yAxisLabel, xAxisLabel, points, closestPointIndex
+  svgRef,
+  yAxisMax,
+  yCoord,
+  width,
+  yAxisLabel,
+  xAxisLabel,
+  points,
+  closestPointIndex,
 }: GridLinesProps<Point>) => {
   const gridLinesGap = Math.ceil(yAxisMax / (numberOfHorizontalGridLines + 1));
 
@@ -64,9 +68,13 @@ const GridLines = <Point extends unknown>({
     return (gridLineIndex: number) => {
       if (!svgDimensions) return;
       return xAxisLabel(
-        points[closestPointIndex(
-          (gridLineIndex * (svgDimensions.width - ((yAxisLeftPadding * svgDimensions.width) / width))) / (numberOfVerticalGridLines - 1)
-        )]
+        points[
+          closestPointIndex(
+            (gridLineIndex *
+              (svgDimensions.width - (yAxisLeftPadding * svgDimensions.width) / width)) /
+              (numberOfVerticalGridLines - 1)
+          )
+        ]
       );
     };
   }, [closestPointIndex, points, svgRef, width, xAxisLabel]);
@@ -101,27 +109,35 @@ const GridLines = <Point extends unknown>({
         {range(1, numberOfVerticalGridLines + 1).map(i => (
           <Fragment key={i}>
             <line
-              x1={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines)}
+              x1={
+                yAxisLeftPadding +
+                (i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines
+              }
               y1={0}
-              x2={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines)}
-              y2={(height - xAxisBottomPadding)}
+              x2={
+                yAxisLeftPadding +
+                (i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines
+              }
+              y2={height - xAxisBottomPadding}
               stroke="#e9e9e9"
               strokeWidth={i === numberOfVerticalGridLines ? 3 : 1}
             />
-            {i === numberOfVerticalGridLines
-              ? null
-              : (
-                <foreignObject
-                  x={yAxisLeftPadding + ((i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines) - (xAxisLabelWidth / 2)}
-                  y={height - xAxisBottomPadding + (axisOverhang / 2)}
-                  width={xAxisLabelWidth}
-                  height={xAxisLabelHeight}
-                >
-                  <div className="flex text-gray-500 justify-center text-sm w-full items-center">
-                    {labelForVerticalGridline(i)}
-                  </div>
-                </foreignObject>
-              )}
+            {i === numberOfVerticalGridLines ? null : (
+              <foreignObject
+                x={
+                  yAxisLeftPadding +
+                  (i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines -
+                  xAxisLabelWidth / 2
+                }
+                y={height - xAxisBottomPadding + axisOverhang / 2}
+                width={xAxisLabelWidth}
+                height={xAxisLabelHeight}
+              >
+                <div className="flex text-gray-500 justify-center text-sm w-full items-center">
+                  {labelForVerticalGridline(i)}
+                </div>
+              </foreignObject>
+            )}
           </Fragment>
         ))}
       </g>
@@ -168,13 +184,13 @@ const useCrosshair = (
     const closeToLeftEdge = xCoord(closest) < hoverBubbleWidth / 2;
     if (closeToRightEdge) {
       // crosshairLabel.style.transformOrigin = 'right';
-      crosshairLabel.style.transform = (
-        `translateX(${(width - xCoord(closest) - (hoverBubbleWidth / 2))}px)`
-      );
+      crosshairLabel.style.transform = `translateX(${
+        width - xCoord(closest) - hoverBubbleWidth / 2
+      }px)`;
     } else if (closeToLeftEdge) {
-      crosshairLabel.style.transform = (
-        `translateX(${hoverBubbleWidth / 2 - xCoord(closest)}px)`
-      );
+      crosshairLabel.style.transform = `translateX(${
+        hoverBubbleWidth / 2 - xCoord(closest)
+      }px)`;
     } else {
       crosshairLabel.style.transform = 'translateX(0)';
       crosshairLabel.style.width = `${hoverBubbleWidth}px`;
@@ -182,18 +198,23 @@ const useCrosshair = (
   }, [svgRef, crosshairRef, width, closestPointIndex, xCoord, closestIndex]);
   useRequestAnimationFrame(repositionCrosshair);
 
-  const mouseMove = useCallback((e: MouseEvent) => {
-    if (!svgRef.current) {
-      hoverXCoord.current = null;
-      return;
-    }
-    const rect = svgRef.current.getBoundingClientRect();
-    const mappedPosition = (width / rect.width) * e.offsetX;
-    hoverXCoord.current = mappedPosition < yAxisLeftPadding ? null : mappedPosition;
-  }, [svgRef, width]);
+  const mouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!svgRef.current) {
+        hoverXCoord.current = null;
+        return;
+      }
+      const rect = svgRef.current.getBoundingClientRect();
+      const mappedPosition = (width / rect.width) * e.offsetX;
+      hoverXCoord.current = mappedPosition < yAxisLeftPadding ? null : mappedPosition;
+    },
+    [svgRef, width]
+  );
   useSvgEvent(svgRef, 'mousemove', mouseMove);
 
-  const mouseLeave = useCallback(() => { hoverXCoord.current = null; }, []);
+  const mouseLeave = useCallback(() => {
+    hoverXCoord.current = null;
+  }, []);
   useSvgEvent(svgRef, 'mouseleave', mouseLeave);
 
   return closestIndex;
@@ -209,10 +230,21 @@ type VerticalCrosshairProps = {
 };
 
 const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
-  svgRef, width, closestPointIndex, xCoord, contents, crosshairWidth
+  svgRef,
+  width,
+  closestPointIndex,
+  xCoord,
+  contents,
+  crosshairWidth,
 }) => {
   const crosshairRef = useRef<SVGGElement | null>(null);
-  const renderIndex = useCrosshair(svgRef, crosshairRef, width, closestPointIndex, xCoord);
+  const renderIndex = useCrosshair(
+    svgRef,
+    crosshairRef,
+    width,
+    closestPointIndex,
+    xCoord
+  );
 
   return (
     <g ref={crosshairRef} className="pointer-events-none" style={{ display: 'none' }}>
@@ -231,12 +263,9 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
         overflow="visible"
       >
         {/* This div is needed for the useCrosshair hook */}
-        <div>
-          {renderIndex === null ? null : contents(renderIndex)}
-        </div>
+        <div>{renderIndex === null ? null : contents(renderIndex)}</div>
       </foreignObject>
     </g>
-
   );
 };
 
@@ -254,37 +283,56 @@ export type LineGraphProps<Line, Point> = {
 };
 
 const LineGraph = <L, P>({
-  lines, points, pointToValue, className, lineColor,
-  yAxisLabel, lineLabel, xAxisLabel, crosshairBubble = () => null,
-  onClick
+  lines,
+  points,
+  pointToValue,
+  className,
+  lineColor,
+  yAxisLabel,
+  lineLabel,
+  xAxisLabel,
+  crosshairBubble = () => null,
+  onClick,
 }: LineGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const yAxisMax = Math.max(...lines.map(line => Math.max(...points(line).map(pointToValue))));
+  const yAxisMax = Math.max(
+    ...lines.map(line => Math.max(...points(line).map(pointToValue)))
+  );
 
-  const xCoord = useCallback((index: number) => (
-    (index * yAxisItemSpacing) + yAxisLeftPadding
-  ), []);
+  const xCoord = useCallback(
+    (index: number) => index * yAxisItemSpacing + yAxisLeftPadding,
+    []
+  );
 
-  const yCoord = useCallback((value: number) => (
-    height - ((value / yAxisMax) * (height - xAxisBottomPadding)) - xAxisBottomPadding
-  ), [yAxisMax]);
+  const yCoord = useCallback(
+    (value: number) =>
+      height - (value / yAxisMax) * (height - xAxisBottomPadding) - xAxisBottomPadding,
+    [yAxisMax]
+  );
 
-  const closestPointIndex = useCallback((xCoord: number) => (
-    Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing)
-  ), []);
+  const closestPointIndex = useCallback(
+    (xCoord: number) => Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing),
+    []
+  );
 
-  const width = lines.length === 0
-    ? 0
-    : ((points(lines[0]).length - 1) * yAxisItemSpacing) + yAxisLeftPadding;
+  const width =
+    lines.length === 0
+      ? 0
+      : (points(lines[0]).length - 1) * yAxisItemSpacing + yAxisLeftPadding;
 
-  const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-    if (!onClick) return;
-    const svgDimensions = svgRef.current?.getBoundingClientRect();
-    if (!svgDimensions) return;
-    const index = closestPointIndex((e.nativeEvent.offsetX / svgDimensions.width) * width);
-    if (index !== null && index >= 0) onClick(index);
-  }, [closestPointIndex, onClick, width]);
+  const onSvgClick = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (!onClick) return;
+      const svgDimensions = svgRef.current?.getBoundingClientRect();
+      if (!svgDimensions) return;
+      const index = closestPointIndex(
+        (e.nativeEvent.offsetX / svgDimensions.width) * width
+      );
+      if (index !== null && index >= 0) onClick(index);
+    },
+    [closestPointIndex, onClick, width]
+  );
 
   if (lines.length === 0) return <div>Couldn't find any matching workitems</div>;
 
@@ -311,9 +359,14 @@ const LineGraph = <L, P>({
       {lines.map(line => (
         <path
           key={lineLabel(line)}
-          d={points(line).map((point, pointIndex) => (
-            `${pointIndex === 0 ? 'M' : 'L'} ${xCoord(pointIndex)} ${yCoord(pointToValue(point))}`
-          )).join(' ')}
+          d={points(line)
+            .map(
+              (point, pointIndex) =>
+                `${pointIndex === 0 ? 'M' : 'L'} ${xCoord(pointIndex)} ${yCoord(
+                  pointToValue(point)
+                )}`
+            )
+            .join(' ')}
           fill="none"
           stroke={lineColor(line)}
           strokeWidth={5}

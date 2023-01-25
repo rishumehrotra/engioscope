@@ -1,7 +1,16 @@
 import { passInputTo, t } from './trpc.js';
-import { aggregateBuildTimelineStats, aggregateBuildTimelineStatsInputParser } from '../../models/build-timeline.js';
-import { centralTemplateOptions, centralTemplateOptionsInputParser } from '../../models/build-reports.js';
-import { getBuildsOverviewForRepository, getBuildsOverviewForRepositoryInputParser } from '../../models/builds.js';
+import {
+  aggregateBuildTimelineStats,
+  aggregateBuildTimelineStatsInputParser,
+} from '../../models/build-timeline.js';
+import {
+  centralTemplateOptions,
+  centralTemplateOptionsInputParser,
+} from '../../models/build-reports.js';
+import {
+  getBuildsOverviewForRepository,
+  getBuildsOverviewForRepositoryInputParser,
+} from '../../models/builds.js';
 
 export default t.router({
   timelineStats: t.procedure
@@ -14,5 +23,5 @@ export default t.router({
 
   getBuildsOverviewForRepository: t.procedure
     .input(getBuildsOverviewForRepositoryInputParser)
-    .query(passInputTo(getBuildsOverviewForRepository))
+    .query(passInputTo(getBuildsOverviewForRepository)),
 });

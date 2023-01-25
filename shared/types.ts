@@ -65,13 +65,20 @@ export type Pipeline = {
   id: number;
   name: string;
   url: string;
-  repos: Record<string, {
-    name: string;
-    branches: string[];
-    additionalBranches?: string[];
-  }>;
+  repos: Record<
+    string,
+    {
+      name: string;
+      branches: string[];
+      additionalBranches?: string[];
+    }
+  >;
   stageCounts: PipelineCount[];
-  attempts: { total: number; master: number; byWeek: { total: number; master: number}[] };
+  attempts: {
+    total: number;
+    master: number;
+    byWeek: { total: number; master: number }[];
+  };
 };
 
 export type ReleasePipelineStats = {
@@ -87,10 +94,10 @@ export type UIBuildPipeline = {
   duration: { average: string; min: string; max: string };
   definitionId: string;
   status:
-  | { type: 'unknown' }
-  | { type: 'succeeded' }
-  | { type: 'failed'; since: Date }
-  | { type: 'unused'; since: Date | undefined };
+    | { type: 'unknown' }
+    | { type: 'succeeded' }
+    | { type: 'failed'; since: Date }
+    | { type: 'unused'; since: Date | undefined };
   type: 'ui' | 'yml';
   buildsByWeek?: number[];
   successesByWeek?: number[];
@@ -157,56 +164,58 @@ export type QualityGateDetails = {
   status: QualityGateStatus;
 };
 
-export type UICodeQuality = null | {
-  name: string;
-  url: string;
-  lastAnalysisDate: Date | null;
-  qualityGateName: string;
-  files?: number;
-  complexity: {
-    cyclomatic?: number;
-    cognitive?: number;
-  };
-  quality: {
-    gate: QualityGateStatus;
-    securityRating?: QualityGateDetails;
-    coverage?: QualityGateDetails;
-    duplicatedLinesDensity?: QualityGateDetails;
-    blockerViolations?: QualityGateDetails;
-    codeSmells?: QualityGateDetails;
-    criticalViolations?: QualityGateDetails;
-  };
-  maintainability: {
-    rating?: number;
-    techDebt?: number;
-    codeSmells?: number;
-  };
-  coverage: {
-    byTests?: number;
-    line?: number;
-    linesToCover?: number;
-    uncoveredLines?: number;
-    branch?: number;
-    conditionsToCover?: number;
-    uncoveredConditions?: number;
-  };
-  reliability: {
-    rating?: number;
-    bugs?: number;
-  };
-  security: {
-    rating?: number;
-    vulnerabilities?: number;
-  };
-  duplication: {
-    blocks?: number;
-    files?: number;
-    lines?: number;
-    linesDensity?: number;
-  };
-  oldestFoundSample: string | undefined;
-  qualityGateByWeek: (QualityGateStatus | null)[];
-}[];
+export type UICodeQuality =
+  | null
+  | {
+      name: string;
+      url: string;
+      lastAnalysisDate: Date | null;
+      qualityGateName: string;
+      files?: number;
+      complexity: {
+        cyclomatic?: number;
+        cognitive?: number;
+      };
+      quality: {
+        gate: QualityGateStatus;
+        securityRating?: QualityGateDetails;
+        coverage?: QualityGateDetails;
+        duplicatedLinesDensity?: QualityGateDetails;
+        blockerViolations?: QualityGateDetails;
+        codeSmells?: QualityGateDetails;
+        criticalViolations?: QualityGateDetails;
+      };
+      maintainability: {
+        rating?: number;
+        techDebt?: number;
+        codeSmells?: number;
+      };
+      coverage: {
+        byTests?: number;
+        line?: number;
+        linesToCover?: number;
+        uncoveredLines?: number;
+        branch?: number;
+        conditionsToCover?: number;
+        uncoveredConditions?: number;
+      };
+      reliability: {
+        rating?: number;
+        bugs?: number;
+      };
+      security: {
+        rating?: number;
+        vulnerabilities?: number;
+      };
+      duplication: {
+        blocks?: number;
+        files?: number;
+        lines?: number;
+        linesDensity?: number;
+      };
+      oldestFoundSample: string | undefined;
+      qualityGateByWeek: (QualityGateStatus | null)[];
+    }[];
 
 export type AggregatedCommitsByDev = {
   name: string;
@@ -279,7 +288,7 @@ export type UIWorkItemType = {
   icon: string;
   color: string;
   iconColor: string | null;
-  workCenters: { label: string; startDateField: string[]; endDateField: string[]}[];
+  workCenters: { label: string; startDateField: string[]; endDateField: string[] }[];
   groupLabel?: string;
   startDateFields?: string[];
   endDateFields?: string[];
@@ -345,15 +354,16 @@ export type ProjectRepoAnalysis = UIProjectAnalysis & {
   };
 };
 
-export type ProjectReleasePipelineAnalysis = UIProjectAnalysis & ReleasePipelineStats & {
-  stagesToHighlight?: string[];
-  ignoreStagesBefore?: string;
-  groups?: {
-    label: string;
-    groups: Record<string, string[]>;
+export type ProjectReleasePipelineAnalysis = UIProjectAnalysis &
+  ReleasePipelineStats & {
+    stagesToHighlight?: string[];
+    ignoreStagesBefore?: string;
+    groups?: {
+      label: string;
+      groups: Record<string, string[]>;
+    };
+    environments?: string[];
   };
-  environments?: string[];
-};
 
 export type ProjectWorkItemAnalysis = UIProjectAnalysis & {
   workItems: AnalysedWorkItems | null;
@@ -414,7 +424,10 @@ export type TrackFlowMetrics = {
   lastUpdated: string;
 };
 
-export type UIChangeProgramTask = Omit<UIWorkItem, 'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'> & {
+export type UIChangeProgramTask = Omit<
+  UIWorkItem,
+  'iterationPath' | 'typeId' | 'env' | 'groupId' | 'severity' | 'rca' | 'filterBy'
+> & {
   collection: string;
   team: string;
   theme: string;

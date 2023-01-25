@@ -9,7 +9,10 @@ import { exec as cpsExec } from 'node:child_process';
 import { rename, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import aggregationWriter, {
-  writeChangeProgramFile, writeSummaryMetricsFile, writeTrackFeatures, writeTrackFlowMetrics
+  writeChangeProgramFile,
+  writeSummaryMetricsFile,
+  writeTrackFeatures,
+  writeTrackFlowMetrics,
 } from './aggregation-writer.js';
 import azure from './network/azure.js';
 import type { ParsedConfig } from './parse-config.js';
@@ -47,8 +50,8 @@ const restoreFromMongo = async () => {
     return;
   }
 
-  if (!await fileExists(join(process.cwd(), 'cache', 'dump.gz'))) {
-    logStep('Couldn\'t find mongodump. Skipping');
+  if (!(await fileExists(join(process.cwd(), 'cache', 'dump.gz')))) {
+    logStep("Couldn't find mongodump. Skipping");
     return;
   }
 
@@ -63,18 +66,18 @@ const scrape = async (config: ParsedConfig) => {
   const time = startTimer();
 
   const {
-    getCollectionWorkItemFields, getCollectionWorkItemIdsForQuery,
-    getCollectionWorkItems
+    getCollectionWorkItemFields,
+    getCollectionWorkItemIdsForQuery,
+    getCollectionWorkItems,
   } = azure(config);
   const analyseProject = projectAnalyser(config);
   const writeToFile = aggregationWriter(config);
   const collectionWorkItems = workItemsForCollection(config);
 
   const changeProgramWorkItems = Promise.all(
-    config.azure.collections.map(changeProgramTasks(
-      getCollectionWorkItemIdsForQuery,
-      getCollectionWorkItems
-    ))
+    config.azure.collections.map(
+      changeProgramTasks(getCollectionWorkItemIdsForQuery, getCollectionWorkItems)
+    )
   ).then(x => x.flat());
 
   const projects = config.azure.collections.flatMap(collection => {
@@ -82,23 +85,17 @@ const scrape = async (config: ParsedConfig) => {
     const workItems = collectionWorkItems(collection);
     const workItemFields = getCollectionWorkItemFields(collection.name);
 
-    return collection.projects.map(project => ([
-      collection,
-      project,
-      workItems,
-      workItemFields
-    ] as const));
+    return collection.projects.map(
+      project => [collection, project, workItems, workItemFields] as const
+    );
   });
 
   const results = zip(
     projects,
-    await mapSettleSeries(
-      projects,
-      async args => {
-        const analysed = await analyseProject(...args);
-        await writeToFile(args[0].name, args[1])(analysed);
-      }
-    )
+    await mapSettleSeries(projects, async args => {
+      const analysed = await analyseProject(...args);
+      await writeToFile(args[0].name, args[1])(analysed);
+    })
   );
 
   const successful = results.filter(result => result[1].status === 'fulfilled');
@@ -119,7 +116,9 @@ const scrape = async (config: ParsedConfig) => {
         failure[1].status === 'rejected' && failure[1].reason
       );
     });
-    console.log('\nRe-run this script to re-fetch the failed data. Data already fetched won\'t be refetched.');
+    console.log(
+      "\nRe-run this script to re-fetch the failed data. Data already fetched won't be refetched."
+    );
     throw new Error('Exiting with non-zero error, see above for details');
   }
   console.log('\n');
@@ -128,37 +127,49 @@ const scrape = async (config: ParsedConfig) => {
 
   await Promise.all([
     changeProgramWorkItems.then(writeChangeProgramFile(config)),
-    trackMetrics(config, results.map(r => ({
-      collectionConfig: r[0][0],
-      projectConfig: r[0][1]
-    }))).then(t => writeTrackFlowMetrics(config, t.filter(exists))),
-    trackFeatures(config, results.map(r => ({
-      collectionConfig: r[0][0],
-      projectConfig: r[0][1]
-    }))).then(t => writeTrackFeatures(config, t)),
+    trackMetrics(
+      config,
+      results.map(r => ({
+        collectionConfig: r[0][0],
+        projectConfig: r[0][1],
+      }))
+    ).then(t => writeTrackFlowMetrics(config, t.filter(exists))),
+    trackFeatures(
+      config,
+      results.map(r => ({
+        collectionConfig: r[0][0],
+        projectConfig: r[0][1],
+      }))
+    ).then(t => writeTrackFeatures(config, t)),
     summariseResults(
       config,
-      results
-        .map(r => ({
-          collectionConfig: r[0][0],
-          projectConfig: r[0][1]
-        }))
-    ).then(writeSummaryMetricsFile)
+      results.map(r => ({
+        collectionConfig: r[0][0],
+        projectConfig: r[0][1],
+      }))
+    ).then(writeSummaryMetricsFile),
   ]);
 };
 
 const printFetchCounters = () => {
   const counts = fetchCounters();
-  debug('fetch-counters')('Made %d HTTP requests, had %d cache hits', counts.networkHits, counts.cacheHits);
+  debug('fetch-counters')(
+    'Made %d HTTP requests, had %d cache hits',
+    counts.networkHits,
+    counts.cacheHits
+  );
 };
 
 const createTarGz = async () => {
   logStep('Creating data/cache.tar.gz...');
   const time = startTimer();
-  await tar.create({
-    gzip: true,
-    file: 'data/cache.tar.gz'
-  }, ['cache']);
+  await tar.create(
+    {
+      gzip: true,
+      file: 'data/cache.tar.gz',
+    },
+    ['cache']
+  );
   logStep(`Created data/cache.tar.gz in ${time()}`);
 };
 

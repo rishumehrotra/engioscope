@@ -20,24 +20,27 @@ import { trpc } from './helpers/trpc';
 import { oneMinuteInMs } from '../shared/utils.js';
 
 const App: React.FC = () => {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnMount: false,
-        refetchOnReconnect: false,
-        refetchInterval: false,
-        refetchOnWindowFocus: false,
-        staleTime: 15 * oneMinuteInMs
-      }
-    }
-  }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnMount: false,
+            refetchOnReconnect: false,
+            refetchInterval: false,
+            refetchOnWindowFocus: false,
+            staleTime: 15 * oneMinuteInMs,
+          },
+        },
+      })
+  );
 
-  const [trpcClient] = useState(() => trpc.createClient({
-    links: [
-      httpBatchLink({ url: '/api/rpc' })
-    ],
-    transformer: superjson
-  }));
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [httpBatchLink({ url: '/api/rpc' })],
+      transformer: superjson,
+    })
+  );
 
   return (
     <BrowserRouter>

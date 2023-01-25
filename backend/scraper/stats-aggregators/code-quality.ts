@@ -1,6 +1,10 @@
 import { head, prop } from 'rambda';
 import { byDate, desc } from 'sort-lib';
-import type { Measure, SonarAnalysisByRepo, SonarQualityGateDetails } from '../types-sonar.js';
+import type {
+  Measure,
+  SonarAnalysisByRepo,
+  SonarQualityGateDetails,
+} from '../types-sonar.js';
 import type { QualityGateStatus, UICodeQuality } from '../../../shared/types.js';
 import { pastDate } from '../../utils.js';
 
@@ -32,39 +36,38 @@ export const requiredMetrics = [
   'uncovered_conditions',
   'uncovered_lines',
   'vulnerabilities',
-  'files'
+  'files',
 ];
 
 type AggregatedCodeQuality = {
   codeQuality: UICodeQuality;
-  languages?: {lang: string; loc: number}[];
+  languages?: { lang: string; loc: number }[];
 };
 
-const isMeasureName = (name: string) => (measure: Measure) => (
-  measure.metric === name
-);
+const isMeasureName = (name: string) => (measure: Measure) => measure.metric === name;
 
 const formatLoc = (loc?: string): AggregatedCodeQuality['languages'] => {
   if (!loc) return;
-  return loc
-    .split(';')
-    .map(langGroup => {
-      const [lang, loc] = langGroup.split('=');
-      return { lang, loc: Number(loc) };
-    });
+  return loc.split(';').map(langGroup => {
+    const [lang, loc] = langGroup.split('=');
+    return { lang, loc: Number(loc) };
+  });
 };
 
-const combineLoc = (locs: ReturnType<typeof formatLoc>[]): ReturnType<typeof formatLoc> => {
+const combineLoc = (
+  locs: ReturnType<typeof formatLoc>[]
+): ReturnType<typeof formatLoc> => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const filtered = locs.filter(Boolean).flatMap(x => x!);
   const combinedSet = new Map<string, number>();
   filtered.forEach(({ lang, loc }) => {
-    combinedSet.set(lang, (
+    combinedSet.set(
+      lang,
       combinedSet.has(lang)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ? combinedSet.get(lang)! + loc
+        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          combinedSet.get(lang)! + loc
         : loc
-    ));
+    );
   });
   return Array.from(combinedSet.entries()).map(([lang, loc]) => ({ lang, loc }));
 };
@@ -87,9 +90,7 @@ const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
 };
 
 const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[number]) => {
-  const {
-    measures, url, lastAnalysisDate, name
-  } = sonarAnalysis;
+  const { measures, url, lastAnalysisDate, name } = sonarAnalysis;
 
   const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
   const measureAsNumber = (name: string) => {
@@ -97,17 +98,21 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
     return measure ? Number(measure) : undefined;
   };
 
-  const qualityGateDetails = JSON.parse(findMeasure('quality_gate_details') || '{}') as SonarQualityGateDetails;
+  const qualityGateDetails = JSON.parse(
+    findMeasure('quality_gate_details') || '{}'
+  ) as SonarQualityGateDetails;
   const qualityGateMetric = (metricName: string) => {
-    const metric = qualityGateDetails.conditions?.find(({ metric }) => metric === metricName);
+    const metric = qualityGateDetails.conditions?.find(
+      ({ metric }) => metric === metricName
+    );
 
     if (!metric) return;
 
     return {
       value: metric?.actual ? Number(metric.actual) : undefined,
-      op: metric?.op ? metric.op.toLowerCase() as 'gt' | 'lt' : undefined,
+      op: metric?.op ? (metric.op.toLowerCase() as 'gt' | 'lt') : undefined,
       level: metric?.error ? Number(metric.error) : undefined,
-      status: parseQualityGateStatus(metric.level)
+      status: parseQualityGateStatus(metric.level),
     };
   };
 
@@ -117,29 +122,34 @@ const sonarAnalysisGetter = (sonarAnalysis: NonNullable<SonarAnalysisByRepo>[num
     lastAnalysisDate,
     measureAsNumber,
     qualityGateMetric,
-    qualityGateStatus: parseQualityGateStatus(qualityGateDetails.level)
+    qualityGateStatus: parseQualityGateStatus(qualityGateDetails.level),
   };
 };
 
-const uptillWeeks = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-  .map(weekIndex => {
-    const weekEnd = pastDate(`${(weekIndex - 1) * 7} days`);
-    return (d: Date) => d <= weekEnd;
-  });
+const uptillWeeks = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(weekIndex => {
+  const weekEnd = pastDate(`${(weekIndex - 1) * 7} days`);
+  return (d: Date) => d <= weekEnd;
+});
 
 export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
   if (!sonarAnalyses) return { codeQuality: null };
 
   return {
     languages: combineLoc(
-      sonarAnalyses
-        .map(
-          sonarAnalysis => formatLoc(sonarAnalysis.measures.find(isMeasureName('ncloc_language_distribution'))?.value)
+      sonarAnalyses.map(sonarAnalysis =>
+        formatLoc(
+          sonarAnalysis.measures.find(isMeasureName('ncloc_language_distribution'))?.value
         )
+      )
     ),
     codeQuality: sonarAnalyses.map(sonarAnalysis => {
       const {
-        name, url, lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus
+        name,
+        url,
+        lastAnalysisDate,
+        measureAsNumber,
+        qualityGateMetric,
+        qualityGateStatus,
       } = sonarAnalysisGetter(sonarAnalysis);
 
       return {
@@ -150,7 +160,7 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
         files: measureAsNumber('files'),
         complexity: {
           cyclomatic: measureAsNumber('complexity'),
-          cognitive: measureAsNumber('cognitive_complexity')
+          cognitive: measureAsNumber('cognitive_complexity'),
         },
         quality: {
           gate: qualityGateStatus,
@@ -159,7 +169,7 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
           duplicatedLinesDensity: qualityGateMetric('duplicated_lines_density'),
           blockerViolations: qualityGateMetric('blocker_violations'),
           codeSmells: qualityGateMetric('code_smells'),
-          criticalViolations: qualityGateMetric('critical_violations')
+          criticalViolations: qualityGateMetric('critical_violations'),
         },
         coverage: {
           byTests: measureAsNumber('coverage'),
@@ -168,30 +178,29 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
           uncoveredLines: measureAsNumber('uncovered_lines'),
           branch: measureAsNumber('branch_coverage'),
           conditionsToCover: measureAsNumber('conditions_to_cover'),
-          uncoveredConditions: measureAsNumber('uncovered_conditions')
+          uncoveredConditions: measureAsNumber('uncovered_conditions'),
         },
         reliability: {
           rating: measureAsNumber('reliability_rating'),
-          bugs: measureAsNumber('bugs')
+          bugs: measureAsNumber('bugs'),
         },
         security: {
           rating: measureAsNumber('security_rating'),
-          vulnerabilities: measureAsNumber('vulnerabilities')
+          vulnerabilities: measureAsNumber('vulnerabilities'),
         },
         duplication: {
           blocks: measureAsNumber('duplicated_blocks'),
           files: measureAsNumber('duplicated_files'),
           lines: measureAsNumber('duplicated_lines'),
-          linesDensity: measureAsNumber('duplicated_lines_density')
+          linesDensity: measureAsNumber('duplicated_lines_density'),
         },
         maintainability: {
           rating: measureAsNumber('sqale_rating'),
           techDebt: measureAsNumber('sqale_index'),
-          codeSmells: measureAsNumber('code_smells')
+          codeSmells: measureAsNumber('code_smells'),
         },
         oldestFoundSample: head(
-          sonarAnalysis.qualityGateHistory
-            .sort(desc(byDate(prop('date'))))
+          sonarAnalysis.qualityGateHistory.sort(desc(byDate(prop('date'))))
         )?.date.toISOString(),
         qualityGateByWeek: uptillWeeks.map(isUptillWeek => {
           const latestInWeek = head(
@@ -201,8 +210,8 @@ export default (sonarAnalyses: SonarAnalysisByRepo): AggregatedCodeQuality => {
           );
 
           return latestInWeek ? parseQualityGateStatus(latestInWeek.value) : null;
-        })
+        }),
       };
-    })
+    }),
   };
 };

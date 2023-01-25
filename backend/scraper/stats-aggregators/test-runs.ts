@@ -1,15 +1,11 @@
 import prettyMs from 'pretty-ms';
-import {
-  equals, head, isNil, last, pipe, prop, T
-} from 'rambda';
+import { equals, head, isNil, last, pipe, prop, T } from 'rambda';
 import { asc, byDate, desc } from 'sort-lib';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
 import type { UITests, UIPipelineTest } from '../../../shared/types.js';
 import type { Build } from '../../models/builds.js';
 import { unique, weeks } from '../../utils.js';
-import type {
-  CodeCoverageData, CodeCoverageSummary, TestRun
-} from '../types-azure.js';
+import type { CodeCoverageData, CodeCoverageSummary, TestRun } from '../types-azure.js';
 
 type TestStats = {
   success: number;
@@ -19,11 +15,14 @@ type TestStats = {
 };
 
 const defaultStat: TestStats = {
-  success: 0, failure: 0, executionTime: 0, total: 0
+  success: 0,
+  failure: 0,
+  executionTime: 0,
+  total: 0,
 };
 
-const getBranchStats = (coverageData: CodeCoverageData[]) => coverageData[0]
-  .coverageStats.find(s => s.label === 'Branch');
+const getBranchStats = (coverageData: CodeCoverageData[]) =>
+  coverageData[0].coverageStats.find(s => s.label === 'Branch');
 
 const coverageFrom = (coverageData?: CodeCoverageData[]) => {
   if (!coverageData?.length) return null;
@@ -38,26 +37,26 @@ const aggregateRuns = (runs: TestRun[]): TestStats => {
   const testRuns = runs.filter(r => r.startedDate && r.completedDate);
   if (testRuns.length === 0) return defaultStat;
 
-  const minStartTime = testRuns
-    .sort(asc(byDate(prop('startedDate'))))[0]
-    .startedDate;
+  const minStartTime = testRuns.sort(asc(byDate(prop('startedDate'))))[0].startedDate;
 
-  const maxEndTime = testRuns
-    .sort(desc(byDate(prop('completedDate'))))[0]
-    .completedDate;
+  const maxEndTime = testRuns.sort(desc(byDate(prop('completedDate'))))[0].completedDate;
 
   return {
-    ...testRuns.reduce((acc, run) => ({
-      success: acc.success + run.passedTests,
-      failure: acc.failure + (run.totalTests - run.passedTests),
-      total: acc.total + run.totalTests
-    }), { success: 0, failure: 0, total: 0 }),
-    executionTime: maxEndTime.getTime() - minStartTime.getTime()
+    ...testRuns.reduce(
+      (acc, run) => ({
+        success: acc.success + run.passedTests,
+        failure: acc.failure + (run.totalTests - run.passedTests),
+        total: acc.total + run.totalTests,
+      }),
+      { success: 0, failure: 0, total: 0 }
+    ),
+    executionTime: maxEndTime.getTime() - minStartTime.getTime(),
   };
 };
 
-const latestBuilds = (allBuilds: Record<number, Build[] | undefined>) => (
-  (inTimeRange: (d: Date) => boolean) => (
+const latestBuilds =
+  (allBuilds: Record<number, Build[] | undefined>) =>
+  (inTimeRange: (d: Date) => boolean) =>
     Object.values(allBuilds).reduce<Build[]>((acc, builds) => {
       const latestBuild = head(
         [...(builds || [])]
@@ -67,9 +66,7 @@ const latestBuilds = (allBuilds: Record<number, Build[] | undefined>) => (
 
       if (latestBuild) acc.push(latestBuild);
       return acc;
-    }, [])
-  )
-);
+    }, []);
 
 const extrapolateIfNeeded = async <T>(
   valuesByWeek: T[],
@@ -100,9 +97,10 @@ const extrapolateIfNeeded = async <T>(
   }, []);
 };
 
-const getMasterBuilds = (allMasterBuilds: Record<string, Record<number, Build[] | undefined>>) => (
-  (repoId?: string) => (repoId ? (allMasterBuilds[repoId] || {}) : [])
-);
+const getMasterBuilds =
+  (allMasterBuilds: Record<string, Record<number, Build[] | undefined>>) =>
+  (repoId?: string) =>
+    repoId ? allMasterBuilds[repoId] || {} : [];
 
 const getDefinitionIdsWithoutBuildsInFirstWeek = (
   allMasterBuilds: Record<string, Record<number, Build[] | undefined>>
@@ -113,10 +111,9 @@ const getDefinitionIdsWithoutBuildsInFirstWeek = (
     Object.keys(allMasterBuilds)
       .filter(repoId => latestBuilds(masterBuilds(repoId))(T).length !== 0)
       .flatMap(repoId => {
-        const withoutBuilds = Object.entries(masterBuilds(repoId))
-          .filter(([, builds]) => (
-            (builds || []).filter(b => weeks[0](b.startTime)).length === 0
-          ));
+        const withoutBuilds = Object.entries(masterBuilds(repoId)).filter(
+          ([, builds]) => (builds || []).filter(b => weeks[0](b.startTime)).length === 0
+        );
 
         return withoutBuilds.map(([definitionId]) => Number(definitionId));
       })
@@ -136,7 +133,11 @@ const historicalStatCollector = (
     aggregator: (runs: T) => U
   ) => {
     const pBuildsByDefinitionIdBeforeQueryPeriod = buildsBeforeQueryPeriod
-      .then(builds => Promise.all(builds.map(async b => [b.definition.id, await statByBuild(b)] as const)))
+      .then(builds =>
+        Promise.all(
+          builds.map(async b => [b.definition.id, await statByBuild(b)] as const)
+        )
+      )
       .then(x => Object.fromEntries(x));
 
     return async (buildDefinitionId: number) => {
@@ -158,9 +159,8 @@ export default (
     allMasterBuilds,
     getOneBuildBeforeQueryPeriod
   );
-  const historicalTestCountByBuildId = collectHistoricalStat(
-    testRunsByBuild,
-    runs => (runs ? count<TestRun>(incrementBy(prop('totalTests')))(runs) : 0)
+  const historicalTestCountByBuildId = collectHistoricalStat(testRunsByBuild, runs =>
+    runs ? count<TestRun>(incrementBy(prop('totalTests')))(runs) : 0
   );
 
   const historicalCoverageByBuildId = collectHistoricalStat(
@@ -178,18 +178,19 @@ export default (
 
     const latestBuildsInEachWeek = weeks.map(latestBuilds(masterBuilds(repoId)));
 
-    const interestingBuilds = [...new Set([
-      ...matchingBuilds,
-      ...latestBuildsInEachWeek.flat()
-    ])];
+    const interestingBuilds = [
+      ...new Set([...matchingBuilds, ...latestBuildsInEachWeek.flat()]),
+    ];
 
     const [testRunsByBuildIds, testCoverageByBuildIds] = await Promise.all([
       Promise.all(
         interestingBuilds.map(async b => [b.id, await testRunsByBuild(b)] as const)
       ).then(x => Object.fromEntries(x)),
       Promise.all(
-        interestingBuilds.map(async b => [b.id, await testCoverageByBuildId(b.id)] as const)
-      ).then(x => Object.fromEntries(x))
+        interestingBuilds.map(
+          async b => [b.id, await testCoverageByBuildId(b.id)] as const
+        )
+      ).then(x => Object.fromEntries(x)),
     ]);
 
     const testStats = matchingBuilds.map(build => {
@@ -199,17 +200,22 @@ export default (
       return {
         buildName: build.definition.name,
         buildDefinitionId: build.definition.id,
-        url: `${build.url.replace('_apis/build/Builds/', '_build/results?buildId=')}&view=ms.vss-test-web.build-test-results-tab`,
+        url: `${build.url.replace(
+          '_apis/build/Builds/',
+          '_build/results?buildId='
+        )}&view=ms.vss-test-web.build-test-results-tab`,
         ...aggregateRuns(runs),
-        testsByWeek: latestBuildsInEachWeek.map(
-          builds => builds.flat()
+        testsByWeek: latestBuildsInEachWeek.map(builds =>
+          builds
+            .flat()
             .filter(b => b.definition.id === build.definition.id)
             .map(b => testRunsByBuildIds[b.id])
             .reduce(incrementBy(count(incrementBy(prop('totalTests')))), 0)
         ),
         coverage: coverageFrom(coverage.coverageData),
-        coverageByWeek: latestBuildsInEachWeek.map(
-          builds => builds.flat()
+        coverageByWeek: latestBuildsInEachWeek.map(builds =>
+          builds
+            .flat()
             .filter(b => b.definition.id === build.definition.id)
             .map(b => testCoverageByBuildIds[b.id])
             .reduce<ReturnType<typeof coverageFrom>>((acc, coverage) => {
@@ -219,10 +225,10 @@ export default (
 
               return {
                 covered: acc.covered + coverageData.covered,
-                total: acc.total + coverageData.total
+                total: acc.total + coverageData.total,
               };
             }, null)
-        )
+        ),
       };
     });
 
@@ -247,12 +253,12 @@ export default (
           coverageByWeek: stat.coverageByWeek.every(isNil)
             ? null
             : await extrapolateIfNeeded(
-              stat.coverageByWeek,
-              () => historicalCoverageByBuildId(stat.buildDefinitionId),
-              isNil,
-              null
-            ),
-          coverage: stat.coverage
+                stat.coverageByWeek,
+                () => historicalCoverageByBuildId(stat.buildDefinitionId),
+                isNil,
+                null
+              ),
+          coverage: stat.coverage,
         }))
     );
   };

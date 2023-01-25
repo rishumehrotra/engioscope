@@ -5,7 +5,7 @@ import NavBar from './common/NavBar.js';
 
 const navItems = [
   { key: 'metrics', label: 'Metrics', linkTo: '/summary' },
-  { key: 'progress', label: 'Progress', linkTo: '/change-program' }
+  { key: 'progress', label: 'Progress', linkTo: '/change-program' },
 ];
 
 const ChangeProgramNavBar: React.FC<{ right: ReactNode }> = ({ right }) => {
@@ -14,7 +14,9 @@ const ChangeProgramNavBar: React.FC<{ right: ReactNode }> = ({ right }) => {
   return (
     <NavBar
       navItems={navItems}
-      selectedTab={navItems.find(n => n.linkTo.startsWith(location.pathname))?.key || navItems[0].key}
+      selectedTab={
+        navItems.find(n => n.linkTo.startsWith(location.pathname))?.key || navItems[0].key
+      }
       right={right}
     />
   );

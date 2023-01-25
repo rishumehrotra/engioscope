@@ -12,7 +12,11 @@ import aggregateTestCases from './stats-aggregators/test-cases.js';
 import aggregateBuildDefinitions from './stats-aggregators/build-definitions.js';
 import sonar from './network/sonar.js';
 import type { ProjectAnalysis, WorkItemAnalysis } from './types.js';
-import type { ParsedCollection, ParsedConfig, ParsedProjectConfig } from './parse-config.js';
+import type {
+  ParsedCollection,
+  ParsedConfig,
+  ParsedProjectConfig,
+} from './parse-config.js';
 import aggregateTestRuns from './stats-aggregators/test-runs.js';
 import languageColors from './language-colors.js';
 import type { RepoAnalysis } from '../../shared/types.js';
@@ -37,18 +41,27 @@ const analyserLog = debug('analyser');
 
 export default (config: ParsedConfig) => {
   const {
-    getBranchesStats, getPRs, getCommits, getTestRuns, getTestCoverage,
-    getProjectWorkItemIdsForQuery, getBuildDefinitions
+    getBranchesStats,
+    getPRs,
+    getCommits,
+    getTestRuns,
+    getTestCoverage,
+    getProjectWorkItemIdsForQuery,
+    getBuildDefinitions,
   } = azure(config);
 
   return async (
     collection: ParsedCollection,
     projectConfig: ParsedProjectConfig,
-    getWorkItems: (projectConfig: ParsedProjectConfig, workItemFieldsPromise: Promise<WorkItemField[]>) => Promise<WorkItemAnalysis>,
+    getWorkItems: (
+      projectConfig: ParsedProjectConfig,
+      workItemFieldsPromise: Promise<WorkItemField[]>
+    ) => Promise<WorkItemAnalysis>,
     workItemFieldsPromise: Promise<WorkItemField[]>
   ): Promise<ProjectAnalysis> => {
     const time = startTimer();
-    const forProject = <T>(fn: (c: string, p: string) => T): T => fn(collection.name, projectConfig.name);
+    const forProject = <T>(fn: (c: string, p: string) => T): T =>
+      fn(collection.name, projectConfig.name);
 
     const codeQualityByRepo = forProject(sonar(config));
 
@@ -61,7 +74,7 @@ export default (config: ParsedConfig) => {
       prByRepoId,
       policyConfigurationByRepoBranch,
       workItemAnalysis,
-      testCasesAnalysis
+      testCasesAnalysis,
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds),
@@ -70,7 +83,7 @@ export default (config: ParsedConfig) => {
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
       getWorkItems(projectConfig, workItemFieldsPromise),
-      aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name)
+      aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name),
     ]);
 
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
@@ -86,47 +99,48 @@ export default (config: ParsedConfig) => {
       allMasterBuilds
     );
 
-    const repoAnalysis: RepoAnalysis[] = await Promise.all(repos.map(async r => {
-      const branchStats = r.size === 0
-        ? Promise.resolve([])
-        : forProject(getBranchesStats)(r.id)
-          .catch(error => {
-            if (!(error instanceof Error)) throw error;
-            if (!error.message.startsWith('HTTP error')) throw error;
-            if (error.message.includes('400')) return [] as GitBranchStats[];
-            throw error;
-          });
+    const repoAnalysis: RepoAnalysis[] = await Promise.all(
+      repos.map(async r => {
+        const branchStats =
+          r.size === 0
+            ? Promise.resolve([])
+            : forProject(getBranchesStats)(r.id).catch(error => {
+                if (!(error instanceof Error)) throw error;
+                if (!error.message.startsWith('HTTP error')) throw error;
+                if (error.message.includes('400')) return [] as GitBranchStats[];
+                throw error;
+              });
 
-      const [
-        branches,
-        tests,
-        { languages, codeQuality },
-        commits,
-        builds
-      ] = await Promise.all([
-        branchStats.then(aggregateBranches(r.webUrl, r.defaultBranch)),
-        getTestsByRepoId(r.id),
-        codeQualityByRepo(r.name, r.defaultBranch).then(aggregateCodeQuality),
-        forProject(getCommits)(r.id).then(aggregateCommits),
-        buildsByRepoId(r.id)
-      ]);
+        const [branches, tests, { languages, codeQuality }, commits, builds] =
+          await Promise.all([
+            branchStats.then(aggregateBranches(r.webUrl, r.defaultBranch)),
+            getTestsByRepoId(r.id),
+            codeQualityByRepo(r.name, r.defaultBranch).then(aggregateCodeQuality),
+            forProject(getCommits)(r.id).then(aggregateCommits),
+            buildsByRepoId(r.id),
+          ]);
 
-      return {
-        name: r.name,
-        id: r.id,
-        url: r.webUrl,
-        defaultBranch: (r.defaultBranch || '').replace('refs/heads/', ''),
-        languages: languages?.map(l => ({ ...l, color: getLanguageColor(l.lang) })),
-        commits,
-        builds,
-        branches,
-        prs: prByRepoId(r.id),
-        tests,
-        codeQuality
-      };
-    }));
+        return {
+          name: r.name,
+          id: r.id,
+          url: r.webUrl,
+          defaultBranch: (r.defaultBranch || '').replace('refs/heads/', ''),
+          languages: languages?.map(l => ({ ...l, color: getLanguageColor(l.lang) })),
+          commits,
+          builds,
+          branches,
+          prs: prByRepoId(r.id),
+          tests,
+          codeQuality,
+        };
+      })
+    );
 
-    const releaseAnalysis = aggregateReleases(projectConfig, releases, policyConfigurationByRepoBranch);
+    const releaseAnalysis = aggregateReleases(
+      projectConfig,
+      releases,
+      policyConfigurationByRepoBranch
+    );
 
     const analysisResults: ProjectAnalysis = {
       repoAnalysis: addPipelinesToRepos(releaseAnalysis, repoAnalysis),
@@ -134,7 +148,7 @@ export default (config: ParsedConfig) => {
       workItemAnalysis,
       workItemLabel: projectConfig.workitems.label,
       testCasesAnalysis,
-      featureToggles: await featureTogglesForRepos(repos.map(prop('id')))
+      featureToggles: await featureTogglesForRepos(repos.map(prop('id'))),
     };
 
     // await writeTimelinesToDb;

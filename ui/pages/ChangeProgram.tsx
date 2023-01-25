@@ -22,7 +22,7 @@ const ChangeProgram: React.FC = () => {
   useEffect(() => {
     setHeaderDetails({
       title: 'Progress',
-      lastUpdated: changeProgram?.lastUpdated
+      lastUpdated: changeProgram?.lastUpdated,
     });
   }, [changeProgram, setHeaderDetails]);
 
@@ -30,36 +30,38 @@ const ChangeProgram: React.FC = () => {
     <>
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
         <ChangeProgramNavBar
-          right={(
+          right={
             <div className="flex items-center">
-              <span className="inline-block pr-2 uppercase text-xs font-semibold w-20 text-right">View by</span>
+              <span className="inline-block pr-2 uppercase text-xs font-semibold w-20 text-right">
+                View by
+              </span>
               <Switcher
                 options={[
                   { label: 'Teams', value: 'teams' },
-                  { label: 'Themes', value: 'theme' }
+                  { label: 'Themes', value: 'theme' },
                 ]}
                 onChange={value => setShow(value === 'teams' ? undefined : value, true)}
                 value={show === undefined ? 'teams' : show}
               />
             </div>
-          )}
+          }
         />
       </div>
 
       <div className="mx-32">
-        {changeProgram
-          ? (
-            <div className="mt-8 bg-gray-50">
-              {changeProgram.details
-                ? (
-                  <GroupedListing
-                    groups={organizeBy(show ? 'theme' : 'team')(changeProgram.details.tasks)}
-                  />
-                )
-                : 'Change program not configured'}
-            </div>
-          )
-          : <Loading />}
+        {changeProgram ? (
+          <div className="mt-8 bg-gray-50">
+            {changeProgram.details ? (
+              <GroupedListing
+                groups={organizeBy(show ? 'theme' : 'team')(changeProgram.details.tasks)}
+              />
+            ) : (
+              'Change program not configured'
+            )}
+          </div>
+        ) : (
+          <Loading />
+        )}
       </div>
     </>
   );

@@ -14,12 +14,12 @@ export const appRouter = t.router({
   analytics,
   releases,
   projects,
-  ...others
+  ...others,
 });
 
 export const trpcExpressHandler = createExpressMiddleware({
   router: appRouter,
-  createContext: trpcContext
+  createContext: trpcContext,
 });
 
 export type AppRouter = typeof appRouter;

@@ -8,7 +8,8 @@ type RatingIconProps = {
 const RatingIcon: React.FC<RatingIconProps> = ({ rating }) => {
   if (rating >= 0 && rating < 50) {
     return <Danger />;
-  } if (rating > 50 && rating < 75) {
+  }
+  if (rating > 50 && rating < 75) {
     return <Alert />;
   }
   return <Done />;

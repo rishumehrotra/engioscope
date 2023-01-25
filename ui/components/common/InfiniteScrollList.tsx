@@ -10,14 +10,17 @@ type InfiniteScrollListProps<T> = {
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const InfiniteScrollList = <T extends {}>({
-  items, itemRenderer, itemKey, onRenderItems
+  items,
+  itemRenderer,
+  itemKey,
+  onRenderItems,
 }: InfiniteScrollListProps<T>) => {
   const [slicedItems, setSlicedItems] = useState<T[]>([]);
   const lastTriggerTime = useRef(Date.now());
   const [ref, inView] = useInView({
     threshold: 0,
     triggerOnce: true,
-    rootMargin: '300px'
+    rootMargin: '300px',
   });
 
   useEffect(() => {
@@ -38,10 +41,7 @@ const InfiniteScrollList = <T extends {}>({
   return (
     <ul>
       {slicedItems.map((item, index) => (
-        <li
-          key={itemKey(item)}
-          {...(index === slicedItems.length - 1 ? { ref } : {})}
-        >
+        <li key={itemKey(item)} {...(index === slicedItems.length - 1 ? { ref } : {})}>
           {itemRenderer(item, index)}
         </li>
       ))}

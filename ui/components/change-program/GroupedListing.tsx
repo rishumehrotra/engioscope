@@ -2,33 +2,55 @@ import { not, prop, range } from 'rambda';
 import React, { useCallback, useState } from 'react';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
 import type { UIChangeProgramTask } from '../../../shared/types.js';
-import {
-  CircularAlert, CircularCheckmark, Minus, Plus
-} from '../common/Icons.js';
+import { CircularAlert, CircularCheckmark, Minus, Plus } from '../common/Icons.js';
 import type {
-  OrganizedTasks, RollupTaskState, TaskState
+  OrganizedTasks,
+  RollupTaskState,
+  TaskState,
 } from './change-program-utils.js';
 import { rollupTooltip, taskTooltip } from './change-program-utils.js';
 import useHover from '../../hooks/use-hover.js';
 
 const styleForState = (state: RollupTaskState) => {
   switch (state) {
-    case 'completed-on-time': { return 'bg-green-600 border-green-600 text-white completed-on-time'; }
-    case 'completed-late': { return 'bg-amber-400 border-amber-400 completed-late'; }
-    case 'overdue': { return 'bg-red-600 border-red-600 text-white overdue'; }
-    case 'planned': { return 'border-black planned'; }
-    case 'unplanned': { return 'border-black unplanned'; }
-    default: { return 'border-transparent'; }
+    case 'completed-on-time': {
+      return 'bg-green-600 border-green-600 text-white completed-on-time';
+    }
+    case 'completed-late': {
+      return 'bg-amber-400 border-amber-400 completed-late';
+    }
+    case 'overdue': {
+      return 'bg-red-600 border-red-600 text-white overdue';
+    }
+    case 'planned': {
+      return 'border-black planned';
+    }
+    case 'unplanned': {
+      return 'border-black unplanned';
+    }
+    default: {
+      return 'border-transparent';
+    }
   }
 };
 
 const styleForTask = (state: TaskState) => {
   switch (state) {
-    case 'completed-on-time': { return 'text-green-600'; }
-    case 'completed-late': { return 'text-amber-500 completed-late'; }
-    case 'overdue': { return 'text-red-700 overdue'; }
-    case 'planned': { return 'text-gray-500'; }
-    default: { return ''; }
+    case 'completed-on-time': {
+      return 'text-green-600';
+    }
+    case 'completed-late': {
+      return 'text-amber-500 completed-late';
+    }
+    case 'overdue': {
+      return 'text-red-700 overdue';
+    }
+    case 'planned': {
+      return 'text-gray-500';
+    }
+    default: {
+      return '';
+    }
   }
 };
 
@@ -50,9 +72,10 @@ type TaskProps = {
 };
 
 const Task: React.FC<TaskProps> = ({
-  taskDetails: {
-    task, weekIndex, weekCount, status
-  }, isHovered, mouseEvents, weeks
+  taskDetails: { task, weekIndex, weekCount, status },
+  isHovered,
+  mouseEvents,
+  weeks,
 }) => {
   const [ref, onRowHover] = useHover<HTMLTableRowElement>();
 
@@ -64,12 +87,18 @@ const Task: React.FC<TaskProps> = ({
       data-tip={taskTooltip(task)}
       data-html
     >
-      <td className={`text-lg sticky z-10 left-0 ${
-        onRowHover ? 'bg-gray-100' : 'bg-gray-50'
-      }`}
+      <td
+        className={`text-lg sticky z-10 left-0 ${
+          onRowHover ? 'bg-gray-100' : 'bg-gray-50'
+        }`}
       >
         <div className="border-r border-gray-300 pr-4 py-1 ">
-          <a href={task.url} target="_blank" rel="noreferrer" className="link-text text-base pl-28 inline-block truncate max-w-screen-sm">
+          <a
+            href={task.url}
+            target="_blank"
+            rel="noreferrer"
+            className="link-text text-base pl-28 inline-block truncate max-w-screen-sm"
+          >
             {formatTitle(task)}
           </a>
         </div>
@@ -77,23 +106,27 @@ const Task: React.FC<TaskProps> = ({
       {range(0, weekCount).map((value, wIndex) => (
         <td
           key={value}
-          className={`text-center ${
-            value === weekIndex ? styleForTask(status) : ''
-          // eslint-disable-next-line no-nested-ternary
-          } ${isHovered(value)
-            ? (weeks[wIndex].highlight ? 'bg-blue-200' : 'bg-gray-100')
-            : (weeks[wIndex].highlight ? 'bg-blue-100' : '')
+          className={`text-center ${value === weekIndex ? styleForTask(status) : ''} ${
+            isHovered(value)
+              ? weeks[wIndex].highlight
+                ? 'bg-blue-200'
+                : 'bg-gray-100'
+              : weeks[wIndex].highlight
+              ? 'bg-blue-100'
+              : ''
           }`}
           {...mouseEvents(value)}
         >
-          {/* eslint-disable-next-line no-nested-ternary */}
-          {value === weekIndex
-            ? (
-              status === 'overdue'
-                ? <CircularAlert className="w-5 m-auto" />
-                : <CircularCheckmark className="w-5 m-auto" />
+          {}
+          {value === weekIndex ? (
+            status === 'overdue' ? (
+              <CircularAlert className="w-5 m-auto" />
+            ) : (
+              <CircularCheckmark className="w-5 m-auto" />
             )
-            : ' '}
+          ) : (
+            ' '
+          )}
         </td>
       ))}
     </tr>
@@ -111,7 +144,10 @@ type ActivitySubgroupProps = {
 };
 
 const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
-  subgroup, isHovered, mouseEvents, weeks
+  subgroup,
+  isHovered,
+  mouseEvents,
+  weeks,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [ref, isSubGroupRowHovered] = useHover<HTMLTableRowElement>();
@@ -123,23 +159,27 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
         ref={ref}
       >
-        <td className={`sticky z-20 left-0 ${isSubGroupRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}>
+        <td
+          className={`sticky z-20 left-0 ${
+            isSubGroupRowHovered ? 'bg-gray-100' : 'bg-gray-50'
+          }`}
+        >
           <div
             className="grid grid-cols-2 items-center gap-2 p-2 ml-16 border-r border-gray-300"
             style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
-              {subgroup.tasks.length
-                ? (
-                  <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
-                    {isExpanded
-                      ? <Minus className="w-4 -mt-1 inline-block" />
-                      : <Plus className="w-4 -mt-1 inline-block" />}
-                  </span>
-                )
-                : (
-                  <span className="text-lg px-1 font-semibold w-10"> </span>
-                )}
+              {subgroup.tasks.length ? (
+                <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
+                  {isExpanded ? (
+                    <Minus className="w-4 -mt-1 inline-block" />
+                  ) : (
+                    <Plus className="w-4 -mt-1 inline-block" />
+                  )}
+                </span>
+              ) : (
+                <span className="text-lg px-1 font-semibold w-10"> </span>
+              )}
             </div>
             <span>
               {subgroup.subgroupName}
@@ -153,24 +193,33 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
           <td
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            // eslint-disable-next-line no-nested-ternary
-            className={`sticky z-10 left-0 text-center ${isHovered(index)
-              ? (weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100')
-              : (weeks[index].highlight ? 'bg-blue-100' : '')
+            className={`sticky z-10 left-0 text-center ${
+              isHovered(index)
+                ? weeks[index].highlight
+                  ? 'bg-blue-200'
+                  : 'bg-gray-100'
+                : weeks[index].highlight
+                ? 'bg-blue-100'
+                : ''
             }`}
             {...mouseEvents(index)}
-            data-tip={rollupTooltip(subgroup.tasks
-              .filter(t => t.weekIndex === index)
-              .map(t => t.task), weeks[index])}
+            data-tip={rollupTooltip(
+              subgroup.tasks.filter(t => t.weekIndex === index).map(t => t.task),
+              weeks[index]
+            )}
             data-html
           >
-            <span className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold ${styleForState(value.state)}`}>
+            <span
+              className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold ${styleForState(
+                value.state
+              )}`}
+            >
               {value.count || ' '}
             </span>
           </td>
         ))}
       </tr>
-      {isExpanded && (
+      {isExpanded &&
         subgroup.tasks.map(taskDetails => (
           <Task
             taskDetails={taskDetails}
@@ -178,8 +227,7 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
             mouseEvents={mouseEvents}
             weeks={weeks}
           />
-        ))
-      )}
+        ))}
     </>
   );
 };
@@ -195,7 +243,10 @@ type ActivityGroupItemProps = {
 };
 
 const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
-  group, isHovered, mouseEvents, weeks
+  group,
+  isHovered,
+  mouseEvents,
+  weeks,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [ref, isRowHovered] = useHover<HTMLTableRowElement>();
@@ -207,16 +258,20 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
         ref={ref}
       >
-        <td className={`sticky z-10 left-0 ${isRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}>
+        <td
+          className={`sticky z-10 left-0 ${isRowHovered ? 'bg-gray-100' : 'bg-gray-50'}`}
+        >
           <div
             className="grid grid-cols-2 items-center gap-2 p-2 ml-8 border-r border-gray-300"
             style={{ gridTemplateColumns: '25px 1fr' }}
           >
             <div>
               <span className="text-lg bg-gray-700 px-1 text-white font-semibold rounded-md">
-                {isExpanded
-                  ? <Minus className="w-4 -mt-1 inline-block" />
-                  : <Plus className="w-4 -mt-1 inline-block" />}
+                {isExpanded ? (
+                  <Minus className="w-4 -mt-1 inline-block" />
+                ) : (
+                  <Plus className="w-4 -mt-1 inline-block" />
+                )}
               </span>
             </div>
             <span>
@@ -231,27 +286,36 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
           <td
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            // eslint-disable-next-line no-nested-ternary
-            className={`text-center ${isHovered(index)
-              ? (weeks[index].highlight ? 'bg-blue-200' : 'bg-gray-100')
-              : (weeks[index].highlight ? 'bg-blue-100' : '')
+            className={`text-center ${
+              isHovered(index)
+                ? weeks[index].highlight
+                  ? 'bg-blue-200'
+                  : 'bg-gray-100'
+                : weeks[index].highlight
+                ? 'bg-blue-100'
+                : ''
             }`}
             {...mouseEvents(index)}
-            data-tip={rollupTooltip(group.subgroups
-              .flatMap(s => s.tasks)
-              .filter(t => t.weekIndex === index)
-              .map(t => t.task), weeks[index])}
+            data-tip={rollupTooltip(
+              group.subgroups
+                .flatMap(s => s.tasks)
+                .filter(t => t.weekIndex === index)
+                .map(t => t.task),
+              weeks[index]
+            )}
             data-html
           >
             <span
-              className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold border-transparent ${styleForState(state)}`}
+              className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold border-transparent ${styleForState(
+                state
+              )}`}
             >
               {count === 0 ? ' ' : count}
             </span>
           </td>
         ))}
       </tr>
-      {isExpanded && (
+      {isExpanded &&
         group.subgroups.map(subgroup => (
           <ActivitySubGroup
             key={subgroup.subgroupName}
@@ -260,8 +324,7 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
             mouseEvents={mouseEvents}
             weeks={weeks}
           />
-        ))
-      )}
+        ))}
     </>
   );
 };
@@ -280,7 +343,13 @@ type TableHeaderProps = {
 };
 
 const TableHeader: React.FC<TableHeaderProps> = ({
-  title, weeks, isHovered, mouseEvents, isExpanded, toggleExpand, counters
+  title,
+  weeks,
+  isHovered,
+  mouseEvents,
+  isExpanded,
+  toggleExpand,
+  counters,
 }) => (
   <tr>
     <th className="text-left sticky z-10 left-0 bg-gray-50" style={{ width: '700px' }}>
@@ -293,51 +362,50 @@ const TableHeader: React.FC<TableHeaderProps> = ({
         tabIndex={0}
       >
         <span className="inline-block bg-gray-700 px-1 text-white font-semibold rounded-md">
-          {isExpanded
-            ? <Minus className="w-4 -mt-1 inline-block" />
-            : <Plus className="w-4 -mt-1 inline-block" />}
+          {isExpanded ? (
+            <Minus className="w-4 -mt-1 inline-block" />
+          ) : (
+            <Plus className="w-4 -mt-1 inline-block" />
+          )}
         </span>
         <h2 className="text-xl font-semibold">
           {title}
-          <span className="text-xs text-gray-600 font-normal pl-2">
-            {counters}
-          </span>
+          <span className="text-xs text-gray-600 font-normal pl-2">{counters}</span>
         </h2>
       </div>
     </th>
     {weeks.map((week, weekIndex) => (
-      <th
-        key={week.label}
-        className="text-center"
-        {...mouseEvents(weekIndex)}
-      >
+      <th key={week.label} className="text-center" {...mouseEvents(weekIndex)}>
         <div className="relative">
-          {isExpanded
-            ? (
-              <div className="absolute -bottom-16 -ml-2 text-left origin-top-left pl-2 w-32 -rotate-45 text-xs font-normal text-gray-600">
-                <span className={`p-1 rounded-md ${
+          {isExpanded ? (
+            <div className="absolute -bottom-16 -ml-2 text-left origin-top-left pl-2 w-32 -rotate-45 text-xs font-normal text-gray-600">
+              <span
+                className={`p-1 rounded-md ${
                   week.highlight ? 'bg-blue-200 text-blue-800' : ''
                 } ${isHovered(weekIndex) ? 'font-semibold' : ''}`}
-                >
-                  {week.label}
-                </span>
-              </div>
-            ) : null}
+              >
+                {week.label}
+              </span>
+            </div>
+          ) : null}
         </div>
       </th>
     ))}
   </tr>
 );
 
-const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
+const GroupedListing: React.FC<{ groups: OrganizedTasks }> = ({ groups }) => {
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
   const [expandPlanned, setExpandPlanned] = useState(false);
   const [expandUnplanned, setExpandUnplanned] = useState(false);
 
-  const mouseEvents = useCallback((weekIndex: number) => ({
-    onMouseOver: () => setHoveredWeekIndex(weekIndex),
-    onMouseOut: () => setHoveredWeekIndex(null)
-  }), []);
+  const mouseEvents = useCallback(
+    (weekIndex: number) => ({
+      onMouseOver: () => setHoveredWeekIndex(weekIndex),
+      onMouseOut: () => setHoveredWeekIndex(null),
+    }),
+    []
+  );
 
   const isHovered = (weekIndex: number) => hoveredWeekIndex === weekIndex;
 
@@ -352,21 +420,22 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
             weeks={groups.weeks}
             isExpanded={expandPlanned}
             toggleExpand={() => setExpandPlanned(not)}
-            counters={`${
-              count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.planned)
-            } of ${
-              count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.planned)
-            }`}
+            counters={`${count<(typeof groups.planned)[number]>(
+              incrementBy(prop('groupTasks'))
+            )(groups.planned)} of ${count<(typeof groups.planned)[number]>(
+              incrementBy(prop('totalTasks'))
+            )(groups.planned)}`}
           />
-          {expandPlanned && groups.planned.map(group => (
-            <ActivityGroupItem
-              key={group.groupName}
-              group={group}
-              isHovered={isHovered}
-              mouseEvents={mouseEvents}
-              weeks={groups.weeks}
-            />
-          ))}
+          {expandPlanned &&
+            groups.planned.map(group => (
+              <ActivityGroupItem
+                key={group.groupName}
+                group={group}
+                isHovered={isHovered}
+                mouseEvents={mouseEvents}
+                weeks={groups.weeks}
+              />
+            ))}
           <TableHeader
             title="Unplanned activities"
             isHovered={isHovered}
@@ -374,21 +443,22 @@ const GroupedListing: React.FC<{ groups: OrganizedTasks}> = ({ groups }) => {
             weeks={groups.weeks}
             isExpanded={expandUnplanned}
             toggleExpand={() => setExpandUnplanned(not)}
-            counters={`${
-              count<(typeof groups.planned)[number]>(incrementBy(prop('groupTasks')))(groups.unplanned)
-            } of ${
-              count<(typeof groups.planned)[number]>(incrementBy(prop('totalTasks')))(groups.unplanned)
-            }`}
+            counters={`${count<(typeof groups.planned)[number]>(
+              incrementBy(prop('groupTasks'))
+            )(groups.unplanned)} of ${count<(typeof groups.planned)[number]>(
+              incrementBy(prop('totalTasks'))
+            )(groups.unplanned)}`}
           />
-          {expandUnplanned && groups.unplanned.map(group => (
-            <ActivityGroupItem
-              key={group.groupName}
-              group={group}
-              isHovered={isHovered}
-              mouseEvents={mouseEvents}
-              weeks={groups.weeks}
-            />
-          ))}
+          {expandUnplanned &&
+            groups.unplanned.map(group => (
+              <ActivityGroupItem
+                key={group.groupName}
+                group={group}
+                isHovered={isHovered}
+                mouseEvents={mouseEvents}
+                weeks={groups.weeks}
+              />
+            ))}
         </tbody>
       </table>
     </div>

@@ -4,13 +4,29 @@ import Checkbox from './common/Checkbox.js';
 import TextCheckboxCombo from './common/TextCheckboxCombo.js';
 import { useTabs } from '../hooks/use-tabs.js';
 import usePopover from '../hooks/use-popover.js';
-import useQueryParam, { asBoolean, asNumber, asString } from '../hooks/use-query-param.js';
+import useQueryParam, {
+  asBoolean,
+  asNumber,
+  asString,
+} from '../hooks/use-query-param.js';
 
-const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
-  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam('commitsGreaterThanZero', asBoolean);
-  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam('buildsGreaterThanZero', asBoolean);
-  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam('withFailingLastBuilds', asBoolean);
-  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam('techDebtGreaterThan', asNumber);
+const RepoFilters: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
+  const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam(
+    'commitsGreaterThanZero',
+    asBoolean
+  );
+  const [buildsGreaterThanZero, setBuildsGreaterThanZero] = useQueryParam(
+    'buildsGreaterThanZero',
+    asBoolean
+  );
+  const [withFailingLastBuilds, setWithFailingLastBuilds] = useQueryParam(
+    'withFailingLastBuilds',
+    asBoolean
+  );
+  const [techDebtGreaterThan, setTechDebtGreaterThan] = useQueryParam(
+    'techDebtGreaterThan',
+    asNumber
+  );
 
   return isOpen ? (
     <span
@@ -37,7 +53,9 @@ const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
       <TextCheckboxCombo
         type="number"
         value={String(techDebtGreaterThan === undefined ? '' : techDebtGreaterThan)}
-        onChange={value => setTechDebtGreaterThan(value === undefined ? undefined : Number(value), true)}
+        onChange={value =>
+          setTechDebtGreaterThan(value === undefined ? undefined : Number(value), true)
+        }
         textBoxPrefix="Tech debt &gt; "
         textBoxSuffix=" days"
       />
@@ -45,12 +63,27 @@ const RepoFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
   ) : null;
 };
 
-const PipelinesFilters: React.FC<{isOpen: boolean}> = ({ isOpen }) => {
-  const [nonMasterReleases, setNonMasterReleases] = useQueryParam('nonMasterReleases', asBoolean);
-  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam('notStartsWithArtifact', asBoolean);
-  const [stageNameExists, setStageNameExists] = useQueryParam('stageNameExists', asString);
-  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
-  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
+const PipelinesFilters: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
+  const [nonMasterReleases, setNonMasterReleases] = useQueryParam(
+    'nonMasterReleases',
+    asBoolean
+  );
+  const [notStartsWithArtifact, setNotStartsWithArtifact] = useQueryParam(
+    'notStartsWithArtifact',
+    asBoolean
+  );
+  const [stageNameExists, setStageNameExists] = useQueryParam(
+    'stageNameExists',
+    asString
+  );
+  const [stageNameExistsNotUsed, setStageNameExistsNotUsed] = useQueryParam(
+    'stageNameExistsNotUsed',
+    asString
+  );
+  const [nonPolicyConforming, setNonPolicyConforming] = useQueryParam(
+    'nonPolicyConforming',
+    asBoolean
+  );
 
   return isOpen ? (
     <span
@@ -95,7 +128,9 @@ const AdvancedFilters: React.FC = () => {
   const [selectedTab] = useTabs();
   const [ref, isOpen, setIsOpen] = usePopover();
 
-  if (selectedTab === 'workitems' || selectedTab === 'devs' || selectedTab === '') return null;
+  if (selectedTab === 'workitems' || selectedTab === 'devs' || selectedTab === '') {
+    return null;
+  }
 
   return (
     <span className="relative">
@@ -110,7 +145,9 @@ const AdvancedFilters: React.FC = () => {
       </button>
       <div ref={ref}>
         {selectedTab === 'repos' ? <RepoFilters isOpen={isOpen} /> : null}
-        {(selectedTab === 'release-pipelines' || selectedTab === 'release-pipelines2') ? <PipelinesFilters isOpen={isOpen} /> : null}
+        {selectedTab === 'release-pipelines' || selectedTab === 'release-pipelines2' ? (
+          <PipelinesFilters isOpen={isOpen} />
+        ) : null}
       </div>
     </span>
   );

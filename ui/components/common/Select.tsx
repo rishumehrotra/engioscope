@@ -9,13 +9,11 @@ type Option = {
 type SelectProps = {
   className?: string;
   onChange: (event: string) => void;
-  options: Option [];
+  options: Option[];
   value: string;
 };
 
-const Select: React.FC<SelectProps> = ({
-  className, onChange, options, value
-}) => (
+const Select: React.FC<SelectProps> = ({ className, onChange, options, value }) => (
   <div className={`inline-block relative ${className || ''}`}>
     <select
       onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
@@ -24,7 +22,11 @@ const Select: React.FC<SelectProps> = ({
         px-4 py-2 pr-8 rounded shadow text-gray-600
         focus:outline-none focus:ring focus:border-gray-200 text-md"
     >
-      {options.map(({ value, label }) => <option value={value} key={value}>{label}</option>)}
+      {options.map(({ value, label }) => (
+        <option value={value} key={value}>
+          {label}
+        </option>
+      ))}
     </select>
     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
       <svg

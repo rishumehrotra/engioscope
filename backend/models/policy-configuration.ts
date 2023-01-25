@@ -108,7 +108,7 @@ const repoPolicySchema = new Schema<RepoPolicy>({
   isDeleted: { type: Boolean, required: true },
   refName: { type: String },
   type: { type: String, required: true },
-  settings: { type: Schema.Types.Mixed }
+  settings: { type: Schema.Types.Mixed },
 });
 
 // For writes
@@ -116,7 +116,7 @@ repoPolicySchema.index({
   collectionName: 1,
   project: 1,
   repositoryId: 1,
-  id: 1
+  id: 1,
 });
 
 // For reads
@@ -124,7 +124,7 @@ repoPolicySchema.index({
   collectionName: 1,
   project: 1,
   repositoryId: 1,
-  refName: 1
+  refName: 1,
 });
 
 // type BranchPolicyMerged = {
@@ -146,67 +146,70 @@ repoPolicySchema.index({
 
 const RepoPolicyModel = model<RepoPolicy>('RepoPolicy', repoPolicySchema);
 
-export const bulkSavePolicies = (collectionName: string, project: string) => (
-  (policies: AzurePolicyConfiguration[]) => (
-    RepoPolicyModel.bulkWrite(policies.map(p => {
-      const { settings: { scope, ...settings }, ...policy } = p;
+export const bulkSavePolicies =
+  (collectionName: string, project: string) => (policies: AzurePolicyConfiguration[]) =>
+    RepoPolicyModel.bulkWrite(
+      policies.map(p => {
+        const {
+          settings: { scope, ...settings },
+          ...policy
+        } = p;
 
-      return {
-        updateOne: {
-          filter: {
-            collectionName,
-            project,
-            repositoryId: scope[0].repositoryId,
-            id: policy.id
+        return {
+          updateOne: {
+            filter: {
+              collectionName,
+              project,
+              repositoryId: scope[0].repositoryId,
+              id: policy.id,
+            },
+            update: {
+              $set: {
+                typeId: policy.type.id,
+                createdById: policy.createdBy.id,
+                createdDate: policy.createdDate,
+                isEnabled: policy.isEnabled,
+                isDeleted: policy.isDeleted,
+                isBlocking: policy.isBlocking,
+                refName: 'refName' in scope[0] ? scope[0].refName : undefined,
+                type: policy.type.displayName,
+                settings,
+              },
+            },
+            upsert: true,
           },
-          update: {
-            $set: {
-              typeId: policy.type.id,
-              createdById: policy.createdBy.id,
-              createdDate: policy.createdDate,
-              isEnabled: policy.isEnabled,
-              isDeleted: policy.isDeleted,
-              isBlocking: policy.isBlocking,
-              refName: 'refName' in scope[0] ? scope[0].refName : undefined,
-              type: policy.type.displayName,
-              settings
-            }
-          },
-          upsert: true
-        }
-      };
-    }))
-  )
-);
+        };
+      })
+    );
 
-export const getPolicyConfigurations = (collectionName: string, project: string) => (
-  RepoPolicyModel.find({ collectionName, project }).lean()
-);
+export const getPolicyConfigurations = (collectionName: string, project: string) =>
+  RepoPolicyModel.find({ collectionName, project }).lean();
 
-export const isFileSizeRestrictionPolicy = (policy: RepoPolicy): policy is FileSizeRestrictionPolicy => (
-  policy.type === 'File size restriction'
-);
-export const isPathLengthRestrictionPolicy = (policy: RepoPolicy): policy is PathLengthRestrictionPolicy => (
-  policy.type === 'Path Length restriction'
-);
-export const isReservedNamesRestrictionPolicy = (policy: RepoPolicy): policy is ReservedNamesRestrictionPolicy => (
-  policy.type === 'Reserved names restriction'
-);
-export const isMinimumNumberOfReviewersPolicy = (policy: RepoPolicy): policy is MinimumNumberOfReviewersPolicy => (
-  policy.type === 'Minimum number of reviewers'
-);
-export const isCommentRequirementsPolicy = (policy: RepoPolicy): policy is CommentRequirementsPolicy => (
-  policy.type === 'Comment requirements'
-);
-export const isWorkItemLinkingPolicy = (policy: RepoPolicy): policy is WorkItemLinkingPolicy => (
-  policy.type === 'Work item linking'
-);
-export const isBuildPolicy = (policy: RepoPolicy): policy is BuildPolicy => (
-  policy.type === 'Build'
-);
-export const isRequiredReviewersPolicy = (policy: RepoPolicy): policy is RequiredReviewersPolicy => (
-  policy.type === 'Required reviewers'
-);
-export const isRequireMergeStrategyPolicy = (policy: RepoPolicy): policy is RequireMergeStrategyPolicy => (
-  policy.type === 'Require a merge strategy'
-);
+export const isFileSizeRestrictionPolicy = (
+  policy: RepoPolicy
+): policy is FileSizeRestrictionPolicy => policy.type === 'File size restriction';
+export const isPathLengthRestrictionPolicy = (
+  policy: RepoPolicy
+): policy is PathLengthRestrictionPolicy => policy.type === 'Path Length restriction';
+export const isReservedNamesRestrictionPolicy = (
+  policy: RepoPolicy
+): policy is ReservedNamesRestrictionPolicy =>
+  policy.type === 'Reserved names restriction';
+export const isMinimumNumberOfReviewersPolicy = (
+  policy: RepoPolicy
+): policy is MinimumNumberOfReviewersPolicy =>
+  policy.type === 'Minimum number of reviewers';
+export const isCommentRequirementsPolicy = (
+  policy: RepoPolicy
+): policy is CommentRequirementsPolicy => policy.type === 'Comment requirements';
+export const isWorkItemLinkingPolicy = (
+  policy: RepoPolicy
+): policy is WorkItemLinkingPolicy => policy.type === 'Work item linking';
+export const isBuildPolicy = (policy: RepoPolicy): policy is BuildPolicy =>
+  policy.type === 'Build';
+export const isRequiredReviewersPolicy = (
+  policy: RepoPolicy
+): policy is RequiredReviewersPolicy => policy.type === 'Required reviewers';
+export const isRequireMergeStrategyPolicy = (
+  policy: RepoPolicy
+): policy is RequireMergeStrategyPolicy => policy.type === 'Require a merge strategy';

@@ -1,6 +1,4 @@
-import React, {
-  useCallback, useMemo, useState
-} from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { not, pipe } from 'rambda';
 import { useParams } from 'react-router-dom';
 import type { Pipeline as TPipeline, PipelineStage } from '../../shared/types.js';
@@ -17,57 +15,80 @@ import type { NormalizedPolicies } from '../../shared/pipeline-utils.js';
 import {
   isPipelineInGroup,
   normalizePolicy,
-  pipelineDeploysExclusivelyFromMaster, pipelineHasStageNamed, pipelineHasUnusedStageNamed,
-  pipelineMeetsBranchPolicyRequirements
+  pipelineDeploysExclusivelyFromMaster,
+  pipelineHasStageNamed,
+  pipelineHasUnusedStageNamed,
+  pipelineMeetsBranchPolicyRequirements,
 } from '../../shared/pipeline-utils.js';
 import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
-import useQueryParam, { asBoolean, asString, asStringArray } from '../hooks/use-query-param.js';
+import useQueryParam, {
+  asBoolean,
+  asString,
+  asStringArray,
+} from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
 const dontFilter = Boolean;
-const filterPipelinesByRepo = (search: string, pipeline: TPipeline) => (
-  Object.values(pipeline.repos).some((r => r.name === getSearchTerm(search)))
-);
-const bySearch = (search: string) => (pipeline: TPipeline) => (
+const filterPipelinesByRepo = (search: string, pipeline: TPipeline) =>
+  Object.values(pipeline.repos).some(r => r.name === getSearchTerm(search));
+const bySearch = (search: string) => (pipeline: TPipeline) =>
   search.startsWith('repo:')
     ? filterPipelinesByRepo(search, pipeline)
-    : filterBySearch(search, pipeline.name) || Object.values(pipeline.repos).some(r => filterBySearch(search, r.name))
+    : filterBySearch(search, pipeline.name) ||
+      Object.values(pipeline.repos).some(r => filterBySearch(search, r.name));
+const byNonMasterReleases = pipe(
+  pipelineDeploysExclusivelyFromMaster,
+  x => (x === null ? true : x),
+  not
 );
-const byNonMasterReleases = pipe(pipelineDeploysExclusivelyFromMaster, x => (x === null ? true : x), not);
-const byNotStartsWithArtifact = (pipeline: TPipeline) => Object.keys(pipeline.repos).length === 0;
-const byNonPolicyConforming = (policyForBranch: (repoId: string, branch: string) => NormalizedPolicies) => (
-  pipe(pipelineMeetsBranchPolicyRequirements(policyForBranch), not)
-);
-const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (pipeline: TPipeline) => (
-  groupNames.some(groupName => (
-    isPipelineInGroup(groupName, groups[groupName] || [])(pipeline)
-  ))
-);
+const byNotStartsWithArtifact = (pipeline: TPipeline) =>
+  Object.keys(pipeline.repos).length === 0;
+const byNonPolicyConforming = (
+  policyForBranch: (repoId: string, branch: string) => NormalizedPolicies
+) => pipe(pipelineMeetsBranchPolicyRequirements(policyForBranch), not);
+const bySelectedGroups =
+  (groupNames: string[], groups: Record<string, string[]>) => (pipeline: TPipeline) =>
+    groupNames.some(groupName =>
+      isPipelineInGroup(groupName, groups[groupName] || [])(pipeline)
+    );
 
 const useReleaseDefinitions = () => {
-  const [releaseDefinitionCache, setReleaseDefinitionCache] = useState<Record<number, PipelineStage[] | 'loading' | undefined>>({});
+  const [releaseDefinitionCache, setReleaseDefinitionCache] = useState<
+    Record<number, PipelineStage[] | 'loading' | undefined>
+  >({});
   const { collection, project } = useParams<{ collection: string; project: string }>();
 
-  const getReleaseDefinitions = useCallback((definitionIds: number[]) => {
-    const needToFetch = definitionIds.filter(id => !releaseDefinitionCache[id]);
+  const getReleaseDefinitions = useCallback(
+    (definitionIds: number[]) => {
+      const needToFetch = definitionIds.filter(id => !releaseDefinitionCache[id]);
 
-    if (!needToFetch.length) return;
+      if (!needToFetch.length) return;
 
-    setReleaseDefinitionCache(cache => needToFetch.reduce((d, id) => ({ ...d, [id]: 'loading' }), cache));
+      setReleaseDefinitionCache(cache =>
+        needToFetch.reduce((d, id) => ({ ...d, [id]: 'loading' }), cache)
+      );
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    releaseDefinitions(collection!, project!, [...new Set(needToFetch)])
-      .then(revisions => {
-        setReleaseDefinitionCache(cache => ({ ...cache, ...revisions }));
-      })
-      .catch(() => {
-        setReleaseDefinitionCache(cache => ({
-          ...cache,
-          ...needToFetch.reduce((d, id) => ({ ...d, [id]: cache[id] === 'loading' ? undefined : cache[id] }), {})
-        }));
-      });
-  }, [collection, project, releaseDefinitionCache]);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      releaseDefinitions(collection!, project!, [...new Set(needToFetch)])
+        .then(revisions => {
+          setReleaseDefinitionCache(cache => ({ ...cache, ...revisions }));
+        })
+        .catch(() => {
+          setReleaseDefinitionCache(cache => ({
+            ...cache,
+            ...needToFetch.reduce(
+              (d, id) => ({
+                ...d,
+                [id]: cache[id] === 'loading' ? undefined : cache[id],
+              }),
+              {}
+            ),
+          }));
+        });
+    },
+    [collection, project, releaseDefinitionCache]
+  );
 
   return [releaseDefinitionCache, getReleaseDefinitions] as const;
 };
@@ -82,13 +103,19 @@ const ReleasePipelines: React.FC = () => {
   const [stageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
   const [nonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
   const [releaseDefinitions, getReleaseDefinitions] = useReleaseDefinitions();
-  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam('group', asStringArray);
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
+    'group',
+    asStringArray
+  );
   useRemoveSort();
 
-  const policyForBranch = useCallback((repoId: string, branch: string): NormalizedPolicies => {
-    if (releaseAnalysis === 'loading') return normalizePolicy({});
-    return normalizePolicy(releaseAnalysis.policies[repoId]?.[branch] || {});
-  }, [releaseAnalysis]);
+  const policyForBranch = useCallback(
+    (repoId: string, branch: string): NormalizedPolicies => {
+      if (releaseAnalysis === 'loading') return normalizePolicy({});
+      return normalizePolicy(releaseAnalysis.policies[repoId]?.[branch] || {});
+    },
+    [releaseAnalysis]
+  );
 
   const pipelines = useMemo(() => {
     if (releaseAnalysis === 'loading') return [];
@@ -97,57 +124,84 @@ const ReleasePipelines: React.FC = () => {
       .filter(search === undefined ? dontFilter : bySearch(search))
       .filter(nonMasterReleases ? byNonMasterReleases : dontFilter)
       .filter(notStartsWithArtifact ? byNotStartsWithArtifact : dontFilter)
-      .filter(stageNameExists === undefined ? dontFilter : pipelineHasStageNamed(stageNameExists))
-      .filter(stageNameExistsNotUsed === undefined ? dontFilter : pipelineHasUnusedStageNamed(stageNameExistsNotUsed))
-      .filter(nonPolicyConforming === undefined ? dontFilter : byNonPolicyConforming(policyForBranch))
       .filter(
-        !selectedGroupLabels || selectedGroupLabels?.length === 0 || !releaseAnalysis.groups?.groups
+        stageNameExists === undefined
           ? dontFilter
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          : bySelectedGroups(selectedGroupLabels, releaseAnalysis.groups!.groups)
+          : pipelineHasStageNamed(stageNameExists)
+      )
+      .filter(
+        stageNameExistsNotUsed === undefined
+          ? dontFilter
+          : pipelineHasUnusedStageNamed(stageNameExistsNotUsed)
+      )
+      .filter(
+        nonPolicyConforming === undefined
+          ? dontFilter
+          : byNonPolicyConforming(policyForBranch)
+      )
+      .filter(
+        !selectedGroupLabels ||
+          selectedGroupLabels?.length === 0 ||
+          !releaseAnalysis.groups?.groups
+          ? dontFilter
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            bySelectedGroups(selectedGroupLabels, releaseAnalysis.groups!.groups)
       );
   }, [
-    nonMasterReleases, nonPolicyConforming, notStartsWithArtifact, policyForBranch,
-    releaseAnalysis, search, selectedGroupLabels, stageNameExists, stageNameExistsNotUsed
+    nonMasterReleases,
+    nonPolicyConforming,
+    notStartsWithArtifact,
+    policyForBranch,
+    releaseAnalysis,
+    search,
+    selectedGroupLabels,
+    stageNameExists,
+    stageNameExistsNotUsed,
   ]);
 
-  const setRenderedPipelines = useCallback((renderedPipelines: TPipeline[]) => {
-    getReleaseDefinitions(renderedPipelines.map(p => p.id));
-  }, [getReleaseDefinitions]);
+  const setRenderedPipelines = useCallback(
+    (renderedPipelines: TPipeline[]) => {
+      getReleaseDefinitions(renderedPipelines.map(p => p.id));
+    },
+    [getReleaseDefinitions]
+  );
 
-  const showPipeline = useCallback((pipeline: TPipeline) => {
-    if (releaseAnalysis === 'loading') return null;
-    return (
-      <Pipeline
-        pipeline={pipeline}
-        stagesToHighlight={releaseAnalysis.stagesToHighlight}
-        policyForBranch={policyForBranch}
-        ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
-        releaseDefinition={releaseDefinitions[pipeline.id]}
-      />
-    );
-  }, [policyForBranch, releaseAnalysis, releaseDefinitions]);
+  const showPipeline = useCallback(
+    (pipeline: TPipeline) => {
+      if (releaseAnalysis === 'loading') return null;
+      return (
+        <Pipeline
+          pipeline={pipeline}
+          stagesToHighlight={releaseAnalysis.stagesToHighlight}
+          policyForBranch={policyForBranch}
+          ignoreStagesBefore={releaseAnalysis.ignoreStagesBefore}
+          releaseDefinition={releaseDefinitions[pipeline.id]}
+        />
+      );
+    },
+    [policyForBranch, releaseAnalysis, releaseDefinitions]
+  );
 
   if (releaseAnalysis === 'loading') return <Loading />;
-  if (!releaseAnalysis.pipelines.length) return <AlertMessage message="No release pipelines found" />;
+  if (!releaseAnalysis.pipelines.length) {
+    return <AlertMessage message="No release pipelines found" />;
+  }
 
   return (
     <>
-      {releaseAnalysis.groups
-        ? (
-          <div className="mb-6">
-            <MultiSelectDropdownWithLabel
-              label={releaseAnalysis.groups.label}
-              options={
-                Object.keys(releaseAnalysis.groups.groups)
-                  .map(group => ({ label: group, value: group }))
-              }
-              value={selectedGroupLabels || []}
-              onChange={x => setSelectedGroupLabels(x.length === 0 ? undefined : x)}
-            />
-          </div>
-        )
-        : null}
+      {releaseAnalysis.groups ? (
+        <div className="mb-6">
+          <MultiSelectDropdownWithLabel
+            label={releaseAnalysis.groups.label}
+            options={Object.keys(releaseAnalysis.groups.groups).map(group => ({
+              label: group,
+              value: group,
+            }))}
+            value={selectedGroupLabels || []}
+            onChange={x => setSelectedGroupLabels(x.length === 0 ? undefined : x)}
+          />
+        </div>
+      ) : null}
       <AppliedFilters type="release-pipelines" count={pipelines.length} />
       <ReleasePipelineSummary
         pipelines={pipelines}

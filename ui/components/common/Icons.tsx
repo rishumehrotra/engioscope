@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import React from 'react';
 
 export const Alert: React.FC = () => (
@@ -10,9 +9,18 @@ export const Alert: React.FC = () => (
 
 export const Danger: React.FC = () => (
   <svg className="h-4 w-4 text-white fill-current" viewBox="0 0 512 512">
-    <path d="M437.019 74.981C388.667 26.629 324.38 0 256 0S123.333 26.63 74.981 74.981 0 187.62 0 256s26.629 132.667 74.981 181.019C123.332 485.371 187.62 512 256 512s132.667-26.629 181.019-74.981C485.371 388.667 512 324.38 512 256s-26.629-132.668-74.981-181.019zM256 470.636C137.65 470.636 41.364 374.35 41.364 256S137.65 41.364 256 41.364 470.636 137.65 470.636 256 374.35 470.636 256 470.636z" fill="#FFF" />
-    <path d="M341.22 170.781c-8.077-8.077-21.172-8.077-29.249 0L170.78 311.971c-8.077 8.077-8.077 21.172 0 29.249 4.038 4.039 9.332 6.058 14.625 6.058s10.587-2.019 14.625-6.058l141.19-141.191c8.076-8.076 8.076-21.171 0-29.248z" fill="#FFF" />
-    <path d="M341.22 311.971l-141.191-141.19c-8.076-8.077-21.172-8.077-29.248 0-8.077 8.076-8.077 21.171 0 29.248l141.19 141.191a20.616 20.616 0 0 0 14.625 6.058 20.618 20.618 0 0 0 14.625-6.058c8.075-8.077 8.075-21.172-.001-29.249z" fill="#FFF" />
+    <path
+      d="M437.019 74.981C388.667 26.629 324.38 0 256 0S123.333 26.63 74.981 74.981 0 187.62 0 256s26.629 132.667 74.981 181.019C123.332 485.371 187.62 512 256 512s132.667-26.629 181.019-74.981C485.371 388.667 512 324.38 512 256s-26.629-132.668-74.981-181.019zM256 470.636C137.65 470.636 41.364 374.35 41.364 256S137.65 41.364 256 41.364 470.636 137.65 470.636 256 374.35 470.636 256 470.636z"
+      fill="#FFF"
+    />
+    <path
+      d="M341.22 170.781c-8.077-8.077-21.172-8.077-29.249 0L170.78 311.971c-8.077 8.077-8.077 21.172 0 29.249 4.038 4.039 9.332 6.058 14.625 6.058s10.587-2.019 14.625-6.058l141.19-141.191c8.076-8.076 8.076-21.171 0-29.248z"
+      fill="#FFF"
+    />
+    <path
+      d="M341.22 311.971l-141.191-141.19c-8.076-8.077-21.172-8.077-29.248 0-8.077 8.076-8.077 21.171 0 29.248l141.19 141.191a20.616 20.616 0 0 0 14.625 6.058 20.618 20.618 0 0 0 14.625-6.058c8.075-8.077 8.075-21.172-.001-29.249z"
+      fill="#FFF"
+    />
   </svg>
 );
 
@@ -96,44 +104,87 @@ export const UpChevron: React.FC<{ className?: string }> = ({ className }) => (
 
 export const Ascending = () => (
   <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+    />
   </svg>
 );
 
 export const Descending = () => (
   <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+    />
   </svg>
 );
 
 export const ArrowUp: React.FC<{ className?: string }> = ({ className }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
     <path d="M14,20H10V11L6.5,14.5L4.08,12.08L12,4.16L19.92,12.08L17.5,14.5L14,11V20Z" />
   </svg>
 );
 
 export const ArrowDown: React.FC<{ className?: string }> = ({ className }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
     <path d="M10,4H14V13L17.5,9.5L19.92,11.92L12,19.84L4.08,11.92L6.5,9.5L10,13V4Z" />
   </svg>
 );
 
 export const Refresh = () => (
   <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+    <path
+      fillRule="evenodd"
+      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
 export const Filters: React.FC<{ className?: string }> = ({ className }) => (
-  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={`h-6 w-7 ${className || ''}`}>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+  <svg
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    className={`h-6 w-7 ${className || ''}`}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+    />
   </svg>
 );
 
-export const Close: React.FC<{ className?: string; tooltip?: string }> = ({ className, tooltip }) => (
+export const Close: React.FC<{ className?: string; tooltip?: string }> = ({
+  className,
+  tooltip,
+}) => (
   <svg className={`h-4 w-4 ${className || ''}`} viewBox="0 0 20 20" fill="currentColor">
     <title>{tooltip}</title>
-    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+    <path
+      fillRule="evenodd"
+      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
@@ -145,7 +196,8 @@ export const Branches: React.FC<{ className?: string }> = ({ className }) => (
 
 export const GitRepo: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 512 512" className={`${className || ''}`}>
-    <path d="M132,334.6c48.8,3.3,59.2,2.1,59.2,12c0,20.1-65.8,20.1-65.8,1.5C125.4,343,128.7,338.7,132,334.6z M160.1,217.4
+    <path
+      d="M132,334.6c48.8,3.3,59.2,2.1,59.2,12c0,20.1-65.8,20.1-65.8,1.5C125.4,343,128.7,338.7,132,334.6z M160.1,217.4
  c-32.4,0-33.9,44.7-0.8,44.7C192,262.1,191.2,217.4,160.1,217.4L160.1,217.4z M481,79.2v353.6c0,26.6-21.6,48.2-48.2,48.2H79.2
  C52.6,481,31,459.4,31,432.8V79.2C31,52.6,52.6,31,79.2,31h353.6C459.4,31,481,52.6,481,79.2z M253,148.8c0,14.6,8.4,23,23,23
  c14.8,0,23.2-8.4,23.2-23c0-14.6-8.4-22.4-23.2-22.4C261.4,126.4,253,134.3,253,148.8z M231.1,194.7h-49.8
@@ -159,37 +211,60 @@ export const GitRepo: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-export const ArrowRight: React.FC<{ className?: string}> = ({ className }) => (
-  <svg
-    className={className || ''}
-    viewBox="0 0 20 20"
-    fill="currentColor"
-  >
-    <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+export const ArrowRight: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className || ''} viewBox="0 0 20 20" fill="currentColor">
+    <path
+      fillRule="evenodd"
+      d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
 export const Plus: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={`${className || ''} w-4 h-4`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+  <svg
+    className={`${className || ''} w-4 h-4`}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+    />
   </svg>
 );
 
 export const Minus: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={`${className || ''} w-4 h-4`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg
+    className={`${className || ''} w-4 h-4`}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
   </svg>
 );
 
 export const ExternalLink: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={`inline-block ${className || ''}`} viewBox="0 0 20 20" fill="currentColor">
+  <svg
+    className={`inline-block ${className || ''}`}
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
     <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
     <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
   </svg>
 );
 
 export const AlertTriangle: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={`inline-block ${className || ''}`} viewBox="0 0 24 24" fill="rgb(234 88 12)">
+  <svg
+    className={`inline-block ${className || ''}`}
+    viewBox="0 0 24 24"
+    fill="rgb(234 88 12)"
+  >
     <path d="M22.56 16.3L14.89 3.58a3.43 3.43 0 0 0-5.78 0L1.44 16.3a3 3 0 0 0-.05 3A3.37 3.37 0 0 0 4.33 21h15.34a3.37 3.37 0 0 0 2.94-1.66 3 3 0 0 0-.05-3.04zm-1.7 2.05a1.31 1.31 0 0 1-1.19.65H4.33a1.31 1.31 0 0 1-1.19-.65 1 1 0 0 1 0-1l7.68-12.73a1.48 1.48 0 0 1 2.36 0l7.67 12.72a1 1 0 0 1 .01 1.01z" />
     <circle cx="12" cy="16" r="1" />
     <path d="M12 8a1 1 0 0 0-1 1v4a1 1 0 0 0 2 0V9a1 1 0 0 0-1-1z" />
@@ -226,7 +301,9 @@ export const Git: React.FC<{ className?: string }> = ({ className }) => (
   <svg width="24pt" height="24pt" viewBox="24 0 92 92" className={`-mr-1.5 ${className}`}>
     <path
       style={{
-        stroke: 'none', fillRule: 'nonzero', fillOpacity: 1
+        stroke: 'none',
+        fillRule: 'nonzero',
+        fillOpacity: 1,
       }}
       d="M90.156 41.965 50.036 1.848a5.918 5.918 0 0 0-8.372 0l-8.328 8.332 10.566 10.566a7.03 7.03 0 0 1 7.23 1.684 7.034 7.034 0 0 1 1.669 7.277l10.187 10.184a7.028 7.028 0 0 1 7.278 1.672 7.04 7.04 0 0 1 0 9.957 7.05 7.05 0 0 1-9.965 0 7.044 7.044 0 0 1-1.528-7.66l-9.5-9.497V59.36a7.04 7.04 0 0 1 1.86 11.29 7.04 7.04 0 0 1-9.957 0 7.04 7.04 0 0 1 0-9.958 7.06 7.06 0 0 1 2.304-1.539V33.926a7.049 7.049 0 0 1-3.82-9.234L29.242 14.272 1.73 41.777a5.925 5.925 0 0 0 0 8.371L41.852 90.27a5.925 5.925 0 0 0 8.37 0l39.934-39.934a5.925 5.925 0 0 0 0-8.371"
     />

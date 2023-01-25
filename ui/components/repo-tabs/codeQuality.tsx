@@ -24,89 +24,89 @@ const fieldDefinitions = {
     {
       key: 'securityRating',
       label: 'Security rating',
-      formatter: rating
+      formatter: rating,
     },
     {
       key: 'coverage',
       label: 'Coverage',
-      formatter: percent
+      formatter: percent,
     },
     {
       key: 'duplicatedLinesDensity',
       label: 'Duplicated lines density',
-      formatter: percent
+      formatter: percent,
     },
     {
       key: 'blockerViolations',
       label: 'Blocker violations',
-      formatter: num
+      formatter: num,
     },
     {
       key: 'codeSmells',
       label: 'Code smells',
-      formatter: num
+      formatter: num,
     },
     {
       key: 'criticalViolations',
       label: 'Critical violations',
-      formatter: num
-    }
+      formatter: num,
+    },
   ],
   complexity: [
     {
       key: 'cognitive',
       label: 'Cognitive Complexity',
-      formatter: num
+      formatter: num,
     },
     {
       key: 'cyclomatic',
       label: 'Cyclomatic Complexity',
-      formatter: num
-    }
+      formatter: num,
+    },
   ],
   reliability: [
     {
       key: 'bugs',
       label: 'Bugs',
-      formatter: num
-    }
+      formatter: num,
+    },
   ],
   security: [
     {
       key: 'vulnerabilities',
       label: 'Vulnerabilities',
-      formatter: num
-    }
+      formatter: num,
+    },
   ],
   duplications: [
     {
       key: 'blocks',
       label: 'Duplicated blocks',
-      formatter: num
+      formatter: num,
     },
     {
       key: 'lines',
       label: 'Duplicated lines',
-      formatter: num
+      formatter: num,
     },
     {
       key: 'files',
       label: 'Files with duplications',
-      formatter: num
-    }
+      formatter: num,
+    },
   ],
   maintainability: [
     {
       key: 'techDebt',
       label: 'Technical Debt',
-      formatter: formatDebt
+      formatter: formatDebt,
     },
     {
       key: 'codeSmells',
       label: 'Code smells',
-      formatter: num
-    }
-  ]
+      formatter: num,
+    },
+  ],
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -115,7 +115,7 @@ const reliabilityRatingMeaning = {
   B: 'At least 1 minor bug',
   C: 'At least 1 major bug',
   D: 'At least 1 critical bug',
-  E: 'At least 1 blocker bug'
+  E: 'At least 1 blocker bug',
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -124,7 +124,7 @@ const securityRatingMeaning = {
   B: 'At least 1 minor vulnerability',
   C: 'At least 1 major vulnerability',
   D: 'At least 1 critical vulnerability',
-  E: 'At least 1 blocker vulnerability'
+  E: 'At least 1 blocker vulnerability',
 };
 
 const ratingClassName = (ratingValue: ReturnType<typeof rating>) => {
@@ -144,7 +144,9 @@ const ratingClassName = (ratingValue: ReturnType<typeof rating>) => {
   }
 };
 
-const gateClassName = (gate: NonNullable<RepoAnalysis['codeQuality']>[number]['quality']['gate']) => {
+const gateClassName = (
+  gate: NonNullable<RepoAnalysis['codeQuality']>[number]['quality']['gate']
+) => {
   switch (gate) {
     case 'pass': {
       return 'text-green-800 bg-green-200';
@@ -168,7 +170,11 @@ type SubCardProps = {
 };
 
 const SubCard: React.FC<SubCardProps> = ({
-  heading, rating, ratingClassName, children, className
+  heading,
+  rating,
+  ratingClassName,
+  children,
+  className,
 }) => (
   <div className={`bg-gray-50 rounded-lg shadow-sm ${className || ''}`}>
     <div className="flex justify-between py-4">
@@ -183,13 +189,13 @@ const SubCard: React.FC<SubCardProps> = ({
         </div>
       )}
     </div>
-    <div className="m-3">
-      {children}
-    </div>
+    <div className="m-3">{children}</div>
   </div>
 );
 
-const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]}> = ({ codeQuality }) => (
+const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number] }> = ({
+  codeQuality,
+}) => (
   <>
     <div className="grid grid-cols-3 gap-4">
       <SubCard
@@ -215,13 +221,21 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
                       {label}
                       {match.op && match.level && (
                         <div className="text-gray-600 text-xs">
-                          {`Should not be ${match.op === 'gt' ? 'above' : 'below'} ${formatter(match.level)}`}
+                          {`Should not be ${
+                            match.op === 'gt' ? 'above' : 'below'
+                          } ${formatter(match.level)}`}
                         </div>
                       )}
                     </td>
-                    <td className="p-1 pr-3 font-semibold align-middle text-right">{formatter(match.value || 0)}</td>
+                    <td className="p-1 pr-3 font-semibold align-middle text-right">
+                      {formatter(match.value || 0)}
+                    </td>
                     <td className="p-1 align-middle text-right">
-                      <div className={`py-1 text-xs rounded-md text-center ${gateClassName(match.status)}`}>
+                      <div
+                        className={`py-1 text-xs rounded-md text-center ${gateClassName(
+                          match.status
+                        )}`}
+                      >
                         {match.status.toUpperCase()}
                       </div>
                     </td>
@@ -237,7 +251,11 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
       <div className="col-span-2 grid grid-cols-3 gap-4">
         <SubCard
           heading="Maintainability"
-          rating={rating(codeQuality.maintainability.rating) === 'unknown' ? undefined : rating(codeQuality.maintainability.rating)}
+          rating={
+            rating(codeQuality.maintainability.rating) === 'unknown'
+              ? undefined
+              : rating(codeQuality.maintainability.rating)
+          }
           ratingClassName={ratingClassName(rating(codeQuality.maintainability.rating))}
         >
           <table className="w-full">
@@ -305,61 +323,80 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
       <div className="col-span-2 grid grid-cols-3 gap-4">
         <SubCard
           heading="Coverage"
-          rating={codeQuality.coverage.byTests === undefined ? undefined : percent(codeQuality.coverage.byTests)}
+          rating={
+            codeQuality.coverage.byTests === undefined
+              ? undefined
+              : percent(codeQuality.coverage.byTests)
+          }
         >
-          {(codeQuality.coverage.line === undefined && codeQuality.coverage.branch === undefined)
-            ? (
-              <div className="text-gray-600 text-sm px-1">
-                No coverage data available
-              </div>
-            )
-            : (
-              <table className="w-full">
-                <tbody>
-                  {([
+          {codeQuality.coverage.line === undefined &&
+          codeQuality.coverage.branch === undefined ? (
+            <div className="text-gray-600 text-sm px-1">No coverage data available</div>
+          ) : (
+            <table className="w-full">
+              <tbody>
+                {(
+                  [
                     {
-                      label: 'Line coverage', stat: 'line', uncovered: 'uncoveredLines', toCover: 'linesToCover'
+                      label: 'Line coverage',
+                      stat: 'line',
+                      uncovered: 'uncoveredLines',
+                      toCover: 'linesToCover',
                     },
                     {
-                      label: 'Branch coverage', stat: 'branch', uncovered: 'uncoveredConditions', toCover: 'conditionsToCover'
-                    }
-                  ] as const)
-                    .filter(({ stat }) => codeQuality.coverage[stat] !== undefined)
-                    .map(({
-                      label, stat, uncovered, toCover
-                    }) => {
-                      if (codeQuality.coverage[stat] === undefined) return null;
-                      return (
-                        <React.Fragment key={stat}>
-                          <tr>
-                            <td className={`px-1 pt-1 ${codeQuality.coverage[uncovered] === undefined ? 'pb-1' : ''}`}>{label}</td>
+                      label: 'Branch coverage',
+                      stat: 'branch',
+                      uncovered: 'uncoveredConditions',
+                      toCover: 'conditionsToCover',
+                    },
+                  ] as const
+                )
+                  .filter(({ stat }) => codeQuality.coverage[stat] !== undefined)
+                  .map(({ label, stat, uncovered, toCover }) => {
+                    if (codeQuality.coverage[stat] === undefined) return null;
+                    return (
+                      <React.Fragment key={stat}>
+                        <tr>
+                          <td
+                            className={`px-1 pt-1 ${
+                              codeQuality.coverage[uncovered] === undefined ? 'pb-1' : ''
+                            }`}
+                          >
+                            {label}
+                          </td>
+                          {}
+                          <td className="text-right p-1 font-semibold">
                             {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                            <td className="text-right p-1 font-semibold">{percent(codeQuality.coverage[stat]!)}</td>
+                            {percent(codeQuality.coverage[stat]!)}
+                          </td>
+                        </tr>
+                        {codeQuality.coverage[uncovered] !== undefined && (
+                          <tr>
+                            <td colSpan={2} className="px-1 pb-1 text-xs text-gray-600">
+                              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                              {`${num(codeQuality.coverage[uncovered]!)} ${
+                                codeQuality.coverage[toCover] === undefined
+                                  ? ''
+                                  : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                    ` of ${num(codeQuality.coverage[toCover]!)}`
+                              } to be covered`}
+                            </td>
                           </tr>
-                          {codeQuality.coverage[uncovered] !== undefined && (
-                            <tr>
-                              <td colSpan={2} className="px-1 pb-1 text-xs text-gray-600">
-                                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                                {`${num(codeQuality.coverage[uncovered]!)} ${
-                                  codeQuality.coverage[toCover] === undefined
-
-                                    ? ''
-                                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                    : ` of ${num(codeQuality.coverage[toCover]!)}`
-                                } to be covered`}
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                </tbody>
-              </table>
-            )}
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+              </tbody>
+            </table>
+          )}
         </SubCard>
         <SubCard
           heading="Duplications"
-          rating={codeQuality.duplication.linesDensity === undefined ? undefined : percent(codeQuality.duplication.linesDensity)}
+          rating={
+            codeQuality.duplication.linesDensity === undefined
+              ? undefined
+              : percent(codeQuality.duplication.linesDensity)
+          }
         >
           <table className="w-full">
             <tbody>
@@ -379,48 +416,39 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
           </table>
         </SubCard>
         <SubCard heading="Complexity">
-          {
-            fieldDefinitions.complexity
-              .filter(({ key }) => codeQuality.complexity[key] !== undefined)
-              .length === 0
-              ? (
-                <div className="text-gray-600 text-sm px-1">
-                  No complexity data available
-                </div>
-              )
-              : (
-                <table className="w-full">
-                  <tbody>
-                    {fieldDefinitions.complexity.map(({ key, label, formatter }) => {
-                      const match = codeQuality.complexity[key];
-                      if (match === undefined) return null;
-                      return (
-                        <tr key={key}>
-                          <td className="p-1">{label}</td>
-                          <td className="text-right p-1 font-semibold">{formatter(match)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )
-          }
+          {fieldDefinitions.complexity.filter(
+            ({ key }) => codeQuality.complexity[key] !== undefined
+          ).length === 0 ? (
+            <div className="text-gray-600 text-sm px-1">No complexity data available</div>
+          ) : (
+            <table className="w-full">
+              <tbody>
+                {fieldDefinitions.complexity.map(({ key, label, formatter }) => {
+                  const match = codeQuality.complexity[key];
+                  if (match === undefined) return null;
+                  return (
+                    <tr key={key}>
+                      <td className="p-1">{label}</td>
+                      <td className="text-right p-1 font-semibold">{formatter(match)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </SubCard>
       </div>
     </div>
     <div className="flex justify-between text-sm italic mt-4">
       <div className="text-gray-600">
         {codeQuality.lastAnalysisDate
-          ? `Last analysis was run on ${shortDate(new Date(codeQuality.lastAnalysisDate))}.`
+          ? `Last analysis was run on ${shortDate(
+              new Date(codeQuality.lastAnalysisDate)
+            )}.`
           : 'Analysis has never been run'}
       </div>
       <div className="items-end">
-        <a
-          className="link-text"
-          href={codeQuality.url}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a className="link-text" href={codeQuality.url} target="_blank" rel="noreferrer">
           See full details on SonarQube
         </a>
       </div>
@@ -428,20 +456,36 @@ const SingleAnalysis: React.FC<{ codeQuality: NonNullable<UICodeQuality>[number]
   </>
 );
 
-const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ codeQuality }) => {
+const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality> }> = ({
+  codeQuality,
+}) => {
   const [expandedRows, setExpandedRows] = useState<NonNullable<UICodeQuality>>([]);
 
   return (
     <table className="table-auto text-center divide-y divide-gray-200 w-full">
       <thead>
         <tr>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider"> </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Quality gate</th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Maintainability</th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Reliability</th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Security</th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Coverage</th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">Duplications</th>
+          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">
+            {' '}
+          </th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+            Quality gate
+          </th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+            Maintainability
+          </th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+            Reliability
+          </th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+            Security
+          </th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+            Coverage
+          </th>
+          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+            Duplications
+          </th>
         </tr>
       </thead>
       <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
@@ -459,9 +503,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ c
               }}
             >
               <td className="pl-6 py-4 whitespace-nowrap text-left text-blue-600 group-hover:underline">
-                <span className="truncate w-full block">
-                  {codeQualityItem.name}
-                </span>
+                <span className="truncate w-full block">{codeQualityItem.name}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span
@@ -496,23 +538,26 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality>}> = ({ c
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold"
-                >
-                  {codeQualityItem.coverage.byTests === undefined ? 'unknown' : percent(codeQualityItem.coverage.byTests)}
+                <span className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold">
+                  {codeQualityItem.coverage.byTests === undefined
+                    ? 'unknown'
+                    : percent(codeQualityItem.coverage.byTests)}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold"
-                >
-                  {codeQualityItem.duplication.linesDensity === undefined ? 'unknown' : percent(codeQualityItem.duplication.linesDensity)}
+                <span className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold">
+                  {codeQualityItem.duplication.linesDensity === undefined
+                    ? 'unknown'
+                    : percent(codeQualityItem.duplication.linesDensity)}
                 </span>
               </td>
             </tr>
             {expandedRows.includes(codeQualityItem) && (
               <tr>
-                <td colSpan={8} className="px-6 py-4 whitespace-nowrap text-left bg-gray-100 ml-2">
+                <td
+                  colSpan={8}
+                  className="px-6 py-4 whitespace-nowrap text-left bg-gray-100 ml-2"
+                >
                   <SingleAnalysis codeQuality={codeQualityItem} />
                 </td>
               </tr>
@@ -538,7 +583,7 @@ const tabLabel = (codeQuality: RepoAnalysis['codeQuality']) => {
 export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
   title: 'Code quality',
   count: tabLabel(codeQuality),
-  Component: () => (
+  Component: () =>
     codeQuality ? (
       <TabContents gridCols={1}>
         {codeQuality.length === 1 ? (
@@ -551,6 +596,5 @@ export default (codeQuality: RepoAnalysis['codeQuality']): Tab => ({
       <TabContents gridCols={0}>
         <AlertMessage message="Couldn't find this repo on SonarQube" />
       </TabContents>
-    )
-  )
+    ),
 });

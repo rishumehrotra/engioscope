@@ -10,9 +10,7 @@ import { fetchCollections } from '../network.js';
 const Project: React.FC<{
   projectName: string;
   route: string;
-}> = ({
-  projectName, route
-}) => (
+}> = ({ projectName, route }) => (
   <Link
     to={route}
     key={route}
@@ -20,25 +18,25 @@ const Project: React.FC<{
     className={[
       'grid grid-flow-col justify-start group link-text text-lg py-3 px-4',
       'hover:bg-gray-200 rounded-xl hover:no-underline border border-transparent',
-      'hover:border-gray-300'
+      'hover:border-gray-300',
     ].join(' ')}
   >
     <span
       className={[
         'inline-grid self-center bg-gray-400 w-8 text-center rounded-lg mr-2 text-white',
-        'group-hover:bg-gray-900 font-semibold'
+        'group-hover:bg-gray-900 font-semibold',
       ].join(' ')}
     >
       {projectName.charAt(0).toUpperCase()}
     </span>
-    <span className="truncate w-full inline-block">
-      {projectName}
-    </span>
+    <span className="truncate w-full inline-block">{projectName}</span>
   </Link>
 );
 
 const Collection: React.FC = () => {
-  const [analysedProjects, setAnalysedProjects] = useState<AnalysedProjects | undefined>();
+  const [analysedProjects, setAnalysedProjects] = useState<
+    AnalysedProjects | undefined
+  >();
   const setProjectDetails = useSetProjectDetails();
   const setHeaderDetails = useSetHeaderDetails();
 
@@ -47,7 +45,9 @@ const Collection: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     fetchCollections().then(setAnalysedProjects);
   }, []);
-  useEffect(() => { setProjectDetails(null); }, [setProjectDetails]);
+  useEffect(() => {
+    setProjectDetails(null);
+  }, [setProjectDetails]);
   useEffect(() => {
     setHeaderDetails({ title: 'Projects', lastUpdated: analysedProjects?.lastUpdated });
   }, [analysedProjects, setHeaderDetails]);
@@ -55,44 +55,43 @@ const Collection: React.FC = () => {
   const grouped = useMemo(() => {
     if (!analysedProjects) return null;
 
-    return Object.entries(analysedProjects.projects.reduce<Record<string, ScrapedProject[]>>((acc, p) => {
-      acc[p.name[0]] = acc[p.name[0]] || [];
-      acc[p.name[0]].push(p);
-      return acc;
-    }, {}));
+    return Object.entries(
+      analysedProjects.projects.reduce<Record<string, ScrapedProject[]>>((acc, p) => {
+        acc[p.name[0]] = acc[p.name[0]] || [];
+        acc[p.name[0]].push(p);
+        return acc;
+      }, {})
+    );
   }, [analysedProjects]);
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      {
-        grouped
-          ? (
-            grouped.map(([collection, projects]) => (
-              <div
-                key={collection}
-                className="bg-gray-100 mb-14 rounded-xl border border-gray-300 overflow-hidden"
-              >
-                <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">
-                  {collection}
-                  <span className="inline-block pl-4 text-base text-gray-400 pb-2">{`${projects.length} projects`}</span>
-                </h2>
-                <div className="grid grid-flow-row grid-cols-3 gap-4 p-10">
-                  {projects.sort(asc(byString(p => p.name[1]))).map(p => (
-                    <Project
-                      key={p.name[1]}
-                      projectName={p.name[1]}
-                      route={`/${p.name.join('/')}/`}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))
-          )
-          : <Loading />
-      }
+      {grouped ? (
+        grouped.map(([collection, projects]) => (
+          <div
+            key={collection}
+            className="bg-gray-100 mb-14 rounded-xl border border-gray-300 overflow-hidden"
+          >
+            <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">
+              {collection}
+              <span className="inline-block pl-4 text-base text-gray-400 pb-2">{`${projects.length} projects`}</span>
+            </h2>
+            <div className="grid grid-flow-row grid-cols-3 gap-4 p-10">
+              {projects.sort(asc(byString(p => p.name[1]))).map(p => (
+                <Project
+                  key={p.name[1]}
+                  projectName={p.name[1]}
+                  route={`/${p.name.join('/')}/`}
+                />
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        <Loading />
+      )}
     </div>
   );
 };
 
 export default Collection;
-

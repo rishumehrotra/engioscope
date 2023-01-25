@@ -8,14 +8,17 @@ type GanttBarProps = {
 };
 
 export const GanttBar: React.FC<GanttBarProps> = ({
-  maxTime, stages, tooltip, className
+  maxTime,
+  stages,
+  tooltip,
+  className,
 }) => (
   <ul
     data-tip={tooltip}
     data-html
     className={`flex gap-0.5 text-xs font-semibold ${className || ''}`}
     style={{
-      flex: `0 0 ${maxTime}px`
+      flex: `0 0 ${maxTime}px`,
     }}
   >
     {stages.map(({ label, time, color }) => (

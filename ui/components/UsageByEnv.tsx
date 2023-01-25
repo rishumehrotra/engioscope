@@ -3,20 +3,30 @@ import { AlertTriangle } from './common/Icons.js';
 import { envRowTooltip } from './OverviewGraphs/helpers/tooltips.js';
 
 type UsageByEnvProps = {
-  perEnvUsage: Record<string, {
-    successful: number;
-    total: number;
-  }>;
+  perEnvUsage: Record<
+    string,
+    {
+      successful: number;
+      total: number;
+    }
+  >;
   pipelineCount: number;
   queryPeriodDays: number;
 };
 
-const doesDeploysCountSeemInconsistent = (perEnvUsage: [string, { successful: number; total: number }][], index: number) => {
+const doesDeploysCountSeemInconsistent = (
+  perEnvUsage: [string, { successful: number; total: number }][],
+  index: number
+) => {
   if (index === 0) return false;
   return perEnvUsage[index - 1][1].successful < perEnvUsage[index][1].total;
 };
 
-const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount, queryPeriodDays }) => {
+const UsageByEnv: React.FC<UsageByEnvProps> = ({
+  perEnvUsage,
+  pipelineCount,
+  queryPeriodDays,
+}) => {
   const max = Math.max(...Object.values(perEnvUsage).map(({ total }) => total));
   const allEnvs = Object.entries(perEnvUsage);
   return (
@@ -25,8 +35,9 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount, que
         <Fragment key={env}>
           <div
             className="font-semibold text-sm flex items-center justify-end"
-            {...(doesDeploysCountSeemInconsistent(allEnvs, index) ? ({
-              'data-tip': `
+            {...(doesDeploysCountSeemInconsistent(allEnvs, index)
+              ? {
+                  'data-tip': `
                   <b>${env} </b>
                   has more deployments
                   (<b>${total}</b>)
@@ -35,8 +46,9 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount, que
                   deployments
                   (<b>${allEnvs[index - 1][1].successful}</b>)
               `,
-              'data-html': 'true'
-            }) : {})}
+                  'data-html': 'true',
+                }
+              : {})}
           >
             {doesDeploysCountSeemInconsistent(allEnvs, index) && (
               <AlertTriangle className="w-4 h-4 inline-block mr-1" />

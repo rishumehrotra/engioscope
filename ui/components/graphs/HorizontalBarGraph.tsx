@@ -5,24 +5,28 @@ const barThickness = 30;
 const barSpacing = 10;
 // const graphWidth = 500;
 
-const barWidth = (value: number, maxValue: number, width: number) => (
-  maxValue
-    ? (value / maxValue) * width
-    : 0
-);
+const barWidth = (value: number, maxValue: number, width: number) =>
+  maxValue ? (value / maxValue) * width : 0;
 
 type HorizontalBarGraphProps = {
   graphData: { label: string; value: number; color: string }[];
   width: number;
-  onBarClick?: (x: {label: string; value: number; color: string}) => void;
+  onBarClick?: (x: { label: string; value: number; color: string }) => void;
   formatValue?: (value: number) => string;
   className?: string;
 };
 
 const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
-  graphData, width, onBarClick, formatValue, className
+  graphData,
+  width,
+  onBarClick,
+  formatValue,
+  className,
 }) => {
-  const height = useMemo(() => (graphData.length * (barThickness + barSpacing)) - barSpacing, [graphData]);
+  const height = useMemo(
+    () => graphData.length * (barThickness + barSpacing) - barSpacing,
+    [graphData]
+  );
   const maxValue = useMemo(() => Math.max(...graphData.map(d => d.value)), [graphData]);
   const putLabelInBar = (value: number) => value > maxValue * 0.5;
 
@@ -51,15 +55,25 @@ const HorizontalBarGraph: React.FC<HorizontalBarGraphProps> = ({
             onClick={() => onBarClick?.({ label, value, color })}
           />
           <foreignObject
-            x={putLabelInBar(value)
-              ? yAxisLabelWidth
-              : barWidth(value, maxValue, width) + yAxisLabelWidth}
+            x={
+              putLabelInBar(value)
+                ? yAxisLabelWidth
+                : barWidth(value, maxValue, width) + yAxisLabelWidth
+            }
             y={index * (barThickness + barSpacing)}
-            width={putLabelInBar(value) ? barWidth(value, maxValue, width) : width - barWidth(value, maxValue, width) - yAxisLabelWidth}
+            width={
+              putLabelInBar(value)
+                ? barWidth(value, maxValue, width)
+                : width - barWidth(value, maxValue, width) - yAxisLabelWidth
+            }
             height={barThickness}
             className="pointer-events-none"
           >
-            <div className={`h-full flex items-center px-2 font-semibold ${putLabelInBar(value) ? 'justify-end text-white' : ''}`}>
+            <div
+              className={`h-full flex items-center px-2 font-semibold ${
+                putLabelInBar(value) ? 'justify-end text-white' : ''
+              }`}
+            >
               {`${label} ${formatValue?.(value) || value}`}
             </div>
           </foreignObject>

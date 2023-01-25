@@ -21,13 +21,8 @@ export default (prs: RepoAnalysis['prs']): Tab => ({
           position="last"
         />
       ) : (
-        <Metric
-          name="Time to approve"
-          value="-"
-          position="last"
-        />
+        <Metric name="Time to approve" value="-" position="last" />
       )}
     </TabContents>
-  )
+  ),
 });
-

@@ -30,11 +30,13 @@ export type FetchResponse<T> = FrontMatter & { fromCache: boolean; data: T };
 
 const cacheLocation = join(process.cwd(), 'cache');
 
-const cachePath = (pathParts: string[]): FileLocation => (
+const cachePath = (pathParts: string[]): FileLocation =>
   pathParts.length === 0
     ? [cacheLocation, `${pathParts[0]}.txt`]
-    : [join(cacheLocation, ...pathParts.slice(0, -1)), `${pathParts[pathParts.length - 1]}.txt`]
-);
+    : [
+        join(cacheLocation, ...pathParts.slice(0, -1)),
+        `${pathParts[pathParts.length - 1]}.txt`,
+      ];
 
 const fileNameForLogs = (fileName: string) => fileName.replace(`${process.cwd()}/`, '');
 
@@ -51,13 +53,11 @@ const getFirstLine = async (pathToFile: string) => {
   return line as string;
 };
 
-const getFrontMatter = async (filePath: string) => (
-  JSON.parse(await getFirstLine(filePath)) as FrontMatter
-);
+const getFrontMatter = async (filePath: string) =>
+  JSON.parse(await getFirstLine(filePath)) as FrontMatter;
 
-const looksLikeDate = (value: string) => (
-  /\d{4}-[01]\d-[0-3]\dT[0-2](?:\d:[0-5]){2}\d(.*Z)/.test(value)
-);
+const looksLikeDate = (value: string) =>
+  /\d{4}-[01]\d-[0-3]\dT[0-2](?:\d:[0-5]){2}\d(.*Z)/.test(value);
 
 const parseDate = (_: string, value: unknown) => {
   if (typeof value !== 'string') return value;
@@ -70,9 +70,13 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   const filePath = join(...fileLocation);
 
   if (!response.ok) {
-    logNetwork(`HTTP error when fetching ${response.url} ${response.status} - ${response.statusText}`);
+    logNetwork(
+      `HTTP error when fetching ${response.url} ${response.status} - ${response.statusText}`
+    );
     logNetwork(await response.text());
-    throw new Error(`HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`);
+    throw new Error(
+      `HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`
+    );
   }
 
   if (!response.body && response.status !== 204) {
@@ -80,16 +84,22 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
     throw new Error(`HTTP error: Stream is empty. ${response.url}`);
   }
 
-  logNetwork(`Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(filePath)}`);
+  logNetwork(
+    `Status: ${response.status}. Streaming from ${response.url} to ${fileNameForLogs(
+      filePath
+    )}`
+  );
 
   await fs.mkdir(fileLocation[0], { recursive: true });
 
   const fileStream = createWriteStream(filePath);
-  fileStream.write(JSON.stringify({
-    date: Date.now(),
-    status: response.status,
-    headers: Object.fromEntries(response.headers.entries())
-  } as FrontMatter));
+  fileStream.write(
+    JSON.stringify({
+      date: Date.now(),
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+    } as FrontMatter)
+  );
   fileStream.write('\n');
 
   const readStream = response.body || Readable.from([]);
@@ -102,13 +112,16 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
 export const fetchCounters = () => ({ networkHits, cacheHits });
 
 export default (diskCacheTimeMs: number) => ({
-  usingDiskCache: async <T>(pathParts: string[], fetcher: Fetcher): Promise<FetchResponse<T>> => (
+  usingDiskCache: async <T>(
+    pathParts: string[],
+    fetcher: Fetcher
+  ): Promise<FetchResponse<T>> =>
     retry(async () => {
       const fileLocation = cachePath(pathParts);
       const filePath = join(...fileLocation);
       let fromCache = true;
 
-      if (!await doesFileExist(filePath)) {
+      if (!(await doesFileExist(filePath))) {
         await streamToDisk(fileLocation, fetcher);
         fromCache = false;
       } else if (Date.now() - (await getFrontMatter(filePath)).date > diskCacheTimeMs) {
@@ -131,21 +144,20 @@ export default (diskCacheTimeMs: number) => ({
         return {
           ...frontMatter,
           fromCache,
-          data: frontMatter.status === 204 ? null : JSON.parse(dataString, parseDate)
+          data: frontMatter.status === 204 ? null : JSON.parse(dataString, parseDate),
         };
       } catch (error) {
         await fs.unlink(filePath);
         (error as Error).message += ` reading ${filePath}`;
         throw error;
       }
-    })
-  ),
+    }),
   clearDiskCache: async (pathParts: string[]) => {
     const possibleDirectory = join(cacheLocation, ...pathParts);
 
     if (
-      await doesFileExist(possibleDirectory)
-      && (await fs.stat(possibleDirectory)).isDirectory()
+      (await doesFileExist(possibleDirectory)) &&
+      (await fs.stat(possibleDirectory)).isDirectory()
     ) {
       logDisk(`Deleting directory ${fileNameForLogs(possibleDirectory)}`);
       await rimraf(possibleDirectory);
@@ -153,5 +165,5 @@ export default (diskCacheTimeMs: number) => ({
       logDisk(`Deleting ${fileNameForLogs(join(...cachePath(pathParts)))}`);
       await fs.unlink(join(...cachePath(pathParts)));
     }
-  }
+  },
 });

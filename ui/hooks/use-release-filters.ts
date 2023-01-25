@@ -24,7 +24,7 @@ export default (): ReleaseFilters => {
   const [selectedGroupLabels] = useQueryParam('group', asStringArray);
 
   if (!collection || !project) {
-    throw new Error('Couldn\'t find a collection or project');
+    throw new Error("Couldn't find a collection or project");
   }
 
   return {
@@ -36,6 +36,6 @@ export default (): ReleaseFilters => {
     stageNameContaining: stageNameExists,
     stageNameUsed: stageNameExistsNotUsed,
     notConfirmingToBranchPolicies: nonPolicyConforming,
-    repoGroups: selectedGroupLabels
+    repoGroups: selectedGroupLabels,
   };
 };

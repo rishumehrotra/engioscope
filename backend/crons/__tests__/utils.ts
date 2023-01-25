@@ -20,8 +20,8 @@ describe('createSchedule', () => {
         s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
         s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
         s`Then till ${60 * oneDayInMs}, check every ${6 * oneDayInMs}.`,
-        s`Then till ${90 * oneDayInMs}, check every ${10 * oneDayInMs}.`
-      ]
+        s`Then till ${90 * oneDayInMs}, check every ${10 * oneDayInMs}.`,
+      ],
     });
 
     // Should make the call for the first day
@@ -47,13 +47,13 @@ describe('createSchedule', () => {
     });
 
     // Double-check call at 90 days
-    expect(shouldUpdate(timeAgo((90 * oneDayInMs) - oneHourInMs))).toBe(false);
+    expect(shouldUpdate(timeAgo(90 * oneDayInMs - oneHourInMs))).toBe(false);
     expect(shouldUpdate(timeAgo(90 * oneDayInMs))).toBe(true);
-    expect(shouldUpdate(timeAgo((90 * oneDayInMs) + oneHourInMs))).toBe(false);
+    expect(shouldUpdate(timeAgo(90 * oneDayInMs + oneHourInMs))).toBe(false);
     expect(shouldUpdate(timeAgo((90 + 1) * oneDayInMs))).toBe(false);
 
     // Double check that it's not forgotten
-    expect(shouldUpdate(timeAgo((180 * oneDayInMs)))).toBe(true);
-    expect(shouldUpdate(timeAgo((270 * oneDayInMs)))).toBe(true);
+    expect(shouldUpdate(timeAgo(180 * oneDayInMs))).toBe(true);
+    expect(shouldUpdate(timeAgo(270 * oneDayInMs))).toBe(true);
   });
 });

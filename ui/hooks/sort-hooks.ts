@@ -7,11 +7,8 @@ type SortContext = {
   defaultKey: string;
 } | null;
 
-const [
-  SortContextProvider,
-  useSortOptions,
-  useSetSortOptions
-] = createContextState<SortContext>(null);
+const [SortContextProvider, useSortOptions, useSetSortOptions] =
+  createContextState<SortContext>(null);
 
 export { SortContextProvider, useSortOptions };
 
@@ -20,18 +17,24 @@ export const useSortParams = () => {
   const [sort, setSort] = useQueryParam('sort', asString);
   const [sortBy, setSortBy] = useQueryParam('sortBy', asString);
 
-  const sortParams = useMemo(() => ({
-    sort: sort === undefined ? 'desc' : 'asc',
-    sortBy
-  }), [sort, sortBy]);
+  const sortParams = useMemo(
+    () => ({
+      sort: sort === undefined ? 'desc' : 'asc',
+      sortBy,
+    }),
+    [sort, sortBy]
+  );
 
   const toggleSortDirection = useCallback(() => {
     setSort(sort === 'asc' ? undefined : 'asc', true);
   }, [setSort, sort]);
 
-  const onSortByChange = useCallback((sortBy: string) => {
-    setSortBy(sortBy === sortOptions?.defaultKey ? undefined : sortBy, true);
-  }, [setSortBy, sortOptions?.defaultKey]);
+  const onSortByChange = useCallback(
+    (sortBy: string) => {
+      setSortBy(sortBy === sortOptions?.defaultKey ? undefined : sortBy, true);
+    },
+    [setSortBy, sortOptions?.defaultKey]
+  );
 
   return [sortParams, toggleSortDirection, onSortByChange] as const;
 };
@@ -47,9 +50,10 @@ export const useSort = <T>(sortMap: SortMap<T>, defaultKey: string) => {
   const setSortOptions = useSetSortOptions();
   const [sortParams] = useSortParams();
 
-  useEffect(() => (
-    setSortOptions({ sortKeys: Object.keys(sortMap), defaultKey })
-  ), [defaultKey, setSortOptions, sortMap]);
+  useEffect(
+    () => setSortOptions({ sortKeys: Object.keys(sortMap), defaultKey }),
+    [defaultKey, setSortOptions, sortMap]
+  );
 
   return useCallback(
     (a: T, b: T) => {

@@ -1,5 +1,14 @@
 import {
-  add, allPass, compose, identity, length, not, pipe, prop, range, uniq
+  add,
+  allPass,
+  compose,
+  identity,
+  length,
+  not,
+  pipe,
+  prop,
+  range,
+  uniq,
 } from 'rambda';
 import { asc, byString } from 'sort-lib';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
@@ -14,7 +23,9 @@ const taskState = (referenceDate: Date) => (task: UIChangeProgramTask) => {
     if (new Date(task.plannedCompletion) < referenceDate) return 'overdue';
     return 'planned';
   }
-  if (new Date(task.actualCompletion) <= new Date(task.plannedCompletion)) return 'completed-on-time';
+  if (new Date(task.actualCompletion) <= new Date(task.plannedCompletion)) {
+    return 'completed-on-time';
+  }
   return 'completed-late';
 };
 
@@ -32,7 +43,9 @@ const rollUpTaskStates = (states: TaskState[]): RollupTaskState => {
 
 const rollUpGroupStates = (states: RollupTaskState[]) => {
   if (states.every(state => state === 'no-tasks')) return 'no-tasks';
-  return rollUpTaskStates(uniq(states).filter(state => state !== 'no-tasks') as TaskState[]);
+  return rollUpTaskStates(
+    uniq(states).filter(state => state !== 'no-tasks') as TaskState[]
+  );
 };
 
 const showStatus = (className: string, label: string) => `
@@ -48,23 +61,57 @@ export const taskTooltip = (task: UIChangeProgramTask) => `
     <div class="w-64">
       ${task.id}: <strong>${task.title}</strong><br />
       Status: <strong>${task.state}</strong><br />
-      ${task.plannedStart ? `Planned start: <strong>${shortDate(new Date(task.plannedStart))}</strong><br />` : ''}
-      ${task.actualStart ? `Actual start: <strong>${shortDate(new Date(task.actualStart))}</strong><br />` : ''}
-      ${task.plannedCompletion ? `Planned completion: <strong>${shortDate(new Date(task.plannedCompletion))}</strong><br />` : ''}
-      ${task.actualCompletion ? `Actual completion: <strong>${shortDate(new Date(task.actualCompletion))}</strong><br />` : ''}
+      ${
+        task.plannedStart
+          ? `Planned start: <strong>${shortDate(
+              new Date(task.plannedStart)
+            )}</strong><br />`
+          : ''
+      }
+      ${
+        task.actualStart
+          ? `Actual start: <strong>${shortDate(
+              new Date(task.actualStart)
+            )}</strong><br />`
+          : ''
+      }
+      ${
+        task.plannedCompletion
+          ? `Planned completion: <strong>${shortDate(
+              new Date(task.plannedCompletion)
+            )}</strong><br />`
+          : ''
+      }
+      ${
+        task.actualCompletion
+          ? `Actual completion: <strong>${shortDate(
+              new Date(task.actualCompletion)
+            )}</strong><br />`
+          : ''
+      }
       ${(() => {
-    switch (taskState(new Date())(task)) {
-      case 'completed-on-time': { return showStatus('bg-green-600', 'Completed on time'); }
-      case 'completed-late': { return showStatus('bg-amber-500', 'Completed, delayed'); }
-      case 'overdue': { return showStatus('bg-red-600', 'Overdue'); }
-      case 'planned': { return showStatus('bg-gray-600', 'Planned'); }
-      default: { return showStatus('bg-gray-600', 'Unplanned'); }
-    }
-  })()}
+        switch (taskState(new Date())(task)) {
+          case 'completed-on-time': {
+            return showStatus('bg-green-600', 'Completed on time');
+          }
+          case 'completed-late': {
+            return showStatus('bg-amber-500', 'Completed, delayed');
+          }
+          case 'overdue': {
+            return showStatus('bg-red-600', 'Overdue');
+          }
+          case 'planned': {
+            return showStatus('bg-gray-600', 'Planned');
+          }
+          default: {
+            return showStatus('bg-gray-600', 'Unplanned');
+          }
+        }
+      })()}
     </div>
   `;
 
-const showCount = (count: number, label: string, className: string) => (
+const showCount = (count: number, label: string, className: string) =>
   count === 0
     ? ''
     : `
@@ -74,10 +121,12 @@ const showCount = (count: number, label: string, className: string) => (
           <strong>${count}</strong> ${count === 1 ? 'task' : 'tasks'} ${label}
         </span>
       </div>
-    `
-);
+    `;
 
-export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks['weeks'][number]) => {
+export const rollupTooltip = (
+  tasks: UIChangeProgramTask[],
+  week: OrganizedTasks['weeks'][number]
+) => {
   const states = tasks.map(task => taskState(new Date())(task));
   const getCountOf = (state: TaskState) => states.filter(s => s === state).length;
   const overdueCount = getCountOf('overdue');
@@ -97,7 +146,8 @@ export const rollupTooltip = (tasks: UIChangeProgramTask[], week: OrganizedTasks
 };
 
 export const taskClassName = (
-  details: NonNullable<UIChangeProgram['details']>, task: UIChangeProgramTask
+  details: NonNullable<UIChangeProgram['details']>,
+  task: UIChangeProgramTask
 ) => {
   if (task.state === details.startedState) {
     return 'border-2 border-green-600';
@@ -121,12 +171,12 @@ const isInWeekStarting = (weekStart: Date, date: Date) => {
 
 const getWeekStarting = (date: Date, referenceDate: Date, deltaWeeks = 1): Date => {
   const pastWeekStartDate = new Date(referenceDate);
-  pastWeekStartDate.setDate(pastWeekStartDate.getDate() - (deltaWeeks * 7));
+  pastWeekStartDate.setDate(pastWeekStartDate.getDate() - deltaWeeks * 7);
 
   if (isInWeekStarting(pastWeekStartDate, date)) return pastWeekStartDate;
 
   const futureWeekStartDate = new Date(referenceDate);
-  futureWeekStartDate.setDate(futureWeekStartDate.getDate() + ((deltaWeeks - 1) * 7));
+  futureWeekStartDate.setDate(futureWeekStartDate.getDate() + (deltaWeeks - 1) * 7);
 
   if (isInWeekStarting(futureWeekStartDate, date)) return futureWeekStartDate;
 
@@ -137,24 +187,23 @@ export const organizeTasksByWeek = (
   dateFromTask: (task: UIChangeProgramTask) => Date,
   tasks: UIChangeProgramTask[],
   referenceDate = new Date()
-) => (
-  tasks
-    .reduce<Record<string, UIChangeProgramTask[]>>((acc, task) => {
-      const weekStart = getWeekStarting(dateFromTask(task), referenceDate);
+) =>
+  tasks.reduce<Record<string, UIChangeProgramTask[]>>((acc, task) => {
+    const weekStart = getWeekStarting(dateFromTask(task), referenceDate);
 
-      acc[weekStart.toISOString()] = acc[weekStart.toISOString()] || [];
-      acc[weekStart.toISOString()].push(task);
+    acc[weekStart.toISOString()] = acc[weekStart.toISOString()] || [];
+    acc[weekStart.toISOString()].push(task);
 
-      return acc;
-    }, {})
-);
+    return acc;
+  }, {});
 
-const isOfTeam = (teamName: string) => (task: UIChangeProgramTask) => task.team === teamName;
-const isOfTheme = (themeName: string) => (task: UIChangeProgramTask) => task.theme === themeName;
+const isOfTeam = (teamName: string) => (task: UIChangeProgramTask) =>
+  task.team === teamName;
+const isOfTheme = (themeName: string) => (task: UIChangeProgramTask) =>
+  task.theme === themeName;
 const isPlanned = (task: UIChangeProgramTask) => task.plannedCompletion !== undefined;
-const isOfType = (listingType: ListingType) => (
-  compose(listingType === 'planned' ? identity : not, isPlanned)
-);
+const isOfType = (listingType: ListingType) =>
+  compose(listingType === 'planned' ? identity : not, isPlanned);
 
 export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTask[]) => {
   const today = new Date();
@@ -162,7 +211,9 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
   const tasksByWeek = Object.fromEntries(
     Object.entries(
       organizeTasksByWeek(
-        task => new Date(task.plannedCompletion ?? task.created.on), tasks, today
+        task => new Date(task.plannedCompletion ?? task.created.on),
+        tasks,
+        today
       )
     ).sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
   );
@@ -181,71 +232,71 @@ export const organizeBy = (type: 'theme' | 'team') => (tasks: UIChangeProgramTas
         const applicableTasksFilter = allPass([
           isOfTeam(type === 'theme' ? subgroupName : groupName),
           isOfTheme(type === 'theme' ? groupName : subgroupName),
-          isOfType(listingType)
+          isOfType(listingType),
         ]);
 
         return {
           subgroupName,
-          totalTasks: tasks.filter(allPass([
-            isOfTeam(type === 'theme' ? subgroupName : groupName),
-            isOfTheme(type === 'theme' ? groupName : subgroupName)
-          ])).length,
-          tasks: Object.entries(tasksByWeek)
-            .flatMap(([weekStart, tasks], weekIndex) => {
-              const applicableTasks = tasks.filter(applicableTasksFilter);
-              return (
-                applicableTasks
-                  .map(task => ({
-                    task,
-                    weekIndex,
-                    weekStart,
-                    weekCount: Object.keys(tasksByWeek).length,
-                    status: taskStateToday(task) as TaskState
-                  }))
-              );
-            }),
-          rolledUpByWeek: Object.values(tasksByWeek)
-            .map(tasks => {
-              const applicableTasks = tasks.filter(applicableTasksFilter);
-              return {
-                state: rollUpTaskStates(applicableTasks.map(taskStateToday)) as RollupTaskState,
-                count: applicableTasks.length
-              };
-            })
+          totalTasks: tasks.filter(
+            allPass([
+              isOfTeam(type === 'theme' ? subgroupName : groupName),
+              isOfTheme(type === 'theme' ? groupName : subgroupName),
+            ])
+          ).length,
+          tasks: Object.entries(tasksByWeek).flatMap(([weekStart, tasks], weekIndex) => {
+            const applicableTasks = tasks.filter(applicableTasksFilter);
+            return applicableTasks.map(task => ({
+              task,
+              weekIndex,
+              weekStart,
+              weekCount: Object.keys(tasksByWeek).length,
+              status: taskStateToday(task) as TaskState,
+            }));
+          }),
+          rolledUpByWeek: Object.values(tasksByWeek).map(tasks => {
+            const applicableTasks = tasks.filter(applicableTasksFilter);
+            return {
+              state: rollUpTaskStates(
+                applicableTasks.map(taskStateToday)
+              ) as RollupTaskState,
+              count: applicableTasks.length,
+            };
+          }),
         };
-      })
+      }),
     }));
 
-    return splitByGroups
-      .map(group => ({
-        ...group,
-        totalTasks: count<(typeof group.subgroups)[number]>(incrementBy(prop('totalTasks')))(group.subgroups),
-        groupTasks: count<(typeof group.subgroups)[number]>(incrementBy(pipe(prop('tasks'), length)))(group.subgroups),
-        rolledUpByWeek: range(0, Object.keys(tasksByWeek).length)
-          .map(weekIndex => ({
-            state: rollUpGroupStates(
-              group.subgroups.map(subgroup => subgroup.rolledUpByWeek[weekIndex].state)
-            ) as RollupTaskState,
-            count: group.subgroups
-              .map(subgroup => subgroup.rolledUpByWeek[weekIndex].count)
-              .reduce(add, 0)
-          }))
-      }));
+    return splitByGroups.map(group => ({
+      ...group,
+      totalTasks: count<(typeof group.subgroups)[number]>(
+        incrementBy(prop('totalTasks'))
+      )(group.subgroups),
+      groupTasks: count<(typeof group.subgroups)[number]>(
+        incrementBy(pipe(prop('tasks'), length))
+      )(group.subgroups),
+      rolledUpByWeek: range(0, Object.keys(tasksByWeek).length).map(weekIndex => ({
+        state: rollUpGroupStates(
+          group.subgroups.map(subgroup => subgroup.rolledUpByWeek[weekIndex].state)
+        ) as RollupTaskState,
+        count: group.subgroups
+          .map(subgroup => subgroup.rolledUpByWeek[weekIndex].count)
+          .reduce(add, 0),
+      })),
+    }));
   };
 
   return {
     planned: createGroupingWith('planned'),
     unplanned: createGroupingWith('unplanned'),
-    weeks: Object.keys(tasksByWeek)
-      .map(weekStartString => {
-        const weekStart = new Date(weekStartString);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-        return {
-          label: `${shortDate(new Date(weekStart))} - ${shortDate(weekEnd)}`,
-          highlight: today >= weekStart && today < weekEnd
-        };
-      })
+    weeks: Object.keys(tasksByWeek).map(weekStartString => {
+      const weekStart = new Date(weekStartString);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      return {
+        label: `${shortDate(new Date(weekStart))} - ${shortDate(weekEnd)}`,
+        highlight: today >= weekStart && today < weekEnd,
+      };
+    }),
   };
 };
 

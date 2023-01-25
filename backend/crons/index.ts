@@ -5,11 +5,12 @@ import reposCron from './repos.js';
 import releaseDefinitionsCron from './release-definitions.js';
 import policyConfigurationCron from './policy-configuration.js';
 
-export default () => [
-  buildCron,
-  workItemsCron,
-  workItemTypesCron,
-  reposCron,
-  releaseDefinitionsCron,
-  policyConfigurationCron
-].forEach(fn => fn());
+export default () =>
+  [
+    buildCron,
+    workItemsCron,
+    workItemTypesCron,
+    reposCron,
+    releaseDefinitionsCron,
+    policyConfigurationCron,
+  ].forEach(fn => fn());

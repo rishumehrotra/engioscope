@@ -1,7 +1,5 @@
 import { prop } from 'rambda';
-import React, {
-  Fragment, useRef, useState
-} from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import { asc, byString } from 'sort-lib';
 import { maybe } from '../../../shared/maybe.js';
 import type { SummaryMetrics } from '../../../shared/types.js';
@@ -12,16 +10,27 @@ import { LabelWithSparkline } from '../graphs/Sparkline.js';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.js';
 import {
   buildRunsSparkline,
-  changeLeadTimeSparkline, coverageSparkline, cycleTimeSparkline,
-  flowEfficiencySparkline, newBugsSparkline, newItemsSparkline, newSonarSetupsSparkline,
-  testAutomationSparkline, velocitySparkline, wipTrendSparkline
+  changeLeadTimeSparkline,
+  coverageSparkline,
+  cycleTimeSparkline,
+  flowEfficiencySparkline,
+  newBugsSparkline,
+  newItemsSparkline,
+  newSonarSetupsSparkline,
+  testAutomationSparkline,
+  velocitySparkline,
+  wipTrendSparkline,
 } from '../sparkline-props.js';
 import UsageByEnv from '../UsageByEnv.js';
 import type { SummaryGroupKey, SummaryItemProps } from './utils.js';
 import {
-  decreaseIsBetter, increaseIsBetter,
-  getMetricCategoryDefinitionId, flattenSummaryGroups, allExceptExpectedKeys,
-  renderGroupItem, processSummary
+  decreaseIsBetter,
+  increaseIsBetter,
+  getMetricCategoryDefinitionId,
+  flattenSummaryGroups,
+  allExceptExpectedKeys,
+  renderGroupItem,
+  processSummary,
 } from './utils.js';
 
 type CardProps = {
@@ -33,17 +42,27 @@ type CardProps = {
 };
 
 const Card: React.FC<CardProps> = ({
-  title, children, type, comingSoon = false, width = 1
+  title,
+  children,
+  type,
+  comingSoon = false,
+  width = 1,
 }) => (
   <div
-    className={`p-6 h-full bg-white rounded-lg shadow ${
-      type === 'large' ? 'mt-4' : ''
-    } ${comingSoon ? 'opacity-50' : ''} ${width === 2 ? 'col-span-2' : ''}`}
+    className={`p-6 h-full bg-white rounded-lg shadow ${type === 'large' ? 'mt-4' : ''} ${
+      comingSoon ? 'opacity-50' : ''
+    } ${width === 2 ? 'col-span-2' : ''}`}
   >
-    <h2 className={`${type === 'large' ? 'text-xl' : 'text-lg'} mb-5 font-semibold flex items-center`}>
+    <h2
+      className={`${
+        type === 'large' ? 'text-xl' : 'text-lg'
+      } mb-5 font-semibold flex items-center`}
+    >
       {title}
       {comingSoon && (
-        <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">coming soon</span>
+        <span className="bg-gray-300 uppercase text-xs ml-2 rounded-md px-2 py-1">
+          coming soon
+        </span>
       )}
     </h2>
     {children}
@@ -56,7 +75,9 @@ const FlowMetrics: React.FC<{
   queryPeriodDays: number;
 }> = ({ group, workItemTypes, queryPeriodDays }) => {
   const [filterKey] = allExceptExpectedKeys(group);
-  const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+  const filterQS = `?filter=${encodeURIComponent(
+    `${filterKey}:${group[filterKey as SummaryGroupKey]}`
+  )}`;
   const projectLink = `/${group.collection}/${group.project}/${filterQS}`;
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
 
@@ -118,7 +139,9 @@ const FlowMetrics: React.FC<{
 
             const workItems = group.workItems[definitionId];
             const workItemsSummary = flattenSummaryGroups(workItems || {});
-            const renderMetric = renderGroupItem(typeName === 'Feature' ? portfolioProjectLink : projectLink);
+            const renderMetric = renderGroupItem(
+              typeName === 'Feature' ? portfolioProjectLink : projectLink
+            );
 
             return (
               <tr key={typeName}>
@@ -188,9 +211,7 @@ const FlowMetrics: React.FC<{
                 </td>
                 <td className="font-semibold text-xl py-3">
                   {renderMetric(
-                    workItemsSummary.wipAge
-                      ? prettyMS(workItemsSummary.wipAge)
-                      : '-',
+                    workItemsSummary.wipAge ? prettyMS(workItemsSummary.wipAge) : '-',
                     '#age-of-work-in-progress-items'
                   )}
                 </td>
@@ -211,7 +232,9 @@ const QualityMetrics: React.FC<{
   const bugsDefinitionId = getMetricCategoryDefinitionId(workItemTypes, 'Bug');
   const bugs = bugsDefinitionId ? group.workItems[bugsDefinitionId] : null;
   const [filterKey] = allExceptExpectedKeys(group);
-  const filterQS = `?filter=${encodeURIComponent(`${filterKey}:${group[filterKey as SummaryGroupKey]}`)}`;
+  const filterQS = `?filter=${encodeURIComponent(
+    `${filterKey}:${group[filterKey as SummaryGroupKey]}`
+  )}`;
   const portfolioProjectLink = `/${group.collection}/${group.portfolioProject}/${filterQS}`;
   const renderBugMetric = renderGroupItem(portfolioProjectLink);
   const envs = group.environments?.map(e => e.toLowerCase());
@@ -282,14 +305,13 @@ const QualityMetrics: React.FC<{
                 <tr key={environment}>
                   <td className="font-semibold text-sm py-3 align-middle">
                     <span className="inline-flex items-center">
-                      { bugsDefinitionId ? (
+                      {bugsDefinitionId ? (
                         <img
                           src={workItemTypes[bugsDefinitionId].icon}
                           alt="Features"
                           className="w-4 h-4 mr-2"
                         />
-                      )
-                        : null}
+                      ) : null}
                       {environment}
                     </span>
                   </td>
@@ -349,9 +371,7 @@ const QualityMetrics: React.FC<{
                   </td>
                   <td className="font-semibold text-xl py-3">
                     {renderBugMetric(
-                      maybe(bugInfo.wipAge)
-                        .map(prettyMS)
-                        .getOr('-'),
+                      maybe(bugInfo.wipAge).map(prettyMS).getOr('-'),
                       '#age-of-work-in-progress-items'
                     )}
                   </td>
@@ -368,40 +388,47 @@ const HealthMetrics: React.FC<{
   group: SummaryMetrics['groups'][number];
   queryPeriodDays: number;
 }> = ({ group, queryPeriodDays }) => {
+  const { repoStats, pipelineStats, collection, project } = group;
   const {
-    repoStats, pipelineStats, collection, project
-  } = group;
-  const {
-    codeQuality, repos, excluded, testsByWeek, coverageByWeek,
-    newSonarSetupsByWeek, sonarCountsByWeek, healthyBranches, builds,
-    ymlPipelines, usesCentralTemplate, hasPipelines
+    codeQuality,
+    repos,
+    excluded,
+    testsByWeek,
+    coverageByWeek,
+    newSonarSetupsByWeek,
+    sonarCountsByWeek,
+    healthyBranches,
+    builds,
+    ymlPipelines,
+    usesCentralTemplate,
+    hasPipelines,
   } = repoStats;
   const [filterKey] = allExceptExpectedKeys(group);
-  const filterQS = `?group=${encodeURIComponent(`${group[filterKey as SummaryGroupKey]}`)}`;
+  const filterQS = `?group=${encodeURIComponent(
+    `${group[filterKey as SummaryGroupKey]}`
+  )}`;
   const baseProjectLink = `/${collection}/${project}`;
   const reposMetric = renderGroupItem(`${baseProjectLink}/repos${filterQS}`);
-  const pipelinesMetric = renderGroupItem(`${baseProjectLink}/release-pipelines${filterQS}`);
+  const pipelinesMetric = renderGroupItem(
+    `${baseProjectLink}/release-pipelines${filterQS}`
+  );
 
   return (
     <>
       <div className="grid grid-cols-2 justify-between">
-        <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
-          Health metrics
-        </h2>
+        <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">Health metrics</h2>
         <p className="justify-self-end mt-8 mr-1 text-xs">
           {'Analysed '}
           <b>{repos}</b>
           {repos === 1 ? ' repo' : ' repos'}
-          {excluded
-            ? (
-              <>
-                {', excluded '}
-                <b>{excluded}</b>
-                {' inactive'}
-                {excluded === 1 ? ' repo' : ' repos'}
-              </>
-            )
-            : null}
+          {excluded ? (
+            <>
+              {', excluded '}
+              <b>{excluded}</b>
+              {' inactive'}
+              {excluded === 1 ? ' repo' : ' repos'}
+            </>
+          ) : null}
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
@@ -437,38 +464,36 @@ const HealthMetrics: React.FC<{
                 </div>
               </div>
             </div>
-            {
-              pipelineStats.stages.map(stage => (
-                <Fragment key={stage.name}>
-                  <div
-                    className="text-xs font-semibold"
-                    data-tip={`Percentage of pipelines having ${stage.name}`}
-                  >
-                    {`Pipelines having ${stage.name}`}
-                    <div className="font-semibold text-xl">
-                      {pipelinesMetric(
-                        divide(stage.exists, pipelineStats.pipelines)
-                          .map(toPercentage)
-                          .getOr('-')
-                      )}
-                    </div>
+            {pipelineStats.stages.map(stage => (
+              <Fragment key={stage.name}>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip={`Percentage of pipelines having ${stage.name}`}
+                >
+                  {`Pipelines having ${stage.name}`}
+                  <div className="font-semibold text-xl">
+                    {pipelinesMetric(
+                      divide(stage.exists, pipelineStats.pipelines)
+                        .map(toPercentage)
+                        .getOr('-')
+                    )}
                   </div>
-                  <div
-                    className="text-xs font-semibold"
-                    data-tip={`Percentage of pipelines using ${stage.name}`}
-                  >
-                    {`Pipelines using ${stage.name}`}
-                    <div className="font-semibold text-xl">
-                      {pipelinesMetric(
-                        divide(stage.used, pipelineStats.pipelines)
-                          .map(toPercentage)
-                          .getOr('-')
-                      )}
-                    </div>
+                </div>
+                <div
+                  className="text-xs font-semibold"
+                  data-tip={`Percentage of pipelines using ${stage.name}`}
+                >
+                  {`Pipelines using ${stage.name}`}
+                  <div className="font-semibold text-xl">
+                    {pipelinesMetric(
+                      divide(stage.used, pipelineStats.pipelines)
+                        .map(toPercentage)
+                        .getOr('-')
+                    )}
                   </div>
-                </Fragment>
-              ))
-            }
+                </div>
+              </Fragment>
+            ))}
           </div>
         </Card>
 
@@ -486,18 +511,18 @@ const HealthMetrics: React.FC<{
                   className="font-semibold text-xl mb-2"
                   data-tip={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}
                 >
-                  {repos
-                    ? (
-                      <>
-                        {reposMetric(
-                          <ExtendedLabelWithSparkline
-                            data={newSonarSetupsByWeek}
-                            {...newSonarSetupsSparkline(repos)}
-                          />
-                        )}
-                      </>
-                    )
-                    : '-'}
+                  {repos ? (
+                    <>
+                      {reposMetric(
+                        <ExtendedLabelWithSparkline
+                          data={newSonarSetupsByWeek}
+                          {...newSonarSetupsSparkline(repos)}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    '-'
+                  )}
                 </div>
               </div>
 
@@ -513,16 +538,18 @@ const HealthMetrics: React.FC<{
                     className="font-semibold text-md"
                     data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
                   >
-                    {codeQuality.sonarProjects
-                      ? (
-                        <LabelWithSparkline
-                          label={divide(codeQuality.pass, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                          data={sonarCountsByWeek.pass}
-                          lineColor={increaseIsBetter(sonarCountsByWeek.pass)}
-                          yAxisLabel={n => `${n}%`}
-                        />
-                      )
-                      : '-'}
+                    {codeQuality.sonarProjects ? (
+                      <LabelWithSparkline
+                        label={divide(codeQuality.pass, codeQuality.sonarProjects)
+                          .map(toPercentage)
+                          .getOr('-')}
+                        data={sonarCountsByWeek.pass}
+                        lineColor={increaseIsBetter(sonarCountsByWeek.pass)}
+                        yAxisLabel={n => `${n}%`}
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </div>
                 </div>
                 <div>
@@ -536,16 +563,18 @@ const HealthMetrics: React.FC<{
                     className="font-semibold text-md"
                     data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
                   >
-                    {codeQuality.sonarProjects
-                      ? (
-                        <LabelWithSparkline
-                          label={divide(codeQuality.warn, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                          data={sonarCountsByWeek.warn}
-                          lineColor={decreaseIsBetter(sonarCountsByWeek.warn)}
-                          yAxisLabel={n => `${n}%`}
-                        />
-                      )
-                      : '-'}
+                    {codeQuality.sonarProjects ? (
+                      <LabelWithSparkline
+                        label={divide(codeQuality.warn, codeQuality.sonarProjects)
+                          .map(toPercentage)
+                          .getOr('-')}
+                        data={sonarCountsByWeek.warn}
+                        lineColor={decreaseIsBetter(sonarCountsByWeek.warn)}
+                        yAxisLabel={n => `${n}%`}
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </div>
                 </div>
                 <div>
@@ -559,16 +588,18 @@ const HealthMetrics: React.FC<{
                     className="font-semibold text-md"
                     data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
                   >
-                    {codeQuality.sonarProjects
-                      ? (
-                        <LabelWithSparkline
-                          label={divide(codeQuality.fail, codeQuality.sonarProjects).map(toPercentage).getOr('-')}
-                          data={sonarCountsByWeek.fail}
-                          lineColor={decreaseIsBetter(sonarCountsByWeek.fail)}
-                          yAxisLabel={n => `${n}%`}
-                        />
-                      )
-                      : '-'}
+                    {codeQuality.sonarProjects ? (
+                      <LabelWithSparkline
+                        label={divide(codeQuality.fail, codeQuality.sonarProjects)
+                          .map(toPercentage)
+                          .getOr('-')}
+                        data={sonarCountsByWeek.fail}
+                        lineColor={decreaseIsBetter(sonarCountsByWeek.fail)}
+                        yAxisLabel={n => `${n}%`}
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </div>
                 </div>
               </div>
@@ -583,7 +614,10 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div className="font-semibold text-xl">
                   {pipelinesMetric(
-                    divide(pipelineStats.conformsToBranchPolicies, pipelineStats.pipelines)
+                    divide(
+                      pipelineStats.conformsToBranchPolicies,
+                      pipelineStats.pipelines
+                    )
                       .map(toPercentage)
                       .getOr('-')
                   )}
@@ -637,11 +671,9 @@ const HealthMetrics: React.FC<{
               <div className="font-semibold text-lg">
                 {reposMetric(
                   <LabelWithSparkline
-                    label={
-                      divide(builds.successful, builds.total)
-                        .map(toPercentage)
-                        .getOr('-')
-                    }
+                    label={divide(builds.successful, builds.total)
+                      .map(toPercentage)
+                      .getOr('-')}
                     data={builds.successfulByWeek}
                     lineColor={increaseIsBetter(builds.successfulByWeek)}
                     yAxisLabel={x => `${x}%`}
@@ -695,13 +727,16 @@ const HealthMetrics: React.FC<{
                 <div className="font-semibold text-xl">
                   {pipelinesMetric(
                     <LabelWithSparkline
-                      label={
-                        divide(pipelineStats.masterOnlyPipelines.count, pipelineStats.masterOnlyPipelines.total)
-                          .map(toPercentage)
-                          .getOr('-')
-                      }
+                      label={divide(
+                        pipelineStats.masterOnlyPipelines.count,
+                        pipelineStats.masterOnlyPipelines.total
+                      )
+                        .map(toPercentage)
+                        .getOr('-')}
                       data={pipelineStats.masterOnlyReleasesByWeek}
-                      lineColor={increaseIsBetter(pipelineStats.masterOnlyReleasesByWeek.filter(exists))}
+                      lineColor={increaseIsBetter(
+                        pipelineStats.masterOnlyReleasesByWeek.filter(exists)
+                      )}
                       yAxisLabel={x => `${x}%`}
                       renderer={pathRendererSkippingUndefineds}
                     />
@@ -731,11 +766,7 @@ const HealthMetrics: React.FC<{
                   Repos with release pipelines
                 </div>
                 <div className="font-semibold text-xl">
-                  {reposMetric(
-                    divide(hasPipelines, repos)
-                      .map(toPercentage)
-                      .getOr('-')
-                  )}
+                  {reposMetric(divide(hasPipelines, repos).map(toPercentage).getOr('-'))}
                 </div>
               </div>
             </div>
@@ -752,10 +783,7 @@ const HealthMetrics: React.FC<{
         <Card title="Contract driven development" type="small" comingSoon>
           <div className="grid grid-cols-2 gap-y-4">
             <div>
-              <div
-                className="text-xs font-semibold"
-                data-tip="Number of contracts tests"
-              >
+              <div className="text-xs font-semibold" data-tip="Number of contracts tests">
                 Contract Tests
               </div>
               <div className="font-semibold text-xl">xx</div>
@@ -800,9 +828,7 @@ const HealthMetrics: React.FC<{
                 Deployment Downtime
               </div>
               <div className="font-semibold text-xl">
-                xx
-                {' '}
-                <span className="text-sm">mins</span>
+                xx <span className="text-sm">mins</span>
               </div>
             </div>
             <div>
@@ -854,9 +880,7 @@ const HealthMetrics: React.FC<{
                 Toggled ON (Avg. age)
               </div>
               <div className="font-semibold text-xl">
-                xx
-                {' '}
-                <span className="text-sm">days</span>
+                xx <span className="text-sm">days</span>
               </div>
             </div>
             <div>
@@ -867,9 +891,7 @@ const HealthMetrics: React.FC<{
                 Toggled OFF (Avg. age)
               </div>
               <div className="font-semibold text-xl">
-                xx
-                {' '}
-                <span className="text-sm">days</span>
+                xx <span className="text-sm">days</span>
               </div>
             </div>
             <div>
@@ -888,7 +910,11 @@ const HealthMetrics: React.FC<{
   );
 };
 
-const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes, queryPeriodDays }) => {
+const SummaryItem: React.FC<SummaryItemProps> = ({
+  group,
+  workItemTypes,
+  queryPeriodDays,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const summaryRef = useRef<HTMLElement>(null);
 
@@ -910,9 +936,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ group, workItemTypes, queryPe
 
       {isOpen && (
         <>
-          <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">
-            Value metrics
-          </h2>
+          <h2 className="text-xs uppercase mt-8 ml-1 font-semibold">Value metrics</h2>
           <FlowMetrics
             group={group}
             workItemTypes={workItemTypes}
@@ -936,17 +960,15 @@ const SummaryByTeam: React.FC<{
   queryPeriodDays: number;
 }> = ({ groups, workItemTypes, queryPeriodDays }) => (
   <ul className="bg-gray-50 p-8 rounded-lg">
-    {groups
-      .sort(asc(byString(prop('groupName'))))
-      .map(group => (
-        <li key={group.groupName} className="mb-8">
-          <SummaryItem
-            group={group}
-            workItemTypes={workItemTypes}
-            queryPeriodDays={queryPeriodDays}
-          />
-        </li>
-      ))}
+    {groups.sort(asc(byString(prop('groupName')))).map(group => (
+      <li key={group.groupName} className="mb-8">
+        <SummaryItem
+          group={group}
+          workItemTypes={workItemTypes}
+          queryPeriodDays={queryPeriodDays}
+        />
+      </li>
+    ))}
   </ul>
 );
 

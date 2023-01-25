@@ -1,7 +1,10 @@
 import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../types-azure.js';
 import {
-  automatedTestCases, automatedTestCasesOfPriority,
-  notAutomatedTestCases, notAutomatedTestCasesOfPriority, priorities
+  automatedTestCases,
+  automatedTestCasesOfPriority,
+  notAutomatedTestCases,
+  notAutomatedTestCasesOfPriority,
+  priorities,
 } from '../queries/test-cases.js';
 
 export default async (
@@ -22,12 +25,16 @@ export default async (
     notAutomatedTestCasesP2,
     notAutomatedTestCasesP3,
     notAutomatedTestCasesP4,
-    notAutomatedTestCasesP5
+    notAutomatedTestCasesP5,
   ] = await Promise.all([
     getCount(automatedTestCases(projectName)),
     getCount(notAutomatedTestCases(projectName)),
-    ...priorities.map(priority => getCount(automatedTestCasesOfPriority(projectName, priority))),
-    ...priorities.map(priority => getCount(notAutomatedTestCasesOfPriority(projectName, priority)))
+    ...priorities.map(priority =>
+      getCount(automatedTestCasesOfPriority(projectName, priority))
+    ),
+    ...priorities.map(priority =>
+      getCount(notAutomatedTestCasesOfPriority(projectName, priority))
+    ),
   ]);
 
   return {
@@ -37,7 +44,7 @@ export default async (
       p2: automatedTestCasesP2,
       p3: automatedTestCasesP3,
       p4: automatedTestCasesP4,
-      p5: automatedTestCasesP5
+      p5: automatedTestCasesP5,
     },
     notAutomated: {
       total: notAutomatedTestCasesCount,
@@ -45,7 +52,7 @@ export default async (
       p2: notAutomatedTestCasesP2,
       p3: notAutomatedTestCasesP3,
       p4: notAutomatedTestCasesP4,
-      p5: notAutomatedTestCasesP5
-    }
+      p5: notAutomatedTestCasesP5,
+    },
   };
 };

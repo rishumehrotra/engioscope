@@ -15,7 +15,9 @@ const Artefacts: React.FC<{
 }> = ({ releaseDefinitionId }) => {
   const { collectionName, project } = useCollectionAndProject();
   const artifactsResponse = trpc.releases.getArtifacts.useQuery({
-    collectionName, project, releaseDefnId: releaseDefinitionId
+    collectionName,
+    project,
+    releaseDefnId: releaseDefinitionId,
   });
   const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
 
@@ -32,16 +34,21 @@ const Artefacts: React.FC<{
         Artifacts
       </div>
       <ol className="flex flex-wrap gap-2">
-        {/* eslint-disable-next-line no-nested-ternary */}
+        {}
         {artifacts ? (
-          artifacts.length === 0
-            ? (
-              <li>
-                <AlertMessage message="No starting artifact" />
-              </li>
-            )
-            : artifacts.map(artifact => (
-              <li key={artifact.type === 'Build' ? (`build-${artifact.name}`) : (`other-${artifact.alias}`)}>
+          artifacts.length === 0 ? (
+            <li>
+              <AlertMessage message="No starting artifact" />
+            </li>
+          ) : (
+            artifacts.map(artifact => (
+              <li
+                key={
+                  artifact.type === 'Build'
+                    ? `build-${artifact.name}`
+                    : `other-${artifact.alias}`
+                }
+              >
                 <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
                   {artifact.type === 'Build' ? (
                     <div className="bg-gray-100 rounded self-start artifact">
@@ -78,8 +85,12 @@ const Artefacts: React.FC<{
                         <details>
                           <summary className="text-gray-500 text-xs pl-1 mt-1 cursor-pointer">
                             {`${artifact.additionalBranches.length} additional ${
-                              artifact.additionalBranches.length === 1 ? 'branch' : 'branches'
-                            } that didn't go to ${projectConfig.data?.releasePipelines.ignoreStagesBefore}`}
+                              artifact.additionalBranches.length === 1
+                                ? 'branch'
+                                : 'branches'
+                            } that didn't go to ${
+                              projectConfig.data?.releasePipelines.ignoreStagesBefore
+                            }`}
                           </summary>
                           <ol className="flex flex-wrap mt-2">
                             {artifact.additionalBranches.map(branch => (
@@ -117,14 +128,14 @@ const Artefacts: React.FC<{
                 </div>
               </li>
             ))
-        )
-          : (
-            <li>
-              <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg h-4">
-                <Loading />
-              </div>
-            </li>
-          )}
+          )
+        ) : (
+          <li>
+            <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg h-4">
+              <Loading />
+            </div>
+          </li>
+        )}
       </ol>
     </div>
   );
@@ -133,7 +144,9 @@ const Artefacts: React.FC<{
 const Stages: React.FC<{ releaseDefinitionId: number }> = ({ releaseDefinitionId }) => {
   const { collectionName, project } = useCollectionAndProject();
   const stages = trpc.releases.releasePipelineStages.useQuery({
-    collectionName, project, releaseDefnId: releaseDefinitionId
+    collectionName,
+    project,
+    releaseDefnId: releaseDefinitionId,
   });
   return (
     <>
@@ -141,11 +154,7 @@ const Stages: React.FC<{ releaseDefinitionId: number }> = ({ releaseDefinitionId
         Stages
       </div>
       <div className="mt-6">
-        {stages.data ? (
-          <PipelineDiagram stages={stages.data} />
-        ) : (
-          <Loading />
-        )}
+        {stages.data ? <PipelineDiagram stages={stages.data} /> : <Loading />}
       </div>
     </>
   );
@@ -161,7 +170,9 @@ export const Pipeline: React.FC<{
   const { collectionName, project } = useCollectionAndProject();
   const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
   const stages = trpc.releases.releasePipelineStages.useQuery({
-    collectionName, project, releaseDefnId: id
+    collectionName,
+    project,
+    releaseDefnId: id,
   });
 
   const stagesToHighlight = projectConfig.data?.releasePipelines.stagesToHighlight;
@@ -173,17 +184,25 @@ export const Pipeline: React.FC<{
       titleUrl={url}
       isExpanded={false}
       subtitle={stagesToHighlight?.map(stageToHighlight => {
-        const matchingStage = stages.data
-          ?.find(s => s.name.toLowerCase().includes(stageToHighlight.toLowerCase()));
+        const matchingStage = stages.data?.find(s =>
+          s.name.toLowerCase().includes(stageToHighlight.toLowerCase())
+        );
         const doesStageExist = Boolean(matchingStage);
         const isStageUsed = Boolean((matchingStage?.total || 0) > 0);
 
         return (
           <Flair
             key={stageToHighlight}
-            // eslint-disable-next-line no-nested-ternary
-            colorClassName={doesStageExist && isStageUsed ? 'bg-green-600' : (doesStageExist ? 'bg-yellow-400' : 'bg-gray-400')}
-            label={`${stageToHighlight}: ${doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"}`}
+            colorClassName={
+              doesStageExist && isStageUsed
+                ? 'bg-green-600'
+                : doesStageExist
+                ? 'bg-yellow-400'
+                : 'bg-gray-400'
+            }
+            label={`${stageToHighlight}: ${
+              doesStageExist ? `${isStageUsed ? 'Used' : 'Unused'}` : "Doesn't exist"
+            }`}
           />
         );
       })}

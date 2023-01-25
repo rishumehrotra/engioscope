@@ -12,16 +12,15 @@ const cellHorizontalSpacing = 50;
 const cellVerticalSpacing = 15;
 
 const getRowHeightUsing = (nodes: Record<number, number[]>) => {
-  const getRowHeight = (rank: number): number => (
+  const getRowHeight = (rank: number): number =>
     nodes[rank]?.length
       ? Math.max(...nodes[rank].map(getRowHeight), nodes[rank].length) + 1
-      : 1
-  );
+      : 1;
 
   return getRowHeight;
 };
 
-const stagesTree = (stages: PipelineStageWithCounts[]) => (
+const stagesTree = (stages: PipelineStageWithCounts[]) =>
   stages.reduce<{ nodes: Record<number, number[]>; root: number[] }>(
     (acc, stage) => {
       stage.conditions.forEach(condition => {
@@ -35,8 +34,7 @@ const stagesTree = (stages: PipelineStageWithCounts[]) => (
       return acc;
     },
     { nodes: {}, root: stages.map(s => s.rank) }
-  )
-);
+  );
 
 const getDepthUsing = (nodes: Record<number, number[]>) => {
   const getDepth = (rank: number): number => {
@@ -66,9 +64,8 @@ const stagesGrid = (stages: PipelineStageWithCounts[]): Grid => {
     // eslint-disable-next-line unicorn/no-useless-undefined
     .map(() => range(0, maxDepth).map(() => undefined));
 
-  const gridContains = (rank: number) => (
-    grid.some(row => row.some(s => s?.rank === rank))
-  );
+  const gridContains = (rank: number) =>
+    grid.some(row => row.some(s => s?.rank === rank));
 
   const placeNode = (rank: number, rowOffset: number, colOffset: number) => {
     if (gridContains(rank)) return;
@@ -88,35 +85,32 @@ const stagesGrid = (stages: PipelineStageWithCounts[]): Grid => {
   return grid.filter(row => row.some(exists));
 };
 
-const getParentLocationsUsing = (grid: Grid) => (
-  (stage: PipelineStageWithCounts) => (
-    stage.conditions
-      .filter(c => c.type === 'environmentState')
-      .map(condition => {
-        const rowIndex = grid.findIndex(row => row.some(s => s?.name === condition.name));
-        if (rowIndex === -1) return;
-        const colIndex = grid[rowIndex].findIndex(s => s?.name === condition.name);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return [rowIndex, colIndex, grid[rowIndex][colIndex]!] as const;
-      })
-      .filter(exists)
-  )
-);
+const getParentLocationsUsing = (grid: Grid) => (stage: PipelineStageWithCounts) =>
+  stage.conditions
+    .filter(c => c.type === 'environmentState')
+    .map(condition => {
+      const rowIndex = grid.findIndex(row => row.some(s => s?.name === condition.name));
+      if (rowIndex === -1) return;
+      const colIndex = grid[rowIndex].findIndex(s => s?.name === condition.name);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return [rowIndex, colIndex, grid[rowIndex][colIndex]!] as const;
+    })
+    .filter(exists);
 
 const linePathUsing = (colIndex: number, rowIndex: number) => {
   const endingX = colIndex * (cellWidth + cellHorizontalSpacing);
-  const endingY = rowIndex * (cellHeight + cellVerticalSpacing) + (cellHeight / 2);
+  const endingY = rowIndex * (cellHeight + cellVerticalSpacing) + cellHeight / 2;
 
   return (fromColIndex: number, fromRowIndex: number) => {
     const startingX = fromColIndex * (cellWidth + cellHorizontalSpacing) + cellWidth;
-    const startingY = fromRowIndex * (cellHeight + cellVerticalSpacing) + (cellHeight / 2);
+    const startingY = fromRowIndex * (cellHeight + cellVerticalSpacing) + cellHeight / 2;
     const isFarAway = endingX - startingX > cellHorizontalSpacing;
 
     const path = [
       `M${startingX},${startingY}`,
       isFarAway ? `H${endingX - 50}` : '',
       `C${isFarAway ? endingX : startingX + 50},${startingY} ${endingX - 50},${endingY}`,
-      `${endingX} ${endingY}`
+      `${endingX} ${endingY}`,
     ].join(' ');
     return path;
   };
@@ -135,23 +129,22 @@ type PipelineDiagramProps = {
 const PipelineDiagramInternal: React.FC<PipelineDiagramProps> = ({ stages }) => {
   const grid = useMemo(() => stagesGrid(stages), [stages]);
 
-  const gridWidth = useMemo(() => (
-    grid[0].length * (cellWidth + cellHorizontalSpacing) - cellHorizontalSpacing
-  ), [grid]);
+  const gridWidth = useMemo(
+    () => grid[0].length * (cellWidth + cellHorizontalSpacing) - cellHorizontalSpacing,
+    [grid]
+  );
 
-  const gridHeight = useMemo(() => (
-    grid.length * (cellHeight + cellVerticalSpacing) - cellVerticalSpacing
-  ), [grid]);
+  const gridHeight = useMemo(
+    () => grid.length * (cellHeight + cellVerticalSpacing) - cellVerticalSpacing,
+    [grid]
+  );
 
   const getParentLocations = useMemo(() => getParentLocationsUsing(grid), [grid]);
 
   return (
     <div className="overflow-y-auto w-full">
-      <svg
-        width={gridWidth}
-        height={gridHeight}
-      >
-        {grid.map((row, rowIndex) => (
+      <svg width={gridWidth} height={gridHeight}>
+        {grid.map((row, rowIndex) =>
           row.map((stage, colIndex) => {
             if (!stage) return null;
 
@@ -173,35 +166,37 @@ const PipelineDiagramInternal: React.FC<PipelineDiagramProps> = ({ stages }) => 
                   height={cellHeight}
                 >
                   <div
-                    className={`border-gray-300 rounded-md overflow-hidden text-sm ${stage.total === 0 ? 'opacity-40' : ''}`}
+                    className={`border-gray-300 rounded-md overflow-hidden text-sm ${
+                      stage.total === 0 ? 'opacity-40' : ''
+                    }`}
                     style={{ height: `${cellHeight}px`, borderWidth: '1px' }}
                   >
                     <div className="text-gray-600 truncate px-2 py-1 bg-gray-100 font-semibold">
                       {stage.name}
                     </div>
                     <div className={`px-2 py-1 ${stageLabelColor(stage)}`}>
-                      <span className="font-semibold">
-                        {stage.successful}
-                      </span>
-                      <span className="opacity-70">
-                        {` / ${stage.total} succeeded`}
-                      </span>
+                      <span className="font-semibold">{stage.successful}</span>
+                      <span className="opacity-70">{` / ${stage.total} succeeded`}</span>
                     </div>
                   </div>
                 </foreignObject>
-                {getParentLocations(stage).map(([fromRowIndex, fromColIndex, parentStage]) => (
-                  <path
-                    key={`${stage.rank}-${fromRowIndex}-${fromColIndex}`}
-                    d={linePath(fromColIndex, fromRowIndex)}
-                    stroke={(parentStage.total === 0 || stage.total === 0) ? '#eee' : '#ddd'}
-                    strokeWidth={2}
-                    fill="none"
-                  />
-                ))}
+                {getParentLocations(stage).map(
+                  ([fromRowIndex, fromColIndex, parentStage]) => (
+                    <path
+                      key={`${stage.rank}-${fromRowIndex}-${fromColIndex}`}
+                      d={linePath(fromColIndex, fromRowIndex)}
+                      stroke={
+                        parentStage.total === 0 || stage.total === 0 ? '#eee' : '#ddd'
+                      }
+                      strokeWidth={2}
+                      fill="none"
+                    />
+                  )
+                )}
               </g>
             );
           })
-        ))}
+        )}
       </svg>
     </div>
   );
@@ -209,9 +204,11 @@ const PipelineDiagramInternal: React.FC<PipelineDiagramProps> = ({ stages }) => 
 
 const PipelineDiagram: React.FC<PipelineDiagramProps> = pipelineDiagramProps => (
   <ErrorBoundary
-    fallback={(
-      <div className="text-sm text-amber-700">Sorry, something went wrong when showing the pipeline diagram.</div>
-    )}
+    fallback={
+      <div className="text-sm text-amber-700">
+        Sorry, something went wrong when showing the pipeline diagram.
+      </div>
+    }
   >
     <PipelineDiagramInternal {...pipelineDiagramProps} />
   </ErrorBoundary>

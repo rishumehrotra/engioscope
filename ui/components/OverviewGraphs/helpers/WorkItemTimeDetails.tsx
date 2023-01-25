@@ -10,7 +10,10 @@ type WorkItemTimeDetailsProps = {
   workItemTimes: (workItem: UIWorkItem) => Overview['times'][number];
 };
 
-export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workItem, workItemTimes }) => {
+export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({
+  workItem,
+  workItemTimes,
+}) => {
   const times = workItemTimes(workItem);
 
   const workingTime = prettyMilliseconds(
@@ -26,15 +29,13 @@ export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workIt
         {split.map(({ label, timeDiff }, index) => (
           <li key={label} className="inline">
             {index !== 0 && ' + '}
-            {timeDiff === maxTimeDiff
-              ? (
-                <strong className="font-semibold">
-                  {`${label}: ${prettyMilliseconds(timeDiff, { compact: true })}`}
-                </strong>
-              )
-              : (
-                `${label}: ${prettyMilliseconds(timeDiff, { compact: true })}`
-              )}
+            {timeDiff === maxTimeDiff ? (
+              <strong className="font-semibold">
+                {`${label}: ${prettyMilliseconds(timeDiff, { compact: true })}`}
+              </strong>
+            ) : (
+              `${label}: ${prettyMilliseconds(timeDiff, { compact: true })}`
+            )}
           </li>
         ))}
       </ul>
@@ -43,55 +44,62 @@ export const WorkItemTimeDetails: React.FC<WorkItemTimeDetailsProps> = ({ workIt
 
   const lastWorkCenter = last(times.workCenters);
 
-  const waitingTime = times.workCenters.length > 1
-    ? prettyMilliseconds(
-      times.workCenters.slice(1).reduce(
-        (acc, wc, index) => acc + timeDifference({
-          start: times.workCenters[index].end || new Date().toISOString(),
-          end: wc.start
-        }), 0
-      ) + (
-        // Time after last work center
-        lastWorkCenter?.end && lastWorkCenter.end !== times.end
-          ? timeDifference({ start: lastWorkCenter.end, end: times.end })
-          : 0
-      ),
-      { compact: true }
-    )
-    : 'unknown';
+  const waitingTime =
+    times.workCenters.length > 1
+      ? prettyMilliseconds(
+          times.workCenters.slice(1).reduce(
+            (acc, wc, index) =>
+              acc +
+              timeDifference({
+                start: times.workCenters[index].end || new Date().toISOString(),
+                end: wc.start,
+              }),
+            0
+          ) +
+            // Time after last work center
+            (lastWorkCenter?.end && lastWorkCenter.end !== times.end
+              ? timeDifference({ start: lastWorkCenter.end, end: times.end })
+              : 0),
+          { compact: true }
+        )
+      : 'unknown';
 
   if (times.workCenters.length === 0) return null;
 
   return (
     <div className="text-gray-500 text-sm ml-6 mb-3">
       {`Total working time: ${workingTime} (`}
-      {showTimeSplit(times.workCenters.map(wc => ({
-        label: `${wc.label} time`,
-        timeDiff: timeDifference(wc)
-      })))}
+      {showTimeSplit(
+        times.workCenters.map(wc => ({
+          label: `${wc.label} time`,
+          timeDiff: timeDifference(wc),
+        }))
+      )}
       )
       <br />
       {`Total waiting time: ${waitingTime} (`}
       {times.workCenters.length === 1
         ? 'unknown'
         : showTimeSplit([
-          ...times.workCenters.slice(1).map((wc, index) => ({
-            label: `${times.workCenters[index].label} to ${wc.label}`,
-            timeDiff: timeDifference({
-              start: times.workCenters[index].end || new Date().toISOString(),
-              end: wc.start
-            })
-          })),
-          ...(lastWorkCenter && times.end !== lastWorkCenter.end
-            ? [{
-              label: `After ${lastWorkCenter.label}`,
+            ...times.workCenters.slice(1).map((wc, index) => ({
+              label: `${times.workCenters[index].label} to ${wc.label}`,
               timeDiff: timeDifference({
-                start: lastWorkCenter.end || new Date().toISOString(),
-                end: times.end
-              })
-            }]
-            : [])
-        ])}
+                start: times.workCenters[index].end || new Date().toISOString(),
+                end: wc.start,
+              }),
+            })),
+            ...(lastWorkCenter && times.end !== lastWorkCenter.end
+              ? [
+                  {
+                    label: `After ${lastWorkCenter.label}`,
+                    timeDiff: timeDifference({
+                      start: lastWorkCenter.end || new Date().toISOString(),
+                      end: times.end,
+                    }),
+                  },
+                ]
+              : []),
+          ])}
       )
     </div>
   );

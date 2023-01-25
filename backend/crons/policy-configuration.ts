@@ -6,13 +6,16 @@ import { runJob } from './utils.js';
 export const getPolicyConfigurations = () => {
   const { getPolicyConfigurations } = azure(getConfig());
 
-  return collectionsAndProjects().reduce<Promise<void>>(async (acc, [collection, project]) => {
-    await acc;
-    await getPolicyConfigurations(collection.name, project.name)
-      .then(bulkSavePolicies(collection.name, project.name));
-  }, Promise.resolve());
+  return collectionsAndProjects().reduce<Promise<void>>(
+    async (acc, [collection, project]) => {
+      await acc;
+      await getPolicyConfigurations(collection.name, project.name).then(
+        bulkSavePolicies(collection.name, project.name)
+      );
+    },
+    Promise.resolve()
+  );
 };
 
-export default () => (
-  runJob('fetching repo policies', t => t.every(3).days(), getPolicyConfigurations)
-);
+export default () =>
+  runJob('fetching repo policies', t => t.every(3).days(), getPolicyConfigurations);

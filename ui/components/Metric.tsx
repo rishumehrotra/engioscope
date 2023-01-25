@@ -10,7 +10,11 @@ type MetricProps = {
 };
 
 const Metric: React.FC<MetricProps> = ({
-  name, value, additionalValue, tooltip, position = 'default'
+  name,
+  value,
+  additionalValue,
+  tooltip,
+  position = 'default',
 }) => (
   <div
     style={{ outline: 'none' }}

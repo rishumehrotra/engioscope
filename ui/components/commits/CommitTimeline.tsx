@@ -15,9 +15,13 @@ const svgHeight = 50;
 const dateString = (date: Date) => date.toISOString().split('T')[0];
 const range = (max: number) => [...Array.from({ length: max }).keys()];
 
-const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max, queryPeriodDays }) => {
+const CommitTimeline: React.FC<CommitTimelineProps> = ({
+  timeline,
+  max,
+  queryPeriodDays,
+}) => {
   const startDate = new Date();
-  startDate.setDate((new Date()).getDate() - queryPeriodDays);
+  startDate.setDate(new Date().getDate() - queryPeriodDays);
   const svgWidth = (barWidth + barSpacing) * queryPeriodDays;
 
   return (
@@ -26,7 +30,7 @@ const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max, queryPer
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + day);
         const commitsForThisDay = timeline[dateString(date)];
-        const barHeight = commitsForThisDay ? ((commitsForThisDay * svgHeight) / max) : 1;
+        const barHeight = commitsForThisDay ? (commitsForThisDay * svgHeight) / max : 1;
 
         return (
           <rect
@@ -36,7 +40,9 @@ const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max, queryPer
             y={svgHeight - barHeight}
             width={barWidth}
             height={barHeight}
-            data-tip={`${commitsForThisDay || 0} commit${commitsForThisDay === 1 ? '' : 's'} on ${shortDate(date)}`}
+            data-tip={`${commitsForThisDay || 0} commit${
+              commitsForThisDay === 1 ? '' : 's'
+            } on ${shortDate(date)}`}
           />
         );
       })}

@@ -8,11 +8,11 @@ const tree = {
       id: 'child1',
       children: [
         { id: 'grandchild1', children: [] },
-        { id: 'grandchild2', children: [] }
-      ]
+        { id: 'grandchild2', children: [] },
+      ],
     },
-    { id: 'child2', children: [] }
-  ]
+    { id: 'child2', children: [] },
+  ],
 };
 
 it('should reduce a tree', () => {
@@ -32,10 +32,10 @@ it('should filter a tree', () => {
         id: 'child1',
         children: [
           { id: 'grandchild1', children: [] },
-          { id: 'grandchild2', children: [] }
-        ]
-      }
-    ]
+          { id: 'grandchild2', children: [] },
+        ],
+      },
+    ],
   });
 
   expect(filterTree<{ id: string }>(node => node.id === 'grandchild1')(tree)).toEqual({
@@ -43,12 +43,10 @@ it('should filter a tree', () => {
     children: [
       {
         id: 'child1',
-        children: [
-          { id: 'grandchild1', children: [] }
-        ]
-      }
-    ]
+        children: [{ id: 'grandchild1', children: [] }],
+      },
+    ],
   });
 
-  expect(filterTree<{ id: string}>(node => node.id === 'root')(tree)).toEqual(tree);
+  expect(filterTree<{ id: string }>(node => node.id === 'root')(tree)).toEqual(tree);
 });

@@ -11,32 +11,29 @@ export const oneFortnightInMs = 15 * oneDayInMs;
 export const oneMonthInMs = 30 * oneDayInMs;
 export const oneYearInMs = 365 * oneDayInMs;
 
-export const exists = <T>(x: T | undefined | null): x is T => (
-  x !== null && x !== undefined
-);
+export const exists = <T>(x: T | undefined | null): x is T =>
+  x !== null && x !== undefined;
 
-export const divide = (numerator: number, denominator: number) => (
-  maybe(numerator / denominator)
-);
+export const divide = (numerator: number, denominator: number) =>
+  maybe(numerator / denominator);
 
 export const toPercentage = (value: number) => `${Math.round(value * 100)}%`;
 
-export const combineColumnsInArray = <T>(combiner: (a: T, b: T) => T) => (rows: T[][]) => (
-  rows.reduce<T[]>((acc, row) => {
-    row.forEach((val, index) => {
-      acc[index] = combiner(acc[index], val);
-    });
-    return acc;
-  }, [])
-);
+export const combineColumnsInArray =
+  <T>(combiner: (a: T, b: T) => T) =>
+  (rows: T[][]) =>
+    rows.reduce<T[]>((acc, row) => {
+      row.forEach((val, index) => {
+        acc[index] = combiner(acc[index], val);
+      });
+      return acc;
+    }, []);
 
 export const addColumnsInArray = combineColumnsInArray<number>((a, b) => add(a || 0, b));
 
-export const mapObj = <T, U>(xform: (x: T) => U) => (obj: Record<string, T>) => (
-  Object.fromEntries(
-    Object.entries(obj)
-      .map(([key, value]) => [key, xform(value)])
-  )
-);
+export const mapObj =
+  <T, U>(xform: (x: T) => U) =>
+  (obj: Record<string, T>) =>
+    Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, xform(value)]));
 
 export const merge = <T>(obj1: T, obj2: T) => ({ ...obj1, ...obj2 });

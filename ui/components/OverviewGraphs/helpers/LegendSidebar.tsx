@@ -22,33 +22,27 @@ export type LegendSidebarProps = {
 };
 
 export const LegendSidebar: React.FC<LegendSidebarProps> = ({
-  headlineStats, items, onItemClick, onCheckboxClick
+  headlineStats,
+  items,
+  onItemClick,
+  onCheckboxClick,
 }) => (
   <div style={{ width: sidebarWidth }} className="justify-self-end">
     {headlineStats.length > 0 && (
       <div className="bg-gray-800 text-white p-4 mb-2 rounded-t-lg grid grid-cols-2 gap-4">
         {headlineStats.map(({ label, value, unit }) => (
           <div key={label}>
-            <h3 className="font-semibold pb-1">
-              {label}
-            </h3>
+            <h3 className="font-semibold pb-1">{label}</h3>
             <div className="">
-              <span className="text-2xl font-semibold">
-                {value}
-              </span>
-              {' '}
-              <span className="text-sm">
-                {unit}
-              </span>
+              <span className="text-2xl font-semibold">{value}</span>{' '}
+              <span className="text-sm">{unit}</span>
             </div>
           </div>
         ))}
       </div>
     )}
     <div className="grid gap-3 grid-cols-2">
-      {items.map(({
-        iconUrl, label, value, key, color, isChecked
-      }) => (
+      {items.map(({ iconUrl, label, value, key, color, isChecked }) => (
         <div className="relative" key={key}>
           {onCheckboxClick && (
             <input
@@ -68,12 +62,14 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
             onClick={() => onItemClick(key)}
           >
             <h4
-              className={`text-sm flex items-center h-10 overflow-hidden ${iconUrl ? 'px-5' : ''} ${onCheckboxClick ? 'pr-2' : ''}`}
+              className={`text-sm flex items-center h-10 overflow-hidden ${
+                iconUrl ? 'px-5' : ''
+              } ${onCheckboxClick ? 'pr-2' : ''}`}
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
-                textIndent: iconUrl ? '-20px' : '0'
+                textIndent: iconUrl ? '-20px' : '0',
               }}
             >
               {iconUrl && (
@@ -86,7 +82,11 @@ export const LegendSidebar: React.FC<LegendSidebarProps> = ({
               )}
               {label}
             </h4>
-            <div className={`text-xl flex items-center font-semibold ${iconUrl ? 'pl-5' : ''}`}>
+            <div
+              className={`text-xl flex items-center font-semibold ${
+                iconUrl ? 'pl-5' : ''
+              }`}
+            >
               {value}
             </div>
           </button>

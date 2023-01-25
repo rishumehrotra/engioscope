@@ -1,8 +1,8 @@
-import React, {
-  useCallback,
-  useLayoutEffect, useMemo, useRef
-} from 'react';
-import type { ProjectOverviewAnalysis, TestCaseAggregateStats } from '../../../shared/types.js';
+import React, { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import type {
+  ProjectOverviewAnalysis,
+  TestCaseAggregateStats,
+} from '../../../shared/types.js';
 import OverviewFilters from './helpers/OverviewFilters.js';
 import { useRemoveSort } from '../../hooks/sort-hooks.js';
 import useGlobalFilters from './helpers/use-global-filters.js';
@@ -23,79 +23,79 @@ import NewGraph from './New.js';
 import TimeSpentGraph from './TimeSpentGraph.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
-const palette = createPalette([
-  '#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9'
-]);
+const palette = createPalette(['#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9']);
 
-type TestCaseStatsByPriority = Record<keyof Omit<TestCaseAggregateStats, 'total'>, { total: number; automated: number }>;
+type TestCaseStatsByPriority = Record<
+  keyof Omit<TestCaseAggregateStats, 'total'>,
+  { total: number; automated: number }
+>;
 type TestPriority = keyof TestCaseStatsByPriority;
 
 const TestCaseStats: React.FC<{
   title: string;
   testCasesByPriority: TestCaseStatsByPriority;
-}> = ({
-  title,
-  testCasesByPriority
-}) => (
-  (
-    <div className="w-72">
-      <div className="mt-2 flex">
-        <div className="flex-1">
-          {Object.keys(testCasesByPriority).map(priority => {
-            const { automated, total } = testCasesByPriority[priority as TestPriority];
+}> = ({ title, testCasesByPriority }) => (
+  <div className="w-72">
+    <div className="mt-2 flex">
+      <div className="flex-1">
+        {Object.keys(testCasesByPriority).map(priority => {
+          const { automated, total } = testCasesByPriority[priority as TestPriority];
 
-            return (
-              <div className="flex" key={priority}>
-                <span
-                  className="w-20 text-sm self-center text-right text-gray-800"
-                >
-                  {`Priority ${priority.slice(1)}`}
-                </span>
-                <div
-                  className="ml-2 flex flex-1 items-center"
-                  style={{
+          return (
+            <div className="flex" key={priority}>
+              <span className="w-20 text-sm self-center text-right text-gray-800">
+                {`Priority ${priority.slice(1)}`}
+              </span>
+              <div
+                className="ml-2 flex flex-1 items-center"
+                style={
+                  {
                     // borderLeftWidth: 1
+                  }
+                }
+              >
+                <div
+                  className="rounded-r"
+                  style={{
+                    height: '50%',
+                    backgroundColor: palette(priority),
+                    marginLeft: 1,
+                    width: `${Math.max(1, (automated / total) * 100)}%`,
                   }}
-                >
-                  <div
-                    className="rounded-r"
-                    style={{
-                      height: '50%',
-                      backgroundColor: palette(priority),
-                      marginLeft: 1,
-                      width: `${Math.max(1, (automated / total) * 100)}%`
-                    }}
-                  />
-                  <div className="ml-2 py-2 whitespace-nowrap">
-                    <div className="text-sm text-gray-800 font-bold">
-                      {((automated * 100) / total).toFixed(0)}
-                      %
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {num(automated)}
-                      {' '}
-                      /
-                      {' '}
-                      {num(total)}
-                    </div>
+                />
+                <div className="ml-2 py-2 whitespace-nowrap">
+                  <div className="text-sm text-gray-800 font-bold">
+                    {((automated * 100) / total).toFixed(0)}%
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {num(automated)} / {num(total)}
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
-      <div className="text-xs text-center mt-4">{title}</div>
     </div>
-  )
+    <div className="text-xs text-center mt-4">{title}</div>
+  </div>
 );
 
-const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({ projectAnalysis }) => {
+const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({
+  projectAnalysis,
+}) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const rootNode = useRef<HTMLDivElement>(null);
-  const workItems = useMemo(() => Object.values(projectAnalysis.overview.byId), [projectAnalysis.overview.byId]);
-  const accessors = useMemo(() => workItemAccessors(projectAnalysis, queryPeriodDays), [projectAnalysis, queryPeriodDays]);
-  const [filteredWorkItems, filters, selectedFilters, setSelectedFilters] = useGlobalFilters(workItems);
+  const workItems = useMemo(
+    () => Object.values(projectAnalysis.overview.byId),
+    [projectAnalysis.overview.byId]
+  );
+  const accessors = useMemo(
+    () => workItemAccessors(projectAnalysis, queryPeriodDays),
+    [projectAnalysis, queryPeriodDays]
+  );
+  const [filteredWorkItems, filters, selectedFilters, setSelectedFilters] =
+    useGlobalFilters(workItems);
   const [Modal, modalProps, openModal] = useModalHelper();
   useRemoveSort();
 
@@ -107,7 +107,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     const rect = element.getBoundingClientRect();
     setTimeout(() => {
       window.scrollTo({
-        top: rect.top - (document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0)
+        top:
+          rect.top -
+          (document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0),
       });
     }, 10);
 
@@ -120,7 +122,9 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
     }, 1000);
   }, []);
 
-  const { testCases: { automated: automatedTestCases, notAutomated: notAutomatedTestCases } } = projectAnalysis;
+  const {
+    testCases: { automated: automatedTestCases, notAutomated: notAutomatedTestCases },
+  } = projectAnalysis;
   const { total: totalAutomated, ...allAutomatedTestCases } = automatedTestCases;
   const { total: totalNotAutomated, ...allNonAutomatedTestCases } = notAutomatedTestCases;
   const testCasesByPriority = useMemo(() => {
@@ -131,7 +135,7 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
       if (allAutomatedTestCases[p] + allNonAutomatedTestCases[p]) {
         t[p] = {
           total: allAutomatedTestCases[p] + allNonAutomatedTestCases[p],
-          automated: allAutomatedTestCases[p]
+          automated: allAutomatedTestCases[p],
         };
       }
     });
@@ -141,12 +145,15 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
   const totalTestCases = totalAutomated + totalNotAutomated;
 
-  const popup = useCallback(() => (
-    <TestCaseStats
-      testCasesByPriority={testCasesByPriority}
-      title="Percentage of automated test cases"
-    />
-  ), [testCasesByPriority]);
+  const popup = useCallback(
+    () => (
+      <TestCaseStats
+        testCasesByPriority={testCasesByPriority}
+        title="Percentage of automated test cases"
+      />
+    ),
+    [testCasesByPriority]
+  );
 
   return (
     <div style={{ marginBottom: '100vh' }} ref={rootNode}>
@@ -154,34 +161,57 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
 
       <ProjectStats>
         <ProjectStat
-          topStats={[{
-            title: 'Test cases',
-            value: num(totalTestCases),
-            tooltip: 'Total number of test cases in Test Plans'
-          }]}
-          childStats={[{
-            title: 'Automated',
-            value: totalTestCases === 0
-              ? '0%'
-              : `${((totalAutomated * 100) / totalTestCases).toFixed(0)}%`,
-            // eslint-disable-next-line unicorn/consistent-destructuring
-            tooltip: `${num(projectAnalysis.testCases.automated.total)} automated test cases`
-          }]}
-          onClick={totalTestCases ? {
-            open: 'popup',
-            contents: popup
-          } : undefined}
+          topStats={[
+            {
+              title: 'Test cases',
+              value: num(totalTestCases),
+              tooltip: 'Total number of test cases in Test Plans',
+            },
+          ]}
+          childStats={[
+            {
+              title: 'Automated',
+              value:
+                totalTestCases === 0
+                  ? '0%'
+                  : `${((totalAutomated * 100) / totalTestCases).toFixed(0)}%`,
+
+              tooltip: `${num(
+                // eslint-disable-next-line unicorn/consistent-destructuring
+                projectAnalysis.testCases.automated.total
+              )} automated test cases`,
+            },
+          ]}
+          onClick={
+            totalTestCases
+              ? {
+                  open: 'popup',
+                  contents: popup,
+                }
+              : undefined
+          }
         />
       </ProjectStats>
 
       <div className="mb-4" />
 
-      <OverviewFilters filters={filters} selectedFilters={selectedFilters} onChange={setSelectedFilters} />
+      <OverviewFilters
+        filters={filters}
+        selectedFilters={selectedFilters}
+        onChange={setSelectedFilters}
+      />
 
       {[
-        NewGraph, VelocityGraph, CycleTimeGraph, ChangeLeadTimeGraph,
-        TimeSpentGraph, FlowEfficiencyGraph, BugLeakageAndRCAGraph,
-        AgeOfWorkItemsByStatus, WIPTrendGraph, AgeOfWIPItemsGraph
+        NewGraph,
+        VelocityGraph,
+        CycleTimeGraph,
+        ChangeLeadTimeGraph,
+        TimeSpentGraph,
+        FlowEfficiencyGraph,
+        BugLeakageAndRCAGraph,
+        AgeOfWorkItemsByStatus,
+        WIPTrendGraph,
+        AgeOfWIPItemsGraph,
       ].map((Graph, index) => (
         <Graph
           // eslint-disable-next-line react/no-array-index-key

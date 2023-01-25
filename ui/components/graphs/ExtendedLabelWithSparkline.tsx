@@ -16,14 +16,18 @@ const trendDirection = (currentValue: number, previousValue: number) => {
   return 'same';
 };
 
-const tooltip = (label: string, thisMonthValue: string, previousMonthStats: PreviousMonthStats) => `
-  <strong>${thisMonthValue}</strong> ${label} ${label === 'WIP' ? 'today' : 'in the last month'}${
+const tooltip = (
+  label: string,
+  thisMonthValue: string,
+  previousMonthStats: PreviousMonthStats
+) => `
+  <strong>${thisMonthValue}</strong> ${label} ${
+  label === 'WIP' ? 'today' : 'in the last month'
+}${
   previousMonthStats && previousMonthStats.trendDirection !== 'same'
-    ? `<br />This is a <strong>${
-      previousMonthStats?.changePercentage.replace('-', '')
-    } ${
-      previousMonthStats.trendDirection === 'up' ? 'increase' : 'decrease'
-    }</strong> from the previous month`
+    ? `<br />This is a <strong>${previousMonthStats?.changePercentage.replace('-', '')} ${
+        previousMonthStats.trendDirection === 'up' ? 'increase' : 'decrease'
+      }</strong> from the previous month`
     : ''
 }`;
 
@@ -39,9 +43,18 @@ export type ExtendedLabelWithSparklineProps<T> = {
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const ExtendedLabelWithSparkline = <T extends {}>({
-  data, toValue, colorBy, valueToLabel, renderer, combineValues, tooltipLabel
+  data,
+  toValue,
+  colorBy,
+  valueToLabel,
+  renderer,
+  combineValues,
+  tooltipLabel,
 }: ExtendedLabelWithSparklineProps<T>) => {
-  const thisMonthValue = useMemo(() => combineValues(data.slice(-4)), [combineValues, data]);
+  const thisMonthValue = useMemo(
+    () => combineValues(data.slice(-4)),
+    [combineValues, data]
+  );
 
   const dataForSparkline = useMemo(() => data.map(toValue), [data, toValue]);
 
@@ -56,7 +69,7 @@ const ExtendedLabelWithSparkline = <T extends {}>({
       trendDirection: trendDirection(thisMonthValue, previousMonthValue),
       changePercentage: divide(thisMonthValue - previousMonthValue, previousMonthValue)
         .map(toPercentage)
-        .getOr('0%')
+        .getOr('0%'),
     };
   }, [colorBy, combineValues, data, thisMonthValue]);
 
@@ -76,28 +89,25 @@ const ExtendedLabelWithSparkline = <T extends {}>({
         />
       </span>
       {previousMonthStats ? (
-        <span className="text-sm text-gray-600" style={{ color: previousMonthStats.color }}>
-          {/* eslint-disable-next-line no-nested-ternary */}
+        <span
+          className="text-sm text-gray-600"
+          style={{ color: previousMonthStats.color }}
+        >
+          {}
           {previousMonthStats.trendDirection === 'up'
             ? '▲'
-            : (previousMonthStats.trendDirection === 'same'
-              ? ' '
-              : '▼')}
-          {' '}
+            : previousMonthStats.trendDirection === 'same'
+            ? ' '
+            : '▼'}{' '}
           {thisMonthValue - previousMonthStats.value === 0
             ? '-'
-            : valueToLabel(Math.abs(thisMonthValue - previousMonthStats.value))}
-          {' '}
-          {Number.parseInt(previousMonthStats.changePercentage, 10) === 0
-            ? null
-            : (
-              <span className="text-xs">
-                (
-                {Number.parseInt(previousMonthStats.changePercentage, 10) > 0 ? '+' : null}
-                {previousMonthStats.changePercentage}
-                )
-              </span>
-            )}
+            : valueToLabel(Math.abs(thisMonthValue - previousMonthStats.value))}{' '}
+          {Number.parseInt(previousMonthStats.changePercentage, 10) === 0 ? null : (
+            <span className="text-xs">
+              ({Number.parseInt(previousMonthStats.changePercentage, 10) > 0 ? '+' : null}
+              {previousMonthStats.changePercentage})
+            </span>
+          )}
         </span>
       ) : null}
     </span>

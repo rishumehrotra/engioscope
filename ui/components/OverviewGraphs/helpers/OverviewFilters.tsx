@@ -1,6 +1,4 @@
-import React, {
-  useEffect, useMemo, useRef, useState
-} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MultiSelectDropdownWithLabel } from '../../common/MultiSelectDropdown.js';
 import type { Filter } from './use-global-filters.js';
 
@@ -29,15 +27,16 @@ const Filters: React.FC<FiltersProps> = ({ filters, selectedFilters, onChange })
   });
 
   const filtersProps = useMemo(
-    () => filters
-      .map(({ label, tags }) => ({
+    () =>
+      filters.map(({ label, tags }) => ({
         label,
         options: tags.map(tag => ({ label: tag, value: tag })),
         value: selectedFilters.find(sf => sf.label === label)?.tags ?? [],
-        onChange: (value: string[]) => onChange([
-          ...selectedFilters.filter(sf => sf.label !== label),
-          { label, tags: value }
-        ])
+        onChange: (value: string[]) =>
+          onChange([
+            ...selectedFilters.filter(sf => sf.label !== label),
+            { label, tags: value },
+          ]),
       })),
     [filters, onChange, selectedFilters]
   );
@@ -53,7 +52,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, selectedFilters, onChange })
       ref={ref}
       style={{
         marginLeft: 'calc(50% - 50vw)',
-        marginRight: 'calc(50% - 50vw)'
+        marginRight: 'calc(50% - 50vw)',
       }}
     >
       <div className="flex gap-2 items-center mb-2 ml-5">

@@ -3,10 +3,10 @@ import { add } from 'rambda';
 import type { GitPullRequest, PullRequestStatus } from '../types-azure.js';
 import type { UIPullRequests } from '../../../shared/types.js';
 
-const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) => pr.status === status;
-const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) => (
-  pastDate.getTime() < (pr.closedDate || pr.creationDate).getTime()
-);
+const isStatus = (status: PullRequestStatus) => (pr: GitPullRequest) =>
+  pr.status === status;
+const isInTimeWindow = (pastDate: Date) => (pr: GitPullRequest) =>
+  pastDate.getTime() < (pr.closedDate || pr.creationDate).getTime();
 
 export default (fromDate: Date) => (prs: GitPullRequest[]) => {
   const prsByRepo = prs.reduce<Record<string, GitPullRequest[]>>((acc, pr) => {
@@ -21,8 +21,9 @@ export default (fromDate: Date) => (prs: GitPullRequest[]) => {
     const abandonedPrCount = prsInTimeWindow.filter(isStatus('abandoned')).length;
     const completedPrs = prsInTimeWindow.filter(isStatus('completed'));
 
-    const timesToApprove = completedPrs
-      .map(pr => (pr.closedDate.getTime() - pr.creationDate.getTime()));
+    const timesToApprove = completedPrs.map(
+      pr => pr.closedDate.getTime() - pr.creationDate.getTime()
+    );
 
     const completedPrCount = completedPrs.length;
 
@@ -31,11 +32,17 @@ export default (fromDate: Date) => (prs: GitPullRequest[]) => {
       active: activePrCount,
       abandoned: abandonedPrCount,
       completed: completedPrCount,
-      timeToApprove: timesToApprove.length === 0 ? null : {
-        average: prettyMilliseconds(timesToApprove.reduce(add, 0) / timesToApprove.length, { unitCount: 2 }),
-        min: prettyMilliseconds(Math.min(...timesToApprove), { unitCount: 2 }),
-        max: prettyMilliseconds(Math.max(...timesToApprove), { unitCount: 2 })
-      }
+      timeToApprove:
+        timesToApprove.length === 0
+          ? null
+          : {
+              average: prettyMilliseconds(
+                timesToApprove.reduce(add, 0) / timesToApprove.length,
+                { unitCount: 2 }
+              ),
+              min: prettyMilliseconds(Math.min(...timesToApprove), { unitCount: 2 }),
+              max: prettyMilliseconds(Math.max(...timesToApprove), { unitCount: 2 }),
+            },
     };
   };
 };

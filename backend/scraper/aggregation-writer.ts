@@ -3,10 +3,20 @@ import { join } from 'node:path';
 import debug from 'debug';
 import pluralize from 'pluralize';
 import type {
-  AnalysedProjects, ProjectOverviewAnalysis, ProjectReleasePipelineAnalysis,
-  ProjectRepoAnalysis, ProjectWorkItemAnalysis, ScrapedProject, SummaryMetrics,
-  TrackMetricsByTrack, TrackFlowMetrics, UIChangeProgram, UIChangeProgramTask,
-  UIProjectAnalysis, TrackwiseData, TrackFeatures
+  AnalysedProjects,
+  ProjectOverviewAnalysis,
+  ProjectReleasePipelineAnalysis,
+  ProjectRepoAnalysis,
+  ProjectWorkItemAnalysis,
+  ScrapedProject,
+  SummaryMetrics,
+  TrackMetricsByTrack,
+  TrackFlowMetrics,
+  UIChangeProgram,
+  UIChangeProgramTask,
+  UIProjectAnalysis,
+  TrackwiseData,
+  TrackFeatures,
 } from '../../shared/types.js';
 import { doesFileExist, lock } from '../utils.js';
 import type { ProjectAnalysis } from './types.js';
@@ -20,12 +30,14 @@ const dataFolderPath = join(process.cwd(), 'data');
 const overallSummaryFilePath = join(dataFolderPath, 'index.json');
 const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
 
-const projectName = (project: string | ParsedProjectConfig) => (
-  typeof project === 'string' ? project : project.name
-);
+const projectName = (project: string | ParsedProjectConfig) =>
+  typeof project === 'string' ? project : project.name;
 
 const writeFile = async (path: string[], fileName: string, contents: string) => {
-  outputFileLog('Writing', join(dataFolderPath, ...path, fileName).replace(`${process.cwd()}/`, ''));
+  outputFileLog(
+    'Writing',
+    join(dataFolderPath, ...path, fileName).replace(`${process.cwd()}/`, '')
+  );
   await fs.mkdir(join(dataFolderPath, ...path), { recursive: true });
   return fs.writeFile(join(dataFolderPath, ...path, fileName), contents, 'utf8');
 };
@@ -40,8 +52,13 @@ const projectSummary = (
   lastUpdated: new Date().toISOString(),
   reposCount: projectAnalysis.repoAnalysis.length,
   releasePipelineCount: projectAnalysis.releaseAnalysis.pipelines.length,
-  workItemCount: Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {}).length || 0,
-  workItemLabel: [pluralize.singular(projectAnalysis.workItemLabel), projectAnalysis.workItemLabel]
+  workItemCount:
+    Object.values(projectAnalysis.workItemAnalysis?.analysedWorkItems?.ids[0] || {})
+      .length || 0,
+  workItemLabel: [
+    pluralize.singular(projectAnalysis.workItemLabel),
+    projectAnalysis.workItemLabel,
+  ],
 });
 
 const writeRepoAnalysisFile = async (
@@ -54,7 +71,7 @@ const writeRepoAnalysisFile = async (
     ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
     repos: projectAnalysis.repoAnalysis,
     featureToggles: projectAnalysis.featureToggles,
-    groups: projectConfig.groupRepos
+    groups: projectConfig.groupRepos,
   };
   return writeFile(
     [collectionName, projectConfig.name],
@@ -75,7 +92,7 @@ const writeReleaseAnalysisFile = async (
     stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight,
     ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore,
     groups: projectConfig.groupRepos,
-    environments: projectConfig.environments
+    environments: projectConfig.environments,
   };
   return writeFile(
     [collectionName, projectConfig.name],
@@ -93,7 +110,7 @@ const writeWorkItemAnalysisFile = async (
   const analysis: ProjectWorkItemAnalysis = {
     ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
     workItems: projectAnalysis.workItemAnalysis.analysedWorkItems,
-    taskType: projectConfig.workitems.label
+    taskType: projectConfig.workitems.label,
   };
   return writeFile(
     [collectionName, projectConfig.name],
@@ -113,7 +130,7 @@ const writeOverviewFile = async (
     overview: projectAnalysis.workItemAnalysis?.overview,
     testCases: projectAnalysis.testCasesAnalysis,
     ignoreForWIP: projectConfig.workitems.ignoreForWIP,
-    environments: projectConfig.environments
+    environments: projectConfig.environments,
   };
   return writeFile(
     [collectionName, projectConfig.name],
@@ -122,10 +139,11 @@ const writeOverviewFile = async (
   );
 };
 
-const matchingProject = (projectSpec: readonly [string, string | ParsedProjectConfig]) => (scrapedProject: { name: [string, string] }) => (
-  scrapedProject.name[0] === projectSpec[0]
-    && scrapedProject.name[1] === projectName(projectSpec[1])
-);
+const matchingProject =
+  (projectSpec: readonly [string, string | ParsedProjectConfig]) =>
+  (scrapedProject: { name: [string, string] }) =>
+    scrapedProject.name[0] === projectSpec[0] &&
+    scrapedProject.name[1] === projectName(projectSpec[1]);
 
 const readOverallSummaryFile = async (): Promise<AnalysedProjects> => {
   await createDataFolder;
@@ -134,97 +152,105 @@ const readOverallSummaryFile = async (): Promise<AnalysedProjects> => {
     : { projects: [], lastUpdated: null, hasSummary: false };
 };
 
-const populateWithEmptyValuesIfNeeded = (config: ParsedConfig) => (projectAnalysis: AnalysedProjects): AnalysedProjects => {
-  const projects = config.azure.collections.flatMap(collection => (
-    collection.projects.map(project => [collection.name, projectName(project)] as ScrapedProject['name'])
-  ));
+const populateWithEmptyValuesIfNeeded =
+  (config: ParsedConfig) =>
+  (projectAnalysis: AnalysedProjects): AnalysedProjects => {
+    const projects = config.azure.collections.flatMap(collection =>
+      collection.projects.map(
+        project => [collection.name, projectName(project)] as ScrapedProject['name']
+      )
+    );
 
-  return {
-    ...projectAnalysis,
-    projects: projects.map(configProjectSpec => {
-      const matchingExistingProject = projectAnalysis.projects.find(matchingProject(configProjectSpec));
-      if (matchingExistingProject) return matchingExistingProject;
-      return { name: configProjectSpec, rating: null } as ScrapedProject;
-    })
+    return {
+      ...projectAnalysis,
+      projects: projects.map(configProjectSpec => {
+        const matchingExistingProject = projectAnalysis.projects.find(
+          matchingProject(configProjectSpec)
+        );
+        if (matchingExistingProject) return matchingExistingProject;
+        return { name: configProjectSpec, rating: null } as ScrapedProject;
+      }),
+    };
   };
-};
 
-const writeOverallSummaryFile = (analysedProjects: AnalysedProjects) => (
-  writeFile(['./'], 'index.json', JSON.stringify(analysedProjects))
-);
+const writeOverallSummaryFile = (analysedProjects: AnalysedProjects) =>
+  writeFile(['./'], 'index.json', JSON.stringify(analysedProjects));
 
-const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: ScrapedProject) => (
+const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: ScrapedProject) =>
   acquireLock()
     .then(readOverallSummaryFile)
     .then(populateWithEmptyValuesIfNeeded(config))
     .then(analysedProjects => ({
       ...analysedProjects,
       hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-      changeProgramName: config.azure.collections.find(c => c.name === scrapedProject.name[0])?.changeProgram?.name,
+      changeProgramName: config.azure.collections.find(
+        c => c.name === scrapedProject.name[0]
+      )?.changeProgram?.name,
       lastUpdated: new Date().toISOString(),
-      projects: analysedProjects.projects.map(p => (
+      projects: analysedProjects.projects.map(p =>
         matchingProject(p.name)(scrapedProject) ? scrapedProject : p
-      ))
+      ),
     }))
     .then(writeOverallSummaryFile)
-    .finally(releaseLock)
-);
+    .finally(releaseLock);
 
-export default (config: ParsedConfig) => (collectionName: string, projectConfig: ParsedProjectConfig) => (
-  (analysis: ProjectAnalysis) => Promise.all([
-    writeRepoAnalysisFile(config, collectionName, projectConfig, analysis),
-    writeReleaseAnalysisFile(config, collectionName, projectConfig, analysis),
-    writeWorkItemAnalysisFile(config, collectionName, projectConfig, analysis),
-    writeOverviewFile(config, collectionName, projectConfig, analysis),
-    updateOverallSummary(config)({ name: [collectionName, projectConfig.name] })
-  ])
-);
+export default (config: ParsedConfig) =>
+  (collectionName: string, projectConfig: ParsedProjectConfig) =>
+  (analysis: ProjectAnalysis) =>
+    Promise.all([
+      writeRepoAnalysisFile(config, collectionName, projectConfig, analysis),
+      writeReleaseAnalysisFile(config, collectionName, projectConfig, analysis),
+      writeWorkItemAnalysisFile(config, collectionName, projectConfig, analysis),
+      writeOverviewFile(config, collectionName, projectConfig, analysis),
+      updateOverallSummary(config)({ name: [collectionName, projectConfig.name] }),
+    ]);
 
-export const writeSummaryMetricsFile = (summary: SummaryMetrics) => (
-  writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary))
-);
+export const writeSummaryMetricsFile = (summary: SummaryMetrics) =>
+  writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary));
 
-export const writeTrackFlowMetrics = (config: ParsedConfig, tracks: TrackMetricsByTrack) => {
+export const writeTrackFlowMetrics = (
+  config: ParsedConfig,
+  tracks: TrackMetricsByTrack
+) => {
   const tracksWorkItems: TrackFlowMetrics = {
     tracks,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
   };
 
-  return (
-    writeFile(['./'], 'track-flow-metrics.json', JSON.stringify(tracksWorkItems))
-  );
+  return writeFile(['./'], 'track-flow-metrics.json', JSON.stringify(tracksWorkItems));
 };
 
 export const writeTrackFeatures = (config: ParsedConfig, tracks: TrackwiseData[]) => {
   const tracksWorkItems: TrackFeatures = {
     tracks,
-    lastUpdated: new Date().toISOString()
-  };
-
-  return (
-    writeFile(['./'], 'track-features.json', JSON.stringify(tracksWorkItems))
-  );
-};
-
-export const writeChangeProgramFile = (config: ParsedConfig) => (tasks: UIChangeProgramTask[]) => {
-  const someCollectionWithChangeProgram = config.azure.collections.find(c => c.changeProgram);
-
-  const changeProgram: UIChangeProgram = {
     lastUpdated: new Date().toISOString(),
-    details: someCollectionWithChangeProgram
-      ? {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        taskName: someCollectionWithChangeProgram.changeProgram!.workItemTypeName,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        name: someCollectionWithChangeProgram.changeProgram!.name,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        startedState: someCollectionWithChangeProgram.changeProgram!.startedState,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        doneState: someCollectionWithChangeProgram.changeProgram!.doneState,
-        tasks
-      }
-      : null
   };
 
-  return writeFile(['./'], 'change-program.json', JSON.stringify(changeProgram));
+  return writeFile(['./'], 'track-features.json', JSON.stringify(tracksWorkItems));
 };
+
+export const writeChangeProgramFile =
+  (config: ParsedConfig) => (tasks: UIChangeProgramTask[]) => {
+    const someCollectionWithChangeProgram = config.azure.collections.find(
+      c => c.changeProgram
+    );
+
+    const changeProgram: UIChangeProgram = {
+      lastUpdated: new Date().toISOString(),
+      details: someCollectionWithChangeProgram
+        ? {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            taskName: someCollectionWithChangeProgram.changeProgram!.workItemTypeName,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            name: someCollectionWithChangeProgram.changeProgram!.name,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            startedState: someCollectionWithChangeProgram.changeProgram!.startedState,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            doneState: someCollectionWithChangeProgram.changeProgram!.doneState,
+            tasks,
+          }
+        : null,
+    };
+
+    return writeFile(['./'], 'change-program.json', JSON.stringify(changeProgram));
+  };

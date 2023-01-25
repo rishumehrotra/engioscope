@@ -8,7 +8,10 @@ type PaginatedGetRequest<T> = {
   url: string;
   headers: (previousResponse?: FetchResponse<T>) => Record<string, string>;
   hasAnotherPage: (previousResponse: FetchResponse<T>) => boolean;
-  qsParams: (pageIndex: number, previousResponse?: FetchResponse<T>) => Record<string, string>;
+  qsParams: (
+    pageIndex: number,
+    previousResponse?: FetchResponse<T>
+  ) => Record<string, string>;
   chunkHandler: (chunk: FetchResponse<T>) => Promise<unknown>;
 };
 
@@ -16,16 +19,21 @@ export default (diskCacheTimeMs: number, verifySsl: boolean, requestTimeout?: nu
   const { usingDiskCache } = fetchWithDiskCache(diskCacheTimeMs);
 
   return async <T>({
-    url, qsParams, cacheFile, headers, hasAnotherPage, chunkHandler
+    url,
+    qsParams,
+    cacheFile,
+    headers,
+    hasAnotherPage,
+    chunkHandler,
   }: PaginatedGetRequest<T>) => {
     let pageIndex = 1;
-    let lastResponse = await usingDiskCache<T>(cacheFile('0'), () => (
+    let lastResponse = await usingDiskCache<T>(cacheFile('0'), () =>
       fetch(`${url}?${qs.stringify(qsParams(0))}`, {
         headers: headers ? headers() : {},
         verifySsl,
-        timeout: requestTimeout
+        timeout: requestTimeout,
       })
-    ));
+    );
 
     await chunkHandler(lastResponse);
 
@@ -34,11 +42,12 @@ export default (diskCacheTimeMs: number, verifySsl: boolean, requestTimeout?: nu
       lastResponse = await usingDiskCache<T>(
         cacheFile(pageIndex.toString()),
         // eslint-disable-next-line no-loop-func
-        () => fetch(`${url}?${qs.stringify(qsParams(pageIndex, lastResponse))}`, {
-          headers: headers ? headers(lastResponse) : {},
-          timeout: requestTimeout,
-          verifySsl
-        })
+        () =>
+          fetch(`${url}?${qs.stringify(qsParams(pageIndex, lastResponse))}`, {
+            headers: headers ? headers(lastResponse) : {},
+            timeout: requestTimeout,
+            verifySsl,
+          })
       );
 
       pageIndex += 1;

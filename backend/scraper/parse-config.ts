@@ -2,7 +2,11 @@ import ms from 'ms';
 import { pastDate } from '../utils.js';
 
 type BranchPolicyConfiguration = Partial<{
-  'Minimum number of reviewers': { isEnabled: boolean; isBlocking: boolean; minimumApproverCount: number };
+  'Minimum number of reviewers': {
+    isEnabled: boolean;
+    isBlocking: boolean;
+    minimumApproverCount: number;
+  };
   'Comment requirements': { isEnabled: boolean; isBlocking: boolean };
   'Work item linking': { isEnabled: boolean; isBlocking: boolean };
   'Build': { isEnabled: boolean; isBlocking: boolean };
@@ -37,7 +41,7 @@ type CollectionWorkItemConfig = {
     devCompletionDate?: string | string[];
     track?: string;
     workCenters?: ({ label: string } & (
-      { startDate: string | string[] }
+      | { startDate: string | string[] }
       | { endDate: string | string[] }
       | { startDate: string | string[]; endDate: string | string[] }
     ))[];
@@ -211,125 +215,177 @@ export type ParsedConfig = Readonly<{
   sonar?: SonarConfig[];
 }>;
 
-const parseCollection = (config: Config) => (collection: CollectionConfig): ParsedCollection => {
-  const workitems: ParsedCollectionWorkItemConfig = {
-    label: collection.workitems?.label ?? config.azure.workitems?.label ?? 'Features & Bugs',
-    getWorkItems: collection.workitems?.getWorkItems ?? config.azure.workitems?.getWorkItems ?? ['Feature', 'Bug'],
-    groupUnder: collection.workitems?.groupUnder ?? config.azure.workitems?.groupUnder ?? ['Feature', 'Bug'],
-    skipChildren: collection.workitems?.skipChildren ?? config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
-    environmentField: collection.workitems?.environmentField ?? config.azure.workitems?.environmentField,
-    ignoredWorkItemsForFlowAnalysis: collection.workitems?.ignoredWorkItemsForFlowAnalysis
-      ?? config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
-    ignoreStates: collection.workitems?.ignoreStates ?? config.azure.workitems?.ignoreStates,
-    filterBy: (collection.workitems?.filterBy || config.azure.workitems?.filterBy || []).map(filter => ({
-      label: filter.label,
-      fields: Array.isArray(filter.field) ? filter.field : [filter.field],
-      delimiter: filter.delimiter
-    })),
-    types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(type => ({
-      type: type.type,
-      groupByField: type.groupByField,
-      groupLabel: type.groupLabel,
-      startDate: Array.isArray(type.startDate) ? type.startDate : [type.startDate || 'System.CreatedDate'],
-      endDate: Array.isArray(type.endDate) ? type.endDate : [type.endDate || 'Microsoft.VSTS.Common.ClosedDate'],
-      // eslint-disable-next-line no-nested-ternary
-      devCompletionDate: Array.isArray(type.devCompletionDate)
-        ? type.devCompletionDate
-        : (type.devCompletionDate ? [type.devCompletionDate] : []),
-      // eslint-disable-next-line no-nested-ternary
-      rootCause: Array.isArray(type.rootCause) ? type.rootCause : (type.rootCause ? [type.rootCause] : []),
-      track: type.track,
-      workCenters: (type.workCenters || []).map(workCenter => ({
-        label: workCenter.label,
-        // eslint-disable-next-line no-nested-ternary
-        startDate: 'startDate' in workCenter
-          ? (Array.isArray(workCenter.startDate) ? workCenter.startDate : [workCenter.startDate])
-          : ['System.CreatedDate'],
-        // eslint-disable-next-line no-nested-ternary
-        endDate: 'endDate' in workCenter
-          ? (Array.isArray(workCenter.endDate) ? workCenter.endDate : [workCenter.endDate])
-          : ['Microsoft.VSTS.Common.ClosedDate']
-      }))
-    }))
-  };
+const parseCollection =
+  (config: Config) =>
+  (collection: CollectionConfig): ParsedCollection => {
+    const workitems: ParsedCollectionWorkItemConfig = {
+      label:
+        collection.workitems?.label ?? config.azure.workitems?.label ?? 'Features & Bugs',
+      getWorkItems: collection.workitems?.getWorkItems ??
+        config.azure.workitems?.getWorkItems ?? ['Feature', 'Bug'],
+      groupUnder: collection.workitems?.groupUnder ??
+        config.azure.workitems?.groupUnder ?? ['Feature', 'Bug'],
+      skipChildren: collection.workitems?.skipChildren ??
+        config.azure.workitems?.skipChildren ?? ['Test Case', 'Test Scenario'],
+      environmentField:
+        collection.workitems?.environmentField ??
+        config.azure.workitems?.environmentField,
+      ignoredWorkItemsForFlowAnalysis:
+        collection.workitems?.ignoredWorkItemsForFlowAnalysis ??
+        config.azure.workitems?.ignoredWorkItemsForFlowAnalysis,
+      ignoreStates:
+        collection.workitems?.ignoreStates ?? config.azure.workitems?.ignoreStates,
+      filterBy: (
+        collection.workitems?.filterBy ||
+        config.azure.workitems?.filterBy ||
+        []
+      ).map(filter => ({
+        label: filter.label,
+        fields: Array.isArray(filter.field) ? filter.field : [filter.field],
+        delimiter: filter.delimiter,
+      })),
+      types: (collection.workitems?.types ?? config.azure.workitems?.types)?.map(
+        type => ({
+          type: type.type,
+          groupByField: type.groupByField,
+          groupLabel: type.groupLabel,
+          startDate: Array.isArray(type.startDate)
+            ? type.startDate
+            : [type.startDate || 'System.CreatedDate'],
+          endDate: Array.isArray(type.endDate)
+            ? type.endDate
+            : [type.endDate || 'Microsoft.VSTS.Common.ClosedDate'],
 
-  const changeProgram: null | ParsedCollectionChangeProgramConfig = (
-    (collection.changeProgram || config.azure.changeProgram)
-      ? {
-        name: collection.changeProgram?.name
-          ?? config.azure.changeProgram?.name
-          ?? 'Change program',
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        workItemTypeName: (collection.changeProgram?.workItemTypeName ?? config.azure.changeProgram?.workItemTypeName)!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        teamNameField: (collection.changeProgram?.teamNameField ?? config.azure.changeProgram?.teamNameField)!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        themeNameField: (collection.changeProgram?.themeNameField ?? config.azure.changeProgram?.themeNameField)!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        startedState: (collection.changeProgram?.startedState ?? config.azure.changeProgram?.startedState)!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        doneState: (collection.changeProgram?.doneState ?? config.azure.changeProgram?.doneState)!,
-        ignoreStates: collection.changeProgram?.ignoreStates ?? config.azure.changeProgram?.ignoreStates ?? [],
-        plannedStartDateField: (collection.changeProgram?.plannedStartDateField ?? config.azure.changeProgram?.plannedStartDateField),
-        plannedCompletionDateField: (
-          collection.changeProgram?.plannedCompletionDateField
-          ?? config.azure.changeProgram?.plannedCompletionDateField
-        ),
-        actualStartDateField: (collection.changeProgram?.actualStartDateField ?? config.azure.changeProgram?.actualStartDateField),
-        actualCompletionDateField: (
-          collection.changeProgram?.actualCompletionDateField
-          ?? config.azure.changeProgram?.actualCompletionDateField
-        )
-      }
-      : null
-  );
+          devCompletionDate: Array.isArray(type.devCompletionDate)
+            ? type.devCompletionDate
+            : type.devCompletionDate
+            ? [type.devCompletionDate]
+            : [],
 
-  return {
-    name: collection.name,
-    workitems,
-    changeProgram,
-    projects: collection.projects.map<ParsedProjectConfig>(project => {
-      if (typeof project === 'string') {
+          rootCause: Array.isArray(type.rootCause)
+            ? type.rootCause
+            : type.rootCause
+            ? [type.rootCause]
+            : [],
+          track: type.track,
+          workCenters: (type.workCenters || []).map(workCenter => ({
+            label: workCenter.label,
+
+            startDate:
+              'startDate' in workCenter
+                ? Array.isArray(workCenter.startDate)
+                  ? workCenter.startDate
+                  : [workCenter.startDate]
+                : ['System.CreatedDate'],
+
+            endDate:
+              'endDate' in workCenter
+                ? Array.isArray(workCenter.endDate)
+                  ? workCenter.endDate
+                  : [workCenter.endDate]
+                : ['Microsoft.VSTS.Common.ClosedDate'],
+          })),
+        })
+      ),
+    };
+
+    const changeProgram: null | ParsedCollectionChangeProgramConfig =
+      collection.changeProgram || config.azure.changeProgram
+        ? {
+            name:
+              collection.changeProgram?.name ??
+              config.azure.changeProgram?.name ??
+              'Change program',
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            workItemTypeName: (collection.changeProgram?.workItemTypeName ??
+              config.azure.changeProgram?.workItemTypeName)!,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            teamNameField: (collection.changeProgram?.teamNameField ??
+              config.azure.changeProgram?.teamNameField)!,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            themeNameField: (collection.changeProgram?.themeNameField ??
+              config.azure.changeProgram?.themeNameField)!,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            startedState: (collection.changeProgram?.startedState ??
+              config.azure.changeProgram?.startedState)!,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            doneState: (collection.changeProgram?.doneState ??
+              config.azure.changeProgram?.doneState)!,
+            ignoreStates:
+              collection.changeProgram?.ignoreStates ??
+              config.azure.changeProgram?.ignoreStates ??
+              [],
+            plannedStartDateField:
+              collection.changeProgram?.plannedStartDateField ??
+              config.azure.changeProgram?.plannedStartDateField,
+            plannedCompletionDateField:
+              collection.changeProgram?.plannedCompletionDateField ??
+              config.azure.changeProgram?.plannedCompletionDateField,
+            actualStartDateField:
+              collection.changeProgram?.actualStartDateField ??
+              config.azure.changeProgram?.actualStartDateField,
+            actualCompletionDateField:
+              collection.changeProgram?.actualCompletionDateField ??
+              config.azure.changeProgram?.actualCompletionDateField,
+          }
+        : null;
+
+    return {
+      name: collection.name,
+      workitems,
+      changeProgram,
+      projects: collection.projects.map<ParsedProjectConfig>(project => {
+        if (typeof project === 'string') {
+          return {
+            name: project,
+            releasePipelines: collection.releasePipelines ??
+              config.azure.releasePipelines ?? { stagesToHighlight: [] },
+            workitems: {
+              groupUnder: workitems.groupUnder,
+              label: workitems.label,
+              ignoreForWIP:
+                collection.workitems?.ignoreForWIP ??
+                config.azure.workitems?.ignoreForWIP ??
+                [],
+            },
+            environments: collection.environments ?? config.azure.environments,
+            templateRepoName:
+              collection.templateRepoName ?? config.azure.templateRepoName,
+            branchPolicies:
+              collection.branchPolicies ?? config.azure.branchPolicies ?? {},
+          };
+        }
+
         return {
-          name: project,
-          releasePipelines: collection.releasePipelines
-            ?? config.azure.releasePipelines
-            ?? { stagesToHighlight: [] },
+          name: project.name,
+          releasePipelines: project.releasePipelines ??
+            collection.releasePipelines ??
+            config.azure.releasePipelines ?? { stagesToHighlight: [] },
           workitems: {
-            groupUnder: workitems.groupUnder,
-            label: workitems.label,
-            ignoreForWIP: collection.workitems?.ignoreForWIP
-              ?? config.azure.workitems?.ignoreForWIP
-              ?? []
+            groupUnder: project.workitems?.groupUnder ?? workitems.groupUnder,
+            label: project.workitems?.label ?? workitems.label,
+            ignoreForWIP:
+              project.workitems?.ignoreForWIP ??
+              collection.workitems?.ignoreForWIP ??
+              config.azure.workitems?.ignoreForWIP ??
+              [],
           },
-          environments: collection.environments ?? config.azure.environments,
-          templateRepoName: collection.templateRepoName ?? config.azure.templateRepoName,
-          branchPolicies: collection.branchPolicies ?? config.azure.branchPolicies ?? {}
+          environments:
+            project.environments ?? collection.environments ?? config.azure.environments,
+          groupRepos: project.groupRepos,
+          templateRepoName:
+            project.templateRepoName ??
+            collection.templateRepoName ??
+            config.azure.templateRepoName,
+          branchPolicies:
+            project.branchPolicies ??
+            collection.branchPolicies ??
+            config.azure.branchPolicies ??
+            {},
         };
-      }
-
-      return {
-        name: project.name,
-        releasePipelines: project.releasePipelines
-          ?? collection.releasePipelines
-          ?? config.azure.releasePipelines
-          ?? { stagesToHighlight: [] },
-        workitems: {
-          groupUnder: project.workitems?.groupUnder ?? workitems.groupUnder,
-          label: project.workitems?.label ?? workitems.label,
-          ignoreForWIP: project.workitems?.ignoreForWIP
-            ?? collection.workitems?.ignoreForWIP
-            ?? config.azure.workitems?.ignoreForWIP
-            ?? []
-        },
-        environments: project.environments ?? collection.environments ?? config.azure.environments,
-        groupRepos: project.groupRepos,
-        templateRepoName: project.templateRepoName ?? collection.templateRepoName ?? config.azure.templateRepoName,
-        branchPolicies: project.branchPolicies ?? collection.branchPolicies ?? config.azure.branchPolicies ?? {}
-      };
-    })
+      }),
+    };
   };
-};
 
 export default (config: Config): ParsedConfig => ({
   port: config.port,
@@ -341,10 +397,8 @@ export default (config: Config): ParsedConfig => ({
     verifySsl: config.azure.verifySsl ?? true,
     queryFrom: pastDate(config.azure.lookAtPast),
     collections: config.azure.collections.map(parseCollection(config)),
-    summaryPageGroups: config.azure.summaryPageGroups
+    summaryPageGroups: config.azure.summaryPageGroups,
   },
-  // eslint-disable-next-line no-nested-ternary
-  sonar: Array.isArray(config.sonar)
-    ? config.sonar
-    : (config.sonar ? [config.sonar] : [])
+
+  sonar: Array.isArray(config.sonar) ? config.sonar : config.sonar ? [config.sonar] : [],
 });

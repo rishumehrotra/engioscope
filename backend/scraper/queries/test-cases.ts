@@ -16,7 +16,10 @@ export const notAutomatedTestCases = (projectName: string) => `
     AND [System.TeamProject] = '${projectName}'
 `;
 
-export const automatedTestCasesOfPriority = (projectName: string, priority: (typeof priorities)[number]) => `
+export const automatedTestCasesOfPriority = (
+  projectName: string,
+  priority: (typeof priorities)[number]
+) => `
   SELECT [System.Id] FROM workitems
   WHERE
     [System.WorkItemType] = 'Test Case'
@@ -25,7 +28,10 @@ export const automatedTestCasesOfPriority = (projectName: string, priority: (typ
     AND [System.TeamProject] = '${projectName}'
 `;
 
-export const notAutomatedTestCasesOfPriority = (projectName: string, priority: (typeof priorities)[number]) => `
+export const notAutomatedTestCasesOfPriority = (
+  projectName: string,
+  priority: (typeof priorities)[number]
+) => `
   SELECT [System.Id] FROM workitems
   WHERE
     [System.WorkItemType] = 'Test Case'

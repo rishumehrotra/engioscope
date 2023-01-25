@@ -21,30 +21,30 @@ const projectSchema = new Schema<Project>({
   state: { type: String, required: true },
   revision: { type: Number },
   visibility: { type: String },
-  lastUpdatedTime: { type: Date }
+  lastUpdatedTime: { type: Date },
 });
 
 projectSchema.index({ collectionName: 1, name: 1 });
 
 const ProjectModel = model<Project>('Project', projectSchema);
 
-export const bulkSaveProjects = (collectionName: string) => (projects: Project[]) => (
-  ProjectModel.bulkWrite(projects.map(project => {
-    const { id, ...rest } = project;
+export const bulkSaveProjects = (collectionName: string) => (projects: Project[]) =>
+  ProjectModel.bulkWrite(
+    projects.map(project => {
+      const { id, ...rest } = project;
 
-    return {
-      updateOne: {
-        filter: {
-          collectionName,
-          'id': id
+      return {
+        updateOne: {
+          filter: {
+            collectionName,
+            id,
+          },
+          update: { $set: { ...rest } },
+          upsert: true,
         },
-        update: { $set: { ...rest } },
-        upsert: true
-      }
-    };
-  }))
-);
+      };
+    })
+  );
 
-export const getProjects = (collectionName: string) => (
-  ProjectModel.find({ collectionName }).lean()
-);
+export const getProjects = (collectionName: string) =>
+  ProjectModel.find({ collectionName }).lean();

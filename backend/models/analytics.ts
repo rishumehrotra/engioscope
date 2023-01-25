@@ -22,20 +22,29 @@ export type AnalyticsLogLine = PageView; // | other types
 
 const discriminator = { discriminatorKey: 'type' };
 
-const analyticsLogLineBaseSchema = new Schema<AnalyticsLogLine>({
-  userId: { type: String },
-  date: { type: Date, required: true },
-  browser: { type: String, required: true },
-  browserVersion: { type: String, required: true },
-  os: { type: String, required: true },
-  osVersion: { type: String, required: true }
-}, { timestamps: false, ...discriminator });
+const analyticsLogLineBaseSchema = new Schema<AnalyticsLogLine>(
+  {
+    userId: { type: String },
+    date: { type: Date, required: true },
+    browser: { type: String, required: true },
+    browserVersion: { type: String, required: true },
+    os: { type: String, required: true },
+    osVersion: { type: String, required: true },
+  },
+  { timestamps: false, ...discriminator }
+);
 
-const AnalyticsModel = model<AnalyticsLogLine>('AnalyticsLog', analyticsLogLineBaseSchema);
+const AnalyticsModel = model<AnalyticsLogLine>(
+  'AnalyticsLog',
+  analyticsLogLineBaseSchema
+);
 
-const pageViewSchema = new Schema<PageView>({
-  path: { type: String, required: true }
-}, { ...discriminator });
+const pageViewSchema = new Schema<PageView>(
+  {
+    path: { type: String, required: true },
+  },
+  { ...discriminator }
+);
 
 pageViewSchema.index({ date: 1 });
 
@@ -50,117 +59,118 @@ const baseDetails = (userId: string, userAgent: string): Base => {
     browser: browser.name || 'unknown',
     browserVersion: browser.version || 'unknown',
     os: os.name || 'unknown',
-    osVersion: os.version || 'unknown'
+    osVersion: os.version || 'unknown',
   };
 };
 
-export const recordPageView = (path: string, userId: string, userAgent: string) => (
+export const recordPageView = (path: string, userId: string, userAgent: string) =>
   new PageViewModel({
     type: 'page-view',
     path,
-    ...baseDetails(userId, userAgent)
-  }).save()
-);
+    ...baseDetails(userId, userAgent),
+  }).save();
 
 export const getAnalyticsGroups = () => {
   const now = new Date();
 
-  return Promise.all([
-    {
-      label: 'Today',
-      start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-      end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-    },
-    {
-      label: 'Yesterday',
-      start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
-      end: new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    },
-    {
-      label: 'Last 7 days',
-      start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
-      end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-    },
-    {
-      label: 'Last 30 days',
-      start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30),
-      end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-    }
-  ].map(async group => (
-    AnalyticsModel
-      .aggregate<{ _id: string; pageViews: number; uniques: number; userIds: string[]}>([
+  return Promise.all(
+    [
+      {
+        label: 'Today',
+        start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+        end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+      },
+      {
+        label: 'Yesterday',
+        start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
+        end: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+      },
+      {
+        label: 'Last 7 days',
+        start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
+        end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+      },
+      {
+        label: 'Last 30 days',
+        start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30),
+        end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+      },
+    ].map(async group =>
+      AnalyticsModel.aggregate<{
+        _id: string;
+        pageViews: number;
+        uniques: number;
+        userIds: string[];
+      }>([
         {
           $match: {
-            $and: [
-              { date: { $gt: group.start } }, { date: { $lt: group.end } }
-            ],
-            type: 'page-view'
-          }
+            $and: [{ date: { $gt: group.start } }, { date: { $lt: group.end } }],
+            type: 'page-view',
+          },
         },
         {
-          $group: { // by path and userid
+          $group: {
+            // by path and userid
             _id: { path: '$path', userId: '$userId' },
-            dates: { $addToSet: '$date' }
-          }
+            dates: { $addToSet: '$date' },
+          },
         },
         {
-          $group: { // back to path, but retain userId
+          $group: {
+            // back to path, but retain userId
             _id: '$_id.path',
             hits: {
               $push: {
                 userId: '$_id.userId',
                 minDate: { $min: '$dates' },
                 maxDate: { $max: '$dates' },
-                count: { $size: '$dates' }
-              }
-            }
-          }
+                count: { $size: '$dates' },
+              },
+            },
+          },
         },
         {
           $project: {
             _id: 1,
             pageViews: { $sum: '$hits.count' },
             uniques: { $size: '$hits' },
-            userIds: '$hits.userId'
-          }
-        }
-      ])
-      .then(async lines => {
+            userIds: '$hits.userId',
+          },
+        },
+      ]).then(async lines => {
         const userIds = unique(lines.flatMap(line => line.userIds)).filter(Boolean);
 
-        const returning = await AnalyticsModel
-          .aggregate([
-            {
-              $match: {
-                userId: { $in: userIds },
-                $and: [
-                  { date: { $lt: group.end } },
-                  { date: { $gt: new Date(group.end.getTime() - oneYearInMs) } }
-                ]
-              }
+        const returning = await AnalyticsModel.aggregate([
+          {
+            $match: {
+              userId: { $in: userIds },
+              $and: [
+                { date: { $lt: group.end } },
+                { date: { $gt: new Date(group.end.getTime() - oneYearInMs) } },
+              ],
             },
-            {
-              $group: {
-                _id: '$userId',
-                minDate: { $min: '$date' },
-                maxDate: { $max: '$date' }
-              }
+          },
+          {
+            $group: {
+              _id: '$userId',
+              minDate: { $min: '$date' },
+              maxDate: { $max: '$date' },
             },
-            {
-              $addFields: {
-                diff: {
-                  $dateDiff: {
-                    startDate: '$minDate',
-                    endDate: '$maxDate',
-                    unit: 'hour'
-                  }
-                }
-              }
+          },
+          {
+            $addFields: {
+              diff: {
+                $dateDiff: {
+                  startDate: '$minDate',
+                  endDate: '$maxDate',
+                  unit: 'hour',
+                },
+              },
             },
-            { $match: { diff: { $gte: 6 } } },
-            { $group: { _id: null, count: { $sum: 1 } } }
-          ])
-          .then(result => result[0]?.count || 0);
+          },
+          { $match: { diff: { $gte: 6 } } },
+          { $group: { _id: null, count: { $sum: 1 } } },
+        ]).then(result => result[0]?.count || 0);
 
         return {
           label: group.label,
@@ -173,11 +183,12 @@ export const getAnalyticsGroups = () => {
             .map(line => ({
               path: line._id,
               pageViews: line.pageViews,
-              uniques: line.uniques
-            }))
+              uniques: line.uniques,
+            })),
         };
       })
-  )));
+    )
+  );
 };
 
 // eslint-disable-next-line no-underscore-dangle

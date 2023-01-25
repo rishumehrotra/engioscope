@@ -20,11 +20,11 @@ const Overview: React.FC = () => {
           <NewV2 openModal={openModal} />
         </>
       ) : null}
-      {
-        projectAnalysis === 'loading'
-          ? <Loading />
-          : <OverviewGraphs projectAnalysis={projectAnalysis} />
-      }
+      {projectAnalysis === 'loading' ? (
+        <Loading />
+      ) : (
+        <OverviewGraphs projectAnalysis={projectAnalysis} />
+      )}
     </>
   );
 };

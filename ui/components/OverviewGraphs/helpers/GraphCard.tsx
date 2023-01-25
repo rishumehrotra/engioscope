@@ -14,36 +14,44 @@ type GraphCardProps = {
   csvData?: (string | number)[][];
 };
 
-const titleToUrlFragment = (title: string) => (
-  title.toLowerCase().replace(/\s/g, '-')
-);
+const titleToUrlFragment = (title: string) => title.toLowerCase().replace(/\s/g, '-');
 
-const convertToCSV = (data: (string | number)[][]) => (
-  data.map(
-    row => row
-      .map(cell => (
-        typeof cell === 'string'
-          ? `"${cell.replace(/"/g, '""')}"`
-          : cell
-      ))
-      .join(',')
-  ).join('\n')
-);
+const convertToCSV = (data: (string | number)[][]) =>
+  data
+    .map(row =>
+      row
+        .map(cell => (typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell))
+        .join(',')
+    )
+    .join('\n');
 
 const GraphCard: React.FC<GraphCardProps> = ({
-  title, subtitle, left, right, hasData, renderLazily = true, csvData
+  title,
+  subtitle,
+  left,
+  right,
+  hasData,
+  renderLazily = true,
+  csvData,
 }) => {
   const csv = useMemo(() => (csvData ? convertToCSV(csvData) : null), [csvData]);
-  const downloadLinkAttributes = useDownloadLinkProps(csv || '', 'text/plain', `${title} - ${new Date().toISOString().split('T')[0]}.csv`);
+  const downloadLinkAttributes = useDownloadLinkProps(
+    csv || '',
+    'text/plain',
+    `${title} - ${new Date().toISOString().split('T')[0]}.csv`
+  );
 
   const [ref, inView] = useInView({
     threshold: 0,
     triggerOnce: true,
-    rootMargin: `-${document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0}px`
+    rootMargin: `-${
+      document.querySelector('#sticky-block')?.getBoundingClientRect().height || 0
+    }px`,
   });
 
   const mustRender = useMemo(
-    () => !renderLazily || inView || window.location.hash === `#${titleToUrlFragment(title)}`,
+    () =>
+      !renderLazily || inView || window.location.hash === `#${titleToUrlFragment(title)}`,
     [inView, renderLazily, title]
   );
 
@@ -57,8 +65,7 @@ const GraphCard: React.FC<GraphCardProps> = ({
       <div className="flex justify-between">
         <div>
           <h1 className="text-2xl font-semibold group">
-            {title}
-            {' '}
+            {title}{' '}
             <a
               href={`#${titleToUrlFragment(title)}`}
               className="opacity-0 group-hover:opacity-100 text-gray-400"
@@ -67,9 +74,7 @@ const GraphCard: React.FC<GraphCardProps> = ({
               #
             </a>
           </h1>
-          <p className="text-base text-gray-600 mb-4">
-            {subtitle}
-          </p>
+          <p className="text-base text-gray-600 mb-4">{subtitle}</p>
         </div>
         <div className="pt-2">
           {csv && (
@@ -83,8 +88,8 @@ const GraphCard: React.FC<GraphCardProps> = ({
         </div>
       </div>
 
-      {hasData
-        ? mustRender && (
+      {hasData ? (
+        mustRender && (
           <div className="grid gap-8 grid-flow-col">
             <div
               className="flex gap-6 justify-evenly pt-2"
@@ -95,11 +100,9 @@ const GraphCard: React.FC<GraphCardProps> = ({
             </div>
           </div>
         )
-        : (
-          <p className="text-gray-600 italic text-sm">
-            Couldn't find any data.
-          </p>
-        )}
+      ) : (
+        <p className="text-gray-600 italic text-sm">Couldn't find any data.</p>
+      )}
     </div>
   );
 };

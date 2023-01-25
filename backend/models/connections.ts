@@ -15,57 +15,60 @@ export type SonarConnection = {
   verifySsl: boolean;
 };
 
-export type Connection = (
-  | AzurePATConnection
-  | SonarConnection
-);
+export type Connection = AzurePATConnection | SonarConnection;
 
 const discriminatorKey = { discriminatorKey: 'type' };
 
-const connectionSchema = new Schema<Connection>({}, {
-  timestamps: true,
-  ...discriminatorKey
-});
+const connectionSchema = new Schema<Connection>(
+  {},
+  {
+    timestamps: true,
+    ...discriminatorKey,
+  }
+);
 const ConnectionModel = model<Connection>('Connection', connectionSchema);
 
-const azurePATConnectionSchema = new Schema<AzurePATConnection>({
-  host: { type: String, required: true },
-  token: { type: String, required: true },
-  verifySsl: { type: Boolean, default: true }
-}, { ...discriminatorKey });
-
-const AzurePATConnectionModel = ConnectionModel.discriminator(
-  'azure-pat', azurePATConnectionSchema
+const azurePATConnectionSchema = new Schema<AzurePATConnection>(
+  {
+    host: { type: String, required: true },
+    token: { type: String, required: true },
+    verifySsl: { type: Boolean, default: true },
+  },
+  { ...discriminatorKey }
 );
 
-const sonarConnectionSchema = new Schema<SonarConnection>({
-  url: { type: String, required: true },
-  token: { type: String },
-  verifySsl: { type: Boolean, default: true }
-}, { ...discriminatorKey });
+const AzurePATConnectionModel = ConnectionModel.discriminator(
+  'azure-pat',
+  azurePATConnectionSchema
+);
+
+const sonarConnectionSchema = new Schema<SonarConnection>(
+  {
+    url: { type: String, required: true },
+    token: { type: String },
+    verifySsl: { type: Boolean, default: true },
+  },
+  { ...discriminatorKey }
+);
 
 const SonarConnectionModel = ConnectionModel.discriminator(
-  'sonar', sonarConnectionSchema
+  'sonar',
+  sonarConnectionSchema
 );
 
 export const getConnections = () => ConnectionModel.find().lean();
 
-export const getConnectionById = (id: ObjectId | string) => (
-  ConnectionModel.findOne({ _id: id }).lean()
-);
+export const getConnectionById = (id: ObjectId | string) =>
+  ConnectionModel.findOne({ _id: id }).lean();
 
-export const createAzurePATConnection = (connection: Omit<AzurePATConnection, 'type'>) => (
-  AzurePATConnectionModel.create(connection)
-);
+export const createAzurePATConnection = (connection: Omit<AzurePATConnection, 'type'>) =>
+  AzurePATConnectionModel.create(connection);
 
-export const createSonarConnection = (connection: Omit<SonarConnection, 'type'>) => (
-  SonarConnectionModel.create(connection)
-);
+export const createSonarConnection = (connection: Omit<SonarConnection, 'type'>) =>
+  SonarConnectionModel.create(connection);
 
-export const modifyConnection = (connection: Connection & { _id: ObjectId }) => (
-  ConnectionModel.replaceOne({ _id: connection._id }, connection).lean()
-);
+export const modifyConnection = (connection: Connection & { _id: ObjectId }) =>
+  ConnectionModel.replaceOne({ _id: connection._id }, connection).lean();
 
-export const deleteConnection = (id: ObjectId | string) => (
-  ConnectionModel.deleteOne({ _id: id }).lean()
-);
+export const deleteConnection = (id: ObjectId | string) =>
+  ConnectionModel.deleteOne({ _id: id }).lean();

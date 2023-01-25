@@ -7,36 +7,37 @@ export type CronUpdateDates = {
 
 const cronUpdateDatesSchema = new Schema<CronUpdateDates>({
   key: { type: String, required: true, unique: true },
-  date: { type: Date, required: true }
+  date: { type: Date, required: true },
 });
 
 cronUpdateDatesSchema.index({ key: 1 });
 
-const CronUpdateDatesModel = model<CronUpdateDates>('CronUpdateDates', cronUpdateDatesSchema);
+const CronUpdateDatesModel = model<CronUpdateDates>(
+  'CronUpdateDates',
+  cronUpdateDatesSchema
+);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createHandler = <T extends (...x: any[]) => string>(keyCreator: T): [
+const createHandler = <T extends (...x: any[]) => string>(
+  keyCreator: T
+): [
   (...x: Parameters<T>) => Promise<Date | undefined>,
   (...x: Parameters<T>) => Promise<void>
-] => ([
-  (...x) => (
-    CronUpdateDatesModel
-      .findOne({ key: keyCreator(...x) })
+] => [
+  (...x) =>
+    CronUpdateDatesModel.findOne({ key: keyCreator(...x) })
       .lean()
-      .then(x => x?.date)
-  ),
-  (...x) => (
-    CronUpdateDatesModel
-      .updateOne(
-        { key: keyCreator(...x) },
-        { $set: { date: new Date() } },
-        { upsert: true }
-      )
+      .then(x => x?.date),
+  (...x) =>
+    CronUpdateDatesModel.updateOne(
+      { key: keyCreator(...x) },
+      { $set: { date: new Date() } },
+      { upsert: true }
+    )
       .lean()
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      .then(() => {})
-  )
-]);
+      .then(() => {}),
+];
 
 export const [getWorkItemUpdateDate, setWorkItemUpdateDate] = createHandler(
   (collection: string) => `${collection}:work-items`

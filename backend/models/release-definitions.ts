@@ -12,7 +12,6 @@ export type ReleaseCondition = {
 
 export type ReleaseDefinitionEnvironment = {
   // Many properties have been skipped
-  // eslint-disable-next-line max-len
   // https://learn.microsoft.com/en-us/rest/api/azure/devops/release/definitions/list?view=azure-devops-rest-5.1&tabs=HTTP#releasedefinitionenvironment
   id: number;
   name: string;
@@ -56,85 +55,97 @@ const releaseDefinitionSchema = new Schema<ReleaseDefinition>({
   modifiedOn: { type: Date },
   isDeleted: { type: Boolean, required: true },
   releaseNameFormat: { type: String, required: true },
-  environments: [{
-    id: { type: Number },
-    name: { type: String },
-    rank: { type: Number },
-    ownerId: { type: String },
-    badgeUrl: { type: String },
-    conditions: [{
-      conditionType: { type: String },
+  environments: [
+    {
+      id: { type: Number },
       name: { type: String },
-      value: { type: String }
-    }]
-  }]
+      rank: { type: Number },
+      ownerId: { type: String },
+      badgeUrl: { type: String },
+      conditions: [
+        {
+          conditionType: { type: String },
+          name: { type: String },
+          value: { type: String },
+        },
+      ],
+    },
+  ],
 });
 
 releaseDefinitionSchema.index({ collectionName: 1, project: 1, id: 1 }, { unique: true });
 
-export const ReleaseDefinitionModel = model<ReleaseDefinition>('ReleaseDefinition', releaseDefinitionSchema);
+export const ReleaseDefinitionModel = model<ReleaseDefinition>(
+  'ReleaseDefinition',
+  releaseDefinitionSchema
+);
 
-export const bulkSaveReleaseDefinitions = (collectionName: string, project: string) => (
-  (releaseDefinitions: AzureReleaseDefinition[]) => (
-    ReleaseDefinitionModel
-      .bulkWrite(releaseDefinitions.map(r => {
+export const bulkSaveReleaseDefinitions =
+  (collectionName: string, project: string) =>
+  (releaseDefinitions: AzureReleaseDefinition[]) =>
+    ReleaseDefinitionModel.bulkWrite(
+      releaseDefinitions.map(r => {
         const { createdBy, modifiedBy, ...rest } = r;
 
-        return ({
+        return {
           updateOne: {
             filter: {
               collectionName,
               project,
-              id: r.id
+              id: r.id,
             },
             update: {
               $set: {
                 createdById: createdBy.id,
                 modifiedById: modifiedBy.id,
-                ...rest
-              }
+                ...rest,
+              },
             },
-            upsert: true
-          }
-        });
-      }))
-  )
-);
+            upsert: true,
+          },
+        };
+      })
+    );
 
-export const getReleaseEnvironments = (collectionName: string, project: string, definitionId: number) => (
-  ReleaseDefinitionModel
-    .findOne({ collectionName, project, id: definitionId }, { environments: 1 })
+export const getReleaseEnvironments = (
+  collectionName: string,
+  project: string,
+  definitionId: number
+) =>
+  ReleaseDefinitionModel.findOne(
+    { collectionName, project, id: definitionId },
+    { environments: 1 }
+  )
     .lean()
-    .then(r => r?.environments)
-);
+    .then(r => r?.environments);
 
 const getMinimalReleaseDefinitionsInner = (
-  collectionName: string, project: string,
-  searchTerm?: string, stageNameContaining?: string
-) => (
-  ReleaseDefinitionModel
-    .find({
+  collectionName: string,
+  project: string,
+  searchTerm?: string,
+  stageNameContaining?: string
+) =>
+  ReleaseDefinitionModel.find(
+    {
       collectionName,
       project,
-      ...(searchTerm ? {
-        $or: [
-          { name: { $regex: new RegExp(searchTerm, 'i') } },
-          { 'environments.name': { $regex: new RegExp(searchTerm, 'i') } }
-        ]
-      } : {}),
-      ...(
-        stageNameContaining
-          ? { 'environments.name': { $regex: new RegExp(stageNameContaining, 'i') } }
-          : {}
-      )
-    }, { name: 1, id: 1, url: 1 })
-    .lean() as unknown as Promise<Pick<ReleaseDefinition, 'id' | 'name' | 'url'>[]>
-);
+      ...(searchTerm
+        ? {
+            $or: [
+              { name: { $regex: new RegExp(searchTerm, 'i') } },
+              { 'environments.name': { $regex: new RegExp(searchTerm, 'i') } },
+            ],
+          }
+        : {}),
+      ...(stageNameContaining
+        ? { 'environments.name': { $regex: new RegExp(stageNameContaining, 'i') } }
+        : {}),
+    },
+    { name: 1, id: 1, url: 1 }
+  ).lean() as unknown as Promise<Pick<ReleaseDefinition, 'id' | 'name' | 'url'>[]>;
 
 const cache = new ExpiryMap(5 * oneMinuteInMs);
-export const getMinimalReleaseDefinitions = pMemoize(
-  getMinimalReleaseDefinitionsInner, {
-    cacheKey: x => JSON.stringify(x),
-    cache
-  }
-);
+export const getMinimalReleaseDefinitions = pMemoize(getMinimalReleaseDefinitionsInner, {
+  cacheKey: x => JSON.stringify(x),
+  cache,
+});

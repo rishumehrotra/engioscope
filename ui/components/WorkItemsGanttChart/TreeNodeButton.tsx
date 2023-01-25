@@ -8,7 +8,11 @@ type TreeNodeButtonProps = {
   onToggle: (e: React.MouseEvent) => void;
 };
 
-export const TreeNodeButton: React.FC<TreeNodeButtonProps> = ({ expandedState, indentation, onToggle }) => {
+export const TreeNodeButton: React.FC<TreeNodeButtonProps> = ({
+  expandedState,
+  indentation,
+  onToggle,
+}) => {
   if (expandedState === 'collapsed') {
     return (
       <button
@@ -35,7 +39,7 @@ export const TreeNodeButton: React.FC<TreeNodeButtonProps> = ({ expandedState, i
 
   return (
     <span
-      style={{ marginLeft: `${(indentation * 20) + 0}px` }}
+      style={{ marginLeft: `${indentation * 20 + 0}px` }}
       className="inline-block w-4 h-4 mt-1 mr-2"
     >
       {' '}

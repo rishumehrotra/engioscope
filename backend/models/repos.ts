@@ -29,40 +29,42 @@ const repositorySchema = new Schema<Repository>({
   webUrl: { type: String, required: true },
   project: {
     id: { type: String, required: true },
-    name: { type: String, required: true }
-  }
+    name: { type: String, required: true },
+  },
 });
 
 repositorySchema.index({
   'collectionName': 1,
   'id': 1,
-  'project.id': 1
+  'project.id': 1,
 });
 
 const RepositoryModel = model<Repository>('Repository', repositorySchema);
 
-export const bulkSaveRepositories = (collectionName: string) => (repos: GitRepository[]) => (
-  RepositoryModel.bulkWrite(repos.map(repo => {
-    const { project, ...rest } = repo;
+export const bulkSaveRepositories =
+  (collectionName: string) => (repos: GitRepository[]) =>
+    RepositoryModel.bulkWrite(
+      repos.map(repo => {
+        const { project, ...rest } = repo;
 
-    return {
-      updateOne: {
-        filter: {
-          collectionName,
-          'id': repo.id,
-          'project.id': project.id
-        },
-        update: { $set: { ...rest, project: { id: project.id, name: project.name } } },
-        upsert: true
-      }
-    };
-  }))
-);
+        return {
+          updateOne: {
+            filter: {
+              collectionName,
+              'id': repo.id,
+              'project.id': project.id,
+            },
+            update: {
+              $set: { ...rest, project: { id: project.id, name: project.name } },
+            },
+            upsert: true,
+          },
+        };
+      })
+    );
 
-export const getRepositories = (collectionName: string, project: string) => (
-  RepositoryModel.find({ collectionName, 'project.name': project }).lean()
-);
+export const getRepositories = (collectionName: string, project: string) =>
+  RepositoryModel.find({ collectionName, 'project.name': project }).lean();
 
-export const getRepoCount = (collectionName: string, project: string) => (
-  RepositoryModel.count({ collectionName, 'project.name': project }).lean()
-);
+export const getRepoCount = (collectionName: string, project: string) =>
+  RepositoryModel.count({ collectionName, 'project.name': project }).lean();

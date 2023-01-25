@@ -8,19 +8,19 @@ export default async (
   saveBuildTimeline: ReturnType<typeof save>
 ) => {
   const missingBuildIds = await missingTimelines(
-    builds
-      .filter(b => b.result !== 'canceled')
-      .map(b => b.id)
+    builds.filter(b => b.result !== 'canceled').map(b => b.id)
   );
 
-  return Promise.all(missingBuildIds.map(async buildId => {
-    const timeline = await getBuildTimeline(buildId);
-    if (!timeline) return;
-    return saveBuildTimeline(
-      buildId,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      builds.find(b => b.id === buildId)!.definition.id,
-      timeline
-    );
-  }));
+  return Promise.all(
+    missingBuildIds.map(async buildId => {
+      const timeline = await getBuildTimeline(buildId);
+      if (!timeline) return;
+      return saveBuildTimeline(
+        buildId,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        builds.find(b => b.id === buildId)!.definition.id,
+        timeline
+      );
+    })
+  );
 };

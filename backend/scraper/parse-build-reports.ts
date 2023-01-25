@@ -37,7 +37,7 @@ export const htmlReportToObj = (htmlContent: string) => {
     buildDefinitionId: read('SYSTEM_DEFINITIONID')!,
     buildReason: read('BUILD_REASON')! as AzureBuildReport['buildReason'],
     buildScript: buildScript ? decode(buildScript) : undefined,
-    centralTemplate: Object.keys(centralTemplate).length ? centralTemplate : undefined
+    centralTemplate: Object.keys(centralTemplate).length ? centralTemplate : undefined,
   };
   /* eslint-enable */
 };
@@ -56,14 +56,18 @@ const parseReport = async (fileName: string) => {
   return htmlReportToObj(htmlContent);
 };
 
-export default (collectionName: string, projectName: string) => (
+export default (collectionName: string, projectName: string) =>
   async (repoName: string, branchName: string) => {
-    const buildReportDir = join(process.cwd(), 'build-reports', collectionName, projectName, repoName);
-    const matchingBuildReportFiles = await globAsync(join(buildReportDir, '**', `${normalizeBranchName(branchName)}.html`));
-
-    return (
-      (await Promise.all(matchingBuildReportFiles.map(parseReport)))
-        .filter(exists)
+    const buildReportDir = join(
+      process.cwd(),
+      'build-reports',
+      collectionName,
+      projectName,
+      repoName
     );
-  }
-);
+    const matchingBuildReportFiles = await globAsync(
+      join(buildReportDir, '**', `${normalizeBranchName(branchName)}.html`)
+    );
+
+    return (await Promise.all(matchingBuildReportFiles.map(parseReport))).filter(exists);
+  };

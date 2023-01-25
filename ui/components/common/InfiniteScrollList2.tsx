@@ -8,14 +8,17 @@ type InfiniteScrollListProps<T> = {
   itemKey: (item: T) => string;
 };
 
-const InfiniteScrollList2 = <T, >({
-  items, itemKey, loadNextPage, itemComponent: Item
+const InfiniteScrollList2 = <T,>({
+  items,
+  itemKey,
+  loadNextPage,
+  itemComponent: Item,
 }: InfiniteScrollListProps<T>) => {
   const lastTriggerTime = useRef(Date.now());
   const [ref, inView] = useInView({
     threshold: 0,
     triggerOnce: true,
-    rootMargin: '100px'
+    rootMargin: '100px',
   });
 
   useEffect(() => {
@@ -28,10 +31,7 @@ const InfiniteScrollList2 = <T, >({
   return (
     <ul>
       {items.map((item, index) => (
-        <li
-          key={itemKey(item)}
-          {...(index === items.length - 1 ? { ref } : {})}
-        >
+        <li key={itemKey(item)} {...(index === items.length - 1 ? { ref } : {})}>
           <Item {...{ item, index }} />
         </li>
       ))}

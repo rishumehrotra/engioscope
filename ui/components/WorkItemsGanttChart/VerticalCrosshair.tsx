@@ -2,8 +2,12 @@ import type { MutableRefObject } from 'react';
 import React, { useCallback, useRef } from 'react';
 import { mediumDate } from '../../helpers/utils.js';
 import {
-  axisLabelsHeight, axisLabelsWidth, barStartPadding,
-  svgWidth, textWidth, xCoordToDate
+  axisLabelsHeight,
+  axisLabelsWidth,
+  barStartPadding,
+  svgWidth,
+  textWidth,
+  xCoordToDate,
 } from './helpers.js';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
 import useSvgEvent from '../../hooks/use-svg-event.js';
@@ -41,9 +45,9 @@ const useCrosshair = (
     const closeToRightEdge = svgWidth - hoverXCoord.current < axisLabelsWidth / 2;
     if (closeToRightEdge) {
       crosshairLabel.style.transformOrigin = 'right';
-      crosshairLabel.style.transform = (
-        `translateX(${(svgWidth - hoverXCoord.current - axisLabelsWidth / 2)}px)`
-      );
+      crosshairLabel.style.transform = `translateX(${
+        svgWidth - hoverXCoord.current - axisLabelsWidth / 2
+      }px)`;
       crosshairLabel.style.textAlign = 'right';
     } else {
       crosshairLabel.style.transform = 'translateX(0)';
@@ -54,18 +58,24 @@ const useCrosshair = (
 
   useRequestAnimationFrame(repositionCrosshair);
 
-  const mouseMove = useCallback((e: MouseEvent) => {
-    if (!svgRef.current) {
-      hoverXCoord.current = null;
-      return;
-    }
-    const rect = svgRef.current.getBoundingClientRect();
-    const mappedPosition = (svgWidth / rect.width) * e.offsetX;
-    hoverXCoord.current = mappedPosition < (textWidth + barStartPadding) ? null : mappedPosition;
-  }, [svgRef]);
+  const mouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!svgRef.current) {
+        hoverXCoord.current = null;
+        return;
+      }
+      const rect = svgRef.current.getBoundingClientRect();
+      const mappedPosition = (svgWidth / rect.width) * e.offsetX;
+      hoverXCoord.current =
+        mappedPosition < textWidth + barStartPadding ? null : mappedPosition;
+    },
+    [svgRef]
+  );
   useSvgEvent(svgRef, 'mousemove', mouseMove);
 
-  const mouseLeave = useCallback(() => { hoverXCoord.current = null; }, []);
+  const mouseLeave = useCallback(() => {
+    hoverXCoord.current = null;
+  }, []);
   useSvgEvent(svgRef, 'mouseleave', mouseLeave);
 };
 
@@ -77,7 +87,10 @@ type VerticalCrossharRef = {
 };
 
 const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
-  svgRef, svgHeight, minDate, maxDate
+  svgRef,
+  svgHeight,
+  minDate,
+  maxDate,
 }) => {
   const crosshairRef = useRef<SVGLineElement | null>(null);
   useCrosshair(svgRef, crosshairRef, xCoordToDate(minDate, maxDate));
@@ -101,9 +114,7 @@ const VerticalCrosshair: React.FC<VerticalCrossharRef> = ({
         height={axisLabelsHeight}
         overflow="visible"
       >
-        <div className="text-xs text-gray-500 text-center bg-white">
-          date
-        </div>
+        <div className="text-xs text-gray-500 text-center bg-white">date</div>
       </foreignObject>
     </g>
   );

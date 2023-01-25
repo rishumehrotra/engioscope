@@ -21,7 +21,9 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle, titleUrl }) => (
         >
           {title}
         </a>
-      ) : title}
+      ) : (
+        title
+      )}
     </span>
     <div
       className="text-base ml-2 text-gray-600 font-semibold flex-1 align-text-bottom"
@@ -43,25 +45,25 @@ export type CardProps = {
 };
 
 const Card: React.FC<CardProps> = ({
-  title, titleUrl, subtitle, children, onCardClick, isExpanded, className
+  title,
+  titleUrl,
+  subtitle,
+  children,
+  onCardClick,
+  isExpanded,
+  className,
 }) => (
   <div
-    className={`bg-white ${className} border-l-4 p-6 mb-4 ${isExpanded ? 'border-gray-500' : ''} 
+    className={`bg-white ${className} border-l-4 p-6 mb-4 ${
+      isExpanded ? 'border-gray-500' : ''
+    } 
   transition-colors duration-500 ease-in-out rounded-lg shadow relative
   `}
   >
     <div className="grid grid-flow-row mt-2">
-      <div
-        className="w-full cursor-pointer"
-        role="button"
-        onClick={onCardClick}
-      >
+      <div className="w-full cursor-pointer" role="button" onClick={onCardClick}>
         <div className="grid mx-6">
-          <CardTitle
-            title={title}
-            titleUrl={titleUrl}
-            subtitle={subtitle}
-          />
+          <CardTitle title={title} titleUrl={titleUrl} subtitle={subtitle} />
         </div>
       </div>
     </div>

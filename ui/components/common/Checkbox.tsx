@@ -8,9 +8,7 @@ type CheckboxProps = {
   disabled?: boolean;
 };
 
-const Checkbox: React.FC<CheckboxProps> = ({
-  value, label, onChange, disabled
-}) => {
+const Checkbox: React.FC<CheckboxProps> = ({ value, label, onChange, disabled }) => {
   const id = generateId();
   return (
     <span className="text-sm flex items-baseline">
@@ -22,7 +20,9 @@ const Checkbox: React.FC<CheckboxProps> = ({
         onChange={() => onChange(!value)}
         disabled={disabled}
       />
-      <label htmlFor={id} className="font-small text-gray-600 cursor-pointer">{label}</label>
+      <label htmlFor={id} className="font-small text-gray-600 cursor-pointer">
+        {label}
+      </label>
     </span>
   );
 };

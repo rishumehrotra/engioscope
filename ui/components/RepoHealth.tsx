@@ -1,7 +1,5 @@
 import type { MouseEventHandler } from 'react';
-import React, {
-  useRef, useCallback, useEffect, useMemo, useState
-} from 'react';
+import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { not, prop } from 'rambda';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -26,7 +24,7 @@ import useOnClickOutside from '../hooks/on-click-outside.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 
 const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
-  featureToggles
+  featureToggles,
 }) => {
   const [isFeatureToggleExpanded, setFeatureToggleExpanded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -36,7 +34,9 @@ const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
     setFeatureToggleExpanded(not);
   }, []);
 
-  useOnClickOutside(ref, () => { setFeatureToggleExpanded(false); });
+  useOnClickOutside(ref, () => {
+    setFeatureToggleExpanded(false);
+  });
   useHotkeys('esc', () => setFeatureToggleExpanded(false));
 
   if (featureToggles.length === 0) return null;
@@ -56,18 +56,16 @@ const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
         {` feature ${featureToggles.length === 1 ? 'toggle' : 'toggles'}`}
         <DownChevron className="inline-block w-4 h-4 -m-1 ml-2" />
       </button>
-      {isFeatureToggleExpanded
-        ? (
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
-          <div
-            className="absolute top-8 py-2 px-5 rounded-lg text-left right-0 bg-black text-white shadow-md cursor-default"
-            style={{ width: '500px' }}
-            onClick={event => event.stopPropagation()}
-          >
-            Content
-          </div>
-        )
-        : null}
+      {isFeatureToggleExpanded ? (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
+        <div
+          className="absolute top-8 py-2 px-5 rounded-lg text-left right-0 bg-black text-white shadow-md cursor-default"
+          style={{ width: '500px' }}
+          onClick={event => event.stopPropagation()}
+        >
+          Content
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -81,19 +79,26 @@ type RepoHealthProps = {
 };
 
 const RepoHealth: React.FC<RepoHealthProps> = ({
-  repo, isFirst, aggregatedDevs, queryPeriodDays, featureToggles
+  repo,
+  isFirst,
+  aggregatedDevs,
+  queryPeriodDays,
+  featureToggles,
 }) => {
   const pageName = usePageName();
   const location = useLocation();
 
-  const tabs = useMemo(() => [
-    builds(repo.builds, queryPeriodDays),
-    branches(repo.branches, repo.defaultBranch),
-    commits(repo, aggregatedDevs, location, queryPeriodDays),
-    prs(repo.prs),
-    tests(repo, queryPeriodDays),
-    codeQuality(repo.codeQuality)
-  ], [repo, aggregatedDevs, location, queryPeriodDays]);
+  const tabs = useMemo(
+    () => [
+      builds(repo.builds, queryPeriodDays),
+      branches(repo.branches, repo.defaultBranch),
+      commits(repo, aggregatedDevs, location, queryPeriodDays),
+      prs(repo.prs),
+      tests(repo, queryPeriodDays),
+      codeQuality(repo.codeQuality),
+    ],
+    [repo, aggregatedDevs, location, queryPeriodDays]
+  );
 
   const [{ sortBy }] = useSortParams();
   const [selectedTab, setSelectedTab] = useState<Tab | null>(isFirst ? tabs[0] : null);
@@ -111,12 +116,16 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
     setSelectedTab(selectedTab ? null : tabs[0]);
   }, [selectedTab, tabs]);
 
-  const pipelinesUrl = location.pathname.replace('/repos', `/release-pipelines?search=repo:"${repo.name}"`);
+  const pipelinesUrl = location.pathname.replace(
+    '/repos',
+    `/release-pipelines?search=repo:"${repo.name}"`
+  );
   const isExpanded = selectedTab !== null || isFirst || false;
 
-  const languages = useMemo(() => (
-    [...(repo.languages || [])].sort(desc(byNum(prop('loc'))))
-  ), [repo.languages]);
+  const languages = useMemo(
+    () => [...(repo.languages || [])].sort(desc(byNum(prop('loc')))),
+    [repo.languages]
+  );
 
   const totalLoc = useMemo(
     () => languages.reduce((acc, lang) => acc + lang.loc, 0),
@@ -152,26 +161,23 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                   {repo.name}
                 </a>
                 <span className="inline-block ml-4">
-                  {
-                    languages
-                      .map(l => (
-                        <Flair
-                          key={l.lang}
-                          flairColor={l.color}
-                          title={`${num(l.loc)} lines of code`}
-                          label={`${Math.round((l.loc * 100) / totalLoc)}% ${l.lang}`}
-                        />
-                      ))
-                  }
+                  {languages.map(l => (
+                    <Flair
+                      key={l.lang}
+                      flairColor={l.color}
+                      title={`${num(l.loc)} lines of code`}
+                      label={`${Math.round((l.loc * 100) / totalLoc)}% ${l.lang}`}
+                    />
+                  ))}
                 </span>
               </div>
               {repo.pipelineCount ? (
                 <div>
-                  <Link
-                    to={pipelinesUrl}
-                    className="link-text"
-                  >
-                    {`Used in ${repo.pipelineCount} ${pageName('release-pipelines', repo.pipelineCount).toLowerCase()}`}
+                  <Link to={pipelinesUrl} className="link-text">
+                    {`Used in ${repo.pipelineCount} ${pageName(
+                      'release-pipelines',
+                      repo.pipelineCount
+                    ).toLowerCase()}`}
                   </Link>
                 </div>
               ) : null}
@@ -180,21 +186,20 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
               className="text-gray-600 font-semibold text-right"
               style={{ lineHeight: '27px' }}
             >
-              {
-                repo.defaultBranch
-                  ? (
-                    <div className="italic text-sm text-gray-400" style={{ lineHeight: 'inherit' }}>
-                      Default branch
-                      {' '}
-                      <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
-                        {repo.defaultBranch}
-                      </code>
-                    </div>
-                  ) : null
-              }
-              {isFtEnabled
-                ? <FeatureToggleDropdown featureToggles={featureToggles} />
-                : null}
+              {repo.defaultBranch ? (
+                <div
+                  className="italic text-sm text-gray-400"
+                  style={{ lineHeight: 'inherit' }}
+                >
+                  Default branch{' '}
+                  <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
+                    {repo.defaultBranch}
+                  </code>
+                </div>
+              ) : null}
+              {isFtEnabled ? (
+                <FeatureToggleDropdown featureToggles={featureToggles} />
+              ) : null}
             </div>
           </div>
         </div>

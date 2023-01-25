@@ -7,10 +7,7 @@ type HeaderContext = Partial<{
   lastUpdated: string;
 }>;
 
-const [
-  HeaderProvider,
-  useHeaderDetails,
-  useSetHeaderDetails
-] = createContextState<HeaderContext>({});
+const [HeaderProvider, useHeaderDetails, useSetHeaderDetails] =
+  createContextState<HeaderContext>({});
 
 export { HeaderProvider, useHeaderDetails, useSetHeaderDetails };

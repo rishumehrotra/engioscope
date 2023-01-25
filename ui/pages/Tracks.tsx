@@ -12,7 +12,7 @@ import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
 const navItems = [
   { key: 'metrics', label: 'Flow metrics', linkTo: '/tracks' },
-  { key: 'features', label: 'Features', linkTo: '/tracks?show=listing' }
+  { key: 'features', label: 'Features', linkTo: '/tracks?show=listing' },
 ];
 
 const TrackNavBar: React.FC = () => {
@@ -60,18 +60,18 @@ const Tracks: React.FC = () => {
 
     setHeaderDetails({
       title: 'Tracks',
-      subtitle: headerInfo
-        ? (
-          <div className="text-base mt-2 font-normal text-gray-200">
-            <span className="text-lg font-bold">
-              {shortDate(fromDate(headerInfo.lastUpdated, queryPeriodDays))}
-            </span>
-            {' to '}
-            <span className="text-lg font-bold">{shortDate(new Date(headerInfo.lastUpdated))}</span>
-          </div>
-        )
-        : null,
-      lastUpdated: headerInfo?.lastUpdated
+      subtitle: headerInfo ? (
+        <div className="text-base mt-2 font-normal text-gray-200">
+          <span className="text-lg font-bold">
+            {shortDate(fromDate(headerInfo.lastUpdated, queryPeriodDays))}
+          </span>
+          {' to '}
+          <span className="text-lg font-bold">
+            {shortDate(new Date(headerInfo.lastUpdated))}
+          </span>
+        </div>
+      ) : null,
+      lastUpdated: headerInfo?.lastUpdated,
     });
   }, [trackFlowMetrics, setHeaderDetails, trackFeatures, queryPeriodDays]);
 
@@ -83,21 +83,18 @@ const Tracks: React.FC = () => {
         <TrackNavBar />
       </div>
       <div className="mx-32">
-        {loadedData
-          ? (
-            <div className="mt-8 bg-gray-50">
-              {
-                // eslint-disable-next-line no-nested-ternary
-                Object.keys(loadedData.tracks).length
-                  ? (show === 'listing'
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    ? trackFeatures && <FeaturesList tracks={trackFeatures!.tracks} />
-                    : trackFlowMetrics && <FlowMetrics tracks={trackFlowMetrics} />)
-                  : 'Tracks not configured'
-              }
-            </div>
-          )
-          : <Loading />}
+        {loadedData ? (
+          <div className="mt-8 bg-gray-50">
+            {Object.keys(loadedData.tracks).length
+              ? show === 'listing'
+                ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  trackFeatures && <FeaturesList tracks={trackFeatures!.tracks} />
+                : trackFlowMetrics && <FlowMetrics tracks={trackFlowMetrics} />
+              : 'Tracks not configured'}
+          </div>
+        ) : (
+          <Loading />
+        )}
       </div>
     </>
   );

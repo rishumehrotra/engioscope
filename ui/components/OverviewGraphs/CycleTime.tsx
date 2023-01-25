@@ -10,7 +10,10 @@ import GraphCard from './helpers/GraphCard.js';
 import { prettyMS, priorityBasedColor } from '../../helpers/utils.js';
 import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
-  stringifyDateField, getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats
+  stringifyDateField,
+  getSidebarStatByKey,
+  getSidebarItemStats,
+  getSidebarHeadlineStats,
 } from './helpers/helpers.js';
 import { createCompletedWorkItemTooltip } from './helpers/tooltips.js';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
@@ -25,10 +28,18 @@ type CycleTimeGraphProps = {
   openModal: (x: ModalArgs) => void;
 };
 
-export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, accessors, openModal }) => {
+export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({
+  workItems,
+  accessors,
+  openModal,
+}) => {
   const {
-    isWorkItemClosed, organizeByWorkItemType, workItemType, cycleTime: cTime,
-    sortByEnvironment, workItemTimes
+    isWorkItemClosed,
+    organizeByWorkItemType,
+    workItemType,
+    cycleTime: cTime,
+    sortByEnvironment,
+    workItemTimes,
   } = accessors;
 
   const cycleTime = useCallback(
@@ -38,8 +49,12 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     [cTime]
   );
 
-  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
+  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
+  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
 
   const preFilteredWorkItems = useMemo(
     () => workItems.filter(isWorkItemClosed),
@@ -51,9 +66,10 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     [priorityFilter, sizeFilter]
   );
 
-  const csvData = useMemo(() => (
-    closedWorkItemsCSV(preFilteredWorkItems.filter(filter), accessors)
-  ), [preFilteredWorkItems, filter, accessors]);
+  const csvData = useMemo(
+    () => closedWorkItemsCSV(preFilteredWorkItems.filter(filter), accessors),
+    [preFilteredWorkItems, filter, accessors]
+  );
 
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(accessors),
@@ -65,29 +81,34 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
     [organizeByWorkItemType, preFilteredWorkItems, filter]
   );
 
-  const showWorkItemTimeDetails = useCallback((workItem: UIWorkItem) => (
-    <WorkItemTimeDetails
-      workItem={workItem}
-      workItemTimes={workItemTimes}
-    />
-  ), [workItemTimes]);
+  const showWorkItemTimeDetails = useCallback(
+    (workItem: UIWorkItem) => (
+      <WorkItemTimeDetails workItem={workItem} workItemTimes={workItemTimes} />
+    ),
+    [workItemTimes]
+  );
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
-    const {
-      totalCycleTime, workItemType
-    } = accessors;
+    const { totalCycleTime, workItemType } = accessors;
 
-    const aggregator = (workItems: UIWorkItem[]) => (
-      workItems.length ? prettyMS(totalCycleTime(workItems) / workItems.length) : '-'
-    );
+    const aggregator = (workItems: UIWorkItem[]) =>
+      workItems.length ? prettyMS(totalCycleTime(workItems) / workItems.length) : '-';
     const items = getSidebarItemStats(workItemsToDisplay, accessors, aggregator);
-    const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
+    const headlineStats = getSidebarHeadlineStats(
+      workItemsToDisplay,
+      workItemType,
+      aggregator,
+      'avg'
+    );
 
     return {
       headlineStats,
       items,
       onItemClick: key => {
-        const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
+        const [witId, groupName, workItems] = getSidebarStatByKey(
+          key,
+          workItemsToDisplay
+        );
 
         return openModal({
           heading: 'Cycle time',
@@ -100,44 +121,54 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
               flairs={workItem => [prettyMS(cycleTime(workItem))]}
               extra={showWorkItemTimeDetails}
             />
-          )
+          ),
         });
-      }
+      },
     };
-  }, [accessors, cycleTime, openModal, showWorkItemTimeDetails, workItemTooltip, workItemsToDisplay]);
+  }, [
+    accessors,
+    cycleTime,
+    openModal,
+    showWorkItemTimeDetails,
+    workItemTooltip,
+    workItemsToDisplay,
+  ]);
 
   const graphBlocks = useMemo(
-    () => (
-      Object.entries(workItemsToDisplay)
-        .reduce<{
+    () =>
+      Object.entries(workItemsToDisplay).reduce<
+        {
           width: number;
           witId: string;
           scatterLineGraphProps: ScatterLineGraphProps<UIWorkItem>;
-        }[][]>(
-          (acc, [witId, group], index) => {
-            const rowIndex = Math.floor(index / 2);
-            if (!acc[rowIndex]) acc[rowIndex] = [];
-            acc[rowIndex].push({
-              width: Object.values(group).length,
-              witId,
-              scatterLineGraphProps: {
-                graphData: [{
-                  label: workItemType(witId).name[1],
-                  data: Object.fromEntries(Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))),
-                  yAxisPoint: cycleTime,
-                  tooltip: wi => workItemTooltip(wi)
-                }],
-                pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
-                height: 420,
-                linkForItem: prop('url'),
-                className: 'w-full'
-              }
-            });
+        }[][]
+      >((acc, [witId, group], index) => {
+        const rowIndex = Math.floor(index / 2);
+        if (!acc[rowIndex]) acc[rowIndex] = [];
+        acc[rowIndex].push({
+          width: Object.values(group).length,
+          witId,
+          scatterLineGraphProps: {
+            graphData: [
+              {
+                label: workItemType(witId).name[1],
+                data: Object.fromEntries(
+                  Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))
+                ),
+                yAxisPoint: cycleTime,
+                tooltip: wi => workItemTooltip(wi),
+              },
+            ],
+            pointColor: workItem =>
+              workItem.priority ? priorityBasedColor(workItem.priority) : undefined,
+            height: 420,
+            linkForItem: prop('url'),
+            className: 'w-full',
+          },
+        });
 
-            return acc;
-          }, []
-        )
-    ),
+        return acc;
+      }, []),
     [cycleTime, sortByEnvironment, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
@@ -147,18 +178,21 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
       subtitle="Time taken to complete a work item"
       hasData={preFilteredWorkItems.length > 0}
       csvData={csvData}
-      left={(
+      left={
         <>
           <div className="flex justify-end mb-8 gap-2">
             <SizeFilter workItems={preFilteredWorkItems} setFilter={setSizeFilter} />
-            <PriorityFilter workItems={preFilteredWorkItems} setFilter={setPriorityFilter} />
+            <PriorityFilter
+              workItems={preFilteredWorkItems}
+              setFilter={setPriorityFilter}
+            />
           </div>
           {graphBlocks.map(row => (
             <div
               className="grid gap-4 justify-between items-center grid-cols-2 mb-16"
               key={row[0].witId}
               style={{
-                gridTemplateColumns: row.map(({ width }) => `${width + 1}fr`).join(' ')
+                gridTemplateColumns: row.map(({ width }) => `${width + 1}fr`).join(' '),
               }}
             >
               {row.map(({ witId, scatterLineGraphProps }) => (
@@ -169,7 +203,9 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
           <ul className="text-sm text-gray-600 pl-8 mt-4 list-disc bg-gray-50 p-2 border-gray-200 border-2 rounded-md">
             {Object.keys(workItemsToDisplay).map(witId => (
               <li key={witId}>
-                {`Cycle time for ${workItemType(witId).name[1].toLowerCase()} is computed from `}
+                {`Cycle time for ${workItemType(
+                  witId
+                ).name[1].toLowerCase()} is computed from `}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {stringifyDateField(workItemType(witId).startDateFields!)}
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
@@ -178,10 +214,8 @@ export const CycleTimeGraph: React.FC<CycleTimeGraphProps> = ({ workItems, acces
             ))}
           </ul>
         </>
-      )}
-      right={(
-        <LegendSidebar {...legendSidebarProps} />
-      )}
+      }
+      right={<LegendSidebar {...legendSidebarProps} />}
     />
   );
 };

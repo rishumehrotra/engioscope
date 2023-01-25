@@ -11,13 +11,11 @@ export default <T extends HTMLElement>() => {
   const resizeObserver = useRef<ResizeObserver | null>();
   const ref = useRef<T>(null);
 
-  const setResizeObserver = useCallback(
-    (fn: OnResize) => {
-      if (resizeObserver.current) resizeObserver.current.disconnect();
-      resizeObserver.current = new ResizeObserver((...args) => fn(...args, ref));
-      // if (ref.current) resizeObserver.current.observe(ref.current);
-    }, []
-  );
+  const setResizeObserver = useCallback((fn: OnResize) => {
+    if (resizeObserver.current) resizeObserver.current.disconnect();
+    resizeObserver.current = new ResizeObserver((...args) => fn(...args, ref));
+    // if (ref.current) resizeObserver.current.observe(ref.current);
+  }, []);
 
   useEffect(() => {
     if (!ref.current) return;

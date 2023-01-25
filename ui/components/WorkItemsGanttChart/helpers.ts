@@ -1,5 +1,9 @@
 import prettyMilliseconds from 'pretty-ms';
-import type { UIWorkItem, UIWorkItemRevision, UIWorkItemType } from '../../../shared/types.js';
+import type {
+  UIWorkItem,
+  UIWorkItemRevision,
+  UIWorkItemType,
+} from '../../../shared/types.js';
 import { mediumDate } from '../../helpers/utils.js';
 
 export const svgWidth = 1300;
@@ -12,41 +16,31 @@ export const axisLabelsHeight = 20;
 export const axisLabelsWidth = 80;
 export const bottomScaleHeight = 80;
 
-export const svgHeight = (childrenCount: number) => (
-  ((textHeight + (rowPadding * 2)) * childrenCount) + axisLabelsHeight
-);
+export const svgHeight = (childrenCount: number) =>
+  (textHeight + rowPadding * 2) * childrenCount + axisLabelsHeight;
 
-export const barYCoord = (targetIndex: number) => (
-  (targetIndex * (textHeight + (rowPadding * 2))) + ((textHeight - barHeight) / 2)
-);
+export const barYCoord = (targetIndex: number) =>
+  targetIndex * (textHeight + rowPadding * 2) + (textHeight - barHeight) / 2;
 
-export const getMinDateTime = (revisions: UIWorkItemRevision[]) => Math.min(
-  ...revisions.map(r => new Date(r.date).getTime())
-);
+export const getMinDateTime = (revisions: UIWorkItemRevision[]) =>
+  Math.min(...revisions.map(r => new Date(r.date).getTime()));
 
-export const getMaxDateTime = (revisions: UIWorkItemRevision[]) => Math.max(
-  ...revisions.map(r => new Date(r.date).getTime())
-);
+export const getMaxDateTime = (revisions: UIWorkItemRevision[]) =>
+  Math.max(...revisions.map(r => new Date(r.date).getTime()));
 
-export const xCoordToDate = (minDate: number, maxDate: number) => (
-  (xCoord: number) => (
-    (
-      (xCoord - textWidth - barStartPadding)
-      / (svgWidth - textWidth - barStartPadding)
-    ) * (maxDate - minDate)
-  ) + minDate
-);
+export const xCoordToDate = (minDate: number, maxDate: number) => (xCoord: number) =>
+  ((xCoord - textWidth - barStartPadding) / (svgWidth - textWidth - barStartPadding)) *
+    (maxDate - minDate) +
+  minDate;
 
-export const xCoordConverterWithin = (minDateTime: number, maxDateTime: number) => (
-  (time: string | Date) => {
+export const xCoordConverterWithin =
+  (minDateTime: number, maxDateTime: number) => (time: string | Date) => {
     const date = new Date(time);
-    const xCoordWithoutText = (
-      (date.getTime() - minDateTime)
-      / (maxDateTime - minDateTime)
-    ) * (svgWidth - textWidth - barStartPadding);
+    const xCoordWithoutText =
+      ((date.getTime() - minDateTime) / (maxDateTime - minDateTime)) *
+      (svgWidth - textWidth - barStartPadding);
     return (xCoordWithoutText < 0 ? 0 : xCoordWithoutText) + textWidth + barStartPadding;
-  }
-);
+  };
 
 export const createXCoordConverterFor = (revisions: UIWorkItemRevision[]) => {
   const minDateTime = getMinDateTime(revisions);
@@ -55,17 +49,21 @@ export const createXCoordConverterFor = (revisions: UIWorkItemRevision[]) => {
   return xCoordConverterWithin(minDateTime, maxDateTime);
 };
 
-export const barWidthUsing = (timeToXCoord: (time: string) => number) => (
+export const barWidthUsing =
+  (timeToXCoord: (time: string) => number) =>
   (revisions: UIWorkItemRevision[], index: number) => {
     if (revisions.length === 1) {
       return Math.max(svgWidth - timeToXCoord(revisions[0].date), 3);
     }
-    return Math.max(timeToXCoord(revisions[index + 1].date) - timeToXCoord(revisions[index].date), 3);
-  }
-);
+    return Math.max(
+      timeToXCoord(revisions[index + 1].date) - timeToXCoord(revisions[index].date),
+      3
+    );
+  };
 
 export const makeTransparent = (rgb: string) => {
-  if (rgb.length > 7) { // already has a rgbA component
+  if (rgb.length > 7) {
+    // already has a rgbA component
     return `${rgb.slice(0, -2)}11`;
   }
 
@@ -73,16 +71,23 @@ export const makeTransparent = (rgb: string) => {
 };
 
 export const makeDarker = (rgb: string) => {
-  if (rgb.length > 7) { // already has a rgbA component
+  if (rgb.length > 7) {
+    // already has a rgbA component
     return `${rgb.slice(0, -2)}30`;
   }
 
   return `${rgb}11`;
 };
 
-export const revisionTooltip = (revision: UIWorkItemRevision, nextRevision: UIWorkItemRevision) => `
+export const revisionTooltip = (
+  revision: UIWorkItemRevision,
+  nextRevision: UIWorkItemRevision
+) => `
   <b>${revision.state} → ${nextRevision.state}</b><br />
-  ${prettyMilliseconds(new Date(nextRevision.date).getTime() - new Date(revision.date).getTime(), { unitCount: 2, verbose: true })}<br />
+  ${prettyMilliseconds(
+    new Date(nextRevision.date).getTime() - new Date(revision.date).getTime(),
+    { unitCount: 2, verbose: true }
+  )}<br />
   <div class="text-gray-400">
     ${mediumDate(new Date(revision.date))} → ${mediumDate(new Date(nextRevision.date))}
   </div>
@@ -97,12 +102,16 @@ export const rowItemTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => `
       </span>
       ${workItem.title}
     </div>
-    ${workItem.env ? (`
+    ${
+      workItem.env
+        ? `
       <div class="mt-2">
         <span class="font-bold">Environment: </span>
         ${workItem.env}
       </div>
-    `) : ''}
+    `
+        : ''
+    }
     <div class="mt-2">
       <span class="font-bold">Project: </span>
       ${workItem.project}

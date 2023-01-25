@@ -5,30 +5,30 @@ import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 
 const cronLog = debug('cron');
 
-export const runJob = (name: string, when: (time: typeof cronTime) => string, onTick: () => Promise<unknown>) => {
+export const runJob = (
+  name: string,
+  when: (time: typeof cronTime) => string,
+  onTick: () => Promise<unknown>
+) => {
   const timePattern = when(cronTime);
 
   cronLog('Setting up cron for', name, 'with pattern', timePattern);
-  const j = new CronJob(
-    timePattern,
-    async () => {
-      cronLog('Starting cron for', name);
-      try {
-        await onTick();
-        cronLog('Done cron for', name);
-      } catch (error) {
-        cronLog('Cron for ', name, 'FAILED', error);
-      }
+  const j = new CronJob(timePattern, async () => {
+    cronLog('Starting cron for', name);
+    try {
+      await onTick();
+      cronLog('Done cron for', name);
+    } catch (error) {
+      cronLog('Cron for ', name, 'FAILED', error);
     }
-  );
+  });
   j.start();
 };
 
 const timeSince = (date: Date) => Date.now() - date.getTime();
 
-const scheduleLine = (_: TemplateStringsArray, limit: number, frequency: number) => (
-  [limit, frequency] as const
-);
+const scheduleLine = (_: TemplateStringsArray, limit: number, frequency: number) =>
+  [limit, frequency] as const;
 
 type CreateScheduleArgs = {
   frequency: number;
@@ -59,6 +59,6 @@ export const shouldUpdate = createSchedule({
     s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
     s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
     s`Then till ${60 * oneDayInMs}, check every ${6 * oneDayInMs}.`,
-    s`Then till ${90 * oneDayInMs}, check every ${10 * oneDayInMs}.`
-  ]
+    s`Then till ${90 * oneDayInMs}, check every ${10 * oneDayInMs}.`,
+  ],
 });

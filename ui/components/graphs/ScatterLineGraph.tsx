@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import {
-  add, identity, map, range
-} from 'rambda';
-import React, {
-  Fragment, useCallback, useMemo
-} from 'react';
+import { add, identity, map, range } from 'rambda';
+import React, { Fragment, useCallback, useMemo } from 'react';
 import { asc, byNum } from 'sort-lib';
 import hexToHsl from '../../helpers/hex-to-hsl.js';
 import { prettyMS } from '../../helpers/utils.js';
@@ -33,12 +29,10 @@ type Group<T> = {
   pointColor?: (value: T) => string | null | undefined;
 };
 
-const valuesUsing = <T extends {}>(graphData: Group<T>[]) => (
-  graphData.flatMap(
-    ({ data, yAxisPoint }) => Object.values(data || {})
-      .flatMap(map(yAxisPoint))
-  )
-);
+const valuesUsing = <T extends {}>(graphData: Group<T>[]) =>
+  graphData.flatMap(({ data, yAxisPoint }) =>
+    Object.values(data || {}).flatMap(map(yAxisPoint))
+  );
 
 const median = (values: number[]) => {
   const sortedValues = [...values].sort(asc(byNum(identity)));
@@ -46,30 +40,30 @@ const median = (values: number[]) => {
   return sortedValues[middleIndex];
 };
 
-const groupWidth = <T extends {}>(x: Group<T>) => (
-  Object.values(x.data || {}).length * barSpacingInGroup
-);
+const groupWidth = <T extends {}>(x: Group<T>) =>
+  Object.values(x.data || {}).length * barSpacingInGroup;
 
-const graphWidth = <T extends {}>(groups: Group<T>[]) => (
+const graphWidth = <T extends {}>(groups: Group<T>[]) =>
   Object.values(groups)
     .map(groupWidth)
     .filter(width => width > 0)
-    .reduce((acc, curr) => acc + curr + groupSpacing, 0)
-  + yAxisLabelWidth
-  - groupSpacing
-  + graphBarXPadding
-);
+    .reduce((acc, curr) => acc + curr + groupSpacing, 0) +
+  yAxisLabelWidth -
+  groupSpacing +
+  graphBarXPadding;
 
-const xCoordForBarGroup = <T extends {}>(graphData: Group<T>[], group: Group<T>): number => (
+const xCoordForBarGroup = <T extends {}>(
+  graphData: Group<T>[],
+  group: Group<T>
+): number =>
   graphData
     .slice(0, graphData.indexOf(group))
     .map(groupWidth)
     .filter(width => width > 0)
-    .reduce((acc, curr) => acc + curr + groupSpacing, 0)
-  + (groupSpacing / 2)
-  + yAxisLabelWidth
-  + graphBarXPadding
-);
+    .reduce((acc, curr) => acc + curr + groupSpacing, 0) +
+  groupSpacing / 2 +
+  yAxisLabelWidth +
+  graphBarXPadding;
 
 const randomMap = new WeakMap();
 // Prevents shifting of data on re-render
@@ -90,7 +84,14 @@ type BarProps<T extends {}> = {
 };
 
 const Bar = <T extends {}>({
-  items, yAxisPoint, xCoord, tooltip, yCoord, pointColor, label, linkForItem
+  items,
+  yAxisPoint,
+  xCoord,
+  tooltip,
+  yCoord,
+  pointColor,
+  label,
+  linkForItem,
 }: BarProps<T>) => {
   const averageValueOfItems = items.length
     ? items.map(yAxisPoint).reduce(add, 0) / items.length
@@ -100,19 +101,17 @@ const Bar = <T extends {}>({
   return (
     <g>
       <foreignObject
-        x={xCoord - (xAxisLabelWidth / 2)}
+        x={xCoord - xAxisLabelWidth / 2}
         y={yCoord(0) + graphTopPadding}
         width={xAxisLabelWidth}
         height={xAxisLabelHeight}
       >
-        <div className="text-sm text-gray-700 text-center">
-          {`${label}`}
-        </div>
+        <div className="text-sm text-gray-700 text-center">{`${label}`}</div>
       </foreignObject>
       {items.map((item, index) => {
         const fillColorHSL = hexToHsl(pointColor?.(item) || '#197fe6');
         const fillColorWithJitter = `hsla(${
-          (Math.round(Math.random() * 30)) + (fillColorHSL[0] - 15)
+          Math.round(Math.random() * 30) + (fillColorHSL[0] - 15)
         }, 80%, 50%, 0.7)`;
         const yPoint = yAxisPoint(item);
 
@@ -120,7 +119,7 @@ const Bar = <T extends {}>({
           // eslint-disable-next-line react/no-array-index-key
           <a key={index} href={linkForItem(item)} target="_blank" rel="noreferrer">
             <circle
-              cx={(getRandom(item) * scatterWidth) + xCoord - (scatterWidth / 2)}
+              cx={getRandom(item) * scatterWidth + xCoord - scatterWidth / 2}
               cy={yCoord(yPoint)}
               r={bubbleSize}
               fill={fillColorWithJitter}
@@ -131,32 +130,30 @@ const Bar = <T extends {}>({
           </a>
         );
       })}
-      {items.length
-        ? (
-          <line
-            x1={xCoord - scatterWidth}
-            y1={yCoord(averageValueOfItems)}
-            x2={xCoord + scatterWidth}
-            y2={yCoord(averageValueOfItems)}
-            stroke="rgba(255,0,0,0.6)"
-            strokeWidth={5}
-            data-tip={`Average ${label}: ${prettyMS(averageValueOfItems)} of ${items.length} items`}
-          />
-        )
-        : null}
-      {items.length
-        ? (
-          <line
-            x1={xCoord - scatterWidth}
-            y1={yCoord(medianValue)}
-            x2={xCoord + scatterWidth}
-            y2={yCoord(medianValue)}
-            stroke="rgba(0,0,255,0.6)"
-            strokeWidth={5}
-            data-tip={`Median ${label}: ${prettyMS(medianValue)} of ${items.length} items`}
-          />
-        )
-        : null}
+      {items.length ? (
+        <line
+          x1={xCoord - scatterWidth}
+          y1={yCoord(averageValueOfItems)}
+          x2={xCoord + scatterWidth}
+          y2={yCoord(averageValueOfItems)}
+          stroke="rgba(255,0,0,0.6)"
+          strokeWidth={5}
+          data-tip={`Average ${label}: ${prettyMS(averageValueOfItems)} of ${
+            items.length
+          } items`}
+        />
+      ) : null}
+      {items.length ? (
+        <line
+          x1={xCoord - scatterWidth}
+          y1={yCoord(medianValue)}
+          x2={xCoord + scatterWidth}
+          y2={yCoord(medianValue)}
+          stroke="rgba(0,0,255,0.6)"
+          strokeWidth={5}
+          data-tip={`Median ${label}: ${prettyMS(medianValue)} of ${items.length} items`}
+        />
+      ) : null}
     </g>
   );
 };
@@ -170,35 +167,34 @@ type BarGroupProps<T extends {}> = {
 };
 
 const BarGroup = <T extends {}>({
-  group, xCoord, yCoord, linkForItem, pointToColor
+  group,
+  xCoord,
+  yCoord,
+  linkForItem,
+  pointToColor,
 }: BarGroupProps<T>) => (
   <g>
-    {Object.entries(group.data || {}).length > 1
-      ? (
-        <foreignObject
-          x={xCoord - (scatterWidth / 2)}
-          y={yCoord(0) + xAxisLabelHeight}
+    {Object.entries(group.data || {}).length > 1 ? (
+      <foreignObject
+        x={xCoord - scatterWidth / 2}
+        y={yCoord(0) + xAxisLabelHeight}
+        width={
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          width={((Object.entries(group.data!).length - 1) * (barSpacingInGroup + scatterWidth)) - (barSpacingInGroup / 2)}
-          height={xAxisLabelAreaHeight}
-        >
-          <div className="text-sm text-gray-700 text-center">
-            {group.label}
-          </div>
-        </foreignObject>
-      )
-      : null}
+          (Object.entries(group.data!).length - 1) * (barSpacingInGroup + scatterWidth) -
+          barSpacingInGroup / 2
+        }
+        height={xAxisLabelAreaHeight}
+      >
+        <div className="text-sm text-gray-700 text-center">{group.label}</div>
+      </foreignObject>
+    ) : null}
     {Object.entries(group.data || {}).map(([key, items], index) => (
       <Bar
         key={key}
         items={items}
-        label={
-          Object.entries(group.data || {}).length === 1
-            ? group.label
-            : key
-        }
+        label={Object.entries(group.data || {}).length === 1 ? group.label : key}
         yAxisPoint={group.yAxisPoint}
-        xCoord={xCoord + (barSpacingInGroup * index)}
+        xCoord={xCoord + barSpacingInGroup * index}
         yCoord={yCoord}
         pointColor={pointToColor}
         tooltip={group.tooltip}
@@ -235,7 +231,8 @@ const Axes: React.FC<AxesProps> = ({ width, maxValue, yCoord }) => (
       strokeWidth={1}
     />
     {range(0, gridLinesCount).map(gridLineIndex => {
-      const gridLineValue = (maxValue * (gridLinesCount - gridLineIndex)) / gridLinesCount;
+      const gridLineValue =
+        (maxValue * (gridLinesCount - gridLineIndex)) / gridLinesCount;
 
       return (
         <Fragment key={gridLineIndex}>
@@ -249,14 +246,12 @@ const Axes: React.FC<AxesProps> = ({ width, maxValue, yCoord }) => (
           />
           <foreignObject
             x={0}
-            y={yCoord(gridLineValue) - (yAxisLabelHeight / 2)}
+            y={yCoord(gridLineValue) - yAxisLabelHeight / 2}
             width={yAxisLabelWidth}
             height={yAxisLabelHeight}
           >
             <div className="text-right text-sm text-gray-700 pr-3">
-              {gridLineValue > 0
-                ? prettyMS(gridLineValue)
-                : '-'}
+              {gridLineValue > 0 ? prettyMS(gridLineValue) : '-'}
             </div>
           </foreignObject>
         </Fragment>
@@ -274,17 +269,28 @@ export type ScatterLineGraphProps<T> = {
 };
 
 const ScatterLineGraph = <T extends {}>({
-  graphData, height, linkForItem, className, pointColor
+  graphData,
+  height,
+  linkForItem,
+  className,
+  pointColor,
 }: ScatterLineGraphProps<T>): React.ReactElement => {
   const maxOfSpread = useMemo(() => Math.max(...valuesUsing(graphData)), [graphData]);
   const computedWidth = useMemo(() => graphWidth(graphData), [graphData]);
-  const yCoord = useCallback((value: number) => {
-    const availableHeight = graphHeight - xAxisLabelAreaHeight - graphTopPadding;
-    return availableHeight - ((value / maxOfSpread) * availableHeight) + graphTopPadding;
-  }, [maxOfSpread]);
+  const yCoord = useCallback(
+    (value: number) => {
+      const availableHeight = graphHeight - xAxisLabelAreaHeight - graphTopPadding;
+      return availableHeight - (value / maxOfSpread) * availableHeight + graphTopPadding;
+    },
+    [maxOfSpread]
+  );
 
   return (
-    <svg viewBox={`0 0 ${computedWidth} ${graphHeight}`} height={height} className={className}>
+    <svg
+      viewBox={`0 0 ${computedWidth} ${graphHeight}`}
+      height={height}
+      className={className}
+    >
       <Axes width={computedWidth} maxValue={maxOfSpread} yCoord={yCoord} />
       {graphData.map(group => (
         <BarGroup

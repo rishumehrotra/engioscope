@@ -1,7 +1,11 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 
-export default (data: string, type: string, fileName: string): React.HTMLProps<HTMLAnchorElement> => {
+export default (
+  data: string,
+  type: string,
+  fileName: string
+): React.HTMLProps<HTMLAnchorElement> => {
   const ref = useRef<string | null>(null);
 
   useEffect(() => {
@@ -15,6 +19,6 @@ export default (data: string, type: string, fileName: string): React.HTMLProps<H
 
   return {
     download: fileName,
-    href: ref.current || ''
+    href: ref.current || '',
   };
 };

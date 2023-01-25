@@ -8,9 +8,9 @@ body {
 
 .accordian-content {
   max-height: 0;
-  -webkit-transition: max-height .55s;
-  -o-transition: max-height .55s;
-  transition: max-height .55s;
+  -webkit-transition: max-height 0.55s;
+  -o-transition: max-height 0.55s;
+  transition: max-height 0.55s;
 }
 
 .max-width-full {
@@ -30,7 +30,7 @@ body {
 }
 
 .link-text {
-  @apply text-blue-600 hover:underline
+  @apply text-blue-600 hover:underline;
 }
 
 .nav-link {

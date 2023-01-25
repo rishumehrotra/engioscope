@@ -6,21 +6,18 @@ const useHover = <T extends HTMLElement>() => {
   const handleMouseOver = (): void => setValue(true);
   const handleMouseOut = (): void => setValue(false);
 
-  useEffect(
-    () => {
-      const node = ref.current;
-      if (!node) return;
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
 
-      node.addEventListener('mouseover', handleMouseOver);
-      node.addEventListener('mouseout', handleMouseOut);
+    node.addEventListener('mouseover', handleMouseOver);
+    node.addEventListener('mouseout', handleMouseOut);
 
-      return () => {
-        node.removeEventListener('mouseover', handleMouseOver);
-        node.removeEventListener('mouseout', handleMouseOut);
-      };
-    },
-    []
-  );
+    return () => {
+      node.removeEventListener('mouseover', handleMouseOver);
+      node.removeEventListener('mouseout', handleMouseOut);
+    };
+  }, []);
 
   return [ref, value] as const;
 };

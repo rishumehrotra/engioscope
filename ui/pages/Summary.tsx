@@ -11,7 +11,8 @@ import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { metricsSummary } from '../network.js';
 
-const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) => filterBySearch(search, group.groupName);
+const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) =>
+  filterBySearch(search, group.groupName);
 
 const threeMonthsAgo = (date: string) => {
   const d = new Date(date);
@@ -34,16 +35,18 @@ const Summary: React.FC = () => {
   useEffect(() => {
     setHeaderDetails({
       title: 'Metrics',
-      subtitle: metrics
-        ? (
-          <div className="text-base mt-2 font-normal text-gray-200">
-            <span className="text-lg font-bold">{shortDate(threeMonthsAgo(metrics.lastUpdateDate))}</span>
-            {' to '}
-            <span className="text-lg font-bold">{shortDate(new Date(metrics.lastUpdateDate))}</span>
-          </div>
-        )
-        : null,
-      lastUpdated: metrics?.lastUpdateDate
+      subtitle: metrics ? (
+        <div className="text-base mt-2 font-normal text-gray-200">
+          <span className="text-lg font-bold">
+            {shortDate(threeMonthsAgo(metrics.lastUpdateDate))}
+          </span>
+          {' to '}
+          <span className="text-lg font-bold">
+            {shortDate(new Date(metrics.lastUpdateDate))}
+          </span>
+        </div>
+      ) : null,
+      lastUpdated: metrics?.lastUpdateDate,
     });
   }, [metrics, setHeaderDetails]);
 
@@ -51,46 +54,45 @@ const Summary: React.FC = () => {
     <>
       <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
         <ChangeProgramNavBar
-          right={(
+          right={
             <div className="flex items-center">
-              <span className="inline-block pr-2 text-right uppercase text-xs font-semibold w-20">View by</span>
+              <span className="inline-block pr-2 text-right uppercase text-xs font-semibold w-20">
+                View by
+              </span>
               <Switcher
                 options={[
                   { label: 'Teams', value: 'teams' },
-                  { label: 'Metric', value: 'metric' }
+                  { label: 'Metric', value: 'metric' },
                 ]}
                 onChange={value => setShow(value === 'teams' ? undefined : value, true)}
                 value={show === undefined ? 'teams' : show}
               />
             </div>
-          )}
+          }
         />
       </div>
 
       <div className="mx-32">
-        {/* eslint-disable-next-line no-nested-ternary */}
-        {metrics
-          ? (
-            show
-              ? (
-                <SummaryByMetric
-                  groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-                  workItemTypes={metrics.workItemTypes}
-                  queryPeriodDays={queryPeriodDays}
-                />
-              ) : (
-                <SummaryByTeam
-                  groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-                  workItemTypes={metrics.workItemTypes}
-                  queryPeriodDays={queryPeriodDays}
-                />
-              )
+        {}
+        {metrics ? (
+          show ? (
+            <SummaryByMetric
+              groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
+              workItemTypes={metrics.workItemTypes}
+              queryPeriodDays={queryPeriodDays}
+            />
+          ) : (
+            <SummaryByTeam
+              groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
+              workItemTypes={metrics.workItemTypes}
+              queryPeriodDays={queryPeriodDays}
+            />
           )
-          : (
-            <div className="my-4">
-              <Loading />
-            </div>
-          )}
+        ) : (
+          <div className="my-4">
+            <Loading />
+          </div>
+        )}
       </div>
     </>
   );

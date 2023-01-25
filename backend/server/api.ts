@@ -25,8 +25,12 @@ export default (config: ParsedConfig) => {
 
   router.post('/api/ft', (req, res) => {
     req.pipe(createWriteStream(join(process.cwd(), 'ft.json')));
-    req.on('end', () => { res.send(202); });
-    req.on('error', () => { res.send(598); });
+    req.on('end', () => {
+      res.send(202);
+    });
+    req.on('error', () => {
+      res.send(598);
+    });
   });
 
   router.get('/api/cache', (req, res) => {
@@ -43,35 +47,44 @@ export default (config: ParsedConfig) => {
       return res.status(400).send('Missing id');
     }
 
-    const revisions = (await Promise.all(
-      ids
-        .split(',')
-        .map(async id => ({
-          [id]: toUIWorkItem(await getWorkItemRevisions(collectionName)(Number(id)))
+    const revisions = (
+      await Promise.all(
+        ids.split(',').map(async id => ({
+          [id]: toUIWorkItem(await getWorkItemRevisions(collectionName)(Number(id))),
         }))
-    )).reduce<Record<number, UIWorkItemRevision[]>>((acc, curr) => Object.assign(acc, curr), {});
+      )
+    ).reduce<Record<number, UIWorkItemRevision[]>>(
+      (acc, curr) => Object.assign(acc, curr),
+      {}
+    );
 
     res.status(200).send(revisions);
   });
 
-  router.get('/api/:collectionName/:projectName/release-definitions', async (req, res) => {
-    const { collectionName, projectName } = req.params;
-    const { ids } = req.query;
+  router.get(
+    '/api/:collectionName/:projectName/release-definitions',
+    async (req, res) => {
+      const { collectionName, projectName } = req.params;
+      const { ids } = req.query;
 
-    if (!ids || typeof ids !== 'string') {
-      return res.status(400).send('Missing id');
+      if (!ids || typeof ids !== 'string') {
+        return res.status(400).send('Missing id');
+      }
+
+      const releases = (
+        await Promise.all(
+          ids.split(',').map(async id => ({
+            [id]: formatReleaseDefinition(
+              (await getReleaseEnvironments(collectionName, projectName, Number(id))) ||
+                []
+            ),
+          }))
+        )
+      ).reduce<PipelineDefinitions>((acc, curr) => ({ ...acc, ...curr }), {});
+
+      res.status(200).send(releases);
     }
-
-    const releases = (await Promise.all(
-      ids
-        .split(',')
-        .map(async id => ({
-          [id]: formatReleaseDefinition((await getReleaseEnvironments(collectionName, projectName, Number(id))) || [])
-        }))
-    )).reduce<PipelineDefinitions>((acc, curr) => ({ ...acc, ...curr }), {});
-
-    res.status(200).send(releases);
-  });
+  );
 
   router.get('/api/*', async (req, res) => {
     const fileName = decodeURIComponent(req.path.replace('/api/', ''));

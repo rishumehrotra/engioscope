@@ -17,9 +17,8 @@ const getReportOutputPath = (html: string) => {
   const collectionUri = readFromHtml('SYSTEM_COLLECTIONURI');
 
   const collectionUriParts = collectionUri.split('/');
-  const collectionName = collectionUriParts[
-    collectionUriParts.length - (collectionUri.endsWith('/') ? 2 : 1)
-  ];
+  const collectionName =
+    collectionUriParts[collectionUriParts.length - (collectionUri.endsWith('/') ? 2 : 1)];
 
   const project = readFromHtml('SYSTEM_TEAMPROJECT');
   const repo = readFromHtml('BUILD_REPOSITORY_NAME');
@@ -28,7 +27,7 @@ const getReportOutputPath = (html: string) => {
 
   return [
     [process.cwd(), 'build-reports', collectionName, project, repo, pipelineId],
-    branch
+    branch,
   ] as const;
 };
 
@@ -39,7 +38,7 @@ const saveBuildReportToMongo = async (html: string) => {
   return saveBuildReport({
     ...rest,
     collectionName: collection,
-    repo: repoName
+    repo: repoName,
   });
 };
 

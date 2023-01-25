@@ -7,23 +7,26 @@ export const getReleaseDefinitions = async () => {
   const { getReleaseDefinitions, getReleaseDefinition } = azure(getConfig());
 
   await Promise.all(
-    collectionsAndProjects()
-      .map(([collection, project]) => (
-        getReleaseDefinitions(collection.name, project.name)
-          .then(async defns => Promise.all(
-            defns.map(d => (
-              getReleaseDefinition(collection.name, project.name, d.id)
-                .then(d => bulkSaveReleaseDefinitions(collection.name, project.name)([d]))
-                .catch(error => {
-                  if (error.message?.includes('404')) return;
-                  throw error;
-                })
-            ))
-          ))
-      ))
+    collectionsAndProjects().map(([collection, project]) =>
+      getReleaseDefinitions(collection.name, project.name).then(async defns =>
+        Promise.all(
+          defns.map(d =>
+            getReleaseDefinition(collection.name, project.name, d.id)
+              .then(d => bulkSaveReleaseDefinitions(collection.name, project.name)([d]))
+              .catch(error => {
+                if (error.message?.includes('404')) return;
+                throw error;
+              })
+          )
+        )
+      )
+    )
   );
 };
 
-export default () => (
-  runJob('fetching release definitions', t => t.everySundayAt(5, 30), getReleaseDefinitions)
-);
+export default () =>
+  runJob(
+    'fetching release definitions',
+    t => t.everySundayAt(5, 30),
+    getReleaseDefinitions
+  );

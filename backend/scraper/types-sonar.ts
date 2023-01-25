@@ -14,14 +14,16 @@ export type CodeQuality = {
 
 export type SonarQualityGate = 'OK' | 'ERROR' | 'WARN';
 
-export type SonarAnalysisByRepo = null | {
-  url: string;
-  name: string;
-  measures: Measure[];
-  lastAnalysisDate: Date | null;
-  qualityGateName: string;
-  qualityGateHistory: { date: Date; value: SonarQualityGate }[];
-}[];
+export type SonarAnalysisByRepo =
+  | null
+  | {
+      url: string;
+      name: string;
+      measures: Measure[];
+      lastAnalysisDate: Date | null;
+      qualityGateName: string;
+      qualityGateHistory: { date: Date; value: SonarQualityGate }[];
+    }[];
 
 export type SonarQualityGateDetails = {
   level: SonarQualityGate;

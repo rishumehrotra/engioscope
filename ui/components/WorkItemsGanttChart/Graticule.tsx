@@ -1,7 +1,10 @@
 import React from 'react';
 import { mediumDate } from '../../helpers/utils.js';
 import {
-  textWidth, barStartPadding, axisLabelsHeight, axisLabelsWidth
+  textWidth,
+  barStartPadding,
+  axisLabelsHeight,
+  axisLabelsWidth,
 } from './helpers.js';
 
 type GraticuleProps = {
@@ -21,14 +24,12 @@ export const Graticule: React.FC<GraticuleProps> = ({ height, date }) => (
       strokeDasharray="3,5"
     />
     <foreignObject
-      x={textWidth + barStartPadding - (axisLabelsWidth / 2)}
+      x={textWidth + barStartPadding - axisLabelsWidth / 2}
       y={height - axisLabelsHeight}
       width={axisLabelsWidth}
       height={axisLabelsHeight}
     >
-      <div className="text-xs text-gray-500 text-center">
-        {mediumDate(date)}
-      </div>
+      <div className="text-xs text-gray-500 text-center">{mediumDate(date)}</div>
     </foreignObject>
   </g>
 );

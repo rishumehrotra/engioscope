@@ -14,10 +14,8 @@ export const workItemTypeIconColor = (workItemType: WorkItemType) => {
   return iconColorCache.get(workItemType.icon.url)!;
 };
 
-export const workItemTypeId = (workItemType: WorkItemType) => (
-  md5(workItemType.name + workItemType.icon.id + workItemTypeIconColor(workItemType))
-);
+export const workItemTypeId = (workItemType: WorkItemType) =>
+  md5(workItemType.name + workItemType.icon.id + workItemTypeIconColor(workItemType));
 
-export const closedDate = (workItem: WorkItem) => (
-  workItem.fields['Microsoft.VSTS.Common.ClosedDate']
-);
+export const closedDate = (workItem: WorkItem) =>
+  workItem.fields['Microsoft.VSTS.Common.ClosedDate'];

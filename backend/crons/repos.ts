@@ -7,14 +7,12 @@ export const getRepositories = async () => {
   const { getRepositories } = azure(getConfig());
 
   await Promise.all(
-    collectionsAndProjects()
-      .map(([collection, project]) => (
-        getRepositories(collection.name, project.name)
-          .then(bulkSaveRepositories(collection.name))
-      ))
+    collectionsAndProjects().map(([collection, project]) =>
+      getRepositories(collection.name, project.name).then(
+        bulkSaveRepositories(collection.name)
+      )
+    )
   );
 };
 
-export default () => (
-  runJob('fetching repos', t => t.everyDayAt(22, 45), getRepositories)
-);
+export default () => runJob('fetching repos', t => t.everyDayAt(22, 45), getRepositories);

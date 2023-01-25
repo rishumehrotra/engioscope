@@ -1,10 +1,15 @@
-import {
-  always, head, last, pipe, prop
-} from 'rambda';
+import { always, head, last, pipe, prop } from 'rambda';
 import { asc, byNum } from 'sort-lib';
-import type { BranchPolicies, PipelineStage, ReleasePipelineStats } from '../../../shared/types.js';
+import type {
+  BranchPolicies,
+  PipelineStage,
+  ReleasePipelineStats,
+} from '../../../shared/types.js';
 import { exists } from '../../../shared/utils.js';
-import type { ReleaseCondition, ReleaseDefinitionEnvironment } from '../../models/release-definitions.js';
+import type {
+  ReleaseCondition,
+  ReleaseDefinitionEnvironment,
+} from '../../models/release-definitions.js';
 import type { Release } from '../../models/releases.js';
 import { isMaster, weeks } from '../../utils.js';
 import type { ParsedProjectConfig } from '../parse-config.js';
@@ -12,7 +17,7 @@ import type { EnvironmentStatus } from '../types-azure.js';
 
 const createCondition = (condition: ReleaseCondition) => ({
   type: condition.conditionType,
-  name: condition.name
+  name: condition.name,
 });
 
 type EnvDetails = {
@@ -32,7 +37,11 @@ type PipelineDetails = {
   attempts: {
     id: number;
     name: string;
-    reposAndBranches: Readonly<{ repoId: string; repoName: string; branchName: string }>[];
+    reposAndBranches: Readonly<{
+      repoId: string;
+      repoName: string;
+      branchName: string;
+    }>[];
     progression: {
       name: string;
       date: Date;
@@ -45,49 +54,56 @@ type PipelineDetails = {
 const barePipeline = (release: Release): PipelineDetails => ({
   definitionId: release.releaseDefinitionId,
   name: release.releaseDefinitionName,
-  url: release.releaseDefinitionUrl.replace('_apis/Release/definitions/', '_release?definitionId='),
+  url: release.releaseDefinitionUrl.replace(
+    '_apis/Release/definitions/',
+    '_release?definitionId='
+  ),
   envs: {},
-  attempts: []
+  attempts: [],
 });
 
-const getArtifactDetails = (release: Release) => (
-  release.artifacts.map(artifact => {
-    const repoName = artifact.definition?.repositoryName;
-    const repoId = artifact.definition?.repositoryId;
-    const branchName = artifact.definition?.branch;
-    if (!repoName || !repoId || !branchName) return;
-    return { repoName, repoId, branchName };
-  }).filter(exists)
-);
+const getArtifactDetails = (release: Release) =>
+  release.artifacts
+    .map(artifact => {
+      const repoName = artifact.definition?.repositoryName;
+      const repoId = artifact.definition?.repositoryId;
+      const branchName = artifact.definition?.branch;
+      if (!repoName || !repoId || !branchName) return;
+      return { repoName, repoId, branchName };
+    })
+    .filter(exists);
 
 export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
-  const combinedReleases = releases.reduce<Record<number, PipelineDetails>>((acc, release) => {
-    acc[release.releaseDefinitionId] = acc[release.releaseDefinitionId] || barePipeline(release);
+  const combinedReleases = releases.reduce<Record<number, PipelineDetails>>(
+    (acc, release) => {
+      acc[release.releaseDefinitionId] =
+        acc[release.releaseDefinitionId] || barePipeline(release);
 
-    acc[release.releaseDefinitionId].attempts.push({
-      id: release.id,
-      name: release.name,
-      reposAndBranches: getArtifactDetails(release),
-      progression: release.environments
-        .filter(env => env.status !== 'notStarted' && env.deploySteps?.length)
-        .map(env => ({
-          name: env.name,
-          rank: env.rank,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          date: last(env.deploySteps)!.lastModifiedOn,
-          state: env.status
-        }))
-        .filter(exists)
-        .sort(asc(byNum(prop('rank'))))
-    });
+      acc[release.releaseDefinitionId].attempts.push({
+        id: release.id,
+        name: release.name,
+        reposAndBranches: getArtifactDetails(release),
+        progression: release.environments
+          .filter(env => env.status !== 'notStarted' && env.deploySteps?.length)
+          .map(env => ({
+            name: env.name,
+            rank: env.rank,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            date: last(env.deploySteps)!.lastModifiedOn,
+            state: env.status,
+          }))
+          .filter(exists)
+          .sort(asc(byNum(prop('rank')))),
+      });
 
-    acc[release.releaseDefinitionId].envs = release.environments
-      .reduce<Record<string, EnvDetails>>((acc, env) => {
+      acc[release.releaseDefinitionId].envs = release.environments.reduce<
+        Record<string, EnvDetails>
+      >((acc, env) => {
         if (!acc[env.name]) {
           acc[env.name] = {
             name: env.name,
             conditions: env.conditions.map(createCondition),
-            rank: env.rank
+            rank: env.rank,
           };
         } else if (!acc[env.name].conditions.length) {
           acc[env.name].conditions = env.conditions.map(createCondition);
@@ -96,16 +112,17 @@ export const aggregateReleasesIntoPipelines = (releases: Release[]) => {
         return acc;
       }, acc[release.releaseDefinitionId].envs);
 
-    return acc;
-  }, {});
+      return acc;
+    },
+    {}
+  );
 
   return Object.values(combinedReleases).map(release => {
     const { envs, ...rest } = release;
 
     return {
       ...rest,
-      envs: Object.values(envs)
-        .sort(asc(byNum(prop('rank'))))
+      envs: Object.values(envs).sort(asc(byNum(prop('rank')))),
     };
   });
 };
@@ -114,9 +131,11 @@ const didAttemptGoAheadUsing = (
   pipeline: ReturnType<typeof aggregateReleasesIntoPipelines>[number],
   ignoreStagesBefore: string
 ) => {
-  const firstMatchingStage: EnvDetails | undefined = head(pipeline.envs.filter(
-    env => env.name.toLowerCase().includes(ignoreStagesBefore.toLowerCase())
-  ));
+  const firstMatchingStage: EnvDetails | undefined = head(
+    pipeline.envs.filter(env =>
+      env.name.toLowerCase().includes(ignoreStagesBefore.toLowerCase())
+    )
+  );
 
   if (!firstMatchingStage) return always(false);
 
@@ -136,12 +155,13 @@ const getReposAndBranches = (
     ? didAttemptGoAheadUsing(pipeline, ignoreStagesBefore)
     : always(true);
 
-  const isAttemptIn = (week: (d: Date) => boolean) => (attempt: (typeof pipeline)['attempts'][number]) => {
-    const lastProgression = last(attempt.progression);
-    if (!lastProgression) return false;
-    const attemptProgressionDate = lastProgression.date;
-    return week(attemptProgressionDate);
-  };
+  const isAttemptIn =
+    (week: (d: Date) => boolean) => (attempt: (typeof pipeline)['attempts'][number]) => {
+      const lastProgression = last(attempt.progression);
+      if (!lastProgression) return false;
+      const attemptProgressionDate = lastProgression.date;
+      return week(attemptProgressionDate);
+    };
 
   const isAttemptFromMaster = (attempt: (typeof pipeline)['attempts'][number]) => {
     if (attempt.reposAndBranches.length === 0) return false;
@@ -150,69 +170,82 @@ const getReposAndBranches = (
 
   const masterOnlyReleasesByWeek = weeks
     .map(week => pipeline.attempts.filter(isAttemptIn(week)))
-    .map(attempts => (
-      attempts.reduce((acc, attempt) => {
-        acc.total += 1;
-        acc.master += isAttemptFromMaster(attempt) ? 1 : 0;
-        return acc;
-      }, { total: 0, master: 0 })
-    ));
+    .map(attempts =>
+      attempts.reduce(
+        (acc, attempt) => {
+          acc.total += 1;
+          acc.master += isAttemptFromMaster(attempt) ? 1 : 0;
+          return acc;
+        },
+        { total: 0, master: 0 }
+      )
+    );
 
   const { repos, stageInfo, attempts } = pipeline.attempts.reduce<{
-    repos: Record<string, { name: string; branches: Set<string>; additionalBranches: Set<string> }>;
+    repos: Record<
+      string,
+      { name: string; branches: Set<string>; additionalBranches: Set<string> }
+    >;
     stageInfo: Map<string, { successful: number; total: number }>;
-    attempts: { total: number; master: number; byWeek: { total: number; master: number }[] };
-  }>((acc, attempt) => {
-    const attemptWentAhead = didAttemptGoAhead(attempt);
+    attempts: {
+      total: number;
+      master: number;
+      byWeek: { total: number; master: number }[];
+    };
+  }>(
+    (acc, attempt) => {
+      const attemptWentAhead = didAttemptGoAhead(attempt);
 
-    attempt.reposAndBranches.forEach(({ repoId, repoName, branchName }) => {
-      acc.repos[repoId] = acc.repos[repoId] || {
-        name: repoName,
-        branches: new Set(),
-        additionalBranches: new Set()
-      };
+      attempt.reposAndBranches.forEach(({ repoId, repoName, branchName }) => {
+        acc.repos[repoId] = acc.repos[repoId] || {
+          name: repoName,
+          branches: new Set(),
+          additionalBranches: new Set(),
+        };
+
+        if (attemptWentAhead) {
+          acc.repos[repoId].branches.add(branchName);
+          acc.repos[repoId].additionalBranches.delete(branchName);
+        } else if (!acc.repos[repoId].branches.has(branchName)) {
+          acc.repos[repoId].additionalBranches.add(branchName);
+        }
+      });
+
+      attempt.progression.forEach(stage => {
+        const stageInfo = acc.stageInfo.get(stage.name) || { successful: 0, total: 0 };
+
+        stageInfo.total += 1;
+        if (stage.state === 'succeeded') stageInfo.successful += 1;
+
+        acc.stageInfo.set(stage.name, stageInfo);
+      });
 
       if (attemptWentAhead) {
-        acc.repos[repoId].branches.add(branchName);
-        acc.repos[repoId].additionalBranches.delete(branchName);
-      } else if (!acc.repos[repoId].branches.has(branchName)) {
-        acc.repos[repoId].additionalBranches.add(branchName);
+        acc.attempts.total += 1;
+        if (isAttemptFromMaster(attempt)) acc.attempts.master += 1;
       }
-    });
 
-    attempt.progression.forEach(stage => {
-      const stageInfo = acc.stageInfo.get(stage.name) || { successful: 0, total: 0 };
-
-      stageInfo.total += 1;
-      if (stage.state === 'succeeded') stageInfo.successful += 1;
-
-      acc.stageInfo.set(stage.name, stageInfo);
-    });
-
-    if (attemptWentAhead) {
-      acc.attempts.total += 1;
-      if (isAttemptFromMaster(attempt)) acc.attempts.master += 1;
+      return acc;
+    },
+    {
+      repos: {},
+      stageInfo: new Map(),
+      attempts: { total: 0, master: 0, byWeek: masterOnlyReleasesByWeek },
     }
-
-    return acc;
-  }, {
-    repos: {},
-    stageInfo: new Map(),
-    attempts: { total: 0, master: 0, byWeek: masterOnlyReleasesByWeek }
-  });
+  );
 
   return {
-    repos: Object.entries(repos).reduce<Record<string, { name: string; branches: string[]; additionalBranches?: string[] }>>(
-      (acc, [repoId, { name, branches, additionalBranches }]) => {
-        acc[repoId] = {
-          name,
-          branches: [...branches],
-          additionalBranches: additionalBranches.size > 0 ? [...additionalBranches] : undefined
-        };
-        return acc;
-      },
-      {}
-    ),
+    repos: Object.entries(repos).reduce<
+      Record<string, { name: string; branches: string[]; additionalBranches?: string[] }>
+    >((acc, [repoId, { name, branches, additionalBranches }]) => {
+      acc[repoId] = {
+        name,
+        branches: [...branches],
+        additionalBranches:
+          additionalBranches.size > 0 ? [...additionalBranches] : undefined,
+      };
+      return acc;
+    }, {}),
     attempts,
     stageCounts: pipeline.envs
       .filter(({ name }) => stageInfo.has(name))
@@ -220,8 +253,8 @@ const getReposAndBranches = (
       .map(stage => ({
         name: stage.name,
         successful: stageInfo.get(stage.name)?.successful || 0,
-        total: stageInfo.get(stage.name)?.total || 0
-      }))
+        total: stageInfo.get(stage.name)?.total || 0,
+      })),
   };
 };
 
@@ -231,34 +264,37 @@ export default (
   policyConfigurationByRepoId: (repoId: string, branch: string) => BranchPolicies
 ): ReleasePipelineStats => {
   const { ignoreStagesBefore } = projectConfig.releasePipelines;
-  const pipelines = aggregateReleasesIntoPipelines(releases)
-    .map(pipeline => ({
-      id: pipeline.definitionId,
-      name: pipeline.name,
-      url: pipeline.url,
-      ...getReposAndBranches(pipeline, ignoreStagesBefore)
-    }));
+  const pipelines = aggregateReleasesIntoPipelines(releases).map(pipeline => ({
+    id: pipeline.definitionId,
+    name: pipeline.name,
+    url: pipeline.url,
+    ...getReposAndBranches(pipeline, ignoreStagesBefore),
+  }));
 
-  const policies = pipelines.reduce<Record<string, Record<string, BranchPolicies>>>((acc, pipeline) => {
-    Object.entries(pipeline.repos).forEach(([repoId, { branches, additionalBranches }]) => {
-      [...branches, ...(additionalBranches || [])].forEach(branch => {
-        acc[repoId] = acc[repoId] || {};
-        acc[repoId][branch] = policyConfigurationByRepoId(repoId, branch);
-      });
-    });
+  const policies = pipelines.reduce<Record<string, Record<string, BranchPolicies>>>(
+    (acc, pipeline) => {
+      Object.entries(pipeline.repos).forEach(
+        ([repoId, { branches, additionalBranches }]) => {
+          [...branches, ...(additionalBranches || [])].forEach(branch => {
+            acc[repoId] = acc[repoId] || {};
+            acc[repoId][branch] = policyConfigurationByRepoId(repoId, branch);
+          });
+        }
+      );
 
-    return acc;
-  }, {});
+      return acc;
+    },
+    {}
+  );
 
   return { pipelines, policies };
 };
 
-export const formatReleaseDefinition = (environments: ReleaseDefinitionEnvironment[]): PipelineStage[] => (
-  environments
-    .sort(asc(byNum(prop('rank'))))
-    .map(env => ({
-      name: env.name,
-      rank: env.rank,
-      conditions: env.conditions.map(createCondition)
-    }))
-);
+export const formatReleaseDefinition = (
+  environments: ReleaseDefinitionEnvironment[]
+): PipelineStage[] =>
+  environments.sort(asc(byNum(prop('rank')))).map(env => ({
+    name: env.name,
+    rank: env.rank,
+    conditions: env.conditions.map(createCondition),
+  }));

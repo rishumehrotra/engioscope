@@ -10,7 +10,7 @@ const ReleasePipelines2: React.FC = () => {
   const filters = useReleaseFilters();
   useRemoveSort();
   const query = trpc.releases.paginatedReleases.useInfiniteQuery(filters, {
-    getNextPageParam: lastPage => lastPage.nextCursor
+    getNextPageParam: lastPage => lastPage.nextCursor,
   });
 
   return (

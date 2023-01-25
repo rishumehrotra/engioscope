@@ -20,7 +20,7 @@ export const useQueryPeriod = () => {
     queryPeriod: [
       queryPeriodStart,
       startOfDay,
-      Intl.DateTimeFormat().resolvedOptions().timeZone
-    ] as [Date, Date, string]
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    ] as [Date, Date, string],
   };
 };

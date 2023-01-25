@@ -16,7 +16,10 @@ import { combinedQualityGateStatus } from '../components/code-quality-utils.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
 import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
 import useQueryParam, {
-  asBoolean, asNumber, asString, asStringArray
+  asBoolean,
+  asNumber,
+  asString,
+  asStringArray,
 } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
@@ -28,20 +31,19 @@ const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   return 1;
 };
 
-const bySearch = (search: string) => (repo: RepoAnalysis) => filterBySearch(search, repo.name);
+const bySearch = (search: string) => (repo: RepoAnalysis) =>
+  filterBySearch(search, repo.name);
 const byCommitsGreaterThanZero = (repo: RepoAnalysis) => repo.commits.count;
 const byBuildsGreaterThanZero = (repo: RepoAnalysis) => numberOfBuilds(repo) > 0;
-const byFailingLastBuilds = (repo: RepoAnalysis) => (
-  repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded')
-);
-const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) => (
+const byFailingLastBuilds = (repo: RepoAnalysis) =>
+  repo.builds?.pipelines.some(pipeline => pipeline.status.type !== 'succeeded');
+const byTechDebtMoreThanDays = (techDebtMoreThanDays: number) => (repo: RepoAnalysis) =>
   repo.codeQuality?.some(
     q => (q.maintainability.techDebt || 0) / (24 * 60) > techDebtMoreThanDays
-  )
-);
-const bySelectedGroups = (groupNames: string[], groups: Record<string, string[]>) => (repo: RepoAnalysis) => (
-  groupNames.some(groupName => (groups[groupName] || []).includes(repo.name))
-);
+  );
+const bySelectedGroups =
+  (groupNames: string[], groups: Record<string, string[]>) => (repo: RepoAnalysis) =>
+    groupNames.some(groupName => (groups[groupName] || []).includes(repo.name));
 
 const sorters: SortMap<RepoAnalysis> = {
   'Builds': (a, b) => numberOfBuilds(a) - numberOfBuilds(b),
@@ -49,7 +51,8 @@ const sorters: SortMap<RepoAnalysis> = {
   'Commits': (a, b) => a.commits.count - b.commits.count,
   'Pull requests': (a, b) => a.prs.total - b.prs.total,
   'Tests': (a, b) => numberOfTests(a) - numberOfTests(b),
-  'Code quality': (a, b) => qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality)
+  'Code quality': (a, b) =>
+    qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality),
 };
 
 const Repos: React.FC = () => {
@@ -61,7 +64,10 @@ const Repos: React.FC = () => {
   const [buildsGreaterThanZero] = useQueryParam('buildsGreaterThanZero', asBoolean);
   const [withFailingLastBuilds] = useQueryParam('withFailingLastBuilds', asBoolean);
   const [techDebtMoreThanDays] = useQueryParam('techDebtGreaterThan', asNumber);
-  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam('group', asStringArray);
+  const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
+    'group',
+    asStringArray
+  );
 
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
@@ -76,56 +82,69 @@ const Repos: React.FC = () => {
       .filter(commitsGreaterThanZero ? byCommitsGreaterThanZero : dontFilter)
       .filter(buildsGreaterThanZero ? byBuildsGreaterThanZero : dontFilter)
       .filter(withFailingLastBuilds ? byFailingLastBuilds : dontFilter)
-      .filter(techDebtMoreThanDays === undefined ? dontFilter : byTechDebtMoreThanDays(techDebtMoreThanDays))
       .filter(
-        (!selectedGroupLabels || selectedGroupLabels?.length === 0 || !projectAnalysis.groups?.groups)
+        techDebtMoreThanDays === undefined
           ? dontFilter
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          : bySelectedGroups(selectedGroupLabels, projectAnalysis.groups!.groups)
+          : byTechDebtMoreThanDays(techDebtMoreThanDays)
+      )
+      .filter(
+        !selectedGroupLabels ||
+          selectedGroupLabels?.length === 0 ||
+          !projectAnalysis.groups?.groups
+          ? dontFilter
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            bySelectedGroups(selectedGroupLabels, projectAnalysis.groups!.groups)
       )
       .sort(sorter);
   }, [
-    buildsGreaterThanZero, commitsGreaterThanZero, projectAnalysis, search,
-    selectedGroupLabels, sorter, techDebtMoreThanDays, withFailingLastBuilds
+    buildsGreaterThanZero,
+    commitsGreaterThanZero,
+    projectAnalysis,
+    search,
+    selectedGroupLabels,
+    sorter,
+    techDebtMoreThanDays,
+    withFailingLastBuilds,
   ]);
 
-  const showRepo = useCallback((repo: RepoAnalysis, index: number) => {
-    if (aggregatedDevs === 'loading' || projectAnalysis === 'loading') return null;
+  const showRepo = useCallback(
+    (repo: RepoAnalysis, index: number) => {
+      if (aggregatedDevs === 'loading' || projectAnalysis === 'loading') return null;
 
-    return (
-      <RepoHealth
-        repo={repo}
-        aggregatedDevs={aggregatedDevs}
-        isFirst={index === 0}
-        queryPeriodDays={queryPeriodDays}
-        featureToggles={projectAnalysis.featureToggles.filter(
-          ft => ft.repoIds.includes(repo.id)
-        )}
-      />
-    );
-  }, [aggregatedDevs, projectAnalysis, queryPeriodDays]);
+      return (
+        <RepoHealth
+          repo={repo}
+          aggregatedDevs={aggregatedDevs}
+          isFirst={index === 0}
+          queryPeriodDays={queryPeriodDays}
+          featureToggles={projectAnalysis.featureToggles.filter(ft =>
+            ft.repoIds.includes(repo.id)
+          )}
+        />
+      );
+    },
+    [aggregatedDevs, projectAnalysis, queryPeriodDays]
+  );
 
   if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
 
   return repos.length ? (
     <>
-      {projectAnalysis.groups?.groups
-        ? (
-          <div className="mb-6">
-            <MultiSelectDropdownWithLabel
-              label={projectAnalysis.groups.label}
-              options={
-                Object.keys(projectAnalysis.groups.groups)
-                  .map(groupName => ({ value: groupName, label: groupName }))
-              }
-              value={selectedGroupLabels || []}
-              onChange={x => {
-                setSelectedGroupLabels(x.length === 0 ? undefined : x);
-              }}
-            />
-          </div>
-        )
-        : null}
+      {projectAnalysis.groups?.groups ? (
+        <div className="mb-6">
+          <MultiSelectDropdownWithLabel
+            label={projectAnalysis.groups.label}
+            options={Object.keys(projectAnalysis.groups.groups).map(groupName => ({
+              value: groupName,
+              label: groupName,
+            }))}
+            value={selectedGroupLabels || []}
+            onChange={x => {
+              setSelectedGroupLabels(x.length === 0 ? undefined : x);
+            }}
+          />
+        </div>
+      ) : null}
       <AppliedFilters type="repos" count={repos.length} />
       <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
       <InfiniteScrollList
@@ -134,8 +153,9 @@ const Repos: React.FC = () => {
         itemRenderer={showRepo}
       />
     </>
-  ) : <AlertMessage message="No repos found" />;
+  ) : (
+    <AlertMessage message="No repos found" />
+  );
 };
 
 export default Repos;
-

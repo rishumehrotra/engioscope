@@ -1,8 +1,10 @@
-import React, {
-  useCallback, useMemo, useState
-} from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import type { ProjectWorkItemAnalysis, UIWorkItem, UIWorkItemRevision } from '../../shared/types.js';
+import type {
+  ProjectWorkItemAnalysis,
+  UIWorkItem,
+  UIWorkItemRevision,
+} from '../../shared/types.js';
 import { workItemMetrics, workItemRevisions } from '../network.js';
 import { createPalette, dontFilter } from '../helpers/utils.js';
 import WorkItem from '../components/WorkItemHealth.js';
@@ -15,44 +17,72 @@ import InfiniteScrollList from '../components/common/InfiniteScrollList.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
 
 const colorForStage = createPalette([
-  '#2ab7ca', '#fed766', '#0e9aa7', '#3da4ab',
-  '#f6cd61', '#fe8a71', '#96ceb4', '#ffeead',
-  '#ff6f69', '#ffcc5c', '#88d8b0', '#a8e6cf',
-  '#dcedc1', '#ffd3b6', '#ffaaa5', '#ff8b94',
-  '#00b159', '#00aedb', '#f37735', '#ffc425',
-  '#edc951', '#eb6841', '#00a0b0', '#fe4a49'
+  '#2ab7ca',
+  '#fed766',
+  '#0e9aa7',
+  '#3da4ab',
+  '#f6cd61',
+  '#fe8a71',
+  '#96ceb4',
+  '#ffeead',
+  '#ff6f69',
+  '#ffcc5c',
+  '#88d8b0',
+  '#a8e6cf',
+  '#dcedc1',
+  '#ffd3b6',
+  '#ffaaa5',
+  '#ff8b94',
+  '#00b159',
+  '#00aedb',
+  '#f37735',
+  '#ffc425',
+  '#edc951',
+  '#eb6841',
+  '#00a0b0',
+  '#fe4a49',
 ]);
 
-const bySearchTerm = (searchTerm: string) => (workItem: UIWorkItem) => (
-  (`${workItem.id}: ${workItem.title}`).toLowerCase().includes(searchTerm.toLowerCase())
-);
+const bySearchTerm = (searchTerm: string) => (workItem: UIWorkItem) =>
+  `${workItem.id}: ${workItem.title}`.toLowerCase().includes(searchTerm.toLowerCase());
 
 const sorters = (childrenCount: (id: number) => number): SortMap<UIWorkItem> => ({
-  'Bundle size': (a, b) => childrenCount(a.id) - childrenCount(b.id)
+  'Bundle size': (a, b) => childrenCount(a.id) - childrenCount(b.id),
 });
 
 const useRevisionsForCollection = () => {
   const { collection } = useParams<{ collection: string }>();
-  const [revisions, setRevisions] = useState<Record<string, 'loading' | UIWorkItemRevision[]>>({});
+  const [revisions, setRevisions] = useState<
+    Record<string, 'loading' | UIWorkItemRevision[]>
+  >({});
 
-  const getRevisions = useCallback((workItemIds: number[]) => {
-    const needToFetch = workItemIds.filter(id => !revisions[id]);
+  const getRevisions = useCallback(
+    (workItemIds: number[]) => {
+      const needToFetch = workItemIds.filter(id => !revisions[id]);
 
-    setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: 'loading' }), rs));
+      setRevisions(rs =>
+        needToFetch.reduce((rs, id) => ({ ...rs, [id]: 'loading' }), rs)
+      );
 
-    if (!needToFetch.length) return;
+      if (!needToFetch.length) return;
 
-    // TODO: Error handling
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-floating-promises
-    workItemRevisions(collection!, [...new Set(needToFetch)]).then(revisions => {
-      setRevisions(rs => needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs));
-    });
-  }, [collection, revisions]);
+      // TODO: Error handling
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-floating-promises
+      workItemRevisions(collection!, [...new Set(needToFetch)]).then(revisions => {
+        setRevisions(rs =>
+          needToFetch.reduce((rs, id) => ({ ...rs, [id]: revisions[id] }), rs)
+        );
+      });
+    },
+    [collection, revisions]
+  );
 
   return [revisions, getRevisions] as const;
 };
 
-const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({ workItemAnalysis }) => {
+const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }> = ({
+  workItemAnalysis,
+}) => {
   const [revisions, getRevisions] = useRevisionsForCollection();
   const [search] = useQueryParam('search', asString);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -66,10 +96,7 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
 
   const sorter = useSort(sorterMap, 'Bundle size');
 
-  const workItemById = useCallback(
-    (id: number) => workItems.byId[id],
-    [workItems.byId]
-  );
+  const workItemById = useCallback((id: number) => workItems.byId[id], [workItems.byId]);
 
   const filteredWorkItems = useMemo(() => {
     const { workItems } = workItemAnalysis;
@@ -82,26 +109,34 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
       .sort(sorter);
   }, [search, sorter, workItemAnalysis, workItemById]);
 
-  const workItemType = useCallback((workItem: UIWorkItem) => (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    workItemAnalysis.workItems!.types[workItem.typeId]
-  ), [workItemAnalysis]);
+  const workItemType = useCallback(
+    (workItem: UIWorkItem) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      workItemAnalysis.workItems!.types[workItem.typeId],
+    [workItemAnalysis]
+  );
 
-  const setRenderedWorkItems = useCallback((workItems: UIWorkItem[]) => {
-    getRevisions(workItems.map(({ id }) => id));
-  }, [getRevisions]);
+  const setRenderedWorkItems = useCallback(
+    (workItems: UIWorkItem[]) => {
+      getRevisions(workItems.map(({ id }) => id));
+    },
+    [getRevisions]
+  );
 
-  const showWorkItem = useCallback((workItem: UIWorkItem) => (
-    <WorkItem
-      workItemId={workItem.id}
-      workItemsById={workItems.byId}
-      workItemsIdTree={workItems.ids}
-      workItemType={workItemType}
-      colorForStage={colorForStage}
-      revisions={revisions}
-      getRevisions={getRevisions}
-    />
-  ), [getRevisions, revisions, workItemType, workItems.byId, workItems.ids]);
+  const showWorkItem = useCallback(
+    (workItem: UIWorkItem) => (
+      <WorkItem
+        workItemId={workItem.id}
+        workItemsById={workItems.byId}
+        workItemsIdTree={workItems.ids}
+        workItemType={workItemType}
+        colorForStage={colorForStage}
+        revisions={revisions}
+        getRevisions={getRevisions}
+      />
+    ),
+    [getRevisions, revisions, workItemType, workItems.byId, workItems.ids]
+  );
 
   return (
     <>

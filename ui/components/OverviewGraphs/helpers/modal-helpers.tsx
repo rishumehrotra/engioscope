@@ -1,15 +1,16 @@
 import { prop } from 'rambda';
 import type { ReactNode } from 'react';
-import React, {
-  useMemo, useCallback, useState
-} from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import ReactTooltip from 'react-tooltip';
 import { asc, byDate } from 'sort-lib';
 import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types.js';
 import { divide } from '../../../../shared/utils.js';
 import { trpc } from '../../../helpers/trpc.js';
 import {
-  contrastColour, prettyMS, priorityBasedColor, shortDate
+  contrastColour,
+  prettyMS,
+  priorityBasedColor,
+  shortDate,
 } from '../../../helpers/utils.js';
 import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
 import { modalHeading, useModal } from '../../common/Modal.js';
@@ -25,20 +26,28 @@ export type ModalArgs = {
 
 export const useModalHelper = () => {
   const [Modal, modalProps, open] = useModal();
-  const [modalState, setModalState] = useState<ModalArgs>(
-    { heading: null, subheading: null, body: null }
+  const [modalState, setModalState] = useState<ModalArgs>({
+    heading: null,
+    subheading: null,
+    body: null,
+  });
+
+  const fullModalProps = useMemo(
+    () => ({
+      ...modalProps,
+      heading: modalHeading(modalState.heading, modalState.subheading),
+      children: modalState.body,
+    }),
+    [modalProps, modalState.body, modalState.heading, modalState.subheading]
   );
 
-  const fullModalProps = useMemo(() => ({
-    ...modalProps,
-    heading: modalHeading(modalState.heading, modalState.subheading),
-    children: modalState.body
-  }), [modalProps, modalState.body, modalState.heading, modalState.subheading]);
-
-  const openModal = useCallback((x: ModalArgs) => {
-    setModalState(x);
-    open();
-  }, [open]);
+  const openModal = useCallback(
+    (x: ModalArgs) => {
+      setModalState(x);
+      open();
+    },
+    [open]
+  );
 
   return [Modal, fullModalProps, openModal] as const;
 };
@@ -51,7 +60,10 @@ type WorkItemLinkForModalProps = {
 };
 
 export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({
-  workItem, workItemType, flairs = [], tooltip
+  workItem,
+  workItemType,
+  flairs = [],
+  tooltip,
 }) => (
   <a
     href={workItem.url}
@@ -72,8 +84,11 @@ export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({
       {': '}
       {workItem.title}
       {flairs.map((flair, index) => (
-        // eslint-disable-next-line react/no-array-index-key
-        <span key={index} className="ml-3 rounded-full bg-gray-200 px-3 py-1 text-sm no-underline self-end -mb-1">
+        <span
+          // eslint-disable-next-line react/no-array-index-key
+          key={index}
+          className="ml-3 rounded-full bg-gray-200 px-3 py-1 text-sm no-underline self-end -mb-1"
+        >
           {flair}
         </span>
       ))}
@@ -86,11 +101,18 @@ type WorkItemFlatListProps = {
   workItemType: UIWorkItemType;
   flairs?: (workItem: UIWorkItem) => ReactNode[];
   extra?: (workItem: UIWorkItem) => ReactNode;
-  tooltip?: (workItem: UIWorkItem, additionalSections?: { label: string; value: string | number }[]) => string;
+  tooltip?: (
+    workItem: UIWorkItem,
+    additionalSections?: { label: string; value: string | number }[]
+  ) => string;
 };
 
 export const WorkItemFlatList: React.FC<WorkItemFlatListProps> = ({
-  workItems, workItemType, flairs, extra, tooltip
+  workItems,
+  workItemType,
+  flairs,
+  extra,
+  tooltip,
 }) => (
   <ul>
     {workItems.map(workItem => (
@@ -108,15 +130,25 @@ export const WorkItemFlatList: React.FC<WorkItemFlatListProps> = ({
 );
 
 type WorkItemsNestedProps = {
-  workItems: { heading: { label: string; flair?: string; flairColor?: string }; workItems: UIWorkItem[] }[];
+  workItems: {
+    heading: { label: string; flair?: string; flairColor?: string };
+    workItems: UIWorkItem[];
+  }[];
   accessors: WorkItemAccessors;
   flairs?: (workItem: UIWorkItem) => ReactNode[];
   extra?: (workItem: UIWorkItem) => ReactNode;
-  tooltip?: (workItem: UIWorkItem, additionalSections?: { label: string; value: string | number }[]) => string;
+  tooltip?: (
+    workItem: UIWorkItem,
+    additionalSections?: { label: string; value: string | number }[]
+  ) => string;
 };
 
 export const WorkItemsNested: React.FC<WorkItemsNestedProps> = ({
-  workItems, accessors, flairs, extra, tooltip
+  workItems,
+  accessors,
+  flairs,
+  extra,
+  tooltip,
 }) => (
   <ul>
     {workItems.map(({ heading, workItems }) => (
@@ -128,7 +160,7 @@ export const WorkItemsNested: React.FC<WorkItemsNestedProps> = ({
               className="text-base inline-block ml-2 px-3 rounded-full"
               style={{
                 color: contrastColour(heading.flairColor || '#888'),
-                backgroundColor: heading.flairColor || '#888'
+                backgroundColor: heading.flairColor || '#888',
               }}
             >
               {heading.flair}
@@ -148,18 +180,20 @@ export const WorkItemsNested: React.FC<WorkItemsNestedProps> = ({
             </li>
           ))}
         </ul>
-
       </li>
     ))}
   </ul>
 );
 
 export const workItemSubheading = (
-  witId: string, groupName: string,
-  workItems: UIWorkItem[], workItemType: WorkItemAccessors['workItemType']
-) => (
-  `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `/ ${groupName}`} (${workItems.length})`
-);
+  witId: string,
+  groupName: string,
+  workItems: UIWorkItem[],
+  workItemType: WorkItemAccessors['workItemType']
+) =>
+  `${workItemType(witId).name[1]} ${groupName === noGroup ? '' : `/ ${groupName}`} (${
+    workItems.length
+  })`;
 
 const useWorkItemType = (workItemType: string) => {
   const cnp = useCollectionAndProject();
@@ -175,20 +209,24 @@ type TooltipSectionProps = {
 };
 
 const TooltipSection: React.FC<TooltipSectionProps> = ({
-  label, value, graphValue, width
+  label,
+  value,
+  graphValue,
+  width,
 }) => (
   <div className={width === 2 ? 'col-span-2' : ''}>
     {label}
-    <div className="font-semibold">
-      {value}
-    </div>
-    {graphValue !== undefined && graphValue <= 1
-      ? (
-        <div className="rounded-md bg-gray-500 mt-1 h-1.5 w-full">
-          <div className="bg-gray-300 h-1.5 rounded-md" style={{ width: `${graphValue * 100}%` }} />
-        </div>
-      )
-      : ''}
+    <div className="font-semibold">{value}</div>
+    {graphValue !== undefined && graphValue <= 1 ? (
+      <div className="rounded-md bg-gray-500 mt-1 h-1.5 w-full">
+        <div
+          className="bg-gray-300 h-1.5 rounded-md"
+          style={{ width: `${graphValue * 100}%` }}
+        />
+      </div>
+    ) : (
+      ''
+    )}
   </div>
 );
 
@@ -200,7 +238,10 @@ type WorkItemLinkForModalv2Props = {
 };
 
 const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
-  id, url, workItemType, title
+  id,
+  url,
+  workItemType,
+  title,
 }) => {
   const domId = `wi-${id}`;
   const { collectionName } = useCollectionAndProject();
@@ -209,11 +250,13 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
   const tooltipData = trpc.workItems.workItemForTooltip.useQuery(
     { collectionName, id },
     {
-      enabled: hasHovered
+      enabled: hasHovered,
     }
   );
 
-  const onHover = useCallback(() => { setHasHovered(true); }, []);
+  const onHover = useCallback(() => {
+    setHasHovered(true);
+  }, []);
 
   return (
     <>
@@ -245,9 +288,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
             height="14"
             className="inline -mt-1 mr-2"
           />
-          <strong>
-            {`${id}: ${title}`}
-          </strong>
+          <strong>{`${id}: ${title}`}</strong>
 
           {tooltipData.data ? (
             <div className="grid grid-cols-2 gap-4 my-3">
@@ -258,30 +299,26 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
                 />
               ) : null}
               {tooltipData.data.state ? (
-                <TooltipSection
-                  label="Currently"
-                  value={tooltipData.data.state}
-                />
+                <TooltipSection label="Currently" value={tooltipData.data.state} />
               ) : null}
               {tooltipData.data.priority === undefined ? null : (
                 <TooltipSection
                   label="Priority"
-                  value={(
+                  value={
                     <>
                       <span
                         className="inline-block w-2 h-2 mr-1"
-                        style={{ background: priorityBasedColor(tooltipData.data.priority) }}
+                        style={{
+                          background: priorityBasedColor(tooltipData.data.priority),
+                        }}
                       />
                       {tooltipData.data.priority}
                     </>
-                  )}
+                  }
                 />
               )}
               {tooltipData.data.severity === undefined ? null : (
-                <TooltipSection
-                  label="Severity"
-                  value={tooltipData.data.severity}
-                />
+                <TooltipSection label="Severity" value={tooltipData.data.severity} />
               )}
               {tooltipData.data.rca?.length ? (
                 <TooltipSection
@@ -290,28 +327,28 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
                   width={2}
                 />
               ) : null}
-              {
-                // eslint-disable-next-line no-nested-ternary
-                tooltipData.data.cycleTime ? (
-                  <TooltipSection
-                    label="Cycle time"
-                    value={prettyMS(tooltipData.data.cycleTime)}
-                  />
-                ) : (tooltipData.data.startDate ? (
-                  <TooltipSection
-                    label="Age"
-                    value={prettyMS(Date.now() - tooltipData.data.startDate.getTime())}
-                  />
-                ) : null)
-              }
+              {tooltipData.data.cycleTime ? (
+                <TooltipSection
+                  label="Cycle time"
+                  value={prettyMS(tooltipData.data.cycleTime)}
+                />
+              ) : tooltipData.data.startDate ? (
+                <TooltipSection
+                  label="Age"
+                  value={prettyMS(Date.now() - tooltipData.data.startDate.getTime())}
+                />
+              ) : null}
               {tooltipData.data.clt ? (
                 <TooltipSection
                   label="Change lead time"
                   value={prettyMS(tooltipData.data.clt)}
                   graphValue={
                     tooltipData.data.cycleTime
-                      // eslint-disable-next-line unicorn/no-useless-undefined
-                      ? divide(tooltipData.data.clt, tooltipData.data.cycleTime).getOr(undefined)
+                      ? divide(
+                          tooltipData.data.clt,
+                          tooltipData.data.cycleTime
+                          // eslint-disable-next-line unicorn/no-useless-undefined
+                        ).getOr(undefined)
                       : undefined
                   }
                 />
@@ -330,27 +367,31 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
 };
 
 type WorkItemsByDateProps = {
-  workItems: {title: string; id: number; date: Date; url: string}[];
+  workItems: { title: string; id: number; date: Date; url: string }[];
   workItemTypeName: string;
   groupName: string;
 };
 
 export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
-  workItems, workItemTypeName, groupName
+  workItems,
+  workItemTypeName,
+  groupName,
 }) => {
   const cnp = useCollectionAndProject();
   const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
 
-  const groupedByDate = useMemo(() => (
-    workItems
-      .sort(asc(byDate(prop('date'))))
-      .reduce<Record<string, typeof workItems>>((acc, workItem) => {
-        const dateString = shortDate(workItem.date);
-        acc[dateString] = acc[dateString] || [];
-        acc[dateString].push(workItem);
-        return acc;
-      }, {})
-  ), [workItems]);
+  const groupedByDate = useMemo(
+    () =>
+      workItems
+        .sort(asc(byDate(prop('date'))))
+        .reduce<Record<string, typeof workItems>>((acc, workItem) => {
+          const dateString = shortDate(workItem.date);
+          acc[dateString] = acc[dateString] || [];
+          acc[dateString].push(workItem);
+          return acc;
+        }, {}),
+    [workItems]
+  );
 
   if (!workItemTypes.data) return <Loading />;
 
@@ -364,7 +405,7 @@ export const WorkItemsByDate: React.FC<WorkItemsByDateProps> = ({
               className="text-base inline-block ml-2 px-3 rounded-full"
               style={{
                 color: contrastColour(lineColor({ witId: workItemTypeName, groupName })),
-                backgroundColor: lineColor({ witId: workItemTypeName, groupName })
+                backgroundColor: lineColor({ witId: workItemTypeName, groupName }),
               }}
             >
               {workItems.length}
@@ -399,27 +440,30 @@ type WorkItemsByGroupProps = {
   }[];
 };
 
-const groupLabel = (workItem: WorkItemsByGroupProps['workItems'][number]) => (
-  workItem.group === noGroup ? workItem.type : (`${workItem.type} - ${workItem.group}`)
-);
+const groupLabel = (workItem: WorkItemsByGroupProps['workItems'][number]) =>
+  workItem.group === noGroup ? workItem.type : `${workItem.type} - ${workItem.group}`;
 
 export const WorkItemsByGroup: React.FC<WorkItemsByGroupProps> = ({ workItems }) => {
   const cnp = useCollectionAndProject();
   const workItemTypes = trpc.workItems.getWorkItemTypes.useQuery(cnp);
 
-  const groupedByGroup = useMemo(() => (
-    workItems
-      .reduce<Record<string, { color: string; workItems: typeof workItems }>>((acc, workItem) => {
-        const label = groupLabel(workItem);
-        acc[label] = acc[label] || {
-          color: lineColor({ witId: workItem.type, groupName: workItem.group }),
-          workItems: []
-        };
+  const groupedByGroup = useMemo(
+    () =>
+      workItems.reduce<Record<string, { color: string; workItems: typeof workItems }>>(
+        (acc, workItem) => {
+          const label = groupLabel(workItem);
+          acc[label] = acc[label] || {
+            color: lineColor({ witId: workItem.type, groupName: workItem.group }),
+            workItems: [],
+          };
 
-        acc[label].workItems.push(workItem);
-        return acc;
-      }, {})
-  ), [workItems]);
+          acc[label].workItems.push(workItem);
+          return acc;
+        },
+        {}
+      ),
+    [workItems]
+  );
 
   if (!workItemTypes.data) return <Loading />;
 
@@ -433,7 +477,7 @@ export const WorkItemsByGroup: React.FC<WorkItemsByGroupProps> = ({ workItems })
               className="text-base inline-block ml-2 px-3 rounded-full"
               style={{
                 color: contrastColour(color),
-                backgroundColor: color
+                backgroundColor: color,
               }}
             >
               {workItems.length}

@@ -22,11 +22,15 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
               <tr>
                 <th> </th>
                 <th>
-                  <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                  <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
+                    {' '}
+                  </span>
                   Successful
                 </th>
                 <th>
-                  <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2"> </span>
+                  <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
+                    {' '}
+                  </span>
                   Failed
                 </th>
                 <th>Execution time</th>
@@ -38,7 +42,7 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
                 <tr key={pipeline.id}>
                   <td>
                     <LabelWithSparkline
-                      label={(
+                      label={
                         <a
                           href={pipeline.url}
                           target="_blank"
@@ -48,7 +52,7 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
                         >
                           {pipeline.name}
                         </a>
-                      )}
+                      }
                       data={pipeline.testsByWeek}
                       lineColor={increaseIsBetter(pipeline.testsByWeek)}
                     />
@@ -57,28 +61,28 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
                   <td>{num(pipeline.failed)}</td>
                   <td>{pipeline.executionTime}</td>
                   <td>
-                    {pipeline.coverage
-                      ? (
-                        <LabelWithSparkline
-                          label={(
-                            pipeline.coverage
-                              ? divide(pipeline.coverage.covered, pipeline.coverage.total)
+                    {pipeline.coverage ? (
+                      <LabelWithSparkline
+                        label={
+                          pipeline.coverage
+                            ? divide(pipeline.coverage.covered, pipeline.coverage.total)
                                 .map(toPercentage)
                                 .getOr('-')
-                              : '-'
-                          )}
-                          data={(pipeline.coverageByWeek || []).map(c => (
-                            c ? divide(c.covered, c.total).map(multiply(100)).getOr(0) : 0
-                          ))}
-                          lineColor={increaseIsBetter((pipeline.coverageByWeek || []).map(c => (
+                            : '-'
+                        }
+                        data={(pipeline.coverageByWeek || []).map(c =>
+                          c ? divide(c.covered, c.total).map(multiply(100)).getOr(0) : 0
+                        )}
+                        lineColor={increaseIsBetter(
+                          (pipeline.coverageByWeek || []).map(c =>
                             c ? divide(c.covered, c.total).getOr(0) : 0
-                          )))}
-                          yAxisLabel={x => `${x}%`}
-                        />
-                      )
-                      : (
-                        '-'
-                      )}
+                          )
+                        )}
+                        yAxisLabel={x => `${x}%`}
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </td>
                 </tr>
               ))}
@@ -96,5 +100,5 @@ export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
         </TabContents>
       )}
     </TabContents>
-  )
+  ),
 });

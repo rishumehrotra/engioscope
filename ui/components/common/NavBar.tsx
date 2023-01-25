@@ -1,6 +1,4 @@
-import React, {
-  Fragment, useCallback, useLayoutEffect, useRef, useState
-} from 'react';
+import React, { Fragment, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useResizeObserver from '@react-hook/resize-observer';
 import { not } from 'rambda';
@@ -35,14 +33,18 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
     const container = menuContainerRef.current;
     if (!container) return;
 
-    const lis = [...(container?.querySelectorAll<HTMLLIElement>('li:not(.overflow-menu)') || [])];
+    const lis = [
+      ...(container?.querySelectorAll<HTMLLIElement>('li:not(.overflow-menu)') || []),
+    ];
     const offsetTops = lis.map(e => e.offsetTop);
     const offsetTopOfFirstElement = offsetTops[0];
 
     if (offsetTops.every(e => e === offsetTopOfFirstElement)) {
       setOverflowNavItems(null);
     } else {
-      setOverflowNavItems(navItems.filter((_, i) => offsetTops[i] > offsetTopOfFirstElement));
+      setOverflowNavItems(
+        navItems.filter((_, i) => offsetTops[i] > offsetTopOfFirstElement)
+      );
     }
 
     lis.forEach(li => {
@@ -53,15 +55,21 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
       }
     });
 
-    const lastVisible = [...lis].reverse().find(li => li.offsetTop === offsetTopOfFirstElement);
+    const lastVisible = [...lis]
+      .reverse()
+      .find(li => li.offsetTop === offsetTopOfFirstElement);
     if (!lastVisible) return; // stupid TS
     if (!overflowMenuButtonRef.current) return;
 
-    overflowMenuButtonRef.current.style.left = `${lastVisible.offsetLeft + lastVisible.offsetWidth}px`;
+    overflowMenuButtonRef.current.style.left = `${
+      lastVisible.offsetLeft + lastVisible.offsetWidth
+    }px`;
   }, [navItems]);
 
   useResizeObserver(menuContainerRef, onResize);
-  useLayoutEffect(() => { onResize(); }, [onResize]);
+  useLayoutEffect(() => {
+    onResize();
+  }, [onResize]);
 
   return (
     <div
@@ -75,7 +83,9 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
               <li className="inline-block">
                 <Link
                   to={linkTo}
-                  className={`nav-link ${selectedTab === key ? 'selected' : 'not-selected'}`}
+                  className={`nav-link ${
+                    selectedTab === key ? 'selected' : 'not-selected'
+                  }`}
                 >
                   {label}
                 </Link>
@@ -115,9 +125,7 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
           ) : null}
         </div>
       </div>
-      <div>
-        {right}
-      </div>
+      <div>{right}</div>
     </div>
   );
 };

@@ -1,8 +1,14 @@
 import { collections, configForCollection, getConfig } from '../config.js';
-import { getWorkItemUpdateDate, setWorkItemUpdateDate } from '../models/cron-update-dates.js';
+import {
+  getWorkItemUpdateDate,
+  setWorkItemUpdateDate,
+} from '../models/cron-update-dates.js';
 import { bulkUpsertWorkItems } from '../models/workitems.js';
 import azure from '../scraper/network/azure.js';
-import type { WorkItemQueryFlatResult, WorkItemQueryResult } from '../scraper/types-azure.js';
+import type {
+  WorkItemQueryFlatResult,
+  WorkItemQueryResult,
+} from '../scraper/types-azure.js';
 import { runJob } from './utils.js';
 
 const formatDate = (date: Date) => `'${date.toISOString()}'`;
@@ -18,20 +24,22 @@ const buildQuery = (collection: string, workItemUpdateDate: Date | undefined) =>
     SELECT [System.Id]
     FROM workitems
     WHERE
-      ${collectionConfig.workitems.getWorkItems.map(workItemType => (`
+      ${collectionConfig.workitems.getWorkItems
+        .map(
+          workItemType => `
         (
           [System.WorkItemType] = '${workItemType}'
           AND [Microsoft.VSTS.Common.StateChangeDate] > ${queryStart}
         )
-      `)).join(' OR ')}
+      `
+        )
+        .join(' OR ')}
   `;
 };
 
 export const getWorkItems = () => {
-  const {
-    getCollectionWorkItemIdsForQuery,
-    getCollectionWorkItemsAndRelationsChunks
-  } = azure(getConfig());
+  const { getCollectionWorkItemIdsForQuery, getCollectionWorkItemsAndRelationsChunks } =
+    azure(getConfig());
 
   return Promise.all(
     collections().map(async collection => {
@@ -40,15 +48,25 @@ export const getWorkItems = () => {
         await getWorkItemUpdateDate(collection.name)
       );
 
-      const queryResult: WorkItemQueryResult<WorkItemQueryFlatResult> = (
-        (await getCollectionWorkItemIdsForQuery(collection.name, query, 'work-items-cron', true))
-      );
+      const queryResult: WorkItemQueryResult<WorkItemQueryFlatResult> =
+        await getCollectionWorkItemIdsForQuery(
+          collection.name,
+          query,
+          'work-items-cron',
+          true
+        );
       await setWorkItemUpdateDate(collection.name);
 
       const workItemIds = queryResult.workItems.map(wi => wi.id);
-      const workItemsPromises = getCollectionWorkItemsAndRelationsChunks(collection.name, workItemIds, 'work-items-cron');
+      const workItemsPromises = getCollectionWorkItemsAndRelationsChunks(
+        collection.name,
+        workItemIds,
+        'work-items-cron'
+      );
 
-      return Promise.all(workItemsPromises.map(p => p.then(bulkUpsertWorkItems(collection.name))));
+      return Promise.all(
+        workItemsPromises.map(p => p.then(bulkUpsertWorkItems(collection.name)))
+      );
     })
   );
 };

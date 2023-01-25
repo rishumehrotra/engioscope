@@ -4,41 +4,45 @@ export const oneYear = 1000 * 60 * 60 * 24 * 365;
 
 export const num = (num: number) => Intl.NumberFormat().format(num);
 
-export const shortDate = (date: Date) => (
-  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
-);
+export const shortDate = (date: Date) =>
+  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
 
-export const mediumDate = (date: Date) => (
-  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
-);
+export const mediumDate = (date: Date) =>
+  Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 
 export const formatDebt = (debtInMins: number) => {
-  if (debtInMins > 60 && debtInMins < (60 * 24)) {
-    return `${Math.ceil((debtInMins / 60))} hrs`;
-  } if (debtInMins > 24 * 60) {
-    return `${Math.ceil((debtInMins / (60 * 8)))} days`;
+  if (debtInMins > 60 && debtInMins < 60 * 24) {
+    return `${Math.ceil(debtInMins / 60)} hrs`;
+  }
+  if (debtInMins > 24 * 60) {
+    return `${Math.ceil(debtInMins / (60 * 8))} days`;
   }
   return `${debtInMins} mins`;
 };
 
-export const generateId = () => (
-  Math.random().toString(36).replace(/[^a-z]+/g, '').slice(2, 10)
-);
+export const generateId = () =>
+  Math.random()
+    .toString(36)
+    .replace(/[^a-z]+/g, '')
+    .slice(2, 10);
 
 export const dontFilter = Boolean;
 
-const isWrappedAroundQuotes = (search: string) => search.startsWith('"') && search.endsWith('"');
+const isWrappedAroundQuotes = (search: string) =>
+  search.startsWith('"') && search.endsWith('"');
 export const getSearchTerm = (search: string) => search.split('"')[1];
 
-export const filterBySearch = (search: string, item: string) => (
+export const filterBySearch = (search: string, item: string) =>
   isWrappedAroundQuotes(search)
-    ? (item === getSearchTerm(search))
-    : item.toLowerCase().includes(search.toLowerCase())
-);
+    ? item === getSearchTerm(search)
+    : item.toLowerCase().includes(search.toLowerCase());
 
-export const exists = <T>(x: T | undefined | null): x is T => (
-  x !== null && x !== undefined
-);
+export const exists = <T>(x: T | undefined | null): x is T =>
+  x !== null && x !== undefined;
 
 export const createPalette = (colors: string[]) => {
   const cache = new Map<string, string>();
@@ -56,9 +60,10 @@ export const contrastColour = (hex: string) => {
   const g = Number.parseInt(hex.slice(3, 5), 16);
   const b = Number.parseInt(hex.slice(5, 7), 16);
 
-  const contrast = (Math.round(r * 299) + Math.round(g * 587) + Math.round(b * 114)) / 1000;
+  const contrast =
+    (Math.round(r * 299) + Math.round(g * 587) + Math.round(b * 114)) / 1000;
 
-  return (contrast >= 128) ? '#222' : '#fff';
+  return contrast >= 128 ? '#222' : '#fff';
 };
 
 export const priorityBasedColor = (priority: number) => {
@@ -78,9 +83,7 @@ export const priorityBasedColor = (priority: number) => {
   }
 };
 
-export const prettyMS = (ms: number) => (
-  prettyMilliseconds(ms, { unitCount: ms > oneYear ? 2 : 1 })
-);
+export const prettyMS = (ms: number) =>
+  prettyMilliseconds(ms, { unitCount: ms > oneYear ? 2 : 1 });
 
 export const last = <T>(arr: T[]) => (arr.length ? arr[arr.length - 1] : undefined);
-

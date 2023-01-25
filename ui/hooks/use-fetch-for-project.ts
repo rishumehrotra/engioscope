@@ -3,7 +3,9 @@ import { useParams } from 'react-router-dom';
 import type { UIProjectAnalysis } from '../../shared/types.js';
 import { useSetProjectDetails } from './project-details-hooks.js';
 
-export default <T extends UIProjectAnalysis>(fetcher: (collectionName: string, projectName: string) => Promise<T>) => {
+export default <T extends UIProjectAnalysis>(
+  fetcher: (collectionName: string, projectName: string) => Promise<T>
+) => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
   const [fetchResult, setFetchResult] = useState<T | 'loading'>('loading');
   const setProjectDetails = useSetProjectDetails();

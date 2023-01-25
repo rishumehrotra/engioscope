@@ -1,8 +1,4 @@
-import {
-  compose,
-  equals,
-  identity, last, not, prop, sum
-} from 'rambda';
+import { compose, equals, identity, last, not, prop, sum } from 'rambda';
 import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num, prettyMS } from '../helpers/utils.js';
 import type { ExtendedLabelWithSparklineProps } from './graphs/ExtendedLabelWithSparkline.js';
@@ -14,12 +10,11 @@ type SparklinePropsWithoutData<T> = Omit<ExtendedLabelWithSparklineProps<T>, 'da
 const sparklineAsNumber = {
   toValue: identity,
   combineValues: sum,
-  valueToLabel: num
+  valueToLabel: num,
 };
 
-const increaseIsBetterStrippingUndefineds = (values: (number | undefined)[]) => (
-  increaseIsBetter(values.filter(exists))
-);
+const increaseIsBetterStrippingUndefineds = (values: (number | undefined)[]) =>
+  increaseIsBetter(values.filter(exists));
 
 // const decreaseIsBetterStrippingUndefineds = (values: (number | undefined)[]) => (
 //   decreaseIsBetter(values.filter(exists))
@@ -27,24 +22,22 @@ const increaseIsBetterStrippingUndefineds = (values: (number | undefined)[]) => 
 
 const notZero = compose(not, equals(0));
 
-const decreaseIsBetterStrippingZerosAndUndefineds = (values: (number | undefined)[]) => (
-  decreaseIsBetter(values.filter(exists).filter(notZero))
-);
+const decreaseIsBetterStrippingZerosAndUndefineds = (values: (number | undefined)[]) =>
+  decreaseIsBetter(values.filter(exists).filter(notZero));
 
 const averageOfTimes = (value: number[]) => divide(sum(value), value.length);
-const excludeUndefinedsAndAverage = (values: (number | undefined)[][]) => (
-  averageOfTimes(values.flat().filter(exists).filter(notZero)).getOr(0)
-);
+const excludeUndefinedsAndAverage = (values: (number | undefined)[][]) =>
+  averageOfTimes(values.flat().filter(exists).filter(notZero)).getOr(0);
 export const newItemsSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
   tooltipLabel: 'new work items',
-  ...sparklineAsNumber
+  ...sparklineAsNumber,
 };
 
 export const newBugsSparkline: SparklinePropsWithoutData<number> = {
   colorBy: decreaseIsBetterStrippingZerosAndUndefineds,
   tooltipLabel: 'new bugs',
-  ...sparklineAsNumber
+  ...sparklineAsNumber,
 };
 
 export const velocitySparkline = newItemsSparkline;
@@ -56,39 +49,49 @@ export const cycleTimeSparkline: SparklinePropsWithoutData<number[]> = {
   combineValues: excludeUndefinedsAndAverage,
   valueToLabel: x => (x === 0 ? '-' : prettyMS(x)),
   renderer: pathRendererSkippingUndefineds,
-  tooltipLabel: 'cycle time'
+  tooltipLabel: 'cycle time',
 };
 
 export const changeLeadTimeSparkline = {
   ...cycleTimeSparkline,
-  tooltipLabel: 'change lead time'
+  tooltipLabel: 'change lead time',
 };
 
-const addNumeratorsAndDenominators = <T>(
-  numerator: (x: T) => number,
-  denominator: (x: T) => number
-) => (values: T[]) => (
-  values.reduce((acc, x) => {
-    acc.numerator += numerator(x);
-    acc.denominator += denominator(x);
-    return acc;
-  }, { numerator: 0, denominator: 0 })
-);
+const addNumeratorsAndDenominators =
+  <T>(numerator: (x: T) => number, denominator: (x: T) => number) =>
+  (values: T[]) =>
+    values.reduce(
+      (acc, x) => {
+        acc.numerator += numerator(x);
+        acc.denominator += denominator(x);
+        return acc;
+      },
+      { numerator: 0, denominator: 0 }
+    );
 
-const averageOfFractions = <T>(
-  numerator: (x: T) => number,
-  denominator: (x: T) => number
-) => (values: T[]) => {
-  const { numerator: n, denominator: d } = addNumeratorsAndDenominators(numerator, denominator)(values);
-  return divide(n, d);
-};
+const averageOfFractions =
+  <T>(numerator: (x: T) => number, denominator: (x: T) => number) =>
+  (values: T[]) => {
+    const { numerator: n, denominator: d } = addNumeratorsAndDenominators(
+      numerator,
+      denominator
+    )(values);
+    return divide(n, d);
+  };
 
-export const flowEfficiencySparkline: SparklinePropsWithoutData<{ wcTime: number; total: number }> = {
+export const flowEfficiencySparkline: SparklinePropsWithoutData<{
+  wcTime: number;
+  total: number;
+}> = {
   colorBy: increaseIsBetterStrippingUndefineds,
   toValue: x => divide(x.wcTime, x.total).getOr(0),
-  combineValues: x => averageOfFractions<{ wcTime: number; total: number}>(prop('wcTime'), prop('total'))(x).getOr(0),
+  combineValues: x =>
+    averageOfFractions<{ wcTime: number; total: number }>(
+      prop('wcTime'),
+      prop('total')
+    )(x).getOr(0),
   valueToLabel: toPercentage,
-  tooltipLabel: 'flow efficiency'
+  tooltipLabel: 'flow efficiency',
 };
 
 export const wipTrendSparkline: SparklinePropsWithoutData<number> = {
@@ -96,7 +99,7 @@ export const wipTrendSparkline: SparklinePropsWithoutData<number> = {
   toValue: identity,
   combineValues: x => last(x) || 0,
   valueToLabel: num,
-  tooltipLabel: 'WIP'
+  tooltipLabel: 'WIP',
 };
 
 export const testAutomationSparkline: SparklinePropsWithoutData<number> = {
@@ -104,7 +107,7 @@ export const testAutomationSparkline: SparklinePropsWithoutData<number> = {
   combineValues: x => last(x) || 0,
   toValue: identity,
   valueToLabel: num,
-  tooltipLabel: 'automated tests'
+  tooltipLabel: 'automated tests',
 };
 
 export const coverageSparkline: SparklinePropsWithoutData<number> = {
@@ -112,19 +115,21 @@ export const coverageSparkline: SparklinePropsWithoutData<number> = {
   combineValues: x => last(x) || 0,
   toValue: identity,
   valueToLabel: x => `${x}%`,
-  tooltipLabel: 'branch coverage'
+  tooltipLabel: 'branch coverage',
 };
 
-export const newSonarSetupsSparkline = (repoCount: number): SparklinePropsWithoutData<number> => ({
+export const newSonarSetupsSparkline = (
+  repoCount: number
+): SparklinePropsWithoutData<number> => ({
   colorBy: increaseIsBetterStrippingUndefineds,
   combineValues: x => last(x) || 0,
   toValue: identity,
   valueToLabel: x => divide(x, repoCount).map(toPercentage).getOr('-'),
-  tooltipLabel: 'repos with sonar'
+  tooltipLabel: 'repos with sonar',
 });
 
 export const buildRunsSparkline: SparklinePropsWithoutData<number> = {
   colorBy: increaseIsBetterStrippingUndefineds,
   ...sparklineAsNumber,
-  tooltipLabel: 'builds'
+  tooltipLabel: 'builds',
 };

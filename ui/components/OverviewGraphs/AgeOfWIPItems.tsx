@@ -10,7 +10,10 @@ import GraphCard from './helpers/GraphCard.js';
 import { prettyMS, priorityBasedColor, shortDate } from '../../helpers/utils.js';
 import type { WorkItemAccessors } from './helpers/helpers.js';
 import {
-  stringifyDateField, getSidebarStatByKey, getSidebarItemStats, getSidebarHeadlineStats
+  stringifyDateField,
+  getSidebarStatByKey,
+  getSidebarItemStats,
+  getSidebarHeadlineStats,
 } from './helpers/helpers.js';
 import { createWIPWorkItemTooltip } from './helpers/tooltips.js';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
@@ -24,31 +27,40 @@ type AgeOfWIPItemsGraphProps = {
   openModal: (x: ModalArgs) => void;
 };
 
-export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItems, accessors, openModal }) => {
+export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({
+  workItems,
+  accessors,
+  openModal,
+}) => {
   const {
-    organizeByWorkItemType, workItemType, lastUpdated, workItemTimes, isWIP,
-    sortByEnvironment
+    organizeByWorkItemType,
+    workItemType,
+    lastUpdated,
+    workItemTimes,
+    isWIP,
+    sortByEnvironment,
   } = accessors;
 
-  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(() => () => true);
-
-  const preFilteredWorkItems = useMemo(
-    () => workItems.filter(isWIP),
-    [isWIP, workItems]
+  const [priorityFilter, setPriorityFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
   );
+  const [sizeFilter, setSizeFilter] = useState<(wi: UIWorkItem) => boolean>(
+    () => () => true
+  );
+
+  const preFilteredWorkItems = useMemo(() => workItems.filter(isWIP), [isWIP, workItems]);
 
   const filter = useCallback(
     (workItem: UIWorkItem) => priorityFilter(workItem) && sizeFilter(workItem),
     [priorityFilter, sizeFilter]
   );
 
-  const workItemTooltip = useMemo(
-    () => createWIPWorkItemTooltip(accessors),
-    [accessors]
-  );
+  const workItemTooltip = useMemo(() => createWIPWorkItemTooltip(accessors), [accessors]);
 
-  const csvData = useMemo(() => wipWorkItemsCSV(preFilteredWorkItems, accessors), [preFilteredWorkItems, accessors]);
+  const csvData = useMemo(
+    () => wipWorkItemsCSV(preFilteredWorkItems, accessors),
+    [preFilteredWorkItems, accessors]
+  );
 
   const workItemsToDisplay = useMemo(
     () => organizeByWorkItemType(preFilteredWorkItems, filter),
@@ -56,81 +68,91 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
   );
 
   const ageOfWorkItem = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (workItem: UIWorkItem) => lastUpdated.getTime() - new Date(workItemTimes(workItem).start!).getTime(),
+    (workItem: UIWorkItem) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      lastUpdated.getTime() - new Date(workItemTimes(workItem).start!).getTime(),
     [lastUpdated, workItemTimes]
   );
 
   const legendSidebarProps = useMemo<LegendSidebarProps>(() => {
     const { workItemType } = accessors;
 
-    const totalAgeOfWorkItems = (workItems: UIWorkItem[]) => workItems.reduce(
-      (acc, wi) => acc + ageOfWorkItem(wi),
-      0
-    );
+    const totalAgeOfWorkItems = (workItems: UIWorkItem[]) =>
+      workItems.reduce((acc, wi) => acc + ageOfWorkItem(wi), 0);
 
-    const aggregator = (workItems: UIWorkItem[]) => (
-      workItems.length ? prettyMS(totalAgeOfWorkItems(workItems) / workItems.length) : '-'
-    );
+    const aggregator = (workItems: UIWorkItem[]) =>
+      workItems.length
+        ? prettyMS(totalAgeOfWorkItems(workItems) / workItems.length)
+        : '-';
 
     const items = getSidebarItemStats(workItemsToDisplay, accessors, aggregator);
-    const headlineStats = getSidebarHeadlineStats(workItemsToDisplay, workItemType, aggregator, 'avg');
+    const headlineStats = getSidebarHeadlineStats(
+      workItemsToDisplay,
+      workItemType,
+      aggregator,
+      'avg'
+    );
 
     return {
       headlineStats,
       items,
       onItemClick: key => {
-        const [witId, groupName, workItems] = getSidebarStatByKey(key, workItemsToDisplay);
+        const [witId, groupName, workItems] = getSidebarStatByKey(
+          key,
+          workItemsToDisplay
+        );
 
         return openModal({
           heading: 'Age of work-in-progress items',
           subheading: workItemSubheading(witId, groupName, workItems, workItemType),
           body: (
             <WorkItemFlatList
-              workItems={(
-                workItems.sort(desc(byNum(ageOfWorkItem)))
-              )}
+              workItems={workItems.sort(desc(byNum(ageOfWorkItem)))}
               workItemType={workItemType(witId)}
               tooltip={workItemTooltip}
               flairs={workItem => [prettyMS(ageOfWorkItem(workItem))]}
             />
-          )
+          ),
         });
-      }
+      },
     };
   }, [accessors, ageOfWorkItem, openModal, workItemTooltip, workItemsToDisplay]);
 
   const graphBlocks = useMemo(
-    () => (
-      Object.entries(workItemsToDisplay).reduce<{
-        width: number;
-        witId: string;
-        scatterLineGraphProps: ScatterLineGraphProps<UIWorkItem>;
-      }[][]>(
-        (acc, [witId, group], index) => {
-          const rowIndex = Math.floor(index / 2);
-          if (!acc[rowIndex]) acc[rowIndex] = [];
-          acc[rowIndex].push({
-            width: Object.values(group).length,
-            witId,
-            scatterLineGraphProps: {
-              graphData: [{
+    () =>
+      Object.entries(workItemsToDisplay).reduce<
+        {
+          width: number;
+          witId: string;
+          scatterLineGraphProps: ScatterLineGraphProps<UIWorkItem>;
+        }[][]
+      >((acc, [witId, group], index) => {
+        const rowIndex = Math.floor(index / 2);
+        if (!acc[rowIndex]) acc[rowIndex] = [];
+        acc[rowIndex].push({
+          width: Object.values(group).length,
+          witId,
+          scatterLineGraphProps: {
+            graphData: [
+              {
                 label: workItemType(witId).name[1],
-                data: Object.fromEntries(Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))),
+                data: Object.fromEntries(
+                  Object.entries(group).sort(([a], [b]) => sortByEnvironment(a, b))
+                ),
                 yAxisPoint: ageOfWorkItem,
-                tooltip: wi => workItemTooltip(wi)
-              }],
-              pointColor: workItem => (workItem.priority ? priorityBasedColor(workItem.priority) : undefined),
-              height: 420,
-              linkForItem: prop('url'),
-              className: 'w-full'
-            }
-          });
+                tooltip: wi => workItemTooltip(wi),
+              },
+            ],
+            pointColor: workItem =>
+              workItem.priority ? priorityBasedColor(workItem.priority) : undefined,
+            height: 420,
+            linkForItem: prop('url'),
+            className: 'w-full',
+          },
+        });
 
-          return acc;
-        }, []
-      )
-    ),
+        return acc;
+      }, []),
     [ageOfWorkItem, sortByEnvironment, workItemTooltip, workItemType, workItemsToDisplay]
   );
 
@@ -140,7 +162,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
       subtitle="How old are the current work-in-progress items"
       hasData={preFilteredWorkItems.length > 0}
       csvData={csvData}
-      left={(
+      left={
         <>
           <div className="flex justify-end mb-8 gap-2">
             <SizeFilter workItems={workItems} setFilter={setSizeFilter} />
@@ -151,7 +173,7 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
               className="grid gap-4 justify-between items-center grid-cols-2 mb-16"
               key={row[0].witId}
               style={{
-                gridTemplateColumns: row.map(({ width }) => `${width + 1}fr`).join(' ')
+                gridTemplateColumns: row.map(({ width }) => `${width + 1}fr`).join(' '),
               }}
             >
               {row.map(({ witId, scatterLineGraphProps }) => (
@@ -170,10 +192,8 @@ export const AgeOfWIPItemsGraph: React.FC<AgeOfWIPItemsGraphProps> = ({ workItem
             ))}
           </ul>
         </>
-      )}
-      right={(
-        <LegendSidebar {...legendSidebarProps} />
-      )}
+      }
+      right={<LegendSidebar {...legendSidebarProps} />}
     />
   );
 };

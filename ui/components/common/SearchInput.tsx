@@ -11,7 +11,8 @@ const SearchInput: React.FC = () => {
   if (!selectedTab) return null;
 
   return (
-    <div className="w-full text-gray-600 h-full flex items-between items-center
+    <div
+      className="w-full text-gray-600 h-full flex items-between items-center
     relative shadow mr-1 rounded border border-gray-400"
     >
       <button type="button" className="absolute left-3">
@@ -24,7 +25,9 @@ const SearchInput: React.FC = () => {
         name="search"
         placeholder="Search"
         value={search || ''}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value, true)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          setSearchTerm(e.target.value, true)
+        }
       />
     </div>
   );

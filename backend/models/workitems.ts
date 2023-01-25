@@ -10,7 +10,10 @@ import type { ParsedCollection } from '../scraper/parse-config.js';
 import type { WorkItemWithRelations } from '../scraper/types-azure.js';
 import type { QueryRange } from './helpers.js';
 import {
-  collectionAndProjectInputs, queryPeriodInputParser, timezone, queryRangeFilter
+  collectionAndProjectInputs,
+  queryPeriodInputParser,
+  timezone,
+  queryRangeFilter,
 } from './helpers.js';
 
 type WorkItem = {
@@ -31,22 +34,22 @@ type WorkItem = {
   url: string;
   relations?: {
     rel:
-    | 'Microsoft.VSTS.Common.Affects-Forward'
-    | 'Microsoft.VSTS.Common.Affects-Reverse'
-    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
-    | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse'
-    | 'Microsoft.VSTS.Common.TestedBy-Forward'
-    | 'Microsoft.VSTS.Common.TestedBy-Reverse'
-    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Forward'
-    | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Reverse'
-    | 'System.LinkTypes.Duplicate-Forward'
-    | 'System.LinkTypes.Duplicate-Reverse'
-    | 'System.LinkTypes.Dependency-Forward'
-    | 'System.LinkTypes.Dependency-Reverse'
-    | 'System.LinkTypes.Hierarchy-Forward'
-    | 'System.LinkTypes.Hierarchy-Reverse'
-    | 'System.LinkTypes.Related'
-    | string;
+      | 'Microsoft.VSTS.Common.Affects-Forward'
+      | 'Microsoft.VSTS.Common.Affects-Reverse'
+      | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'
+      | 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse'
+      | 'Microsoft.VSTS.Common.TestedBy-Forward'
+      | 'Microsoft.VSTS.Common.TestedBy-Reverse'
+      | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Forward'
+      | 'Microsoft.VSTS.TestCase.SharedStepReferencedBy-Reverse'
+      | 'System.LinkTypes.Duplicate-Forward'
+      | 'System.LinkTypes.Duplicate-Reverse'
+      | 'System.LinkTypes.Dependency-Forward'
+      | 'System.LinkTypes.Dependency-Reverse'
+      | 'System.LinkTypes.Hierarchy-Forward'
+      | 'System.LinkTypes.Hierarchy-Reverse'
+      | 'System.LinkTypes.Related'
+      | string;
     attributes: Record<string, unknown>;
   }[];
 };
@@ -67,21 +70,29 @@ const workItemSchema = new Schema<WorkItem>({
   severity: String,
   fields: Schema.Types.Mixed,
   url: String,
-  relations: [{
-    rel: String,
-    url: String,
-    attributes: Schema.Types.Mixed
-  }]
+  relations: [
+    {
+      rel: String,
+      url: String,
+      attributes: Schema.Types.Mixed,
+    },
+  ],
 });
 
 workItemSchema.index({ collectionName: 1, id: 1 }, { unique: true }); // Used for writes
 workItemSchema.index({
-  collectionName: 1, project: 1, workItemType: 1, state: 1
+  collectionName: 1,
+  project: 1,
+  workItemType: 1,
+  state: 1,
 });
 
 const WorkItemModel = model<WorkItem>('WorkItem', workItemSchema);
 
-const apiShapeToModelShape = (collectionName: string, workItem: WorkItemWithRelations): WorkItem => ({
+const apiShapeToModelShape = (
+  collectionName: string,
+  workItem: WorkItemWithRelations
+): WorkItem => ({
   id: workItem.id,
   collectionName,
   project: workItem.fields['System.TeamProject'],
@@ -101,34 +112,35 @@ const apiShapeToModelShape = (collectionName: string, workItem: WorkItemWithRela
   severity: workItem.fields['Microsoft.VSTS.Common.Severity'] || undefined,
   fields: workItem.fields,
   url: workItem.url,
-  relations: workItem.relations
+  relations: workItem.relations,
 });
 
-export const bulkUpsertWorkItems = (collectionName: string) => (workItems: WorkItemWithRelations[]) => (
-  WorkItemModel.bulkWrite(workItems.map(workItem => ({
-    updateOne: {
-      filter: { collectionName, id: workItem.id },
-      update: { $set: apiShapeToModelShape(collectionName, workItem) },
-      upsert: true
-    }
-  })))
-);
+export const bulkUpsertWorkItems =
+  (collectionName: string) => (workItems: WorkItemWithRelations[]) =>
+    WorkItemModel.bulkWrite(
+      workItems.map(workItem => ({
+        updateOne: {
+          filter: { collectionName, id: workItem.id },
+          update: { $set: apiShapeToModelShape(collectionName, workItem) },
+          upsert: true,
+        },
+      }))
+    );
 
 const field = (fieldName: string) => ({
   $getField: {
     field: { $literal: fieldName },
-    input: '$fields'
-  }
+    input: '$fields',
+  },
 });
 
 const formatUrl = <T extends { url: string }>(wi: T) => ({
-  ...wi, url: wi.url.replace('_apis/wit/workItems/', '_workitems/edit/')
+  ...wi,
+  url: wi.url.replace('_apis/wit/workItems/', '_workitems/edit/'),
 });
 
-const sanitizeFieldName = (field: string) => field
-  .replace(/\s/g, '_')
-  .replace(/\./g, '_')
-  .replace(/\$/g, '_');
+const sanitizeFieldName = (field: string) =>
+  field.replace(/\s/g, '_').replace(/\./g, '_').replace(/\$/g, '_');
 
 const applyAdditionalFilters = (
   collectionName: string,
@@ -136,207 +148,253 @@ const applyAdditionalFilters = (
 ) => {
   if (!additionalFilters) return [];
 
-  return Object.entries(additionalFilters)
-    .flatMap(([label, value]): PipelineStage[] => {
-      const configForField = configForCollection(collectionName)
-        ?.workitems.filterBy
-        ?.find(f => f.label === label);
+  return Object.entries(additionalFilters).flatMap(([label, value]): PipelineStage[] => {
+    const configForField = configForCollection(collectionName)?.workitems.filterBy?.find(
+      f => f.label === label
+    );
 
-      if (!configForField) return [];
+    if (!configForField) return [];
 
-      if (configForField.fields.length === 1 && !configForField.delimiter) {
-        // Single field, no delimiter, so exact match is sufficient
-        return [
-          { $match: { $expr: { $in: [field(configForField.fields[0]), value] } } }
-        ];
-      }
+    if (configForField.fields.length === 1 && !configForField.delimiter) {
+      // Single field, no delimiter, so exact match is sufficient
+      return [{ $match: { $expr: { $in: [field(configForField.fields[0]), value] } } }];
+    }
 
-      return [
-        // Concat the fields
-        {
-          $addFields: {
-            [`${sanitizeFieldName(label)}-temp-1`]: {
-              $concat: configForField.fields.flatMap(f => [
-                { $ifNull: [field(f), ''] },
-                configForField.delimiter
-              ])
-            }
-          }
+    return [
+      // Concat the fields
+      {
+        $addFields: {
+          [`${sanitizeFieldName(label)}-temp-1`]: {
+            $concat: configForField.fields.flatMap(f => [
+              { $ifNull: [field(f), ''] },
+              configForField.delimiter,
+            ]),
+          },
         },
-        // Split by the delimiter
-        {
-          $addFields: {
-            [`${sanitizeFieldName(label)}-temp-2`]: {
-              $split: [`$${sanitizeFieldName(label)}-temp-1`, configForField.delimiter]
-            }
-          }
+      },
+      // Split by the delimiter
+      {
+        $addFields: {
+          [`${sanitizeFieldName(label)}-temp-2`]: {
+            $split: [`$${sanitizeFieldName(label)}-temp-1`, configForField.delimiter],
+          },
         },
-        // Filter out empty fields
-        {
-          $addFields: {
-            [`${sanitizeFieldName(label)}`]: {
-              $filter: {
-                input: `$${sanitizeFieldName(label)}-temp-2`,
-                as: 'part',
-                cond: { $ne: ['$$part', ''] }
-              }
-            }
-          }
+      },
+      // Filter out empty fields
+      {
+        $addFields: {
+          [`${sanitizeFieldName(label)}`]: {
+            $filter: {
+              input: `$${sanitizeFieldName(label)}-temp-2`,
+              as: 'part',
+              cond: { $ne: ['$$part', ''] },
+            },
+          },
         },
-        // Check if value exists
-        { $match: { [sanitizeFieldName(label)]: { $in: value } } }
-      ];
-    });
+      },
+      // Check if value exists
+      { $match: { [sanitizeFieldName(label)]: { $in: value } } },
+    ];
+  });
 };
 
-const getWorkItemsOfType = (collectionName: string, project: string, workItemTypeName: string) => [{
-  $match: {
-    collectionName,
-    project,
-    workItemType: workItemTypeName,
-    state: { $nin: configForCollection(collectionName)?.workitems.ignoreStates || [] }
-  }
-}];
+const getWorkItemsOfType = (
+  collectionName: string,
+  project: string,
+  workItemTypeName: string
+) => [
+  {
+    $match: {
+      collectionName,
+      project,
+      workItemType: workItemTypeName,
+      state: { $nin: configForCollection(collectionName)?.workitems.ignoreStates || [] },
+    },
+  },
+];
 
-const startDateFieldForNew = (workItemTypeConfig?: NonNullable<ParsedCollection['workitems']['types']>[number]) => (
+const startDateFieldForNew = (
+  workItemTypeConfig?: NonNullable<ParsedCollection['workitems']['types']>[number]
+) =>
   workItemTypeConfig?.type.toLowerCase().includes('bug')
     ? ['System.CreatedDate']
-    : workItemTypeConfig?.startDate
-);
+    : workItemTypeConfig?.startDate;
 
-const createDateField = (fieldName: string, fields: string[] | undefined) => (
-  { $addFields: { [fieldName]: { $min: (fields || []).map(field) } } }
-);
+const createDateField = (fieldName: string, fields: string[] | undefined) => ({
+  $addFields: { [fieldName]: { $min: (fields || []).map(field) } },
+});
 
-const ensureDateInRange = (newFieldName: string, fields: string[] | undefined, queryPeriod: QueryRange) => ([
+const ensureDateInRange = (
+  newFieldName: string,
+  fields: string[] | undefined,
+  queryPeriod: QueryRange
+) => [
   // Get the min date based on the fields
   createDateField(newFieldName, fields),
   // Ensure it's within range
-  { $match: { [newFieldName]: queryRangeFilter(queryPeriod) } }
-]);
+  { $match: { [newFieldName]: queryRangeFilter(queryPeriod) } },
+];
 
-const groupByField = (workItemTypeConfig?: { groupByField?: string }) => (
-  workItemTypeConfig?.groupByField
-    ? field(workItemTypeConfig?.groupByField)
-    : noGroup
-);
+const groupByField = (workItemTypeConfig?: { groupByField?: string }) =>
+  workItemTypeConfig?.groupByField ? field(workItemTypeConfig?.groupByField) : noGroup;
 
 const groupByDate = (dateField: string, queryPeriod: QueryRange) => ({
   $dateToString: {
-    date: `$${dateField}`, timezone: timezone(queryPeriod), format: '%Y-%m-%d'
-  }
+    date: `$${dateField}`,
+    timezone: timezone(queryPeriod),
+    format: '%Y-%m-%d',
+  },
 });
 
 const newWorkItemsBaseInput = {
   ...collectionAndProjectInputs,
-  additionalFilters: z.record(z.string(), z.array(z.string()))
+  additionalFilters: z.record(z.string(), z.array(z.string())),
 };
 
 const newWorkItemsSummaryInput = {
   ...newWorkItemsBaseInput,
-  queryPeriod: queryPeriodInputParser
+  queryPeriod: queryPeriodInputParser,
 };
 export const newWorkItemsSummaryInputParser = z.object(newWorkItemsSummaryInput);
 
 const newWorkItemsForWorkItemType = ({
-  collectionName, project, workItemType, queryPeriod, additionalFilters
+  collectionName,
+  project,
+  workItemType,
+  queryPeriod,
+  additionalFilters,
 }: z.infer<typeof newWorkItemsSummaryInputParser> & { workItemType: string }) => {
   const collectionConfig = configForCollection(collectionName);
-  const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
+  const workItemTypeConfig = collectionConfig?.workitems.types?.find(
+    t => t.type === workItemType
+  );
 
   const pipeline = [
     ...getWorkItemsOfType(collectionName, project, workItemType),
-    ...ensureDateInRange('startDate', startDateFieldForNew(workItemTypeConfig), queryPeriod),
+    ...ensureDateInRange(
+      'startDate',
+      startDateFieldForNew(workItemTypeConfig),
+      queryPeriod
+    ),
     ...applyAdditionalFilters(collectionName, additionalFilters),
     {
       $group: {
         _id: {
           group: groupByField(workItemTypeConfig),
-          date: groupByDate('startDate', queryPeriod)
+          date: groupByDate('startDate', queryPeriod),
         },
-        count: { $sum: 1 }
-      }
-    }, {
+        count: { $sum: 1 },
+      },
+    },
+    {
       // Nest the startDate inside the group
-      $group: { _id: '$_id.group', count: { $push: { k: '$_id.date', v: '$count' } } }
-    }, {
+      $group: { _id: '$_id.group', count: { $push: { k: '$_id.date', v: '$count' } } },
+    },
+    {
       // And convert to object to reduce size
-      $project: { _id: 1, counts: { $arrayToObject: '$count' } }
-    }
+      $project: { _id: 1, counts: { $arrayToObject: '$count' } },
+    },
   ];
 
-  return (
-    WorkItemModel
-      .aggregate(pipeline)
-      .then(result => Object.fromEntries(
-        result
-          .sort(desc(byNum(r => sum(Object.values(r.counts)))))
-          .sort(asc(byNum(r => collectionConfig?.projects[0].environments?.indexOf(r._id) || -1)))
-          .map((r): [string, Record<string, number> ] => ([r._id, r.counts]))
-      ))
+  return WorkItemModel.aggregate(pipeline).then(result =>
+    Object.fromEntries(
+      result
+        .sort(desc(byNum(r => sum(Object.values(r.counts)))))
+        .sort(
+          asc(
+            byNum(r => collectionConfig?.projects[0].environments?.indexOf(r._id) || -1)
+          )
+        )
+        .map((r): [string, Record<string, number>] => [r._id, r.counts])
+    )
   );
 };
 
-export const newWorkItemsSummary = async (options: z.infer<typeof newWorkItemsSummaryInputParser>) => {
+export const newWorkItemsSummary = async (
+  options: z.infer<typeof newWorkItemsSummaryInputParser>
+) => {
   const collConfig = configForCollection('JioMobilityAndEnterprise');
   if (!collConfig) return {};
 
   const { types } = collConfig.workitems;
   if (!types) return {};
 
-  return (
-    Promise.all(types.map(type => (
-      newWorkItemsForWorkItemType({ ...options, workItemType: type.type })
-        .then(result => {
+  return Promise.all(
+    types.map(type =>
+      newWorkItemsForWorkItemType({ ...options, workItemType: type.type }).then(
+        result => {
           if (Object.keys(result).length === 0) return {};
-          return ({ [type.type]: result });
-        })
-    )))
-      .then(result => result.reduce(merge, {}))
-  );
+          return { [type.type]: result };
+        }
+      )
+    )
+  ).then(result => result.reduce(merge, {}));
 };
 
 export const newWorkItemsListForGroupInputParser = z.object({
   ...newWorkItemsBaseInput,
   queryPeriod: queryPeriodInputParser,
   workItemType: z.string(),
-  groupName: z.string()
+  groupName: z.string(),
 });
 
 export const newWorkItemsListForGroup = async ({
-  collectionName, project, workItemType, groupName, additionalFilters, queryPeriod
+  collectionName,
+  project,
+  workItemType,
+  groupName,
+  additionalFilters,
+  queryPeriod,
 }: z.infer<typeof newWorkItemsListForGroupInputParser>) => {
   const collectionConfig = configForCollection(collectionName);
-  const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === workItemType);
+  const workItemTypeConfig = collectionConfig?.workitems.types?.find(
+    t => t.type === workItemType
+  );
 
   const pipeline = [
     ...getWorkItemsOfType(collectionName, project, workItemType),
-    ...ensureDateInRange('startDate', startDateFieldForNew(workItemTypeConfig), queryPeriod),
+    ...ensureDateInRange(
+      'startDate',
+      startDateFieldForNew(workItemTypeConfig),
+      queryPeriod
+    ),
     ...applyAdditionalFilters(collectionName, additionalFilters),
-    ...((groupName === noGroup || !workItemTypeConfig?.groupByField)
+    ...(groupName === noGroup || !workItemTypeConfig?.groupByField
       ? []
       : [
-        { $match: { $expr: { $eq: [field(workItemTypeConfig?.groupByField), groupName] } } }
-      ]),
+          {
+            $match: {
+              $expr: { $eq: [field(workItemTypeConfig?.groupByField), groupName] },
+            },
+          },
+        ]),
     {
       $project: {
-        id: 1, title: 1, date: '$startDate', url: 1
-      }
-    }
+        id: 1,
+        title: 1,
+        date: '$startDate',
+        url: 1,
+      },
+    },
   ];
 
-  return WorkItemModel.aggregate<{ id: number; title: string; date: Date; url: string }>(pipeline)
-    .then(wis => wis.map(omit(['_id'])).map(formatUrl));
+  return WorkItemModel.aggregate<{ id: number; title: string; date: Date; url: string }>(
+    pipeline
+  ).then(wis => wis.map(omit(['_id'])).map(formatUrl));
 };
 
 export const newWorkItemsListForDateInputParser = z.object({
   ...newWorkItemsBaseInput,
   date: z.date(),
-  timeZone: z.string()
+  timeZone: z.string(),
 });
 
 export const newWorkItemsListForDate = async ({
-  collectionName, project, additionalFilters, date, timeZone
+  collectionName,
+  project,
+  additionalFilters,
+  date,
+  timeZone,
 }: z.infer<typeof newWorkItemsListForDateInputParser>) => {
   const collectionConfig = configForCollection(collectionName);
 
@@ -346,32 +404,48 @@ export const newWorkItemsListForDate = async ({
   endOfRange.setDate(startOfRange.getDate() + 1);
   const queryPeriod: QueryRange = [startOfRange, endOfRange, timeZone];
 
-  const results = await Promise.all((collectionConfig?.workitems.types || []).map(workItemType => {
-    const pipeline = [
-      ...getWorkItemsOfType(collectionName, project, workItemType.type),
-      ...ensureDateInRange('startDate', startDateFieldForNew(workItemType), queryPeriod),
-      ...applyAdditionalFilters(collectionName, additionalFilters),
-      {
-        $project: {
-          id: 1,
-          title: 1,
-          date: '$startDate',
-          url: 1,
-          type: '$workItemType',
-          group: workItemType.groupByField ? field(workItemType.groupByField) : noGroup
-        }
-      }
-    ];
+  const results = await Promise.all(
+    (collectionConfig?.workitems.types || []).map(workItemType => {
+      const pipeline = [
+        ...getWorkItemsOfType(collectionName, project, workItemType.type),
+        ...ensureDateInRange(
+          'startDate',
+          startDateFieldForNew(workItemType),
+          queryPeriod
+        ),
+        ...applyAdditionalFilters(collectionName, additionalFilters),
+        {
+          $project: {
+            id: 1,
+            title: 1,
+            date: '$startDate',
+            url: 1,
+            type: '$workItemType',
+            group: workItemType.groupByField ? field(workItemType.groupByField) : noGroup,
+          },
+        },
+      ];
 
-    return WorkItemModel.aggregate<{ id: number; title: string; url: string; date: Date; type: string; group: string }>(pipeline);
-  }));
+      return WorkItemModel.aggregate<{
+        id: number;
+        title: string;
+        url: string;
+        date: Date;
+        type: string;
+        group: string;
+      }>(pipeline);
+    })
+  );
 
-  return results.flat().map(omit(['_id'])).map(formatUrl);
+  return results
+    .flat()
+    .map(omit(['_id']))
+    .map(formatUrl);
 };
 
 export const workItemForTooltipInputParser = z.object({
   collectionName: z.string(),
-  id: z.number()
+  id: z.number(),
 });
 
 type WorkItemForTooltip = {
@@ -399,12 +473,17 @@ const getDateFieldValue = (fields: string[] | undefined, wi: WorkItem) => {
   );
 };
 
-export const workItemForTooltip = async (
-  { collectionName, id }: z.infer<typeof workItemForTooltipInputParser>
-): Promise<WorkItemForTooltip | undefined> => {
+export const workItemForTooltip = async ({
+  collectionName,
+  id,
+}: z.infer<typeof workItemForTooltipInputParser>): Promise<
+  WorkItemForTooltip | undefined
+> => {
   const match = await WorkItemModel.findOne({ collectionName, id }).lean();
   const collectionConfig = configForCollection(collectionName);
-  const workItemTypeConfig = collectionConfig?.workitems.types?.find(t => t.type === match?.workItemType);
+  const workItemTypeConfig = collectionConfig?.workitems.types?.find(
+    t => t.type === match?.workItemType
+  );
 
   if (!match) return;
 
@@ -412,19 +491,23 @@ export const workItemForTooltip = async (
   const endDate = getDateFieldValue(workItemTypeConfig?.endDate, match);
   const devDoneDate = getDateFieldValue(workItemTypeConfig?.devCompletionDate, match);
 
-  const cycleTime = startDate && endDate && (endDate.getTime() - startDate.getTime());
-  const clt = devDoneDate && endDate && (endDate.getTime() - devDoneDate.getTime());
+  const cycleTime = startDate && endDate && endDate.getTime() - startDate.getTime();
+  const clt = devDoneDate && endDate && endDate.getTime() - devDoneDate.getTime();
 
   return {
     id: match.id,
     title: match.title,
     state: match.state,
-    group: workItemTypeConfig?.groupByField ? match.fields[workItemTypeConfig.groupByField] as string : undefined,
+    group: workItemTypeConfig?.groupByField
+      ? (match.fields[workItemTypeConfig.groupByField] as string)
+      : undefined,
     priority: match.fields['Microsoft.VSTS.Common.Priority'] as number | undefined,
     severity: match.fields['Microsoft.VSTS.Common.Severity'] as string | undefined,
-    rca: workItemTypeConfig?.rootCause.map(rcaField => match.fields[rcaField] as string).filter(exists),
+    rca: workItemTypeConfig?.rootCause
+      .map(rcaField => match.fields[rcaField] as string)
+      .filter(exists),
     cycleTime,
     clt,
-    startDate
+    startDate,
   };
 };

@@ -1,11 +1,18 @@
 import React, { useCallback, useMemo } from 'react';
 import type {
-  AnalysedWorkItems, UIWorkItem, UIWorkItemRevision, UIWorkItemType
+  AnalysedWorkItems,
+  UIWorkItem,
+  UIWorkItemRevision,
+  UIWorkItemType,
 } from '../../shared/types.js';
 import { Revisions } from './WorkItemsGanttChart/GanttRow.js';
 import {
   barHeight,
-  barWidthUsing, getMaxDateTime, getMinDateTime, rowPadding, svgWidth
+  barWidthUsing,
+  getMaxDateTime,
+  getMinDateTime,
+  rowPadding,
+  svgWidth,
 } from './WorkItemsGanttChart/helpers.js';
 import WorkItemsGanttChart from './WorkItemsGanttChart/index.js';
 
@@ -18,12 +25,16 @@ const titleTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => `
       </span>
       ${workItem.title}
     </div>
-    ${workItem.env ? (`
+    ${
+      workItem.env
+        ? `
       <div class="mt-2">
         <span class="font-bold">Environment: </span>
         ${workItem.env}
       </div>
-    `) : ''}
+    `
+        : ''
+    }
     <div class="mt-2">
       <span class="font-bold">Project: </span>
       ${workItem.project}
@@ -31,16 +42,13 @@ const titleTooltip = (workItem: UIWorkItem, type: UIWorkItemType) => `
   </div>
 `;
 
-export const xCoordConverterWithin = (minDateTime: number, maxDateTime: number) => (
-  (time: string | Date) => {
+export const xCoordConverterWithin =
+  (minDateTime: number, maxDateTime: number) => (time: string | Date) => {
     const date = new Date(time);
-    const xCoordWithoutText = (
-      (date.getTime() - minDateTime)
-      / (maxDateTime - minDateTime)
-    ) * (svgWidth);
-    return (xCoordWithoutText < 0 ? 0 : xCoordWithoutText);
-  }
-);
+    const xCoordWithoutText =
+      ((date.getTime() - minDateTime) / (maxDateTime - minDateTime)) * svgWidth;
+    return xCoordWithoutText < 0 ? 0 : xCoordWithoutText;
+  };
 
 export const createXCoordConverterFor = (revisions: UIWorkItemRevision[]) => {
   const minDateTime = getMinDateTime(revisions);
@@ -60,18 +68,27 @@ type WorkItemProps = {
 };
 
 const WorkItem: React.FC<WorkItemProps> = ({
-  workItemId, workItemsById, workItemsIdTree, workItemType,
-  colorForStage, revisions, getRevisions
+  workItemId,
+  workItemsById,
+  workItemsIdTree,
+  workItemType,
+  colorForStage,
+  revisions,
+  getRevisions,
 }) => {
   const workItemRevisions = useMemo(() => revisions[workItemId], [revisions, workItemId]);
   const workItem = useMemo(() => workItemsById[workItemId], [workItemsById, workItemId]);
 
-  const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>((time: string | Date) => {
-    const coordsGetter = workItemRevisions === 'loading'
-      ? () => 0
-      : createXCoordConverterFor(workItemRevisions);
-    return coordsGetter(time);
-  }, [workItemRevisions]);
+  const timeToXCoord = useCallback<ReturnType<typeof xCoordConverterWithin>>(
+    (time: string | Date) => {
+      const coordsGetter =
+        workItemRevisions === 'loading'
+          ? () => 0
+          : createXCoordConverterFor(workItemRevisions);
+      return coordsGetter(time);
+    },
+    [workItemRevisions]
+  );
 
   const barWidth = useMemo(() => barWidthUsing(timeToXCoord), [timeToXCoord]);
 
@@ -99,29 +116,25 @@ const WorkItem: React.FC<WorkItemProps> = ({
             />
             {`${workItem.id}: ${workItem.title}`}
           </a>
-
         </div>
       </h3>
       <div className="flex items-end mb-2">
         <div className="font-semibold text-sm mr-2">Timeline:</div>
-        {
-          workItemRevisions
-            ? (
-              <svg
-                viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}
-                height="100%"
-                width="100%"
-              >
-                <Revisions
-                  revisions={workItemRevisions}
-                  barWidth={barWidth}
-                  colorForStage={colorForStage}
-                  rowIndex={0}
-                  timeToXCoord={timeToXCoord}
-                />
-              </svg>
-            ) : null
-        }
+        {workItemRevisions ? (
+          <svg
+            viewBox={`0 0 ${svgWidth} ${barHeight + 2 * rowPadding}`}
+            height="100%"
+            width="100%"
+          >
+            <Revisions
+              revisions={workItemRevisions}
+              barWidth={barWidth}
+              colorForStage={colorForStage}
+              rowIndex={0}
+              timeToXCoord={timeToXCoord}
+            />
+          </svg>
+        ) : null}
       </div>
       <div className="mt-4 cursor-default">
         <WorkItemsGanttChart
