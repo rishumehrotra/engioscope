@@ -130,9 +130,7 @@ export const latestBuildReportsForRepoAndBranch =
         $group: {
           _id: '$buildId',
           latestDate: {
-            $max: {
-              $mergeObjects: [{ updatedAt: '$updatedAt' }, '$$ROOT'],
-            },
+            $max: { $mergeObjects: [{ updatedAt: '$updatedAt' }, '$$ROOT'] },
           },
         },
       },
@@ -239,30 +237,16 @@ export const buildsCentralTemplateStats = async (
         collectionName,
         project: projectName,
         repo: repoName,
-        createdAt: {
-          $gte: new Date(startDate),
-          $lt: new Date(endDate),
-        },
+        createdAt: { $gte: new Date(startDate), $lt: new Date(endDate) },
       },
     },
     {
       $addFields: {
         usesCentralTemplate: {
           $or: [
-            {
-              $eq: ['$centralTemplate', true],
-            },
-            {
-              $eq: [
-                {
-                  $type: '$centralTemplate',
-                },
-                'object',
-              ],
-            },
-            {
-              $eq: ['$templateRepo', 'build-pipeline-templates'],
-            },
+            { $eq: ['$centralTemplate', true] },
+            { $eq: [{ $type: '$centralTemplate' }, 'object'] },
+            { $eq: ['$templateRepo', 'build-pipeline-templates'] },
           ],
         },
       },
@@ -278,18 +262,13 @@ export const buildsCentralTemplateStats = async (
         templateUsers: {
           $sum: {
             $cond: {
-              if: {
-                $eq: ['$usesCentralTemplate', true],
-              },
-
+              if: { $eq: ['$usesCentralTemplate', true] },
               then: 1,
               else: 0,
             },
           },
         },
-        totalAzureBuilds: {
-          $sum: 1,
-        },
+        totalAzureBuilds: { $sum: 1 },
       },
     },
     {

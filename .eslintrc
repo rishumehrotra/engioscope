@@ -111,6 +111,7 @@
     "react/jsx-indent": "off",
     "react/jsx-curly-newline": "off",
     "comma-spacing": "off",
+    "object-property-newline": "off",
     "jsx-a11y/click-events-have-key-events": "warn",
     "react/no-array-index-key": "warn",
     "jsx-a11y/control-has-associated-label": "warn",

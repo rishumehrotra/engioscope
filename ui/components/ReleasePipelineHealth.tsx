@@ -241,47 +241,4 @@ const Pipeline: React.FC<{
   );
 };
 
-// type PipelineConfig = {
-//   stagesToHighlight?: string[];
-//   ignoreStagesBefore?: string;
-//   releaseDefinition: PipelineStage[] | 'loading' | undefined;
-// };
-
-export const pipeline2 = () => {
-  // ({}: PipelineConfig) => {
-  const Pipeline: React.FC<{
-    item: {
-      id: number;
-      url: string;
-      name: string;
-    };
-  }> = ({ item }) => (
-    <Card key={item.name} title={item.name} titleUrl={item.url} isExpanded={false}>
-      <div className="px-6">
-        {/* <Artefacts
-            pipeline={pipeline}
-            policyForBranch={policyForBranch}
-            ignoreStagesBefore={ignoreStagesBefore}
-          /> */}
-        <div className="uppercase font-semibold text-sm text-gray-800 tracking-wide mt-6">
-          Stages
-        </div>
-        <div className="mt-6">
-          {/* {formattedReleaseDefinition && (
-              formattedReleaseDefinition === 'loading'
-                ? (
-                  <div className="text-gray-500 text-sm mb-10">
-                    Loading...
-                  </div>
-                ) : (
-                  <PipelineDiagram stages={formattedReleaseDefinition} />
-                )
-            )} */}
-        </div>
-      </div>
-    </Card>
-  );
-  return Pipeline;
-};
-
 export default Pipeline;

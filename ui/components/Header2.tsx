@@ -54,8 +54,7 @@ const Header2: React.FC = () => {
                     isSelected(url)
                       ? 'text-gray-100 bg-slate-700'
                       : 'hover:border-slate-500 text-gray-200 cursor-pointer'
-                  }
-                `}
+                  }`}
                   >
                     {name}
                   </Link>

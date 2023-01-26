@@ -314,10 +314,6 @@ export const getPipelinesCount = (
         'environments.deploySteps.queuedOn': { $gt: queryFrom },
       },
     },
-    {
-      $group: { _id: '$releaseDefinitionId' },
-    },
-    {
-      $count: 'count',
-    },
+    { $group: { _id: '$releaseDefinitionId' } },
+    { $count: 'count' },
   ]).then(result => result[0].count);

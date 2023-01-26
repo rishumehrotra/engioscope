@@ -195,7 +195,6 @@ const filterByNotConfirmingToBranchPolicy = (
         ],
       },
     },
-    // { $match: {} }
   ];
 };
 const doesStageExist = (stage: string) => ({
@@ -552,7 +551,6 @@ export const releasePipelineStages = async ({
             $sum: {
               $cond: {
                 if: { $ne: ['$environments.status', 'notStarted'] },
-
                 then: 1,
                 else: 0,
               },
@@ -562,7 +560,6 @@ export const releasePipelineStages = async ({
             $sum: {
               $cond: {
                 if: { $eq: ['$environments.status', 'succeeded'] },
-
                 then: 1,
                 else: 0,
               },

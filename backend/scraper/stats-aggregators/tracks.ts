@@ -255,6 +255,7 @@ export const trackFeatures = (
         project: result.projectConfig.name,
         workItems: workItemsWithTracks,
         filterLabel: result.collectionConfig.workitems.filterBy?.find(f =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           f.fields.some(f => configWorkItemsWithTracks.map(w => w.track!).includes(f))
         )?.label,
         times: workItemTimes,

@@ -163,11 +163,7 @@ export const getBuildsOverviewForRepository = async ({
         'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) },
       },
     },
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
+    { $sort: { createdAt: -1 } },
     {
       $group: {
         _id: {
@@ -175,16 +171,11 @@ export const getBuildsOverviewForRepository = async ({
           collectionName: '$collectionName',
           repositoryID: '$repository.id',
         },
-        totalBuilds: {
-          $sum: 1,
-        },
+        totalBuilds: { $sum: 1 },
         totalSuccessfulBuilds: {
           $sum: {
             $cond: {
-              if: {
-                $eq: ['$result', 'succeeded'],
-              },
-
+              if: { $eq: ['$result', 'succeeded'] },
               then: 1,
               else: 0,
             },
@@ -234,12 +225,8 @@ export const getBuildsOverviewForRepository = async ({
             },
           },
         },
-        lastBuildStatus: {
-          $first: '$status',
-        },
-        lastBuildTimestamp: {
-          $first: '$finishTime',
-        },
+        lastBuildStatus: { $first: '$status' },
+        lastBuildTimestamp: { $first: '$finishTime' },
       },
     },
     {
