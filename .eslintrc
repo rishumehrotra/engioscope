@@ -115,6 +115,8 @@
     "arrow-body-style": "off",
     "quotes": "off",
     "object-curly-spacing": "off",
+    "semi": "off",
+    "no-trailing-spaces": "off",
     "jsx-a11y/click-events-have-key-events": "warn",
     "react/no-array-index-key": "warn",
     "jsx-a11y/control-has-associated-label": "warn",

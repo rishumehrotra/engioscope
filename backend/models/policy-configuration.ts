@@ -158,6 +158,13 @@ const combinedBranchPoliciesSchema = new Schema({
   policies: {},
 });
 
+combinedBranchPoliciesSchema.index({
+  collectionName: 1,
+  project: 1,
+  repositoryId: 1,
+  refName: 1,
+});
+
 const CombinedBranchPoliciesModel = model<CombinedBranchPolicies>(
   'CombinedBranchPolicies',
   combinedBranchPoliciesSchema
