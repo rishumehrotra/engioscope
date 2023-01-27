@@ -1,12 +1,15 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
-import { bulkSavePolicies } from '../models/policy-configuration.js';
+import {
+  bulkSavePolicies,
+  refreshCombinedBranchPoliciesView,
+} from '../models/policy-configuration.js';
 import azure from '../scraper/network/azure.js';
 import { runJob } from './utils.js';
 
-export const getPolicyConfigurations = () => {
+export const getPolicyConfigurations = async () => {
   const { getPolicyConfigurations } = azure(getConfig());
 
-  return collectionsAndProjects().reduce<Promise<void>>(
+  await collectionsAndProjects().reduce<Promise<void>>(
     async (acc, [collection, project]) => {
       await acc;
       await getPolicyConfigurations(collection.name, project.name).then(
@@ -15,6 +18,8 @@ export const getPolicyConfigurations = () => {
     },
     Promise.resolve()
   );
+
+  return refreshCombinedBranchPoliciesView;
 };
 
 export default () =>

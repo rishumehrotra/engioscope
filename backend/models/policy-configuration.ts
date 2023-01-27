@@ -127,24 +127,85 @@ repoPolicySchema.index({
   refName: 1,
 });
 
-// type BranchPolicyMerged = {
-//   _id: {
-//     collectionName: string;
-//     project: string;
-//     repositoryId: string;
-//     refName: string;
-//   };
-//   policies: Partial<{
-//     [key in BranchPolicy['type']]: {
-//       isEnabled: boolean;
-//       isBlocking: boolean;
-//       minimumApproverCount?: number;
-//       buildDefinitionId?: number;
-//     };
-//   }>;
-// };
-
 const RepoPolicyModel = model<RepoPolicy>('RepoPolicy', repoPolicySchema);
+
+const creatingRepoPoliciesCollection = RepoPolicyModel.createCollection();
+
+type CombinedBranchPolicies = {
+  _id: {
+    collectionName: string;
+    project: string;
+    repositoryId: string;
+    refName: string;
+  };
+  policies: Partial<{
+    [key in BranchPolicy['type']]: {
+      isEnabled: boolean;
+      isBlocking: boolean;
+      minimumApproverCount?: number;
+      buildDefinitionId?: number;
+    };
+  }>;
+};
+
+const combinedBranchPoliciesSchema = new Schema({
+  _id: {
+    collectionName: { type: String, required: true },
+    project: { type: String, required: true },
+    repositoryId: { type: String, required: true },
+    refName: { type: String, required: true },
+  },
+  policies: {},
+});
+
+const CombinedBranchPoliciesModel = model<CombinedBranchPolicies>(
+  'CombinedBranchPolicies',
+  combinedBranchPoliciesSchema
+);
+
+export const refreshCombinedBranchPoliciesView = async () => {
+  await CombinedBranchPoliciesModel.collection.drop();
+  return CombinedBranchPoliciesModel.createCollection({
+    viewOn: 'repopolicies',
+    pipeline: [
+      { $match: { isDeleted: false, refName: { $exists: 1 } } },
+      {
+        $group: {
+          _id: {
+            refName: '$refName',
+            collectionName: '$collectionName',
+            project: '$project',
+            repositoryId: '$repositoryId',
+          },
+          policies: {
+            $push: {
+              k: '$type',
+              v: {
+                isEnabled: '$isEnabled',
+                isBlocking: '$isBlocking',
+                minimumApproverCount: '$settings.minimumApproverCount',
+                buildDefinitionId: '$settings.buildDefinitionId',
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          policies: { $arrayToObject: '$policies' },
+          collectionName: '$_id.collectionName',
+          project: '$_id.project',
+          repositoryId: '$_id.repositoryId',
+          refName: '$_id.refName',
+        },
+      },
+      { $unset: '_id' },
+    ],
+  });
+};
+
+// eslint-disable-next-line @typescript-eslint/no-floating-promises, unicorn/prefer-top-level-await
+creatingRepoPoliciesCollection.then(refreshCombinedBranchPoliciesView);
 
 export const bulkSavePolicies =
   (collectionName: string, project: string) => (policies: AzurePolicyConfiguration[]) =>
