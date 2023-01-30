@@ -261,13 +261,13 @@ export const getBuildsOverviewForRepository = async ({
         },
       },
     ]),
-    buildsCentralTemplateStats({
+    buildsCentralTemplateStats(
       collectionName,
       project,
-      startDate,
-      endDate,
       repositoryName,
-    }),
+      startDate,
+      endDate
+    ),
   ]);
 
   return result.map(pipeline => ({

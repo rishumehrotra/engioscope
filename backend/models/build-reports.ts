@@ -4,7 +4,7 @@ import { map } from 'rambda';
 import yaml from 'yaml';
 import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
-import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
 const { Schema, model } = mongoose;
 
@@ -214,19 +214,13 @@ export const centralTemplateOptions = async ({
   );
 };
 
-export const buildsCentralTemplateStatsInputParser = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
-  repositoryName: z.string(),
-});
-
-export const buildsCentralTemplateStats = async ({
-  collectionName,
-  project,
-  repositoryName,
-  startDate,
-  endDate,
-}: z.infer<typeof buildsCentralTemplateStatsInputParser>) => {
+export const buildsCentralTemplateStats = async (
+  collectionName: string,
+  project: string,
+  repositoryName: string,
+  startDate: Date,
+  endDate: Date
+) => {
   type CentralTemplateResult = {
     buildDefinitionId: string;
     templateUsers: number;
