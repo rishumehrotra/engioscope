@@ -156,14 +156,6 @@ export const getBuildsOverviewForRepository = async ({
   repositoryName,
   repositoryId,
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
-  console.log('getBuildsOverviewForRepository', {
-    collectionName,
-    project,
-    startDate,
-    endDate,
-    repositoryName,
-    repositoryId,
-  });
   // Make sure to send default start and end date values
   const [result, buildTemplateCounts] = await Promise.all([
     BuildModel.aggregate<BuildOverviewStats>([
