@@ -6,6 +6,7 @@ import { configForProject, getConfig } from '../config.js';
 import type { ParsedProjectConfig } from '../scraper/parse-config.js';
 import type { ArtifactType } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
+import { conformsToBranchPolicies } from './policy-configuration.js';
 import {
   getMinimalReleaseDefinitions,
   ReleaseDefinitionModel,
@@ -403,6 +404,7 @@ const createSummary = (collectionName: string, project: string): PipelineStage[]
     },
   ];
 };
+
 const addBooleanFields = (collectionName: string, project: string): PipelineStage => {
   const projectConfig = configForProject(collectionName, project);
   const lastEnvironmentName = projectConfig?.environments
@@ -596,7 +598,8 @@ export const getArtifacts = async ({
     _id:
       | {
           type: 'Build';
-          repostitoryName: string;
+          repositoryName: string;
+          repositoryId: string;
           branch: string;
           alias: string;
         }
@@ -643,7 +646,8 @@ export const getArtifacts = async ({
         _id: {
           type: '$artifacts.type',
           alias: '$artifacts.alias',
-          repostitoryName: '$artifacts.definition.repositoryName',
+          repositoryName: '$artifacts.definition.repositoryName',
+          repositoryId: '$artifacts.definition.repositoryId',
           branch: '$artifacts.definition.branch',
         },
         buildPipelineUrl: { $first: '$artifacts.definition.buildPipelineUrl' },
@@ -658,6 +662,22 @@ export const getArtifacts = async ({
     },
   ]);
 
+  const rnb = results
+    .map(r => {
+      if (r._id.type !== 'Build') return;
+      return { repositoryId: r._id.repositoryId, refName: r._id.branch };
+    })
+    .filter(exists);
+
+  const conformsStatus = await Promise.all(
+    rnb.map(async r => {
+      return {
+        ...r,
+        conforms: await conformsToBranchPolicies({ collectionName, project, ...r }),
+      };
+    })
+  );
+
   const { builds, others } = results.reduce<{
     builds: Record<
       string,
@@ -667,9 +687,11 @@ export const getArtifacts = async ({
         isPrimary?: boolean;
         branches: {
           name: string;
+          conforms: boolean | undefined;
         }[];
         additionalBranches: {
           name: string;
+          conforms: boolean | undefined;
         }[];
       }
     >;
@@ -684,7 +706,7 @@ export const getArtifacts = async ({
       if (result._id.type === 'Build') {
         acc.builds[result.buildPipelineUrl] = acc.builds[result.buildPipelineUrl] || {
           type: 'Build',
-          name: result._id.repostitoryName,
+          name: result._id.repositoryName,
           isPrimary: result.isPrimary || undefined,
           branches: [],
           additionalBranches: [],
@@ -699,7 +721,16 @@ export const getArtifacts = async ({
             b => result._id.type === 'Build' && b.name === result._id.branch
           )
         ) {
-          branchesList.push({ name: result._id.branch });
+          branchesList.push({
+            name: result._id.branch,
+            conforms: conformsStatus.find(c => {
+              return (
+                result._id.type === 'Build' &&
+                c.repositoryId === result._id.repositoryId &&
+                c.refName === result._id.branch
+              );
+            })?.conforms,
+          });
         }
       } else if (
         !acc.others.some(

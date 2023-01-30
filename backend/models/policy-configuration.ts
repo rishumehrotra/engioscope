@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { configForProject } from '../config.js';
 import type { PolicyConfiguration as AzurePolicyConfiguration } from '../scraper/types-azure.js';
 
 const { Schema, model } = mongoose;
@@ -149,12 +150,10 @@ type CombinedBranchPolicies = {
 };
 
 const combinedBranchPoliciesSchema = new Schema({
-  _id: {
-    collectionName: { type: String, required: true },
-    project: { type: String, required: true },
-    repositoryId: { type: String, required: true },
-    refName: { type: String, required: true },
-  },
+  collectionName: { type: String, required: true },
+  project: { type: String, required: true },
+  repositoryId: { type: String, required: true },
+  refName: { type: String, required: true },
   policies: {},
 });
 
@@ -252,6 +251,53 @@ export const bulkSavePolicies =
 
 export const getPolicyConfigurations = (collectionName: string, project: string) =>
   RepoPolicyModel.find({ collectionName, project }).lean();
+
+export const conformsToBranchPolicies = async ({
+  collectionName,
+  project,
+  repositoryId,
+  refName,
+}: {
+  collectionName: string;
+  project: string;
+  repositoryId: string;
+  refName: string;
+}) => {
+  const branchPolicies = configForProject(collectionName, project)?.branchPolicies;
+  if (!branchPolicies) return;
+
+  const match = await CombinedBranchPoliciesModel.findOne({
+    collectionName,
+    project,
+    repositoryId,
+    refName,
+  }).lean();
+
+  if (!match) return false;
+
+  return Object.entries(branchPolicies).every(([p, policyConfig]) => {
+    const policyName = p as keyof typeof match.policies;
+    const matchingPolicy = match.policies[policyName];
+    if (!matchingPolicy) return false;
+
+    const isActive =
+      matchingPolicy.isEnabled === policyConfig.isEnabled &&
+      matchingPolicy.isBlocking === policyConfig.isBlocking;
+
+    if (!isActive) return false;
+
+    if (
+      policyName === 'Minimum number of reviewers' &&
+      'minimumApproverCount' in policyConfig
+    ) {
+      return (
+        (matchingPolicy.minimumApproverCount || 0) >= policyConfig.minimumApproverCount
+      );
+    }
+
+    return true;
+  });
+};
 
 export const isFileSizeRestrictionPolicy = (
   policy: RepoPolicy

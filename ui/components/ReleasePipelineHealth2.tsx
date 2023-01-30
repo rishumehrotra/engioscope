@@ -68,7 +68,11 @@ const Artefacts: React.FC<{
                               <Branches className="h-4 mr-1" />
                               {branch.name.replace('refs/heads/', '')}
                               <span
-                                className="text-xs border-2 rounded-full px-2 inline-block m-2"
+                                className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${
+                                  branch.conforms
+                                    ? 'text-green-700 bg-green-50'
+                                    : 'text-red-700 bg-red-50'
+                                }`}
                                 data-html
                               >
                                 Policies
