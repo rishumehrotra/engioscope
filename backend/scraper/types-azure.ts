@@ -245,16 +245,16 @@ export type Build = {
 };
 
 export type BuildOverviewStats = {
-  project: string;
-  collectionName: string;
-  repositoryID: string;
+  buildDefinitionId: number;
   totalBuilds: number;
   totalSuccessfulBuilds: number;
-  averageDuration: 1;
+  averageDuration: number;
   minDuration: number;
   maxDuration: number;
+  url: string;
   lastBuildStatus: string;
   lastBuildTimestamp: Date;
+  definitionName: string;
 };
 
 export type DeploymentAttempt = {

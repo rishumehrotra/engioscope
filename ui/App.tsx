@@ -37,7 +37,7 @@ const App: React.FC = () => {
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links: [httpBatchLink({ url: '/api/rpc' })],
+      links: [httpBatchLink({ url: '/api/rpc', maxURLLength: 1024 })],
       transformer: superjson,
     })
   );

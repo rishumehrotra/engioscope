@@ -10,6 +10,7 @@ import type {
   BuildStatus,
   BuildOverviewStats,
 } from '../scraper/types-azure.js';
+import { buildsCentralTemplateStats } from './build-reports.js';
 import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
 
 export type Build = {
@@ -142,6 +143,7 @@ export const getBuilds = (
 export const getBuildsOverviewForRepositoryInputParser = z.object({
   ...collectionAndProjectInputs,
   ...dateRangeInputs,
+  repositoryName: z.string(),
   repositoryId: z.string(),
 });
 
@@ -151,102 +153,138 @@ export const getBuildsOverviewForRepository = async ({
   project,
   startDate,
   endDate,
+  repositoryName,
   repositoryId,
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
+  console.log('getBuildsOverviewForRepository', {
+    collectionName,
+    project,
+    startDate,
+    endDate,
+    repositoryName,
+    repositoryId,
+  });
   // Make sure to send default start and end date values
-  const result = await BuildModel.aggregate<BuildOverviewStats>([
-    {
-      $match: {
-        project,
-        collectionName,
-        'repository.id': repositoryId,
-        'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) },
+  const [result, buildTemplateCounts] = await Promise.all([
+    BuildModel.aggregate<BuildOverviewStats>([
+      {
+        $match: {
+          project,
+          collectionName,
+          'repository.id': repositoryId,
+          'createdAt': { $gte: new Date(startDate), $lt: new Date(endDate) },
+        },
       },
-    },
-    { $sort: { createdAt: -1 } },
-    {
-      $group: {
-        _id: {
-          project: '$project',
-          collectionName: '$collectionName',
-          repositoryID: '$repository.id',
-        },
-        totalBuilds: { $sum: 1 },
-        totalSuccessfulBuilds: {
-          $sum: {
-            $cond: {
-              if: { $eq: ['$result', 'succeeded'] },
-              then: 1,
-              else: 0,
-            },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: {
+            project: '$project',
+            collectionName: '$collectionName',
+            repositoryId: '$repository.id',
+            definitionId: '$definition.id',
           },
-        },
-        averageDuration: {
-          $avg: {
-            $dateDiff: {
-              startDate: '$startTime',
-              endDate: '$finishTime',
-              unit: 'millisecond',
-            },
-          },
-        },
-        minDuration: {
-          $min: {
-            $cond: [
-              {
-                $gt: [
-                  {
-                    $dateDiff: {
-                      startDate: '$startTime',
-                      endDate: '$finishTime',
-                      unit: 'millisecond',
-                    },
-                  },
-                  0,
-                ],
-              },
-              {
-                $dateDiff: {
-                  startDate: '$startTime',
-                  endDate: '$finishTime',
-                  unit: 'millisecond',
+          totalBuilds: { $sum: 1 },
+          totalSuccessfulBuilds: {
+            $sum: {
+              $cond: {
+                if: {
+                  $or: [
+                    { $eq: ['$result', 'succeeded'] },
+                    { $eq: ['$result', 'partiallySucceeded'] },
+                  ],
                 },
+                then: 1,
+                else: 0,
               },
-              null,
-            ],
-          },
-        },
-        maxDuration: {
-          $max: {
-            $dateDiff: {
-              startDate: '$startTime',
-              endDate: '$finishTime',
-              unit: 'millisecond',
             },
           },
+          averageDuration: {
+            $avg: {
+              $dateDiff: {
+                startDate: '$startTime',
+                endDate: '$finishTime',
+                unit: 'millisecond',
+              },
+            },
+          },
+          minDuration: {
+            $min: {
+              $cond: [
+                {
+                  $gt: [
+                    {
+                      $dateDiff: {
+                        startDate: '$startTime',
+                        endDate: '$finishTime',
+                        unit: 'millisecond',
+                      },
+                    },
+                    0,
+                  ],
+                },
+                {
+                  $dateDiff: {
+                    startDate: '$startTime',
+                    endDate: '$finishTime',
+                    unit: 'millisecond',
+                  },
+                },
+                null,
+              ],
+            },
+          },
+          maxDuration: {
+            $max: {
+              $dateDiff: {
+                startDate: '$startTime',
+                endDate: '$finishTime',
+                unit: 'millisecond',
+              },
+            },
+          },
+          buildDefinitionId: { $first: '$definition.id' },
+          definitionName: { $first: '$definition.name' },
+          url: { $first: '$definition.url' },
+          lastBuildStatus: { $first: '$result' },
+          lastBuildTimestamp: { $first: '$finishTime' },
         },
-        lastBuildStatus: { $first: '$status' },
-        lastBuildTimestamp: { $first: '$finishTime' },
       },
-    },
-    {
-      $project: {
-        totalBuilds: 1,
-        totalSuccessfulBuilds: 1,
-        averageDuration: 1,
-        minDuration: 1,
-        maxDuration: 1,
-        lastBuildStatus: 1,
-        lastBuildTimestamp: 1,
-        _id: 0,
-        project: '$_id.project',
-        collectionName: '$_id.collectionName',
-        repositoryID: '$_id.repositoryID',
+      {
+        $project: {
+          totalBuilds: 1,
+          totalSuccessfulBuilds: 1,
+          averageDuration: 1,
+          minDuration: 1,
+          maxDuration: 1,
+          lastBuildStatus: 1,
+          lastBuildTimestamp: 1,
+          _id: 0,
+          url: 1,
+          buildDefinitionId: 1,
+          definitionName: 1,
+          project: '$_id.project',
+          collectionName: '$_id.collectionName',
+          repositoryID: '$_id.repositoryID',
+        },
       },
-    },
+    ]),
+    buildsCentralTemplateStats({
+      collectionName,
+      project,
+      startDate,
+      endDate,
+      repositoryName,
+    }),
   ]);
 
-  return result;
+  return result.map(pipeline => ({
+    ...pipeline,
+    centralTemplateCount:
+      buildTemplateCounts.find(
+        t => Number(t.buildDefinitionId) === pipeline.buildDefinitionId
+      )?.templateUsers || 0,
+  }));
 };
 
 const getOneBuildPerDefinitionId = async (

@@ -214,29 +214,31 @@ export const centralTemplateOptions = async ({
   );
 };
 
-export const buildsCentralTemplateStatsInputParse = z.object({
+export const buildsCentralTemplateStatsInputParser = z.object({
   ...collectionAndProjectInputs,
   ...dateRangeInputs,
-  repoName: z.string(),
+  repositoryName: z.string(),
 });
 
-export const buildsCentralTemplateStats = async (
-  collectionName: string,
-  projectName: string,
-  repoName: string,
-  startDate: Date,
-  endDate: Date
-) => {
-  const result = await AzureBuildReportModel.aggregate<{
+export const buildsCentralTemplateStats = async ({
+  collectionName,
+  project,
+  repositoryName,
+  startDate,
+  endDate,
+}: z.infer<typeof buildsCentralTemplateStatsInputParser>) => {
+  type CentralTemplateResult = {
     buildDefinitionId: string;
     templateUsers: number;
     totalAzureBuilds: number;
-  }>([
+  };
+
+  const result = await AzureBuildReportModel.aggregate<CentralTemplateResult>([
     {
       $match: {
         collectionName,
-        project: projectName,
-        repo: repoName,
+        project,
+        repo: repositoryName,
         createdAt: { $gte: new Date(startDate), $lt: new Date(endDate) },
       },
     },

@@ -1,5 +1,6 @@
-import React, { Fragment, useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useState, useMemo } from 'react';
 import ReactTooltip from 'react-tooltip';
+import prettyMilliseconds from 'pretty-ms';
 import type { RepoAnalysis } from '../../../shared/types.js';
 import { num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.js';
@@ -10,6 +11,9 @@ import BuildInsights from './BuildInsights.jsx';
 import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
+import Loading from '../Loading.jsx';
+import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -107,7 +111,6 @@ const BuildsOld: React.FC<{
   queryPeriodDays: number;
 }> = ({ builds, queryPeriodDays }) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-
   const toggleExpanded = useCallback(
     (url: string) => {
       if (expandedRows.includes(url)) {
@@ -150,6 +153,8 @@ const BuildsOld: React.FC<{
                     <td>
                       <div className="flex">
                         <button
+                          type="button"
+                          title='Expand/collapse "Builds" section'
                           onClick={() => toggleExpanded(pipeline.url)}
                           className="mr-2"
                         >
@@ -281,15 +286,26 @@ const BuildsOld: React.FC<{
 };
 
 const BuildsNew: React.FC<{
-  builds: RepoAnalysis['builds'];
-  queryPeriodDays: number;
-}> = ({ builds, queryPeriodDays }) => {
+  repositoryId: string;
+  repositoryName: string;
+}> = ({ repositoryId, repositoryName }) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  // const { collectionName, project } = useCollectionAndProject();
-  // const [queryPeriodDays] = useQueryPeriodDays();
-  // trpc.builds.getBuildsOverviewForRepository.useQuery({
-  //   collectionName, project,
-  // })
+  const { collectionName, project } = useCollectionAndProject();
+  const [queryPeriodDays] = useQueryPeriodDays();
+  const [startDate, endDate] = useMemo(() => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - queryPeriodDays);
+    return [startDate, new Date()] as const;
+  }, [queryPeriodDays]);
+
+  const builds = trpc.builds.getBuildsOverviewForRepository.useQuery({
+    collectionName,
+    project,
+    repositoryId,
+    repositoryName,
+    startDate,
+    endDate,
+  });
 
   const toggleExpanded = useCallback(
     (url: string) => {
@@ -305,6 +321,8 @@ const BuildsNew: React.FC<{
     (url: string) => expandedRows.includes(url),
     [expandedRows]
   );
+
+  if (!builds.data) return <Loading />;
 
   return (
     <TabContents gridCols={1}>
@@ -325,14 +343,19 @@ const BuildsNew: React.FC<{
               </tr>
             </thead>
             <tbody>
-              {builds.pipelines.map(pipeline => (
+              {builds.data.map(pipeline => (
                 <Fragment key={pipeline.url}>
                   <tr
-                    className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}
+                    className={`${
+                      pipeline.lastBuildStatus === 'unused' ? 'opacity-60' : ''
+                    }`}
                   >
+                    {/* Build Toggler */}
                     <td>
                       <div className="flex">
                         <button
+                          title="Expand/collapse"
+                          type="button"
                           onClick={() => toggleExpanded(pipeline.url)}
                           className="mr-2"
                         >
@@ -349,12 +372,12 @@ const BuildsNew: React.FC<{
                           href={pipeline.url}
                           target="_blank"
                           rel="noreferrer"
-                          data-tip={pipeline.name}
+                          data-tip={pipeline.definitionName}
                           className="link-text"
                         >
                           <span className="truncate w-96 block">
-                            {pipeline.name}
-                            {pipeline.type === 'yml' ? null : (
+                            {pipeline.definitionName}
+                            {/* {pipeline.type === 'yml' ? null : (
                               <span
                                 className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
                                 rounded-sm text-red-700 border font-semibold no-underline`}
@@ -362,76 +385,93 @@ const BuildsNew: React.FC<{
                               >
                                 UI
                               </span>
-                            )}
+                            )} */}
                           </span>
                         </a>
                       </div>
                     </td>
+                    {/* Central Template Usage */}
                     <td>
                       <CentralTemplateUsage
-                        buildDefinitionId={pipeline.definitionId}
-                        centralTemplateRuns={pipeline.centralTemplateRuns}
-                        totalRuns={pipeline.count}
+                        buildDefinitionId={String(pipeline.buildDefinitionId)}
+                        centralTemplateRuns={pipeline.centralTemplateCount}
+                        totalRuns={pipeline.totalBuilds}
                       />
                     </td>
+                    {/* Successful Count */}
                     <td>
-                      {pipeline.status.type === 'unused' ? '-' : num(pipeline.success)}
-                    </td>
-                    <td>
-                      {pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}
-                    </td>
-                    <td>
-                      {pipeline.status.type === 'unused'
+                      {pipeline.lastBuildStatus === 'unused'
                         ? '-'
-                        : divide(pipeline.success, pipeline.count)
+                        : num(pipeline.totalSuccessfulBuilds)}
+                    </td>
+                    {/* Total Count */}
+                    <td>
+                      {pipeline.lastBuildStatus === 'unused'
+                        ? '-'
+                        : num(pipeline?.totalBuilds)}
+                    </td>
+                    {/* Success Rate */}
+                    <td>
+                      {pipeline.lastBuildStatus === 'unused'
+                        ? '-'
+                        : divide(pipeline.totalSuccessfulBuilds, pipeline.totalBuilds)
                             .map(toPercentage)
                             .getOr('-')}
                     </td>
+                    {/* Average Duration */}
                     <td style={{ textAlign: 'right' }}>
-                      {pipeline.status.type === 'unused' ? (
+                      {pipeline.lastBuildStatus === 'unused' ? (
                         '-'
                       ) : (
                         <>
-                          <span>{pipeline.duration.average}</span>
+                          <span>{prettyMilliseconds(pipeline.averageDuration)}</span>
                           <div className="text-gray-400 text-sm" data-tip="loading">
-                            ({`${pipeline.duration.min} - ${pipeline.duration.max}`})
+                            (
+                            {`${prettyMilliseconds(
+                              pipeline.minDuration
+                            )} - ${prettyMilliseconds(pipeline.maxDuration)}`}
+                            )
                           </div>
                         </>
                       )}
                     </td>
+                    {/* Current Status */}
                     <td style={{ textAlign: 'left' }} className="pl-6">
-                      {pipeline.status.type !== 'failed' &&
-                        pipeline.status.type !== 'unused' && (
-                          <>
-                            <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
-                              {' '}
-                            </span>
-                            <span className="capitalize">{pipeline.status.type}</span>
-                          </>
-                        )}
-                      {pipeline.status.type === 'failed' ? (
+                      {pipeline.lastBuildStatus === 'succeeded' && (
+                        <>
+                          <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
+                            {' '}
+                          </span>
+                          <span className="capitalize">{pipeline.lastBuildStatus}</span>
+                        </>
+                      )}
+                      {pipeline.lastBuildStatus === 'failed' ||
+                      pipeline.lastBuildStatus === 'canceled' ||
+                      pipeline.lastBuildStatus === 'partiallySucceeded' ? (
                         <>
                           <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
                           </span>
                           <span>
                             {`Failing since ${shortDate(
-                              new Date(pipeline.status.since)
+                              new Date(pipeline.lastBuildTimestamp)
                             )}`}
                           </span>
                         </>
                       ) : undefined}
-                      {pipeline.status.type === 'unused' ? (
+                      {pipeline.lastBuildStatus === 'unused' ? (
                         <>
                           <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
                           </span>
                           <span>
                             {`Last used ${
-                              pipeline.status.since
+                              pipeline.lastBuildTimestamp
                                 ? `${shortDate(
-                                    new Date(pipeline.status.since)
-                                  )}, ${new Date(pipeline.status.since).getFullYear()}`
+                                    new Date(pipeline.lastBuildTimestamp)
+                                  )}, ${new Date(
+                                    pipeline.lastBuildTimestamp
+                                  ).getFullYear()}`
                                 : 'unknown'
                             }`}
                           </span>
@@ -463,7 +503,12 @@ const BuildsNew: React.FC<{
   );
 };
 
-export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab => ({
+export default (
+  builds: RepoAnalysis['builds'],
+  queryPeriodDays: number,
+  repositoryId: string,
+  repositoryName: string
+): Tab => ({
   title: 'Builds',
   count: builds?.count || 0,
   Component: () => {
@@ -472,7 +517,7 @@ export default (builds: RepoAnalysis['builds'], queryPeriodDays: number): Tab =>
     return (
       <>
         {showNewBuild ? (
-          <BuildsNew builds={builds} queryPeriodDays={queryPeriodDays} />
+          <BuildsNew repositoryId={repositoryId} repositoryName={repositoryName} />
         ) : null}
         <BuildsOld builds={builds} queryPeriodDays={queryPeriodDays} />
       </>

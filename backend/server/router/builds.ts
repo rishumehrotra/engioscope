@@ -6,6 +6,8 @@ import {
 import {
   centralTemplateOptions,
   centralTemplateOptionsInputParser,
+  buildsCentralTemplateStats,
+  buildsCentralTemplateStatsInputParser,
 } from '../../models/build-reports.js';
 import {
   getBuildsOverviewForRepository,
@@ -24,4 +26,8 @@ export default t.router({
   getBuildsOverviewForRepository: t.procedure
     .input(getBuildsOverviewForRepositoryInputParser)
     .query(passInputTo(getBuildsOverviewForRepository)),
+
+  buildsCentralTemplateStats: t.procedure
+    .input(buildsCentralTemplateStatsInputParser)
+    .query(passInputTo(buildsCentralTemplateStats)),
 });
