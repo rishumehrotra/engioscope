@@ -92,7 +92,7 @@ buildSchema.index({
   'repository.id': 1,
 });
 
-const BuildModel = model<Build>('Build', buildSchema);
+export const BuildModel = model<Build>('Build', buildSchema);
 
 export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   const { project, ...rest } = build;
