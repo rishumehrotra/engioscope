@@ -6,6 +6,7 @@ import others from './others.js';
 import analytics from './analytics.js';
 import releases from './releases.js';
 import projects from './projects.js';
+import repos from './repos.js';
 import { t, trpcContext } from './trpc.js';
 
 export const appRouter = t.router({
@@ -14,6 +15,7 @@ export const appRouter = t.router({
   analytics,
   releases,
   projects,
+  repos,
   ...others,
 });
 

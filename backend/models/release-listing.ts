@@ -685,6 +685,7 @@ export const getArtifacts = async ({
         type: 'Build';
         name: string;
         isPrimary?: boolean;
+        repoId: string;
         branches: {
           name: string;
           conforms: boolean | undefined;
@@ -707,6 +708,7 @@ export const getArtifacts = async ({
         acc.builds[result.buildPipelineUrl] = acc.builds[result.buildPipelineUrl] || {
           type: 'Build',
           name: result._id.repositoryName,
+          repoId: result._id.repositoryId,
           isPrimary: result.isPrimary || undefined,
           branches: [],
           additionalBranches: [],

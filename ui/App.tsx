@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { httpBatchLink } from '@trpc/client';
+import { httpLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import superjson from 'superjson';
@@ -37,7 +37,7 @@ const App: React.FC = () => {
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links: [httpBatchLink({ url: '/api/rpc', maxURLLength: 1024 })],
+      links: [httpLink({ url: '/api/rpc' })],
       transformer: superjson,
     })
   );

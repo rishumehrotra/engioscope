@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { z } from 'zod';
 import { configForProject } from '../config.js';
 import type { PolicyConfiguration as AzurePolicyConfiguration } from '../scraper/types-azure.js';
 
@@ -297,6 +298,19 @@ export const conformsToBranchPolicies = async ({
 
     return true;
   });
+};
+
+export const branchPoliciesInputParser = z.object({
+  collectionName: z.string(),
+  project: z.string(),
+  repositoryId: z.string(),
+  refName: z.string(),
+});
+
+export const getBranchPolicies = (options: z.infer<typeof branchPoliciesInputParser>) => {
+  return CombinedBranchPoliciesModel.findOne(options, { policies: 1 })
+    .lean()
+    .then(x => x?.policies || null);
 };
 
 export const isFileSizeRestrictionPolicy = (
