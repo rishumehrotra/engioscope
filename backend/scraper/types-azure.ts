@@ -164,6 +164,9 @@ export type DefinitionReference = {
   type: DefinitionType;
   uri: string;
   url: string;
+  repository?: {
+    id: string;
+  };
 };
 
 export type IdentityRef = {
@@ -208,9 +211,7 @@ export type BuildRepository = {
 export type BuildDefinitionReference = DefinitionReference & {
   latestBuild?: Build;
   latestCompletedBuild?: Build;
-  process: {
-    type: 1 | 2;
-  };
+  process: { type: 1 } | { type: 2; yamlFilename: string };
 };
 
 export type Build = {
