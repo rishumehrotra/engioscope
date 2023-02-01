@@ -373,7 +373,7 @@ const BuildsNew: React.FC<{
                         >
                           <span className="truncate w-96 block">
                             {pipeline.definitionName}
-                            {/* {pipeline.type === 'yml' ? null : (
+                            {pipeline.ui ? (
                               <span
                                 className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
                                 rounded-sm text-red-700 border font-semibold no-underline`}
@@ -381,7 +381,7 @@ const BuildsNew: React.FC<{
                               >
                                 UI
                               </span>
-                            )} */}
+                            ) : null}
                           </span>
                         </a>
                       </div>
@@ -460,7 +460,7 @@ const BuildsNew: React.FC<{
                           <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
                           </span>
-                          <span>Last used : Unknown</span>
+                          <span>Last used : unknown</span>
                         </>
                       ) : undefined}
                     </td>

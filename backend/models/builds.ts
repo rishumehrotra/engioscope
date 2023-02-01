@@ -150,7 +150,14 @@ export const getBuildsOverviewForRepositoryInputParser = z.object({
 
 type BuildsResponse =
   | ({ type: 'recent'; centralTemplateCount: number; ui: boolean } & BuildOverviewStats)
-  | { type: 'old'; definitionName: string; url: string; buildDefinitionId: number };
+  | {
+      type: 'old';
+      definitionName: string;
+      url: string;
+      buildDefinitionId: number;
+      ui: boolean;
+      centralTemplateCount: number;
+    };
 
 // Get Overview Stats for a specific repository
 export const getBuildsOverviewForRepository = async ({
@@ -287,6 +294,11 @@ export const getBuildsOverviewForRepository = async ({
           url: buildDefinition.url,
           definitionName: buildDefinition.name,
           buildDefinitionId: buildDefinition.id,
+          ui: buildDefinition.process.processType === 1,
+          centralTemplateCount:
+            buildTemplateCounts.find(
+              t => Number(t.buildDefinitionId) === buildDefinition.id
+            )?.templateUsers || 0,
         };
       }
 
