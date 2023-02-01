@@ -10,6 +10,7 @@ import type {
   BuildStatus,
   BuildOverviewStats,
 } from '../scraper/types-azure.js';
+import { getBuildDefinitionsForRepo } from './build-definitions.js';
 import { buildsCentralTemplateStats } from './build-reports.js';
 import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
 
@@ -147,6 +148,10 @@ export const getBuildsOverviewForRepositoryInputParser = z.object({
   repositoryId: z.string(),
 });
 
+type BuildsResponse =
+  | ({ type: 'recent'; centralTemplateCount: number; ui: boolean } & BuildOverviewStats)
+  | { type: 'old'; definitionName: string; url: string; buildDefinitionId: number };
+
 // Get Overview Stats for a specific repository
 export const getBuildsOverviewForRepository = async ({
   collectionName,
@@ -157,17 +162,17 @@ export const getBuildsOverviewForRepository = async ({
   repositoryId,
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
   // Make sure to send default start and end date values
-  const [result, buildTemplateCounts] = await Promise.all([
+  const [result, buildTemplateCounts, buildDefinitions] = await Promise.all([
     BuildModel.aggregate<BuildOverviewStats>([
       {
         $match: {
           project,
           collectionName,
           'repository.id': repositoryId,
-          'createdAt': { $gte: new Date(startDate), $lt: new Date(endDate) },
+          'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) },
         },
       },
-      { $sort: { createdAt: -1 } },
+      { $sort: { startTime: -1 } },
       {
         $group: {
           _id: {
@@ -180,12 +185,7 @@ export const getBuildsOverviewForRepository = async ({
           totalSuccessfulBuilds: {
             $sum: {
               $cond: {
-                if: {
-                  $or: [
-                    { $eq: ['$result', 'succeeded'] },
-                    { $eq: ['$result', 'partiallySucceeded'] },
-                  ],
-                },
+                if: { $eq: ['$result', 'succeeded'] },
                 then: 1,
                 else: 0,
               },
@@ -268,15 +268,48 @@ export const getBuildsOverviewForRepository = async ({
       startDate,
       endDate
     ),
+    getBuildDefinitionsForRepo({
+      collectionName,
+      project,
+      repositoryId,
+    }),
   ]);
 
-  return result.map(pipeline => ({
-    ...pipeline,
-    centralTemplateCount:
-      buildTemplateCounts.find(
-        t => Number(t.buildDefinitionId) === pipeline.buildDefinitionId
-      )?.templateUsers || 0,
-  }));
+  return buildDefinitions
+    .map((buildDefinition): BuildsResponse => {
+      const buildStatsForDefinition = result.find(
+        r => r.buildDefinitionId === buildDefinition.id
+      );
+
+      if (!buildStatsForDefinition) {
+        return {
+          type: 'old',
+          url: buildDefinition.url,
+          definitionName: buildDefinition.name,
+          buildDefinitionId: buildDefinition.id,
+        };
+      }
+
+      return {
+        type: 'recent',
+        ...buildStatsForDefinition,
+        ui: buildDefinition.process.processType === 1,
+        centralTemplateCount:
+          buildTemplateCounts.find(
+            t => Number(t.buildDefinitionId) === buildDefinition.id
+          )?.templateUsers || 0,
+      };
+    })
+    .filter(exists)
+    .sort((a, b) => {
+      // TODO : Sorting the unused Builds
+      if (a.type === 'recent' && b.type === 'old') return -1;
+      if (a.type === 'old' && b.type === 'recent') return 1;
+      if (a.type === 'recent' && b.type === 'recent') {
+        return b.totalBuilds - a.totalBuilds;
+      }
+      return 0;
+    });
 };
 
 const getOneBuildPerDefinitionId = async (

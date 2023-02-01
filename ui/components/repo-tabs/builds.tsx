@@ -345,11 +345,7 @@ const BuildsNew: React.FC<{
             <tbody>
               {builds.data.map(pipeline => (
                 <Fragment key={pipeline.url}>
-                  <tr
-                    className={`${
-                      pipeline.lastBuildStatus === 'unused' ? 'opacity-60' : ''
-                    }`}
-                  >
+                  <tr className={`${pipeline.type === 'old' ? 'opacity-60' : ''}`}>
                     {/* Build Toggler */}
                     <td>
                       <div className="flex">
@@ -392,27 +388,25 @@ const BuildsNew: React.FC<{
                     </td>
                     {/* Central Template Usage */}
                     <td>
-                      <CentralTemplateUsage
-                        buildDefinitionId={String(pipeline.buildDefinitionId)}
-                        centralTemplateRuns={pipeline.centralTemplateCount}
-                        totalRuns={pipeline.totalBuilds}
-                      />
+                      {pipeline.type === 'recent' ? (
+                        <CentralTemplateUsage
+                          buildDefinitionId={String(pipeline.buildDefinitionId)}
+                          centralTemplateRuns={pipeline.centralTemplateCount}
+                          totalRuns={pipeline.totalBuilds}
+                        />
+                      ) : null}
                     </td>
                     {/* Successful Count */}
                     <td>
-                      {pipeline.lastBuildStatus === 'unused'
+                      {pipeline.type === 'old'
                         ? '-'
                         : num(pipeline.totalSuccessfulBuilds)}
                     </td>
                     {/* Total Count */}
-                    <td>
-                      {pipeline.lastBuildStatus === 'unused'
-                        ? '-'
-                        : num(pipeline?.totalBuilds)}
-                    </td>
+                    <td>{pipeline.type === 'old' ? '-' : num(pipeline?.totalBuilds)}</td>
                     {/* Success Rate */}
                     <td>
-                      {pipeline.lastBuildStatus === 'unused'
+                      {pipeline.type === 'old'
                         ? '-'
                         : divide(pipeline.totalSuccessfulBuilds, pipeline.totalBuilds)
                             .map(toPercentage)
@@ -420,7 +414,7 @@ const BuildsNew: React.FC<{
                     </td>
                     {/* Average Duration */}
                     <td style={{ textAlign: 'right' }}>
-                      {pipeline.lastBuildStatus === 'unused' ? (
+                      {pipeline.type === 'old' ? (
                         '-'
                       ) : (
                         <>
@@ -437,17 +431,19 @@ const BuildsNew: React.FC<{
                     </td>
                     {/* Current Status */}
                     <td style={{ textAlign: 'left' }} className="pl-6">
-                      {pipeline.lastBuildStatus === 'succeeded' && (
-                        <>
-                          <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
-                            {' '}
-                          </span>
-                          <span className="capitalize">{pipeline.lastBuildStatus}</span>
-                        </>
-                      )}
-                      {pipeline.lastBuildStatus === 'failed' ||
-                      pipeline.lastBuildStatus === 'canceled' ||
-                      pipeline.lastBuildStatus === 'partiallySucceeded' ? (
+                      {pipeline.type === 'recent' &&
+                        pipeline.lastBuildStatus === 'succeeded' && (
+                          <>
+                            <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
+                              {' '}
+                            </span>
+                            <span className="capitalize">{pipeline.lastBuildStatus}</span>
+                          </>
+                        )}
+                      {pipeline.type === 'recent' &&
+                      (pipeline.lastBuildStatus === 'failed' ||
+                        pipeline.lastBuildStatus === 'canceled' ||
+                        pipeline.lastBuildStatus === 'partiallySucceeded') ? (
                         <>
                           <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
@@ -459,22 +455,12 @@ const BuildsNew: React.FC<{
                           </span>
                         </>
                       ) : undefined}
-                      {pipeline.lastBuildStatus === 'unused' ? (
+                      {pipeline.type === 'old' ? (
                         <>
                           <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
                           </span>
-                          <span>
-                            {`Last used ${
-                              pipeline.lastBuildTimestamp
-                                ? `${shortDate(
-                                    new Date(pipeline.lastBuildTimestamp)
-                                  )}, ${new Date(
-                                    pipeline.lastBuildTimestamp
-                                  ).getFullYear()}`
-                                : 'unknown'
-                            }`}
-                          </span>
+                          <span>Last used : Unknown</span>
                         </>
                       ) : undefined}
                     </td>

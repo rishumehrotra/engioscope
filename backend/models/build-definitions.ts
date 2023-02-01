@@ -97,3 +97,11 @@ export const bulkSaveBuildDefinitions =
         };
       })
     );
+
+export const getBuildDefinitionsForRepo = (options: {
+  collectionName: string;
+  project: string;
+  repositoryId: string;
+}) => {
+  return BuildDefinitionModel.find(options).lean();
+};
