@@ -128,6 +128,9 @@ export const bulkSaveBuildDefinitions =
       })
     );
 
+export const getBuildDefinitionsForProject = (collectionName: string, project: string) =>
+  BuildDefinitionModel.find({ collectionName, project }).lean();
+
 export const getBuildDefinitionsForRepo = (options: {
   collectionName: string;
   project: string;

@@ -1,10 +1,10 @@
-import type { BuildDefinitionReference } from '../types-azure.js';
+import type { BuildDefinition } from '../../models/build-definitions.js';
 
-export default (buildDefinitions: BuildDefinitionReference[]) => {
+export default (buildDefinitions: BuildDefinition[]) => {
   const buildDefinitionsByRepoId = buildDefinitions.reduce<
-    Record<string, BuildDefinitionReference[]>
+    Record<string, BuildDefinition[]>
   >((acc, buildDefinition) => {
-    const repoId = buildDefinition.latestBuild?.repository.id || 'no-repo-id';
+    const repoId = buildDefinition.repositoryId || 'no-repo-id';
     acc[repoId] = acc[repoId] || [];
     acc[repoId].push(buildDefinition);
     return acc;

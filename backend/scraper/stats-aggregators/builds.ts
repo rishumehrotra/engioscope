@@ -1,11 +1,11 @@
 import prettyMilliseconds from 'pretty-ms';
 import { add, adjust, identity, inc, pipe, prop, replace } from 'rambda';
 import { asc, byDate, desc } from 'sort-lib';
-import type { BuildDefinitionReference } from '../types-azure.js';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
 import { isMaster, weeks } from '../../utils.js';
 import type { centralBuildTemplateBuildCount } from '../../models/build-reports.js';
 import type { Build } from '../../models/builds.js';
+import type { BuildDefinition } from '../../models/build-definitions.js';
 
 type CentralTemplateBuildCountForPipeline = ReturnType<
   typeof centralBuildTemplateBuildCount
@@ -85,7 +85,7 @@ const buildDefinitionWebUrl = pipe(
 
 export default (
   builds: Build[],
-  buildDefinitionsByRepoId: (repoId: string) => BuildDefinitionReference[],
+  buildDefinitionsByRepoId: (repoId: string) => BuildDefinition[],
   centralTemplateBuildCount: CentralTemplateBuildCountForPipeline
 ) => {
   type AggregatedBuilds = {
@@ -176,7 +176,7 @@ export default (
                     } as UIBuildPipeline['status']),
               type:
                 buildDefinitionsByRepoId(id).find(bd => bd.id === Number(definitionId))
-                  ?.process.type === 1
+                  ?.process.processType === 1
                   ? 'ui'
                   : 'yml',
               buildsByWeek: buildStats.buildsByWeek,
@@ -201,7 +201,7 @@ export default (
                 duration: { average: '0', min: '0', max: '0' },
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 status: { type: 'unused', since: d.latestBuild!.startTime },
-                type: d.process.type === 1 ? 'ui' : 'yml',
+                type: d.process.processType === 1 ? 'ui' : 'yml',
                 centralTemplateRuns: 0,
               }))
           )

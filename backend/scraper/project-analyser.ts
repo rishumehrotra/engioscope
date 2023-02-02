@@ -29,6 +29,7 @@ import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
 import { getRepositories } from '../models/repos.js';
 import { getReleases } from '../models/releases.js';
 import { getPolicyConfigurations } from '../models/policy-configuration.js';
+import { getBuildDefinitionsForProject } from '../models/build-definitions.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -47,7 +48,6 @@ export default (config: ParsedConfig) => {
     getTestRuns,
     getTestCoverage,
     getProjectWorkItemIdsForQuery,
-    getBuildDefinitions,
   } = azure(config);
 
   return async (
@@ -78,7 +78,7 @@ export default (config: ParsedConfig) => {
     ] = await Promise.all([
       forProject(getRepositories),
       forProject(getBuilds),
-      forProject(getBuildDefinitions).then(aggregateBuildDefinitions),
+      forProject(getBuildDefinitionsForProject).then(aggregateBuildDefinitions),
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
