@@ -157,6 +157,9 @@ type BuildsResponse =
       buildDefinitionId: number;
       ui: boolean;
       centralTemplateCount: number;
+      latestBuildResult: string | undefined;
+      latestBuildTime: Date | undefined;
+      totalBuilds: number;
     };
 
 // Get Overview Stats for a specific repository
@@ -295,10 +298,16 @@ export const getBuildsOverviewForRepository = async ({
           definitionName: buildDefinition.name,
           buildDefinitionId: buildDefinition.id,
           ui: buildDefinition.process.processType === 1,
+          latestBuildResult: buildDefinition.latestBuild?.result,
+          latestBuildTime: buildDefinition.latestBuild?.startTime,
           centralTemplateCount:
             buildTemplateCounts.find(
               t => Number(t.buildDefinitionId) === buildDefinition.id
             )?.templateUsers || 0,
+          totalBuilds:
+            buildTemplateCounts.find(
+              t => Number(t.buildDefinitionId) === buildDefinition.id
+            )?.totalAzureBuilds || 0,
         };
       }
 
@@ -314,9 +323,16 @@ export const getBuildsOverviewForRepository = async ({
     })
     .filter(exists)
     .sort((a, b) => {
-      // TODO : Sorting the unused Builds
       if (a.type === 'recent' && b.type === 'old') return -1;
       if (a.type === 'old' && b.type === 'recent') return 1;
+
+      if (a.type === 'old' && b.type === 'old') {
+        if (a.latestBuildTime === undefined || b.latestBuildTime === undefined) {
+          return 0;
+        }
+        return b.latestBuildTime.getTime() - a.latestBuildTime.getTime();
+      }
+
       if (a.type === 'recent' && b.type === 'recent') {
         return b.totalBuilds - a.totalBuilds;
       }

@@ -388,13 +388,11 @@ const BuildsNew: React.FC<{
                     </td>
                     {/* Central Template Usage */}
                     <td>
-                      {pipeline.type === 'recent' ? (
-                        <CentralTemplateUsage
-                          buildDefinitionId={String(pipeline.buildDefinitionId)}
-                          centralTemplateRuns={pipeline.centralTemplateCount}
-                          totalRuns={pipeline.totalBuilds}
-                        />
-                      ) : null}
+                      <CentralTemplateUsage
+                        buildDefinitionId={String(pipeline.buildDefinitionId)}
+                        centralTemplateRuns={pipeline.centralTemplateCount}
+                        totalRuns={pipeline.totalBuilds}
+                      />
                     </td>
                     {/* Successful Count */}
                     <td>
@@ -460,7 +458,15 @@ const BuildsNew: React.FC<{
                           <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
                           </span>
-                          <span>Last used : unknown</span>
+                          <span>
+                            {`Last used ${
+                              pipeline.latestBuildTime
+                                ? `${shortDate(
+                                    new Date(pipeline.latestBuildTime)
+                                  )}, ${new Date(pipeline.latestBuildTime).getFullYear()}`
+                                : 'unknown'
+                            }`}
+                          </span>
                         </>
                       ) : undefined}
                     </td>
