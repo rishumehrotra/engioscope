@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
-import type { BuildDefinitionReference } from '../scraper/types-azure.js';
+import type {
+  BuildDefinitionReference,
+  BuildStatus,
+  BuildResult,
+} from '../scraper/types-azure.js';
 
 const { Schema, model } = mongoose;
 
@@ -16,8 +20,22 @@ export type BuildDefinition = {
   type: 'build' | 'xaml';
   uri: string;
   url: string;
-  latestBuildId?: number;
-  latestCompletedBuildId?: number;
+  latestBuild?: {
+    id: number;
+    status: BuildStatus;
+    result: BuildResult;
+    queueTime: Date;
+    startTime: Date;
+    finishTime: Date;
+  };
+  latestCompletedBuild?: {
+    id: number;
+    status: BuildStatus;
+    result: BuildResult;
+    queueTime: Date;
+    startTime: Date;
+    finishTime: Date;
+  };
   process: { processType: 1 } | { processType: 2; yamlFilename: string };
 };
 
@@ -35,8 +53,22 @@ const buildDefinitionSchema = new Schema<BuildDefinition>(
     type: { type: String, required: true },
     uri: { type: String, required: true },
     url: { type: String, required: true },
-    latestBuildId: { type: Number },
-    latestCompletedBuildId: { type: Number },
+    latestBuild: {
+      id: { type: Number, required: true },
+      status: { type: String, required: true },
+      result: { type: String, required: true },
+      queueTime: { type: Date, required: true },
+      startTime: { type: Date, required: true },
+      finishTime: { type: Date, required: true },
+    },
+    latestCompletedBuild: {
+      id: { type: Number, required: true },
+      status: { type: String, required: true },
+      result: { type: String, required: true },
+      queueTime: { type: Date, required: true },
+      startTime: { type: Date, required: true },
+      finishTime: { type: Date, required: true },
+    },
     process: {
       processType: { type: Number, required: true },
       yamlFilename: { type: String },
@@ -87,8 +119,6 @@ export const bulkSaveBuildDefinitions =
               $set: {
                 process: processForDB,
                 repositoryId: buildDefinition.repository?.id,
-                latestBuildId: rest.latestBuild?.id,
-                latestCompletedBuildId: rest.latestCompletedBuild?.id,
                 ...rest,
               },
             },
