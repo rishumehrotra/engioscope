@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose';
+import { pipe, replace } from 'rambda';
 import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
@@ -148,6 +149,11 @@ export const getBuildsOverviewForRepositoryInputParser = z.object({
   repositoryId: z.string(),
 });
 
+const buildDefinitionWebUrl = pipe(
+  replace('_apis/build/Definitions/', '_build/definition?definitionId='),
+  replace(/\?revision=.*/, '')
+);
+
 type BuildsResponse =
   | ({ type: 'recent'; centralTemplateCount: number; ui: boolean } & BuildOverviewStats)
   | {
@@ -294,7 +300,7 @@ export const getBuildsOverviewForRepository = async ({
       if (!buildStatsForDefinition) {
         return {
           type: 'old',
-          url: buildDefinition.url,
+          url: buildDefinitionWebUrl(buildDefinition.url),
           definitionName: buildDefinition.name,
           buildDefinitionId: buildDefinition.id,
           ui: buildDefinition.process.processType === 1,
@@ -314,6 +320,7 @@ export const getBuildsOverviewForRepository = async ({
       return {
         type: 'recent',
         ...buildStatsForDefinition,
+        url: buildDefinitionWebUrl(buildStatsForDefinition.url),
         ui: buildDefinition.process.processType === 1,
         centralTemplateCount:
           buildTemplateCounts.find(
