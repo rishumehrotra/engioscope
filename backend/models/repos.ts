@@ -68,3 +68,14 @@ export const getRepositories = (collectionName: string, project: string) =>
 
 export const getRepoCount = (collectionName: string, project: string) =>
   RepositoryModel.count({ collectionName, 'project.name': project }).lean();
+
+export const searchRepositories = (
+  collectionName: string,
+  project: string,
+  searchTerm: string
+) =>
+  RepositoryModel.find({
+    collectionName,
+    'project.name': project,
+    'name': new RegExp(searchTerm, 'i'),
+  });

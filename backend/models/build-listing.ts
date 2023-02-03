@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 import { collectionAndProjectInputs } from './helpers.js';
-import { BuildModel } from './builds.js';
+import { BuildModel, getBuildsOverviewForRepository } from './builds.js';
+import { searchRepositories } from './repos.js';
 
 // TODO: Filter Options Logic
 export const buildFilterOptions = {
@@ -27,6 +28,12 @@ export const buildPipelineFilterInput = {
   buildDefinitionId: z.string(),
 };
 
+export type RepoSearchArgs = {
+  collectionName: string;
+  project: string;
+  searchTerm: string;
+};
+
 export type BuildSearchArgs = {
   collectionName: string;
   project: string;
@@ -48,11 +55,10 @@ export type SearchBuildData = {
 };
 
 // Search Builds by Repository Name and Date Range and Get :
-// 1. Array of All Matching Builds,
-// 2.Total Builds Count,
-// 3.Total Successful Builds Count
+// 1.Total Builds Count,
+// 2.Total Successful Builds Count
 
-export const searchBuilds = async (buildSearchArgs: BuildSearchArgs) => {
+export const getBuildsCount = async (buildSearchArgs: BuildSearchArgs) => {
   const result = await BuildModel.aggregate<SearchBuildData>([
     {
       $match: {
@@ -69,15 +75,6 @@ export const searchBuilds = async (buildSearchArgs: BuildSearchArgs) => {
           'project': buildSearchArgs.project,
           'repository.name': new RegExp(buildSearchArgs.searchTerm, 'i'),
         },
-        builds: {
-          $push: {
-            id: '$id',
-            definitionId: '$definition.id',
-            result: '$result',
-            startTime: '$startTime',
-            url: '$url',
-          },
-        },
         totalBuilds: { $sum: 1 },
         totalSuccessfulBuilds: {
           $sum: {
@@ -93,7 +90,6 @@ export const searchBuilds = async (buildSearchArgs: BuildSearchArgs) => {
     {
       $project: {
         _id: 0,
-        builds: 1,
         totalBuilds: 1,
         totalSuccessfulBuilds: 1,
       },
@@ -180,6 +176,42 @@ export const getTotalBuildsCountByMonth = async (buildSearchArgs: BuildSearchArg
     },
   ]);
   return result;
+};
+
+// Get All Repository Names and ID's for a Given Collection and Project
+// Then Get the builds for each of the repositories using repository ID
+export const getAllBuildsByRepository = async (
+  repoSearchArgs: RepoSearchArgs,
+  startDate: Date,
+  endDate: Date
+) => {
+  const allRepos = await searchRepositories(
+    repoSearchArgs.collectionName,
+    repoSearchArgs.project,
+    repoSearchArgs.searchTerm
+  );
+
+  const allBuildsOverviewStats = await Promise.all(
+    allRepos.map(async repo => {
+      const buildsArgs = {
+        collectionName: repoSearchArgs.collectionName,
+        project: repoSearchArgs.project,
+        searchTerm: repo.id,
+        startDate,
+        endDate,
+        repositoryName: repo.name,
+        repositoryId: repo.id,
+      };
+
+      const result = await getBuildsOverviewForRepository(buildsArgs);
+
+      return result;
+    })
+  );
+  return {
+    allRepositories: allRepos,
+    allBuildsOverviewStats,
+  };
 };
 
 export const buildPipelineFilterInputParser = z.object(buildPipelineFilterInput);
