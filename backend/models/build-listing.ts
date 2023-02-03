@@ -40,58 +40,6 @@ export type SearchBuildData = {
   }[];
 };
 
-// Search Builds by Repository Name and Date Range and Get :
-// 1.Total Builds Count,
-// 2.Total Successful Builds Count
-
-export const getBuildsCount = async (
-  collectionName: string,
-  project: string,
-  searchTerm: string,
-  startDate: Date,
-  endDate: Date
-) => {
-  const result = await BuildModel.aggregate<SearchBuildData>([
-    {
-      $match: {
-        'collectionName': collectionName,
-        'project': project,
-        'repository.name': new RegExp(searchTerm, 'i'),
-        'startTime': { $gte: startDate, $lt: endDate },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          'collectionName': collectionName,
-          'project': project,
-          'repository.name': new RegExp(searchTerm, 'i'),
-        },
-        totalBuilds: { $sum: 1 },
-        totalSuccessfulBuilds: {
-          $sum: {
-            $cond: {
-              if: { $eq: ['$result', 'succeeded'] },
-              then: 1,
-              else: 0,
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        totalBuilds: 1,
-        totalSuccessfulBuilds: 1,
-      },
-    },
-  ]);
-  return result[0];
-};
-
-// Search Builds by Repository Name and Date Range
-// and Find Total Builds Count For Each Week During The Date Range Specified
 export const getTotalBuildsCountByWeek = async (
   collectionName: string,
   project: string,
@@ -136,8 +84,6 @@ export const getTotalBuildsCountByWeek = async (
   return result;
 };
 
-// Search Builds by Repository Name and Date Range
-// and Find Total Builds Count For Each Month During The Date Range Specified
 export const getTotalBuildsCountByMonth = async (
   collectionName: string,
   project: string,
@@ -182,9 +128,7 @@ export const getTotalBuildsCountByMonth = async (
   return result;
 };
 
-// Get All Repository Names and ID's for a Given Collection and Project
-// Then Get the builds for each of the repositories using repository ID
-export const getAllBuildsByRepository = async (
+export const getBuildSummary = async (
   collectionName: string,
   project: string,
   startDate: Date,
@@ -193,7 +137,10 @@ export const getAllBuildsByRepository = async (
 ) => {
   const allRepos = await searchRepositories(collectionName, project, searchTerm);
 
-  const totals = await BuildModel.aggregate([
+  const totals = await BuildModel.aggregate<{
+    totalBuilds: number;
+    totalSuccesses: number;
+  }>([
     {
       $match: {
         collectionName,
@@ -204,10 +151,7 @@ export const getAllBuildsByRepository = async (
     },
     {
       $group: {
-        _id: {
-          collectionName: '$collectionName',
-          project: '$project',
-        },
+        _id: null,
         totalBuilds: { $sum: 1 },
         totalSuccesses: {
           $sum: {
@@ -229,10 +173,7 @@ export const getAllBuildsByRepository = async (
     },
   ]);
 
-  return {
-    allRepositories: allRepos,
-    totals,
-  };
+  return totals[0] || { totalBuilds: 0, totalSuccesses: 0 };
 };
 
 export const buildPipelineFilterInputParser = z.object(buildPipelineFilterInput);
