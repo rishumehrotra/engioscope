@@ -16,7 +16,7 @@ import {
   queryRangeFilter,
 } from './helpers.js';
 
-type WorkItem = {
+export type WorkItem = {
   id: number;
   collectionName: string;
   project: string;
@@ -28,7 +28,7 @@ type WorkItem = {
   description: string;
   closedDate?: Date;
   stateChangeDate?: Date;
-  priorty?: number;
+  priority?: number;
   severity?: string;
   fields: Record<string, unknown>;
   url: string;
@@ -51,6 +51,7 @@ type WorkItem = {
       | 'System.LinkTypes.Related'
       | string;
     attributes: Record<string, unknown>;
+    url?: string;
   }[];
 };
 
@@ -66,7 +67,7 @@ const workItemSchema = new Schema<WorkItem>({
   description: { type: String, required: true },
   closedDate: Date,
   stateChangeDate: Date,
-  priorty: Number,
+  priority: Number,
   severity: String,
   fields: Schema.Types.Mixed,
   url: String,
@@ -87,7 +88,7 @@ workItemSchema.index({
   state: 1,
 });
 
-const WorkItemModel = model<WorkItem>('WorkItem', workItemSchema);
+export const WorkItemModel = model<WorkItem>('WorkItem', workItemSchema);
 
 const apiShapeToModelShape = (
   collectionName: string,
@@ -108,7 +109,7 @@ const apiShapeToModelShape = (
   stateChangeDate: workItem.fields['Microsoft.VSTS.Common.StateChangeDate']
     ? new Date(workItem.fields['Microsoft.VSTS.Common.StateChangeDate'])
     : undefined,
-  priorty: workItem.fields['Microsoft.VSTS.Common.Priority'] || undefined,
+  priority: workItem.fields['Microsoft.VSTS.Common.Priority'] || undefined,
   severity: workItem.fields['Microsoft.VSTS.Common.Severity'] || undefined,
   fields: workItem.fields,
   url: workItem.url,
