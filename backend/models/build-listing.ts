@@ -35,9 +35,25 @@ export type BuildSearchArgs = {
   endDate: Date;
 };
 
-// Search Builds by Repository Name and Date Range
+export type SearchBuildData = {
+  totalBuilds: number;
+  totalSuccessfulBuilds: number;
+  builds: {
+    id: string;
+    definitionId: string;
+    result: string;
+    startTime: Date;
+    url: string;
+  }[];
+};
+
+// Search Builds by Repository Name and Date Range and Get :
+// 1. Array of All Matching Builds,
+// 2.Total Builds Count,
+// 3.Total Successful Builds Count
+
 export const searchBuilds = async (buildSearchArgs: BuildSearchArgs) => {
-  const result = await BuildModel.aggregate([
+  const result = await BuildModel.aggregate<SearchBuildData>([
     {
       $match: {
         'collectionName': buildSearchArgs.collectionName,
@@ -46,48 +62,46 @@ export const searchBuilds = async (buildSearchArgs: BuildSearchArgs) => {
         'createdAt': { $gte: buildSearchArgs.startDate, $lt: buildSearchArgs.endDate },
       },
     },
+    {
+      $group: {
+        _id: {
+          'collectionName': buildSearchArgs.collectionName,
+          'project': buildSearchArgs.project,
+          'repository.name': new RegExp(buildSearchArgs.searchTerm, 'i'),
+        },
+        builds: {
+          $push: {
+            id: '$id',
+            definitionId: '$definition.id',
+            result: '$result',
+            startTime: '$startTime',
+            url: '$url',
+          },
+        },
+        totalBuilds: { $sum: 1 },
+        totalSuccessfulBuilds: {
+          $sum: {
+            $cond: {
+              if: { $eq: ['$result', 'succeeded'] },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        builds: 1,
+        totalBuilds: 1,
+        totalSuccessfulBuilds: 1,
+      },
+    },
   ]);
-  return result;
+  return result[0];
 };
 
-// Search Builds by Repository Name and Date Range
-// and Find Total Successful Builds Count
-export const getSuccessfulBuildsCount = async (buildSearchArgs: BuildSearchArgs) => {
-  const result = await BuildModel.aggregate<{ count: number }>([
-    {
-      $match: {
-        'collectionName': buildSearchArgs.collectionName,
-        'project': buildSearchArgs.project,
-        'repository.name': new RegExp(buildSearchArgs.searchTerm, 'i'),
-        'createdAt': { $gte: buildSearchArgs.startDate, $lt: buildSearchArgs.endDate },
-        'result': 'succeeded',
-      },
-    },
-    {
-      $count: 'successfulBuildsCount',
-    },
-  ]);
-  return result[0]?.count || 0;
-};
-
-// Search Builds by Repository Name and Date Range
-// and Find Total Builds Count
-export const getTotalBuildsCount = async (buildSearchArgs: BuildSearchArgs) => {
-  const result = await BuildModel.aggregate<{ count: number }>([
-    {
-      $match: {
-        'collectionName': buildSearchArgs.collectionName,
-        'project': buildSearchArgs.project,
-        'repository.name': new RegExp(buildSearchArgs.searchTerm, 'i'),
-        'createdAt': { $gte: buildSearchArgs.startDate, $lt: buildSearchArgs.endDate },
-      },
-    },
-    {
-      $count: 'totalBuildsCount',
-    },
-  ]);
-  return result[0]?.count || 0;
-};
 // Search Builds by Repository Name and Date Range
 // and Find Total Builds Count For Each Week During The Date Range Specified
 export const getTotalBuildsCountByWeek = async (buildSearchArgs: BuildSearchArgs) => {

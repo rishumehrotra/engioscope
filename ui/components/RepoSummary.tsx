@@ -25,6 +25,7 @@ import type {
 } from '../../shared/types.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { num, shortDate } from '../helpers/utils.js';
+import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
@@ -117,6 +118,7 @@ type RepoSummaryProps = {
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
+  const [showNewBuild] = useQueryParam('build-v2', asBoolean);
 
   return (
     <ProjectStats
@@ -382,6 +384,24 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           },
         ]}
       />
+      {showNewBuild ? (
+        <ProjectStat
+          topStats={[
+            {
+              title: 'Builds',
+              value: 13_000,
+              tooltip: 'Total Builds Count',
+            },
+          ]}
+          childStats={[
+            {
+              title: 'Success',
+              value: divide(10, 10).map(toPercentage).getOr('-'),
+              tooltip: 'Total Builds Count',
+            },
+          ]}
+        />
+      ) : null}
     </ProjectStats>
   );
 };
