@@ -1,5 +1,7 @@
 import { model, Schema } from 'mongoose';
+import { z } from 'zod';
 import type { GitRepository } from '../scraper/types-azure.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
 export type Repository = {
   collectionName: string;
@@ -69,16 +71,31 @@ export const getRepositories = (collectionName: string, project: string) =>
 export const getRepoCount = (collectionName: string, project: string) =>
   RepositoryModel.count({ collectionName, 'project.name': project }).lean();
 
-export const searchRepositories = (
-  collectionName: string,
-  project: string,
-  searchTerm?: string
-) =>
-  RepositoryModel.find(
+export const paginatedRepoListParser = z.object({
+  ...collectionAndProjectInputs,
+  searchTerm: z.string().optional(),
+  cursor: z
+    .object({
+      pageSize: z.number().optional(),
+      pageNumber: z.number().optional(),
+    })
+    .nullish(),
+});
+
+export const searchRepositories = async (
+  options: z.infer<typeof paginatedRepoListParser>
+) => {
+  const result = await RepositoryModel.find(
     {
-      collectionName,
-      'project.name': project,
-      ...(searchTerm ? { name: new RegExp(searchTerm, 'i') } : {}),
+      'collectionName': options.collectionName,
+      'project.name': options.project,
+      ...(options.searchTerm ? { name: new RegExp(options.searchTerm, 'i') } : {}),
     },
     { id: 1, name: 1, url: 1 }
-  );
+  )
+    .sort({ id: -1 })
+    .skip((options.cursor?.pageNumber || 0) * (options.cursor?.pageSize || 5))
+    .limit(options.cursor?.pageSize || 5);
+
+  return result;
+};

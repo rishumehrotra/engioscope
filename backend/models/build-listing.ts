@@ -135,7 +135,13 @@ export const getBuildSummary = async (
   endDate: Date,
   searchTerm?: string
 ) => {
-  const allRepos = await searchRepositories(collectionName, project, searchTerm);
+  const repoSearchOptions = {
+    collectionName,
+    project,
+    searchTerm,
+  };
+
+  const allRepos = await searchRepositories(repoSearchOptions);
 
   const totals = await BuildModel.aggregate<{
     totalBuilds: number;
