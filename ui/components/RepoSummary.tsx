@@ -84,6 +84,7 @@ const notYmlPipeline = compose(not, isYmlPipeline);
 const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
   const repos = reposBeforeExclusions.filter(active);
   const allBuildPipelines = buildPipelines(repos);
+  const pipelinesRunningTests = repos.flatMap(r => r.tests || []);
 
   return {
     repos,
@@ -108,6 +109,7 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     totalCoverageByWeek: totalCoverageByWeek(repos),
     usingCentralTemplate: { ...totalUsingCentralTemplate(repos) },
     healthBranches: healthyBranches(repos),
+    pipelinesRunningTests,
   };
 };
 
@@ -215,7 +217,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 lineColor={increaseIsBetter(stats.totalTestsByWeek)}
               />
             ),
-            tooltip: 'Total number of tests across all matching repos',
+            tooltip: `Total number of tests across all matching repos.<br />${num(
+              stats.pipelinesRunningTests.length
+            )} of ${num(stats.buildPipelines.length)} build pipelines post test reports.`,
           },
         ]}
         childStats={[
