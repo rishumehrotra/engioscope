@@ -40,93 +40,62 @@ export type SearchBuildData = {
   }[];
 };
 
-export const getTotalBuildsCountByWeek = async (
-  collectionName: string,
-  project: string,
-  searchTerm: string,
-  startDate: Date,
-  endDate: Date
-) => {
-  const result = await BuildModel.aggregate<{
-    week: number;
-    year: number;
-    totalBuilds: number;
-  }>([
-    {
-      $match: {
-        'collectionName': collectionName,
-        'project': project,
-        'repository.name': new RegExp(searchTerm, 'i'),
-        'startTime': { $gte: startDate, $lt: endDate },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          week: { $week: '$startTime' },
-          year: { $year: '$startTime' },
-        },
-        totalBuilds: { $sum: 1 },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        week: '$_id.week',
-        year: '$_id.year',
-        totalBuilds: 1,
-      },
-    },
-    {
-      $sort: { '_id.year': 1, '_id.week': 1 },
-    },
-  ]);
-  return result;
-};
+export const getBuildsCountByConditions =
+  (isWeek: boolean, isSuccessful: boolean) =>
+  async (
+    collectionName: string,
+    project: string,
+    searchTerm: string,
+    startDate: Date,
+    endDate: Date
+  ) => {
+    const groupField = isWeek
+      ? { week: { $week: '$startTime' }, year: { $year: '$startTime' } }
+      : { month: { $month: '$startTime' }, year: { $year: '$startTime' } };
 
-export const getTotalBuildsCountByMonth = async (
-  collectionName: string,
-  project: string,
-  searchTerm: string,
-  startDate: Date,
-  endDate: Date
-) => {
-  const result = await BuildModel.aggregate<{
-    month: number;
-    year: number;
-    totalBuilds: number;
-  }>([
-    {
-      $match: {
-        'collectionName': collectionName,
-        'project': project,
-        'repository.name': new RegExp(searchTerm, 'i'),
-        'startTime': { $gte: startDate, $lt: endDate },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          month: { $month: '$startTime' },
-          year: { $year: '$startTime' },
+    const result = await BuildModel.aggregate<{
+      week?: number;
+      month?: number;
+      year: number;
+      totalBuilds: number;
+    }>([
+      {
+        $match: {
+          'collectionName': collectionName,
+          'project': project,
+          'repository.name': new RegExp(searchTerm, 'i'),
+          'startTime': { $gte: startDate, $lt: endDate },
         },
-        totalBuilds: { $sum: 1 },
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        month: '$_id.month',
-        year: '$_id.year',
-        totalBuilds: 1,
+      {
+        $group: {
+          _id: groupField,
+          totalBuilds: {
+            $sum: isSuccessful ? { $cond: [{ $eq: ['$result', 'success'] }, 1, 0] } : 1,
+          },
+        },
       },
-    },
-    {
-      $sort: { '_id.year': 1, '_id.month': 1 },
-    },
-  ]);
-  return result;
-};
+
+      {
+        $project: {
+          _id: 0,
+          week: '$_id.week',
+          month: '$_id.month',
+          year: '$_id.year',
+          totalBuilds: 1,
+        },
+      },
+      {
+        $sort: { '_id.year': 1, [isWeek ? '_id.week' : '_id.month']: 1 },
+      },
+    ]);
+    return result;
+  };
+
+export const getBuildsCountByWeek = getBuildsCountByConditions(true, false);
+export const getSuccessfulBuildsCountByWeek = getBuildsCountByConditions(true, true);
+export const getBuildsCountByMonth = getBuildsCountByConditions(false, false);
+export const getSuccessfulBuildsCountByMonth = getBuildsCountByConditions(false, true);
 
 export const getBuildSummary = async (
   collectionName: string,

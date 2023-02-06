@@ -87,3 +87,43 @@ export const prettyMS = (ms: number) =>
   prettyMilliseconds(ms, { unitCount: ms > oneYear ? 2 : 1 });
 
 export const last = <T>(arr: T[]) => (arr.length ? arr[arr.length - 1] : undefined);
+export const getWeekDates = (
+  week: number,
+  year: number
+): { start: string; end: string } => {
+  const firstDayOfYear = new Date(year, 0, 1);
+  const weekTime = week * 7 * 24 * 60 * 60 * 1000;
+  const start = new Date(firstDayOfYear.getTime() + weekTime);
+  const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+  return {
+    start: start.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }),
+    end: end.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }),
+  };
+};
+
+export const getMonthName = (monthNumber: number) => {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  if (monthNumber < 1 || monthNumber > 12) return 'Invalid Month Number';
+  return months[monthNumber - 1];
+};
