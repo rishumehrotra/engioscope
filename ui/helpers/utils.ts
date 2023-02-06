@@ -1,4 +1,5 @@
 import prettyMilliseconds from 'pretty-ms';
+import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 
 export const oneYear = 1000 * 60 * 60 * 24 * 365;
 
@@ -87,14 +88,10 @@ export const prettyMS = (ms: number) =>
   prettyMilliseconds(ms, { unitCount: ms > oneYear ? 2 : 1 });
 
 export const last = <T>(arr: T[]) => (arr.length ? arr[arr.length - 1] : undefined);
-export const getWeekDates = (
-  week: number,
-  year: number
-): { start: string; end: string } => {
+export const getWeekDates = (week: number, year: number) => {
   const firstDayOfYear = new Date(year, 0, 1);
-  const weekTime = week * 7 * 24 * 60 * 60 * 1000;
-  const start = new Date(firstDayOfYear.getTime() + weekTime);
-  const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const start = new Date(firstDayOfYear.getTime() + week * oneWeekInMs);
+  const end = new Date(start.getTime() + 6 * oneDayInMs);
   return {
     start: start.toLocaleDateString('en-US', {
       day: 'numeric',

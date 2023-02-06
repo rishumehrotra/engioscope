@@ -7,6 +7,7 @@ export const oneSecondInMs = 1000;
 export const oneMinuteInMs = 60 * oneSecondInMs;
 export const oneHourInMs = 60 * oneMinuteInMs;
 export const oneDayInMs = 24 * oneHourInMs;
+export const oneWeekInMs = 7 * oneDayInMs;
 export const oneFortnightInMs = 15 * oneDayInMs;
 export const oneMonthInMs = 30 * oneDayInMs;
 export const oneYearInMs = 365 * oneDayInMs;
