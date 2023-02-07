@@ -41,7 +41,7 @@ export type SearchBuildData = {
 };
 
 export const getBuildsCountByConditions =
-  (isWeek: boolean, isSuccessful: boolean) =>
+  (duration: 'week' | 'month') =>
   async (
     collectionName: string,
     project: string,
@@ -49,9 +49,30 @@ export const getBuildsCountByConditions =
     startDate: Date,
     endDate: Date
   ) => {
-    const groupField = isWeek
-      ? { week: { $week: '$startTime' }, year: { $year: '$startTime' } }
-      : { month: { $month: '$startTime' }, year: { $year: '$startTime' } };
+    const groupField =
+      duration === 'week'
+        ? { week: { $week: '$startTime' }, year: { $year: '$startTime' } }
+        : { month: { $month: '$startTime' }, year: { $year: '$startTime' } };
+
+    const projectWeekFields = {
+      _id: 0,
+      year: '$_id.year',
+      totalBuilds: 1,
+      totalSuccessFulBuilds: 1,
+      week: '$_id.week',
+      startWeek: 1,
+      endWeek: 1,
+    };
+
+    const projectMonthFields = {
+      _id: 0,
+      year: '$_id.year',
+      totalBuilds: 1,
+      totalSuccessFulBuilds: 1,
+      month: '$_id.month',
+      startMonth: 1,
+      endMonth: 1,
+    };
 
     const result = await BuildModel.aggregate<{
       week?: number;
@@ -71,31 +92,61 @@ export const getBuildsCountByConditions =
         $group: {
           _id: groupField,
           totalBuilds: {
-            $sum: isSuccessful ? { $cond: [{ $eq: ['$result', 'success'] }, 1, 0] } : 1,
+            $sum: 1,
+          },
+          totalSuccessfulBuilds: {
+            $sum: { $cond: [{ $eq: ['$result', 'success'] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $addFields: {
+          startMonth: {
+            $dateFromParts: {
+              year: '$_id.year',
+              month: '$_id.month',
+              day: 1,
+            },
+          },
+          endMonth: {
+            $dateFromParts: {
+              year: '$_id.year',
+              month: '$_id.month',
+              day: 0,
+            },
+          },
+          startWeek: {
+            $dateFromParts: {
+              isoWeekYear: '$_id.year',
+              isoWeek: '$_id.week',
+              isoDayOfWeek: 1,
+            },
+          },
+          endWeek: {
+            $dateFromParts: {
+              isoWeekYear: '$_id.year',
+              isoWeek: '$_id.week',
+              isoDayOfWeek: 7,
+            },
           },
         },
       },
 
       {
-        $project: {
-          _id: 0,
-          week: '$_id.week',
-          month: '$_id.month',
-          year: '$_id.year',
-          totalBuilds: 1,
-        },
+        $project: duration === 'week' ? projectWeekFields : projectMonthFields,
       },
       {
-        $sort: { '_id.year': 1, [isWeek ? '_id.week' : '_id.month']: 1 },
+        $sort: {
+          '_id.year': 1,
+          [duration === 'week' ? 'week' : 'month']: 1,
+        },
       },
     ]);
     return result;
   };
 
-export const getBuildsCountByWeek = getBuildsCountByConditions(true, false);
-export const getSuccessfulBuildsCountByWeek = getBuildsCountByConditions(true, true);
-export const getBuildsCountByMonth = getBuildsCountByConditions(false, false);
-export const getSuccessfulBuildsCountByMonth = getBuildsCountByConditions(false, true);
+export const getBuildsCountByWeek = getBuildsCountByConditions('week');
+export const getBuildsCountByMonth = getBuildsCountByConditions('month');
 
 export const getBuildSummary = async (
   collectionName: string,
