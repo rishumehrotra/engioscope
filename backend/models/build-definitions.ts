@@ -138,3 +138,64 @@ export const getBuildDefinitionsForRepo = (options: {
 }) => {
   return BuildDefinitionModel.find(options).lean();
 };
+
+export const getYamlPipelinesCountSummary = async (
+  collectionName: string,
+  project: string
+) => {
+  const result = await BuildDefinitionModel.aggregate<{
+    totalCount: number;
+    yamlCount: number;
+    uiCount: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+      },
+    },
+    {
+      $group: {
+        _id: {
+          collectionName: '$collectionName',
+          project: '$project',
+        },
+        totalCount: {
+          $sum: 1,
+        },
+        yamlCount: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ['$process.processType', 2],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        uiCount: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ['$process.processType', 1],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        totalCount: 1,
+        yamlCount: 1,
+        uiCount: 1,
+      },
+    },
+  ]);
+
+  return result[0] || { totalCount: 0, yamlCount: 0, uiCount: 0 };
+};
