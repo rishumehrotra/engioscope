@@ -146,7 +146,6 @@ export const getYamlPipelinesCountSummary = async (
   const result = await BuildDefinitionModel.aggregate<{
     totalCount: number;
     yamlCount: number;
-    uiCount: number;
   }>([
     {
       $match: {
@@ -174,17 +173,6 @@ export const getYamlPipelinesCountSummary = async (
             },
           },
         },
-        uiCount: {
-          $sum: {
-            $cond: {
-              if: {
-                $eq: ['$process.processType', 1],
-              },
-              then: 1,
-              else: 0,
-            },
-          },
-        },
       },
     },
     {
@@ -192,10 +180,9 @@ export const getYamlPipelinesCountSummary = async (
         _id: 0,
         totalCount: 1,
         yamlCount: 1,
-        uiCount: 1,
       },
     },
   ]);
 
-  return result[0] || { totalCount: 0, yamlCount: 0, uiCount: 0 };
+  return result[0] || { totalCount: 0, yamlCount: 0 };
 };
