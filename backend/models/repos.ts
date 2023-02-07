@@ -1,7 +1,9 @@
 import { model, Schema } from 'mongoose';
 import { z } from 'zod';
 import type { GitRepository } from '../scraper/types-azure.js';
+import { deleteBuildsForRepoIds } from './builds.js';
 import { collectionAndProjectInputs } from './helpers.js';
+import { deleteRepoPoliciesForRepoIds } from './policy-configuration.js';
 
 export type Repository = {
   collectionName: string;
@@ -43,27 +45,55 @@ repositorySchema.index({
 
 const RepositoryModel = model<Repository>('Repository', repositorySchema);
 
-export const bulkSaveRepositories =
-  (collectionName: string) => (repos: GitRepository[]) =>
-    RepositoryModel.bulkWrite(
-      repos.map(repo => {
-        const { project, ...rest } = repo;
+const deleteRepositories = (collectionName: string, project: string, ids: string[]) => {
+  return Promise.all([
+    RepositoryModel.deleteMany({
+      collectionName,
+      'project.name': project,
+      'id': { $in: ids },
+    }),
+    deleteBuildsForRepoIds(collectionName, project, ids),
+    deleteRepoPoliciesForRepoIds(collectionName, project, ids),
+  ]);
+};
 
-        return {
-          updateOne: {
-            filter: {
-              collectionName,
-              'id': repo.id,
-              'project.id': project.id,
+export const bulkSaveRepositories =
+  (collectionName: string) => async (repos: GitRepository[]) => {
+    const existingRepoIds = repos.length
+      ? (
+          await RepositoryModel.find(
+            { collectionName, 'project.id': repos[0].project.id },
+            { id: 1 }
+          ).lean()
+        ).map(r => r.id)
+      : [];
+
+    const incomingRepoIds = new Set(repos.map(r => r.id));
+    const deletedRepoIds = existingRepoIds.filter(id => !incomingRepoIds.has(id));
+
+    return Promise.all([
+      RepositoryModel.bulkWrite(
+        repos.map(repo => {
+          const { project, ...rest } = repo;
+
+          return {
+            updateOne: {
+              filter: {
+                collectionName,
+                'id': repo.id,
+                'project.id': project.id,
+              },
+              update: {
+                $set: { ...rest, project: { id: project.id, name: project.name } },
+              },
+              upsert: true,
             },
-            update: {
-              $set: { ...rest, project: { id: project.id, name: project.name } },
-            },
-            upsert: true,
-          },
-        };
-      })
-    );
+          };
+        })
+      ),
+      deleteRepositories(collectionName, repos[0]?.project.name, deletedRepoIds),
+    ]);
+  };
 
 export const getRepositories = (collectionName: string, project: string) =>
   RepositoryModel.find({ collectionName, 'project.name': project }).lean();

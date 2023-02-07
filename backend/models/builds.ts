@@ -154,6 +154,18 @@ const buildDefinitionWebUrl = pipe(
   replace(/\?revision=.*/, '')
 );
 
+export const deleteBuildsForRepoIds = (
+  collectionName: string,
+  project: string,
+  ids: string[]
+) => {
+  return BuildModel.deleteMany({
+    collectionName,
+    project,
+    'repository.id': { $in: ids },
+  });
+};
+
 type BuildsResponse =
   | ({ type: 'recent'; centralTemplateCount: number; ui: boolean } & BuildOverviewStats)
   | {

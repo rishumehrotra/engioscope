@@ -313,6 +313,18 @@ export const getBranchPolicies = (options: z.infer<typeof branchPoliciesInputPar
     .then(x => x?.policies || null);
 };
 
+export const deleteRepoPoliciesForRepoIds = (
+  collectionName: string,
+  project: string,
+  ids: string[]
+) => {
+  return RepoPolicyModel.deleteMany({
+    collectionName,
+    project,
+    repositoryId: { $in: ids },
+  });
+};
+
 export const isFileSizeRestrictionPolicy = (
   policy: RepoPolicy
 ): policy is FileSizeRestrictionPolicy => policy.type === 'File size restriction';
