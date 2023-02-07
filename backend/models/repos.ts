@@ -43,7 +43,7 @@ repositorySchema.index({
   'project.id': 1,
 });
 
-const RepositoryModel = model<Repository>('Repository', repositorySchema);
+export const RepositoryModel = model<Repository>('Repository', repositorySchema);
 
 const deleteRepositories = (collectionName: string, project: string, ids: string[]) => {
   return Promise.all([

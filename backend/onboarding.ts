@@ -9,6 +9,7 @@ import { getReleaseDefinitions } from './crons/release-definitions.js';
 import { getReleases } from './crons/releases.js';
 import { getPolicyConfigurations } from './crons/policy-configuration.js';
 import { getBuildDefinitions } from './crons/build-definitions.js';
+import { getBranchesStats } from './crons/branches.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -26,6 +27,7 @@ export default async (config: ParsedConfig) => {
   await getReleases();
   await getPolicyConfigurations();
   await getBuildDefinitions();
+  await getBranchesStats();
 
   // eslint-disable-next-line no-console
   console.log('Done.');
