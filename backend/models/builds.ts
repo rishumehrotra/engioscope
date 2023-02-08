@@ -422,7 +422,11 @@ export const getActiveRepoIds = async (
   endDate: Date,
   searchTerm?: string
 ) => {
-  const result = await BuildModel.aggregate([
+  const result = await BuildModel.aggregate<{
+    id: string;
+    buildsCount: number;
+    name: string;
+  }>([
     {
       $match: {
         collectionName,
