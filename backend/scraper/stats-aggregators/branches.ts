@@ -1,23 +1,22 @@
 import { allPass, anyPass, complement, compose, filter, not, pipe } from 'rambda';
 import { asc, byDate, byNum, desc } from 'sort-lib';
 import type { UIBranches } from '../../../shared/types.js';
-import type { GitBranchStats } from '../types-azure.js';
 import { oneFortnightInMs } from '../../../shared/utils.js';
+import type { BranchStats } from '../../models/branches.js';
 
 const branchPageLimit = 20;
 
-const commitDate = (b: GitBranchStats) => new Date(b.commit.committer.date);
+const commitDate = (b: BranchStats) => new Date(b.date);
 const byCommitDate = byDate(commitDate);
-const pageLimitBranches = (branches: GitBranchStats[]) =>
-  branches.slice(0, branchPageLimit);
+const pageLimitBranches = (branches: BranchStats[]) => branches.slice(0, branchPageLimit);
 
 const isActive = pipe(commitDate, d => Date.now() - d.getTime() < oneFortnightInMs);
 
-const isBranchName = (branchName?: string) => (b: GitBranchStats) =>
+const isBranchName = (branchName?: string) => (b: BranchStats) =>
   b.name === (branchName || '').replace('refs/heads/', '');
 
-const isAheadBy = (num: number) => (b: GitBranchStats) => b.aheadCount > num;
-const isBehindBy = (num: number) => (b: GitBranchStats) => b.behindCount > num;
+const isAheadBy = (num: number) => (b: BranchStats) => b.aheadCount > num;
+const isBehindBy = (num: number) => (b: BranchStats) => b.behindCount > num;
 
 const isTooAhead = isAheadBy(10);
 const isNotTooAhead = complement(isTooAhead);
@@ -55,7 +54,7 @@ const isUnhealthy = (defaultBranch?: string) =>
   );
 
 export default (repoUrl: string, defaultBranch?: string) =>
-  (branches: GitBranchStats[]): UIBranches => {
+  (branches: BranchStats[]): UIBranches => {
     const allBranches = branches.sort(desc(byCommitDate));
 
     const healthy = filter(isBranchHealthy(defaultBranch));
@@ -71,14 +70,14 @@ export default (repoUrl: string, defaultBranch?: string) =>
     );
 
     const getBranchWithLink =
-      (linkType: 'history' | 'contents') => (branch: GitBranchStats) => ({
+      (linkType: 'history' | 'contents') => (branch: BranchStats) => ({
         name: branch.name,
         url: `${repoUrl}/?_a=${linkType}&targetVersion=GB${encodeURIComponent(
           branch.name
         )}`,
         aheadCount: branch.aheadCount,
         behindCount: branch.behindCount,
-        lastCommitDate: branch.commit.committer.date,
+        lastCommitDate: branch.date,
       });
 
     return {

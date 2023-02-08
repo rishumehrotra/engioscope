@@ -21,7 +21,7 @@ import aggregateTestRuns from './stats-aggregators/test-runs.js';
 import languageColors from './language-colors.js';
 import type { RepoAnalysis } from '../../shared/types.js';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
-import type { GitBranchStats, WorkItemField } from './types-azure.js';
+import type { WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
@@ -30,6 +30,7 @@ import { getRepositories } from '../models/repos.js';
 import { getReleases } from '../models/releases.js';
 import { getPolicyConfigurations } from '../models/policy-configuration.js';
 import { getBuildDefinitionsForProject } from '../models/build-definitions.js';
+import { branchStatsForRepo } from '../models/branches.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -42,7 +43,6 @@ const analyserLog = debug('analyser');
 
 export default (config: ParsedConfig) => {
   const {
-    getBranchesStats,
     getPRs,
     getCommits,
     getTestRuns,
@@ -101,15 +101,7 @@ export default (config: ParsedConfig) => {
 
     const repoAnalysis: RepoAnalysis[] = await Promise.all(
       repos.map(async r => {
-        const branchStats =
-          r.size === 0
-            ? Promise.resolve([])
-            : forProject(getBranchesStats)(r.id).catch(error => {
-                if (!(error instanceof Error)) throw error;
-                if (!error.message.startsWith('HTTP error')) throw error;
-                if (error.message.includes('400')) return [] as GitBranchStats[];
-                throw error;
-              });
+        const branchStats = forProject(branchStatsForRepo)(r.id);
 
         const [branches, tests, { languages, codeQuality }, commits, builds] =
           await Promise.all([

@@ -74,3 +74,13 @@ export const branchUpdateDate = async (
 
   return result[0]?.date as Date | undefined;
 };
+
+export const branchStatsForRepo =
+  (collectionName: string, project: string) => async (repositoryId: string) => {
+    const result = await BranchModel.find({
+      collectionName,
+      project,
+      repositoryId,
+    }).lean();
+    return result || [];
+  };

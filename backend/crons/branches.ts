@@ -54,4 +54,4 @@ export const getBranchesStats = async () => {
 };
 
 export default () =>
-  runJob('fetching branch stats', t => t.everyHour(), getBranchesStats);
+  runJob('fetching branch stats', t => t.everyHourAt(15), getBranchesStats);
