@@ -37,6 +37,7 @@ export const getBranchesStats = async () => {
     requested: 0,
     skipped: 0,
   };
+
   // eslint-disable-next-line no-restricted-syntax
   for await (const repo of repos) {
     const updateDate = await branchUpdateDate(repo.collectionName, repo.project, repo.id);

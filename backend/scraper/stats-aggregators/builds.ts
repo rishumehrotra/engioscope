@@ -199,8 +199,7 @@ export default (
                 success: 0,
                 definitionId: d.id.toString(),
                 duration: { average: '0', min: '0', max: '0' },
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                status: { type: 'unused', since: d.latestBuild!.startTime },
+                status: { type: 'unused', since: d.latestBuild?.startTime },
                 type: d.process.processType === 1 ? 'ui' : 'yml',
                 centralTemplateRuns: 0,
               }))
