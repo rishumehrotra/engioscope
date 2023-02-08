@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 import { collectionAndProjectInputs } from './helpers.js';
-import { BuildModel } from './builds.js';
-import { searchRepositories } from './repos.js';
+import { BuildModel, getActiveRepoIds } from './builds.js';
 
 // TODO: Filter Options Logic
 export const buildFilterOptions = {
@@ -155,13 +154,13 @@ export const getBuildSummary = async (
   endDate: Date,
   searchTerm?: string
 ) => {
-  const repoSearchOptions = {
+  const activeRepos = await getActiveRepoIds(
     collectionName,
     project,
-    searchTerm,
-  };
-
-  const allRepos = await searchRepositories(repoSearchOptions);
+    startDate,
+    endDate,
+    searchTerm
+  );
 
   const totals = await BuildModel.aggregate<{
     totalBuilds: number;
@@ -172,7 +171,7 @@ export const getBuildSummary = async (
         collectionName,
         project,
         'startTime': { $gte: startDate, $lt: endDate },
-        'repository.id': { $in: allRepos.map(r => r.id) },
+        'repository.id': { $in: activeRepos.map(r => r.id) },
       },
     },
     {

@@ -415,5 +415,50 @@ export const getOneBuildBeforeQueryPeriod =
     return [...foundBuilds, ...refetchedAdditionalBuilds];
   };
 
+export const getActiveRepoIds = async (
+  collectionName: string,
+  project: string,
+  startDate: Date,
+  endDate: Date,
+  searchTerm?: string
+) => {
+  const result = await BuildModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        ...(searchTerm
+          ? {
+              'repository.name': { $regex: new RegExp(searchTerm, 'i') },
+            }
+          : {}),
+        startTime: {
+          $gte: new Date(startDate),
+          $lt: new Date(endDate),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$repository.id',
+        name: { $first: '$repository.name' },
+        buildsCount: {
+          $sum: 1,
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        id: '$_id',
+        buildsCount: 1,
+        name: 1,
+      },
+    },
+  ]);
+
+  return result;
+};
+
 // eslint-disable-next-line no-underscore-dangle
 export const __BuildModelDONOTUSE = BuildModel;
