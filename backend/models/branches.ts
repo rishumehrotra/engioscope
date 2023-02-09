@@ -244,9 +244,7 @@ export const getBranchListByCategory =
       lastCommit: Date;
     }>([
       {
-        $match: {
-          matchField,
-        },
+        $match: matchField,
       },
 
       {
