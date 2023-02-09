@@ -1,5 +1,5 @@
 import type { PipelineStage } from 'mongoose';
-import { last, omit, prop } from 'rambda';
+import { last, omit, prop, sum } from 'rambda';
 import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { configForProject, getConfig } from '../config.js';
@@ -86,7 +86,6 @@ const addFilteredEnvsField = (ignoreStagesBefore: string | undefined): PipelineS
                     { $eq: ['$considerStagesAfter', null] },
                   ],
                 },
-
                 then: '$environments',
                 else: {
                   $slice: [
@@ -456,16 +455,93 @@ type Summary = {
   ignoredStagesBefore?: string;
 };
 
+const conformsToBranchPoliciesSummary = async (
+  options: z.infer<typeof pipelineFiltersInputParser>
+) => {
+  const filter = await createFilter(options);
+  const projectConfig = configForProject(options.collectionName, options.project);
+  const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
+
+  const result = await ReleaseModel.aggregate<{ _id: boolean; count: number }>([
+    ...filter,
+    ...addFilteredEnvsField(ignoreStagesBefore),
+    {
+      $addFields: {
+        hasGoneAhead: {
+          $anyElementTrue: {
+            $map: {
+              input: '$filteredEnvs',
+              as: 'env',
+              in: { $ne: ['$$env.status', 'notStarted'] },
+            },
+          },
+        },
+      },
+    },
+    { $match: { hasGoneAhead: true } },
+    { $unwind: '$artifacts' },
+    { $match: { 'artifacts.type': 'Build' } },
+    {
+      $project: {
+        collectionName: '$collectionName',
+        project: '$project',
+        repositoryId: '$artifacts.definition.repositoryId',
+        branch: '$artifacts.definition.branch',
+      },
+    },
+    {
+      $lookup: {
+        from: 'combinedbranchpolicies',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+          branch: '$branch',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $eq: ['$repositoryId', '$$repositoryId'] },
+                  { $eq: ['$refName', '$$branch'] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'conforms',
+      },
+    },
+    { $project: { conforms: { $arrayElemAt: ['$conforms', 0] } } },
+    { $project: { conforms: { $ifNull: ['$conforms.conforms', false] } } },
+    { $group: { _id: '$conforms', count: { $sum: 1 } } },
+  ]);
+
+  return {
+    conforms: result.find(x => x._id)?.count || 0,
+    total: sum(result.map(x => x.count)),
+  };
+};
+
 export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const filter = await createFilter(options);
 
-  const summary = await ReleaseModel.aggregate<Summary & { _id: null }>([
-    ...filter,
-    addBooleanFields(options.collectionName, options.project),
-    ...createSummary(options.collectionName, options.project),
+  const [[summary], branchPolicy] = await Promise.all([
+    ReleaseModel.aggregate<Summary & { _id: null }>([
+      ...filter,
+      addBooleanFields(options.collectionName, options.project),
+      ...createSummary(options.collectionName, options.project),
+    ]),
+    conformsToBranchPoliciesSummary(options),
   ]);
 
-  return omit(['_id'], summary[0]);
+  return {
+    ...omit(['_id'], summary),
+    branchPolicy,
+  };
 };
 
 export const paginatedReleaseIdsInputParser = z.object({

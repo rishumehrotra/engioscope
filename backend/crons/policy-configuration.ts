@@ -19,7 +19,7 @@ export const getPolicyConfigurations = async () => {
     Promise.resolve()
   );
 
-  return refreshCombinedBranchPoliciesView;
+  return refreshCombinedBranchPoliciesView();
 };
 
 export default () =>

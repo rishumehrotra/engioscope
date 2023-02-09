@@ -131,15 +131,12 @@ repoPolicySchema.index({
 
 const RepoPolicyModel = model<RepoPolicy>('RepoPolicy', repoPolicySchema);
 
-const creatingRepoPoliciesCollection = RepoPolicyModel.createCollection();
-
 type CombinedBranchPolicies = {
-  _id: {
-    collectionName: string;
-    project: string;
-    repositoryId: string;
-    refName: string;
-  };
+  collectionName: string;
+  project: string;
+  repositoryId: string;
+  refName: string;
+  conforms: boolean;
   policies: Partial<{
     [key in BranchPolicy['type']]: {
       isEnabled: boolean;
@@ -155,6 +152,7 @@ const combinedBranchPoliciesSchema = new Schema({
   project: { type: String, required: true },
   repositoryId: { type: String, required: true },
   refName: { type: String, required: true },
+  conforms: { type: Boolean, required: true },
   policies: {},
 });
 
@@ -172,47 +170,79 @@ const CombinedBranchPoliciesModel = model<CombinedBranchPolicies>(
 
 export const refreshCombinedBranchPoliciesView = async () => {
   await CombinedBranchPoliciesModel.collection.drop();
-  return CombinedBranchPoliciesModel.createCollection({
-    viewOn: 'repopolicies',
-    pipeline: [
-      { $match: { isDeleted: false, refName: { $exists: 1 } } },
-      {
-        $group: {
-          _id: {
-            refName: '$refName',
-            collectionName: '$collectionName',
-            project: '$project',
-            repositoryId: '$repositoryId',
-          },
-          policies: {
-            $push: {
-              k: '$type',
-              v: {
-                isEnabled: '$isEnabled',
-                isBlocking: '$isBlocking',
-                minimumApproverCount: '$settings.minimumApproverCount',
-                buildDefinitionId: '$settings.buildDefinitionId',
-              },
+  const results = RepoPolicyModel.aggregate<Omit<CombinedBranchPolicies, 'conforms'>>([
+    { $match: { refName: { $exists: true }, isDeleted: false } },
+    {
+      $group: {
+        _id: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+          refName: '$refName',
+        },
+        policies: {
+          $push: {
+            k: '$type',
+            v: {
+              isEnabled: '$isEnabled',
+              isBlocking: '$isBlocking',
+              minimumApproverCount: '$settings.minimumApproverCount',
+              buildDefinitionId: '$settings.buildDefinitionId',
             },
           },
         },
       },
-      {
-        $addFields: {
-          policies: { $arrayToObject: '$policies' },
-          collectionName: '$_id.collectionName',
-          project: '$_id.project',
-          repositoryId: '$_id.repositoryId',
-          refName: '$_id.refName',
-        },
+    },
+    {
+      $addFields: {
+        policies: { $arrayToObject: '$policies' },
+        collectionName: '$_id.collectionName',
+        project: '$_id.project',
+        repositoryId: '$_id.repositoryId',
+        refName: '$_id.refName',
       },
-      { $unset: '_id' },
-    ],
-  });
-};
+    },
+    { $unset: '_id' },
+  ]);
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises, unicorn/prefer-top-level-await
-creatingRepoPoliciesCollection.then(refreshCombinedBranchPoliciesView);
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const match of results) {
+    const branchPolicies = configForProject(
+      match.collectionName,
+      match.project
+    )?.branchPolicies;
+    // eslint-disable-next-line no-continue
+    if (!branchPolicies) continue;
+
+    const conforms = Object.entries(branchPolicies).every(([p, policyConfig]) => {
+      const policyName = p as keyof typeof match.policies;
+      const matchingPolicy = match.policies[policyName];
+      if (!matchingPolicy) return false;
+
+      const isActive =
+        matchingPolicy.isEnabled === policyConfig.isEnabled &&
+        matchingPolicy.isBlocking === policyConfig.isBlocking;
+
+      if (!isActive) return false;
+
+      if (
+        policyName === 'Minimum number of reviewers' &&
+        'minimumApproverCount' in policyConfig
+      ) {
+        return (
+          (matchingPolicy.minimumApproverCount || 0) >= policyConfig.minimumApproverCount
+        );
+      }
+
+      return true;
+    });
+
+    await CombinedBranchPoliciesModel.create({
+      ...match,
+      conforms,
+    });
+  }
+};
 
 export const bulkSavePolicies =
   (collectionName: string, project: string) => (policies: AzurePolicyConfiguration[]) =>
@@ -267,37 +297,19 @@ export const conformsToBranchPolicies = async ({
   const branchPolicies = configForProject(collectionName, project)?.branchPolicies;
   if (!branchPolicies) return;
 
-  const match = await CombinedBranchPoliciesModel.findOne({
-    collectionName,
-    project,
-    repositoryId,
-    refName,
-  }).lean();
+  const match = await CombinedBranchPoliciesModel.findOne(
+    {
+      collectionName,
+      project,
+      repositoryId,
+      refName,
+    },
+    { conforms: 1 }
+  ).lean();
 
   if (!match) return false;
 
-  return Object.entries(branchPolicies).every(([p, policyConfig]) => {
-    const policyName = p as keyof typeof match.policies;
-    const matchingPolicy = match.policies[policyName];
-    if (!matchingPolicy) return false;
-
-    const isActive =
-      matchingPolicy.isEnabled === policyConfig.isEnabled &&
-      matchingPolicy.isBlocking === policyConfig.isBlocking;
-
-    if (!isActive) return false;
-
-    if (
-      policyName === 'Minimum number of reviewers' &&
-      'minimumApproverCount' in policyConfig
-    ) {
-      return (
-        (matchingPolicy.minimumApproverCount || 0) >= policyConfig.minimumApproverCount
-      );
-    }
-
-    return true;
-  });
+  return match.conforms;
 };
 
 export const branchPoliciesInputParser = z.object({

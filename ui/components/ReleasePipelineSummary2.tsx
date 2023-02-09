@@ -6,7 +6,6 @@ import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { trpc } from '../helpers/trpc.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
-import Loading from './Loading.jsx';
 
 const ReleasePipelineSummary2: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
@@ -27,7 +26,20 @@ const ReleasePipelineSummary2: React.FC = () => {
     []
   );
 
-  if (!summary) return <Loading />;
+  if (!summary) {
+    return (
+      <ProjectStats>
+        <ProjectStat
+          topStats={[
+            {
+              title: 'Loading...',
+              value: '...',
+            },
+          ]}
+        />
+      </ProjectStats>
+    );
+  }
 
   return (
     <ProjectStats>
@@ -131,10 +143,16 @@ const ReleasePipelineSummary2: React.FC = () => {
         topStats={[
           {
             title: 'Conforms to branch policies',
-            value: 'todo',
-            // tooltip: `${num(policyPassCount)} out of ${num(pipelines.length)} have branches that conform to the branch policy.${
-            //   ignoreStagesBefore ? `<br />Branches that didn't go to ${ignoreStagesBefore} are not considered.` : ''
-            // }`
+            value: divide(summary.branchPolicy.conforms, summary.branchPolicy.total)
+              .map(toPercentage)
+              .getOr('-'),
+            tooltip: `${num(summary.branchPolicy.conforms)} out of ${num(
+              summary.branchPolicy.total
+            )} artifacts are from branches that conform<br />to the branch policy.${
+              summary.ignoredStagesBefore
+                ? `<br />Artifacts that didn't go to ${summary.ignoredStagesBefore} are not considered.`
+                : ''
+            }`,
           },
         ]}
       />
