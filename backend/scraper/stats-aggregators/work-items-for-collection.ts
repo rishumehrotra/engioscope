@@ -275,115 +275,113 @@ const fireOffCollectionAPICalls = (
   return Promise.all([pGetWorkItemType, workItemDetails()] as const);
 };
 
-export default (config: ParsedConfig) => (collection: ParsedCollection) => {
-  const pCollectionData = fireOffCollectionAPICalls(config, collection);
+export default (config: ParsedConfig) =>
+  (collection: ParsedCollection, workItemFieldsPromise: Promise<WorkItemField[]>) => {
+    const pCollectionData = fireOffCollectionAPICalls(config, collection);
 
-  return async (
-    project: ParsedProjectConfig,
-    workItemFieldsPromise: Promise<WorkItemField[]>
-  ): Promise<WorkItemAnalysis> => {
-    const [[getWorkItemType, [workItemRelations, workItemsById]], workItemFields] =
-      await Promise.all([pCollectionData, workItemFieldsPromise]);
+    return async (project: ParsedProjectConfig): Promise<WorkItemAnalysis> => {
+      const [[getWorkItemType, [workItemRelations, workItemsById]], workItemFields] =
+        await Promise.all([pCollectionData, workItemFieldsPromise]);
 
-    const createUIWorkItem = uiWorkItemCreator(collection, getWorkItemType);
+      const createUIWorkItem = uiWorkItemCreator(collection, getWorkItemType);
 
-    const workItemsForProject = Object.values(workItemsById).filter(
-      wi => wi.fields['System.TeamProject'] === project.name
-    );
+      const workItemsForProject = Object.values(workItemsById).filter(
+        wi => wi.fields['System.TeamProject'] === project.name
+      );
 
-    const sourcesForWorkItem = sourcesUntilMatch(
-      sourceByWorkItemId(workItemRelations),
-      workItemsById,
-      project
-    );
+      const sourcesForWorkItem = sourcesUntilMatch(
+        sourceByWorkItemId(workItemRelations),
+        workItemsById,
+        project
+      );
 
-    const topLevelItems = unique(
-      workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
-    );
+      const topLevelItems = unique(
+        workItemsForProject.flatMap(workItem => sourcesForWorkItem(workItem.id))
+      );
 
-    const workItemFieldsByReferenceName = workItemFields.reduce<
-      Record<string, WorkItemField>
-    >((acc, field) => {
-      acc[field.referenceName] = field;
-      return acc;
-    }, {});
-
-    const getFieldName = (f: string) =>
-      workItemFieldsByReferenceName[f]?.name || undefined;
-
-    type AggregatedWorkItemsAndTypes = {
-      byId: Record<number, UIWorkItem>;
-      types: Record<string, UIWorkItemType>;
-    };
-
-    const { byId, types } = Object.entries(
-      workItemsById
-    ).reduce<AggregatedWorkItemsAndTypes>(
-      (acc, [id, workItem]) => {
-        acc.byId[Number(id)] = createUIWorkItem(workItem);
-
-        const workItemType = getWorkItemType(workItem);
-        const witId = workItemTypeId(workItemType);
-
-        if (!acc.types[witId]) {
-          const iconColor = workItemTypeIconColor(workItemType);
-          const matchingWit = collection.workitems.types?.find(
-            wit => wit.type === workItemType.name
-          );
-
-          acc.types[witId] = {
-            name: [workItemType.name, pluralize(workItemType.name)],
-            color: workItemType.color,
-            icon: `data:image/svg+xml;utf8,${encodeURIComponent(
-              workItemIconSvgs[workItemType.icon.id](iconColor)
-            )}`,
-            iconColor,
-            startDateFields: matchingWit?.startDate.map(getFieldName).filter(exists),
-            endDateFields: matchingWit?.endDate.map(getFieldName).filter(exists),
-            devCompleteFields: matchingWit?.devCompletionDate
-              .map(getFieldName)
-              .filter(exists),
-            workCenters: (matchingWit?.workCenters || []).map(wc => ({
-              label: wc.label,
-              startDateField: wc.startDate.map(getFieldName).filter(exists),
-              endDateField: wc.endDate.map(getFieldName).filter(exists),
-            })),
-            groupLabel: matchingWit?.groupLabel,
-            rootCauseFields: matchingWit?.rootCause.map(getFieldName).filter(exists),
-          };
-        }
-
+      const workItemFieldsByReferenceName = workItemFields.reduce<
+        Record<string, WorkItemField>
+      >((acc, field) => {
+        acc[field.referenceName] = field;
         return acc;
-      },
-      { byId: {}, types: {} }
-    );
+      }, {});
 
-    const ids = workItemRelations.reduce<Record<number, number[]>>(
-      (acc, wir) => {
-        if (!wir.source) return acc;
-        const parent = wir.source ? wir.source.id : 0;
+      const getFieldName = (f: string) =>
+        workItemFieldsByReferenceName[f]?.name || undefined;
 
-        acc[parent] = unique([...(acc[parent] || []), wir.target?.id].filter(exists));
-        return acc;
-      },
-      { 0: topLevelItems }
-    );
+      type AggregatedWorkItemsAndTypes = {
+        byId: Record<number, UIWorkItem>;
+        types: Record<string, UIWorkItemType>;
+      };
 
-    return {
-      analysedWorkItems: {
-        byId,
-        ids,
-        types,
-      },
-      overview: getOverviewData(
-        config,
-        collection,
-        workItemsForProject,
-        byId,
-        types,
-        getWorkItemType,
-        ids
-      ),
+      const { byId, types } = Object.entries(
+        workItemsById
+      ).reduce<AggregatedWorkItemsAndTypes>(
+        (acc, [id, workItem]) => {
+          acc.byId[Number(id)] = createUIWorkItem(workItem);
+
+          const workItemType = getWorkItemType(workItem);
+          const witId = workItemTypeId(workItemType);
+
+          if (!acc.types[witId]) {
+            const iconColor = workItemTypeIconColor(workItemType);
+            const matchingWit = collection.workitems.types?.find(
+              wit => wit.type === workItemType.name
+            );
+
+            acc.types[witId] = {
+              name: [workItemType.name, pluralize(workItemType.name)],
+              color: workItemType.color,
+              icon: `data:image/svg+xml;utf8,${encodeURIComponent(
+                workItemIconSvgs[workItemType.icon.id](iconColor)
+              )}`,
+              iconColor,
+              startDateFields: matchingWit?.startDate.map(getFieldName).filter(exists),
+              endDateFields: matchingWit?.endDate.map(getFieldName).filter(exists),
+              devCompleteFields: matchingWit?.devCompletionDate
+                .map(getFieldName)
+                .filter(exists),
+              workCenters: (matchingWit?.workCenters || []).map(wc => ({
+                label: wc.label,
+                startDateField: wc.startDate.map(getFieldName).filter(exists),
+                endDateField: wc.endDate.map(getFieldName).filter(exists),
+              })),
+              groupLabel: matchingWit?.groupLabel,
+              rootCauseFields: matchingWit?.rootCause.map(getFieldName).filter(exists),
+            };
+          }
+
+          return acc;
+        },
+        { byId: {}, types: {} }
+      );
+
+      const ids = workItemRelations.reduce<Record<number, number[]>>(
+        (acc, wir) => {
+          if (!wir.source) return acc;
+          const parent = wir.source ? wir.source.id : 0;
+
+          acc[parent] = unique([...(acc[parent] || []), wir.target?.id].filter(exists));
+          return acc;
+        },
+        { 0: topLevelItems }
+      );
+
+      return {
+        analysedWorkItems: {
+          byId,
+          ids,
+          types,
+        },
+        overview: getOverviewData(
+          config,
+          collection,
+          workItemsForProject,
+          byId,
+          types,
+          getWorkItemType,
+          ids
+        ),
+      };
     };
   };
-};

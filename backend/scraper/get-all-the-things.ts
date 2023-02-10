@@ -82,12 +82,10 @@ const scrape = async (config: ParsedConfig) => {
 
   const projects = config.azure.collections.flatMap(collection => {
     // Execute these only once per collection
-    const workItems = collectionWorkItems(collection);
     const workItemFields = getCollectionWorkItemFields(collection.name);
+    const workItems = collectionWorkItems(collection, workItemFields);
 
-    return collection.projects.map(
-      project => [collection, project, workItems, workItemFields] as const
-    );
+    return collection.projects.map(project => [collection, project, workItems] as const);
   });
 
   const results = zip(

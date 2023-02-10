@@ -75,7 +75,9 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
     );
     logNetwork(await response.text());
     throw new Error(
-      `HTTP error when fetching ${response.url}, statusText: ${response.status} - ${response.statusText}`
+      `HTTP error when fetching ${response.url}, statusText: ${response.status} - ${
+        response.statusText
+      }\n ${await response.text()}`
     );
   }
 

@@ -21,7 +21,6 @@ import aggregateTestRuns from './stats-aggregators/test-runs.js';
 import languageColors from './language-colors.js';
 import type { RepoAnalysis } from '../../shared/types.js';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
-import type { WorkItemField } from './types-azure.js';
 import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
@@ -53,11 +52,7 @@ export default (config: ParsedConfig) => {
   return async (
     collection: ParsedCollection,
     projectConfig: ParsedProjectConfig,
-    getWorkItems: (
-      projectConfig: ParsedProjectConfig,
-      workItemFieldsPromise: Promise<WorkItemField[]>
-    ) => Promise<WorkItemAnalysis>,
-    workItemFieldsPromise: Promise<WorkItemField[]>
+    getWorkItems: (projectConfig: ParsedProjectConfig) => Promise<WorkItemAnalysis>
   ): Promise<ProjectAnalysis> => {
     const time = startTimer();
     const forProject = <T>(fn: (c: string, p: string) => T): T =>
@@ -82,7 +77,7 @@ export default (config: ParsedConfig) => {
       forProject(getReleases),
       forProject(getPRs).then(aggregatePrs(config.azure.queryFrom)),
       forProject(getPolicyConfigurations).then(aggregatePolicyConfigurations),
-      getWorkItems(projectConfig, workItemFieldsPromise),
+      getWorkItems(projectConfig),
       aggregateTestCases(forProject(getProjectWorkItemIdsForQuery), projectConfig.name),
     ]);
 
