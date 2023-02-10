@@ -4,14 +4,13 @@ import azure from '../scraper/network/azure.js';
 import { runJob } from './utils.js';
 
 export const getReleaseDefinitions = async () => {
-  const { getReleaseDefinitions, getReleaseDefinition } = azure(getConfig());
+  const { getReleaseDefinitionsAsChunks, getReleaseDefinition } = azure(getConfig());
 
   await Promise.all(
     collectionsAndProjects().map(([collection, project]) =>
-      getReleaseDefinitions(collection.name, project.name).then(async defns => {
+      getReleaseDefinitionsAsChunks(collection.name, project.name, async defns => {
         // eslint-disable-next-line no-restricted-syntax
-        for (const d of defns) {
-          // eslint-disable-next-line no-await-in-loop
+        for await (const d of defns) {
           await getReleaseDefinition(collection.name, project.name, d.id)
             .then(d => bulkSaveReleaseDefinitions(collection.name, project.name)([d]))
             .catch(error => {

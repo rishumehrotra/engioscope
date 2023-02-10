@@ -416,6 +416,18 @@ export default (config: ParsedConfig) => {
         cacheFile: [collectionName, projectName, 'release_definitions'],
       }),
 
+    getReleaseDefinitionsAsChunks: (
+      collectionName: string,
+      projectName: string,
+      chunkHandler: (x: ReleaseDefinition[]) => Promise<unknown>
+    ) =>
+      chunkedList<ReleaseDefinition>({
+        url: url(collectionName, projectName, '/release/definitions'),
+        qsParams: { $expand: 'environments' },
+        cacheFile: [collectionName, projectName, 'release_definitions'],
+        chunkHandler,
+      }),
+
     getReleaseDefinition: (
       collectionName: string,
       projectName: string,
