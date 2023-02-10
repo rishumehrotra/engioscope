@@ -10,6 +10,7 @@ import { getReleases } from './crons/releases.js';
 import { getPolicyConfigurations } from './crons/policy-configuration.js';
 import { getBuildDefinitions } from './crons/build-definitions.js';
 import { getBranchesStats } from './crons/branches.js';
+import { refreshCombinedBranchPoliciesView } from './models/policy-configuration.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -26,6 +27,7 @@ export default async (config: ParsedConfig) => {
   await getReleaseDefinitions();
   await getReleases();
   await getPolicyConfigurations();
+  await refreshCombinedBranchPoliciesView();
   await getBuildDefinitions();
   await getBranchesStats();
 
