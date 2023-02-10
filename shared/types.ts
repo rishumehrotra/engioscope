@@ -121,6 +121,26 @@ export type UIBranchStats = {
   limit: number;
 };
 
+export type UIBranchStats2 = {
+  branches: {
+    name: string;
+    url: string;
+    aheadCount: number;
+    behindCount: number;
+    lastCommitDate: Date;
+  }[];
+  count: number;
+  limit: number;
+};
+
+export type BranchDetails = {
+  name: string;
+  url: string;
+  aheadCount: number;
+  behindCount: number;
+  lastCommitDate: Date;
+}[];
+
 export type UIBranches = {
   listingUrl: string;
   total: number;

@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
+import { z } from 'zod';
+import type { PipelineStage } from 'mongoose';
 import type { GitBranchStats } from '../scraper/types-azure.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
 const { Schema, model } = mongoose;
 
@@ -85,7 +88,13 @@ export const branchStatsForRepo =
     return result || [];
   };
 
-export const healthyBranchesSummary = async (collectionName: string, project: string) => {
+export const HealthyBranchesSummaryInputParser = z.object({
+  ...collectionAndProjectInputs,
+});
+export const getHealthyBranchesSummary = async ({
+  collectionName,
+  project,
+}: z.infer<typeof HealthyBranchesSummaryInputParser>) => {
   const today = new Date();
   const fifteenDaysBack = today.setDate(today.getDate() - 15);
 
@@ -146,11 +155,16 @@ export const healthyBranchesSummary = async (collectionName: string, project: st
   return result[0] || { totalBranches: 0, healthyBranches: 0 };
 };
 
-export const getRepoTotalBranches = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string
-) => {
+export const RepoTotalBranchesInputParser = z.object({
+  ...collectionAndProjectInputs,
+  repositoryId: z.string(),
+});
+
+export const getRepoTotalBranches = async ({
+  collectionName,
+  project,
+  repositoryId,
+}: z.infer<typeof RepoTotalBranchesInputParser>) => {
   const result = await BranchModel.countDocuments({
     collectionName,
     project,
@@ -172,113 +186,121 @@ export const setBranchUrl = (
   return branchUrl;
 };
 
-export const getBranchListByCategory =
+const createMatcher =
+  (additionalClauses: (x: Date) => any) =>
   (
-    branchCategory: 'healthy' | 'delete candidate' | 'abandoned' | 'unhealthy',
-    linkType: 'history' | 'contents'
-  ) =>
-  async (
     collectionName: string,
     project: string,
     repositoryId: string,
-    repoUrl: string,
-    limit: number
-  ) => {
+    fifteenDaysBack: Date
+  ): PipelineStage => ({
+    $match: {
+      collectionName,
+      project,
+      repositoryId,
+      ...additionalClauses(fifteenDaysBack),
+    },
+  });
+
+const matchers = {
+  healthy: createMatcher(fifteenDaysBack => ({
+    aheadCount: { $lt: 10 },
+    behindCount: { $lt: 10 },
+    date: { $gte: fifteenDaysBack },
+  })),
+  deleteCandidates: createMatcher(fifteenDaysBack => ({
+    name: { $ne: 'main' },
+    aheadCount: { $eq: 0 },
+    date: { $lt: fifteenDaysBack },
+  })),
+  abandoned: createMatcher(fifteenDaysBack => ({
+    name: { $ne: 'main' },
+    aheadCount: { $gte: 0 },
+    date: { $lt: fifteenDaysBack },
+  })),
+  unhealthy: createMatcher(fifteenDaysBack => ({
+    name: { $ne: 'main' },
+    $or: [
+      { aheadCount: { $gte: 0 } },
+      { behindCount: { $gte: 0 } },
+      { date: { $lt: fifteenDaysBack } },
+    ],
+  })),
+};
+
+export const BranchesListInputParser = z.object({
+  ...collectionAndProjectInputs,
+  repositoryId: z.string(),
+  repoUrl: z.string(),
+  limit: z.number(),
+});
+export const getBranchListByCategory =
+  (
+    matcher: (
+      collectionName: string,
+      project: string,
+      repositoryId: string,
+      fifteenDaysBack: Date
+    ) => PipelineStage,
+    linkType: 'history' | 'contents'
+  ) =>
+  async ({
+    collectionName,
+    project,
+    repositoryId,
+    repoUrl,
+    limit,
+  }: z.infer<typeof BranchesListInputParser>) => {
     const today = new Date();
     const fifteenDaysBack = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
-
-    const healthyMatchFields = {
-      collectionName,
-      project,
-      repositoryId,
-      aheadCount: { $lt: 10 },
-      behindCount: { $lt: 10 },
-      date: { $gte: fifteenDaysBack },
-    };
-    const deleteCandidateMatchFields = {
-      collectionName,
-      project,
-      repositoryId,
-      name: { $ne: 'main' },
-      aheadCount: { $eq: 0 },
-      date: { $lt: fifteenDaysBack },
-    };
-    const abandonedMatchFields = {
-      collectionName,
-      project,
-      repositoryId,
-      name: { $ne: 'main' },
-      aheadCount: { $gte: 0 },
-      date: { $lt: fifteenDaysBack },
-    };
-    const unhealthyMatchFields = {
-      collectionName,
-      project,
-      repositoryId,
-      name: { $ne: 'main' },
-      $or: [
-        { aheadCount: { $gte: 0 } },
-        { behindCount: { $gte: 0 } },
-        {
-          date: { $lt: fifteenDaysBack },
-        },
-      ],
-    };
-
-    const matchField =
-      branchCategory === 'healthy'
-        ? healthyMatchFields
-        : branchCategory === 'delete candidate'
-        ? deleteCandidateMatchFields
-        : branchCategory === 'abandoned'
-        ? abandonedMatchFields
-        : branchCategory === 'unhealthy'
-        ? unhealthyMatchFields
-        : { collectionName, project, repositoryId };
 
     const result = await BranchModel.aggregate<{
       name: string;
       url: string;
       aheadCount: number;
       behindCount: number;
-      lastCommit: Date;
+      lastCommitDate: Date;
     }>([
-      {
-        $match: matchField,
-      },
-
+      matcher(collectionName, project, repositoryId, fifteenDaysBack),
       {
         $project: {
           _id: 0,
           aheadCount: 1,
           behindCount: 1,
-          lastCommit: '$date',
+          lastCommitDate: '$date',
           name: 1,
         },
       },
-      {
-        $limit: limit,
-      },
-      {
-        $sort: {
-          lastCommit: -1,
-        },
-      },
+      { $limit: limit },
+      { $sort: { lastCommit: -1 } },
     ]);
-    const updatedResult = result.map(branch => {
+    const addUrl = result.map(branch => {
       return {
         ...branch,
         url: setBranchUrl(encodeURIComponent(branch.name), repoUrl, linkType),
       };
     });
-
+    const updatedResult = {
+      branches: addUrl || [],
+      count: addUrl.length || 0,
+      limit,
+    };
     return updatedResult;
   };
 
-export const getHealthyBranchesList = getBranchListByCategory('healthy', 'contents');
+export const getHealthyBranchesList = getBranchListByCategory(
+  matchers.healthy,
+  'contents'
+);
 export const getDeleteCandidateBranchesList = getBranchListByCategory(
-  'delete candidate',
+  matchers.deleteCandidates,
   'history'
 );
-export const getAbandonedBranchesList = getBranchListByCategory('abandoned', 'history');
-export const getUnhealthyBranchesList = getBranchListByCategory('unhealthy', 'history');
+export const getAbandonedBranchesList = getBranchListByCategory(
+  matchers.abandoned,
+  'history'
+);
+export const getUnhealthyBranchesList = getBranchListByCategory(
+  matchers.unhealthy,
+  'history'
+);

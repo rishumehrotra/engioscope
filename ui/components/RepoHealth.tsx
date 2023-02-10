@@ -91,7 +91,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
   const tabs = useMemo(
     () => [
       builds(repo.builds, queryPeriodDays, repo.id, repo.name),
-      branches(repo.branches, repo.defaultBranch),
+      branches(repo.branches, repo.defaultBranch, repo.id, repo.url),
       commits(repo, aggregatedDevs, location, queryPeriodDays),
       prs(repo.prs),
       tests(repo, queryPeriodDays),
