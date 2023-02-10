@@ -8,18 +8,18 @@ export const getReleaseDefinitions = async () => {
 
   await Promise.all(
     collectionsAndProjects().map(([collection, project]) =>
-      getReleaseDefinitions(collection.name, project.name).then(async defns =>
-        Promise.all(
-          defns.map(d =>
-            getReleaseDefinition(collection.name, project.name, d.id)
-              .then(d => bulkSaveReleaseDefinitions(collection.name, project.name)([d]))
-              .catch(error => {
-                if (error.message?.includes('404')) return;
-                throw error;
-              })
-          )
-        )
-      )
+      getReleaseDefinitions(collection.name, project.name).then(async defns => {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const d of defns) {
+          // eslint-disable-next-line no-await-in-loop
+          await getReleaseDefinition(collection.name, project.name, d.id)
+            .then(d => bulkSaveReleaseDefinitions(collection.name, project.name)([d]))
+            .catch(error => {
+              if (error.message?.includes('404')) return;
+              throw error;
+            });
+        }
+      })
     )
   );
 };
