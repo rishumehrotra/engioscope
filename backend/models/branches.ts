@@ -187,7 +187,7 @@ export const setBranchUrl = (
 };
 
 const createMatcher =
-  (additionalClauses: (x: Date) => any) =>
+  (additionalClauses: (x: Date) => object) =>
   (
     collectionName: string,
     project: string,
