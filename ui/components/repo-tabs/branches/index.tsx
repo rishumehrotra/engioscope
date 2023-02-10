@@ -178,6 +178,11 @@ const BranchesNew: React.FC<{
   const [selectedTab, setSelectedTab] = useState(0);
   const cnp = useCollectionAndProject();
 
+  const branchTotalCount = trpc.branches.getRepoBranchStats.useQuery({
+    ...cnp,
+    repositoryId,
+  });
+
   const tabs = useMemo(
     () => [
       {
@@ -188,7 +193,7 @@ const BranchesNew: React.FC<{
           </>
         ),
         key: 'healthy',
-        count: num(branchStats.healthy.count),
+        count: num(branchTotalCount.data ? branchTotalCount.data.totalHealthy : 0),
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const healthyBranchesList = trpc.branches.getHealthyBranchesList.useQuery({
@@ -222,7 +227,7 @@ const BranchesNew: React.FC<{
               {healthyBranchesList.data && (
                 <BranchStats2
                   branches={healthyBranchesList.data.branches}
-                  count={healthyBranchesList.data.count}
+                  count={branchTotalCount.data ? branchTotalCount.data.totalHealthy : 0}
                   limit={healthyBranchesList.data.limit}
                 />
               )}
@@ -238,7 +243,7 @@ const BranchesNew: React.FC<{
           </>
         ),
         key: 'delete-candidates',
-        count: num(branchStats.deleteCandidates.count),
+        count: num(branchTotalCount.data ? branchTotalCount.data.totalDelete : 0),
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const deleteCandidateBranchesList =
@@ -264,7 +269,7 @@ const BranchesNew: React.FC<{
               {deleteCandidateBranchesList.data && (
                 <BranchStats2
                   branches={deleteCandidateBranchesList.data.branches}
-                  count={deleteCandidateBranchesList.data.count}
+                  count={branchTotalCount.data ? branchTotalCount.data.totalDelete : 0}
                   limit={deleteCandidateBranchesList.data.limit}
                 />
               )}
@@ -280,7 +285,7 @@ const BranchesNew: React.FC<{
           </>
         ),
         key: 'abandoned-branches',
-        count: num(branchStats.abandoned.count),
+        count: num(branchTotalCount.data ? branchTotalCount.data.totalAbandoned : 0),
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const abandonedBranchesList = trpc.branches.getAbandonedBranchesList.useQuery({
@@ -307,7 +312,7 @@ const BranchesNew: React.FC<{
               {abandonedBranchesList.data && (
                 <BranchStats2
                   branches={abandonedBranchesList.data.branches}
-                  count={abandonedBranchesList.data.count}
+                  count={branchTotalCount.data ? branchTotalCount.data.totalAbandoned : 0}
                   limit={abandonedBranchesList.data.limit}
                 />
               )}
@@ -323,7 +328,7 @@ const BranchesNew: React.FC<{
           </>
         ),
         key: 'Unhealthy',
-        count: num(branchStats.unhealthy.count),
+        count: num(branchTotalCount.data ? branchTotalCount.data.totalUnhealthy : 0),
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const unhealthyBranchesList = trpc.branches.getUnhealthyBranchesList.useQuery({
@@ -345,7 +350,7 @@ const BranchesNew: React.FC<{
               {unhealthyBranchesList.data && (
                 <BranchStats2
                   branches={unhealthyBranchesList.data.branches}
-                  count={unhealthyBranchesList.data.count}
+                  count={branchTotalCount.data ? branchTotalCount.data.totalUnhealthy : 0}
                   limit={unhealthyBranchesList.data.limit}
                 />
               )}
@@ -354,7 +359,7 @@ const BranchesNew: React.FC<{
         },
       },
     ],
-    [branchStats, cnp, defaultBranch, repoUrl, repositoryId]
+    [branchTotalCount.data, cnp, defaultBranch, repoUrl, repositoryId]
   );
 
   const SelectedTabComponent = tabs[selectedTab].Component;

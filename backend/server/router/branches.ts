@@ -4,7 +4,7 @@ import {
   getAbandonedBranchesList,
   getDeleteCandidateBranchesList,
   getUnhealthyBranchesList,
-  getRepoTotalBranches,
+  getRepoBranchStats,
   BranchesListInputParser,
   RepoTotalBranchesInputParser,
 } from '../../models/branches.js';
@@ -26,7 +26,7 @@ export default t.router({
     .input(BranchesListInputParser)
     .query(passInputTo(getAbandonedBranchesList)),
 
-  getRepoTotalBranches: t.procedure
+  getRepoBranchStats: t.procedure
     .input(RepoTotalBranchesInputParser)
-    .query(passInputTo(getRepoTotalBranches)),
+    .query(passInputTo(getRepoBranchStats)),
 });

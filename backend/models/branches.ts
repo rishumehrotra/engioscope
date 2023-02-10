@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { PipelineStage } from 'mongoose';
 import type { GitBranchStats } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
+import { oneFortnightInMs } from '../../shared/utils.js';
+import { RepositoryModel } from './repos.js';
 
 const { Schema, model } = mongoose;
 
@@ -160,18 +162,144 @@ export const RepoTotalBranchesInputParser = z.object({
   repositoryId: z.string(),
 });
 
-export const getRepoTotalBranches = async ({
+export const repoDefaultBranch = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string
+) => {
+  const repoBranch = await RepositoryModel.findOne(
+    {
+      collectionName,
+      'project.name': project,
+      'id': repositoryId,
+    },
+    {
+      defaultBranch: 1,
+    }
+  );
+  return repoBranch;
+};
+export const getRepoBranchStats = async ({
   collectionName,
   project,
   repositoryId,
 }: z.infer<typeof RepoTotalBranchesInputParser>) => {
-  const result = await BranchModel.countDocuments({
-    collectionName,
-    project,
-    repositoryId,
-  });
+  const today = new Date();
+  const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
 
-  return result || 0;
+  const repo = await repoDefaultBranch(collectionName, project, repositoryId);
+
+  if (!repo?.defaultBranch) {
+    return {
+      totalBranches: 0,
+      totalHealthy: 0,
+      totalDelete: 0,
+      totalAbandoned: 0,
+      totalUnhealthy: 0,
+    };
+  }
+
+  const { defaultBranch } = repo;
+
+  const result = await BranchModel.aggregate<{
+    totalBranches: number;
+    totalHealthy: number;
+    totalDelete: number;
+    totalAbandoned: number;
+    totalUnhealthy: number;
+  }>([
+    { $match: { collectionName, project, repositoryId } },
+    {
+      $group: {
+        _id: null,
+
+        totalBranches: { $sum: 1 },
+
+        totalHealthy: {
+          $sum: {
+            $cond: [
+              {
+                $or: [
+                  {
+                    $and: [
+                      { $lt: ['$aheadCount', 10] },
+                      { $lt: ['$behindCount', 10] },
+                      { $gte: ['$date', fifteenDaysBack] },
+                    ],
+                  },
+                  { $eq: ['$name', defaultBranch] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalDelete: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ['$aheadCount', 0] },
+                  { $lt: ['$date', fifteenDaysBack] },
+                  { $ne: ['$name', defaultBranch] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalAbandoned: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $gte: ['$aheadCount', 0] },
+                  { $lt: ['$date', fifteenDaysBack] },
+                  { $ne: ['$name', defaultBranch] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalUnhealthy: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  {
+                    $or: [
+                      { $gte: ['$aheadCount', 0] },
+                      { $gte: ['$behindCount', 0] },
+                      { $lt: ['$date', fifteenDaysBack] },
+                    ],
+                  },
+                  { $ne: ['$name', defaultBranch] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        totalBranches: 1,
+        totalHealthy: 1,
+        totalDelete: 1,
+        totalAbandoned: 1,
+        totalUnhealthy: 1,
+      },
+    },
+  ]);
+
+  return result[0];
 };
 
 export const setBranchUrl = (
@@ -234,13 +362,14 @@ export const BranchesListInputParser = z.object({
   repoUrl: z.string(),
   limit: z.number(),
 });
-export const getBranchListByCategory =
+export const getBranches =
   (
     matcher: (
       collectionName: string,
       project: string,
       repositoryId: string,
-      fifteenDaysBack: Date
+      fifteenDaysBack: Date,
+      defaultBranch: string
     ) => PipelineStage,
     linkType: 'history' | 'contents'
   ) =>
@@ -252,7 +381,17 @@ export const getBranchListByCategory =
     limit,
   }: z.infer<typeof BranchesListInputParser>) => {
     const today = new Date();
-    const fifteenDaysBack = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
+    const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
+
+    const repo = await repoDefaultBranch(collectionName, project, repositoryId);
+
+    if (!repo?.defaultBranch) {
+      return {
+        branches: [],
+        count: 0,
+        limit,
+      };
+    }
 
     const result = await BranchModel.aggregate<{
       name: string;
@@ -261,7 +400,7 @@ export const getBranchListByCategory =
       behindCount: number;
       lastCommitDate: Date;
     }>([
-      matcher(collectionName, project, repositoryId, fifteenDaysBack),
+      matcher(collectionName, project, repositoryId, fifteenDaysBack, repo.defaultBranch),
       {
         $project: {
           _id: 0,
@@ -288,19 +427,10 @@ export const getBranchListByCategory =
     return updatedResult;
   };
 
-export const getHealthyBranchesList = getBranchListByCategory(
-  matchers.healthy,
-  'contents'
-);
-export const getDeleteCandidateBranchesList = getBranchListByCategory(
+export const getHealthyBranchesList = getBranches(matchers.healthy, 'contents');
+export const getDeleteCandidateBranchesList = getBranches(
   matchers.deleteCandidates,
   'history'
 );
-export const getAbandonedBranchesList = getBranchListByCategory(
-  matchers.abandoned,
-  'history'
-);
-export const getUnhealthyBranchesList = getBranchListByCategory(
-  matchers.unhealthy,
-  'history'
-);
+export const getAbandonedBranchesList = getBranches(matchers.abandoned, 'history');
+export const getUnhealthyBranchesList = getBranches(matchers.unhealthy, 'history');
