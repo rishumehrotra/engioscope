@@ -2,7 +2,7 @@ import type { z } from 'zod';
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
 import { getPipelinesCount } from '../../models/releases.js';
 import { getRepoCount } from '../../models/repos.js';
-import { passInputTo, t } from './trpc.js';
+import { memoizeForUI, passInputTo, t } from './trpc.js';
 
 const summary = async ({
   collectionName,
@@ -17,5 +17,7 @@ const summary = async ({
 };
 
 export default t.router({
-  summary: t.procedure.input(collectionAndProjectInputParser).query(passInputTo(summary)),
+  summary: t.procedure
+    .input(collectionAndProjectInputParser)
+    .query(passInputTo(memoizeForUI(summary))),
 });
