@@ -129,3 +129,21 @@ export const searchRepositories = async (
 
   return result;
 };
+
+export const repoDefaultBranch = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string
+) => {
+  const repoBranch = await RepositoryModel.findOne(
+    {
+      collectionName,
+      'project.name': project,
+      'id': repositoryId,
+    },
+    {
+      defaultBranch: 1,
+    }
+  );
+  return repoBranch?.defaultBranch;
+};

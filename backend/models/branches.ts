@@ -4,7 +4,7 @@ import type { PipelineStage } from 'mongoose';
 import type { GitBranchStats } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
 import { oneFortnightInMs } from '../../shared/utils.js';
-import { RepositoryModel } from './repos.js';
+import { repoDefaultBranch } from './repos.js';
 
 const { Schema, model } = mongoose;
 
@@ -130,9 +130,7 @@ export const getHealthyBranchesSummary = async ({
                     $and: [
                       { $lt: ['$aheadCount', 10] },
                       { $lt: ['$behindCount', 10] },
-                      {
-                        $gte: ['$date', fifteenDaysBack],
-                      },
+                      { $gte: ['$date', fifteenDaysBack] },
                     ],
                   },
                   { $eq: ['$name', 'master'] },
@@ -162,23 +160,6 @@ export const RepoTotalBranchesInputParser = z.object({
   repositoryId: z.string(),
 });
 
-export const repoDefaultBranch = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string
-) => {
-  const repoBranch = await RepositoryModel.findOne(
-    {
-      collectionName,
-      'project.name': project,
-      'id': repositoryId,
-    },
-    {
-      defaultBranch: 1,
-    }
-  );
-  return repoBranch;
-};
 export const getRepoBranchStats = async ({
   collectionName,
   project,
@@ -187,19 +168,9 @@ export const getRepoBranchStats = async ({
   const today = new Date();
   const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
 
-  const repo = await repoDefaultBranch(collectionName, project, repositoryId);
+  const defaultBranch = await repoDefaultBranch(collectionName, project, repositoryId);
 
-  if (!repo?.defaultBranch) {
-    return {
-      totalBranches: 0,
-      totalHealthy: 0,
-      totalDelete: 0,
-      totalAbandoned: 0,
-      totalUnhealthy: 0,
-    };
-  }
-
-  const { defaultBranch } = repo;
+  if (!defaultBranch) return;
 
   const result = await BranchModel.aggregate<{
     totalBranches: number;
@@ -315,43 +286,44 @@ export const setBranchUrl = (
 };
 
 const createMatcher =
-  <T>(additionalClauses: (x: Date) => T) =>
+  <T>(additionalClauses: (startDate: Date, defaultBranch: string) => T) =>
   (
     collectionName: string,
     project: string,
     repositoryId: string,
-    fifteenDaysBack: Date
+    startDate: Date,
+    defaultBranch: string
   ): PipelineStage => ({
     $match: {
       collectionName,
       project,
       repositoryId,
-      ...additionalClauses(fifteenDaysBack),
+      ...additionalClauses(startDate, defaultBranch),
     },
   });
 
 const matchers = {
-  healthy: createMatcher(fifteenDaysBack => ({
+  healthy: createMatcher(startDate => ({
     aheadCount: { $lt: 10 },
     behindCount: { $lt: 10 },
-    date: { $gte: fifteenDaysBack },
+    date: { $gte: startDate },
   })),
-  deleteCandidates: createMatcher(fifteenDaysBack => ({
-    name: { $ne: 'main' },
+  deleteCandidates: createMatcher((startDate, defaultBranch) => ({
+    name: { $ne: defaultBranch },
     aheadCount: { $eq: 0 },
-    date: { $lt: fifteenDaysBack },
+    date: { $lt: startDate },
   })),
-  abandoned: createMatcher(fifteenDaysBack => ({
-    name: { $ne: 'main' },
+  abandoned: createMatcher((startDate, defaultBranch) => ({
+    name: { $ne: defaultBranch },
     aheadCount: { $gte: 0 },
-    date: { $lt: fifteenDaysBack },
+    date: { $lt: startDate },
   })),
-  unhealthy: createMatcher(fifteenDaysBack => ({
-    name: { $ne: 'main' },
+  unhealthy: createMatcher((startDate, defaultBranch) => ({
+    name: { $ne: defaultBranch },
     $or: [
       { aheadCount: { $gte: 0 } },
       { behindCount: { $gte: 0 } },
-      { date: { $lt: fifteenDaysBack } },
+      { date: { $lt: startDate } },
     ],
   })),
 };
@@ -383,15 +355,9 @@ export const getBranches =
     const today = new Date();
     const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
 
-    const repo = await repoDefaultBranch(collectionName, project, repositoryId);
+    const defaultBranch = await repoDefaultBranch(collectionName, project, repositoryId);
 
-    if (!repo?.defaultBranch) {
-      return {
-        branches: [],
-        count: 0,
-        limit,
-      };
-    }
+    if (!defaultBranch) return;
 
     const result = await BranchModel.aggregate<{
       name: string;
@@ -400,7 +366,7 @@ export const getBranches =
       behindCount: number;
       lastCommitDate: Date;
     }>([
-      matcher(collectionName, project, repositoryId, fifteenDaysBack, repo.defaultBranch),
+      matcher(collectionName, project, repositoryId, fifteenDaysBack, defaultBranch),
       {
         $project: {
           _id: 0,
