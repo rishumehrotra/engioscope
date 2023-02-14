@@ -23,7 +23,7 @@ import type {
   QualityGateStatus,
   UICodeQuality,
 } from '../../shared/types.js';
-import { divide, toPercentage } from '../../shared/utils.js';
+import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num, shortDate } from '../helpers/utils.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
@@ -85,6 +85,9 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
   const repos = reposBeforeExclusions.filter(active);
   const allBuildPipelines = buildPipelines(repos);
   const pipelinesRunningTests = repos.flatMap(r => r.tests || []);
+  const pipelinesPostingBranchCoverage = repos
+    .flatMap(r => r.tests?.flatMap(t => t.coverage))
+    .filter(exists);
 
   return {
     repos,
@@ -110,6 +113,7 @@ const computeStats = (reposBeforeExclusions: RepoAnalysis[]) => {
     usingCentralTemplate: { ...totalUsingCentralTemplate(repos) },
     healthBranches: healthyBranches(repos),
     pipelinesRunningTests,
+    pipelinesPostingBranchCoverage,
   };
 };
 
@@ -217,9 +221,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 lineColor={increaseIsBetter(stats.totalTestsByWeek)}
               />
             ),
-            tooltip: `Total number of tests across all matching repos.<br />${num(
-              stats.pipelinesRunningTests.length
-            )} of ${num(stats.buildPipelines.length)} build pipelines post test reports.`,
+            tooltip: `Total number of tests across all matching repos.`,
           },
         ]}
         childStats={[
@@ -235,6 +237,35 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 yAxisLabel={x => `${x}%`}
               />
             ),
+          },
+        ]}
+      />
+      <ProjectStat
+        topStats={[
+          {
+            title: 'Pipelines running tests',
+            value: divide(stats.pipelinesRunningTests.length, stats.buildPipelines.length)
+              .map(toPercentage)
+              .getOr('-'),
+            tooltip: `${num(stats.pipelinesRunningTests.length)} of ${
+              stats.buildPipelines.length
+            } pipelines report test results`,
+          },
+        ]}
+        childStats={[
+          {
+            title: 'Reporting coverage',
+            value: divide(
+              stats.pipelinesPostingBranchCoverage.length,
+              stats.pipelinesRunningTests.length
+            )
+              .map(toPercentage)
+              .getOr('-'),
+            tooltip: `${num(
+              stats.pipelinesPostingBranchCoverage.length
+            )} pipelines of the ${
+              stats.pipelinesRunningTests.length
+            } that run tests report branch coverage`,
           },
         ]}
       />
