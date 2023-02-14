@@ -256,6 +256,10 @@ export type BuildOverviewStats = {
   lastBuildStatus: string;
   lastBuildTimestamp: Date;
   definitionName: string;
+  failingSince: null | {
+    result: string;
+    timestamp: Date;
+  };
 };
 
 export type DeploymentAttempt = {

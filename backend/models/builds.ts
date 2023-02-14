@@ -267,7 +267,13 @@ export const getBuildsOverviewForRepository = async ({
           definitionName: { $first: '$definition.name' },
           url: { $first: '$definition.url' },
           lastBuildStatus: { $first: '$result' },
-          lastBuildTimestamp: { $first: '$finishTime' },
+          lastBuildTimestamp: { $first: '$startTime' },
+          builds: {
+            $push: {
+              result: '$result',
+              timestamp: '$startTime',
+            },
+          },
         },
       },
       {
@@ -286,6 +292,30 @@ export const getBuildsOverviewForRepository = async ({
           project: '$_id.project',
           collectionName: '$_id.collectionName',
           repositoryID: '$_id.repositoryID',
+          builds: 1,
+          latestBuildResult: { $arrayElemAt: ['$builds', 0] },
+          latestSuccessfulIndex: {
+            $indexOfArray: ['$builds.result', 'succeeded', 0],
+          },
+        },
+      },
+      {
+        $addFields: {
+          failingSince: {
+            $cond: {
+              if: { $ne: ['$lastBuildStatus', 'succeeded'] },
+              then: {
+                $arrayElemAt: ['$builds', { $subtract: ['$latestSuccessfulIndex', 1] }],
+              },
+              else: null,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          builds: 0,
+          latestSuccessfulIndex: 0,
         },
       },
     ]),

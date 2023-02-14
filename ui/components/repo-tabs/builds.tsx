@@ -447,9 +447,11 @@ const BuildsNew: React.FC<{
                             {' '}
                           </span>
                           <span>
-                            {`Failing since ${shortDate(
-                              new Date(pipeline.lastBuildTimestamp)
-                            )}`}
+                            {pipeline.failingSince === null
+                              ? null
+                              : `Failing since ${shortDate(
+                                  new Date(pipeline.failingSince.timestamp)
+                                )}`}
                           </span>
                         </>
                       ) : undefined}
