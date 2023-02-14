@@ -831,3 +831,51 @@ export const getArtifacts = async ({
 
   return [...others, ...Object.values(builds)];
 };
+
+export const releaseBranchesForRepo = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string,
+  startDate: Date,
+  endDate: Date
+) => {
+  const projectConfig = configForProject(collectionName, project);
+  const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
+
+  const results = await ReleaseModel.aggregate<{ _id: string }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'artifacts.definition.repositoryId': repositoryId,
+        'modifiedOn': { $gte: startDate, $lt: endDate },
+      },
+    },
+    ...(ignoreStagesBefore
+      ? [
+          ...addFilteredEnvsField(ignoreStagesBefore),
+          {
+            $addFields: {
+              hasGoneAhead: {
+                $anyElementTrue: {
+                  $map: {
+                    input: '$filteredEnvs',
+                    as: 'env',
+                    in: { $ne: ['$$env.status', 'notStarted'] },
+                  },
+                },
+              },
+            },
+          },
+          { $unset: 'filteredEnvs' },
+        ]
+      : []),
+    { $match: { hasGoneAhead: true } },
+    { $unwind: '$artifacts' },
+    { $match: { 'artifacts.definition.repositoryId': repositoryId } },
+    { $project: { branch: '$artifacts.definition.branch' } },
+    { $group: { _id: '$branch' } },
+  ]);
+
+  return results.map(r => r._id);
+};
