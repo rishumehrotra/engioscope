@@ -247,9 +247,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             value: divide(stats.pipelinesRunningTests.length, stats.buildPipelines.length)
               .map(toPercentage)
               .getOr('-'),
-            tooltip: `${num(stats.pipelinesRunningTests.length)} of ${
+            tooltip: `${num(stats.pipelinesRunningTests.length)} of ${num(
               stats.buildPipelines.length
-            } pipelines report test results`,
+            )} pipelines report test results`,
           },
         ]}
         childStats={[
@@ -263,9 +263,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
               .getOr('-'),
             tooltip: `${num(
               stats.pipelinesPostingBranchCoverage.length
-            )} pipelines of the ${
+            )} pipelines of the ${num(
               stats.pipelinesRunningTests.length
-            } that run tests report branch coverage`,
+            )} that run tests report branch coverage`,
           },
         ]}
       />
