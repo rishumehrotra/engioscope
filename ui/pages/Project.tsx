@@ -14,6 +14,8 @@ import Overview from './Overview.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import type { UIProjectAnalysis } from '../../shared/types.js';
 import ReleasePipelines2 from './ReleasePipelines2.jsx';
+import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { trpc } from '../helpers/trpc.js';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) =>
   count ? (
@@ -59,45 +61,52 @@ const useNavItems = (projectDetails: UIProjectAnalysis | null) => {
 
 const Project: React.FC = () => {
   const projectDetails = useProjectDetails();
+  const cnp = useCollectionAndProject();
+  const { data: projectSummary } = trpc.projects.summary.useQuery(cnp);
   const pageName = usePageName();
   const { project: projectName } = useParams<{ project: string }>();
   const setHeaderDetails = useSetHeaderDetails();
 
-  const project = projectDetails?.name[1] === projectName ? projectDetails : null;
-
   const { navItems, selectedTab } = useNavItems(projectDetails);
 
   useEffect(() => {
-    projectDetails &&
+    projectSummary &&
       setHeaderDetails({
-        title: projectName || '',
+        title: cnp.project || '',
         subtitle: (
           <div className="text-base mt-2 font-normal text-gray-200">
-            {project ? (
+            {projectSummary ? (
               <>
                 {renderStatIfAvailable(
-                  project.reposCount,
-                  pageName('repos', project.reposCount)
+                  projectSummary.repos,
+                  pageName('repos', projectSummary.repos)
                 )}
-                {project.releasePipelineCount ? ' | ' : ''}
+                {projectSummary.pipelines ? ' | ' : ''}
                 {renderStatIfAvailable(
-                  project.releasePipelineCount,
-                  pageName('release-pipelines', project.releasePipelineCount)
+                  projectSummary.pipelines,
+                  pageName('release-pipelines', projectSummary.pipelines)
                 )}
-                {project.workItemCount ? ' | ' : ''}
+                {/* {projectSummary.workItemCount ? ' | ' : ''}
                 {renderStatIfAvailable(
-                  project.workItemCount,
-                  pageName('workitems', project.workItemCount)
-                )}
+                  projectSummary.workItemCount,
+                  pageName('workitems', projectSummary.workItemCount)
+                )} */}
               </>
             ) : (
               <span className="font-bold text-lg">&nbsp;</span>
             )}
           </div>
         ),
-        lastUpdated: projectDetails.lastUpdated,
+        lastUpdated: projectDetails?.lastUpdated,
       });
-  }, [pageName, project, projectDetails, projectName, setHeaderDetails]);
+  }, [
+    pageName,
+    projectSummary,
+    projectDetails,
+    projectName,
+    setHeaderDetails,
+    cnp.project,
+  ]);
 
   return (
     <div className="mx-32 bg-gray-50 rounded-t-lg" style={{ marginTop: '-2.25rem' }}>
