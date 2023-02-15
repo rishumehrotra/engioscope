@@ -250,7 +250,7 @@ export const getBuildsOverviewForRepository = async ({
                     unit: 'millisecond',
                   },
                 },
-                null,
+                0,
               ],
             },
           },

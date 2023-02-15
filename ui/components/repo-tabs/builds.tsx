@@ -229,7 +229,7 @@ const Builds: React.FC<{
                           : {
                               'data-tip': `${num(
                                 pipeline.totalSuccessfulBuilds
-                              )} successful buidls`,
+                              )} successful builds`,
                               'data-html': true,
                             })}
                       >
@@ -246,7 +246,7 @@ const Builds: React.FC<{
                         ) : (
                           <>
                             <span>{prettyMilliseconds(pipeline.averageDuration)}</span>
-                            <div className="text-gray-400 text-sm" data-tip="loading">
+                            <div className="text-gray-400 text-sm">
                               (
                               {`${prettyMilliseconds(
                                 pipeline.minDuration
