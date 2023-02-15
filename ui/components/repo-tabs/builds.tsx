@@ -197,6 +197,14 @@ const Builds: React.FC<{
                                   UI
                                 </span>
                               ) : null}
+                              {pipeline.type === 'recent' ? (
+                                <span
+                                  className="inline-block ml-2 uppercase text-xs px-1 border-green-700 bg-green-100 rounded-sm text-green-700 border font-semibold no-underline"
+                                  data-tip={`This pipeline have ${pipeline.prCount} builds triggered by pull requests in the last ${queryPeriodDays} days`}
+                                >
+                                  PR
+                                </span>
+                              ) : null}
                             </span>
                           </a>
                         </div>

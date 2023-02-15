@@ -274,6 +274,15 @@ export const getBuildsOverviewForRepository = async ({
               timestamp: '$startTime',
             },
           },
+          prCount: {
+            $sum: {
+              $cond: {
+                if: { $eq: ['$reason', 'pullRequest'] },
+                then: 0,
+                else: 1,
+              },
+            },
+          },
         },
       },
       {
@@ -297,6 +306,7 @@ export const getBuildsOverviewForRepository = async ({
           latestSuccessfulIndex: {
             $indexOfArray: ['$builds.result', 'succeeded', 0],
           },
+          prCount: 1,
         },
       },
       {

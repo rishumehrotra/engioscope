@@ -260,6 +260,7 @@ export type BuildOverviewStats = {
     result: string;
     timestamp: Date;
   };
+  prCount: number;
 };
 
 export type DeploymentAttempt = {
