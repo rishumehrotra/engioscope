@@ -117,7 +117,9 @@ const scrape = async (config: ParsedConfig) => {
     console.log(
       "\nRe-run this script to re-fetch the failed data. Data already fetched won't be refetched."
     );
-    throw new Error('Exiting with non-zero error, see above for details');
+    console.error('Exiting with non-zero error, see above for details');
+    // eslint-disable-next-line unicorn/no-process-exit
+    process.exit(-1);
   }
   console.log('\n');
 
