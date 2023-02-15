@@ -103,23 +103,11 @@ export const getHealthyBranchesSummary = async ({
     totalBranches: number;
     healthyBranches: number;
   }>([
-    {
-      $match: {
-        collectionName,
-        project,
-      },
-    },
+    { $match: { collectionName, project } },
     {
       $group: {
-        _id: {
-          collectionName: '$collectionName',
-          project: '$project',
-        },
-
-        totalBranches: {
-          $sum: 1,
-        },
-
+        _id: { collectionName: '$collectionName', project: '$project' },
+        totalBranches: { $sum: 1 },
         healthyBranches: {
           $sum: {
             $cond: [
@@ -234,27 +222,18 @@ export const getRepoBranchStats = async ({
     {
       $group: {
         _id: null,
-
         totalBranches: { $sum: 1 },
         totalHealthy: {
-          $sum: {
-            $cond: [{ $eq: ['$category', 'healthy'] }, 1, 0],
-          },
+          $sum: { $cond: [{ $eq: ['$category', 'healthy'] }, 1, 0] },
         },
         totalDelete: {
-          $sum: {
-            $cond: [{ $eq: ['$category', 'delete'] }, 1, 0],
-          },
+          $sum: { $cond: [{ $eq: ['$category', 'delete'] }, 1, 0] },
         },
         totalAbandoned: {
-          $sum: {
-            $cond: [{ $eq: ['$category', 'abandoned'] }, 1, 0],
-          },
+          $sum: { $cond: [{ $eq: ['$category', 'abandoned'] }, 1, 0] },
         },
         totalUnhealthy: {
-          $sum: {
-            $cond: [{ $eq: ['$category', 'unhealthy'] }, 1, 0],
-          },
+          $sum: { $cond: [{ $eq: ['$category', 'unhealthy'] }, 1, 0] },
         },
       },
     },
@@ -278,7 +257,8 @@ export const setBranchUrl = (
   repoUrl: string,
   linkType: 'history' | 'contents'
 ) => {
-  const branchUrl = `${repoUrl}/?_a=${linkType}&targetVersion=GB${encodeURIComponent(
+  // /?version=GBMultidevice-fix2
+  const branchUrl = `${repoUrl}/?_a=${linkType}&version=GB${encodeURIComponent(
     branchName
   )}`;
 
