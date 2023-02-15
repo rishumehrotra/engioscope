@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useState, useMemo } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 import ReactTooltip from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
 import type { RepoAnalysis } from '../../../shared/types.js';
@@ -10,10 +10,10 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
 import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
 import { trpc } from '../../helpers/trpc.js';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 import Loading from '../Loading.jsx';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
+import { useDateRange } from '../../hooks/date-range-hooks.jsx';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -106,205 +106,21 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   );
 };
 
-const BuildsOld: React.FC<{
-  builds: RepoAnalysis['builds'];
-  queryPeriodDays: number;
-}> = ({ builds, queryPeriodDays }) => {
-  const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const toggleExpanded = useCallback(
-    (url: string) => {
-      if (expandedRows.includes(url)) {
-        return setExpandedRows(e => e.filter(u => u !== url));
-      }
-      setExpandedRows(e => [...e, url]);
-    },
-    [expandedRows]
-  );
-
-  const isExpanded = useCallback(
-    (url: string) => expandedRows.includes(url),
-    [expandedRows]
-  );
-
-  return (
-    <TabContents gridCols={1}>
-      {builds ? (
-        <div className="overflow-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th> </th>
-                <th>Central template</th>
-                <th>Successful</th>
-                <th>Runs</th>
-                <th>Success rate</th>
-                <th className="text-right" style={{ paddingRight: 0 }}>
-                  Average duration
-                </th>
-                <th className="text-left">Current status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {builds.pipelines.map(pipeline => (
-                <Fragment key={pipeline.url}>
-                  <tr
-                    className={`${pipeline.status.type === 'unused' ? 'opacity-60' : ''}`}
-                  >
-                    <td>
-                      <div className="flex">
-                        <button
-                          type="button"
-                          title='Expand/collapse "Builds" section'
-                          onClick={() => toggleExpanded(pipeline.url)}
-                          className="mr-2"
-                        >
-                          <span
-                            className="list-item"
-                            style={{
-                              listStyleType: isExpanded(pipeline.url)
-                                ? 'disclosure-open'
-                                : 'disclosure-closed',
-                            }}
-                          />
-                        </button>
-                        <a
-                          href={pipeline.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          data-tip={pipeline.name}
-                          className="link-text"
-                        >
-                          <span className="truncate w-96 block">
-                            {pipeline.name}
-                            {pipeline.type === 'yml' ? null : (
-                              <span
-                                className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
-                                rounded-sm text-red-700 border font-semibold no-underline`}
-                                data-tip="This pipeline is configured using the UI instead of a YAML file"
-                              >
-                                UI
-                              </span>
-                            )}
-                          </span>
-                        </a>
-                      </div>
-                    </td>
-                    <td>
-                      <CentralTemplateUsage
-                        buildDefinitionId={pipeline.definitionId}
-                        centralTemplateRuns={pipeline.centralTemplateRuns}
-                        totalRuns={pipeline.count}
-                      />
-                    </td>
-                    <td>
-                      {pipeline.status.type === 'unused' ? '-' : num(pipeline.success)}
-                    </td>
-                    <td>
-                      {pipeline.status.type === 'unused' ? '-' : num(pipeline.count)}
-                    </td>
-                    <td>
-                      {pipeline.status.type === 'unused'
-                        ? '-'
-                        : divide(pipeline.success, pipeline.count)
-                            .map(toPercentage)
-                            .getOr('-')}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      {pipeline.status.type === 'unused' ? (
-                        '-'
-                      ) : (
-                        <>
-                          <span>{pipeline.duration.average}</span>
-                          <div className="text-gray-400 text-sm" data-tip="loading">
-                            ({`${pipeline.duration.min} - ${pipeline.duration.max}`})
-                          </div>
-                        </>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'left' }} className="pl-6">
-                      {pipeline.status.type !== 'failed' &&
-                        pipeline.status.type !== 'unused' && (
-                          <>
-                            <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
-                              {' '}
-                            </span>
-                            <span className="capitalize">{pipeline.status.type}</span>
-                          </>
-                        )}
-                      {pipeline.status.type === 'failed' ? (
-                        <>
-                          <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
-                            {' '}
-                          </span>
-                          <span>
-                            {`Failing since ${shortDate(
-                              new Date(pipeline.status.since)
-                            )}`}
-                          </span>
-                        </>
-                      ) : undefined}
-                      {pipeline.status.type === 'unused' ? (
-                        <>
-                          <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
-                            {' '}
-                          </span>
-                          <span>
-                            {`Last used ${
-                              pipeline.status.since
-                                ? `${shortDate(
-                                    new Date(pipeline.status.since)
-                                  )}, ${new Date(pipeline.status.since).getFullYear()}`
-                                : 'unknown'
-                            }`}
-                          </span>
-                        </>
-                      ) : undefined}
-                    </td>
-                  </tr>
-                  {isExpanded(pipeline.url) ? (
-                    <tr>
-                      <td colSpan={7} style={{ padding: 0 }}>
-                        <BuildInsights url={pipeline.url} />
-                      </td>
-                    </tr>
-                  ) : null}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-          <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-            {`* Data shown is for the last ${queryPeriodDays} days`}
-          </div>
-        </div>
-      ) : (
-        <TabContents gridCols={1}>
-          <AlertMessage message="No builds for this repo in the last three months" />
-        </TabContents>
-      )}
-    </TabContents>
-  );
-};
-
-const BuildsNew: React.FC<{
+const Builds: React.FC<{
   repositoryId: string;
   repositoryName: string;
 }> = ({ repositoryId, repositoryName }) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const { collectionName, project } = useCollectionAndProject();
   const [queryPeriodDays] = useQueryPeriodDays();
-  const [startDate, endDate] = useMemo(() => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - queryPeriodDays);
-    return [startDate, new Date()] as const;
-  }, [queryPeriodDays]);
+  const dateRange = useDateRange();
 
   const builds = trpc.builds.getBuildsOverviewForRepository.useQuery({
     collectionName,
     project,
     repositoryId,
     repositoryName,
-    startDate,
-    endDate,
+    ...dateRange,
   });
 
   const toggleExpanded = useCallback(
@@ -322,176 +138,184 @@ const BuildsNew: React.FC<{
     [expandedRows]
   );
 
-  if (!builds.data) return <Loading />;
-
   return (
     <TabContents gridCols={1}>
-      {builds ? (
-        <div className="overflow-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th> </th>
-                <th>Central template</th>
-                <th>Successful</th>
-                <th>Runs</th>
-                <th>Success rate</th>
-                <th className="text-right" style={{ paddingRight: 0 }}>
-                  Average duration
-                </th>
-                <th className="text-left">Current status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {builds.data.map(pipeline => (
-                <Fragment key={pipeline.url}>
-                  <tr className={`${pipeline.type === 'old' ? 'opacity-60' : ''}`}>
-                    {/* Build Toggler */}
-                    <td>
-                      <div className="flex">
-                        <button
-                          title="Expand/collapse"
-                          type="button"
-                          onClick={() => toggleExpanded(pipeline.url)}
-                          className="mr-2"
-                        >
-                          <span
-                            className="list-item"
-                            style={{
-                              listStyleType: isExpanded(pipeline.url)
-                                ? 'disclosure-open'
-                                : 'disclosure-closed',
-                            }}
-                          />
-                        </button>
-                        <a
-                          href={pipeline.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          data-tip={pipeline.definitionName}
-                          className="link-text"
-                        >
-                          <span className="truncate w-96 block">
-                            {pipeline.definitionName}
-                            {pipeline.ui ? (
-                              <span
-                                className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
-                                rounded-sm text-red-700 border font-semibold no-underline`}
-                                data-tip="This pipeline is configured using the UI instead of a YAML file"
-                              >
-                                UI
-                              </span>
-                            ) : null}
-                          </span>
-                        </a>
-                      </div>
-                    </td>
-                    {/* Central Template Usage */}
-                    <td>
-                      <CentralTemplateUsage
-                        buildDefinitionId={String(pipeline.buildDefinitionId)}
-                        centralTemplateRuns={pipeline.centralTemplateCount}
-                        totalRuns={pipeline.totalBuilds}
-                      />
-                    </td>
-                    {/* Successful Count */}
-                    <td>
-                      {pipeline.type === 'old'
-                        ? '-'
-                        : num(pipeline.totalSuccessfulBuilds)}
-                    </td>
-                    {/* Total Count */}
-                    <td>{pipeline.type === 'old' ? '-' : num(pipeline?.totalBuilds)}</td>
-                    {/* Success Rate */}
-                    <td>
-                      {pipeline.type === 'old'
-                        ? '-'
-                        : divide(pipeline.totalSuccessfulBuilds, pipeline.totalBuilds)
-                            .map(toPercentage)
-                            .getOr('-')}
-                    </td>
-                    {/* Average Duration */}
-                    <td style={{ textAlign: 'right' }}>
-                      {pipeline.type === 'old' ? (
-                        '-'
-                      ) : (
-                        <>
-                          <span>{prettyMilliseconds(pipeline.averageDuration)}</span>
-                          <div className="text-gray-400 text-sm" data-tip="loading">
-                            (
-                            {`${prettyMilliseconds(
-                              pipeline.minDuration
-                            )} - ${prettyMilliseconds(pipeline.maxDuration)}`}
-                            )
-                          </div>
-                        </>
-                      )}
-                    </td>
-                    {/* Current Status */}
-                    <td style={{ textAlign: 'left' }} className="pl-6">
-                      {pipeline.type === 'recent' &&
-                        pipeline.lastBuildStatus === 'succeeded' && (
-                          <>
-                            <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
-                              {' '}
+      {builds.data ? (
+        builds.data.length ? (
+          <div className="overflow-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th> </th>
+                  <th>Central template</th>
+                  <th>Successful</th>
+                  <th>Runs</th>
+                  <th>Success rate</th>
+                  <th className="text-right" style={{ paddingRight: 0 }}>
+                    Average duration
+                  </th>
+                  <th className="text-left">Current status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {builds.data.map(pipeline => (
+                  <Fragment key={pipeline.url}>
+                    <tr className={`${pipeline.type === 'old' ? 'opacity-60' : ''}`}>
+                      {/* Build Toggler */}
+                      <td>
+                        <div className="flex">
+                          <button
+                            title="Expand/collapse"
+                            type="button"
+                            onClick={() => toggleExpanded(pipeline.url)}
+                            className="mr-2"
+                          >
+                            <span
+                              className="list-item"
+                              style={{
+                                listStyleType: isExpanded(pipeline.url)
+                                  ? 'disclosure-open'
+                                  : 'disclosure-closed',
+                              }}
+                            />
+                          </button>
+                          <a
+                            href={pipeline.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            data-tip={pipeline.definitionName}
+                            className="link-text"
+                          >
+                            <span className="truncate w-96 block">
+                              {pipeline.definitionName}
+                              {pipeline.ui ? (
+                                <span
+                                  className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
+                                  rounded-sm text-red-700 border font-semibold no-underline`}
+                                  data-tip="This pipeline is configured using the UI instead of a YAML file"
+                                >
+                                  UI
+                                </span>
+                              ) : null}
                             </span>
-                            <span className="capitalize">{pipeline.lastBuildStatus}</span>
+                          </a>
+                        </div>
+                      </td>
+                      {/* Central Template Usage */}
+                      <td>
+                        <CentralTemplateUsage
+                          buildDefinitionId={String(pipeline.buildDefinitionId)}
+                          centralTemplateRuns={pipeline.centralTemplateCount}
+                          totalRuns={pipeline.totalBuilds}
+                        />
+                      </td>
+                      {/* Successful Count */}
+                      <td>
+                        {pipeline.type === 'old'
+                          ? '-'
+                          : num(pipeline.totalSuccessfulBuilds)}
+                      </td>
+                      {/* Total Count */}
+                      <td>
+                        {pipeline.type === 'old' ? '-' : num(pipeline?.totalBuilds)}
+                      </td>
+                      {/* Success Rate */}
+                      <td>
+                        {pipeline.type === 'old'
+                          ? '-'
+                          : divide(pipeline.totalSuccessfulBuilds, pipeline.totalBuilds)
+                              .map(toPercentage)
+                              .getOr('-')}
+                      </td>
+                      {/* Average Duration */}
+                      <td style={{ textAlign: 'right' }}>
+                        {pipeline.type === 'old' ? (
+                          '-'
+                        ) : (
+                          <>
+                            <span>{prettyMilliseconds(pipeline.averageDuration)}</span>
+                            <div className="text-gray-400 text-sm" data-tip="loading">
+                              (
+                              {`${prettyMilliseconds(
+                                pipeline.minDuration
+                              )} - ${prettyMilliseconds(pipeline.maxDuration)}`}
+                              )
+                            </div>
                           </>
                         )}
-                      {pipeline.type === 'recent' &&
-                      (pipeline.lastBuildStatus === 'failed' ||
-                        pipeline.lastBuildStatus === 'canceled' ||
-                        pipeline.lastBuildStatus === 'partiallySucceeded') ? (
-                        <>
-                          <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
-                            {' '}
-                          </span>
-                          <span>
-                            {pipeline.failingSince === null
-                              ? null
-                              : `Failing since ${shortDate(
-                                  new Date(pipeline.failingSince.timestamp)
-                                )}`}
-                          </span>
-                        </>
-                      ) : undefined}
-                      {pipeline.type === 'old' ? (
-                        <>
-                          <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
-                            {' '}
-                          </span>
-                          <span>
-                            {`Last used ${
-                              pipeline.latestBuildTime
-                                ? `${shortDate(
-                                    new Date(pipeline.latestBuildTime)
-                                  )}, ${new Date(pipeline.latestBuildTime).getFullYear()}`
-                                : 'unknown'
-                            }`}
-                          </span>
-                        </>
-                      ) : undefined}
-                    </td>
-                  </tr>
-                  {isExpanded(pipeline.url) ? (
-                    <tr>
-                      <td colSpan={7} style={{ padding: 0 }}>
-                        <BuildInsights url={pipeline.url} />
+                      </td>
+                      {/* Current Status */}
+                      <td style={{ textAlign: 'left' }} className="pl-6">
+                        {pipeline.type === 'recent' &&
+                          pipeline.lastBuildStatus === 'succeeded' && (
+                            <>
+                              <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
+                                {' '}
+                              </span>
+                              <span className="capitalize">
+                                {pipeline.lastBuildStatus}
+                              </span>
+                            </>
+                          )}
+                        {pipeline.type === 'recent' &&
+                        (pipeline.lastBuildStatus === 'failed' ||
+                          pipeline.lastBuildStatus === 'canceled' ||
+                          pipeline.lastBuildStatus === 'partiallySucceeded') ? (
+                          <>
+                            <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
+                              {' '}
+                            </span>
+                            <span>
+                              {pipeline.failingSince === null
+                                ? null
+                                : `Failing since ${shortDate(
+                                    new Date(pipeline.failingSince.timestamp)
+                                  )}`}
+                            </span>
+                          </>
+                        ) : undefined}
+                        {pipeline.type === 'old' ? (
+                          <>
+                            <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
+                              {' '}
+                            </span>
+                            <span>
+                              {`Last used ${
+                                pipeline.latestBuildTime
+                                  ? `${shortDate(
+                                      new Date(pipeline.latestBuildTime)
+                                    )}, ${new Date(
+                                      pipeline.latestBuildTime
+                                    ).getFullYear()}`
+                                  : 'unknown'
+                              }`}
+                            </span>
+                          </>
+                        ) : undefined}
                       </td>
                     </tr>
-                  ) : null}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-          <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-            {`* Data shown is for the last ${queryPeriodDays} days`}
+                    {isExpanded(pipeline.url) ? (
+                      <tr>
+                        <td colSpan={7} style={{ padding: 0 }}>
+                          <BuildInsights url={pipeline.url} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+            <div className="w-full text-right text-sm italic text-gray-500 mt-4">
+              {`* Data shown is for the last ${queryPeriodDays} days`}
+            </div>
           </div>
-        </div>
+        ) : (
+          <TabContents gridCols={1}>
+            <AlertMessage message="No builds for this repo in the last three months" />
+          </TabContents>
+        )
       ) : (
-        <TabContents gridCols={1}>
-          <AlertMessage message="No builds for this repo in the last three months" />
-        </TabContents>
+        <Loading />
       )}
     </TabContents>
   );
@@ -499,22 +323,12 @@ const BuildsNew: React.FC<{
 
 export default (
   builds: RepoAnalysis['builds'],
-  queryPeriodDays: number,
   repositoryId: string,
   repositoryName: string
 ): Tab => ({
   title: 'Builds',
   count: builds?.count || 0,
   Component: () => {
-    const [showNewBuild] = useQueryParam('build-v2', asBoolean);
-
-    return (
-      <>
-        {showNewBuild ? (
-          <BuildsNew repositoryId={repositoryId} repositoryName={repositoryName} />
-        ) : null}
-        <BuildsOld builds={builds} queryPeriodDays={queryPeriodDays} />
-      </>
-    );
+    return <Builds repositoryId={repositoryId} repositoryName={repositoryName} />;
   },
 });
