@@ -18,6 +18,7 @@ import RefreshIfUpdated from './components/RefreshIfUpdated.js';
 import Tracks from './pages/Tracks.jsx';
 import { trpc } from './helpers/trpc';
 import { oneMinuteInMs } from '../shared/utils.js';
+import { DateRangeProvider } from './hooks/date-range-hooks.jsx';
 
 const App: React.FC = () => {
   const [queryClient] = useState(
@@ -45,29 +46,31 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <RefreshIfUpdated>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <ProjectDetailsProvider>
-              <SortContextProvider>
-                <HeaderProvider>
-                  <div className="pb-64 transition duration-500 ease-in-out">
-                    <RecordAnalytics />
-                    <Header />
-                    <Routes>
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/summary" element={<Summary />} />
-                      <Route path="/change-program" element={<ChangeProgram />} />
-                      <Route path="/tracks" element={<Tracks />} />
-                      <Route path="/:collection/:project/*" element={<Project />} />
-                      <Route path="/" element={<Collection />} />
-                    </Routes>
-                  </div>
-                </HeaderProvider>
-              </SortContextProvider>
-            </ProjectDetailsProvider>
-            <ReactQueryDevtools initialIsOpen={false} />
-          </QueryClientProvider>
-        </trpc.Provider>
+        <DateRangeProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <ProjectDetailsProvider>
+                <SortContextProvider>
+                  <HeaderProvider>
+                    <div className="pb-64 transition duration-500 ease-in-out">
+                      <RecordAnalytics />
+                      <Header />
+                      <Routes>
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/summary" element={<Summary />} />
+                        <Route path="/change-program" element={<ChangeProgram />} />
+                        <Route path="/tracks" element={<Tracks />} />
+                        <Route path="/:collection/:project/*" element={<Project />} />
+                        <Route path="/" element={<Collection />} />
+                      </Routes>
+                    </div>
+                  </HeaderProvider>
+                </SortContextProvider>
+              </ProjectDetailsProvider>
+              <ReactQueryDevtools initialIsOpen={false} />
+            </QueryClientProvider>
+          </trpc.Provider>
+        </DateRangeProvider>
       </RefreshIfUpdated>
     </BrowserRouter>
   );

@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useDateRange } from './date-range-hooks.jsx';
 import useQueryParam, { asBoolean, asString, asStringArray } from './use-query-param.js';
 
 type ReleaseFilters = {
@@ -11,6 +12,8 @@ type ReleaseFilters = {
   stageNameUsed?: string;
   notConfirmingToBranchPolicies?: boolean;
   repoGroups?: string[];
+  startDate: Date;
+  endDate: Date;
 };
 
 export default (): ReleaseFilters => {
@@ -22,6 +25,7 @@ export default (): ReleaseFilters => {
   const [stageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
   const [nonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
   const [selectedGroupLabels] = useQueryParam('group', asStringArray);
+  const dateRange = useDateRange();
 
   if (!collection || !project) {
     throw new Error("Couldn't find a collection or project");
@@ -37,5 +41,6 @@ export default (): ReleaseFilters => {
     stageNameUsed: stageNameExistsNotUsed,
     notConfirmingToBranchPolicies: nonPolicyConforming,
     repoGroups: selectedGroupLabels,
+    ...dateRange,
   };
 };

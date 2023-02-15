@@ -2,10 +2,10 @@ import type { PipelineStage } from 'mongoose';
 import { last, omit, prop, sum } from 'rambda';
 import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
-import { configForProject, getConfig } from '../config.js';
+import { configForProject } from '../config.js';
 import type { ParsedProjectConfig } from '../scraper/parse-config.js';
 import type { ArtifactType } from '../scraper/types-azure.js';
-import { collectionAndProjectInputs } from './helpers.js';
+import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { conformsToBranchPolicies } from './policy-configuration.js';
 import {
   getMinimalReleaseDefinitions,
@@ -22,6 +22,7 @@ export const pipelineFiltersInput = {
   stageNameUsed: z.string().optional(),
   notConfirmingToBranchPolicies: z.boolean().optional(),
   repoGroups: z.array(z.string()).optional(),
+  ...dateRangeInputs,
 };
 
 export const pipelineFiltersInputParser = z.object(pipelineFiltersInput);
@@ -273,6 +274,8 @@ const createFilter = async (
     stageNameContaining,
     stageNameUsed,
     repoGroups,
+    startDate,
+    endDate,
   } = options;
 
   const releaseDefns = await getMinimalReleaseDefinitions(
@@ -290,7 +293,7 @@ const createFilter = async (
       $match: {
         collectionName,
         project,
-        modifiedOn: { $gte: getConfig().azure.queryFrom },
+        modifiedOn: inDateRange(startDate, endDate),
         releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
         ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
         ...filterRepos(collectionName, project, repoGroups),
@@ -596,14 +599,15 @@ export const paginatedReleaseIds = async (
 export const releasePipelineDetailsInputParser = z.object({
   ...collectionAndProjectInputs,
   releaseDefnId: z.number(),
-  queryFrom: z.date().optional(),
+  ...dateRangeInputs,
 });
 
 export const releasePipelineStages = async ({
   collectionName,
   project,
   releaseDefnId,
-  queryFrom,
+  startDate,
+  endDate,
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
   const [releaseDefn, environments] = await Promise.all([
     ReleaseDefinitionModel.findOne(
@@ -616,7 +620,7 @@ export const releasePipelineStages = async ({
           collectionName,
           project,
           releaseDefinitionId: releaseDefnId,
-          modifiedOn: { $gt: queryFrom || getConfig().azure.queryFrom },
+          modifiedOn: inDateRange(startDate, endDate),
         },
       },
       {
@@ -665,7 +669,8 @@ export const getArtifacts = async ({
   collectionName,
   project,
   releaseDefnId,
-  queryFrom,
+  startDate,
+  endDate,
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
   const projectConfig = configForProject(collectionName, project);
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
@@ -694,7 +699,7 @@ export const getArtifacts = async ({
         collectionName,
         project,
         releaseDefinitionId: releaseDefnId,
-        modifiedOn: { $gt: queryFrom || getConfig().azure.queryFrom },
+        modifiedOn: inDateRange(startDate, endDate),
       },
     },
     ...(ignoreStagesBefore
