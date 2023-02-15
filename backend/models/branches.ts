@@ -188,7 +188,7 @@ export const categoryAddFields = (startDate: Date, defaultBranch: string) => {
           case: {
             $and: [
               { $ne: ['$category', 'healthy'] },
-              { $gte: ['$aheadCount', 0] },
+              { $gt: ['$aheadCount', 0] },
               { $lt: ['$date', startDate] },
             ],
           },
