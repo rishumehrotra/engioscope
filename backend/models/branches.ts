@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import { z } from 'zod';
-import type { PipelineStage } from 'mongoose';
 import type { GitBranchStats } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
 import { oneFortnightInMs } from '../../shared/utils.js';
@@ -155,6 +154,53 @@ export const getHealthyBranchesSummary = async ({
   return result[0] || { totalBranches: 0, healthyBranches: 0 };
 };
 
+export const categoryAddFields = (startDate: Date, defaultBranch: string) => {
+  const categoryFields = {
+    $switch: {
+      branches: [
+        {
+          case: {
+            $or: [
+              {
+                $and: [
+                  { $lt: ['$aheadCount', 10] },
+                  { $lt: ['$behindCount', 10] },
+                  { $gte: ['$date', startDate] },
+                ],
+              },
+              { $eq: ['$name', defaultBranch] },
+            ],
+          },
+          then: 'healthy',
+        },
+        {
+          case: {
+            $and: [
+              { $ne: ['$category', 'healthy'] },
+              { $eq: ['$aheadCount', 0] },
+              { $lt: ['$date', startDate] },
+              { $ne: ['$name', defaultBranch] },
+            ],
+          },
+          then: 'delete',
+        },
+        {
+          case: {
+            $and: [
+              { $ne: ['$category', 'healthy'] },
+              { $gte: ['$aheadCount', 0] },
+              { $lt: ['$date', startDate] },
+            ],
+          },
+          then: 'abandoned',
+        },
+      ],
+      default: 'unhealthy',
+    },
+  };
+  return categoryFields;
+};
+
 export const RepoTotalBranchesInputParser = z.object({
   ...collectionAndProjectInputs,
   repositoryId: z.string(),
@@ -181,79 +227,33 @@ export const getRepoBranchStats = async ({
   }>([
     { $match: { collectionName, project, repositoryId } },
     {
+      $addFields: {
+        category: categoryAddFields(fifteenDaysBack, defaultBranch),
+      },
+    },
+    {
       $group: {
         _id: null,
 
         totalBranches: { $sum: 1 },
-
         totalHealthy: {
           $sum: {
-            $cond: [
-              {
-                $or: [
-                  {
-                    $and: [
-                      { $lt: ['$aheadCount', 10] },
-                      { $lt: ['$behindCount', 10] },
-                      { $gte: ['$date', fifteenDaysBack] },
-                    ],
-                  },
-                  { $eq: ['$name', defaultBranch] },
-                ],
-              },
-              1,
-              0,
-            ],
+            $cond: [{ $eq: ['$category', 'healthy'] }, 1, 0],
           },
         },
         totalDelete: {
           $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$aheadCount', 0] },
-                  { $lt: ['$date', fifteenDaysBack] },
-                  { $ne: ['$name', defaultBranch] },
-                ],
-              },
-              1,
-              0,
-            ],
+            $cond: [{ $eq: ['$category', 'delete'] }, 1, 0],
           },
         },
         totalAbandoned: {
           $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$aheadCount', 0] },
-                  { $lt: ['$date', fifteenDaysBack] },
-                  { $ne: ['$name', defaultBranch] },
-                ],
-              },
-              1,
-              0,
-            ],
+            $cond: [{ $eq: ['$category', 'abandoned'] }, 1, 0],
           },
         },
         totalUnhealthy: {
           $sum: {
-            $cond: [
-              {
-                $and: [
-                  {
-                    $or: [
-                      { $gte: ['$aheadCount', 0] },
-                      { $gte: ['$behindCount', 0] },
-                      { $lt: ['$date', fifteenDaysBack] },
-                    ],
-                  },
-                  { $ne: ['$name', defaultBranch] },
-                ],
-              },
-              1,
-              0,
-            ],
+            $cond: [{ $eq: ['$category', 'unhealthy'] }, 1, 0],
           },
         },
       },
@@ -285,64 +285,16 @@ export const setBranchUrl = (
   return branchUrl;
 };
 
-const createMatcher =
-  <T>(additionalClauses: (startDate: Date, defaultBranch: string) => T) =>
-  (
-    collectionName: string,
-    project: string,
-    repositoryId: string,
-    startDate: Date,
-    defaultBranch: string
-  ): PipelineStage => ({
-    $match: {
-      collectionName,
-      project,
-      repositoryId,
-      ...additionalClauses(startDate, defaultBranch),
-    },
-  });
-
-const matchers = {
-  healthy: createMatcher(startDate => ({
-    aheadCount: { $lt: 10 },
-    behindCount: { $lt: 10 },
-    date: { $gte: startDate },
-  })),
-  deleteCandidates: createMatcher((startDate, defaultBranch) => ({
-    name: { $ne: defaultBranch },
-    aheadCount: { $eq: 0 },
-    date: { $lt: startDate },
-  })),
-  abandoned: createMatcher((startDate, defaultBranch) => ({
-    name: { $ne: defaultBranch },
-    aheadCount: { $gte: 0 },
-    date: { $lt: startDate },
-  })),
-  unhealthy: createMatcher((startDate, defaultBranch) => ({
-    name: { $ne: defaultBranch },
-    $or: [
-      { aheadCount: { $gte: 0 } },
-      { behindCount: { $gte: 0 } },
-      { date: { $lt: startDate } },
-    ],
-  })),
-};
-
 export const BranchesListInputParser = z.object({
   ...collectionAndProjectInputs,
   repositoryId: z.string(),
   repoUrl: z.string(),
   limit: z.number(),
 });
+
 export const getBranches =
   (
-    matcher: (
-      collectionName: string,
-      project: string,
-      repositoryId: string,
-      fifteenDaysBack: Date,
-      defaultBranch: string
-    ) => PipelineStage,
+    category: 'healthy' | 'delete' | 'abandoned' | 'unhealthy',
     linkType: 'history' | 'contents'
   ) =>
   async ({
@@ -366,7 +318,17 @@ export const getBranches =
       behindCount: number;
       lastCommitDate: Date;
     }>([
-      matcher(collectionName, project, repositoryId, fifteenDaysBack, defaultBranch),
+      { $match: { collectionName, project, repositoryId } },
+      {
+        $addFields: {
+          category: categoryAddFields(fifteenDaysBack, defaultBranch),
+        },
+      },
+      {
+        $match: {
+          category,
+        },
+      },
       {
         $project: {
           _id: 0,
@@ -377,8 +339,9 @@ export const getBranches =
         },
       },
       { $limit: limit },
-      { $sort: { lastCommit: -1 } },
+      { $sort: { lastCommitDate: -1 } },
     ]);
+
     const addUrl = result.map(branch => {
       return {
         ...branch,
@@ -393,10 +356,7 @@ export const getBranches =
     return updatedResult;
   };
 
-export const getHealthyBranchesList = getBranches(matchers.healthy, 'contents');
-export const getDeleteCandidateBranchesList = getBranches(
-  matchers.deleteCandidates,
-  'history'
-);
-export const getAbandonedBranchesList = getBranches(matchers.abandoned, 'history');
-export const getUnhealthyBranchesList = getBranches(matchers.unhealthy, 'history');
+export const getHealthyBranchesList = getBranches('healthy', 'contents');
+export const getDeleteCandidateBranchesList = getBranches('delete', 'history');
+export const getAbandonedBranchesList = getBranches('abandoned', 'history');
+export const getUnhealthyBranchesList = getBranches('unhealthy', 'history');

@@ -145,5 +145,5 @@ export const repoDefaultBranch = async (
       defaultBranch: 1,
     }
   );
-  return repoBranch?.defaultBranch;
+  return repoBranch?.defaultBranch?.replace('refs/heads/', '');
 };
