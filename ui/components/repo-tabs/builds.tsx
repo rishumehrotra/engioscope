@@ -14,6 +14,7 @@ import Loading from '../Loading.jsx';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
+import { PullRequest } from '../common/Icons.jsx';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -148,7 +149,6 @@ const Builds: React.FC<{
                 <tr>
                   <th> </th>
                   <th>Central template</th>
-                  <th>Successful</th>
                   <th>Runs</th>
                   <th>Success rate</th>
                   <th className="text-right" style={{ paddingRight: 0 }}>
@@ -199,10 +199,11 @@ const Builds: React.FC<{
                               ) : null}
                               {pipeline.type === 'recent' ? (
                                 <span
-                                  className="inline-block ml-2 uppercase text-xs px-1 border-green-700 bg-green-100 rounded-sm text-green-700 border font-semibold no-underline"
-                                  data-tip={`This pipeline have ${pipeline.prCount} builds triggered by pull requests in the last ${queryPeriodDays} days`}
+                                  data-tip={`${num(
+                                    pipeline.prCount
+                                  )} builds triggered by pull requests`}
                                 >
-                                  PR
+                                  <PullRequest className="inline-block w-4 ml-2" />
                                 </span>
                               ) : null}
                             </span>
@@ -217,18 +218,21 @@ const Builds: React.FC<{
                           totalRuns={pipeline.totalBuilds}
                         />
                       </td>
-                      {/* Successful Count */}
-                      <td>
-                        {pipeline.type === 'old'
-                          ? '-'
-                          : num(pipeline.totalSuccessfulBuilds)}
-                      </td>
                       {/* Total Count */}
                       <td>
                         {pipeline.type === 'old' ? '-' : num(pipeline?.totalBuilds)}
                       </td>
                       {/* Success Rate */}
-                      <td>
+                      <td
+                        {...(pipeline.type === 'old'
+                          ? {}
+                          : {
+                              'data-tip': `${num(
+                                pipeline.totalSuccessfulBuilds
+                              )} successful buidls`,
+                              'data-html': true,
+                            })}
+                      >
                         {pipeline.type === 'old'
                           ? '-'
                           : divide(pipeline.totalSuccessfulBuilds, pipeline.totalBuilds)
