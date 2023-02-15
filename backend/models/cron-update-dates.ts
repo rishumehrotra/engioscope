@@ -12,7 +12,7 @@ const cronUpdateDatesSchema = new Schema<CronUpdateDates>({
 
 cronUpdateDatesSchema.index({ key: 1 });
 
-const CronUpdateDatesModel = model<CronUpdateDates>(
+export const CronUpdateDatesModel = model<CronUpdateDates>(
   'CronUpdateDates',
   cronUpdateDatesSchema
 );
