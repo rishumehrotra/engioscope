@@ -1,12 +1,14 @@
 import React from 'react';
-import type { BranchDetails } from '../../../../shared/types.js';
+import type { BranchDetails, BranchTypes } from '../../../../shared/types.js';
+import { oneFortnightInMs } from '../../../../shared/utils.js';
 import { mediumDate, num } from '../../../helpers/utils.js';
 
-const BranchStats2: React.FC<{
+const BranchStats: React.FC<{
   branches: BranchDetails;
-  count: number;
+  count: number | '...';
   limit: number;
-}> = ({ branches, count, limit }) =>
+  branchType: BranchTypes;
+}> = ({ branches, count, limit, branchType }) =>
   count ? (
     <>
       <table className="table-auto text-center divide-y divide-gray-200 w-full">
@@ -39,20 +41,39 @@ const BranchStats2: React.FC<{
                   {branch.name}
                 </a>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-center">
+              <td
+                className={
+                  branch.aheadCount >= 10 && branchType === 'unhealthy'
+                    ? `px-6 py-4 whitespace-nowrap text-center text-red-700`
+                    : `px-6 py-4 whitespace-nowrap text-center`
+                }
+              >
                 {`${num(branch.aheadCount)} commits`}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-center">
+              <td
+                className={
+                  branch.behindCount >= 10 && branchType === 'unhealthy'
+                    ? `px-6 py-4 whitespace-nowrap text-center text-red-700`
+                    : `px-6 py-4 whitespace-nowrap text-center`
+                }
+              >
                 {`${num(branch.behindCount)} commits`}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right">
+              <td
+                className={
+                  new Date(branch.lastCommitDate).getTime() <
+                    Date.now() - oneFortnightInMs && branchType === 'unhealthy'
+                    ? `px-6 py-4 whitespace-nowrap text-right text-red-700`
+                    : `px-6 py-4 whitespace-nowrap text-right`
+                }
+              >
                 {mediumDate(new Date(branch.lastCommitDate))}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {count > limit ? (
+      {count !== '...' && count > limit ? (
         <p className="text-left text-sm italic text-gray-500 mt-4">
           {`* ${num(count - limit)} branches not shown`}
         </p>
@@ -62,4 +83,4 @@ const BranchStats2: React.FC<{
     <p className="text-gray-600 italic mt-4">No results found.</p>
   );
 
-export default BranchStats2;
+export default BranchStats;

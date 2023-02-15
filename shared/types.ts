@@ -150,6 +150,8 @@ export type UIBranches = {
   abandoned: UIBranchStats;
 };
 
+export type BranchTypes = 'healthy' | 'delete' | 'abandoned' | 'unhealthy';
+
 export type UIPullRequests = {
   total: number;
   active: number;

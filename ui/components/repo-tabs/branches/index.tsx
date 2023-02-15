@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { RepoAnalysis } from '../../../../shared/types.js';
 import type { Tab } from '../Tabs.js';
 import { num } from '../../../helpers/utils.js';
-import BranchStats2 from './BranchStats.jsx';
+import BranchStats from './BranchStats.jsx';
 import BranchTab from './BranchTab.js';
 import TabContents from '../TabContents.js';
 import AlertMessage from '../../common/AlertMessage.js';
@@ -66,10 +66,13 @@ const Branches: React.FC<{
                 </div>
               </div>
               {healthyBranchesList.data && (
-                <BranchStats2
+                <BranchStats
                   branches={healthyBranchesList.data.branches}
-                  count={branchTotalCount.data ? branchTotalCount.data.totalHealthy : 0}
+                  count={
+                    branchTotalCount.data ? branchTotalCount.data.totalHealthy : '...'
+                  }
                   limit={healthyBranchesList.data.limit}
+                  branchType="healthy"
                 />
               )}
             </>
@@ -108,10 +111,13 @@ const Branches: React.FC<{
                 </ul>
               </div>
               {deleteCandidateBranchesList.data && (
-                <BranchStats2
+                <BranchStats
                   branches={deleteCandidateBranchesList.data.branches}
-                  count={branchTotalCount.data ? branchTotalCount.data.totalDelete : 0}
+                  count={
+                    branchTotalCount.data ? branchTotalCount.data.totalDelete : '...'
+                  }
                   limit={deleteCandidateBranchesList.data.limit}
+                  branchType="delete"
                 />
               )}
             </>
@@ -151,10 +157,13 @@ const Branches: React.FC<{
                 </ul>
               </div>
               {abandonedBranchesList.data && (
-                <BranchStats2
+                <BranchStats
                   branches={abandonedBranchesList.data.branches}
-                  count={branchTotalCount.data ? branchTotalCount.data.totalAbandoned : 0}
+                  count={
+                    branchTotalCount.data ? branchTotalCount.data.totalAbandoned : '...'
+                  }
                   limit={abandonedBranchesList.data.limit}
+                  branchType="abandoned"
                 />
               )}
             </>
@@ -189,10 +198,13 @@ const Branches: React.FC<{
               </div>
 
               {unhealthyBranchesList.data && (
-                <BranchStats2
+                <BranchStats
                   branches={unhealthyBranchesList.data.branches}
-                  count={branchTotalCount.data ? branchTotalCount.data.totalUnhealthy : 0}
+                  count={
+                    branchTotalCount.data ? branchTotalCount.data.totalUnhealthy : '...'
+                  }
                   limit={unhealthyBranchesList.data.limit}
+                  branchType="unhealthy"
                 />
               )}
             </>

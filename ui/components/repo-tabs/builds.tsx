@@ -151,7 +151,7 @@ const Builds: React.FC<{
                   <th>Central template</th>
                   <th>Runs</th>
                   <th>Success rate</th>
-                  <th className="text-right" style={{ paddingRight: 0 }}>
+                  <th className="text-center" style={{ paddingRight: 0 }}>
                     Average duration
                   </th>
                   <th className="text-left">Current status</th>
@@ -240,8 +240,12 @@ const Builds: React.FC<{
                               .getOr('-')}
                       </td>
                       {/* Average Duration */}
-                      <td style={{ textAlign: 'right' }}>
-                        {pipeline.type === 'old' ? (
+                      <td
+                        style={{
+                          textAlign: 'center',
+                        }}
+                      >
+                        {pipeline.type === 'old' || pipeline.averageDuration === 0 ? (
                           '-'
                         ) : (
                           <>
