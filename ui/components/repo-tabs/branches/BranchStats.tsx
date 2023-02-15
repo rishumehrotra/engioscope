@@ -1,10 +1,12 @@
 import React from 'react';
-import type { UIBranchStats } from '../../../../shared/types.js';
+import type { BranchDetails } from '../../../../shared/types.js';
 import { mediumDate, num } from '../../../helpers/utils.js';
 
-const BranchStats: React.FC<{
-  branchStats: UIBranchStats;
-}> = ({ branchStats: { branches, count, limit } }) =>
+const BranchStats2: React.FC<{
+  branches: BranchDetails;
+  count: number;
+  limit: number;
+}> = ({ branches, count, limit }) =>
   count ? (
     <>
       <table className="table-auto text-center divide-y divide-gray-200 w-full">
@@ -60,4 +62,4 @@ const BranchStats: React.FC<{
     <p className="text-gray-600 italic mt-4">No results found.</p>
   );
 
-export default BranchStats;
+export default BranchStats2;
