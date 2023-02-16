@@ -2,14 +2,20 @@ import React from 'react';
 import type { BranchDetails, BranchTypes } from '../../../../shared/types.js';
 import { oneFortnightInMs } from '../../../../shared/utils.js';
 import { mediumDate, num } from '../../../helpers/utils.js';
+import Loading from '../../Loading.jsx';
 
 const BranchStats: React.FC<{
   branches: BranchDetails;
   count: number | undefined;
   limit: number;
   branchType: BranchTypes;
-}> = ({ branches, count, limit, branchType }) =>
-  count ? (
+}> = ({ branches, count, limit, branchType }) => {
+  if (count === undefined) return <Loading />;
+  if (count === 0) {
+    return <p className="text-gray-600 italic mt-4">No results found.</p>;
+  }
+
+  return (
     <>
       <table className="table-auto text-center divide-y divide-gray-200 w-full">
         <thead>
@@ -73,14 +79,13 @@ const BranchStats: React.FC<{
           ))}
         </tbody>
       </table>
-      {!count && count > limit ? (
+      {count > limit ? (
         <p className="text-left text-sm italic text-gray-500 mt-4">
           {`* ${num(count - limit)} branches not shown`}
         </p>
       ) : null}
     </>
-  ) : (
-    <p className="text-gray-600 italic mt-4">No results found.</p>
   );
+};
 
 export default BranchStats;

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { RepoAnalysis } from '../../../../shared/types.js';
 import type { Tab } from '../Tabs.js';
-import { num } from '../../../helpers/utils.js';
 import BranchStats from './BranchStats.jsx';
 import BranchTab from './BranchTab.js';
 import TabContents from '../TabContents.js';
@@ -34,7 +33,7 @@ const Branches: React.FC<{
           </>
         ),
         key: 'healthy',
-        count: num(branchTotalCount.data ? branchTotalCount.data.totalHealthy : 0),
+        count: branchTotalCount.data?.totalHealthy,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const healthyBranchesList = trpc.branches.getHealthyBranchesList.useQuery({
@@ -85,7 +84,7 @@ const Branches: React.FC<{
           </>
         ),
         key: 'delete-candidates',
-        count: num(branchTotalCount.data ? branchTotalCount.data.totalDelete : 0),
+        count: branchTotalCount.data?.totalDelete,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const deleteCandidateBranchesList =
@@ -128,7 +127,7 @@ const Branches: React.FC<{
           </>
         ),
         key: 'abandoned-branches',
-        count: num(branchTotalCount.data ? branchTotalCount.data.totalAbandoned : 0),
+        count: branchTotalCount.data?.totalAbandoned,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const abandonedBranchesList = trpc.branches.getAbandonedBranchesList.useQuery({
@@ -172,7 +171,7 @@ const Branches: React.FC<{
           </>
         ),
         key: 'Unhealthy',
-        count: num(branchTotalCount.data ? branchTotalCount.data.totalUnhealthy : 0),
+        count: branchTotalCount.data?.totalUnhealthy,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
           const unhealthyBranchesList = trpc.branches.getUnhealthyBranchesList.useQuery({

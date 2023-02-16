@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
+import { num } from '../../../helpers/utils.js';
 
 const BranchTab: React.FC<{
   isSelected: boolean;
   onToggleSelect: () => void;
-  count: string;
+  count: number | undefined;
   label: ReactNode;
 }> = ({ isSelected, onToggleSelect, count, label }) => {
   const onClick = useCallback(
@@ -27,7 +28,7 @@ const BranchTab: React.FC<{
           isSelected ? 'text-black' : 'text-gray-600'
         } `}
       >
-        {count}
+        {count === undefined ? '...' : num(count)}
       </div>
       <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{label}</div>
     </button>
