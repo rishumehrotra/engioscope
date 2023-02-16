@@ -95,8 +95,16 @@ const BuildDefinitionModel = model<BuildDefinition>(
 );
 
 export const bulkSaveBuildDefinitions =
-  (collectionName: string) => (buildDefinitions: BuildDefinitionReference[]) =>
-    BuildDefinitionModel.bulkWrite(
+  (collectionName: string, project: string) =>
+  async (buildDefinitions: BuildDefinitionReference[]) => {
+    // Delete any pipelines that have been deleted from Azure
+    await BuildDefinitionModel.deleteMany({
+      collectionName,
+      project,
+      id: { $nin: buildDefinitions.map(b => b.id) },
+    });
+
+    return BuildDefinitionModel.bulkWrite(
       buildDefinitions.map(buildDefinition => {
         const { project, process, ...rest } = buildDefinition;
 
@@ -127,6 +135,7 @@ export const bulkSaveBuildDefinitions =
         };
       })
     );
+  };
 
 export const getBuildDefinitionsForProject = (collectionName: string, project: string) =>
   BuildDefinitionModel.find({ collectionName, project }).lean();

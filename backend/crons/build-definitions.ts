@@ -11,7 +11,7 @@ export const getBuildDefinitions = () => {
       await acc;
 
       return getBuildDefinitions(collection.name, project.name).then(
-        bulkSaveBuildDefinitions(collection.name)
+        bulkSaveBuildDefinitions(collection.name, project.name)
       );
     },
     Promise.resolve()
