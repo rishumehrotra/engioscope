@@ -2,6 +2,7 @@ import { model, Schema } from 'mongoose';
 import { z } from 'zod';
 import type { GitRepository } from '../scraper/types-azure.js';
 import { deleteBuildsForRepoIds } from './builds.js';
+import { deleteCommitsForRepoIds } from './commits.js';
 import { collectionAndProjectInputs } from './helpers.js';
 import { deleteRepoPoliciesForRepoIds } from './policy-configuration.js';
 
@@ -54,6 +55,7 @@ const deleteRepositories = (collectionName: string, project: string, ids: string
     }),
     deleteBuildsForRepoIds(collectionName, project, ids),
     deleteRepoPoliciesForRepoIds(collectionName, project, ids),
+    deleteCommitsForRepoIds(collectionName, project, ids),
   ]);
 };
 

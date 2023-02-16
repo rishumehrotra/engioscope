@@ -109,8 +109,13 @@ export const bulkSaveCommits =
     );
   };
 
-export const deleteRepoCommits = (
+export const deleteCommitsForRepoIds = (
   collectionName: string,
   project: string,
-  repositoryId: string
-) => CommitModel.deleteMany({ collectionName, project, repositoryId });
+  repositoryIds: string[]
+) =>
+  CommitModel.deleteMany({
+    collectionName,
+    project,
+    repositoryId: { $in: repositoryIds },
+  });
