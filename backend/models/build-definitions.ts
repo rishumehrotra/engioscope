@@ -186,3 +186,6 @@ export const getYamlPipelinesCountSummary = async (
 
   return result[0] || { totalCount: 0, yamlCount: 0 };
 };
+
+export const getBuildPipelineCount = (collectionName: string, project: string) =>
+  BuildDefinitionModel.count({ collectionName, project }).lean();

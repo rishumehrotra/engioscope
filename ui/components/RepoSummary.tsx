@@ -257,15 +257,13 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             title: 'Reporting coverage',
             value: divide(
               stats.pipelinesPostingBranchCoverage.length,
-              stats.pipelinesRunningTests.length
+              stats.buildPipelines.length
             )
               .map(toPercentage)
               .getOr('-'),
-            tooltip: `${num(
-              stats.pipelinesPostingBranchCoverage.length
-            )} pipelines of the ${num(
-              stats.pipelinesRunningTests.length
-            )} that run tests report branch coverage`,
+            tooltip: `${num(stats.pipelinesPostingBranchCoverage.length)} of ${num(
+              stats.buildPipelines.length
+            )} pipelines report branch coverage`,
           },
         ]}
       />

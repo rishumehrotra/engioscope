@@ -81,10 +81,10 @@ const Project: React.FC = () => {
                   projectSummary.repos,
                   pageName('repos', projectSummary.repos)
                 )}
-                {projectSummary.pipelines ? ' | ' : ''}
+                {projectSummary.releasePipelines ? ' | ' : ''}
                 {renderStatIfAvailable(
-                  projectSummary.pipelines,
-                  pageName('release-pipelines', projectSummary.pipelines)
+                  projectSummary.releasePipelines,
+                  pageName('release-pipelines', projectSummary.releasePipelines)
                 )}
                 {/* {projectSummary.workItemCount ? ' | ' : ''}
                 {renderStatIfAvailable(

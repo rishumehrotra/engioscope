@@ -1,6 +1,7 @@
 import type { z } from 'zod';
+import { getBuildPipelineCount } from '../../models/build-definitions.js';
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
-import { getPipelinesCount } from '../../models/releases.js';
+import { getPipelinesCount as getReleasePipelinesCount } from '../../models/releases.js';
 import { getRepoCount } from '../../models/repos.js';
 import { memoizeForUI, passInputTo, t } from './trpc.js';
 
@@ -8,12 +9,13 @@ const summary = async ({
   collectionName,
   project,
 }: z.infer<typeof collectionAndProjectInputParser>) => {
-  const [repos, pipelines] = await Promise.all([
+  const [repos, buildPipelines, releasePipelines] = await Promise.all([
     getRepoCount(collectionName, project),
-    getPipelinesCount(collectionName, project),
+    getBuildPipelineCount(collectionName, project),
+    getReleasePipelinesCount(collectionName, project),
   ]);
 
-  return { repos, pipelines };
+  return { repos, buildPipelines, releasePipelines };
 };
 
 export default t.router({
