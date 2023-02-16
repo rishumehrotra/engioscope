@@ -68,9 +68,7 @@ const Branches: React.FC<{
               {healthyBranchesList.data && (
                 <BranchStats
                   branches={healthyBranchesList.data.branches}
-                  count={
-                    branchTotalCount.data ? branchTotalCount.data.totalHealthy : undefined
-                  }
+                  count={branchTotalCount.data?.totalHealthy}
                   limit={healthyBranchesList.data.limit}
                   branchType="healthy"
                 />
@@ -113,9 +111,7 @@ const Branches: React.FC<{
               {deleteCandidateBranchesList.data && (
                 <BranchStats
                   branches={deleteCandidateBranchesList.data.branches}
-                  count={
-                    branchTotalCount.data ? branchTotalCount.data.totalDelete : undefined
-                  }
+                  count={branchTotalCount.data?.totalDelete}
                   limit={deleteCandidateBranchesList.data.limit}
                   branchType="delete"
                 />
@@ -159,11 +155,7 @@ const Branches: React.FC<{
               {abandonedBranchesList.data && (
                 <BranchStats
                   branches={abandonedBranchesList.data.branches}
-                  count={
-                    branchTotalCount.data
-                      ? branchTotalCount.data.totalAbandoned
-                      : undefined
-                  }
+                  count={branchTotalCount.data?.totalAbandoned}
                   limit={abandonedBranchesList.data.limit}
                   branchType="abandoned"
                 />
@@ -202,11 +194,7 @@ const Branches: React.FC<{
               {unhealthyBranchesList.data && (
                 <BranchStats
                   branches={unhealthyBranchesList.data.branches}
-                  count={
-                    branchTotalCount.data
-                      ? branchTotalCount.data.totalUnhealthy
-                      : undefined
-                  }
+                  count={branchTotalCount.data?.totalUnhealthy}
                   limit={unhealthyBranchesList.data.limit}
                   branchType="unhealthy"
                 />
