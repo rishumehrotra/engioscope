@@ -47,6 +47,7 @@
     "react/static-property-placement": "warn",
     "react/jsx-props-no-spreading": "off",
     "react/jsx-filename-extension": "off",
+    "space-infix-ops": "off",
     "import/no-unresolved": [
       "error",
       {

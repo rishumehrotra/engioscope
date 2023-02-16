@@ -2,7 +2,7 @@ import qs from 'qs';
 import md5 from 'md5';
 import { filter } from 'rambda';
 import fetch from './fetch-with-extras.js';
-import { chunkArray } from '../../utils.js';
+import { chunkArray, pastDate } from '../../utils.js';
 import type {
   Build,
   BuildDefinitionReference,
@@ -532,6 +532,43 @@ export default (config: ParsedConfig) => {
           if (error instanceof Error && error.message.includes('404')) return [];
           throw error;
         }),
+
+    getCommitsSince: (
+      collectionName: string,
+      projectName: string,
+      repoId: string,
+      commitId: string | undefined
+    ): Promise<GitCommitRef[]> => {
+      const pageSize = 1000;
+      return paginatedGet<ListOf<GitCommitRef>>({
+        url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
+        qsParams: pageIndex => ({
+          ...apiVersion,
+          'searchCriteria.$top': String(pageSize),
+          'searchCriteria.includeUserImageUrl': 'true',
+          ...(commitId
+            ? { 'searchCriteria.fromCommitId': commitId }
+            : { 'searchCriteria.fromDate': pastDate('1y').toISOString() }),
+          ...(pageIndex === 0
+            ? {}
+            : { 'searchCriteria.$skip': (pageIndex * pageSize).toString() }),
+        }),
+        hasAnotherPage: previousResponse => previousResponse.data.count === pageSize,
+        headers: () => authHeader,
+        cacheFile: pageIndex => [
+          collectionName,
+          projectName,
+          'repos',
+          repoId,
+          `commits_${pageIndex}`,
+        ],
+      })
+        .then(flattenToValues)
+        .catch(error => {
+          if (error instanceof Error && error.message.includes('404')) return [];
+          throw error;
+        });
+    },
 
     getWorkItemTypes: (collectionName: string, projectName: string) =>
       usingDiskCache<{ count: number; value: WorkItemType[] }>(

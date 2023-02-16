@@ -11,6 +11,7 @@ import { getPolicyConfigurations } from './crons/policy-configuration.js';
 import { getBuildDefinitions } from './crons/build-definitions.js';
 import { getBranchesStats } from './crons/branches.js';
 import { refreshCombinedBranchPoliciesView } from './models/policy-configuration.js';
+import { getCommits } from './crons/commits.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -30,6 +31,7 @@ export default async (config: ParsedConfig) => {
   await refreshCombinedBranchPoliciesView();
   await getBuildDefinitions();
   await getBranchesStats();
+  await getCommits();
 
   // eslint-disable-next-line no-console
   console.log('Done.');
