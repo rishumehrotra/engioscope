@@ -69,7 +69,7 @@ const Branches: React.FC<{
                 <BranchStats
                   branches={healthyBranchesList.data.branches}
                   count={
-                    branchTotalCount.data ? branchTotalCount.data.totalHealthy : '...'
+                    branchTotalCount.data ? branchTotalCount.data.totalHealthy : undefined
                   }
                   limit={healthyBranchesList.data.limit}
                   branchType="healthy"
@@ -114,7 +114,7 @@ const Branches: React.FC<{
                 <BranchStats
                   branches={deleteCandidateBranchesList.data.branches}
                   count={
-                    branchTotalCount.data ? branchTotalCount.data.totalDelete : '...'
+                    branchTotalCount.data ? branchTotalCount.data.totalDelete : undefined
                   }
                   limit={deleteCandidateBranchesList.data.limit}
                   branchType="delete"
@@ -160,7 +160,9 @@ const Branches: React.FC<{
                 <BranchStats
                   branches={abandonedBranchesList.data.branches}
                   count={
-                    branchTotalCount.data ? branchTotalCount.data.totalAbandoned : '...'
+                    branchTotalCount.data
+                      ? branchTotalCount.data.totalAbandoned
+                      : undefined
                   }
                   limit={abandonedBranchesList.data.limit}
                   branchType="abandoned"
@@ -201,7 +203,9 @@ const Branches: React.FC<{
                 <BranchStats
                   branches={unhealthyBranchesList.data.branches}
                   count={
-                    branchTotalCount.data ? branchTotalCount.data.totalUnhealthy : '...'
+                    branchTotalCount.data
+                      ? branchTotalCount.data.totalUnhealthy
+                      : undefined
                   }
                   limit={unhealthyBranchesList.data.limit}
                   branchType="unhealthy"

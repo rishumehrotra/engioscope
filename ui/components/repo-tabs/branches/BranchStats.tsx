@@ -5,7 +5,7 @@ import { mediumDate, num } from '../../../helpers/utils.js';
 
 const BranchStats: React.FC<{
   branches: BranchDetails;
-  count: number | '...';
+  count: number | undefined;
   limit: number;
   branchType: BranchTypes;
 }> = ({ branches, count, limit, branchType }) =>
@@ -73,7 +73,7 @@ const BranchStats: React.FC<{
           ))}
         </tbody>
       </table>
-      {count !== '...' && count > limit ? (
+      {!count && count > limit ? (
         <p className="text-left text-sm italic text-gray-500 mt-4">
           {`* ${num(count - limit)} branches not shown`}
         </p>
