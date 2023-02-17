@@ -5,7 +5,7 @@ import azure from '../scraper/network/azure.js';
 import { runJob, shouldUpdate } from './utils.js';
 
 export const getCommits = async () => {
-  const { getCommitsSince } = azure(getConfig());
+  const { getCommitsAsChunksSince } = azure(getConfig());
 
   const counts = {
     hit: 0,
@@ -31,12 +31,13 @@ export const getCommits = async () => {
 
         if (!commitIdAndDate || shouldUpdate(commitIdAndDate.date)) {
           counts.hit += 1;
-          await getCommitsSince(
+          await getCommitsAsChunksSince(
             collection.name,
             project.name,
             repo.id,
-            commitIdAndDate?.commitId
-          ).then(bulkSaveCommits(collection.name, project.name, repo.id));
+            commitIdAndDate?.commitId,
+            bulkSaveCommits(collection.name, project.name, repo.id)
+          );
         } else {
           counts.skipped += 1;
         }

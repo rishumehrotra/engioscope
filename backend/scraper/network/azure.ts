@@ -33,6 +33,7 @@ import type { FetchResponse } from './fetch-with-disk-cache.js';
 import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import type { ParsedConfig } from '../parse-config.js';
 import createChunkedPaginatedGetter from './create-chunked-paginated-getter.js';
+import { is404 } from './http-error.js';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -70,6 +71,7 @@ export default (config: ParsedConfig) => {
     `${config.azure.host}${collectionName}/${
       projectName === null ? '' : `${projectName}/`
     }_apis${path}`;
+
   const list = <T>({
     url,
     qsParams,
@@ -89,6 +91,7 @@ export default (config: ParsedConfig) => {
         `${cacheFile[cacheFile.length - 1]}_${pageIndex}`,
       ],
     }).then(flattenToValues);
+
   const chunkedList = <T>({
     url,
     qsParams,
@@ -533,14 +536,16 @@ export default (config: ParsedConfig) => {
           throw error;
         }),
 
-    getCommitsSince: (
+    getCommitsAsChunksSince: async (
       collectionName: string,
       projectName: string,
       repoId: string,
-      commitId: string | undefined
-    ): Promise<GitCommitRef[]> => {
+      commitId: string | undefined,
+      chunkHandler: (x: GitCommitRef[]) => Promise<unknown>
+    ) => {
       const pageSize = 1000;
-      return paginatedGet<ListOf<GitCommitRef>>({
+
+      return chunkedPaginatedGet<ListOf<GitCommitRef>>({
         url: url(collectionName, projectName, `/git/repositories/${repoId}/commits`),
         qsParams: pageIndex => ({
           ...apiVersion,
@@ -562,12 +567,11 @@ export default (config: ParsedConfig) => {
           repoId,
           `commits_${pageIndex}`,
         ],
-      })
-        .then(flattenToValues)
-        .catch(error => {
-          if (error instanceof Error && error.message.includes('404')) return [];
-          throw error;
-        });
+        chunkHandler: chunk => chunkHandler(chunk.data.value),
+      }).catch(error => {
+        if (is404(error)) return [];
+        throw error;
+      });
     },
 
     getWorkItemTypes: (collectionName: string, projectName: string) =>

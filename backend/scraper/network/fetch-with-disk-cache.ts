@@ -69,18 +69,6 @@ const streamToDisk = async (fileLocation: FileLocation, fetcher: Fetcher) => {
   const response = await fetcher();
   const filePath = join(...fileLocation);
 
-  if (!response.ok) {
-    logNetwork(
-      `HTTP error when fetching ${response.url} ${response.status} - ${response.statusText}`
-    );
-    logNetwork(await response.text());
-    throw new Error(
-      `HTTP error when fetching ${response.url}, statusText: ${response.status} - ${
-        response.statusText
-      }\n ${await response.text()}`
-    );
-  }
-
   if (!response.body && response.status !== 204) {
     logNetwork(`HTTP error: Stream is empty. ${response.url}`);
     throw new Error(`HTTP error: Stream is empty. ${response.url}`);
@@ -124,8 +112,8 @@ export default (diskCacheTimeMs: number) => ({
       let fromCache = true;
 
       if (!(await doesFileExist(filePath))) {
-        await streamToDisk(fileLocation, fetcher);
         fromCache = false;
+        await streamToDisk(fileLocation, fetcher);
       } else if (Date.now() - (await getFrontMatter(filePath)).date > diskCacheTimeMs) {
         fromCache = false;
         await streamToDisk(fileLocation, fetcher);
@@ -154,6 +142,7 @@ export default (diskCacheTimeMs: number) => ({
         throw error;
       }
     }),
+
   clearDiskCache: async (pathParts: string[]) => {
     const possibleDirectory = join(cacheLocation, ...pathParts);
 

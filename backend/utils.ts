@@ -8,6 +8,7 @@ import { allPass, compose, not } from 'rambda';
 import AL from 'await-lock';
 import { fileURLToPath } from 'node:url';
 import type { ParsedConfig } from './scraper/parse-config.js';
+import { HTTPError } from './scraper/network/http-error.js';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
@@ -111,6 +112,9 @@ export const retry = <T>(
 ): Promise<T> =>
   fn().catch(async error => {
     if (retryCount <= 0) throw error;
+    if (error instanceof HTTPError && error.status >= 400 && error.status < 500) {
+      throw error;
+    }
     await wait(waitTime * 1000);
     return retry(fn, { retryCount: retryCount - 1, waitTime });
   });

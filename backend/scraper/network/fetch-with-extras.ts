@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import https from 'node:https';
 import pLimit from 'p-limit';
 import { constants } from 'node:crypto';
+import { HTTPError } from './http-error.js';
 
 const limit = pLimit(35);
 
@@ -34,6 +35,10 @@ export default (
           );
         }
         throw error;
+      })
+      .then(res => {
+        if (!res.ok) throw new HTTPError(res);
+        return res;
       })
       .finally(() => clearTimeout(timeoutHandle))
   );

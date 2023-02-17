@@ -24,8 +24,7 @@ const configureExpress = (config: ParsedConfig) => {
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.cookies.c === undefined) {
       // Set a new cookie
-      let randomNumber = Math.random().toString();
-      randomNumber = randomNumber.slice(2);
+      const randomNumber = Math.random().toString().slice(2);
       res.cookie('c', randomNumber, { maxAge: oneYearInMs, httpOnly: true });
     } else {
       // Cookie was already present, just reset its maxage
