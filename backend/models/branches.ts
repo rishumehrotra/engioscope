@@ -18,17 +18,19 @@ export const getHealthyBranchesSummary = async ({
   collectionName,
   project,
   repoIds,
+  defaultBranchNames,
 }: {
   collectionName: string;
   project: string;
   repoIds: string[];
+  defaultBranchNames: string[];
 }) => {
   const today = new Date();
   const fifteenDaysBack = today.setDate(today.getDate() - 15);
 
   const result = await BranchModel.aggregate<{
-    totalBranches: number;
-    healthyBranches: number;
+    total: number;
+    healthy: number;
   }>([
     {
       $match: {
@@ -40,8 +42,8 @@ export const getHealthyBranchesSummary = async ({
     {
       $group: {
         _id: { collectionName: '$collectionName', project: '$project' },
-        totalBranches: { $sum: 1 },
-        healthyBranches: {
+        total: { $sum: 1 },
+        healthy: {
           $sum: {
             $cond: [
               {
@@ -53,7 +55,7 @@ export const getHealthyBranchesSummary = async ({
                       { $gte: ['$date', fifteenDaysBack] },
                     ],
                   },
-                  { $eq: ['$name', 'master'] },
+                  { $in: ['$name', defaultBranchNames] },
                 ],
               },
               1,
@@ -66,13 +68,13 @@ export const getHealthyBranchesSummary = async ({
     {
       $project: {
         _id: 0,
-        totalBranches: 1,
-        healthyBranches: 1,
+        total: 1,
+        healthy: 1,
       },
     },
   ]);
 
-  return result[0] || { totalBranches: 0, healthyBranches: 0 };
+  return result[0] || { total: 0, healthy: 0 };
 };
 
 export const categoryAddFields = (startDate: Date, defaultBranch: string) => {

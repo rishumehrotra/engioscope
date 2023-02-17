@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
-import { BuildModel } from './mongoose-models/BuildModel';
+import { BuildModel } from './mongoose-models/BuildModel.js';
 
 // TODO: Filter Options Logic
 export const buildFilterOptions = {
@@ -58,7 +58,7 @@ export const getBuildsCountByConditions =
       _id: 0,
       year: '$_id.year',
       totalBuilds: 1,
-      totalSuccessFulBuilds: 1,
+      totalSuccessfulBuilds: 1,
       week: '$_id.week',
       startWeek: 1,
       endWeek: 1,
@@ -68,7 +68,7 @@ export const getBuildsCountByConditions =
       _id: 0,
       year: '$_id.year',
       totalBuilds: 1,
-      totalSuccessFulBuilds: 1,
+      totalSuccessfulBuilds: 1,
       month: '$_id.month',
       startMonth: 1,
       endMonth: 1,
@@ -79,6 +79,7 @@ export const getBuildsCountByConditions =
       month?: number;
       year: number;
       totalBuilds: number;
+      totalSuccessfulBuilds: number;
     }>([
       {
         $match: {

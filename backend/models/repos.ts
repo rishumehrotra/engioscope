@@ -54,3 +54,18 @@ export const repoDefaultBranch = async (
   );
   return repoBranch?.defaultBranch?.replace('refs/heads/', '');
 };
+
+export const getAllRepoDefaultBranches = async (
+  collectionName: string,
+  project: string,
+  repoIds: string[] | undefined
+) => {
+  const repoBranches: string[] = await RepositoryModel.distinct('defaultBranch', {
+    collectionName,
+    'project.name': project,
+    ...(repoIds ? { id: { $in: repoIds } } : {}),
+  });
+  // if (repoBranches.length === 0) return [];
+
+  return repoBranches.map(branch => branch.replace('refs/heads/', ''));
+};

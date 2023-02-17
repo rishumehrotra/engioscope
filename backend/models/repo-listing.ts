@@ -1,7 +1,13 @@
+import { z } from 'zod';
 import { configForProject } from '../config.js';
-import { BuildModel } from './mongoose-models/BuildModel';
-import { inDateRange } from './helpers.js';
-import { RepositoryModel } from './mongoose-models/RepositoryModel';
+import { BuildModel } from './mongoose-models/BuildModel.js';
+import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import { getHealthyBranchesSummary } from './branches.js';
+import { getYamlPipelinesCountSummary } from './build-definitions.js';
+import { getBuildSummary, getBuildsCountByWeek } from './build-listing.js';
+import { getTotalCentralTemplateUsage } from './build-reports.js';
+import { getAllRepoDefaultBranches } from './repos.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -89,16 +95,82 @@ export const getActiveRepoIds = async (
   return result;
 };
 
-// CENTRAL TEMPLATE USAGE
-// totalCentralTemplateUsage
+export const getSummaryInputParser = z.object({
+  ...collectionAndProjectInputs,
+  ...dateRangeInputs,
+  searchTerm: z.union([z.string(), z.undefined()]),
+  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
+});
 
-// Yaml Pipelines Count Summary
-// getYamlPipelinesCountSummary
+export const getSummary = async ({
+  collectionName,
+  project,
+  startDate,
+  endDate,
+  searchTerm,
+  groupsIncluded,
+}: z.infer<typeof getSummaryInputParser>) => {
+  const activeRepos = await getActiveRepoIds(
+    collectionName,
+    project,
+    startDate,
+    endDate,
+    searchTerm,
+    groupsIncluded
+  );
 
-// FOR BRANCHES SUMMARY
-// getHealthyBranchesSummary
+  const repoIds = activeRepos.map((repo: { id: string }) => repo.id);
 
-// For Builds SUmmary
-// getBuildSummary
-// getBuildsCountByWeek
-// getBuildsCountByMonth
+  const repoNames = activeRepos.map(repo => repo.name);
+
+  const defaultBranchNames = await getAllRepoDefaultBranches(
+    collectionName,
+    project,
+    repoIds
+  );
+
+  const [
+    buildsSummary,
+    buildsCountByWeek,
+    totalCentralTemplate,
+    yamlPipelinesCount,
+    totalHealthyBranches,
+  ] = await Promise.all([
+    getBuildSummary(collectionName, project, startDate, endDate, repoIds),
+
+    getBuildsCountByWeek(
+      collectionName,
+      project,
+      startDate,
+      endDate,
+      searchTerm,
+      repoIds
+    ),
+
+    getTotalCentralTemplateUsage(collectionName, project, repoNames),
+
+    getYamlPipelinesCountSummary(
+      collectionName,
+      project,
+      startDate,
+      endDate,
+      searchTerm,
+      repoIds
+    ),
+
+    getHealthyBranchesSummary({
+      collectionName,
+      project,
+      repoIds,
+      defaultBranchNames,
+    }),
+  ]);
+
+  return {
+    buildsSummary,
+    buildsCountByWeek,
+    totalCentralTemplate,
+    yamlPipelinesCount,
+    totalHealthyBranches,
+  };
+};

@@ -25,11 +25,14 @@ import type {
 } from '../../shared/types.js';
 import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num, shortDate } from '../helpers/utils.js';
-import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
 import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils.js';
+import { trpc } from '../helpers/trpc.js';
+import { useDateRange } from '../hooks/date-range-hooks.jsx';
+import { useCollectionAndProject } from '../hooks/query-hooks.js';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos
@@ -125,6 +128,20 @@ type RepoSummaryProps = {
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
   const [showNewBuild] = useQueryParam('build-v2', asBoolean);
+
+  const { collectionName, project } = useCollectionAndProject();
+  const dateRange = useDateRange();
+  const [search] = useQueryParam('search', asString);
+  const [selectedGroupLabels] = useQueryParam('group', asString);
+
+  const summaries = trpc.repos.getSummaries.useQuery({
+    collectionName,
+    project,
+    searchTerm: search || undefined,
+    groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
+    ...dateRange,
+  });
+
   return (
     <ProjectStats
       note={
@@ -416,23 +433,124 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           },
         ]}
       />
-      {showNewBuild ? (
-        <ProjectStat
-          topStats={[
-            {
-              title: 'Builds',
-              value: 13_000,
-              tooltip: 'Total Builds Count',
-            },
-          ]}
-          childStats={[
-            {
-              title: 'Success',
-              value: divide(10, 10).map(toPercentage).getOr('-'),
-              tooltip: 'Total Builds Count',
-            },
-          ]}
-        />
+      {showNewBuild && summaries.data ? (
+        <>
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Builds',
+                value: summaries.data.buildsSummary.totalBuilds,
+                tooltip: 'Total Builds Count',
+              },
+            ]}
+            childStats={[
+              {
+                title: 'Success',
+                value: divide(
+                  summaries.data.buildsSummary.totalSuccesses,
+                  summaries.data.buildsSummary.totalBuilds
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+                tooltip: 'Total Builds Count',
+              },
+            ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'YAML pipelines',
+                value: divide(
+                  summaries.data.yamlPipelinesCount.yamlCount,
+                  summaries.data.yamlPipelinesCount.totalCount
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+                tooltip: `${num(summaries.data.yamlPipelinesCount.yamlCount)} of ${num(
+                  summaries.data.yamlPipelinesCount.totalCount
+                )} pipelines use a YAML-based configuration`,
+              },
+            ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Using central template',
+                value: `${divide(
+                  summaries.data.totalCentralTemplate.templateUsers,
+                  summaries.data.totalCentralTemplate.totalAzureBuilds
+                )
+                  .map(toPercentage)
+                  .getOr('-')}`,
+                tooltip: `${num(
+                  summaries.data.totalCentralTemplate.templateUsers
+                )} out of ${num(
+                  summaries.data.totalCentralTemplate.totalAzureBuilds
+                )} build runs used the central template`,
+              },
+            ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Healthy branches',
+                value: divide(
+                  summaries.data.totalHealthyBranches.healthy,
+                  summaries.data.totalHealthyBranches.total
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+              },
+            ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Builds',
+                value: (
+                  <LabelWithSparkline
+                    label={num(
+                      summaries.data.buildsCountByWeek.reduce(
+                        (acc, week) => acc + week.totalBuilds,
+                        0
+                      )
+                    )}
+                    data={summaries.data.buildsCountByWeek.map(week => week.totalBuilds)}
+                    lineColor={increaseIsBetter(
+                      summaries.data.buildsCountByWeek.map(week => week.totalBuilds)
+                    )}
+                  />
+                ),
+                tooltip: 'Total number of builds across all matching repos',
+              },
+            ]}
+            childStats={[
+              {
+                title: 'Success',
+                value: (
+                  <LabelWithSparkline
+                    label={num(
+                      summaries.data.buildsCountByWeek.reduce(
+                        (acc, week) => acc + week.totalSuccessfulBuilds,
+                        0
+                      )
+                    )}
+                    data={summaries.data.buildsCountByWeek.map(
+                      week => week.totalSuccessfulBuilds
+                    )}
+                    lineColor={increaseIsBetter(
+                      summaries.data.buildsCountByWeek.map(
+                        week => week.totalSuccessfulBuilds
+                      )
+                    )}
+                    yAxisLabel={x => `${x}%`}
+                  />
+                ),
+                tooltip: 'Success rate across all matching repos',
+              },
+            ]}
+          />
+        </>
       ) : null}
     </ProjectStats>
   );
