@@ -1,6 +1,6 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
 import { bulkSaveCommits, getLatestCommitIdAndDate } from '../models/commits.js';
-import { RepositoryModel } from '../models/repos.js';
+import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
 import { runJob, shouldUpdate } from './utils.js';
 

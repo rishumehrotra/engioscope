@@ -2,7 +2,7 @@ import { allPass, anyPass, complement, compose, filter, not, pipe } from 'rambda
 import { asc, byDate, byNum, desc } from 'sort-lib';
 import type { UIBranches } from '../../../shared/types.js';
 import { oneFortnightInMs } from '../../../shared/utils.js';
-import type { BranchStats } from '../../models/branches.js';
+import type { BranchStats } from '../../models/mongoose-models/BranchModel';
 
 const branchPageLimit = 20;
 

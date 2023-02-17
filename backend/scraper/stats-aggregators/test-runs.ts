@@ -3,7 +3,7 @@ import { equals, head, isNil, last, pipe, prop, T } from 'rambda';
 import { asc, byDate, desc } from 'sort-lib';
 import { count, incrementBy } from '../../../shared/reducer-utils.js';
 import type { UITests, UIPipelineTest } from '../../../shared/types.js';
-import type { Build } from '../../models/builds.js';
+import type { Build } from '../../models/mongoose-models/BuildModel';
 import { unique, weeks } from '../../utils.js';
 import type { CodeCoverageData, CodeCoverageSummary, TestRun } from '../types-azure.js';
 

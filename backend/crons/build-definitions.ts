@@ -1,7 +1,51 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
-import { bulkSaveBuildDefinitions } from '../models/build-definitions.js';
+import { BuildDefinitionModel } from '../models/mongoose-models/BuildDefinitionModel.js';
 import azure from '../scraper/network/azure.js';
+import type { BuildDefinitionReference } from '../scraper/types-azure.js';
 import { runJob } from './utils.js';
+
+export const bulkSaveBuildDefinitions =
+  (collectionName: string, project: string) =>
+  async (buildDefinitions: BuildDefinitionReference[]) => {
+    // Delete any pipelines that have been deleted from Azure
+    await BuildDefinitionModel.deleteMany({
+      collectionName,
+      project,
+      id: { $nin: buildDefinitions.map(b => b.id) },
+    });
+
+    return BuildDefinitionModel.bulkWrite(
+      buildDefinitions.map(buildDefinition => {
+        const { project, process, ...rest } = buildDefinition;
+
+        const processForDB =
+          process.type === 2
+            ? {
+                processType: 2 as const,
+                yamlFilename: process.yamlFilename,
+              }
+            : { processType: 1 as const };
+
+        return {
+          updateOne: {
+            filter: {
+              collectionName,
+              project: project.name,
+              id: buildDefinition.id,
+            },
+            update: {
+              $set: {
+                process: processForDB,
+                repositoryId: buildDefinition.repository?.id,
+                ...rest,
+              },
+            },
+            upsert: true,
+          },
+        };
+      })
+    );
+  };
 
 export const getBuildDefinitions = () => {
   const { getBuildDefinitions } = azure(getConfig());

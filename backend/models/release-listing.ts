@@ -11,7 +11,7 @@ import {
   getMinimalReleaseDefinitions,
   ReleaseDefinitionModel,
 } from './release-definitions.js';
-import { ReleaseModel } from './releases.js';
+import { ReleaseModel } from './mongoose-models/ReleaseEnvironment.js';
 
 export const pipelineFiltersInput = {
   ...collectionAndProjectInputs,

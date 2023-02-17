@@ -1,7 +1,7 @@
 import { configForProject } from '../config.js';
-import { BuildModel } from './builds.js';
+import { BuildModel } from './mongoose-models/BuildModel';
 import { inDateRange } from './helpers.js';
-import { RepositoryModel } from './repos.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel';
 
 const getGroupRepositoryNames = (
   collectionName: string,

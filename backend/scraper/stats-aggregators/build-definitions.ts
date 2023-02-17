@@ -1,4 +1,4 @@
-import type { BuildDefinition } from '../../models/build-definitions.js';
+import type { BuildDefinition } from '../../models/mongoose-models/BuildDefinitionModel';
 
 export default (buildDefinitions: BuildDefinition[]) => {
   const buildDefinitionsByRepoId = buildDefinitions.reduce<

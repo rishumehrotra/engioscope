@@ -10,7 +10,7 @@ import type {
   ReleaseCondition,
   ReleaseDefinitionEnvironment,
 } from '../../models/release-definitions.js';
-import type { Release } from '../../models/releases.js';
+import type { Release } from '../../models/mongoose-models/ReleaseEnvironment';
 import { isMaster, weeks } from '../../utils.js';
 import type { ParsedProjectConfig } from '../parse-config.js';
 import type { EnvironmentStatus } from '../types-azure.js';

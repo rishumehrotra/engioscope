@@ -1,8 +1,48 @@
 import { getConfig } from '../config.js';
-import { branchUpdateDate, saveRepoBranch } from '../models/branches.js';
-import { RepositoryModel } from '../models/repos.js';
+import { BranchModel } from '../models/mongoose-models/BranchModel.js';
+import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
+import type { GitBranchStats } from '../scraper/types-azure.js';
 import { runJob, shouldUpdate } from './utils.js';
+
+const saveRepoBranch = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string,
+  branches: GitBranchStats[]
+) => {
+  await BranchModel.deleteMany({
+    collectionName,
+    project,
+    repositoryId,
+  });
+
+  return BranchModel.insertMany(
+    branches.map(branch => ({
+      collectionName,
+      project,
+      repositoryId,
+      ...branch,
+      date: branch.commit.committer.date,
+    }))
+  );
+};
+
+const branchUpdateDate = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string
+) => {
+  const result = await BranchModel.find(
+    { collectionName, project, repositoryId },
+    { date: 1 }
+  )
+    .sort({ date: -1 })
+    .limit(1)
+    .lean();
+
+  return result[0]?.date as Date | undefined;
+};
 
 type Repo = {
   collectionName: string;

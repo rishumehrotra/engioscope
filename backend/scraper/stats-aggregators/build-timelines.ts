@@ -1,11 +1,17 @@
-import type { saveBuildTimeline as save } from '../../models/build-timeline.js';
+import type { ObjectId } from 'mongoose';
 import type { Build, Timeline } from '../types-azure.js';
+
+type SaveBuildTimeline = (
+  buildId: number,
+  buildDefinitionId: number,
+  buildTimeline: Timeline | null
+) => Promise<ObjectId | null>;
 
 export default async (
   builds: Build[],
   missingTimelines: (buildIds: number[]) => Promise<number[]>,
   getBuildTimeline: (buildId: number) => Promise<Timeline | null>,
-  saveBuildTimeline: ReturnType<typeof save>
+  saveBuildTimeline: SaveBuildTimeline
 ) => {
   const missingBuildIds = await missingTimelines(
     builds.filter(b => b.result !== 'canceled').map(b => b.id)

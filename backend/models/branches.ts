@@ -1,83 +1,8 @@
-import mongoose from 'mongoose';
 import { z } from 'zod';
-import type { GitBranchStats } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs } from './helpers.js';
 import { oneFortnightInMs } from '../../shared/utils.js';
 import { repoDefaultBranch } from './repos.js';
-
-const { Schema, model } = mongoose;
-
-export type BranchStats = {
-  collectionName: string;
-  project: string;
-  repositoryId: string;
-  name: string;
-  date: Date;
-  aheadCount: number;
-  behindCount: number;
-  isBaseVersion: boolean;
-};
-
-const branchStatsSchema = new Schema<BranchStats>(
-  {
-    collectionName: { type: String, required: true },
-    project: { type: String, required: true },
-    repositoryId: { type: String, required: true },
-    name: { type: String, required: true },
-    date: { type: Date, required: true },
-    aheadCount: { type: Number, required: true },
-    behindCount: { type: Number, required: true },
-    isBaseVersion: { type: Boolean, required: true },
-  },
-  { timestamps: true }
-);
-
-branchStatsSchema.index({
-  collectionName: 1,
-  project: 1,
-  repositoryId: 1,
-});
-
-const BranchModel = model<BranchStats>('Branch', branchStatsSchema);
-
-export const saveRepoBranch = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string,
-  branches: GitBranchStats[]
-) => {
-  await BranchModel.deleteMany({
-    collectionName,
-    project,
-    repositoryId,
-  });
-
-  return BranchModel.insertMany(
-    branches.map(branch => ({
-      collectionName,
-      project,
-      repositoryId,
-      ...branch,
-      date: branch.commit.committer.date,
-    }))
-  );
-};
-
-export const branchUpdateDate = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string
-) => {
-  const result = await BranchModel.find(
-    { collectionName, project, repositoryId },
-    { date: 1 }
-  )
-    .sort({ date: -1 })
-    .limit(1)
-    .lean();
-
-  return result[0]?.date as Date | undefined;
-};
+import { BranchModel } from './mongoose-models/BranchModel.js';
 
 export const branchStatsForRepo =
   (collectionName: string, project: string) => async (repositoryId: string) => {
@@ -330,15 +255,15 @@ export const getBranches =
       { $sort: { lastCommitDate: -1 } },
     ]);
 
-    const addUrl = result.map(branch => {
+    const withUrls = result.map(branch => {
       return {
         ...branch,
         url: setBranchUrl(encodeURIComponent(branch.name), repoUrl, linkType),
       };
     });
     const updatedResult = {
-      branches: addUrl || [],
-      count: addUrl.length || 0,
+      branches: withUrls || [],
+      count: withUrls.length || 0,
       limit,
     };
     return updatedResult;

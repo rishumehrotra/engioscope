@@ -4,8 +4,8 @@ import { asc, byDate, desc } from 'sort-lib';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
 import { isMaster, weeks } from '../../utils.js';
 import type { centralBuildTemplateBuildCount } from '../../models/build-reports.js';
-import type { Build } from '../../models/builds.js';
-import type { BuildDefinition } from '../../models/build-definitions.js';
+import type { Build } from '../../models/mongoose-models/BuildModel';
+import type { BuildDefinition } from '../../models/mongoose-models/BuildDefinitionModel';
 
 type CentralTemplateBuildCountForPipeline = ReturnType<
   typeof centralBuildTemplateBuildCount

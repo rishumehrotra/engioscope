@@ -1,7 +1,35 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
-import { bulkSaveReleaseDefinitions } from '../models/release-definitions.js';
+import { ReleaseDefinitionModel } from '../models/release-definitions.js';
 import azure from '../scraper/network/azure.js';
+import type { ReleaseDefinition as AzureReleaseDefinition } from '../scraper/types-azure.js';
 import { runJob } from './utils.js';
+
+export const bulkSaveReleaseDefinitions =
+  (collectionName: string, project: string) =>
+  (releaseDefinitions: AzureReleaseDefinition[]) =>
+    ReleaseDefinitionModel.bulkWrite(
+      releaseDefinitions.map(r => {
+        const { createdBy, modifiedBy, ...rest } = r;
+
+        return {
+          updateOne: {
+            filter: {
+              collectionName,
+              project,
+              id: r.id,
+            },
+            update: {
+              $set: {
+                createdById: createdBy.id,
+                modifiedById: modifiedBy.id,
+                ...rest,
+              },
+            },
+            upsert: true,
+          },
+        };
+      })
+    );
 
 export const getReleaseDefinitions = async () => {
   const { getReleaseDefinitionsAsChunks, getReleaseDefinition } = azure(getConfig());

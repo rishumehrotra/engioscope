@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
-import { BuildModel } from './builds.js';
+import { BuildModel } from './mongoose-models/BuildModel';
 
 // TODO: Filter Options Logic
 export const buildFilterOptions = {

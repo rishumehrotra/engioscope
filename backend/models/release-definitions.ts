@@ -1,7 +1,6 @@
 import { model, Schema } from 'mongoose';
 import pMemoize from 'p-memoize';
 import ExpiryMap from 'expiry-map';
-import type { ReleaseDefinition as AzureReleaseDefinition } from '../scraper/types-azure.js';
 import { oneMinuteInMs } from '../../shared/utils.js';
 
 export type ReleaseCondition = {
@@ -79,33 +78,6 @@ export const ReleaseDefinitionModel = model<ReleaseDefinition>(
   'ReleaseDefinition',
   releaseDefinitionSchema
 );
-
-export const bulkSaveReleaseDefinitions =
-  (collectionName: string, project: string) =>
-  (releaseDefinitions: AzureReleaseDefinition[]) =>
-    ReleaseDefinitionModel.bulkWrite(
-      releaseDefinitions.map(r => {
-        const { createdBy, modifiedBy, ...rest } = r;
-
-        return {
-          updateOne: {
-            filter: {
-              collectionName,
-              project,
-              id: r.id,
-            },
-            update: {
-              $set: {
-                createdById: createdBy.id,
-                modifiedById: modifiedBy.id,
-                ...rest,
-              },
-            },
-            upsert: true,
-          },
-        };
-      })
-    );
 
 export const getReleaseEnvironments = (
   collectionName: string,

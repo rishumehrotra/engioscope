@@ -1,5 +1,5 @@
 import type { BranchPolicies } from '../../../shared/types.js';
-import type { RepoPolicy } from '../../models/policy-configuration.js';
+import type { RepoPolicy } from '../../models/mongoose-models/RepoPoliciesModel';
 import {
   isRequireMergeStrategyPolicy,
   isCommentRequirementsPolicy,

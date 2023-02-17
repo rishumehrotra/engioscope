@@ -1,17 +1,49 @@
 import { oneYearInMs } from '../../shared/utils.js';
 import { collectionsAndProjects, getConfig } from '../config.js';
-import { missingTimelines, saveBuildTimeline } from '../models/build-timeline.js';
-import { bulkSaveBuilds } from '../models/builds.js';
+import { BuildTimelineModel } from '../models/mongoose-models/BuildTimelineModel.js';
 import {
   getLastBuildUpdateDate,
   setLastBuildUpdateDate,
 } from '../models/cron-update-dates.js';
+import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import azure from '../scraper/network/azure.js';
-import type { Timeline } from '../scraper/types-azure.js';
+import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray } from '../utils.js';
 import { runJob } from './utils.js';
 
 const queryStart = new Date(Date.now() - oneYearInMs);
+
+const missingTimelines = async (
+  collectionName: string,
+  project: string,
+  buildIds: number[]
+) => {
+  const existingBuildTimelines = await BuildTimelineModel.find(
+    { collectionName, project, buildId: { $in: buildIds } },
+    { buildId: 1 }
+  ).lean();
+
+  const existingBuildIds = new Set(existingBuildTimelines.map(bt => bt.buildId));
+
+  return buildIds.filter(b => !existingBuildIds.has(b));
+};
+
+const saveBuildTimeline =
+  (collectionName: string, project: string) =>
+  async (buildId: number, buildDefinitionId: number, buildTimeline: Timeline | null) =>
+    buildTimeline
+      ? BuildTimelineModel.updateOne(
+          {
+            collectionName,
+            project,
+            buildId,
+          },
+          { $set: { ...buildTimeline, buildDefinitionId } },
+          { upsert: true }
+        )
+          .lean()
+          .then(result => result.upsertedId)
+      : null;
 
 const putBuildTimelineInDb =
   (collection: string, project: string, buildId: number, buildDefinitionId: number) =>
@@ -19,6 +51,26 @@ const putBuildTimelineInDb =
     buildTimeline
       ? saveBuildTimeline(collection, project)(buildId, buildDefinitionId, buildTimeline)
       : null;
+
+const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) =>
+  BuildModel.bulkWrite(
+    builds.map(build => {
+      const { project, ...rest } = build;
+
+      return {
+        updateOne: {
+          filter: {
+            collectionName,
+            'project': project.name,
+            'repository.id': build.repository.id,
+            'id': build.id,
+          },
+          update: { $set: rest },
+          upsert: true,
+        },
+      };
+    })
+  );
 
 export const getBuildsAndTimelines = () => {
   const { getBuildTimeline, getBuildsAsChunksSince } = azure(getConfig());
@@ -37,8 +89,9 @@ export const getBuildsAndTimelines = () => {
 
           const missingBuildIds = await missingTimelines(
             collection.name,
-            project.name
-          )(builds.map(b => b.id));
+            project.name,
+            builds.map(b => b.id)
+          );
 
           await chunkArray(missingBuildIds, 20).reduce(async (acc, chunk) => {
             await acc;
