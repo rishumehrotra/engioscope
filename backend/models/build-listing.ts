@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { collectionAndProjectInputs } from './helpers.js';
-import { BuildModel, getActiveRepoIds } from './builds.js';
+import { collectionAndProjectInputs, inDateRange } from './helpers.js';
+import { BuildModel } from './builds.js';
 
 // TODO: Filter Options Logic
 export const buildFilterOptions = {
@@ -44,9 +44,10 @@ export const getBuildsCountByConditions =
   async (
     collectionName: string,
     project: string,
-    searchTerm: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    searchTerm?: string,
+    repoIds?: string[]
   ) => {
     const groupField =
       duration === 'week'
@@ -81,18 +82,16 @@ export const getBuildsCountByConditions =
     }>([
       {
         $match: {
-          'collectionName': collectionName,
-          'project': project,
-          'repository.name': new RegExp(searchTerm, 'i'),
-          'startTime': { $gte: startDate, $lt: endDate },
+          collectionName,
+          project,
+          'repository.id': { $in: repoIds },
+          'startTime': inDateRange(startDate, endDate),
         },
       },
       {
         $group: {
           _id: groupField,
-          totalBuilds: {
-            $sum: 1,
-          },
+          totalBuilds: { $sum: 1 },
           totalSuccessfulBuilds: {
             $sum: { $cond: [{ $eq: ['$result', 'success'] }, 1, 0] },
           },
@@ -130,10 +129,7 @@ export const getBuildsCountByConditions =
           },
         },
       },
-
-      {
-        $project: duration === 'week' ? projectWeekFields : projectMonthFields,
-      },
+      { $project: duration === 'week' ? projectWeekFields : projectMonthFields },
       {
         $sort: {
           '_id.year': 1,
@@ -152,16 +148,8 @@ export const getBuildSummary = async (
   project: string,
   startDate: Date,
   endDate: Date,
-  searchTerm?: string
+  repoIds?: string[]
 ) => {
-  const activeRepos = await getActiveRepoIds(
-    collectionName,
-    project,
-    startDate,
-    endDate,
-    searchTerm
-  );
-
   const totals = await BuildModel.aggregate<{
     totalBuilds: number;
     totalSuccesses: number;
@@ -170,8 +158,8 @@ export const getBuildSummary = async (
       $match: {
         collectionName,
         project,
-        'startTime': { $gte: startDate, $lt: endDate },
-        'repository.id': { $in: activeRepos.map(r => r.id) },
+        'startTime': inDateRange(startDate, endDate),
+        'repository.id': { $in: repoIds },
       },
     },
     {

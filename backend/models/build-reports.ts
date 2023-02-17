@@ -279,24 +279,20 @@ export const buildsCentralTemplateStats = async (
   return result;
 };
 
-export const totalCentralTemplateUsage = async (
+export const getTotalCentralTemplateUsage = async (
   collectionName: string,
   project: string,
-  startDate: Date,
-  endDate: Date
+  repoNames?: string[]
 ) => {
-  type CentralTemplateResult = {
-    buildDefinitionId: string;
+  const result = await AzureBuildReportModel.aggregate<{
     templateUsers: number;
     totalAzureBuilds: number;
-  };
-
-  const result = await AzureBuildReportModel.aggregate<CentralTemplateResult>([
+  }>([
     {
       $match: {
         collectionName,
         project,
-        createdAt: { $gte: new Date(startDate), $lt: new Date(endDate) },
+        ...(repoNames ? { repo: { $in: repoNames } } : {}),
       },
     },
     {
@@ -331,13 +327,12 @@ export const totalCentralTemplateUsage = async (
     {
       $project: {
         _id: 0,
-        buildDefinitionId: '$_id.buildDefinitionId',
         templateUsers: '$templateUsers',
         totalAzureBuilds: '$totalAzureBuilds',
       },
     },
   ]);
-  return result;
+  return result[0] || { templateUsers: 0, totalAzureBuilds: 0 };
 };
 
 // eslint-disable-next-line no-underscore-dangle

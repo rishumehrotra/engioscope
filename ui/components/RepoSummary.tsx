@@ -125,7 +125,6 @@ type RepoSummaryProps = {
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
   const [showNewBuild] = useQueryParam('build-v2', asBoolean);
-
   return (
     <ProjectStats
       note={

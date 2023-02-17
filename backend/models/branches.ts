@@ -89,13 +89,15 @@ export const branchStatsForRepo =
     return result || [];
   };
 
-export const HealthyBranchesSummaryInputParser = z.object({
-  ...collectionAndProjectInputs,
-});
 export const getHealthyBranchesSummary = async ({
   collectionName,
   project,
-}: z.infer<typeof HealthyBranchesSummaryInputParser>) => {
+  repoIds,
+}: {
+  collectionName: string;
+  project: string;
+  repoIds: string[];
+}) => {
   const today = new Date();
   const fifteenDaysBack = today.setDate(today.getDate() - 15);
 
@@ -103,7 +105,13 @@ export const getHealthyBranchesSummary = async ({
     totalBranches: number;
     healthyBranches: number;
   }>([
-    { $match: { collectionName, project } },
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repoIds },
+      },
+    },
     {
       $group: {
         _id: { collectionName: '$collectionName', project: '$project' },

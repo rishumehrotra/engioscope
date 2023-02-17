@@ -150,7 +150,11 @@ export const getBuildDefinitionsForRepo = (options: {
 
 export const getYamlPipelinesCountSummary = async (
   collectionName: string,
-  project: string
+  project: string,
+  startDate: Date,
+  endDate: Date,
+  searchTerm?: string,
+  repoIds?: string[]
 ) => {
   const result = await BuildDefinitionModel.aggregate<{
     totalCount: number;
@@ -160,6 +164,7 @@ export const getYamlPipelinesCountSummary = async (
       $match: {
         collectionName,
         project,
+        ...(repoIds ? { repositoryId: { $in: repoIds } } : {}),
       },
     },
     {
