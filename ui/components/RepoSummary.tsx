@@ -133,7 +133,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
-  console.log('Stats', stats);
+
   const summaries = trpc.repos.getSummaries.useQuery({
     collectionName,
     project,
@@ -141,7 +141,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
     ...dateRange,
   });
-  console.log('Summaries', summaries.data);
+
   return (
     <ProjectStats
       note={

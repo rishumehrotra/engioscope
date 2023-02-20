@@ -181,8 +181,6 @@ export const getSummary = async ({
     return (week.totalSuccessfulBuilds / week.totalBuilds) * 100;
   });
 
-  console.log(weeklySuccess);
-
   return {
     buildsCountByWeek,
     totalCentralTemplate,
