@@ -10,7 +10,7 @@ type UsageByEnvProps = {
       total: number;
     }
   >;
-  pipelineCount: number;
+  pipelineCount?: number;
   queryPeriodDays: number;
 };
 

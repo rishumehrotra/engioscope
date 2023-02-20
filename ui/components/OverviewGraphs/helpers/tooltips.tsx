@@ -15,12 +15,12 @@ export const envRowTooltip = (
   env: string,
   successful: number,
   total: number,
-  pipelineCount: number
+  pipelineCount?: number
 ) => `
   <b>${env}</b><br />
   Successful deployments: <b>${num(successful)}</b><br />
   Total deployments: <b>${num(total)}</b><br />
-  Total pipelines: <b>${num(pipelineCount)}</b>
+  ${pipelineCount === undefined ? '' : `Total pipelines: <b>${num(pipelineCount)}</b>`}
 `;
 
 export type TooltipSection = {

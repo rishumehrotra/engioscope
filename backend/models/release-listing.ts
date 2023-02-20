@@ -32,6 +32,7 @@ const filterNotStartingWithBuildArtifact = (notStartingWithBuildArtifact?: boole
   }
   return { 'artifacts.0': { $exists: false } };
 };
+
 const filterRepos = (
   collectionName: string,
   project: string,
@@ -52,6 +53,7 @@ const filterRepos = (
 
   return { 'artifacts.definition.repositoryName': { $in: repos } };
 };
+
 const addFilteredEnvsField = (ignoreStagesBefore: string | undefined): PipelineStage[] =>
   ignoreStagesBefore
     ? [
@@ -101,6 +103,7 @@ const addFilteredEnvsField = (ignoreStagesBefore: string | undefined): PipelineS
         },
       ]
     : [{ $addFields: { filteredEnvs: '$environments' } }];
+
 const filterNonMasterReleases = (
   nonMasterReleases: boolean | undefined
 ): PipelineStage[] => {
@@ -117,6 +120,7 @@ const filterNonMasterReleases = (
     { $match: { filteredEnvs: { $elemMatch: { status: { $ne: 'notStarted' } } } } },
   ];
 };
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const filterByNotConfirmingToBranchPolicy = (
   notConfirmingToBranchPolicies: boolean | undefined,
@@ -198,6 +202,7 @@ const filterByNotConfirmingToBranchPolicy = (
     },
   ];
 };
+
 const doesStageExist = (stage: string) => ({
   $anyElementTrue: {
     $map: {
@@ -212,6 +217,7 @@ const doesStageExist = (stage: string) => ({
     },
   },
 });
+
 const isStageUsed = (stage: string) => ({
   $anyElementTrue: {
     $map: {
@@ -231,6 +237,7 @@ const isStageUsed = (stage: string) => ({
     },
   },
 });
+
 const isStageSuccessful = (stage: string) => ({
   $anyElementTrue: {
     $map: {
@@ -250,6 +257,7 @@ const isStageSuccessful = (stage: string) => ({
     },
   },
 });
+
 const filterStageNameUsed = (stageNameUsed: string | undefined): PipelineStage[] =>
   stageNameUsed
     ? [
@@ -304,6 +312,7 @@ const createFilter = async (
     ...filterStageNameUsed(stageNameUsed),
   ];
 };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const forAllArtifacts = (inClause: any) => ({
   $and: [
@@ -319,6 +328,7 @@ const forAllArtifacts = (inClause: any) => ({
     },
   ],
 });
+
 const addStagesToHighlight = (collectionName: string, project: string) => {
   const stagesToHighlight = configForProject(collectionName, project)?.releasePipelines
     .stagesToHighlight;
@@ -334,10 +344,12 @@ const addStagesToHighlight = (collectionName: string, project: string) => {
     {}
   );
 };
+
 const incIfTrue = (condition: unknown) => ({ $sum: { $cond: [condition, 1, 0] } });
 const incIfNonZero = (field: string) => ({
   $sum: { $cond: [{ $gt: [field, 0] }, 1, 0] },
 });
+
 const createSummary = (collectionName: string, project: string): PipelineStage[] => {
   const projectConfig = configForProject(collectionName, project);
 
@@ -883,4 +895,45 @@ export const releaseBranchesForRepo = async (
   ]);
 
   return results.map(r => r._id);
+};
+
+export const usageByEnvironment = async (
+  options: z.infer<typeof pipelineFiltersInputParser>
+) => {
+  const filter = await createFilter(options);
+  const projectConfig = configForProject(options.collectionName, options.project);
+
+  const result = await ReleaseModel.aggregate<Record<string, number>>([
+    ...filter,
+    {
+      $addFields:
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projectConfig?.environments?.reduce<any>((acc, env) => {
+          acc[`${env}:used`] = isStageUsed(env);
+          acc[`${env}:successful`] = isStageSuccessful(env);
+          return acc;
+        }, {}) || {},
+    },
+    {
+      $group: {
+        _id: null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...projectConfig?.environments?.reduce<any>((acc, env) => {
+          acc[`${env}:used`] = incIfTrue(`$${env}:used`);
+          acc[`${env}:successful`] = incIfTrue(`$${env}:successful`);
+          return acc;
+        }, {}),
+      },
+    },
+  ]);
+
+  return projectConfig?.environments?.reduce<
+    Record<string, { total: number; successful: number }>
+  >((acc, env) => {
+    acc[env] = {
+      successful: result[0][`${env}:successful`],
+      total: result[0][`${env}:used`],
+    };
+    return acc;
+  }, {});
 };

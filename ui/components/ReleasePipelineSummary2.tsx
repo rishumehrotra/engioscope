@@ -6,25 +6,31 @@ import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { trpc } from '../helpers/trpc.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
+import UsageByEnv from './UsageByEnv.jsx';
+import Loading from './Loading.jsx';
+
+const UsageByEnvWrapper = () => {
+  const filters = useReleaseFilters();
+  const [queryPeriodDays] = useQueryPeriodDays();
+  const { data: usageByEnv } = trpc.releases.usageByEnvironment.useQuery(filters);
+
+  return (
+    <div className="w-96">
+      {usageByEnv ? (
+        <UsageByEnv perEnvUsage={usageByEnv} queryPeriodDays={queryPeriodDays} />
+      ) : (
+        <Loading />
+      )}
+    </div>
+  );
+};
 
 const ReleasePipelineSummary2: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const filters = useReleaseFilters();
   const { data: summary } = trpc.releases.summary.useQuery(filters);
 
-  const showReleasePipelineUsage = useCallback(
-    () => (
-      <div className="w-96">
-        {/* <UsageByEnv
-        perEnvUsage={perEnvUsage}
-        pipelineCount={pipelines.length}
-        queryPeriodDays={queryPeriodDays}
-      /> */}
-        Coming soon
-      </div>
-    ),
-    []
-  );
+  const showReleasePipelineUsage = useCallback(() => <UsageByEnvWrapper />, []);
 
   if (!summary) {
     return (

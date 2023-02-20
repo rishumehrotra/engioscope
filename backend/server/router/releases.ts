@@ -6,6 +6,7 @@ import {
   releasePipelineStages,
   releasePipelineDetailsInputParser,
   summary,
+  usageByEnvironment,
 } from '../../models/release-listing.js';
 import { memoizeForUI, passInputTo, t } from './trpc.js';
 
@@ -13,6 +14,10 @@ export default t.router({
   summary: t.procedure
     .input(pipelineFiltersInputParser)
     .query(passInputTo(memoizeForUI(summary))),
+
+  usageByEnvironment: t.procedure
+    .input(pipelineFiltersInputParser)
+    .query(passInputTo(usageByEnvironment)),
 
   paginatedReleases: t.procedure
     .input(paginatedReleaseIdsInputParser)
