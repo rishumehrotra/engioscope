@@ -133,7 +133,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
-
+  console.log('Stats', stats);
   const summaries = trpc.repos.getSummaries.useQuery({
     collectionName,
     project,
@@ -141,7 +141,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
     ...dateRange,
   });
-
+  console.log('Summaries', summaries.data);
   return (
     <ProjectStats
       note={
@@ -439,20 +439,30 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             topStats={[
               {
                 title: 'Builds',
-                value: summaries.data.buildsSummary.totalBuilds,
-                tooltip: 'Total Builds Count',
+                value: (
+                  <LabelWithSparkline
+                    label={num(summaries.data.totalBuilds)}
+                    data={summaries.data.buildsCountByWeek.map(week => week.totalBuilds)}
+                    lineColor={increaseIsBetter(
+                      summaries.data.buildsCountByWeek.map(week => week.totalBuilds)
+                    )}
+                  />
+                ),
+                tooltip: 'Total number of builds across all matching repos',
               },
             ]}
             childStats={[
               {
                 title: 'Success',
-                value: divide(
-                  summaries.data.buildsSummary.totalSuccesses,
-                  summaries.data.buildsSummary.totalBuilds
-                )
-                  .map(toPercentage)
-                  .getOr('-'),
-                tooltip: 'Total Builds Count',
+                value: (
+                  <LabelWithSparkline
+                    label={summaries.data.successRate}
+                    data={summaries.data.weeklySuccess}
+                    lineColor={increaseIsBetter(summaries.data.weeklySuccess)}
+                    yAxisLabel={x => `${x}%`}
+                  />
+                ),
+                tooltip: 'Success rate across all matching repos',
               },
             ]}
           />
@@ -478,14 +488,14 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Using central template',
                 value: `${divide(
                   summaries.data.totalCentralTemplate.templateUsers,
-                  summaries.data.totalCentralTemplate.totalAzureBuilds
+                  summaries.data.totalBuilds
                 )
                   .map(toPercentage)
                   .getOr('-')}`,
                 tooltip: `${num(
                   summaries.data.totalCentralTemplate.templateUsers
                 )} out of ${num(
-                  summaries.data.totalCentralTemplate.totalAzureBuilds
+                  summaries.data.totalBuilds
                 )} build runs used the central template`,
               },
             ]}
@@ -500,53 +510,6 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 )
                   .map(toPercentage)
                   .getOr('-'),
-              },
-            ]}
-          />
-          <ProjectStat
-            topStats={[
-              {
-                title: 'Builds',
-                value: (
-                  <LabelWithSparkline
-                    label={num(
-                      summaries.data.buildsCountByWeek.reduce(
-                        (acc, week) => acc + week.totalBuilds,
-                        0
-                      )
-                    )}
-                    data={summaries.data.buildsCountByWeek.map(week => week.totalBuilds)}
-                    lineColor={increaseIsBetter(
-                      summaries.data.buildsCountByWeek.map(week => week.totalBuilds)
-                    )}
-                  />
-                ),
-                tooltip: 'Total number of builds across all matching repos',
-              },
-            ]}
-            childStats={[
-              {
-                title: 'Success',
-                value: (
-                  <LabelWithSparkline
-                    label={num(
-                      summaries.data.buildsCountByWeek.reduce(
-                        (acc, week) => acc + week.totalSuccessfulBuilds,
-                        0
-                      )
-                    )}
-                    data={summaries.data.buildsCountByWeek.map(
-                      week => week.totalSuccessfulBuilds
-                    )}
-                    lineColor={increaseIsBetter(
-                      summaries.data.buildsCountByWeek.map(
-                        week => week.totalSuccessfulBuilds
-                      )
-                    )}
-                    yAxisLabel={x => `${x}%`}
-                  />
-                ),
-                tooltip: 'Success rate across all matching repos',
               },
             ]}
           />

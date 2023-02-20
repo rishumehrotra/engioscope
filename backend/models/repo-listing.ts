@@ -5,9 +5,10 @@ import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './help
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getHealthyBranchesSummary } from './branches.js';
 import { getYamlPipelinesCountSummary } from './build-definitions.js';
-import { getBuildSummary, getBuildsCountByWeek } from './build-listing.js';
+import { getBuildsCountByWeek } from './build-listing.js';
 import { getTotalCentralTemplateUsage } from './build-reports.js';
-import { getAllRepoDefaultBranches } from './repos.js';
+import { getAllRepoDefaultBranchIDs } from './repos.js';
+import { divide, toPercentage } from '../../shared/utils.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -123,21 +124,18 @@ export const getSummary = async ({
 
   const repoNames = activeRepos.map(repo => repo.name);
 
-  const defaultBranchNames = await getAllRepoDefaultBranches(
+  const defaultBranchIDs = await getAllRepoDefaultBranchIDs(
     collectionName,
     project,
     repoIds
   );
 
   const [
-    buildsSummary,
     buildsCountByWeek,
     totalCentralTemplate,
     yamlPipelinesCount,
     totalHealthyBranches,
   ] = await Promise.all([
-    getBuildSummary(collectionName, project, startDate, endDate, repoIds),
-
     getBuildsCountByWeek(
       collectionName,
       project,
@@ -162,15 +160,37 @@ export const getSummary = async ({
       collectionName,
       project,
       repoIds,
-      defaultBranchNames,
+      defaultBranchIDs,
     }),
   ]);
 
+  const totalBuilds = buildsCountByWeek.reduce((acc, week) => acc + week.totalBuilds, 0);
+  const totalSuccessfulBuilds = buildsCountByWeek.reduce(
+    (acc, week) => acc + week.totalSuccessfulBuilds,
+    0
+  );
+
+  const successRate = `${divide(totalSuccessfulBuilds, totalBuilds)
+    .map(toPercentage)
+    .getOr('-')}`;
+
+  const weeklySuccess = buildsCountByWeek.map(week => {
+    if (week.totalSuccessfulBuilds === 0 || week.totalBuilds === 0) {
+      return 0;
+    }
+    return (week.totalSuccessfulBuilds / week.totalBuilds) * 100;
+  });
+
+  console.log(weeklySuccess);
+
   return {
-    buildsSummary,
     buildsCountByWeek,
     totalCentralTemplate,
     yamlPipelinesCount,
     totalHealthyBranches,
+    weeklySuccess,
+    successRate,
+    totalBuilds,
+    totalSuccessfulBuilds,
   };
 };

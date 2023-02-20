@@ -94,7 +94,7 @@ export const getBuildsCountByConditions =
           _id: groupField,
           totalBuilds: { $sum: 1 },
           totalSuccessfulBuilds: {
-            $sum: { $cond: [{ $eq: ['$result', 'success'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result', 'succeeded'] }, 1, 0] },
           },
         },
       },
@@ -143,51 +143,5 @@ export const getBuildsCountByConditions =
 
 export const getBuildsCountByWeek = getBuildsCountByConditions('week');
 export const getBuildsCountByMonth = getBuildsCountByConditions('month');
-
-export const getBuildSummary = async (
-  collectionName: string,
-  project: string,
-  startDate: Date,
-  endDate: Date,
-  repoIds?: string[]
-) => {
-  const totals = await BuildModel.aggregate<{
-    totalBuilds: number;
-    totalSuccesses: number;
-  }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'startTime': inDateRange(startDate, endDate),
-        'repository.id': { $in: repoIds },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalBuilds: { $sum: 1 },
-        totalSuccesses: {
-          $sum: {
-            $cond: {
-              if: { $eq: ['$result', 'succeeded'] },
-              then: 1,
-              else: 0,
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        totalBuilds: 1,
-        totalSuccesses: 1,
-      },
-    },
-  ]);
-
-  return totals[0] || { totalBuilds: 0, totalSuccesses: 0 };
-};
 
 export const buildPipelineFilterInputParser = z.object(buildPipelineFilterInput);

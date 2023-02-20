@@ -4,7 +4,9 @@ import { map } from 'rambda';
 import yaml from 'yaml';
 import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
+
 import { collectionAndProjectInputs } from './helpers.js';
+import { BuildModel } from './mongoose-models/BuildModel.js';
 
 const { Schema, model } = mongoose;
 
@@ -284,9 +286,8 @@ export const getTotalCentralTemplateUsage = async (
   project: string,
   repoNames?: string[]
 ) => {
-  const result = await AzureBuildReportModel.aggregate<{
-    templateUsers: number;
-    totalAzureBuilds: number;
+  const centralTempBuildDefIDs = await AzureBuildReportModel.aggregate<{
+    buildId: string;
   }>([
     {
       $match: {
@@ -306,33 +307,22 @@ export const getTotalCentralTemplateUsage = async (
         },
       },
     },
-    {
-      $group: {
-        _id: {
-          collectionName: '$collectionName',
-          project: '$project',
-        },
-        templateUsers: {
-          $sum: {
-            $cond: {
-              if: { $eq: ['$usesCentralTemplate', true] },
-              then: 1,
-              else: 0,
-            },
-          },
-        },
-        totalAzureBuilds: { $sum: 1 },
-      },
-    },
+    { $match: { usesCentralTemplate: true } },
     {
       $project: {
         _id: 0,
-        templateUsers: '$templateUsers',
-        totalAzureBuilds: '$totalAzureBuilds',
+        buildId: 1,
       },
     },
   ]);
-  return result[0] || { templateUsers: 0, totalAzureBuilds: 0 };
+
+  if (centralTempBuildDefIDs?.length === 0) return { templateUsers: 0 };
+
+  const count = await BuildModel.find({
+    id: { $in: centralTempBuildDefIDs.map(r => r.buildId) },
+  }).count();
+
+  return { templateUsers: count };
 };
 
 // eslint-disable-next-line no-underscore-dangle

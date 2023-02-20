@@ -1,3 +1,4 @@
+import type { ObjectId } from 'mongoose';
 import { z } from 'zod';
 import { collectionAndProjectInputs } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -55,17 +56,81 @@ export const repoDefaultBranch = async (
   return repoBranch?.defaultBranch?.replace('refs/heads/', '');
 };
 
-export const getAllRepoDefaultBranches = async (
+export const getAllRepoDefaultBranchIDs = async (
   collectionName: string,
   project: string,
   repoIds: string[] | undefined
 ) => {
-  const repoBranches: string[] = await RepositoryModel.distinct('defaultBranch', {
-    collectionName,
-    'project.name': project,
-    ...(repoIds ? { id: { $in: repoIds } } : {}),
-  });
-  // if (repoBranches.length === 0) return [];
+  const repoDefaultBranches = await RepositoryModel.aggregate<{
+    repositoryId: string;
+    defaultBranchName: string;
+    defaultBranchId: ObjectId;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'defaultBranch': { $exists: true },
+        ...(repoIds ? { id: { $in: repoIds } } : {}),
+      },
+    },
+    {
+      $addFields: {
+        defaultBranch: {
+          $replaceAll: {
+            input: '$defaultBranch',
+            find: 'refs/heads/',
+            replacement: '',
+          },
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: 'branches',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project.name',
+          id: '$id',
+          defaultBranch: '$defaultBranch',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $eq: ['$repositoryId', '$$id'] },
+                  { $eq: ['$name', '$$defaultBranch'] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'result',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        defaultBranchName: {
+          $arrayElemAt: ['$result.name', 0],
+        },
+        defaultBranchId: {
+          $arrayElemAt: ['$result._id', 0],
+        },
+      },
+    },
+    {
+      $match: {
+        defaultBranchId: {
+          $exists: true,
+        },
+      },
+    },
+  ]);
 
-  return repoBranches.map(branch => branch.replace('refs/heads/', ''));
+  return repoDefaultBranches.map(repo => repo.defaultBranchId);
 };

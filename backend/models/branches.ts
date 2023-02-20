@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ObjectId } from 'mongoose';
 import { collectionAndProjectInputs } from './helpers.js';
 import { oneFortnightInMs } from '../../shared/utils.js';
 import { repoDefaultBranch } from './repos.js';
@@ -18,12 +19,12 @@ export const getHealthyBranchesSummary = async ({
   collectionName,
   project,
   repoIds,
-  defaultBranchNames,
+  defaultBranchIDs,
 }: {
   collectionName: string;
   project: string;
   repoIds: string[];
-  defaultBranchNames: string[];
+  defaultBranchIDs: ObjectId[];
 }) => {
   const today = new Date();
   const fifteenDaysBack = today.setDate(today.getDate() - 15);
@@ -55,7 +56,7 @@ export const getHealthyBranchesSummary = async ({
                       { $gte: ['$date', fifteenDaysBack] },
                     ],
                   },
-                  { $in: ['$name', defaultBranchNames] },
+                  { $in: ['$_id', defaultBranchIDs] },
                 ],
               },
               1,
