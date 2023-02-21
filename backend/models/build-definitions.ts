@@ -1,4 +1,5 @@
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const getBuildDefinitionsForProject = (collectionName: string, project: string) =>
   BuildDefinitionModel.find({ collectionName, project }).lean();
@@ -65,89 +66,75 @@ export const getNonYamlPipelines = async (
   project: string,
   repoIds: string[]
 ) => {
-  // const result = await RepositoryModel.aggregate([
-  //   {
-  //     $match: {
-  //       collectionName,
-  //       'project.name': project,
-  //       'id': { $in: repoIds },
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: 'builddefinitions',
-  //       let: {
-  //         collectionName: '$collectionName',
-  //         project: '$project.name',
-  //         repositoryId: '$id',
-  //       },
-  //       pipeline: [
-  //         {
-  //           $match: {
-  //             $expr: {
-  //               $and: [
-  //                 {
-  //                   $eq: ['$collectionName', '$$collectionName'],
-  //                 },
-  //                 {
-  //                   $eq: ['$project', '$$project'],
-  //                 },
-  //                 {
-  //                   $eq: ['$repositoryId', '$$repositoryId'],
-  //                 },
-  //                 {
-  //                   $eq: ['$process.processType', 1],
-  //                 },
-  //               ],
-  //             },
-  //           },
-  //         },
-  //       ],
-  //       as: 'buildsDefinitions',
-  //     },
-  //   },
-  //   {
-  //     $match: {
-  //       $expr: {
-  //         $gt: [
-  //           {
-  //             $size: '$buildsDefinitions',
-  //           },
-  //           0,
-  //         ],
-  //       },
-  //     },
-  //   },
-  //   {
-  //     $project: {
-  //       '_id': 0,
-  //       'repositoryId': '$id',
-  //       'name': 1,
-  //       'total': {
-  //         $size: '$buildsDefinitions',
-  //       },
-  //       'buildsDefinitions.id': 1,
-  //       'buildsDefinitions.latestBuild': 1,
-  //       'buildsDefinitions.name': 1,
-  //       'buildsDefinitions.revision': 1,
-  //       'buildsDefinitions.type': 1,
-  //     },
-  //   },
-  // ]);
-
-  const nonYamlDefinitions = await BuildDefinitionModel.find(
+  const result = await RepositoryModel.aggregate([
     {
-      collectionName,
-      project,
-      'repositoryId': { $in: repoIds },
-      'process.processType': 1,
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: repoIds },
+      },
     },
     {
-      _id: 0,
-      id: 1,
-      name: 1,
-    }
-  );
+      $lookup: {
+        from: 'builddefinitions',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project.name',
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ['$collectionName', '$$collectionName'],
+                  },
+                  {
+                    $eq: ['$project', '$$project'],
+                  },
+                  {
+                    $eq: ['$repositoryId', '$$repositoryId'],
+                  },
+                  {
+                    $eq: ['$process.processType', 1],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'buildsDefinitions',
+      },
+    },
+    {
+      $match: {
+        $expr: {
+          $gt: [
+            {
+              $size: '$buildsDefinitions',
+            },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        '_id': 0,
+        'repositoryId': '$id',
+        'name': 1,
+        'total': {
+          $size: '$buildsDefinitions',
+        },
+        'buildsDefinitions.id': 1,
+        'buildsDefinitions.latestBuild': 1,
+        'buildsDefinitions.name': 1,
+        'buildsDefinitions.revision': 1,
+        'buildsDefinitions.type': 1,
+      },
+    },
+  ]);
 
-  return nonYamlDefinitions.map(b => b.id);
+  return result;
 };

@@ -256,13 +256,10 @@ export type BuildOverviewStats = {
   lastBuildStatus: string;
   lastBuildTimestamp: Date;
   definitionName: string;
-  failingSince:
-    | null
-    | undefined
-    | {
-        result: string;
-        timestamp: Date;
-      };
+  failingSince: {
+    result: string;
+    timestamp: Date;
+  };
   prCount: number;
 };
 
