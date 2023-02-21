@@ -61,6 +61,84 @@ type BuildsResponse =
       totalBuilds: number;
     };
 
+export const getBuildFailingSince = async (
+  collectionName: string,
+  project: string,
+  definitionId: number
+) => {
+  const result = await BuildModel.aggregate<{
+    failingSince: {
+      result: string;
+      timestamp: Date;
+    };
+  }>([
+    {
+      $match: {
+        project,
+        collectionName,
+        'definition.id': definitionId,
+      },
+    },
+    { $sort: { finishTime: -1 } },
+    {
+      $group: {
+        _id: {
+          definitionId: '$definition.id',
+        },
+        buildDefinitionId: { $first: '$definition.id' },
+        lastBuildStatus: { $first: '$result' },
+        lastBuildTimestamp: { $first: '$startTime' },
+        builds: {
+          $push: {
+            result: '$result',
+            timestamp: '$startTime',
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        lastBuildStatus: 1,
+        lastBuildTimestamp: 1,
+        _id: 0,
+        buildDefinitionId: 1,
+        builds: 1,
+        latestBuildResult: { $arrayElemAt: ['$builds', 0] },
+        latestSuccessfulIndex: {
+          $indexOfArray: ['$builds.result', 'succeeded', 0],
+        },
+      },
+    },
+    {
+      $addFields: {
+        failingSince: {
+          $cond: {
+            if: {
+              $and: [
+                { $ne: ['$lastBuildStatus', 'succeeded'] },
+                { $gt: ['$latestSuccessfulIndex', 0] },
+              ],
+            },
+            then: {
+              $arrayElemAt: ['$builds', { $subtract: ['$latestSuccessfulIndex', 1] }],
+            },
+            else: {
+              result: '$lastBuildStatus',
+              timestamp: '$lastBuildTimestamp',
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        failingSince: 1,
+      },
+    },
+  ]);
+  return result[0].failingSince;
+};
+
 // Get Overview Stats for a specific repository
 export const getBuildsOverviewForRepository = async ({
   collectionName,
@@ -72,146 +150,163 @@ export const getBuildsOverviewForRepository = async ({
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
   // Make sure to send default start and end date values
   const [result, buildTemplateCounts, buildDefinitions] = await Promise.all([
-    BuildModel.aggregate<BuildOverviewStats>([
-      {
-        $match: {
-          project,
-          collectionName,
-          'repository.id': repositoryId,
-          'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) },
+    Promise.all(
+      await BuildModel.aggregate<BuildOverviewStats>([
+        {
+          $match: {
+            project,
+            collectionName,
+            'repository.id': repositoryId,
+            'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) },
+          },
         },
-      },
-      { $sort: { startTime: -1 } },
-      {
-        $group: {
-          _id: {
-            project: '$project',
-            collectionName: '$collectionName',
-            repositoryId: '$repository.id',
-            definitionId: '$definition.id',
-          },
-          totalBuilds: { $sum: 1 },
-          totalSuccessfulBuilds: {
-            $sum: {
-              $cond: {
-                if: { $eq: ['$result', 'succeeded'] },
-                then: 1,
-                else: 0,
+        { $sort: { startTime: -1 } },
+        {
+          $group: {
+            _id: {
+              project: '$project',
+              collectionName: '$collectionName',
+              repositoryId: '$repository.id',
+              definitionId: '$definition.id',
+            },
+            totalBuilds: { $sum: 1 },
+            totalSuccessfulBuilds: {
+              $sum: {
+                $cond: {
+                  if: { $eq: ['$result', 'succeeded'] },
+                  then: 1,
+                  else: 0,
+                },
               },
             },
-          },
-          averageDuration: {
-            $avg: {
-              $dateDiff: {
-                startDate: '$startTime',
-                endDate: '$finishTime',
-                unit: 'millisecond',
+            averageDuration: {
+              $avg: {
+                $dateDiff: {
+                  startDate: '$startTime',
+                  endDate: '$finishTime',
+                  unit: 'millisecond',
+                },
               },
             },
-          },
-          minDuration: {
-            $min: {
-              $cond: [
-                {
-                  $gt: [
-                    {
-                      $dateDiff: {
-                        startDate: '$startTime',
-                        endDate: '$finishTime',
-                        unit: 'millisecond',
+            minDuration: {
+              $min: {
+                $cond: [
+                  {
+                    $gt: [
+                      {
+                        $dateDiff: {
+                          startDate: '$startTime',
+                          endDate: '$finishTime',
+                          unit: 'millisecond',
+                        },
                       },
-                    },
-                    0,
-                  ],
-                },
-                {
-                  $dateDiff: {
-                    startDate: '$startTime',
-                    endDate: '$finishTime',
-                    unit: 'millisecond',
+                      0,
+                    ],
                   },
-                },
-                0,
-              ],
-            },
-          },
-          maxDuration: {
-            $max: {
-              $dateDiff: {
-                startDate: '$startTime',
-                endDate: '$finishTime',
-                unit: 'millisecond',
-              },
-            },
-          },
-          buildDefinitionId: { $first: '$definition.id' },
-          definitionName: { $first: '$definition.name' },
-          url: { $first: '$definition.url' },
-          lastBuildStatus: { $first: '$result' },
-          lastBuildTimestamp: { $first: '$startTime' },
-          builds: {
-            $push: {
-              result: '$result',
-              timestamp: '$startTime',
-            },
-          },
-          prCount: {
-            $sum: {
-              $cond: {
-                if: { $eq: ['$reason', 'pullRequest'] },
-                then: 0,
-                else: 1,
-              },
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          totalBuilds: 1,
-          totalSuccessfulBuilds: 1,
-          averageDuration: 1,
-          minDuration: 1,
-          maxDuration: 1,
-          lastBuildStatus: 1,
-          lastBuildTimestamp: 1,
-          _id: 0,
-          url: 1,
-          buildDefinitionId: 1,
-          definitionName: 1,
-          project: '$_id.project',
-          collectionName: '$_id.collectionName',
-          repositoryID: '$_id.repositoryID',
-          builds: 1,
-          latestBuildResult: { $arrayElemAt: ['$builds', 0] },
-          latestSuccessfulIndex: {
-            $indexOfArray: ['$builds.result', 'succeeded', 0],
-          },
-          prCount: 1,
-        },
-      },
-      {
-        $addFields: {
-          failingSince: {
-            $cond: {
-              if: {
-                $and: [
-                  { $ne: ['$lastBuildStatus', 'succeeded'] },
-                  { $gt: ['$latestSuccessfulIndex', 0] },
+                  {
+                    $dateDiff: {
+                      startDate: '$startTime',
+                      endDate: '$finishTime',
+                      unit: 'millisecond',
+                    },
+                  },
+                  0,
                 ],
               },
-              then: {
-                $arrayElemAt: ['$builds', { $subtract: ['$latestSuccessfulIndex', 1] }],
+            },
+            maxDuration: {
+              $max: {
+                $dateDiff: {
+                  startDate: '$startTime',
+                  endDate: '$finishTime',
+                  unit: 'millisecond',
+                },
               },
-              else: {
-                result: '$lastBuildStatus',
-                timestamp: '$lastBuildTimestamp',
+            },
+            buildDefinitionId: { $first: '$definition.id' },
+            definitionName: { $first: '$definition.name' },
+            url: { $first: '$definition.url' },
+            lastBuildStatus: { $first: '$result' },
+            lastBuildTimestamp: { $first: '$startTime' },
+            builds: {
+              $push: {
+                result: '$result',
+                timestamp: '$startTime',
+              },
+            },
+            prCount: {
+              $sum: {
+                $cond: {
+                  if: { $eq: ['$reason', 'pullRequest'] },
+                  then: 0,
+                  else: 1,
+                },
               },
             },
           },
         },
-      },
-    ]),
+        {
+          $project: {
+            totalBuilds: 1,
+            totalSuccessfulBuilds: 1,
+            averageDuration: 1,
+            minDuration: 1,
+            maxDuration: 1,
+            lastBuildStatus: 1,
+            lastBuildTimestamp: 1,
+            _id: 0,
+            url: 1,
+            buildDefinitionId: 1,
+            definitionName: 1,
+            project: '$_id.project',
+            collectionName: '$_id.collectionName',
+            repositoryID: '$_id.repositoryID',
+            builds: 1,
+            latestBuildResult: { $arrayElemAt: ['$builds', 0] },
+            latestSuccessfulIndex: {
+              $indexOfArray: ['$builds.result', 'succeeded', 0],
+            },
+            prCount: 1,
+          },
+        },
+        {
+          $addFields: {
+            failingSince: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $ne: ['$lastBuildStatus', 'succeeded'] },
+                    { $gt: ['$latestSuccessfulIndex', 0] },
+                  ],
+                },
+                then: {
+                  $arrayElemAt: ['$builds', { $subtract: ['$latestSuccessfulIndex', 1] }],
+                },
+                else: {
+                  result: '$lastBuildStatus',
+                  timestamp: '$lastBuildTimestamp',
+                },
+              },
+            },
+          },
+        },
+      ]).then(result =>
+        result.map(async build => {
+          if (build.latestSuccessfulIndex === -1) {
+            const failing = await getBuildFailingSince(
+              collectionName,
+              project,
+              build.buildDefinitionId
+            );
+            return {
+              ...build,
+              failingSince: failing,
+            };
+          }
+          return build;
+        })
+      )
+    ),
     buildsCentralTemplateStats(
       collectionName,
       project,

@@ -261,6 +261,7 @@ export type BuildOverviewStats = {
     timestamp: Date;
   };
   prCount: number;
+  latestSuccessfulIndex: number;
 };
 
 export type DeploymentAttempt = {
