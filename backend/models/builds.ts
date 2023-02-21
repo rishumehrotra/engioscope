@@ -82,10 +82,7 @@ export const getBuildFailingSince = async (
     { $sort: { finishTime: -1 } },
     {
       $group: {
-        _id: {
-          definitionId: '$definition.id',
-        },
-        buildDefinitionId: { $first: '$definition.id' },
+        _id: null,
         lastBuildStatus: { $first: '$result' },
         lastBuildTimestamp: { $first: '$startTime' },
         builds: {
@@ -101,7 +98,6 @@ export const getBuildFailingSince = async (
         lastBuildStatus: 1,
         lastBuildTimestamp: 1,
         _id: 0,
-        buildDefinitionId: 1,
         builds: 1,
         latestBuildResult: { $arrayElemAt: ['$builds', 0] },
         latestSuccessfulIndex: {
