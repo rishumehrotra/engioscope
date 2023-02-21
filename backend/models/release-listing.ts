@@ -937,3 +937,22 @@ export const usageByEnvironment = async (
     return acc;
   }, {});
 };
+
+export const getHasReleasesSummary = async (
+  collectionName: string,
+  project: string,
+  startDate: Date,
+  endDate: Date,
+  repoIds: string[]
+) => {
+  const result = await ReleaseModel.distinct('artifacts.definition.repositoryId', {
+    collectionName,
+    project,
+    'modifiedOn': { $gte: new Date(startDate), $lt: new Date(endDate) },
+    'artifacts.type': 'Build',
+  });
+
+  const hasReleasesRepos = repoIds.filter(repoId => result.includes(repoId));
+
+  return hasReleasesRepos.length;
+};

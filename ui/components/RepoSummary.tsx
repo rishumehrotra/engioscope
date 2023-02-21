@@ -128,7 +128,6 @@ type RepoSummaryProps = {
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
   const [showNewBuild] = useQueryParam('build-v2', asBoolean);
-
   const { collectionName, project } = useCollectionAndProject();
   const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
@@ -512,6 +511,104 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                   .getOr('-'),
               },
             ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Has releases',
+                tooltip: `${num(summaries.data.hasReleasesReposCount)} out of ${num(
+                  summaries.data.totalActiveRepos
+                )} repos have made releases in the last ${queryPeriodDays} days`,
+                value: divide(
+                  summaries.data.hasReleasesReposCount,
+                  summaries.data.totalActiveRepos
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+              },
+            ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'YAML pipelines',
+                value: divide(stats.ymlPipelines.length, stats.buildPipelines.length)
+                  .map(toPercentage)
+                  .getOr('-'),
+                tooltip: `${num(stats.ymlPipelines.length)} of ${num(
+                  stats.buildPipelines.length
+                )} pipelines use a YAML-based configuration`,
+              },
+            ]}
+            onClick={
+              stats.ymlPipelines.length === stats.buildPipelines.length
+                ? undefined
+                : {
+                    open: 'modal',
+                    heading: 'Pipelines not using YAML-based configuration',
+                    subheading: `(${
+                      stats.buildPipelines.length - stats.ymlPipelines.length
+                    })`,
+                    body: (
+                      <>
+                        <h1>Hello</h1>
+                        {stats.reposWithNonYmlPipelines.map((repo, index) => {
+                          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                          const pipelines = repo.builds!.pipelines.filter(notYmlPipeline);
+
+                          return (
+                            <details key={repo.id} className="mb-3" open={index === 0}>
+                              <summary className="font-semibold text-lg cursor-pointer">
+                                {`${repo.name} (${pipelines.length})`}
+                              </summary>
+
+                              <div className="bg-gray-100 pt-2 pb-4 px-4 rounded-lg mt-4">
+                                <table className="table-auto text-center divide-y divide-gray-200 w-full">
+                                  <thead>
+                                    <tr>
+                                      {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+                                      <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider" />
+                                      <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                                        {`Runs in the last ${queryPeriodDays} days`}
+                                      </th>
+                                      <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                                        Last used
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
+                                    {pipelines.map(pipeline => (
+                                      <tr key={pipeline.name}>
+                                        <td className="pl-6 py-4 whitespace-nowrap text-left">
+                                          <a
+                                            href={pipeline.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="link-text"
+                                          >
+                                            {pipeline.name}
+                                          </a>
+                                        </td>
+                                        <td>
+                                          {pipeline.status.type === 'unused'
+                                            ? '-'
+                                            : num(pipeline.count)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                          {pipelineLastUsed(pipeline)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </details>
+                          );
+                        })}
+                      </>
+                    ),
+                  }
+            }
           />
         </>
       ) : null}

@@ -194,19 +194,21 @@ export const getBuildsOverviewForRepository = async ({
         $addFields: {
           failingSince: {
             $cond: {
-              if: { $ne: ['$lastBuildStatus', 'succeeded'] },
+              if: {
+                $and: [
+                  { $ne: ['$lastBuildStatus', 'succeeded'] },
+                  { $gt: ['$latestSuccessfulIndex', 0] },
+                ],
+              },
               then: {
                 $arrayElemAt: ['$builds', { $subtract: ['$latestSuccessfulIndex', 1] }],
               },
-              else: null,
+              else: {
+                result: '$lastBuildStatus',
+                timestamp: '$lastBuildTimestamp',
+              },
             },
           },
-        },
-      },
-      {
-        $project: {
-          builds: 0,
-          latestSuccessfulIndex: 0,
         },
       },
     ]),
@@ -335,3 +337,24 @@ export const getOneBuildBeforeQueryPeriod =
 
     return [...foundBuilds, ...refetchedAdditionalBuilds];
   };
+
+export const nonPipeLineBuildStats = async (
+  collectionName: string,
+  project: string,
+  startDate: Date,
+  endDate: Date,
+  repoIds: string[],
+  buildDefIds: string[]
+) => {
+  const result = await BuildModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repository.id': { $in: repoIds },
+        'definition.id': { $in: buildDefIds },
+      },
+    },
+  ]);
+  return result;
+};

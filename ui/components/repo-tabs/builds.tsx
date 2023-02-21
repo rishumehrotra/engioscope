@@ -282,11 +282,14 @@ const Builds: React.FC<{
                               {' '}
                             </span>
                             <span>
-                              {pipeline.failingSince === null
-                                ? null
-                                : `Failing since ${shortDate(
-                                    new Date(pipeline.failingSince.timestamp)
-                                  )}`}
+                              {pipeline.failingSince
+                                ? `Failing since ${shortDate(
+                                    new Date(
+                                      // pipeline.failingSince.timestamp ||
+                                      pipeline.lastBuildTimestamp
+                                    )
+                                  )}`
+                                : null}
                             </span>
                           </>
                         ) : undefined}

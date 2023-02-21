@@ -9,6 +9,7 @@ import { getBuildsCountByWeek } from './build-listing.js';
 import { getTotalCentralTemplateUsage } from './build-reports.js';
 import { getAllRepoDefaultBranchIDs } from './repos.js';
 import { divide, toPercentage } from '../../shared/utils.js';
+import { getHasReleasesSummary } from './release-listing.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -135,6 +136,7 @@ export const getSummary = async ({
     totalCentralTemplate,
     yamlPipelinesCount,
     totalHealthyBranches,
+    hasReleasesReposCount,
   ] = await Promise.all([
     getBuildsCountByWeek(
       collectionName,
@@ -162,6 +164,8 @@ export const getSummary = async ({
       repoIds,
       defaultBranchIDs,
     }),
+
+    getHasReleasesSummary(collectionName, project, startDate, endDate, repoIds),
   ]);
 
   const totalBuilds = buildsCountByWeek.reduce((acc, week) => acc + week.totalBuilds, 0);
@@ -175,10 +179,7 @@ export const getSummary = async ({
     .getOr('-');
 
   const weeklySuccess = buildsCountByWeek.map(week => {
-    if (week.totalSuccessfulBuilds === 0 || week.totalBuilds === 0) {
-      return 0;
-    }
-    return (week.totalSuccessfulBuilds / week.totalBuilds) * 100;
+    return divide(week.totalSuccessfulBuilds, week.totalBuilds).getOr(0) * 100;
   });
 
   return {
@@ -190,5 +191,7 @@ export const getSummary = async ({
     successRate,
     totalBuilds,
     totalSuccessfulBuilds,
+    totalActiveRepos: repoIds.length,
+    hasReleasesReposCount,
   };
 };
