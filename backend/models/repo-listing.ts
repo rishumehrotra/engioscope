@@ -170,9 +170,9 @@ export const getSummary = async ({
     0
   );
 
-  const successRate = `${divide(totalSuccessfulBuilds, totalBuilds)
+  const successRate = divide(totalSuccessfulBuilds, totalBuilds)
     .map(toPercentage)
-    .getOr('-')}`;
+    .getOr('-');
 
   const weeklySuccess = buildsCountByWeek.map(week => {
     if (week.totalSuccessfulBuilds === 0 || week.totalBuilds === 0) {
