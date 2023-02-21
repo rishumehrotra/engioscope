@@ -343,7 +343,7 @@ export default (config: ParsedConfig) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             buildUri.split('/').pop()!,
           ],
-        }),
+        }).then(runs => runs.filter(run => !run.release)),
 
     getTestRunsByReleaseDefnIdAndBranch:
       (collectionName: string, projectName: string) =>
