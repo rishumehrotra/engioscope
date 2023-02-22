@@ -22,28 +22,31 @@ export const bulkSaveCommits =
   (collectionName: string, project: string, repositoryId: string) =>
   (commits: GitCommitRef[]) => {
     return CommitModel.bulkWrite(
-      commits.map(commit => {
-        return {
-          updateOne: {
-            filter: {
-              collectionName,
-              project,
-              repositoryId,
-              commitId: commit.commitId,
-            },
-            update: {
-              $set: {
-                ...commit,
-                changeCounts: {
-                  add: commit.changeCounts.Add,
-                  edit: commit.changeCounts.Edit,
-                  delete: commit.changeCounts.Delete,
+      commits
+        .filter(commit => commit.changeCounts)
+        .map(commit => {
+          if (!commit.changeCounts) throw new Error('Error to keep TS happy');
+          return {
+            updateOne: {
+              filter: {
+                collectionName,
+                project,
+                repositoryId,
+                commitId: commit.commitId,
+              },
+              update: {
+                $set: {
+                  ...commit,
+                  changeCounts: {
+                    add: commit.changeCounts.Add,
+                    edit: commit.changeCounts.Edit,
+                    delete: commit.changeCounts.Delete,
+                  },
                 },
               },
+              upsert: true,
             },
-            upsert: true,
-          },
-        };
-      })
+          };
+        })
     );
   };
