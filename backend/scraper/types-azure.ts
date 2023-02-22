@@ -377,7 +377,7 @@ export type GitCommitRef = {
   author: GitUserDate;
   committer: GitUserDate;
   comment: string;
-  changeCounts: {
+  changeCounts?: {
     Add: number;
     Edit: number;
     Delete: number;

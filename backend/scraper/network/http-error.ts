@@ -13,6 +13,10 @@ export class HTTPError extends Error {
   }
 }
 
-export const is404 = (error: unknown): error is HTTPError => {
-  return error instanceof HTTPError && error.status === 404;
-};
+const isStatusCode =
+  (statusCode: number) =>
+  (error: unknown): error is HTTPError => {
+    return error instanceof HTTPError && error.status === statusCode;
+  };
+
+export const is404 = isStatusCode(404);

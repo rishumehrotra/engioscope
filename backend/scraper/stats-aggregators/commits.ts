@@ -12,9 +12,9 @@ const mergeCommit = (
   name: commit.committer.name,
   imageUrl: commit.committer.imageUrl,
   changes: {
-    add: (aggregatedCommits?.changes.add || 0) + commit.changeCounts.Add,
-    delete: (aggregatedCommits?.changes.delete || 0) + commit.changeCounts.Delete,
-    edit: (aggregatedCommits?.changes.edit || 0) + commit.changeCounts.Edit,
+    add: (aggregatedCommits?.changes.add || 0) + (commit.changeCounts?.Add || 0),
+    delete: (aggregatedCommits?.changes.delete || 0) + (commit.changeCounts?.Delete || 0),
+    edit: (aggregatedCommits?.changes.edit || 0) + (commit.changeCounts?.Edit || 0),
   },
   byDate: {
     ...aggregatedCommits?.byDate,
@@ -26,7 +26,7 @@ const mergeCommit = (
 export default (commits: GitCommitRef[]): UICommits => {
   const commitsByDev = commits.reduce<Record<string, AggregatedCommitsByDev>>(
     (acc, commit) => {
-      if (commit.comment.startsWith('Merge')) return acc;
+      if (!commit.changeCounts) return acc;
 
       acc[commit.committer.name] = mergeCommit(commit, acc[commit.committer.name]);
       return acc;
