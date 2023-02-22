@@ -19,6 +19,7 @@ const NonYamlPipeLineBuilds: React.FC<NonYamlPipeLineBuildProps> = ({
   nonYamlRepos,
   queryPeriodDays,
 }) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const projectDetails = useProjectDetails()!;
   const dateRange = useDateRange();
   const [currentRepoId, setCurrentRepoId] = useState(nonYamlRepos[0].repositoryId);
