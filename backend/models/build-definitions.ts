@@ -66,7 +66,11 @@ export const getNonYamlPipelines = async (
   project: string,
   repoIds: string[]
 ) => {
-  const result = await RepositoryModel.aggregate([
+  const result = await RepositoryModel.aggregate<{
+    repositoryId: string;
+    name: string;
+    total: number;
+  }>([
     {
       $match: {
         collectionName,
@@ -121,18 +125,16 @@ export const getNonYamlPipelines = async (
     },
     {
       $project: {
-        '_id': 0,
-        'repositoryId': '$id',
-        'name': 1,
-        'total': {
+        _id: 0,
+        repositoryId: '$id',
+        name: 1,
+        total: {
           $size: '$buildsDefinitions',
         },
-        'buildsDefinitions.id': 1,
-        'buildsDefinitions.latestBuild': 1,
-        'buildsDefinitions.name': 1,
-        'buildsDefinitions.revision': 1,
-        'buildsDefinitions.type': 1,
       },
+    },
+    {
+      $sort: { total: -1 },
     },
   ]);
 

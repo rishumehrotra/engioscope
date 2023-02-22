@@ -4,7 +4,10 @@ import { BuildModel } from './mongoose-models/BuildModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getHealthyBranchesSummary } from './branches.js';
-import { getYamlPipelinesCountSummary } from './build-definitions.js';
+import {
+  getNonYamlPipelines,
+  getYamlPipelinesCountSummary,
+} from './build-definitions.js';
 import { getBuildsCountByWeek } from './build-listing.js';
 import { getTotalCentralTemplateUsage } from './build-reports.js';
 import { getAllRepoDefaultBranchIDs } from './repos.js';
@@ -137,6 +140,7 @@ export const getSummary = async ({
     yamlPipelinesCount,
     totalHealthyBranches,
     hasReleasesReposCount,
+    nonYamlPipelines,
   ] = await Promise.all([
     getBuildsCountByWeek(
       collectionName,
@@ -166,6 +170,8 @@ export const getSummary = async ({
     }),
 
     getHasReleasesSummary(collectionName, project, startDate, endDate, repoIds),
+
+    getNonYamlPipelines(collectionName, project, repoIds),
   ]);
 
   const totalBuilds = buildsCountByWeek.reduce((acc, week) => acc + week.totalBuilds, 0);
@@ -193,5 +199,6 @@ export const getSummary = async ({
     totalSuccessfulBuilds,
     totalActiveRepos: repoIds.length,
     hasReleasesReposCount,
+    nonYamlPipelines,
   };
 };

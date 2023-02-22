@@ -6,7 +6,8 @@ import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, BuildOverviewStats } from '../scraper/types-azure.js';
 import { getBuildDefinitionsForRepo } from './build-definitions.js';
 import { buildsCentralTemplateStats } from './build-reports.js';
-import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
+import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 
 export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
@@ -429,22 +430,131 @@ export const getOneBuildBeforeQueryPeriod =
     return [...foundBuilds, ...refetchedAdditionalBuilds];
   };
 
-export const nonPipeLineBuildStats = async (
-  collectionName: string,
-  project: string,
-  startDate: Date,
-  endDate: Date,
-  repoIds: string[],
-  buildDefIds: string[]
-) => {
-  const result = await BuildModel.aggregate([
+export const NonYamlPipeLineBuildStatsInputParser1 = z.object({
+  ...collectionAndProjectInputs,
+  ...dateRangeInputs,
+  repositoryId: z.string(),
+  buildDefIds: z.string().array(),
+});
+export const getNonYamlPipeLineBuildStats1 = async ({
+  collectionName,
+  project,
+  startDate,
+  endDate,
+  repositoryId,
+  buildDefIds,
+}: z.infer<typeof NonYamlPipeLineBuildStatsInputParser1>) => {
+  const result = await BuildModel.aggregate<{
+    buildDefinitionId: string;
+    buildDefinitionName: string;
+    buildDefinitionUrl: string;
+    buildCount: number;
+    lastUsed: Date;
+    lastResult: string;
+  }>([
     {
       $match: {
         collectionName,
         project,
-        'repository.id': { $in: repoIds },
+        'repository.id': repositoryId,
         'definition.id': { $in: buildDefIds },
+        'finishTime': inDateRange(startDate, endDate),
       },
+    },
+    {
+      $sort: {
+        finishTime: -1,
+      },
+    },
+    {
+      $group: {
+        _id: '$definition.id',
+        buildDefinitionId: { $first: '$definition.id' },
+        buildDefinitionName: { $first: '$definition.name' },
+        buildDefinitionUrl: { $first: '$definition.url' },
+        buildCount: { $sum: 1 },
+        lastUsed: { $first: '$finishTime' },
+        lastResult: { $first: '$result' },
+      },
+    },
+  ]);
+  return result;
+};
+
+export const NonYamlPipeLineBuildStatsInputParser = z.object({
+  ...collectionAndProjectInputs,
+  ...dateRangeInputs,
+  repositoryId: z.string(),
+});
+export const getNonYamlPipeLineBuildStats = async ({
+  collectionName,
+  project,
+  startDate,
+  endDate,
+  repositoryId,
+}: z.infer<typeof NonYamlPipeLineBuildStatsInputParser>) => {
+  const result = await BuildDefinitionModel.aggregate<{
+    definitionId: string;
+    definitionUrl: string;
+    definitionName: string;
+    buildsCount: number;
+    latestBuildTimestamp: Date;
+    latestBuildResult: string;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId,
+        'process.processType': 1,
+      },
+    },
+    {
+      $sort: {
+        finishTime: -1,
+      },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+          definitionId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$definition.id', '$$definitionId'] },
+                  { $gt: ['$finishTime', startDate] },
+                  { $lt: ['$finishTime', endDate] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'builds',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        definitionId: '$id',
+        definitionUrl: '$url',
+        definitionName: '$name',
+        buildsCount: { $size: '$builds' },
+        latestBuildTimestamp: '$latestBuild.finishTime',
+        latestBuildResult: '$latestBuild.result',
+      },
+    },
+    {
+      $sort: { buildsCount: -1 },
     },
   ]);
   return result;

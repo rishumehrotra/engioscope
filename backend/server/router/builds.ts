@@ -10,6 +10,8 @@ import {
 import {
   getBuildsOverviewForRepository,
   getBuildsOverviewForRepositoryInputParser,
+  getNonYamlPipeLineBuildStats,
+  NonYamlPipeLineBuildStatsInputParser,
 } from '../../models/builds.js';
 
 export default t.router({
@@ -24,4 +26,8 @@ export default t.router({
   getBuildsOverviewForRepository: t.procedure
     .input(getBuildsOverviewForRepositoryInputParser)
     .query(passInputTo(getBuildsOverviewForRepository)),
+
+  getNonYamlPipeLineBuildStats: t.procedure
+    .input(NonYamlPipeLineBuildStatsInputParser)
+    .query(passInputTo(getNonYamlPipeLineBuildStats)),
 });
