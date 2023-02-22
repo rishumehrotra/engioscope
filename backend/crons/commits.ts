@@ -1,8 +1,19 @@
+import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 import { collectionsAndProjects, getConfig } from '../config.js';
 import { bulkSaveCommits, getLatestCommitIdAndDate } from '../models/commits.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
-import { runJob, shouldUpdate } from './utils.js';
+import { createSchedule, runJob } from './utils.js';
+
+export const shouldUpdate = createSchedule({
+  frequency: 3 * oneHourInMs,
+  schedule: s => [
+    s`For the first ${oneDayInMs}, check every ${3 * oneHourInMs}.`,
+    s`Then till ${3 * oneDayInMs}, check every ${6 * oneHourInMs}.`,
+    s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
+    s`Then till ${12 * oneDayInMs}, check every ${oneDayInMs}.`,
+  ],
+});
 
 export const getCommits = async () => {
   const { getCommitsAsChunksSince } = azure(getConfig());
@@ -12,10 +23,8 @@ export const getCommits = async () => {
     skipped: 0,
   };
 
-  await collectionsAndProjects().reduce<Promise<unknown>>(
-    async (acc, [collection, project]) => {
-      await acc;
-
+  await Promise.all(
+    collectionsAndProjects().map(async ([collection, project]) => {
       const repos = RepositoryModel.find({
         'collectionName': collection.name,
         'project.name': project.name,
@@ -42,8 +51,7 @@ export const getCommits = async () => {
           counts.skipped += 1;
         }
       }
-    },
-    Promise.resolve()
+    })
   );
 
   // eslint-disable-next-line no-console
