@@ -3,13 +3,17 @@ import type { Response } from 'node-fetch';
 export class HTTPError extends Error {
   status: number;
 
-  constructor(res: Response) {
+  constructor(res: Response, ...x: unknown[]) {
     super(res.statusText);
     this.name = 'HTTPError';
     this.status = res.status;
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises, no-console
-    res.text().then(console.log);
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    res.text().then(text => {
+      const message = JSON.stringify([...x, text]);
+      console.log(message);
+      this.message = message;
+    });
   }
 }
 

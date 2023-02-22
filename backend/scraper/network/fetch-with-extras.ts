@@ -37,7 +37,7 @@ export default (
         throw error;
       })
       .then(res => {
-        if (!res.ok) throw new HTTPError(res);
+        if (!res.ok) throw new HTTPError(res, url, restInit);
         return res;
       })
       .finally(() => clearTimeout(timeoutHandle))
