@@ -462,23 +462,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                     yAxisLabel={x => `${x}%`}
                   />
                 ),
-                tooltip: 'Success rate across all matching repos',
-              },
-            ]}
-          />
-          <ProjectStat
-            topStats={[
-              {
-                title: 'YAML pipelines',
-                value: divide(
-                  summaries.data.yamlPipelinesCount.yamlCount,
-                  summaries.data.yamlPipelinesCount.totalCount
-                )
-                  .map(toPercentage)
-                  .getOr('-'),
-                tooltip: `${num(summaries.data.yamlPipelinesCount.yamlCount)} of ${num(
-                  summaries.data.yamlPipelinesCount.totalCount
-                )} pipelines use a YAML-based configuration`,
+                tooltip: `${num(summaries.data.totalSuccessfulBuilds)} out of ${num(
+                  summaries.data.totalBuilds
+                )} are successful builds`,
               },
             ]}
           />
@@ -504,6 +490,11 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             topStats={[
               {
                 title: 'Healthy branches',
+                tooltip: `${num(
+                  summaries.data.totalHealthyBranches.healthy
+                )} out of ${num(
+                  summaries.data.totalHealthyBranches.total
+                )} are Healthy Branches`,
                 value: divide(
                   summaries.data.totalHealthyBranches.healthy,
                   summaries.data.totalHealthyBranches.total
@@ -555,12 +546,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                       summaries.data.yamlPipelinesCount.totalCount -
                       summaries.data.yamlPipelinesCount.yamlCount
                     })`,
-                    body: (
-                      <NonYamlPipeLineBuilds
-                        nonYamlRepos={summaries.data.nonYamlPipelines}
-                        queryPeriodDays={queryPeriodDays}
-                      />
-                    ),
+                    body: <NonYamlPipeLineBuilds queryPeriodDays={queryPeriodDays} />,
                   }
             }
           />

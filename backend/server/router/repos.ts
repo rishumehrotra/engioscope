@@ -4,7 +4,12 @@ import {
   getBranchPolicies,
 } from '../../models/policy-configuration.js';
 
-import { getSummary, getSummaryInputParser } from '../../models/repo-listing.js';
+import {
+  getSummary,
+  getSummaryInputParser,
+  getNonYamlPipelines,
+  NonYamlPipelinesParser,
+} from '../../models/repo-listing.js';
 
 export default t.router({
   getBranchPolicies: t.procedure
@@ -12,4 +17,8 @@ export default t.router({
     .query(passInputTo(getBranchPolicies)),
 
   getSummaries: t.procedure.input(getSummaryInputParser).query(passInputTo(getSummary)),
+
+  getNonYamlPipelines: t.procedure
+    .input(NonYamlPipelinesParser)
+    .query(passInputTo(getNonYamlPipelines)),
 });
