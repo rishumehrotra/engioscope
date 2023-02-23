@@ -11,7 +11,8 @@ export class HTTPError extends Error {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     res.text().then(text => {
       const message = JSON.stringify([...x, text]);
-      console.log(message);
+      // eslint-disable-next-line no-console
+      console.error(message);
       this.message = message;
     });
   }
