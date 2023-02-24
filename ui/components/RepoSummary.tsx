@@ -430,6 +430,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             value: divide(stats.healthBranches.count, stats.healthBranches.total)
               .map(toPercentage)
               .getOr('-'),
+            tooltip: `${num(stats.healthBranches.count)} out of ${num(
+              stats.healthBranches.total
+            )} are Healthy Branches`,
           },
         ]}
       />

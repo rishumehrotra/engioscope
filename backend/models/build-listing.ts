@@ -133,7 +133,7 @@ export const getBuildsCountByConditions =
       {
         $sort: {
           '_id.year': 1,
-          [duration === 'week' ? 'week' : 'month']: 1,
+          'startWeek': 1,
         },
       },
     ]);

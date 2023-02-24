@@ -139,7 +139,7 @@ export const getYamlPipelinesCountSummary = async (
 
   return result[0] || { totalCount: 0, yamlCount: 0 };
 };
-export const getcentralTemplatePipeline = async (
+export const getCentralTemplatePipeline = async (
   collectionName: string,
   project: string,
   repoIds: string[]
@@ -194,9 +194,7 @@ export const getcentralTemplatePipeline = async (
     },
     {
       $addFields: {
-        defaultBranch: {
-          $arrayElemAt: ['$repo.defaultBranch', 0],
-        },
+        defaultBranch: { $arrayElemAt: ['$repo.defaultBranch', 0] },
       },
     },
     {
@@ -243,24 +241,16 @@ export const getcentralTemplatePipeline = async (
     },
     {
       $addFields: {
-        sourceBranch: {
-          $arrayElemAt: ['$builds.sourceBranch', 0],
-        },
+        sourceBranch: { $arrayElemAt: ['$builds.sourceBranch', 0] },
       },
     },
     {
       $match: {
         $expr: {
           $and: [
-            {
-              $ne: ['$defaultBranch', null],
-            },
-            {
-              $ne: ['$sourceBranch', null],
-            },
-            {
-              $eq: ['$sourceBranch', '$defaultBranch'],
-            },
+            { $ne: ['$defaultBranch', null] },
+            { $ne: ['$sourceBranch', null] },
+            { $eq: ['$sourceBranch', '$defaultBranch'] },
           ],
         },
       },
@@ -335,7 +325,7 @@ export const getSummary = async ({
 
     getHasReleasesSummary(collectionName, project, startDate, endDate, repoIds),
 
-    getcentralTemplatePipeline(collectionName, project, repoIds),
+    getCentralTemplatePipeline(collectionName, project, repoIds),
   ]);
 
   const totalBuilds = buildsCountByWeek.reduce((acc, week) => acc + week.totalBuilds, 0);
