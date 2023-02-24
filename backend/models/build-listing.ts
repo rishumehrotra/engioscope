@@ -45,8 +45,7 @@ export const getBuildsCountByConditions =
     collectionName: string,
     project: string,
     startDate: Date,
-    endDate: Date,
-    searchTerm?: string,
+    endDate: Date,  
     repoIds?: string[]
   ) => {
     const groupField =

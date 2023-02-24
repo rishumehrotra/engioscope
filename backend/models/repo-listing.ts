@@ -180,14 +180,7 @@ export const getSummary = async ({
     totalHealthyBranches,
     hasReleasesReposCount,
   ] = await Promise.all([
-    getBuildsCountByWeek(
-      collectionName,
-      project,
-      startDate,
-      endDate,
-      searchTerm,
-      repoIds
-    ),
+    getBuildsCountByWeek(collectionName, project, startDate, endDate, repoIds),
 
     getTotalCentralTemplateUsage(collectionName, project, repoNames),
 
