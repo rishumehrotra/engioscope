@@ -241,8 +241,9 @@ const Builds: React.FC<{
                       </td>
                       {/* Average Duration */}
                       <td
+                        className="pr-4"
                         style={{
-                          textAlign: 'center',
+                          textAlign: 'right',
                         }}
                       >
                         {pipeline.type === 'old' || pipeline.averageDuration === 0 ? (
