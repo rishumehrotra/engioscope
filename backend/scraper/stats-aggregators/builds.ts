@@ -2,10 +2,11 @@ import prettyMilliseconds from 'pretty-ms';
 import { add, adjust, identity, inc, pipe, prop, replace } from 'rambda';
 import { asc, byDate, desc } from 'sort-lib';
 import type { UIBuildPipeline, UIBuilds } from '../../../shared/types.js';
-import { isMaster, weeks } from '../../utils.js';
+import { weeks } from '../../utils.js';
 import type { centralBuildTemplateBuildCount } from '../../models/build-reports.js';
 import type { Build } from '../../models/mongoose-models/BuildModel';
 import type { BuildDefinition } from '../../models/mongoose-models/BuildDefinitionModel';
+import type { Repository } from '../../models/mongoose-models/RepositoryModel.js';
 
 type CentralTemplateBuildCountForPipeline = ReturnType<
   typeof centralBuildTemplateBuildCount
@@ -86,8 +87,17 @@ const buildDefinitionWebUrl = pipe(
 export default (
   builds: Build[],
   buildDefinitionsByRepoId: (repoId: string) => BuildDefinition[],
+  repos: Repository[],
   centralTemplateBuildCount: CentralTemplateBuildCountForPipeline
 ) => {
+  const defaultBranchByRepoId = repos.reduce<Record<string, string | undefined>>(
+    (acc, repo) => {
+      acc[repo.id] = repo.defaultBranch;
+      return acc;
+    },
+    {}
+  );
+
   type AggregatedBuilds = {
     buildStats: Record<string, Record<number, BuildStats>>;
     allMasterBuilds: Record<string, Record<number, Build[] | undefined>>;
@@ -128,7 +138,7 @@ export default (
             ...acc.allMasterBuilds,
             [rId]: {
               ...acc.allMasterBuilds[rId],
-              ...(isMaster(build.sourceBranch)
+              ...(build.sourceBranch === defaultBranchByRepoId[rId]
                 ? {
                     [build.definition.id]: [
                       ...(acc.allMasterBuilds[rId]?.[build.definition.id] || []),

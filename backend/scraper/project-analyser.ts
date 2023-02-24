@@ -84,6 +84,7 @@ export default (config: ParsedConfig) => {
     const { buildsByRepoId, allMasterBuilds } = aggregateBuilds(
       builds,
       buildDefinitionsByRepoId,
+      repos,
       forProject(centralBuildTemplateBuildCount)
     );
 
