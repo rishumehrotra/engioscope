@@ -325,5 +325,64 @@ export const getTotalCentralTemplateUsage = async (
   return { templateUsers: count };
 };
 
+export const getCentralTemplateBuildDefs = async (
+  collectionName: string,
+  project: string
+) => {
+  const result = await AzureBuildReportModel.aggregate<{
+    buildDefinitionId: string;
+    collectionName: string;
+    project: string;
+    totalBuilds: number;
+    centralTemplateBuilds: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+      },
+    },
+    {
+      $addFields: {
+        usesCentralTemplate: {
+          $or: [
+            { $eq: ['$centralTemplate', true] },
+            { $eq: [{ $type: '$centralTemplate' }, 'object'] },
+            { $eq: ['$templateRepo', 'build-pipeline-templates'] },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$buildDefinitionId',
+        buildDefinitionId: { $first: '$buildDefinitionId' },
+        collectionName: { $first: '$collectionName' },
+        project: { $first: '$project' },
+        totalBuilds: { $sum: 1 },
+        centralTemplateBuilds: {
+          $sum: {
+            $cond: [{ $eq: ['$usesCentralTemplate', true] }, 1, 0],
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        buildDefinitionId: { $toInt: '$_id' },
+      },
+    },
+    {
+      $match: {
+        centralTemplateBuilds: {
+          $gt: 0,
+        },
+      },
+    },
+  ]);
+
+  return result;
+};
+
 // eslint-disable-next-line no-underscore-dangle
 export const __AzureBuildReportModelDONOTUSE = AzureBuildReportModel;

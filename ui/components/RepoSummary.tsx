@@ -471,33 +471,13 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           <ProjectStat
             topStats={[
               {
-                title: 'Using central template',
-                value: `${divide(
-                  summaries.data.totalCentralTemplate.templateUsers,
-                  summaries.data.totalBuilds
-                )
-                  .map(toPercentage)
-                  .getOr('-')}`,
-                tooltip: `${num(
-                  summaries.data.totalCentralTemplate.templateUsers
-                )} out of ${num(
-                  summaries.data.totalBuilds
-                )} build runs used the central template`,
-              },
-            ]}
-          />
-          <ProjectStat
-            topStats={[
-              {
                 title: 'Healthy branches',
-                tooltip: `${num(
-                  summaries.data.totalHealthyBranches.healthy
-                )} out of ${num(
-                  summaries.data.totalHealthyBranches.total
+                tooltip: `${num(summaries.data.healthyBranches.healthy)} out of ${num(
+                  summaries.data.healthyBranches.total
                 )} are Healthy Branches`,
                 value: divide(
-                  summaries.data.totalHealthyBranches.healthy,
-                  summaries.data.totalHealthyBranches.total
+                  summaries.data.healthyBranches.healthy,
+                  summaries.data.healthyBranches.total
                 )
                   .map(toPercentage)
                   .getOr('-'),
@@ -525,30 +505,51 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
               {
                 title: 'YAML pipelines',
                 value: divide(
-                  summaries.data.yamlPipelinesCount.yamlCount,
-                  summaries.data.yamlPipelinesCount.totalCount
+                  summaries.data.yamlPipelines.yamlCount,
+                  summaries.data.yamlPipelines.totalCount
                 )
                   .map(toPercentage)
                   .getOr('-'),
-                tooltip: `${num(summaries.data.yamlPipelinesCount.yamlCount)} of ${num(
-                  summaries.data.yamlPipelinesCount.totalCount
+                tooltip: `${num(summaries.data.yamlPipelines.yamlCount)} of ${num(
+                  summaries.data.yamlPipelines.totalCount
                 )} pipelines use a YAML-based configuration`,
               },
             ]}
             onClick={
-              summaries.data.yamlPipelinesCount.totalCount ===
-              summaries.data.yamlPipelinesCount.yamlCount
+              summaries.data.yamlPipelines.totalCount ===
+              summaries.data.yamlPipelines.yamlCount
                 ? undefined
                 : {
                     open: 'modal',
                     heading: 'Pipelines not using YAML-based configuration',
                     subheading: `(${
-                      summaries.data.yamlPipelinesCount.totalCount -
-                      summaries.data.yamlPipelinesCount.yamlCount
+                      summaries.data.yamlPipelines.totalCount -
+                      summaries.data.yamlPipelines.yamlCount
                     })`,
                     body: <NonYamlPipeLineBuilds queryPeriodDays={queryPeriodDays} />,
                   }
             }
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Central template usage',
+                tooltip: `${num(
+                  summaries.data.centralTemplatePipeline.central
+                )} out of ${num(
+                  summaries.data.centralTemplatePipeline.total
+                )} build pipelines use the central template on the master branch <br>
+                  ${num(summaries.data.totalCentralTemplate.templateUsers)} out of ${num(
+                  summaries.data.totalBuilds
+                )} build runs used the central template`,
+                value: divide(
+                  summaries.data.centralTemplatePipeline.central,
+                  summaries.data.centralTemplatePipeline.total
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+              },
+            ]}
           />
         </>
       ) : null}

@@ -6,7 +6,10 @@ import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './help
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getHealthyBranchesSummary } from './branches.js';
 import { getBuildsCountByWeek } from './build-listing.js';
-import { getTotalCentralTemplateUsage } from './build-reports.js';
+import {
+  getTotalCentralTemplateUsage,
+  getCentralTemplateBuildDefs,
+} from './build-reports.js';
 import { getAllRepoDefaultBranchIDs } from './repos.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
@@ -136,6 +139,145 @@ export const getYamlPipelinesCountSummary = async (
 
   return result[0] || { totalCount: 0, yamlCount: 0 };
 };
+export const getcentralTemplatePipeline = async (
+  collectionName: string,
+  project: string,
+  repoIds: string[]
+) => {
+  const centralTemplateBuildDefs = await getCentralTemplateBuildDefs(
+    collectionName,
+    project
+  );
+
+  const buildDefinitionId = centralTemplateBuildDefs?.map(
+    buildDef => buildDef.buildDefinitionId
+  );
+
+  const result = await BuildDefinitionModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        ...(repoIds ? { repositoryId: { $in: repoIds } } : {}),
+        ...(buildDefinitionId ? { id: { $in: buildDefinitionId } } : {}),
+      },
+    },
+    {
+      $lookup: {
+        from: 'repositories',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project.name', '$$project'] },
+                  { $eq: ['$id', '$$repositoryId'] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+              defaultBranch: 1,
+            },
+          },
+        ],
+        as: 'repo',
+      },
+    },
+    {
+      $addFields: {
+        defaultBranch: {
+          $arrayElemAt: ['$repo.defaultBranch', 0],
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        collectionName: 1,
+        project: 1,
+        repositoryId: 1,
+        buildDefinitionId: '$id',
+        buildDefinitionName: '$name',
+        defaultBranch: 1,
+      },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+          buildDefinitionId: '$buildDefinitionId',
+          defaultBranch: '$defaultBranch',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$definition.id', '$$buildDefinitionId'] },
+                  { $eq: ['$sourceBranch', '$$defaultBranch'] },
+                ],
+              },
+            },
+          },
+          { $sort: { finishTime: -1 } },
+          { $limit: 1 },
+          { $project: { sourceBranch: 1 } },
+        ],
+        as: 'builds',
+      },
+    },
+    {
+      $addFields: {
+        sourceBranch: {
+          $arrayElemAt: ['$builds.sourceBranch', 0],
+        },
+      },
+    },
+    {
+      $match: {
+        $expr: {
+          $and: [
+            {
+              $ne: ['$defaultBranch', null],
+            },
+            {
+              $ne: ['$sourceBranch', null],
+            },
+            {
+              $eq: ['$sourceBranch', '$defaultBranch'],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $count: 'matchingCount',
+    },
+  ]);
+
+  return {
+    total: centralTemplateBuildDefs.reduce(
+      (total, build) => total + build.centralTemplateBuilds,
+      0
+    ),
+    central: result[0]?.matchingCount || 0,
+  };
+};
 
 export const getSummaryInputParser = z.object({
   ...collectionAndProjectInputs,
@@ -173,9 +315,10 @@ export const getSummary = async ({
   const [
     buildsCountByWeek,
     totalCentralTemplate,
-    yamlPipelinesCount,
-    totalHealthyBranches,
+    yamlPipelines,
+    healthyBranches,
     hasReleasesReposCount,
+    centralTemplatePipeline,
   ] = await Promise.all([
     getBuildsCountByWeek(collectionName, project, startDate, endDate, repoIds),
 
@@ -191,6 +334,8 @@ export const getSummary = async ({
     }),
 
     getHasReleasesSummary(collectionName, project, startDate, endDate, repoIds),
+
+    getcentralTemplatePipeline(collectionName, project, repoIds),
   ]);
 
   const totalBuilds = buildsCountByWeek.reduce((acc, week) => acc + week.totalBuilds, 0);
@@ -212,14 +357,15 @@ export const getSummary = async ({
   return {
     buildsCountByWeek,
     totalCentralTemplate,
-    yamlPipelinesCount,
-    totalHealthyBranches,
+    yamlPipelines,
+    healthyBranches,
     weeklySuccess,
     successRate,
     totalBuilds,
     totalSuccessfulBuilds,
     totalActiveRepos: repoIds.length,
     hasReleasesReposCount,
+    centralTemplatePipeline,
   };
 };
 
