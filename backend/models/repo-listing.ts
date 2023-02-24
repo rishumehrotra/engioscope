@@ -97,9 +97,6 @@ export const getActiveRepoIds = async (
 export const getYamlPipelinesCountSummary = async (
   collectionName: string,
   project: string,
-  startDate: Date,
-  endDate: Date,
-  searchTerm?: string,
   repoIds?: string[]
 ) => {
   const result = await BuildDefinitionModel.aggregate<{
@@ -184,14 +181,7 @@ export const getSummary = async ({
 
     getTotalCentralTemplateUsage(collectionName, project, repoNames),
 
-    getYamlPipelinesCountSummary(
-      collectionName,
-      project,
-      startDate,
-      endDate,
-      searchTerm,
-      repoIds
-    ),
+    getYamlPipelinesCountSummary(collectionName, project, repoIds),
 
     getHealthyBranchesSummary({
       collectionName,
