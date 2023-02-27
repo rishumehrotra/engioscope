@@ -1,5 +1,6 @@
 import { z } from 'zod';
-
+import type { PipelineStage } from 'mongoose';
+import { oneWeekInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 
@@ -144,3 +145,94 @@ export const getBuildsCountByWeek = getBuildsCountByConditions('week');
 export const getBuildsCountByMonth = getBuildsCountByConditions('month');
 
 export const buildPipelineFilterInputParser = z.object(buildPipelineFilterInput);
+
+export const getSplitUpBy = (
+  duration: 'week' | 'month',
+  field: string,
+  condition: unknown
+): PipelineStage[] => {
+  const groupByMonth = {
+    month: { $month: field },
+    year: { $year: field },
+  };
+
+  const groupBySevenDayInterval = {
+    $dateToString: {
+      format: '%Y-%m-%d',
+      date: {
+        $subtract: [
+          field,
+          {
+            $mod: [
+              {
+                $subtract: [field, new Date('Thu, 01 Jan 1970 00:00:00 GMT')],
+              },
+              oneWeekInMs,
+            ],
+          },
+        ],
+      },
+    },
+  };
+
+  const projectMonth = {
+    $dateToString: {
+      format: '%Y-%m-%d',
+      date: {
+        $dateFromParts: {
+          year: '$_id.year',
+          month: '$_id.month',
+        },
+      },
+    },
+  };
+
+  return [
+    {
+      $group: {
+        _id: duration === 'week' ? groupBySevenDayInterval : groupByMonth,
+        counts: { $sum: condition },
+      },
+    },
+    {
+      $project: {
+        _id: duration === 'month' ? projectMonth : 1,
+        counts: 1,
+      },
+    },
+    { $sort: { _id: 1 } },
+  ];
+};
+
+export const getBuildsSplitUp =
+  (condition: unknown) =>
+  (duration: 'week' | 'month') =>
+  async (
+    collectionName: string,
+    project: string,
+    startDate: Date,
+    endDate: Date,
+    repoIds: string[] | undefined
+  ) => {
+    const result = await BuildModel.aggregate<{ _id: string; counts: number }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          'repository.id': { $in: repoIds },
+          'startTime': {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+          },
+        },
+      },
+      ...getSplitUpBy(duration, '$startTime', condition),
+    ]);
+    return result;
+  };
+
+export const getSuccessfulBuildsBy = getBuildsSplitUp({
+  $cond: [{ $eq: ['$result', 'succeeded'] }, 1, 0],
+});
+
+export const getTotalBuildsBy = getBuildsSplitUp(1);

@@ -5,7 +5,7 @@ import { BuildModel } from './mongoose-models/BuildModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getHealthyBranchesSummary } from './branches.js';
-import { getBuildsCountByWeek } from './build-listing.js';
+import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
 import {
   getTotalCentralTemplateUsage,
   getCentralTemplateBuildDefs,
@@ -303,14 +303,16 @@ export const getSummary = async ({
   );
 
   const [
-    buildsCountByWeek,
+    successfulBuildsCount,
+    totalBuildsCount,
     totalCentralTemplate,
     yamlPipelines,
     healthyBranches,
     hasReleasesReposCount,
     centralTemplatePipeline,
   ] = await Promise.all([
-    getBuildsCountByWeek(collectionName, project, startDate, endDate, repoIds),
+    getSuccessfulBuildsBy('week')(collectionName, project, startDate, endDate, repoIds),
+    getTotalBuildsBy('week')(collectionName, project, startDate, endDate, repoIds),
 
     getTotalCentralTemplateUsage(collectionName, project, repoNames),
 
@@ -328,9 +330,9 @@ export const getSummary = async ({
     getCentralTemplatePipeline(collectionName, project, repoIds),
   ]);
 
-  const totalBuilds = buildsCountByWeek.reduce((acc, week) => acc + week.totalBuilds, 0);
-  const totalSuccessfulBuilds = buildsCountByWeek.reduce(
-    (acc, week) => acc + week.totalSuccessfulBuilds,
+  const totalBuilds = totalBuildsCount.reduce((acc, week) => acc + week.counts, 0);
+  const totalSuccessfulBuilds = successfulBuildsCount.reduce(
+    (acc, week) => acc + week.counts,
     0
   );
 
@@ -338,14 +340,19 @@ export const getSummary = async ({
     .map(toPercentage)
     .getOr('-');
 
-  const weeklySuccess = buildsCountByWeek.map(week => {
-    return divide(week.totalSuccessfulBuilds, week.totalBuilds)
-      .map(multiply(100))
-      .getOr(0);
+  const weeklySuccess = totalBuildsCount.map(totalObj => {
+    const successObj = successfulBuildsCount.find(s => s._id === totalObj._id);
+
+    if (successObj) {
+      const rate = divide(successObj.counts, totalObj.counts).map(multiply(100)).getOr(0);
+      return rate;
+    }
+    return 0;
   });
 
   return {
-    buildsCountByWeek,
+    totalBuildsCount,
+    successfulBuildsCount,
     totalCentralTemplate,
     yamlPipelines,
     healthyBranches,

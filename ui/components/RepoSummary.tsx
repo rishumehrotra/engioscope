@@ -445,9 +445,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 value: (
                   <LabelWithSparkline
                     label={num(summaries.data.totalBuilds)}
-                    data={summaries.data.buildsCountByWeek.map(week => week.totalBuilds)}
+                    data={summaries.data.totalBuildsCount.map(week => week.counts)}
                     lineColor={increaseIsBetter(
-                      summaries.data.buildsCountByWeek.map(week => week.totalBuilds)
+                      summaries.data.totalBuildsCount.map(week => week.counts)
                     )}
                   />
                 ),
