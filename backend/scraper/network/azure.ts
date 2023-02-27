@@ -17,6 +17,7 @@ import type {
   TeamProjectReference,
   TestCaseResult,
   TestRun,
+  TestRun2,
   Timeline,
   WorkItem,
   WorkItemField,
@@ -344,6 +345,46 @@ export default (config: ParsedConfig) => {
             buildUri.split('/').pop()!,
           ],
         }).then(runs => runs.filter(run => !run.release)),
+
+    getTestRunsAsChunksSince: (
+      collectionName: string,
+      projectName: string,
+      since: Date,
+      chunkHandler: (x: TestRun2[]) => Promise<unknown>
+    ) => {
+      const weeks: Date[] = [];
+      let currentDate = new Date();
+
+      while (currentDate >= since) {
+        weeks.push(currentDate);
+        currentDate = new Date(currentDate);
+        currentDate.setDate(currentDate.getDate() - 7);
+      }
+      weeks.push(since);
+
+      return weeks.slice(1).reduce<Promise<unknown>>(async (acc, weekStart, index) => {
+        await acc;
+
+        await chunkedList<TestRun2>({
+          url: url(collectionName, projectName, '/test/runs'),
+          qsParams: {
+            maxLastUpdatedDate: weeks[index].toISOString(),
+            minLastUpdatedDate: weekStart.toISOString(),
+            $top: '100',
+            includeRunDetails: 'true',
+            isAutomated: 'true',
+            state: 'completed',
+          },
+          cacheFile: [
+            collectionName,
+            projectName,
+            'test-runs',
+            weekStart.toISOString().split('T')[0],
+          ],
+          chunkHandler,
+        });
+      }, Promise.resolve());
+    },
 
     getTestRunsByReleaseDefnIdAndBranch:
       (collectionName: string, projectName: string) =>

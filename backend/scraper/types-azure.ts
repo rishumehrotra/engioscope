@@ -470,6 +470,38 @@ export type TestRun = {
   runStatistics: { state: string; outcome: TestCaseResultOutcome; count: number }[];
 };
 
+export type TestRun2 = Omit<TestRun, 'build' | 'release'> & {
+  buildConfiguration: {
+    id: number;
+    number: string;
+    flavor: string;
+    platform: string;
+    buildDefinitionId: number;
+    project: {
+      name: string;
+    };
+  };
+  release:
+    | {
+        id: 0;
+        name: null;
+        environmentId: 0;
+        environmentName: null;
+        definitionId: 0;
+        environmentDefinitionId: 0;
+        environmentDefinitionName: null;
+      }
+    | {
+        id: number;
+        name: string | null;
+        environmentId: number;
+        environmentName: null | string;
+        definitionId: number;
+        environmentDefinitionId: number;
+        environmentDefinitionName: null | string;
+      };
+};
+
 // TODO: This was put together in haste. Cleanup.
 export type TestCaseResult = {
   id: number;

@@ -11,8 +11,6 @@ import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray } from '../utils.js';
 import { runJob } from './utils.js';
 
-const queryStart = new Date(Date.now() - oneYearInMs);
-
 const missingTimelines = async (
   collectionName: string,
   project: string,
@@ -74,6 +72,7 @@ const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) =>
 
 export const getBuildsAndTimelines = () => {
   const { getBuildTimeline, getBuildsAsChunksSince } = azure(getConfig());
+  const queryStart = new Date(Date.now() - oneYearInMs);
 
   return collectionsAndProjects().reduce<Promise<void>>(
     async (acc, [collection, project]) => {

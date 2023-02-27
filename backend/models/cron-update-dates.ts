@@ -50,3 +50,7 @@ export const [getLastBuildUpdateDate, setLastBuildUpdateDate] = createHandler(
 export const [getLastReleaseFetchDate, setLastReleaseFetchDate] = createHandler(
   (collection: string, project: string) => `${collection}:${project}:releases`
 );
+
+export const [getLastTestRunDate, setLastTestRunDate] = createHandler(
+  (collection: string, project: string) => `${collection}:${project}:test-runs`
+);
