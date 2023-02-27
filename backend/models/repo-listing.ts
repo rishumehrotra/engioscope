@@ -14,6 +14,7 @@ import { getAllRepoDefaultBranchIDs } from './repos.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
+import { CommitModel } from './mongoose-models/CommitModel.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -94,7 +95,17 @@ export const getActiveRepoIds = async (
     },
   ]);
 
-  return result;
+  const repoIDwithCommits = await CommitModel.distinct('repositoryId', {
+    collectionName,
+    project,
+    'repositoryId': { $in: result.map(repo => repo.id) },
+    'author.date': inDateRange(startDate, endDate),
+  });
+
+  const activeRepoIds = result.filter(repo => {
+    return repoIDwithCommits.includes(repo.id);
+  });
+  return activeRepoIds;
 };
 
 export const getYamlPipelinesCountSummary = async (
