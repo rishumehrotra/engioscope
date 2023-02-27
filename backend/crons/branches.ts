@@ -1,9 +1,21 @@
+import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import { BranchModel } from '../models/mongoose-models/BranchModel.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
 import type { GitBranchStats } from '../scraper/types-azure.js';
-import { runJob, shouldUpdate } from './utils.js';
+import { createSchedule, runJob } from './utils.js';
+
+const shouldUpdate = createSchedule({
+  frequency: oneHourInMs,
+  schedule: s => [
+    s`For the first ${oneDayInMs}, check every ${oneHourInMs}.`,
+    s`Then till ${3 * oneDayInMs}, check every ${3 * oneHourInMs}.`,
+    s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
+    s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
+    s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
+  ],
+});
 
 const saveRepoBranch = async (
   collectionName: string,

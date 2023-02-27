@@ -58,4 +58,4 @@ export const getCommits = async () => {
   console.log(`Done commits cron. Hit: ${counts.hit}, skipped: ${counts.skipped}`);
 };
 
-export default () => runJob('fetching commits', t => t.everyHourAt(45), getCommits);
+export default () => runJob('fetching commits', t => t.every(3).hours(), getCommits);
