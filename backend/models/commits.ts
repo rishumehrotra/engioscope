@@ -1,5 +1,7 @@
+import { z } from 'zod';
 import type { GitCommitRef } from '../scraper/types-azure.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
+import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 
 export const getLatestCommitIdAndDate = async (
   collectionName: string,
@@ -50,3 +52,131 @@ export const bulkSaveCommits =
         })
     );
   };
+
+export const RepoCommitsDetailsInputParser = z.object({
+  repositoryId: z.string(),
+  ...collectionAndProjectInputs,
+  ...dateRangeInputs,
+});
+
+export type CommitDetails = {
+  _id: string;
+  daily: {
+    date: string;
+    total: number;
+  }[];
+  totalAdd: number;
+  totalEdit: number;
+  totalDelete: number;
+  repoCommits: number;
+  otherCommits: number;
+  authorName: string;
+  authorImageUrl: string;
+  authorEmail: string;
+  allRepos: string[];
+};
+
+export const getRepoCommitsDetails = async ({
+  collectionName,
+  project,
+  repositoryId,
+  startDate,
+  endDate,
+}: z.infer<typeof RepoCommitsDetailsInputParser>) => {
+  const result = await CommitModel.aggregate<CommitDetails>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'author.date': inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $addFields: {
+        authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
+      },
+    },
+    {
+      $group: {
+        _id: '$author.email',
+        repoCommits: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, 1, 0],
+          },
+        },
+        otherCommits: {
+          $sum: {
+            $cond: [{ $ne: ['$repositoryId', repositoryId] }, 1, 0],
+          },
+        },
+        totalAdd: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.add', 0],
+          },
+        },
+        totalEdit: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.edit', 0],
+          },
+        },
+        totalDelete: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.delete', 0],
+          },
+        },
+        allRepos: { $addToSet: '$repositoryId' },
+        commits: { $push: '$$ROOT' },
+      },
+    },
+    {
+      $unwind: { path: '$commits' },
+    },
+    {
+      $match: { 'commits.repositoryId': repositoryId },
+    },
+    {
+      $group: {
+        _id: {
+          authorEmail: '$_id',
+          authorDate: '$commits.authorDate',
+        },
+        dailyCommit: { $sum: 1 },
+        repoCommits: { $first: '$repoCommits' },
+        otherCommits: { $first: '$otherCommits' },
+        allRepos: { $first: '$allRepos' },
+        authorName: { $first: '$commits.author.name' },
+        authorImageUrl: { $first: '$commits.author.imageUrl' },
+        totalAdd: { $first: '$totalAdd' },
+        totalEdit: { $first: '$totalEdit' },
+        totalDelete: { $first: '$totalDelete' },
+      },
+    },
+    {
+      $sort: { '_id.authorDate': 1 },
+    },
+    {
+      $group: {
+        _id: '$_id.authorEmail',
+        daily: {
+          $push: {
+            date: '$_id.authorDate',
+            total: '$dailyCommit',
+          },
+        },
+        totalAdd: { $first: '$totalAdd' },
+        totalEdit: { $first: '$totalEdit' },
+        totalDelete: { $first: '$totalDelete' },
+        repoCommits: { $first: '$repoCommits' },
+        otherCommits: { $first: '$otherCommits' },
+        authorName: { $first: '$authorName' },
+        authorImageUrl: { $first: '$authorImageUrl' },
+        authorEmail: { $first: '$_id.authorEmail' },
+        allRepos: { $first: '$allRepos' },
+      },
+    },
+    {
+      $sort: { repoCommits: -1 },
+    },
+  ]);
+  return result;
+};
