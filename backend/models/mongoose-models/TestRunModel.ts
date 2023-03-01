@@ -92,4 +92,10 @@ testSchema.index({
   'buildConfiguration.buildDefinitionId': 1,
 });
 
+testSchema.index({
+  'collectionName': 1,
+  'project.name': 1,
+  'buildConfiguration.id': 1,
+});
+
 export const TestRunModel = model<TestRun>('TestRun', testSchema);
