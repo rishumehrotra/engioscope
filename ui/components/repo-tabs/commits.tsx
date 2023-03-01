@@ -39,7 +39,7 @@ export default (
     count: commits.count,
     Component: () => (
       <>
-        {id ? <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} /> : null}
+        <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />
         <TabContents gridCols={1}>
           {commits.count === 0 ? (
             <AlertMessage message="No commits to this repo in the last three months" />

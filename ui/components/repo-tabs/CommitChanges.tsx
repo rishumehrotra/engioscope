@@ -6,7 +6,7 @@ const CommitChanges: React.FC<{
   edit: number;
   totalDelete: number;
 }> = ({ add, edit, totalDelete }) => (
-  <div className="grid grid-cols-3 gap-5">
+  <div className="grid grid-cols-3 gap-5 pr-3">
     <div className="pl-0 pr-2 py-4 whitespace-nowrap text-right text-green-700">
       <p data-tip={`Added ${num(add)} files`}>
         {add || add !== 0 ? `+${num(add)}` : ' '}
