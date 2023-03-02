@@ -13,7 +13,6 @@ const shouldUpdate = createSchedule({
     s`Then till ${3 * oneDayInMs}, check every ${3 * oneHourInMs}.`,
     s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
     s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
-    s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
   ],
 });
 
