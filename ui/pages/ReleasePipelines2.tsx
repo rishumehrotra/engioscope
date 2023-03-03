@@ -12,16 +12,16 @@ import useReleaseFilters from '../hooks/use-release-filters.js';
 
 const ReleasePipelines2: React.FC = () => {
   const cnp = useCollectionAndProject();
-  const filters = useReleaseFilters();
-  useRemoveSort();
-  const query = trpc.releases.paginatedReleases.useInfiniteQuery(filters, {
-    getNextPageParam: lastPage => lastPage.nextCursor,
-  });
   const projectSummary = trpc.projects.summary.useQuery(cnp);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
     asStringArray
   );
+  const filters = useReleaseFilters();
+  useRemoveSort();
+  const query = trpc.releases.paginatedReleases.useInfiniteQuery(filters, {
+    getNextPageParam: lastPage => lastPage.nextCursor,
+  });
   const count = trpc.releases.filteredReleaseCount.useQuery(filters);
 
   return (

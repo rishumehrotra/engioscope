@@ -12,7 +12,6 @@ import { useProjectDetails } from '../hooks/project-details-hooks.js';
 import usePageName from '../hooks/use-page-name.js';
 import Overview from './Overview.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
-import type { UIProjectAnalysis } from '../../shared/types.js';
 import ReleasePipelines2 from './ReleasePipelines2.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
@@ -27,10 +26,13 @@ const renderStatIfAvailable = (count: number | undefined, label: string) =>
     ''
   );
 
-const useNavItems = (projectDetails: UIProjectAnalysis | null) => {
+const useNavItems = () => {
   const location = useLocation();
   const pathParts = location.pathname.split('/');
   const selectedTab = pathParts[pathParts.length - 1];
+
+  const cnp = useCollectionAndProject();
+  const projectSummary = trpc.projects.summary.useQuery(cnp);
 
   const route = (selectedKey: string) =>
     `${pathParts.slice(0, -1).join('/')}/${selectedKey}`;
@@ -44,11 +46,11 @@ const useNavItems = (projectDetails: UIProjectAnalysis | null) => {
         label: 'Release Pipelines',
         linkTo: route('release-pipelines'),
       },
-      ...(projectDetails?.workItemLabel
+      ...(projectSummary.data?.workItemLabel
         ? [
             {
               key: 'workitems',
-              label: projectDetails.workItemLabel[1],
+              label: projectSummary.data.workItemLabel,
               linkTo: 'workitems',
             },
           ]
@@ -67,7 +69,7 @@ const Project: React.FC = () => {
   const { project: projectName } = useParams<{ project: string }>();
   const setHeaderDetails = useSetHeaderDetails();
 
-  const { navItems, selectedTab } = useNavItems(projectDetails);
+  const { navItems, selectedTab } = useNavItems();
 
   useEffect(() => {
     projectSummary &&

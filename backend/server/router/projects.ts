@@ -16,15 +16,19 @@ const summary = async ({
     getReleasePipelinesCount(collectionName, project),
   ]);
 
-  const groupRepos = configForProject(collectionName, project)?.groupRepos;
+  const projectConfig = configForProject(collectionName, project);
 
   return {
     repos,
     buildPipelines,
     releasePipelines,
-    groups: groupRepos
-      ? { label: groupRepos.label, groups: Object.keys(groupRepos.groups) }
+    groups: projectConfig?.groupRepos
+      ? {
+          label: projectConfig.groupRepos.label,
+          groups: Object.keys(projectConfig.groupRepos.groups),
+        }
       : undefined,
+    workItemLabel: projectConfig?.workitems.label,
   };
 };
 
