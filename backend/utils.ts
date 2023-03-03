@@ -4,11 +4,12 @@
 
 import { promises as fs } from 'node:fs';
 import ms from 'ms';
-import { allPass, compose, not } from 'rambda';
+import { allPass, compose, not, range } from 'rambda';
 import AL from 'await-lock';
 import { fileURLToPath } from 'node:url';
 import type { ParsedConfig } from './scraper/parse-config.js';
 import { HTTPError } from './scraper/network/http-error.js';
+import { oneDayInMs } from '../shared/utils.js';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
@@ -44,10 +45,8 @@ export const doesFileExist = async (filePath: string) => {
   }
 };
 
-export const range = (num: number) => [...Array.from({ length: num }).keys()];
-
 export const chunkArray = <T>(array: T[], chunkSize: number) =>
-  range(Math.ceil(array.length / chunkSize)).map(i =>
+  range(0, Math.ceil(array.length / chunkSize)).map(i =>
     array.slice(i * chunkSize, (i + 1) * chunkSize)
   );
 
@@ -131,3 +130,18 @@ export const lock = () => {
 
 export const dirname = (importMetaUrl: string) =>
   fileURLToPath(new URL('.', importMetaUrl));
+
+export const splitDateRangeByDays =
+  (days: number) => (startDate: Date, endDate: Date) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const numberOfIntervals =
+      Math.floor((end.getTime() - start.getTime()) / (days * oneDayInMs)) + 1;
+
+    return range(1, numberOfIntervals).map(intervalIndex => {
+      const intervalStart = new Date(start.getTime() + intervalIndex * days * oneDayInMs);
+      return intervalStart.toISOString().split('T')[0];
+    });
+  };
+export const splitDateRangeByWeek = splitDateRangeByDays(7);
