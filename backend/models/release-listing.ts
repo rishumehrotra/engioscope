@@ -569,6 +569,32 @@ export const paginatedReleaseIdsInputParser = z.object({
     .nullish(),
 });
 
+export const filteredReleaseCount = async (
+  options: z.infer<typeof paginatedReleaseIdsInputParser>
+) => {
+  const filter = await createFilter(options);
+
+  const result = await ReleaseModel.aggregate<{ count: number }>([
+    ...filter,
+    {
+      $group: {
+        _id: '$releaseDefinitionId',
+        releaseDefinitionUrl: { $first: '$releaseDefinitionUrl' },
+        releaseDefinitionName: { $first: '$releaseDefinitionName' },
+        lastModifiedOn: { $max: '$modifiedOn' },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return result[0].count;
+};
+
 export const paginatedReleaseIds = async (
   options: z.infer<typeof paginatedReleaseIdsInputParser>
 ) => {

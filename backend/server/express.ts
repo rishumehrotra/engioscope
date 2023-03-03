@@ -40,7 +40,9 @@ const configureExpress = (config: ParsedConfig) => {
     res.sendFile(path.join(uiFolder, 'index.html'));
   };
 
-  app.use(morgan('combined'));
+  if (process.env.NODE_ENV === 'production') {
+    app.use(morgan('combined'));
+  }
   app.use(compression());
   app.use(rateLimit({ windowMs: 60 * 1000, max: 100 })); // 100 reqs/min
 

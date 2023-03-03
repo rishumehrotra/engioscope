@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { configForProject } from '../../config.js';
 import { getBuildPipelineCount } from '../../models/build-definitions.js';
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
 import { getPipelinesCount as getReleasePipelinesCount } from '../../models/releases.js';
@@ -15,7 +16,16 @@ const summary = async ({
     getReleasePipelinesCount(collectionName, project),
   ]);
 
-  return { repos, buildPipelines, releasePipelines };
+  const groupRepos = configForProject(collectionName, project)?.groupRepos;
+
+  return {
+    repos,
+    buildPipelines,
+    releasePipelines,
+    groups: groupRepos
+      ? { label: groupRepos.label, groups: Object.keys(groupRepos.groups) }
+      : undefined,
+  };
 };
 
 export default t.router({

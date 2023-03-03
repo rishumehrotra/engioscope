@@ -144,11 +144,9 @@ const Artefacts: React.FC<{
           ) : (
             artifacts.map(artifact => (
               <li
-                key={
-                  artifact.type === 'Build'
-                    ? `build-${artifact.name}`
-                    : `other-${artifact.alias}`
-                }
+                key={`${artifact.type}-${
+                  artifact.type === 'Build' ? artifact.name : artifact.alias
+                }`}
               >
                 <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
                   {artifact.type === 'Build' ? (
@@ -199,13 +197,12 @@ const Artefacts: React.FC<{
                                 className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm"
                               >
                                 <Branches className="h-4 mr-1" />
-                                {branch.name.replace('refs/heads/', '')}
-                                <span
-                                  className="text-xs border-2 rounded-full px-2 inline-block m-2"
-                                  data-html
-                                >
-                                  Policies
-                                </span>
+                                {(branch.name || '(unknown)').replace('refs/heads/', '')}
+                                <BranchPolicyPill
+                                  repositoryId={artifact.repoId}
+                                  refName={branch.name}
+                                  conforms={branch.conforms}
+                                />
                               </li>
                             ))}
                           </ol>
