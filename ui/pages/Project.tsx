@@ -126,8 +126,8 @@ const Project: React.FC = () => {
 
       <Routes>
         <Route path="repos" element={<Repos />} />
-        <Route path="release-pipelines" element={<ReleasePipelines />} />
-        <Route path="release-pipelines2" element={<ReleasePipelines2 />} />
+        <Route path="release-pipelines" element={<ReleasePipelines2 />} />
+        <Route path="release-pipelines2" element={<ReleasePipelines />} />
         <Route path="devs" element={<Devs />} />
         <Route path="workitems" element={<WorkItems />} />
         <Route path="" element={<Overview />} />

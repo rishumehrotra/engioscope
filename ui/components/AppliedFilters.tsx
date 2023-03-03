@@ -20,7 +20,7 @@ const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({
   </span>
 );
 
-const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({
+const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
   count,
   type = 'repos',
 }) => {
@@ -83,7 +83,10 @@ const AppliedFilters: React.FC<{ count: number; type: Tab }> = ({
 
   return (
     <div className="w-auto flex flex-wrap items-center text-gray-800 mb-2">
-      {`Showing ${count} ${pageName(type, count).toLowerCase()} with filters applied: `}
+      {`Showing ${count ?? '...'} ${pageName(
+        type,
+        count ?? 3
+      ).toLowerCase()} with filters applied: `}
       {search ? (
         <FilterTag
           label={`Search: ${search}`}

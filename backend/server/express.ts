@@ -10,7 +10,7 @@ import api from './api.js';
 import { setConfig } from '../config.js';
 import setupCrons from '../crons/index.js';
 import { dirname } from '../utils.js';
-import { oneYearInMs } from '../../shared/utils.js';
+import { oneMinuteInMs, oneYearInMs } from '../../shared/utils.js';
 
 const uiFolder = path.join(dirname(import.meta.url), '..', '..', 'ui');
 
@@ -44,7 +44,7 @@ const configureExpress = (config: ParsedConfig) => {
     app.use(morgan('combined'));
   }
   app.use(compression());
-  app.use(rateLimit({ windowMs: 60 * 1000, max: 100 })); // 100 reqs/min
+  app.use(rateLimit({ windowMs: oneMinuteInMs, max: 200 }));
 
   app.get('/', sendIndexHtml);
   app.use(express.static(uiFolder));

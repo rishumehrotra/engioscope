@@ -592,7 +592,7 @@ export const filteredReleaseCount = async (
     },
   ]);
 
-  return result[0].count;
+  return result[0]?.count || 0;
 };
 
 export const paginatedReleaseIds = async (

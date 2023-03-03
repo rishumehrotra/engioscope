@@ -39,7 +39,7 @@ const ReleasePipelines2: React.FC = () => {
           />
         </div>
       ) : null}
-      <AppliedFilters type="release-pipelines" count={count.data || 0} />
+      <AppliedFilters type="release-pipelines" count={count.data} />
       <ReleasePipelineSummary2 />
       <InfiniteScrollList2
         items={query.data?.pages.flatMap(page => page.items) || []}
