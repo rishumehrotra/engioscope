@@ -6,6 +6,7 @@ import type { RepoAnalysis } from '../../../shared/types.js';
 import AlertMessage from '../common/AlertMessage.js';
 import type { Tab } from './Tabs.js';
 import TabContents from './TabContents.js';
+import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 import CommitTimeline from '../commits/CommitTimeline.js';
 import { ProfilePic } from '../common/ProfilePic.js';
 import Changes from '../commits/Changes.js';
@@ -37,74 +38,79 @@ export default (
   return {
     title: 'Commits',
     count: commits.count,
-    Component: () => (
-      <>
-        <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />
-        <TabContents gridCols={1}>
-          {commits.count === 0 ? (
-            <AlertMessage message="No commits to this repo in the last three months" />
-          ) : (
-            <>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th> </th>
-                    <th>Commits</th>
-                    <th>Changes</th>
-                    <th>Timeline</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {commits.byDev.map(commitsByDev => {
-                    const developerUrl = location.pathname.replace(
-                      '/repos',
-                      `/devs?search="${commitsByDev.name}"`
-                    );
+    Component: () => {
+      const [showNewBuild] = useQueryParam('build-v2', asBoolean);
+      return (
+        <>
+          {showNewBuild ? (
+            <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />
+          ) : null}
+          <TabContents gridCols={1}>
+            {commits.count === 0 ? (
+              <AlertMessage message="No commits to this repo in the last three months" />
+            ) : (
+              <>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th> </th>
+                      <th>Commits</th>
+                      <th>Changes</th>
+                      <th>Timeline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commits.byDev.map(commitsByDev => {
+                      const developerUrl = location.pathname.replace(
+                        '/repos',
+                        `/devs?search="${commitsByDev.name}"`
+                      );
 
-                    return (
-                      <tr key={commitsByDev.name}>
-                        <td className="text-sm">
-                          <Link to={developerUrl} className="flex commits-profile">
-                            <ProfilePic
-                              alt={`Profile pic for ${commitsByDev.name}`}
-                              src={commitsByDev.imageUrl}
-                              width="44"
-                              height="44"
-                              className="rounded-full inline-block mr-2"
+                      return (
+                        <tr key={commitsByDev.name}>
+                          <td className="text-sm">
+                            <Link to={developerUrl} className="flex commits-profile">
+                              <ProfilePic
+                                alt={`Profile pic for ${commitsByDev.name}`}
+                                src={commitsByDev.imageUrl}
+                                width="44"
+                                height="44"
+                                className="rounded-full inline-block mr-2"
+                              />
+                              <div>
+                                <span className="dev-name font-bold text-blue-600 capitalize">
+                                  {commitsByDev.name}
+                                </span>
+                                <p className="text-gray-500 hover:no-underline">
+                                  {subtitle(commitsByDev.name)}
+                                </p>
+                              </div>
+                            </Link>
+                          </td>
+                          <td>{sum(Object.values(commitsByDev.byDate))}</td>
+                          <td>
+                            <Changes changes={commitsByDev.changes} />
+                          </td>
+                          <td>
+                            <CommitTimeline
+                              timeline={commitsByDev.byDate}
+                              max={max}
+                              queryPeriodDays={queryPeriodDays}
                             />
-                            <div>
-                              <span className="dev-name font-bold text-blue-600 capitalize">
-                                {commitsByDev.name}
-                              </span>
-                              <p className="text-gray-500 hover:no-underline">
-                                {subtitle(commitsByDev.name)}
-                              </p>
-                            </div>
-                          </Link>
-                        </td>
-                        <td>{sum(Object.values(commitsByDev.byDate))}</td>
-                        <td>
-                          <Changes changes={commitsByDev.changes} />
-                        </td>
-                        <td>
-                          <CommitTimeline
-                            timeline={commitsByDev.byDate}
-                            max={max}
-                            queryPeriodDays={queryPeriodDays}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-                {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
-              </div>
-            </>
-          )}
-        </TabContents>
-      </>
-    ),
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="w-full text-right text-sm italic text-gray-500 mt-4">
+                  {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
+                </div>
+              </>
+            )}
+          </TabContents>
+        </>
+      );
+    },
   };
 };

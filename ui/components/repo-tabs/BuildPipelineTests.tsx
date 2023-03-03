@@ -3,16 +3,15 @@ import React from 'react';
 import { trpc } from '../../helpers/trpc.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import TabContents from './TabContents.jsx';
 
-const BuildPipelineTets: React.FC<{
+const BuildPipelineTests: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
   const { collectionName, project } = useCollectionAndProject();
-  const [showNewBuild] = useQueryParam('build-v2', asBoolean);
+
   const dateRange = useDateRange();
   const tests = trpc.tests.getTestRunsForRepository.useQuery({
     collectionName,
@@ -21,7 +20,7 @@ const BuildPipelineTets: React.FC<{
     ...dateRange,
   });
 
-  if (!showNewBuild || !tests.data) return null;
+  if (!tests.data) return null;
 
   return (
     <TabContents gridCols={1}>
@@ -137,4 +136,4 @@ const BuildPipelineTets: React.FC<{
   );
 };
 
-export default BuildPipelineTets;
+export default BuildPipelineTests;

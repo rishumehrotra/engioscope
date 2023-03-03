@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { trpc } from '../../helpers/trpc.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
+
 import CommitTimeline from '../commits/CommitTimeline.jsx';
 import AlertMessage from '../common/AlertMessage.jsx';
 import { ProfilePic } from '../common/ProfilePic.jsx';
@@ -14,7 +14,6 @@ const CommitsTable: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
-  const [showNewBuild] = useQueryParam('build-v2', asBoolean);
   const { collectionName, project } = useCollectionAndProject();
   const dateRange = useDateRange();
   const location = useLocation();
@@ -42,7 +41,7 @@ const CommitsTable: React.FC<{
     return dateCommits;
   };
 
-  if (!commitsDetails.data || !showNewBuild) return null;
+  if (!commitsDetails.data) return null;
   return (
     <TabContents gridCols={1}>
       {commitsDetails.data.length === 0 ? (
