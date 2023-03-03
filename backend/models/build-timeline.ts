@@ -9,14 +9,7 @@ const resultCount = 7;
 
 const formatName = {
   $arrayElemAt: [
-    {
-      $split: [
-        {
-          $arrayElemAt: [{ $split: ['$records.name', '@'] }, 0],
-        },
-        '/',
-      ],
-    },
+    { $split: [{ $arrayElemAt: [{ $split: ['$records.name', '@'] }, 0] }, '/'] },
     0,
   ],
 };

@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+import { divide, toPercentage } from '../../shared/utils.js';
 import { AlertTriangle } from './common/Icons.js';
 import { envRowTooltip } from './OverviewGraphs/helpers/tooltips.js';
 
@@ -69,10 +70,21 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({
               style={{ width: `${(successful * 100) / max}%` }}
             />
             <div className="text-sm pl-2 py-0.5 z-20 relative">
-              <b>{`${(total / queryPeriodDays).toFixed(2).replace('.00', '')}`}</b>
-              <span className="text-xs">{' deploys/day, '}</span>
-              <b>{`${Math.round((successful * 100) / total)}%`}</b>
-              <span className="text-xs">{' success rate'}</span>
+              <b>
+                {divide(total, queryPeriodDays)
+                  .map(x => x.toFixed(2).replace('.00', ''))
+                  .getOr('0')}
+              </b>
+              <span className="text-xs">{` deploys/day${total > 0 ? ', ' : ''}`}</span>
+              {divide(successful, total)
+                .map(toPercentage)
+                .map(percent => (
+                  <>
+                    <b>{percent}</b>
+                    <span className="text-xs">{' success rate'}</span>
+                  </>
+                ))
+                .getOr(null)}
             </div>
           </div>
         </Fragment>
