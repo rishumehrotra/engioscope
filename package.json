@@ -69,7 +69,7 @@
     "sort-lib": "^1.0.2",
     "superjson": "1.12.2",
     "tar": "6.1.13",
-    "ua-parser-js": "1.0.33",
+    "ua-parser-js": "1.0.34",
     "yaml": "2.2.1",
     "yargs": "17.7.1",
     "zod": "3.21.0"
