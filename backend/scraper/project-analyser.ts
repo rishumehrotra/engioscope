@@ -30,6 +30,7 @@ import { getReleases } from '../models/releases.js';
 import { getPolicyConfigurations } from '../models/policy-configuration.js';
 import { getBuildDefinitionsForProject } from '../models/build-definitions.js';
 import { branchStatsForRepo } from '../models/branches.js';
+import { getCommits } from '../models/commits.js';
 
 const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
@@ -41,13 +42,8 @@ const getLanguageColor = (lang: string) => {
 const analyserLog = debug('analyser');
 
 export default (config: ParsedConfig) => {
-  const {
-    getPRs,
-    getCommits,
-    getTestRuns,
-    getTestCoverage,
-    getProjectWorkItemIdsForQuery,
-  } = azure(config);
+  const { getPRs, getTestRuns, getTestCoverage, getProjectWorkItemIdsForQuery } =
+    azure(config);
 
   return async (
     collection: ParsedCollection,

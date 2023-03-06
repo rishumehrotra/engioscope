@@ -1,20 +1,20 @@
 import { sum } from 'rambda';
 import { byNum, desc } from 'sort-lib';
 import type { AggregatedCommitsByDev, UICommits } from '../../../shared/types.js';
-import type { GitCommitRef } from '../types-azure.js';
+import type { Commit } from '../../models/mongoose-models/CommitModel.js';
 
 const dateString = (date: Date) => date.toISOString().split('T')[0];
 
 const mergeCommit = (
-  commit: GitCommitRef,
+  commit: Commit,
   aggregatedCommits?: AggregatedCommitsByDev
 ): AggregatedCommitsByDev => ({
   name: commit.committer.name,
   imageUrl: commit.committer.imageUrl,
   changes: {
-    add: (aggregatedCommits?.changes.add || 0) + (commit.changeCounts?.Add || 0),
-    delete: (aggregatedCommits?.changes.delete || 0) + (commit.changeCounts?.Delete || 0),
-    edit: (aggregatedCommits?.changes.edit || 0) + (commit.changeCounts?.Edit || 0),
+    add: (aggregatedCommits?.changes.add || 0) + (commit.changeCounts?.add || 0),
+    delete: (aggregatedCommits?.changes.delete || 0) + (commit.changeCounts?.delete || 0),
+    edit: (aggregatedCommits?.changes.edit || 0) + (commit.changeCounts?.edit || 0),
   },
   byDate: {
     ...aggregatedCommits?.byDate,
@@ -23,7 +23,7 @@ const mergeCommit = (
   },
 });
 
-export default (commits: GitCommitRef[]): UICommits => {
+export default (commits: Commit[]): UICommits => {
   const commitsByDev = commits.reduce<Record<string, AggregatedCommitsByDev>>(
     (acc, commit) => {
       if (!commit.changeCounts) return acc;

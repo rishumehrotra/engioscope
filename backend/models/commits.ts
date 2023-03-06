@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { GitCommitRef } from '../scraper/types-azure.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { getConfig } from '../config.js';
 
 export const getLatestCommitIdAndDate = async (
   collectionName: string,
@@ -51,6 +52,17 @@ export const bulkSaveCommits =
           };
         })
     );
+  };
+
+export const getCommits =
+  (collectionName: string, project: string) => (repositoryId: string) => {
+    const { queryFrom } = getConfig().azure;
+    return CommitModel.find({
+      collectionName,
+      project,
+      repositoryId,
+      'author.date': { $gt: queryFrom },
+    });
   };
 
 export const RepoCommitsDetailsInputParser = z.object({
