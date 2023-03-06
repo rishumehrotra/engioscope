@@ -72,7 +72,7 @@
     "ua-parser-js": "1.0.34",
     "yaml": "2.2.1",
     "yargs": "17.7.1",
-    "zod": "3.21.1"
+    "zod": "3.21.2"
   },
   "browserslist": {
     "production": [
