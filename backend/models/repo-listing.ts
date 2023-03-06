@@ -104,11 +104,6 @@ export const getActiveRepos = async (
     }),
   ]);
 
-  console.log({
-    repos: repos.length,
-    repoIdsFromBuilds: repoIdsFromBuilds.length,
-    repoIdsFromCommits: repoIdsFromCommits.length,
-  });
   const activeRepoIds = unique([
     ...repoIdsFromBuilds.map(r => r.id),
     ...(repoIdsFromCommits as string[]),
