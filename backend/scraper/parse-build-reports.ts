@@ -2,13 +2,10 @@ import { parse as parseHtml } from 'node-html-parser';
 import { decode } from 'html-entities';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
-import glob from 'glob';
+import { glob } from 'glob';
 import { normalizeBranchName } from '../utils.js';
 import { exists } from '../../shared/utils.js';
 import type { AzureBuildReport } from '../models/build-reports.js';
-
-const globAsync = promisify(glob.glob);
 
 export const htmlReportToObj = (htmlContent: string) => {
   const root = parseHtml(htmlContent);
@@ -65,7 +62,7 @@ export default (collectionName: string, projectName: string) =>
       projectName,
       repoName
     );
-    const matchingBuildReportFiles = await globAsync(
+    const matchingBuildReportFiles = await glob(
       join(buildReportDir, '**', `${normalizeBranchName(branchName)}.html`)
     );
 
