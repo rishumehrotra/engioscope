@@ -11,6 +11,7 @@ import { runJob } from './utils.js';
 export const bulkSavePolicies =
   (collectionName: string, project: string) => (policies: AzurePolicyConfiguration[]) =>
     RepoPolicyModel.bulkWrite(
+      // @ts-expect-error Seems to be a bug with mongoose. See commend below
       policies.map(p => {
         const {
           settings: { scope, ...settings },
@@ -34,6 +35,7 @@ export const bulkSavePolicies =
                 isDeleted: policy.isDeleted,
                 isBlocking: policy.isBlocking,
                 refName: 'refName' in scope[0] ? scope[0].refName : undefined,
+                // Type definitions here seems to be a bug with mongoose
                 type: policy.type.displayName,
                 settings,
               },

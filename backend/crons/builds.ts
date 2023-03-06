@@ -40,7 +40,7 @@ const saveBuildTimeline =
           { upsert: true }
         )
           .lean()
-          .then(result => result.upsertedId)
+          .then(result => result._id)
       : null;
 
 const putBuildTimelineInDb =
