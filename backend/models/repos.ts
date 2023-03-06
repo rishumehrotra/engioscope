@@ -7,7 +7,10 @@ export const getRepositories = (collectionName: string, project: string) =>
   RepositoryModel.find({ collectionName, 'project.name': project }).lean();
 
 export const getRepoCount = (collectionName: string, project: string) =>
-  RepositoryModel.count({ collectionName, 'project.name': project }).lean();
+  RepositoryModel.count({ collectionName, 'project.name': project })
+    .lean()
+    // Stupid mongoose types
+    .then(x => x as unknown as number);
 
 export const paginatedRepoListParser = z.object({
   ...collectionAndProjectInputs,
