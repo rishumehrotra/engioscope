@@ -94,11 +94,12 @@ export const getRepoCommitsDetails = async ({
     {
       $addFields: {
         authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
+        authorEmail: { $toLower: '$author.email' },
       },
     },
     {
       $group: {
-        _id: '$author.email',
+        _id: '$authorEmail',
         repoCommits: {
           $sum: {
             $cond: [{ $eq: ['$repositoryId', repositoryId] }, 1, 0],

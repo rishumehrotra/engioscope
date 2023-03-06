@@ -1,17 +1,133 @@
 import React from 'react';
-import { add, sum } from 'rambda';
 import type { Location } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { RepoAnalysis } from '../../../shared/types.js';
-import AlertMessage from '../common/AlertMessage.js';
 import type { Tab } from './Tabs.js';
-import TabContents from './TabContents.js';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
-import CommitTimeline from '../commits/CommitTimeline.js';
-import { ProfilePic } from '../common/ProfilePic.js';
-import Changes from '../commits/Changes.js';
 import type { Dev } from '../../types.js';
-import CommitsTable from './CommitsTable.jsx';
+import { trpc } from '../../helpers/trpc.js';
+import { useDateRange } from '../../hooks/date-range-hooks.jsx';
+import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import CommitTimeline from '../commits/CommitTimeline.jsx';
+import AlertMessage from '../common/AlertMessage.jsx';
+import { ProfilePic } from '../common/ProfilePic.jsx';
+import CommitChanges from './CommitChanges.jsx';
+import TabContents from './TabContents.jsx';
+import Loading from '../Loading.jsx';
+
+const CommitsTable: React.FC<{
+  repositoryId: string;
+  queryPeriodDays: number;
+}> = ({ repositoryId, queryPeriodDays }) => {
+  const { collectionName, project } = useCollectionAndProject();
+  const dateRange = useDateRange();
+  const location = useLocation();
+  const commitsDetails = trpc.commits.getRepoCommitsDetails.useQuery({
+    collectionName,
+    project,
+    repositoryId,
+    ...dateRange,
+  });
+
+  const max = commitsDetails.data
+    ? Math.max(...commitsDetails.data.flatMap(obj => obj.daily.map(item => item.total)))
+    : 0;
+  type CommitsParam = {
+    date: string;
+    total: number;
+  };
+
+  const timelineProp = (commits: CommitsParam[]) => {
+    const dateCommits: Record<string, number> = {};
+    commits.forEach(commit => {
+      dateCommits[commit.date] = commit.total;
+    });
+
+    return dateCommits;
+  };
+
+  return (
+    <TabContents gridCols={1}>
+      {commitsDetails.data ? (
+        commitsDetails.data.length === 0 ? (
+          <AlertMessage message="No commits to this repo in the last three months" />
+        ) : (
+          <>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th> </th>
+                  <th>Commits</th>
+                  <th>Changes</th>
+                  <th>Timeline</th>
+                </tr>
+              </thead>
+              <tbody>
+                {commitsDetails.data.map(commits => {
+                  const developerUrl = location.pathname.replace(
+                    '/repos',
+                    `/devs?search="${commits.authorName}"`
+                  );
+
+                  return (
+                    <tr key={commits.authorEmail}>
+                      <td className="text-sm">
+                        <Link to={developerUrl} className="flex commits-profile">
+                          <ProfilePic
+                            alt={`Profile pic for ${commits.authorName}`}
+                            src={commits.authorImageUrl}
+                            width="44"
+                            height="44"
+                            className="rounded-full inline-block mr-2"
+                          />
+                          <div>
+                            <span className="dev-name font-bold text-blue-600 capitalize">
+                              {commits.authorName}
+                            </span>
+                            <p className="text-gray-500 hover:no-underline">
+                              {/*  Other Commits */}
+                              {commits.otherCommits === 0
+                                ? `No commits in other repos`
+                                : `${commits.otherCommits} commits in ${
+                                    commits.allRepos.length - 1
+                                  } repos`}
+                            </p>
+                          </div>
+                        </Link>
+                      </td>
+                      <td>{commits.repoCommits}</td>
+                      {/* Changes */}
+                      <td>
+                        <CommitChanges
+                          add={commits.totalAdd}
+                          edit={commits.totalEdit}
+                          totalDelete={commits.totalDelete}
+                        />
+                      </td>
+                      <td>
+                        {/* TimeLine Cell */}
+                        <CommitTimeline
+                          timeline={timelineProp(commits.daily)}
+                          max={max}
+                          queryPeriodDays={queryPeriodDays}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="w-full text-right text-sm italic text-gray-500 mt-4">
+              {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
+            </div>
+          </>
+        )
+      ) : (
+        <Loading />
+      )}
+    </TabContents>
+  );
+};
 
 export default (
   repo: RepoAnalysis,
@@ -20,97 +136,12 @@ export default (
   queryPeriodDays: number
 ): Tab => {
   const { commits, id } = repo;
-  const max = Math.max(
-    ...Object.values(commits.byDev).flatMap(d => Object.values(d.byDate))
-  );
-  const subtitle = (devName: string) => {
-    const excludedRepos = aggregatedDevs[devName].repos.filter(r => r.name !== repo.name);
-    const commitCount = excludedRepos
-      .flatMap(r => Object.values(r.byDate))
-      .reduce(add, 0);
-    return excludedRepos.length > 0
-      ? `${commitCount} commits in ${excludedRepos.length} other ${
-          excludedRepos.length === 1 ? 'repo' : 'repos'
-        }`
-      : 'No commits in other repos';
-  };
 
   return {
     title: 'Commits',
     count: commits.count,
     Component: () => {
-      const [showNewBuild] = useQueryParam('build-v2', asBoolean);
-      return (
-        <>
-          {showNewBuild ? (
-            <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />
-          ) : null}
-          <TabContents gridCols={1}>
-            {commits.count === 0 ? (
-              <AlertMessage message="No commits to this repo in the last three months" />
-            ) : (
-              <>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th> </th>
-                      <th>Commits</th>
-                      <th>Changes</th>
-                      <th>Timeline</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {commits.byDev.map(commitsByDev => {
-                      const developerUrl = location.pathname.replace(
-                        '/repos',
-                        `/devs?search="${commitsByDev.name}"`
-                      );
-
-                      return (
-                        <tr key={commitsByDev.name}>
-                          <td className="text-sm">
-                            <Link to={developerUrl} className="flex commits-profile">
-                              <ProfilePic
-                                alt={`Profile pic for ${commitsByDev.name}`}
-                                src={commitsByDev.imageUrl}
-                                width="44"
-                                height="44"
-                                className="rounded-full inline-block mr-2"
-                              />
-                              <div>
-                                <span className="dev-name font-bold text-blue-600 capitalize">
-                                  {commitsByDev.name}
-                                </span>
-                                <p className="text-gray-500 hover:no-underline">
-                                  {subtitle(commitsByDev.name)}
-                                </p>
-                              </div>
-                            </Link>
-                          </td>
-                          <td>{sum(Object.values(commitsByDev.byDate))}</td>
-                          <td>
-                            <Changes changes={commitsByDev.changes} />
-                          </td>
-                          <td>
-                            <CommitTimeline
-                              timeline={commitsByDev.byDate}
-                              max={max}
-                              queryPeriodDays={queryPeriodDays}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-                  {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
-                </div>
-              </>
-            )}
-          </TabContents>
-        </>
-      );
+      return <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />;
     },
   };
 };
