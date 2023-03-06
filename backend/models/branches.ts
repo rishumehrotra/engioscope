@@ -27,7 +27,10 @@ export const getHealthyBranchesSummary = async ({
   defaultBranchIDs: ObjectId[];
 }) => {
   const today = new Date();
-  const fifteenDaysBack = today.setDate(today.getDate() - 15);
+  const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
+  console.log('defaultBranchIDs', defaultBranchIDs);
+  console.log('today', today, 'Fifteen', fifteenDaysBack);
+  console.log('Active Repo', repoIds);
 
   const result = await BranchModel.aggregate<{
     total: number;
@@ -74,6 +77,22 @@ export const getHealthyBranchesSummary = async ({
       },
     },
   ]);
+
+  const resultTotal = await BranchModel.aggregate<{
+    total: number;
+    healthy: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        // repositoryId: { $in: repoIds },
+      },
+    },
+  ]);
+
+  console.log('RESULT TOTAL', resultTotal.length);
+  console.log(result);
 
   return result[0] || { total: 0, healthy: 0 };
 };
