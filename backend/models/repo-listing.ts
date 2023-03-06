@@ -15,6 +15,7 @@ import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
+import { unique } from '../utils.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -44,7 +45,7 @@ const getRepoIdFromNames = async (
   return result.map(repo => repo.id);
 };
 
-export const getActiveRepoIds = async (
+export const getActiveRepos = async (
   collectionName: string,
   project: string,
   startDate: Date,
@@ -60,52 +61,57 @@ export const getActiveRepoIds = async (
     ? await getRepoIdFromNames(collectionName, project, groupRepositoryNames)
     : [];
 
-  const result = await BuildModel.aggregate<{
-    id: string;
-    buildsCount: number;
-    name: string;
-  }>([
+  const repos = await RepositoryModel.find(
     {
-      $match: {
-        collectionName,
-        project,
-        ...(groupRepositoryIDs.length === 0
-          ? {}
-          : { 'repository.id': { $in: groupRepositoryIDs } }),
-        ...(searchTerm
-          ? { 'repository.name': { $regex: new RegExp(searchTerm, 'i') } }
-          : {}),
-        startTime: inDateRange(startDate, endDate),
-      },
+      collectionName,
+      'project.name': project,
+      ...(groupRepositoryIDs.length === 0 ? {} : { id: { $in: groupRepositoryIDs } }),
+
+      ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
     },
-    {
-      $group: {
-        _id: '$repository.id',
-        name: { $first: '$repository.name' },
-        buildsCount: { $sum: 1 },
+    { id: 1, name: 1 }
+  ).lean();
+
+  const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
+    BuildModel.aggregate<{ id: string }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          'repository.id': { $in: repos.map(r => r.id) },
+          'startTime': inDateRange(startDate, endDate),
+        },
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        id: '$_id',
-        buildsCount: 1,
-        name: 1,
+      {
+        $group: {
+          _id: '$repository.id',
+          name: { $first: '$repository.name' },
+          buildsCount: { $sum: 1 },
+        },
       },
-    },
+      {
+        $project: {
+          _id: 0,
+          id: '$_id',
+        },
+      },
+    ]),
+    CommitModel.distinct('repositoryId', {
+      collectionName,
+      project,
+      'author.date': inDateRange(startDate, endDate),
+      'repositoryId': { $in: repos.map(r => r.id) },
+    }),
   ]);
 
-  const repoIDwithCommits = await CommitModel.distinct('repositoryId', {
-    collectionName,
-    project,
-    'repositoryId': { $in: result.map(repo => repo.id) },
-    'author.date': inDateRange(startDate, endDate),
-  });
+  const activeRepoIds = unique([
+    ...repoIdsFromBuilds.map(r => r.id),
+    ...(repoIdsFromCommits as string[]),
+  ]);
 
-  const activeRepoIds = result.filter(repo => {
-    return repoIDwithCommits.includes(repo.id);
-  });
-  return activeRepoIds;
+  return repos
+    .filter(r => activeRepoIds.includes(r.id))
+    .map(r => ({ id: r.id, name: r.name }));
 };
 
 export const getYamlPipelinesCountSummary = async (
@@ -295,7 +301,7 @@ export const getSummary = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof getSummaryInputParser>) => {
-  const activeRepos = await getActiveRepoIds(
+  const activeRepos = await getActiveRepos(
     collectionName,
     project,
     startDate,
@@ -304,13 +310,13 @@ export const getSummary = async ({
     groupsIncluded
   );
 
-  const repoIds = activeRepos.map(prop('id'));
-  const repoNames = activeRepos.map(prop('name'));
+  const activeRepoIds = activeRepos.map(prop('id'));
+  const activeRepoNames = activeRepos.map(prop('name'));
 
   const defaultBranchIDs = await getAllRepoDefaultBranchIDs(
     collectionName,
     project,
-    repoIds
+    activeRepoIds
   );
 
   const [
@@ -322,23 +328,29 @@ export const getSummary = async ({
     hasReleasesReposCount,
     centralTemplatePipeline,
   ] = await Promise.all([
-    getSuccessfulBuildsBy('week')(collectionName, project, startDate, endDate, repoIds),
-    getTotalBuildsBy('week')(collectionName, project, startDate, endDate, repoIds),
+    getSuccessfulBuildsBy('week')(
+      collectionName,
+      project,
+      startDate,
+      endDate,
+      activeRepoIds
+    ),
+    getTotalBuildsBy('week')(collectionName, project, startDate, endDate, activeRepoIds),
 
-    getTotalCentralTemplateUsage(collectionName, project, repoNames),
+    getTotalCentralTemplateUsage(collectionName, project, activeRepoNames),
 
-    getYamlPipelinesCountSummary(collectionName, project, repoIds),
+    getYamlPipelinesCountSummary(collectionName, project, activeRepoIds),
 
     getHealthyBranchesSummary({
       collectionName,
       project,
-      repoIds,
+      repoIds: activeRepoIds,
       defaultBranchIDs,
     }),
 
-    getHasReleasesSummary(collectionName, project, startDate, endDate, repoIds),
+    getHasReleasesSummary(collectionName, project, startDate, endDate, activeRepoIds),
 
-    getCentralTemplatePipeline(collectionName, project, repoIds),
+    getCentralTemplatePipeline(collectionName, project, activeRepoIds),
   ]);
 
   const totalBuilds = totalBuildsCount.reduce((acc, week) => acc + week.counts, 0);
@@ -371,7 +383,7 @@ export const getSummary = async ({
     successRate,
     totalBuilds,
     totalSuccessfulBuilds,
-    totalActiveRepos: repoIds.length,
+    totalActiveRepos: activeRepoIds.length,
     hasReleasesReposCount,
     centralTemplatePipeline,
   };
@@ -392,7 +404,7 @@ export const getNonYamlPipelines = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof NonYamlPipelinesParser>) => {
-  const activeRepos = await getActiveRepoIds(
+  const activeRepoIds = await getActiveRepos(
     collectionName,
     project,
     startDate,
@@ -401,7 +413,6 @@ export const getNonYamlPipelines = async ({
     groupsIncluded
   );
 
-  const repoIds = activeRepos.map((repo: { id: string }) => repo.id);
   const result = await RepositoryModel.aggregate<{
     repositoryId: string;
     name: string;
@@ -411,7 +422,7 @@ export const getNonYamlPipelines = async ({
       $match: {
         collectionName,
         'project.name': project,
-        'id': { $in: repoIds },
+        'id': { $in: activeRepoIds },
       },
     },
     {

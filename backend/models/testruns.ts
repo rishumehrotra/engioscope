@@ -211,7 +211,14 @@ export const getTestRunsForRepository = async ({
           startedDate: { $min: '$tests.startedDate' },
           completedDate: { $max: '$tests.completedDate' },
           passedTests: { $sum: '$tests.passedCount' },
-          testId: { $sum: '$tests.id' },
+          buildId: '$build.buildId',
+          testIds: {
+            $reduce: {
+              input: '$tests.id',
+              initialValue: [],
+              in: { $setUnion: ['$$value', ['$$this']] },
+            },
+          },
         },
       },
       { $sort: { weekDate: -1 } },

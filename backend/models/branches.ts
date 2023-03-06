@@ -27,7 +27,7 @@ export const getHealthyBranchesSummary = async ({
   defaultBranchIDs: ObjectId[];
 }) => {
   const today = new Date();
-  const fifteenDaysBack = today.setDate(today.getDate() - 15);
+  const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
 
   const result = await BranchModel.aggregate<{
     total: number;
