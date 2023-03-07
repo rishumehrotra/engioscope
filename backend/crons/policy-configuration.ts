@@ -6,7 +6,6 @@ import {
 } from '../models/mongoose-models/RepoPoliciesModel.js';
 import azure from '../scraper/network/azure.js';
 import type { PolicyConfiguration as AzurePolicyConfiguration } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 
 export const bulkSavePolicies =
   (collectionName: string, project: string) => (policies: AzurePolicyConfiguration[]) =>
@@ -137,6 +136,3 @@ export const getPolicyConfigurations = async () => {
 
   return refreshCombinedBranchPoliciesView();
 };
-
-export default () =>
-  runJob('fetching repo policies', t => t.every(3).days(), getPolicyConfigurations);

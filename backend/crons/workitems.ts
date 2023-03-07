@@ -9,7 +9,6 @@ import type {
   WorkItemQueryFlatResult,
   WorkItemQueryResult,
 } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 
 const formatDate = (date: Date) => `'${date.toISOString()}'`;
 
@@ -70,5 +69,3 @@ export const getWorkItems = () => {
     })
   );
 };
-
-export default () => runJob('fetching workitems', t => t.everyHourAt(55), getWorkItems);

@@ -4,7 +4,6 @@ import { getLastTestRunDate, setLastTestRunDate } from '../models/cron-update-da
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 import azure from '../scraper/network/azure.js';
 import type { TestRun2 } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 
 export const bulkSaveTestRuns = (collectionName: string) => (testRuns: TestRun2[]) => {
   return TestRunModel.bulkWrite(
@@ -49,5 +48,3 @@ export const getTestRuns = () => {
     })
   );
 };
-
-export default () => runJob('fetching repos', t => t.everyHourAt(35), getTestRuns);

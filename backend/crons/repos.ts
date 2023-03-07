@@ -1,7 +1,6 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
 import azure from '../scraper/network/azure.js';
 import type { GitRepository } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import { RepoPolicyModel } from '../models/mongoose-models/RepoPoliciesModel.js';
@@ -104,5 +103,3 @@ export const getRepositories = async () => {
     )
   );
 };
-
-export default () => runJob('fetching repos', t => t.everyDayAt(22, 45), getRepositories);

@@ -3,7 +3,6 @@ import type { WorkItemType } from '../models/mongoose-models/WorkItemType.js';
 import { WorkItemTypeModel } from '../models/mongoose-models/WorkItemType.js';
 import azure from '../scraper/network/azure.js';
 import type { WorkItemType as AzureWorkItemType } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 
 const apiShapeToModelShape = (
   collectionName: string,
@@ -44,6 +43,3 @@ export const getWorkItemTypes = () => {
     )
   );
 };
-
-export default () =>
-  runJob('fetching workitem types', t => t.everyWeekAt('Sun', 8, 30), getWorkItemTypes);

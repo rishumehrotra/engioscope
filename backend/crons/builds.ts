@@ -9,7 +9,6 @@ import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray } from '../utils.js';
-import { runJob } from './utils.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -70,6 +69,34 @@ const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) =>
     })
   );
 
+const syncBuildTimelines = (
+  buildIds: number[],
+  getBuildTimeline: (
+    collectionName: string,
+    projectName: string
+  ) => (buildId: number) => Promise<Timeline | null>,
+  collectionName: string,
+  project: string,
+  builds: AzureBuild[]
+) => {
+  return Promise.all(
+    buildIds.map(async buildId =>
+      getBuildTimeline(
+        collectionName,
+        project
+      )(buildId).then(
+        putBuildTimelineInDb(
+          collectionName,
+          project,
+          buildId,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          builds.find(b => b.id === buildId)!.definition.id
+        )
+      )
+    )
+  );
+};
+
 export const getBuildsAndTimelines = () => {
   const { getBuildTimeline, getBuildsAsChunksSince } = azure(getConfig());
   const queryStart = new Date(Date.now() - oneYearInMs);
@@ -94,21 +121,12 @@ export const getBuildsAndTimelines = () => {
 
           await chunkArray(missingBuildIds, 20).reduce(async (acc, chunk) => {
             await acc;
-            await Promise.all(
-              chunk.map(async buildId =>
-                getBuildTimeline(
-                  collection.name,
-                  project.name
-                )(buildId).then(
-                  putBuildTimelineInDb(
-                    collection.name,
-                    project.name,
-                    buildId,
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    builds.find(b => b.id === buildId)!.definition.id
-                  )
-                )
-              )
+            await syncBuildTimelines(
+              chunk,
+              getBuildTimeline,
+              collection.name,
+              project.name,
+              builds
             );
           }, Promise.resolve());
         }
@@ -117,6 +135,3 @@ export const getBuildsAndTimelines = () => {
     Promise.resolve()
   );
 };
-
-export default () =>
-  runJob('fetching builds', t => t.everyHourAt(45), getBuildsAndTimelines);

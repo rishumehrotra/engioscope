@@ -2,7 +2,6 @@ import { collectionsAndProjects, getConfig } from '../config.js';
 import { ReleaseDefinitionModel } from '../models/release-definitions.js';
 import azure from '../scraper/network/azure.js';
 import type { ReleaseDefinition as AzureReleaseDefinition } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 
 export const bulkSaveReleaseDefinitions =
   (collectionName: string, project: string) =>
@@ -50,10 +49,3 @@ export const getReleaseDefinitions = async () => {
     )
   );
 };
-
-export default () =>
-  runJob(
-    'fetching release definitions',
-    t => t.everySundayAt(5, 30),
-    getReleaseDefinitions
-  );

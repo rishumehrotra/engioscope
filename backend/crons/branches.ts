@@ -4,7 +4,7 @@ import { BranchModel } from '../models/mongoose-models/BranchModel.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
 import type { GitBranchStats } from '../scraper/types-azure.js';
-import { createSchedule, runJob } from './utils.js';
+import { createSchedule } from './utils.js';
 
 const shouldUpdate = createSchedule({
   frequency: oneHourInMs,
@@ -103,6 +103,3 @@ export const getBranchesStats = async () => {
   // eslint-disable-next-line no-console
   console.log('Repo cron done.', counters);
 };
-
-export default () =>
-  runJob('fetching branch stats', t => t.everyHourAt(15), getBranchesStats);

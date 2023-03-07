@@ -3,7 +3,7 @@ import { collectionsAndProjects, getConfig } from '../config.js';
 import { bulkSaveCommits, getLatestCommitIdAndDate } from '../models/commits.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
-import { createSchedule, runJob } from './utils.js';
+import { createSchedule } from './utils.js';
 
 export const shouldUpdate = createSchedule({
   frequency: 3 * oneHourInMs,
@@ -57,5 +57,3 @@ export const getCommits = async () => {
   // eslint-disable-next-line no-console
   console.log(`Done commits cron. Hit: ${counts.hit}, skipped: ${counts.skipped}`);
 };
-
-export default () => runJob('fetching commits', t => t.every(3).hours(), getCommits);

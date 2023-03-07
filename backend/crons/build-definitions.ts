@@ -2,7 +2,6 @@ import { collectionsAndProjects, getConfig } from '../config.js';
 import { BuildDefinitionModel } from '../models/mongoose-models/BuildDefinitionModel.js';
 import azure from '../scraper/network/azure.js';
 import type { BuildDefinitionReference } from '../scraper/types-azure.js';
-import { runJob } from './utils.js';
 
 export const bulkSaveBuildDefinitions =
   (collectionName: string, project: string) =>
@@ -61,6 +60,3 @@ export const getBuildDefinitions = () => {
     Promise.resolve()
   );
 };
-
-export default () =>
-  runJob('fetching build definitions', t => t.everySunday(), getBuildDefinitions);

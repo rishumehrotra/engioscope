@@ -15,7 +15,7 @@ import type {
   ReleaseEnvironment as AzureReleaseEnvironment,
   Artifact as AzureArtifact,
 } from '../scraper/types-azure.js';
-import { runJob, shouldUpdate } from './utils.js';
+import { shouldUpdate } from './utils.js';
 
 const defaultQueryStart = () => {
   const d = new Date();
@@ -143,6 +143,3 @@ export const getReleaseUpdates = async () => {
     })
   );
 };
-
-runJob('fetching releases', t => t.everyHourAt(20), getReleases);
-runJob('fetching release updates', t => t.everyHourAt(35), getReleaseUpdates);
