@@ -10,6 +10,7 @@ import type {
 import { ReleaseModel } from '../models/mongoose-models/ReleaseEnvironment.js';
 import { getReleaseUpdateDates } from '../models/releases.js';
 import azure from '../scraper/network/azure.js';
+import { is404 } from '../scraper/network/http-error.js';
 import type {
   Release as AzureRelease,
   ReleaseEnvironment as AzureReleaseEnvironment,
@@ -134,12 +135,42 @@ export const getReleaseUpdates = async () => {
         .filter(x => shouldUpdate(x.date))
         .map(x => x.id);
 
-      await getReleasesForReleaseIdsAsChunks(
-        collection.name,
-        project.name,
-        releasesToFetch,
-        bulkSaveReleases(collection.name)
-      );
+      const recurse = async (rids: number[]): Promise<unknown> => {
+        try {
+          await getReleasesForReleaseIdsAsChunks(
+            collection.name,
+            project.name,
+            rids,
+            bulkSaveReleases(collection.name)
+          );
+        } catch (error) {
+          if (!is404(error)) throw error;
+
+          // This is a 404, which means one of the releases was deleted.
+          // Start a recursive binary search to find and delete the offending
+          // release, while saving the rest.
+
+          if (rids.length === 1) {
+            // Search complete. This release ID doesn't exist. Delete it.
+            return ReleaseModel.deleteOne({
+              collectionName: collection.name,
+              project,
+              id: rids[0],
+            });
+          }
+
+          if (rids.length === 0) {
+            // lolwut?
+            return;
+          }
+
+          // Split releaseIds list in two, recurse
+          const parts = [rids.slice(0, rids.length / 2), rids.slice(rids.length / 2)];
+          return Promise.all(parts.map(recurse));
+        }
+      };
+
+      return recurse(releasesToFetch);
     })
   );
 };

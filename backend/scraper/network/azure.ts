@@ -547,7 +547,12 @@ export default (config: ParsedConfig) => {
           $expand: 'environments,artifacts',
           releaseIdFilter: releaseIds.join(','),
         },
-        cacheFile: [collectionName, projectName, 'releases-by-id'],
+        cacheFile: [
+          collectionName,
+          projectName,
+          'releases-by-id',
+          md5(releaseIds.join(',')),
+        ],
         chunkHandler,
       }),
 
