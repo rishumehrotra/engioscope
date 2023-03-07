@@ -45,7 +45,7 @@ export const getCronStatusOverview = async () => {
   }>([
     {
       $group: {
-        _id: 'name',
+        _id: '$name',
         date: { $first: '$date' },
         status: { $first: '$status' },
       },
