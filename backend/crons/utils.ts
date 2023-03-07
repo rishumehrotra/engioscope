@@ -2,24 +2,28 @@ import { CronJob } from 'cron';
 import cronTime from 'cron-time-generator';
 import debug from 'debug';
 import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
+import { appendCronLog, registerCron } from '../models/cron-status.js';
 
 const cronLog = debug('cron');
 
-export const runJob = (
+export const setupJob = (
   name: string,
   when: (time: typeof cronTime) => string,
   onTick: () => Promise<unknown>
 ) => {
   const timePattern = when(cronTime);
 
-  cronLog('Setting up cron for', name, 'with pattern', timePattern);
+  cronLog('Setting up cron for fetching', name, 'with pattern', timePattern);
+  registerCron(name, timePattern);
   const j = new CronJob(timePattern, async () => {
     cronLog('Starting cron for', name);
     try {
       await onTick();
       cronLog('Done cron for', name);
+      await appendCronLog(name, 'succeeded');
     } catch (error) {
       cronLog('Cron for ', name, 'FAILED', error);
+      await appendCronLog(name, 'failed');
     }
   });
   j.start();

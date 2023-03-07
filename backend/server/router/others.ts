@@ -1,6 +1,7 @@
 import { passInputTo, t } from './trpc.js';
 import { configForProject, getConfig, queryPeriodDays } from '../../config.js';
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
+import { getCronStatusOverview } from '../../models/cron-status.js';
 
 export default {
   uiConfig: t.procedure.query(() => ({
@@ -21,4 +22,6 @@ export default {
       };
     })
   ),
+
+  cronStatusOverview: t.procedure.query(passInputTo(getCronStatusOverview)),
 };

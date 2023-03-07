@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 
-export type CronUpdateDates = {
+type CronUpdateDates = {
   key: string;
   date: Date;
 };

@@ -2,33 +2,22 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Loading from '../components/Loading.js';
 import { num } from '../helpers/utils.js';
-import useUIConfig from '../hooks/use-ui-config.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { trpc } from '../helpers/trpc.js';
 
 const Analytics: React.FC = () => {
-  const uiConfig = useUIConfig();
-  // const [analytics, setAnalytics] = useState<AnalyticsItem[] | undefined>();
   const setHeaderDetails = useSetHeaderDetails();
-  const analytics2 = trpc.analytics.getAnalyticsGroups.useQuery();
+  const analytics = trpc.analytics.getAnalyticsGroups.useQuery();
 
-  // useEffect(() => {
-  //   // TODO: Error handling
-  //   // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  //   fetchAnalytics().then(setAnalytics);
-  // }, []);
   useEffect(() => {
-    setHeaderDetails({
-      title: 'Analytics',
-      lastUpdated: new Date().toISOString(),
-    });
-  }, [setHeaderDetails, uiConfig]);
+    setHeaderDetails({ title: 'Analytics' });
+  }, [setHeaderDetails]);
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      {analytics2 ? (
+      {analytics ? (
         <ul className="grid grid-flow-row gap-8 grid-col-1 grid-cols-2 auto-rows-auto">
-          {analytics2.data?.map(({ label, pageViews, uniques, pages, returning }) => (
+          {analytics.data?.map(({ label, pageViews, uniques, pages, returning }) => (
             <li
               key={label}
               className="border-2 border-gray-200 rounded-xl overflow-hidden"
