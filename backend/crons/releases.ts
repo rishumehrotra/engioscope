@@ -1,4 +1,4 @@
-import { collectionsAndProjects, getConfig } from '../config.js';
+import { collections, collectionsAndProjects, getConfig } from '../config.js';
 import {
   getLastReleaseFetchDate,
   setLastReleaseFetchDate,
@@ -109,15 +109,18 @@ export const getReleases = async () => {
   const { getReleasesAsChunks } = azure(getConfig());
 
   await Promise.all(
-    collectionsAndProjects().map(async ([collection, project]) => {
-      await getReleasesAsChunks(
-        collection.name,
-        project.name,
-        (await getLastReleaseFetchDate(collection.name, project.name)) ||
-          defaultQueryStart(),
-        bulkSaveReleases(collection.name)
-      );
-      await setLastReleaseFetchDate(collection.name, project.name);
+    collections().map(({ name: collectionName, projects }) => {
+      return projects.reduce(async (acc, { name: project }) => {
+        await acc;
+
+        await getReleasesAsChunks(
+          collectionName,
+          project,
+          (await getLastReleaseFetchDate(collectionName, project)) || defaultQueryStart(),
+          bulkSaveReleases(collectionName)
+        );
+        await setLastReleaseFetchDate(collectionName, project);
+      }, Promise.resolve());
     })
   );
 };
