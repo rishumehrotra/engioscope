@@ -320,8 +320,8 @@ export const getSummary = async ({
   );
 
   const [
-    successfulBuildsCount,
-    totalBuildsCount,
+    successfulBuilds,
+    totalBuilds,
     totalCentralTemplate,
     yamlPipelines,
     healthyBranches,
@@ -353,36 +353,32 @@ export const getSummary = async ({
     getCentralTemplatePipeline(collectionName, project, activeRepoIds),
   ]);
 
-  const totalBuilds = totalBuildsCount.reduce((acc, week) => acc + week.counts, 0);
-  const totalSuccessfulBuilds = successfulBuildsCount.reduce(
-    (acc, week) => acc + week.counts,
-    0
-  );
-
-  const successRate = divide(totalSuccessfulBuilds, totalBuilds)
+  const successRate = divide(successfulBuilds.count, totalBuilds.count)
     .map(toPercentage)
     .getOr('-');
 
-  const weeklySuccess = totalBuildsCount.map(totalObj => {
-    const successObj = successfulBuildsCount.find(s => s._id === totalObj._id);
+  const weeklySuccess = totalBuilds.byWeek.map(
+    (totalObj: { _id: number; counts: number }) => {
+      const successObj = successfulBuilds.byWeek.find(s => s._id === totalObj._id);
 
-    if (successObj) {
-      const rate = divide(successObj.counts, totalObj.counts).map(multiply(100)).getOr(0);
-      return rate;
+      if (successObj) {
+        const rate = divide(successObj.counts, totalObj.counts)
+          .map(multiply(100))
+          .getOr(0);
+        return rate;
+      }
+      return 0;
     }
-    return 0;
-  });
+  );
 
   return {
-    totalBuildsCount,
-    successfulBuildsCount,
     totalCentralTemplate,
     yamlPipelines,
     healthyBranches,
     weeklySuccess,
     successRate,
     totalBuilds,
-    totalSuccessfulBuilds,
+    successfulBuilds,
     totalActiveRepos: activeRepoIds.length,
     hasReleasesReposCount,
     centralTemplatePipeline,

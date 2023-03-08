@@ -444,10 +444,10 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Builds',
                 value: (
                   <LabelWithSparkline
-                    label={num(summaries.data.totalBuilds)}
-                    data={summaries.data.totalBuildsCount.map(week => week.counts)}
+                    label={num(summaries.data.totalBuilds.count)}
+                    data={summaries.data.totalBuilds.byWeek.map(week => week.counts)}
                     lineColor={increaseIsBetter(
-                      summaries.data.totalBuildsCount.map(week => week.counts)
+                      summaries.data.totalBuilds.byWeek.map(week => week.counts)
                     )}
                   />
                 ),
@@ -465,8 +465,8 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                     yAxisLabel={x => `${x}%`}
                   />
                 ),
-                tooltip: `${num(summaries.data.totalSuccessfulBuilds)} out of ${num(
-                  summaries.data.totalBuilds
+                tooltip: `${num(summaries.data.successfulBuilds.count)} out of ${num(
+                  summaries.data.totalBuilds.count
                 )} are successful builds`,
               },
             ]}
@@ -543,7 +543,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                   summaries.data.centralTemplatePipeline.total
                 )} build pipelines use the central template on the master branch <br>
                   ${num(summaries.data.totalCentralTemplate.templateUsers)} out of ${num(
-                  summaries.data.totalBuilds
+                  summaries.data.totalBuilds.count
                 )} build runs used the central template`,
                 value: divide(
                   summaries.data.centralTemplatePipeline.central,

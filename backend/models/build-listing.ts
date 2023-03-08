@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { PipelineStage } from 'mongoose';
-import { oneWeekInMs } from '../../shared/utils.js';
+import { range } from 'rambda';
+import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 
@@ -149,7 +150,8 @@ export const buildPipelineFilterInputParser = z.object(buildPipelineFilterInput)
 export const getSplitUpBy = (
   duration: 'week' | 'month',
   field: string,
-  condition: unknown
+  condition: unknown,
+  startDate: Date
 ): PipelineStage[] => {
   const groupByMonth = {
     month: { $month: field },
@@ -157,21 +159,13 @@ export const getSplitUpBy = (
   };
 
   const groupBySevenDayInterval = {
-    $dateToString: {
-      format: '%Y-%m-%d',
-      date: {
-        $subtract: [
-          field,
-          {
-            $mod: [
-              {
-                $subtract: [field, new Date('Thu, 01 Jan 1970 00:00:00 GMT')],
-              },
-              oneWeekInMs,
-            ],
-          },
-        ],
-      },
+    $trunc: {
+      $divide: [
+        {
+          $subtract: [field, new Date(startDate)],
+        },
+        oneWeekInMs,
+      ],
     },
   };
 
@@ -192,12 +186,18 @@ export const getSplitUpBy = (
       $group: {
         _id: duration === 'week' ? groupBySevenDayInterval : groupByMonth,
         counts: { $sum: condition },
+        // For Debugging Remove Once In Production
+        start: { $min: field },
+        end: { $max: field },
       },
     },
     {
       $project: {
         _id: duration === 'month' ? projectMonth : 1,
         counts: 1,
+        // For Debugging Remove Once In Production
+        start: 1,
+        end: 1,
       },
     },
     { $sort: { _id: 1 } },
@@ -214,7 +214,12 @@ export const getBuildsSplitUp =
     endDate: Date,
     repoIds: string[] | undefined
   ) => {
-    const result = await BuildModel.aggregate<{ _id: string; counts: number }>([
+    const result = await BuildModel.aggregate<{
+      _id: number;
+      counts: number;
+      start: Date;
+      end: Date;
+    }>([
       {
         $match: {
           collectionName,
@@ -226,9 +231,20 @@ export const getBuildsSplitUp =
           },
         },
       },
-      ...getSplitUpBy(duration, '$startTime', condition),
+      ...getSplitUpBy(duration, '$startTime', condition, startDate),
     ]);
-    return result;
+
+    const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+    const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+    return {
+      count: result.reduce((acc, item) => acc + item.counts, 0),
+      byWeek: range(0, totalIntervals)
+        .map(id => {
+          return result.find(obj => obj._id === id) || { _id: id, counts: 0 };
+        })
+        .slice(totalIntervals - Math.floor(totalDays / 7)),
+    };
   };
 
 export const getSuccessfulBuildsBy = getBuildsSplitUp({
