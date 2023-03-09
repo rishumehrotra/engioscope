@@ -492,6 +492,26 @@ export default (config: ParsedConfig) => {
           )
       ).then(res => res.data),
 
+    getRelease: (collectionName: string, project: string, releaseId: number) => {
+      return usingDiskCache<Release>(
+        [collectionName, project, 'release', releaseId.toString()],
+        () =>
+          fetch(
+            url(
+              collectionName,
+              project,
+              `/release/releases/${releaseId}?${qs.stringify({
+                'api-version': '5.1-preview',
+              })}`
+            ),
+            {
+              headers: authHeader,
+              ...otherFetchParams,
+            }
+          )
+      ).then(res => res.data);
+    },
+
     getReleases: (
       collectionName: string,
       projectName: string,
