@@ -509,7 +509,12 @@ export default (config: ParsedConfig) => {
           $expand: 'environments,artifacts',
           ...(releaseIds ? { releaseIdFilter: releaseIds.join(',') } : {}),
         },
-        cacheFile: [collectionName, projectName, 'releases'],
+        cacheFile: [
+          collectionName,
+          projectName,
+          'releases',
+          md5(releaseIds?.join(',') || 'no-release-ids'),
+        ],
       }).then(
         filter(release =>
           release.environments.some(env =>
