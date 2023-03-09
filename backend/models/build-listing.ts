@@ -32,12 +32,7 @@ export const getWeeklyBuildsStatsFor =
         $group: {
           _id: {
             $trunc: {
-              $divide: [
-                {
-                  $subtract: ['$finishTime', new Date(startDate)],
-                },
-                oneWeekInMs,
-              ],
+              $divide: [{ $subtract: ['$finishTime', new Date(startDate)] }, oneWeekInMs],
             },
           },
           counts: {
@@ -78,5 +73,4 @@ export const getWeeklyBuildsStatsFor =
   };
 
 export const getWeeklyTotalBuilds = getWeeklyBuildsStatsFor('total');
-
 export const getWeeklySuccessfulBuilds = getWeeklyBuildsStatsFor('successful');
