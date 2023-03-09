@@ -3,6 +3,7 @@ import { getConfig } from '../config.js';
 import { BranchModel } from '../models/mongoose-models/BranchModel.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import azure from '../scraper/network/azure.js';
+import { is404 } from '../scraper/network/http-error.js';
 import type { GitBranchStats } from '../scraper/types-azure.js';
 import { createSchedule } from './utils.js';
 
@@ -72,9 +73,8 @@ const saveFromAPI = async (repo: Repo) => {
 
     await saveRepoBranch(repo.collectionName, repo.project, repo.id, branchStats);
   } catch (error) {
-    if (!(error instanceof Error)) throw error;
-    if (!error.message.startsWith('HTTP error')) throw error;
-    if (!error.message.includes('400')) throw error;
+    if (is404(error)) return; // Repo probably doesn't exist anymore.
+    throw error;
   }
 };
 
