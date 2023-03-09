@@ -1,4 +1,4 @@
-import { compose, not } from 'rambda';
+import { compose, multiply, not } from 'rambda';
 import React, { useMemo } from 'react';
 import {
   buildPipelines,
@@ -445,9 +445,9 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 value: (
                   <LabelWithSparkline
                     label={num(summaries.data.totalBuilds.count)}
-                    data={summaries.data.totalBuilds.byWeek.map(week => week.counts)}
+                    data={summaries.data.totalBuilds.byWeek.map(week => week.count)}
                     lineColor={increaseIsBetter(
-                      summaries.data.totalBuilds.byWeek.map(week => week.counts)
+                      summaries.data.totalBuilds.byWeek.map(week => week.count)
                     )}
                   />
                 ),
@@ -460,8 +460,18 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 value: (
                   <LabelWithSparkline
                     label={summaries.data.successRate}
-                    data={summaries.data.weeklySuccess}
-                    lineColor={increaseIsBetter(summaries.data.weeklySuccess)}
+                    data={summaries.data.weeklySuccess.map(week => {
+                      return divide(week.successes, week.count)
+                        .map(multiply(100))
+                        .getOr(0);
+                    })}
+                    lineColor={increaseIsBetter(
+                      summaries.data.weeklySuccess.map(week => {
+                        return divide(week.successes, week.count)
+                          .map(multiply(100))
+                          .getOr(0);
+                      })
+                    )}
                     yAxisLabel={x => `${x}%`}
                   />
                 ),
