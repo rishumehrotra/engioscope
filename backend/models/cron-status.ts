@@ -43,6 +43,7 @@ export const getCronStatusOverview = async () => {
     date: Date;
     status: CronStatus['status'];
   }>([
+    { $sort: { date: -1 } },
     {
       $group: {
         _id: '$name',
