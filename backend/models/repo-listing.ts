@@ -5,7 +5,7 @@ import { BuildModel } from './mongoose-models/BuildModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getHealthyBranchesSummary } from './branches.js';
-import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
+import { getWeeklySuccessfulBuilds, getWeeklyTotalBuilds } from './build-listing.js';
 import {
   getTotalCentralTemplateUsage,
   getCentralTemplateBuildDefs,
@@ -328,14 +328,8 @@ export const getSummary = async ({
     hasReleasesReposCount,
     centralTemplatePipeline,
   ] = await Promise.all([
-    getSuccessfulBuildsBy('week')(
-      collectionName,
-      project,
-      startDate,
-      endDate,
-      activeRepoIds
-    ),
-    getTotalBuildsBy('week')(collectionName, project, startDate, endDate, activeRepoIds),
+    getWeeklySuccessfulBuilds(collectionName, project, startDate, endDate, activeRepoIds),
+    getWeeklyTotalBuilds(collectionName, project, startDate, endDate, activeRepoIds),
 
     getTotalCentralTemplateUsage(collectionName, project, activeRepoNames),
 
@@ -357,19 +351,15 @@ export const getSummary = async ({
     .map(toPercentage)
     .getOr('-');
 
-  const weeklySuccess = totalBuilds.byWeek.map(
-    (totalObj: { _id: number; counts: number }) => {
-      const successObj = successfulBuilds.byWeek.find(s => s._id === totalObj._id);
+  const weeklySuccess = totalBuilds.byWeek.map(totalObj => {
+    const successObj = successfulBuilds.byWeek.find(s => s.id === totalObj.id);
 
-      if (successObj) {
-        const rate = divide(successObj.counts, totalObj.counts)
-          .map(multiply(100))
-          .getOr(0);
-        return rate;
-      }
-      return 0;
+    if (successObj) {
+      const rate = divide(successObj.counts, totalObj.counts).map(multiply(100)).getOr(0);
+      return rate;
     }
-  );
+    return 0;
+  });
 
   return {
     totalCentralTemplate,
