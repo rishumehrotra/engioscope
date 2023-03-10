@@ -33,7 +33,6 @@ import { trpc } from '../helpers/trpc.js';
 import { useDateRange } from '../hooks/date-range-hooks.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import NonYamlPipeLineBuilds from './NonYamlPipelineBuilds.jsx';
-import Loading from './Loading.jsx';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos
@@ -403,7 +402,14 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           />
         </>
       ) : (
-        <Loading />
+        <ProjectStat
+          topStats={[
+            {
+              title: 'Loading...',
+              value: '...',
+            },
+          ]}
+        />
       )}
     </ProjectStats>
   );
