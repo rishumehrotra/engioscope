@@ -1,4 +1,6 @@
+import { range } from 'rambda';
 import { z } from 'zod';
+import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -45,7 +47,8 @@ export const getTestRunsForRepository = async ({
     _id: number;
     tests: {
       definitionId: number;
-      weekDate: string;
+      weekIndex: number;
+      // weekDate: string;
       totalTests: number;
       startedDate: Date;
       completedDate: Date;
@@ -130,27 +133,33 @@ export const getTestRunsForRepository = async ({
         $group: {
           _id: {
             definitionId: '$build.definitionId',
-            weekDate: {
-              $dateToString: {
-                format: '%Y-%m-%d',
-                date: {
-                  $subtract: [
-                    // startDate,
-                    '$build.finishTime',
-                    {
-                      $mod: [
-                        {
-                          $subtract: [
-                            // startDate,
-                            '$build.finishTime',
-                            new Date('Thu, 01 Jan 1970 00:00:00 GMT'),
-                          ],
-                        },
-                        604_800_000,
-                      ],
-                    },
-                  ],
-                },
+            // weekDate: {
+            //   $dateToString: {
+            //     format: '%Y-%m-%d',
+            //     date: {
+            //       $subtract: [
+            //         '$build.finishTime',
+            //         {
+            //           $mod: [
+            //             {
+            //               $subtract: [
+            //                 '$build.finishTime',
+            //                 new Date('Thu, 01 Jan 1970 00:00:00 GMT'),
+            //               ],
+            //             },
+            //             oneWeekInMs,
+            //           ],
+            //         },
+            //       ],
+            //     },
+            //   },
+            // },
+            weekIndex: {
+              $trunc: {
+                $divide: [
+                  { $subtract: ['$build.finishTime', new Date(startDate)] },
+                  oneWeekInMs,
+                ],
               },
             },
           },
@@ -206,7 +215,8 @@ export const getTestRunsForRepository = async ({
         $project: {
           _id: 0,
           definitionId: '$_id.definitionId',
-          weekDate: '$_id.weekDate',
+          // weekDate: '$_id.weekDate',
+          weekIndex: '$_id.weekIndex',
           totalTests: { $sum: '$tests.totalTests' },
           startedDate: { $min: '$tests.startedDate' },
           completedDate: { $max: '$tests.completedDate' },
@@ -221,7 +231,8 @@ export const getTestRunsForRepository = async ({
           },
         },
       },
-      { $sort: { weekDate: -1 } },
+      // { $sort: { weekDate: -1 } },
+      { $sort: { weekIndex: -1 } },
       {
         $group: {
           _id: '$definitionId',
@@ -233,9 +244,39 @@ export const getTestRunsForRepository = async ({
 
   type ResultType = DefType & Partial<DefTestType>;
 
+  // Mapping the build definitions/pipelines with no testruns
   const result: ResultType[] = (definitionList as DefType[]).map(definition => {
     const tests = definitionTestRuns.find(def => def._id === definition.id);
     return { ...definition, ...tests } || definition;
   });
-  return result;
+
+  // Adding the missing weekIndex data for the Build Definition Tests
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+  const intervals = range(0, totalIntervals);
+  const definitionTests = result.map(def => {
+    if (!def.tests) return def;
+
+    const tests = intervals
+      .map(weekIndex => {
+        return (
+          def.tests?.find(test => test.weekIndex === weekIndex) || {
+            weekIndex,
+            totalTests: 0,
+            startedDate: null,
+            completedDate: null,
+            passedTests: 0,
+            testId: [],
+            definitionId: def._id,
+          }
+        );
+      })
+      .slice(totalIntervals - Math.floor(totalDays / 7));
+
+    return {
+      ...def,
+      tests,
+    };
+  });
+  return definitionTests;
 };

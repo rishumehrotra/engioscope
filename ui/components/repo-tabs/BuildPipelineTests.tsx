@@ -4,6 +4,8 @@ import { trpc } from '../../helpers/trpc.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import AlertMessage from '../common/AlertMessage.jsx';
+import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
+import { increaseIsBetter } from '../summary-page/utils.jsx';
 import TabContents from './TabContents.jsx';
 
 const BuildPipelineTests: React.FC<{
@@ -50,30 +52,35 @@ const BuildPipelineTests: React.FC<{
               {tests.data.map(pipeline => (
                 <tr key={pipeline.id}>
                   <td>
-                    <a
-                      href={pipeline.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-tip={pipeline.name}
-                      className="link-text truncate w-full"
-                    >
-                      {pipeline.name}
-                    </a>
-                    {/* <LabelWithSparkline
-                      label={
-                        <a
-                          href={pipeline.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          data-tip={pipeline.name}
-                          className="link-text truncate w-full"
-                        >
-                          {pipeline.name}
-                        </a>
-                      }
-                      data={pipeline.testsByWeek}
-                      lineColor={increaseIsBetter(pipeline.testsByWeek)}
-                    /> */}
+                    {pipeline.tests ? (
+                      <LabelWithSparkline
+                        label={
+                          <a
+                            href={pipeline.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            data-tip={pipeline.name}
+                            className="link-text truncate w-full"
+                          >
+                            {pipeline.name}
+                          </a>
+                        }
+                        data={pipeline.tests.map(t => t.totalTests)}
+                        lineColor={increaseIsBetter(
+                          pipeline.tests.map(t => t.totalTests)
+                        )}
+                      />
+                    ) : (
+                      <a
+                        href={pipeline.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-tip={pipeline.name}
+                        className="link-text truncate w-full"
+                      >
+                        {pipeline.name}
+                      </a>
+                    )}
                   </td>
                   <td>
                     {pipeline.tests?.length ? pipeline.tests[0].passedTests || 0 : '_'}
