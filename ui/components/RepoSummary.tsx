@@ -313,7 +313,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 ),
                 tooltip: `${num(summaries.data.successfulBuilds.count)} out of ${num(
                   summaries.data.totalBuilds.count
-                )} are successful builds`,
+                )} builds have succeeded`,
               },
             ]}
           />
@@ -323,7 +323,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Healthy branches',
                 tooltip: `${num(summaries.data.healthyBranches.healthy)} out of ${num(
                   summaries.data.healthyBranches.total
-                )} are Healthy Branches`,
+                )} branches are healthy`,
                 value: divide(
                   summaries.data.healthyBranches.healthy,
                   summaries.data.healthyBranches.total
@@ -361,7 +361,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                   .getOr('-'),
                 tooltip: `${num(summaries.data.yamlPipelines.yamlCount)} of ${num(
                   summaries.data.yamlPipelines.totalCount
-                )} pipelines use a YAML-based configuration`,
+                )} pipelines are set up using a YAML-based configuration`,
               },
             ]}
             onClick={
