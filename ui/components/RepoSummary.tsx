@@ -19,13 +19,12 @@ import {
 } from '../../shared/repo-utils.js';
 import type {
   RepoAnalysis,
-  UIBuildPipeline,
   QualityGateStatus,
   UICodeQuality,
 } from '../../shared/types.js';
 import { divide, exists, toPercentage } from '../../shared/utils.js';
-import { num, shortDate } from '../helpers/utils.js';
-import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
+import { num } from '../helpers/utils.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
@@ -34,6 +33,7 @@ import { trpc } from '../helpers/trpc.js';
 import { useDateRange } from '../hooks/date-range-hooks.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import NonYamlPipeLineBuilds from './NonYamlPipelineBuilds.jsx';
+import Loading from './Loading.jsx';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
   const aggregated = repos
@@ -72,15 +72,6 @@ const sonarStats = (repos: RepoAnalysis[]) =>
       error: 0,
     }
   );
-
-const pipelineLastUsed = (pipeline: UIBuildPipeline) => {
-  if (pipeline.status.type === 'unknown') return 'Unknown';
-  if (pipeline.status.type === 'succeeded') return 'Within the last 3 months';
-  if (!pipeline.status.since) return 'Unknown';
-  return `${shortDate(new Date(pipeline.status.since))}, ${new Date(
-    pipeline.status.since
-  ).getFullYear()}`;
-};
 
 const active = compose(not, isInactive);
 const notYmlPipeline = compose(not, isYmlPipeline);
@@ -128,7 +119,6 @@ type RepoSummaryProps = {
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
-  const [showNewBuild] = useQueryParam('build-v2', asBoolean);
   const { collectionName, project } = useCollectionAndProject();
   const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
@@ -283,160 +273,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           },
         ]}
       />
-      <ProjectStat
-        topStats={[
-          {
-            title: 'Builds',
-            value: (
-              <LabelWithSparkline
-                label={num(stats.totalBuilds)}
-                data={stats.totalBuildsByWeek}
-                lineColor={increaseIsBetter(stats.totalBuildsByWeek)}
-              />
-            ),
-            tooltip: 'Total number of builds across all matching repos',
-          },
-        ]}
-        childStats={[
-          {
-            title: 'Success',
-            // value: stats.buildSuccessRate,
-            value: (
-              <LabelWithSparkline
-                label={stats.buildSuccessRate}
-                data={stats.totalSuccessfulBuildsByWeek}
-                lineColor={increaseIsBetter(stats.totalSuccessfulBuildsByWeek)}
-                yAxisLabel={x => `${x}%`}
-              />
-            ),
-            tooltip: 'Success rate across all matching repos',
-          },
-        ]}
-      />
-      <ProjectStat
-        topStats={[
-          {
-            title: 'YAML pipelines',
-            value: divide(stats.ymlPipelines.length, stats.buildPipelines.length)
-              .map(toPercentage)
-              .getOr('-'),
-            tooltip: `${num(stats.ymlPipelines.length)} of ${num(
-              stats.buildPipelines.length
-            )} pipelines use a YAML-based configuration`,
-          },
-        ]}
-        onClick={
-          stats.ymlPipelines.length === stats.buildPipelines.length
-            ? undefined
-            : {
-                open: 'modal',
-                heading: 'Pipelines not using YAML-based configuration',
-                subheading: `(${
-                  stats.buildPipelines.length - stats.ymlPipelines.length
-                })`,
-                body: (
-                  <>
-                    {stats.reposWithNonYmlPipelines.map((repo, index) => {
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      const pipelines = repo.builds!.pipelines.filter(notYmlPipeline);
-
-                      return (
-                        <details key={repo.id} className="mb-3" open={index === 0}>
-                          <summary className="font-semibold text-lg cursor-pointer">
-                            {`${repo.name} (${pipelines.length})`}
-                          </summary>
-
-                          <div className="bg-gray-100 pt-2 pb-4 px-4 rounded-lg mt-4">
-                            <table className="table-auto text-center divide-y divide-gray-200 w-full">
-                              <thead>
-                                <tr>
-                                  {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                                  <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider" />
-                                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                                    {`Runs in the last ${queryPeriodDays} days`}
-                                  </th>
-                                  <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                                    Last used
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
-                                {pipelines.map(pipeline => (
-                                  <tr key={pipeline.name}>
-                                    <td className="pl-6 py-4 whitespace-nowrap text-left">
-                                      <a
-                                        href={pipeline.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="link-text"
-                                      >
-                                        {pipeline.name}
-                                      </a>
-                                    </td>
-                                    <td>
-                                      {pipeline.status.type === 'unused'
-                                        ? '-'
-                                        : num(pipeline.count)}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      {pipelineLastUsed(pipeline)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </details>
-                      );
-                    })}
-                  </>
-                ),
-              }
-        }
-      />
-      <ProjectStat
-        topStats={[
-          {
-            title: 'Has releases',
-            tooltip: `${num(stats.reposWithPipelines.length)} out of ${num(
-              stats.repos.length
-            )} repos have made releases in the last ${queryPeriodDays} days`,
-            value: divide(stats.reposWithPipelines.length, stats.repos.length)
-              .map(toPercentage)
-              .getOr('-'),
-          },
-        ]}
-      />
-      <ProjectStat
-        topStats={[
-          {
-            title: 'Using central template',
-            value: `${divide(
-              stats.usingCentralTemplate.count,
-              stats.usingCentralTemplate.total
-            )
-              .map(toPercentage)
-              .getOr('-')}`,
-            tooltip: `${num(stats.usingCentralTemplate.count)} out of ${num(
-              stats.usingCentralTemplate.total
-            )} build runs used the central template`,
-          },
-        ]}
-      />
-      <ProjectStat
-        topStats={[
-          {
-            title: 'Healthy branches',
-            value: divide(stats.healthBranches.count, stats.healthBranches.total)
-              .map(toPercentage)
-              .getOr('-'),
-            tooltip: `${num(stats.healthBranches.count)} out of ${num(
-              stats.healthBranches.total
-            )} are Healthy Branches`,
-          },
-        ]}
-      />
-      {showNewBuild && summaries.data ? (
+      {summaries.data ? (
         <>
           <ProjectStat
             topStats={[
@@ -565,9 +402,10 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             ]}
           />
         </>
-      ) : null}
+      ) : (
+        <Loading />
+      )}
     </ProjectStats>
   );
 };
-
 export default RepoSummary;
