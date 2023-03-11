@@ -36,15 +36,15 @@ export const getTestRuns = () => {
 
   return Promise.all(
     collectionsAndProjects().map(async ([collection, project]) => {
-      return getTestRunsAsChunksSince(
+      await getTestRunsAsChunksSince(
         collection.name,
         project.name,
         (await getLastTestRunDate(collection.name, project.name)) || queryStart,
         async runs => {
           await bulkSaveTestRuns(collection.name)(runs);
-          await setLastTestRunDate(collection.name, project.name);
         }
       );
+      await setLastTestRunDate(collection.name, project.name);
     })
   );
 };

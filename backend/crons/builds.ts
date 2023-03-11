@@ -9,6 +9,7 @@ import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray } from '../utils.js';
+import { CodeCoverageModel } from '../models/mongoose-models/CodeCoverage.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -48,6 +49,45 @@ const putBuildTimelineInDb =
     buildTimeline
       ? saveBuildTimeline(collection, project)(buildId, buildDefinitionId, buildTimeline)
       : null;
+
+const syncTestCoverageForBuildIds = (
+  collection: string,
+  project: string,
+  buildIds: number[]
+) => {
+  const { getTestCoverage } = azure(getConfig());
+
+  return Promise.all(
+    chunkArray(buildIds, 20).map(async buildIds => {
+      const coverages = await Promise.all(
+        buildIds.map(getTestCoverage(collection, project))
+      );
+
+      await CodeCoverageModel.bulkWrite(
+        coverages
+          .filter(c => c.coverageData?.length)
+          .map(coverage => {
+            return {
+              updateOne: {
+                filter: {
+                  'collectionName': collection,
+                  'project': project,
+                  'build.id': Number(coverage.build.id),
+                },
+                update: {
+                  $set: {
+                    ...coverage,
+                    build: { ...coverage.build, id: Number(coverage.build.id) },
+                  },
+                },
+                upsert: true,
+              },
+            };
+          })
+      );
+    })
+  );
+};
 
 const bulkSaveBuilds = (collectionName: string) => (builds: AzureBuild[]) =>
   BuildModel.bulkWrite(
@@ -97,8 +137,27 @@ const syncBuildTimelines = (
   );
 };
 
+async function getBuildTimelines(
+  collection: string,
+  project: string,
+  builds: AzureBuild[]
+) {
+  const { getBuildTimeline } = azure(getConfig());
+
+  const missingBuildIds = await missingTimelines(
+    collection,
+    project,
+    builds.map(b => b.id)
+  );
+
+  await chunkArray(missingBuildIds, 20).reduce(async (acc, chunk) => {
+    await acc;
+    await syncBuildTimelines(chunk, getBuildTimeline, collection, project, builds);
+  }, Promise.resolve());
+}
+
 export const getBuildsAndTimelines = () => {
-  const { getBuildTimeline, getBuildsAsChunksSince } = azure(getConfig());
+  const { getBuildsAsChunksSince } = azure(getConfig());
   const queryStart = new Date(Date.now() - oneYearInMs);
 
   return collectionsAndProjects().reduce<Promise<void>>(
@@ -113,22 +172,14 @@ export const getBuildsAndTimelines = () => {
           await bulkSaveBuilds(collection.name)(builds);
           await setLastBuildUpdateDate(collection.name, project.name);
 
-          const missingBuildIds = await missingTimelines(
-            collection.name,
-            project.name,
-            builds.map(b => b.id)
-          );
-
-          await chunkArray(missingBuildIds, 20).reduce(async (acc, chunk) => {
-            await acc;
-            await syncBuildTimelines(
-              chunk,
-              getBuildTimeline,
+          await Promise.all([
+            getBuildTimelines(collection.name, project.name, builds),
+            syncTestCoverageForBuildIds(
               collection.name,
               project.name,
-              builds
-            );
-          }, Promise.resolve());
+              builds.map(b => b.id)
+            ),
+          ]);
         }
       );
     },
