@@ -67,7 +67,7 @@ const BuildPipelineTests: React.FC<{
                         }
                         data={pipeline.tests.map(t => t.totalTests)}
                         lineColor={increaseIsBetter(
-                          pipeline.tests.map(t => t.totalTests)
+                          pipeline.tests.map(t => t.totalTests || 0)
                         )}
                       />
                     ) : (
@@ -86,14 +86,18 @@ const BuildPipelineTests: React.FC<{
                     {pipeline.tests?.length ? pipeline.tests[0].passedTests || 0 : '_'}
                   </td>
                   <td>
-                    {pipeline.tests?.length
-                      ? pipeline.tests[0].totalTests - pipeline.tests[0].passedTests || 0
+                    {pipeline.tests?.length &&
+                    pipeline.tests[0].totalTests &&
+                    pipeline.tests[0]?.passedTests
+                      ? pipeline.tests[0].totalTests - pipeline.tests[0].passedTests
                       : '_'}
                   </td>
                   <td>
                     {pipeline.tests?.length &&
                     pipeline.tests[0].startedDate !== null &&
-                    pipeline.tests[0].completedDate !== null
+                    pipeline.tests[0].completedDate !== null &&
+                    pipeline.tests[0].startedDate &&
+                    pipeline.tests[0].completedDate
                       ? prettyMs(
                           pipeline.tests[0].completedDate.getTime() -
                             pipeline.tests[0].startedDate.getTime()
