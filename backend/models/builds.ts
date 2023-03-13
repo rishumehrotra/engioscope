@@ -154,7 +154,7 @@ export const getBuildsOverviewForRepository = async ({
             project,
             collectionName,
             'repository.id': repositoryId,
-            'startTime': { $gte: new Date(startDate), $lt: new Date(endDate) },
+            'startTime': inDateRange(startDate, endDate),
           },
         },
         { $sort: { startTime: -1 } },
@@ -255,9 +255,6 @@ export const getBuildsOverviewForRepository = async ({
             url: 1,
             buildDefinitionId: 1,
             definitionName: 1,
-            project: '$_id.project',
-            collectionName: '$_id.collectionName',
-            repositoryID: '$_id.repositoryID',
             builds: 1,
             latestBuildResult: { $arrayElemAt: ['$builds', 0] },
             latestSuccessfulIndex: {
@@ -287,20 +284,18 @@ export const getBuildsOverviewForRepository = async ({
             },
           },
         },
+        { $unset: 'builds' },
       ]).then(result =>
         result.map(async build => {
-          if (build.latestSuccessfulIndex === -1) {
-            const failing = await getBuildFailingSince(
-              collectionName,
-              project,
-              build.buildDefinitionId
-            );
-            return {
-              ...build,
-              failingSince: failing,
-            };
-          }
-          return build;
+          if (build.latestSuccessfulIndex !== -1) return build;
+
+          const failing = await getBuildFailingSince(
+            collectionName,
+            project,
+            build.buildDefinitionId
+          );
+
+          return { ...build, failingSince: failing };
         })
       )
     ),

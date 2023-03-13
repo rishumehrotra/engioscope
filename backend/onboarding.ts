@@ -14,6 +14,7 @@ import {
 import { getBuildDefinitions } from './crons/build-definitions.js';
 import { getBranchesStats } from './crons/branches.js';
 import { getCommits } from './crons/commits.js';
+import { getTestRuns } from './crons/test-runs.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -34,6 +35,7 @@ export default async (config: ParsedConfig) => {
   await getBuildDefinitions();
   await getBranchesStats();
   await getCommits();
+  await getTestRuns();
 
   // eslint-disable-next-line no-console
   console.log('Done.');
