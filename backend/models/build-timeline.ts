@@ -52,11 +52,13 @@ const slowestTaskWithMatch = async (
 
 const failingTasksWithMatch = async (
   matchClause: FilterQuery<unknown>,
-  resultCount: number
+  resultCount: number,
+  runCount: number
 ) => {
   type Result = {
     _id: string;
     errorCount: number;
+    failureRate: number;
     continueOnError: boolean[];
   };
 
@@ -68,7 +70,7 @@ const failingTasksWithMatch = async (
       $group: {
         _id: formatName,
         errorCount: {
-          $avg: {
+          $sum: {
             $cond: {
               if: { $gte: ['$records.errorCount', 1] },
               then: 1,
@@ -92,14 +94,16 @@ const failingTasksWithMatch = async (
         },
       },
     },
+    { $addFields: { failureRate: { $divide: ['$errorCount', runCount] } } },
+    { $match: { failureRate: { $gt: 0.045 } } },
     { $sort: { errorCount: -1 } },
-    { $match: { errorCount: { $gt: 0.05 } } },
     { $limit: resultCount },
   ]);
 
   return results.map(r => ({
     name: r._id,
     errorCount: r.errorCount,
+    failureRate: r.failureRate,
     continueOnError: r.continueOnError.flat().reduce(or, false),
   }));
 };
@@ -145,10 +149,10 @@ const getTimelineStatsForMatch = async (
   matchClause: FilterQuery<unknown>,
   resultCount: number
 ) => {
-  const [count, slowest, failing, skipped] = await Promise.all([
-    BuildTimelineModel.find(matchClause).count(),
+  const count = await BuildTimelineModel.find(matchClause).count();
+  const [slowest, failing, skipped] = await Promise.all([
     slowestTaskWithMatch(matchClause, resultCount),
-    failingTasksWithMatch(matchClause, resultCount),
+    failingTasksWithMatch(matchClause, resultCount, count),
     skippedWithMatch(matchClause, resultCount),
   ]);
 
@@ -183,6 +187,17 @@ export const aggregateBuildTimelineStats = async ({
   );
 };
 
-export const allBuildTimelineStats = async (queryFrom = getConfig().azure.queryFrom) => {
-  return getTimelineStatsForMatch({ 'records.startTime': { $gt: queryFrom } }, 20);
+export const allBuildTimelineStatsInputParser = z.object({
+  ...collectionAndProjectInputs,
+  queryFrom: z.date().optional(),
+});
+export const allBuildTimelineStats = async ({
+  collectionName,
+  project,
+  queryFrom = getConfig().azure.queryFrom,
+}: z.infer<typeof allBuildTimelineStatsInputParser>) => {
+  return getTimelineStatsForMatch(
+    { collectionName, project, 'records.startTime': { $gt: queryFrom } },
+    20
+  );
 };

@@ -15,6 +15,7 @@ import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import ReleasePipelines2 from './ReleasePipelines2.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
+import BuildTimelines from './BuildTimelines.jsx';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) =>
   count ? (
@@ -131,6 +132,7 @@ const Project: React.FC = () => {
         <Route path="release-pipelines" element={<ReleasePipelines2 />} />
         <Route path="release-pipelines2" element={<ReleasePipelines />} />
         <Route path="devs" element={<Devs />} />
+        <Route path="build-timelines" element={<BuildTimelines />} />
         <Route path="workitems" element={<WorkItems />} />
         <Route path="" element={<Overview />} />
       </Routes>

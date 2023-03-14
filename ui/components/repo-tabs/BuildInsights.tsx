@@ -4,6 +4,7 @@ import { trpc } from '../../helpers/trpc.js';
 import Loading from '../Loading.jsx';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import { toPercentage } from '../../../shared/utils.js';
 
 const BuildInsights: React.FC<{
   buildDefinitionId: number;
@@ -15,7 +16,15 @@ const BuildInsights: React.FC<{
   });
   const [queryPeriodDays] = useQueryPeriodDays();
 
-  if (timelineStats.isLoading) return <Loading />;
+  if (!timelineStats.data) return <Loading />;
+
+  if (timelineStats.data.count === 0) {
+    return (
+      <div className="bg-gray-100">
+        Couldn't find any data for the last {queryPeriodDays} days
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-flow-col gap-5 p-5 bg-gray-100">
@@ -26,7 +35,7 @@ const BuildInsights: React.FC<{
         </p>
         {timelineStats.data?.slowest.length === 0 ? (
           <div className="italic text-gray-500">
-            Couldn't find builds in the last {queryPeriodDays} days
+            No tasks took longer than 30s to complete
           </div>
         ) : (
           <table>
@@ -54,7 +63,7 @@ const BuildInsights: React.FC<{
         </p>
         {timelineStats.data?.failing.length === 0 ? (
           <div className="italic text-gray-500">
-            Couldn't find builds in the last {queryPeriodDays} days
+            No task had a significant failure rate in the last {queryPeriodDays} days
           </div>
         ) : (
           <table>
@@ -76,7 +85,7 @@ const BuildInsights: React.FC<{
                       />
                     ) : null}
                   </td>
-                  <td>{(task.errorCount * 100).toFixed(2)}%</td>
+                  <td>{toPercentage(task.failureRate)}</td>
                 </tr>
               ))}
             </tbody>
@@ -88,7 +97,7 @@ const BuildInsights: React.FC<{
         <p className="text-gray-500 text-sm mb-2">Items that are skipped frequently</p>
         {timelineStats.data?.skipped.length === 0 ? (
           <div className="italic text-gray-500">
-            Couldn't find builds in the last {queryPeriodDays} days
+            No tasks were skipped in the last {queryPeriodDays} days
           </div>
         ) : (
           <table>
