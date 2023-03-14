@@ -1,4 +1,4 @@
-import { range } from 'rambda';
+import { head, last, range } from 'rambda';
 import { z } from 'zod';
 import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
@@ -34,73 +34,72 @@ export const TestRunsForRepositoryInputParser = z.object({
   ...dateRangeInputs,
 });
 
-type DefType = { id: number; name: string; url: string };
+type BuildDef = { id: number; name: string; url: string };
 
-type DefTestType = {
-  _id: number;
-  tests: {
-    definitionId: number;
-    weekIndex: number;
-    totalTests: number;
-    startedDate: Date;
-    completedDate: Date;
-    passedTests: number;
-    testId: string[];
-  }[];
-};
-
-type TestType = {
-  definitionId: number;
+type TestsForWeek = {
   weekIndex: number;
   totalTests: number;
   startedDate: Date | null;
   completedDate: Date | null;
   passedTests: number;
-  testId: string[];
+  hasTests: boolean;
 };
-
-type ResultType = DefType & Partial<DefTestType>;
-
-const fillMissingValues = (
-  definitionId: number,
-  intervals: number[],
-  tests: TestType[]
-) => {
-  let prev: Partial<TestType> = {};
-  let prevTotalTests = 0;
-  let prevPassedTests = 0;
-  return intervals.map(interval => {
-    const item = tests.find(t => t.weekIndex === interval);
-    prev = item ?? prev;
-    prevTotalTests = !item || item.totalTests === 0 ? prevTotalTests : item.totalTests;
-    prevPassedTests = !item || item.totalTests === 0 ? prevPassedTests : item.passedTests;
-
-    return {
-      weekIndex: interval,
-      definitionId: prev.definitionId || definitionId,
-      passedTests: prevPassedTests,
-      totalTests: prevTotalTests,
-      testId: prev.testId || [],
-      completedDate: prev.completedDate || null,
-      startedDate: prev.startedDate || null,
-    };
-  });
+type TestsForDef = {
+  definitionId: number;
+  tests: TestsForWeek[];
+  latest?: TestsForWeek;
 };
+type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
 
-export const sortAndSliceTests = (
-  tests: TestType[],
-  totalIntervals: number,
-  totalDays: number,
-  intervalDays: number
+const makeContinuous = async (
+  tests: TestsForWeek[] | undefined,
+  startDate: Date,
+  endDate: Date,
+  getOneOlderTestRun: () => Promise<TestsForWeek | null>
+  // definitionId: number
 ) => {
-  return tests
-    .sort((a, b) => {
-      if (a.weekIndex && b.weekIndex && a.weekIndex - b.weekIndex) {
-        return a.weekIndex - b.weekIndex;
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+  if (!tests) {
+    const olderTest = await getOneOlderTestRun();
+    if (!olderTest) return null;
+
+    return range(0, totalIntervals).map(weekIndex => {
+      return { ...olderTest, weekIndex };
+    });
+  }
+
+  return range(0, totalIntervals)
+    .reduce<Promise<TestsForWeek[]>>(async (acc, weekIndex, index) => {
+      const matchingTest = tests.find(t => t.weekIndex === weekIndex && t.hasTests);
+      if (matchingTest) return [...(await acc), matchingTest];
+
+      if (index === 0) {
+        const olderTest = await getOneOlderTestRun();
+        // console.log('Getting older data', definitionId, olderTest);
+
+        if (!olderTest) {
+          return [
+            {
+              weekIndex,
+              totalTests: 0,
+              passedTests: 0,
+              startedDate: null,
+              completedDate: null,
+              hasTests: false,
+            },
+          ];
+        }
+
+        return [{ ...olderTest, weekIndex }];
       }
-      return 0;
-    })
-    .slice(totalIntervals - Math.floor(totalDays / intervalDays));
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const lastItem = last(await acc)!;
+      return [...(await acc), { ...lastItem, weekIndex }];
+    }, Promise.resolve([]))
+    .then(list => list.slice(totalIntervals - Math.floor(totalDays / 7)));
 };
 
 export const getOldTestRunsForDefinition = async (
@@ -110,7 +109,7 @@ export const getOldTestRunsForDefinition = async (
   repositoryId: string,
   definitionId: number
 ) => {
-  const result = await RepositoryModel.aggregate<TestType>([
+  const result = await RepositoryModel.aggregate<TestsForWeek>([
     {
       $match: {
         'collectionName': collectionName,
@@ -250,7 +249,7 @@ export const getOldTestRunsForDefinition = async (
         },
       },
     },
-
+    { $addFields: { hasTests: { $gt: [{ $size: '$testIds' }, 0] } } },
     { $sort: { weekIndex: -1 } },
     {
       $match: {
@@ -262,7 +261,7 @@ export const getOldTestRunsForDefinition = async (
     },
   ]);
 
-  return result[0] || null;
+  return head(result) || null;
 };
 
 export const getTestRunsForRepo = async (
@@ -286,7 +285,7 @@ export const getTestRunsForRepo = async (
         url: 1,
       }
     ).lean(),
-    RepositoryModel.aggregate<DefTestType>([
+    RepositoryModel.aggregate<TestsForDef>([
       {
         $match: {
           'collectionName': collectionName,
@@ -409,7 +408,6 @@ export const getTestRunsForRepo = async (
         $project: {
           _id: 0,
           definitionId: '$_id.definitionId',
-
           weekIndex: '$_id.weekIndex',
           totalTests: { $sum: '$tests.totalTests' },
           startedDate: { $min: '$tests.startedDate' },
@@ -425,23 +423,37 @@ export const getTestRunsForRepo = async (
           },
         },
       },
-
+      {
+        $addFields: {
+          hasTests: { $gt: [{ $size: '$testIds' }, 0] },
+        },
+      },
       { $sort: { weekIndex: -1 } },
       {
         $group: {
           _id: '$definitionId',
+          definitionId: { $first: '$definitionId' },
           tests: { $push: '$$ROOT' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          definitionId: 1,
+          tests: 1,
         },
       },
     ]),
   ]);
 
   // Mapping the build definitions/pipelines with no testruns
-  const result: ResultType[] = (definitionList as DefType[]).map(definition => {
-    const tests = definitionTestRuns.find(def => def._id === definition.id);
-    return { ...definition, ...tests } || definition;
-  });
-  return result;
+  const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
+    definition => {
+      const tests = definitionTestRuns.find(def => def.definitionId === definition.id);
+      return { ...definition, ...tests } || definition;
+    }
+  );
+  return buildDefsWithTests;
 };
 
 export const getTestRunsForRepository = async ({
@@ -451,7 +463,7 @@ export const getTestRunsForRepository = async ({
   startDate,
   endDate,
 }: z.infer<typeof TestRunsForRepositoryInputParser>) => {
-  const result = await getTestRunsForRepo(
+  const testRunsForRepo = await getTestRunsForRepo(
     collectionName,
     project,
     startDate,
@@ -459,88 +471,32 @@ export const getTestRunsForRepository = async ({
     repositoryId
   );
 
-  // Adding the missing weekIndex data for the Build Definition Tests
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-  const intervals = range(0, totalIntervals);
+  const getOneOlderTestRunForDef = (defId: number) => () => {
+    return getOldTestRunsForDefinition(
+      collectionName,
+      project,
+      startDate,
+      repositoryId,
+      defId
+    );
+  };
+
   const definitionTests = Promise.all(
-    result.map(async def => {
-      if (!def.tests) {
-        // console.log('Triggered No Tests');
-        const oldTestsForDef = await getOldTestRunsForDefinition(
-          collectionName,
-          project,
-          startDate,
-          repositoryId,
-          def.id
-        );
-
-        // console.log(
-        //   oldTestsForDef
-        //     ? `--===| Old Tests for ${def.name} : ${def.id} |===--`
-        //     : `No Old Tests for ${def.name} : ${def.id}}`
-        // );
-
-        if (oldTestsForDef) {
-          const tests = fillMissingValues(def.id, intervals, [oldTestsForDef]);
-
-          return {
-            ...def,
-            tests: sortAndSliceTests(tests, totalIntervals, totalDays, 7),
-          };
-        }
-        return def;
-      }
-
-      // Check if first weekIndex data is missing
-      if (def.tests[0].weekIndex !== 0) {
-        // console.log('Triggered Non Zero');
-        const oldTestsForDef = await getOldTestRunsForDefinition(
-          collectionName,
-          project,
-          startDate,
-          repositoryId,
-          def.id
-        );
-
-        // console.log(
-        //   oldTestsForDef
-        //     ? `--===| Old Tests for ${def.name} : ${def.id} |===--`
-        //     : `No Old Tests for ${def.name} : ${def.id}}`
-        // );
-
-        if (oldTestsForDef) {
-          const tests = fillMissingValues(def.id, intervals, [
-            oldTestsForDef,
-            ...def.tests,
-          ]);
-
-          return {
-            ...def,
-            tests: sortAndSliceTests(tests, totalIntervals, totalDays, 7),
-          };
-        }
-
-        const tests = fillMissingValues(def.id, intervals, def.tests);
-        return {
-          ...def,
-          tests: sortAndSliceTests(tests, totalIntervals, totalDays, 7),
-        };
-      }
-      // console.log('Triggered Normal');
-      const tests = fillMissingValues(def.id, intervals, def.tests);
-      // console.log(`--===| Tests for ${def.name} : ${def.id} |===--`, tests);
+    testRunsForRepo.map(async def => {
+      // console.log('starting tests', def.id, def.tests);
+      const tests = await makeContinuous(
+        def.tests,
+        startDate,
+        endDate,
+        getOneOlderTestRunForDef(def.id)
+        // def.id
+      );
+      // console.log('after making it continuous', def.id, tests);
 
       return {
         ...def,
-        tests: tests
-          .sort((a, b) => {
-            if (a.weekIndex && b.weekIndex && a.weekIndex - b.weekIndex) {
-              return a.weekIndex - b.weekIndex;
-            }
-            return 0;
-          })
-          .slice(totalIntervals - Math.floor(totalDays / 7)),
+        tests,
+        latest: tests ? last(tests) : null,
       };
     })
   );

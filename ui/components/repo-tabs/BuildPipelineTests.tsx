@@ -1,4 +1,5 @@
 import prettyMs from 'pretty-ms';
+import { subtract } from 'rambda';
 import React from 'react';
 import { trpc } from '../../helpers/trpc.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
@@ -31,7 +32,7 @@ const BuildPipelineTests: React.FC<{
           <table className="table">
             <thead>
               <tr>
-                <th> </th>
+                <th>Name</th>
                 <th>
                   <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
                     {' '}
@@ -51,8 +52,9 @@ const BuildPipelineTests: React.FC<{
             <tbody>
               {tests.data.map(pipeline => (
                 <tr key={pipeline.id}>
+                  {/* Pipeline Name */}
                   <td>
-                    {pipeline.tests ? (
+                    {pipeline.tests?.length ? (
                       <LabelWithSparkline
                         label={
                           <a
@@ -76,58 +78,32 @@ const BuildPipelineTests: React.FC<{
                         target="_blank"
                         rel="noreferrer"
                         data-tip={pipeline.name}
-                        className="link-text truncate w-full"
+                        className="link-text truncate w-full opacity-60"
                       >
                         {pipeline.name}
                       </a>
                     )}
                   </td>
+                  {/* Passed Tests */}
+                  <td>{pipeline.latest?.passedTests ?? '_'}</td>
+                  {/* Failed Tests */}
                   <td>
-                    {pipeline.tests?.length ? pipeline.tests[0].passedTests || 0 : '_'}
-                  </td>
-                  <td>
-                    {pipeline.tests?.length &&
-                    pipeline.tests[0].totalTests &&
-                    pipeline.tests[0]?.passedTests
-                      ? pipeline.tests[0].totalTests - pipeline.tests[0].passedTests
+                    {pipeline.latest?.totalTests != null &&
+                    pipeline.latest?.passedTests != null
+                      ? subtract(pipeline.latest.totalTests, pipeline.latest.passedTests)
                       : '_'}
                   </td>
+                  {/* Execution Time */}
                   <td>
-                    {pipeline.tests?.length &&
-                    pipeline.tests[0].startedDate !== null &&
-                    pipeline.tests[0].completedDate !== null &&
-                    pipeline.tests[0].startedDate &&
-                    pipeline.tests[0].completedDate
+                    {pipeline.latest?.completedDate && pipeline.latest?.startedDate
                       ? prettyMs(
-                          pipeline.tests[0].completedDate.getTime() -
-                            pipeline.tests[0].startedDate.getTime()
+                          pipeline.latest.completedDate.getTime() -
+                            pipeline.latest.startedDate.getTime()
                         )
                       : '_'}
                   </td>
-                  <td>
-                    Line Chart
-                    {/* {pipeline.coverage
-                      ? 'Line Chart'
-                      : // <LabelWithSparkline
-                        //   label={
-                        //     pipeline.coverage
-                        //       ? divide(pipeline.coverage.covered, pipeline.coverage.total)
-                        //           .map(toPercentage)
-                        //           .getOr('-')
-                        //       : '-'
-                        //   }
-                        //   data={(pipeline.coverageByWeek || []).map(c =>
-                        //     c ? divide(c.covered, c.total).map(multiply(100)).getOr(0) : 0
-                        //   )}
-                        //   lineColor={increaseIsBetter(
-                        //     (pipeline.coverageByWeek || []).map(c =>
-                        //       c ? divide(c.covered, c.total).getOr(0) : 0
-                        //     )
-                        //   )}
-                        //   yAxisLabel={x => `${x}%`}
-                        // />
-                        '-'} */}
-                  </td>
+                  {/* Branch Coverage */}
+                  <td>-</td>
                 </tr>
               ))}
             </tbody>
