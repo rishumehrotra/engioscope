@@ -72,12 +72,12 @@ const makeContinuous = async (
 
   return range(0, totalIntervals)
     .reduce<Promise<TestsForWeek[]>>(async (acc, weekIndex, index) => {
-      const matchingTest = tests.find(t => t.weekIndex === weekIndex && t.hasTests);
+      const matchingTest = tests.find(t => t.weekIndex === weekIndex);
+
       if (matchingTest) return [...(await acc), matchingTest];
 
       if (index === 0) {
         const olderTest = await getOneOlderTestRun();
-        // console.log('Getting older data', definitionId, olderTest);
 
         if (!olderTest) {
           return [

@@ -62,7 +62,11 @@ const BuildPipelineTests: React.FC<{
                             target="_blank"
                             rel="noreferrer"
                             data-tip={pipeline.name}
-                            className="link-text truncate w-full"
+                            className={
+                              pipeline.latest?.hasTests
+                                ? 'link-text truncate w-full'
+                                : 'link-text truncate w-full opacity-60'
+                            }
                           >
                             {pipeline.name}
                           </a>
@@ -85,17 +89,24 @@ const BuildPipelineTests: React.FC<{
                     )}
                   </td>
                   {/* Passed Tests */}
-                  <td>{pipeline.latest?.passedTests ?? '_'}</td>
+                  <td>
+                    {pipeline.latest?.hasTests && pipeline.latest?.passedTests
+                      ? pipeline.latest.passedTests
+                      : '_'}
+                  </td>
                   {/* Failed Tests */}
                   <td>
-                    {pipeline.latest?.totalTests != null &&
+                    {pipeline.latest?.hasTests &&
+                    pipeline.latest?.totalTests != null &&
                     pipeline.latest?.passedTests != null
                       ? subtract(pipeline.latest.totalTests, pipeline.latest.passedTests)
                       : '_'}
                   </td>
                   {/* Execution Time */}
                   <td>
-                    {pipeline.latest?.completedDate && pipeline.latest?.startedDate
+                    {pipeline.latest?.hasTests &&
+                    pipeline.latest?.completedDate &&
+                    pipeline.latest?.startedDate
                       ? prettyMs(
                           pipeline.latest.completedDate.getTime() -
                             pipeline.latest.startedDate.getTime()
