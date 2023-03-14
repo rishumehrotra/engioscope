@@ -1,18 +1,16 @@
 import prettyMilliseconds from 'pretty-ms';
 import React from 'react';
 import { trpc } from '../../helpers/trpc.js';
-import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
 import Loading from '../Loading.jsx';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
+import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 
-const BuildInsightsInternal: React.FC<{
-  collectionName: string;
-  project: string;
+const BuildInsights: React.FC<{
   buildDefinitionId: number;
-}> = ({ collectionName, project, buildDefinitionId }) => {
+}> = ({ buildDefinitionId }) => {
+  const cnp = useCollectionAndProject();
   const timelineStats = trpc.builds.timelineStats.useQuery({
-    collectionName,
-    project,
+    ...cnp,
     buildDefinitionId,
   });
   const [queryPeriodDays] = useQueryPeriodDays();
@@ -112,20 +110,6 @@ const BuildInsightsInternal: React.FC<{
         )}
       </div>
     </div>
-  );
-};
-
-const BuildInsights: React.FC<{ url: string }> = ({ url }) => {
-  const projectDetails = useProjectDetails();
-
-  if (!projectDetails) return null;
-
-  return (
-    <BuildInsightsInternal
-      collectionName={projectDetails.name[0]}
-      project={projectDetails.name[1]}
-      buildDefinitionId={Number(url.split('=')[1])}
-    />
   );
 };
 

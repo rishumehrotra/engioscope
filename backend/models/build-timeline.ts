@@ -1,5 +1,6 @@
 import { or } from 'rambda';
 import { z } from 'zod';
+import type { FilterQuery } from 'mongoose';
 import { oneSecondInMs } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import { BuildTimelineModel } from './mongoose-models/BuildTimelineModel.js';
@@ -14,26 +15,17 @@ const formatName = {
   ],
 };
 
-const getSlowestTasks = async (
-  collectionName: string,
-  project: string,
-  buildDefinitionId: number,
-  queryFrom = getConfig().azure.queryFrom
+const slowestTaskWithMatch = async (
+  matchClause: FilterQuery<unknown>,
+  resultCount: number
 ) => {
   type Result = {
     _id: string;
     averageTime: number;
   };
 
-  const results: Result[] = await BuildTimelineModel.aggregate([
-    {
-      $match: {
-        collectionName,
-        project,
-        buildDefinitionId,
-        'records.startTime': { $gt: queryFrom },
-      },
-    },
+  const results = await BuildTimelineModel.aggregate<Result>([
+    { $match: matchClause },
     { $unwind: '$records' },
     { $match: { 'records.type': 'Task' } },
     {
@@ -58,11 +50,9 @@ const getSlowestTasks = async (
   return results.map(r => ({ name: r._id, time: r.averageTime }));
 };
 
-const getFailing = async (
-  collectionName: string,
-  project: string,
-  buildDefinitionId: number,
-  queryFrom = getConfig().azure.queryFrom
+const failingTasksWithMatch = async (
+  matchClause: FilterQuery<unknown>,
+  resultCount: number
 ) => {
   type Result = {
     _id: string;
@@ -70,15 +60,8 @@ const getFailing = async (
     continueOnError: boolean[];
   };
 
-  const results: Result[] = await BuildTimelineModel.aggregate([
-    {
-      $match: {
-        collectionName,
-        project,
-        buildDefinitionId,
-        'records.startTime': { $gt: queryFrom },
-      },
-    },
+  const results = await BuildTimelineModel.aggregate<Result>([
+    { $match: matchClause },
     { $unwind: '$records' },
     { $match: { 'records.type': 'Task' } },
     {
@@ -121,11 +104,9 @@ const getFailing = async (
   }));
 };
 
-const getSkipped = async (
-  collectionName: string,
-  project: string,
-  buildDefinitionId: number,
-  queryFrom = getConfig().azure.queryFrom
+const skippedWithMatch = async (
+  matchClause: FilterQuery<unknown>,
+  resultCount: number
 ) => {
   type Result = {
     _id: string;
@@ -133,16 +114,10 @@ const getSkipped = async (
     type: string[];
   };
 
-  const results: Result[] = await BuildTimelineModel.aggregate([
-    {
-      $match: {
-        collectionName,
-        project,
-        buildDefinitionId,
-        'records.startTime': { $gt: queryFrom },
-      },
-    },
+  const results = await BuildTimelineModel.aggregate<Result>([
+    { $match: matchClause },
     { $unwind: '$records' },
+    { $match: { 'records.type': 'Task' } },
     {
       $group: {
         _id: formatName,
@@ -166,6 +141,25 @@ const getSkipped = async (
   }));
 };
 
+const getTimelineStatsForMatch = async (
+  matchClause: FilterQuery<unknown>,
+  resultCount: number
+) => {
+  const [count, slowest, failing, skipped] = await Promise.all([
+    BuildTimelineModel.find(matchClause).count(),
+    slowestTaskWithMatch(matchClause, resultCount),
+    failingTasksWithMatch(matchClause, resultCount),
+    skippedWithMatch(matchClause, resultCount),
+  ]);
+
+  return {
+    count,
+    slowest,
+    failing,
+    skipped,
+  };
+};
+
 export const aggregateBuildTimelineStatsInputParser = z.object({
   ...collectionAndProjectInputs,
   buildDefinitionId: z.number(),
@@ -178,22 +172,17 @@ export const aggregateBuildTimelineStats = async ({
   buildDefinitionId,
   queryFrom = getConfig().azure.queryFrom,
 }: z.infer<typeof aggregateBuildTimelineStatsInputParser>) => {
-  const [count, slowest, failing, skipped] = await Promise.all([
-    BuildTimelineModel.find({
+  return getTimelineStatsForMatch(
+    {
       collectionName,
       project,
       buildDefinitionId,
-      queryFrom: { $gt: queryFrom },
-    }).count(),
-    getSlowestTasks(collectionName, project, buildDefinitionId, queryFrom),
-    getFailing(collectionName, project, buildDefinitionId, queryFrom),
-    getSkipped(collectionName, project, buildDefinitionId, queryFrom),
-  ]);
+      'records.startTime': { $gt: queryFrom },
+    },
+    resultCount
+  );
+};
 
-  return {
-    count,
-    slowest,
-    failing,
-    skipped,
-  };
+export const allBuildTimelineStats = async (queryFrom = getConfig().azure.queryFrom) => {
+  return getTimelineStatsForMatch({ 'records.startTime': { $gt: queryFrom } }, 20);
 };

@@ -315,7 +315,9 @@ const Builds: React.FC<{
                     {isExpanded(pipeline.url) ? (
                       <tr>
                         <td colSpan={7} style={{ padding: 0 }}>
-                          <BuildInsights url={pipeline.url} />
+                          <BuildInsights
+                            buildDefinitionId={Number(pipeline.url.split('=')[1])}
+                          />
                         </td>
                       </tr>
                     ) : null}
