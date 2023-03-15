@@ -89,24 +89,18 @@ const BuildPipelineTests: React.FC<{
                     )}
                   </td>
                   {/* Passed Tests */}
-                  <td>
-                    {pipeline.latest?.hasTests && pipeline.latest?.passedTests
-                      ? pipeline.latest.passedTests
-                      : '_'}
-                  </td>
+                  <td>{pipeline.latest?.hasTests ? pipeline.latest.passedTests : '_'}</td>
                   {/* Failed Tests */}
                   <td>
-                    {pipeline.latest?.hasTests &&
-                    pipeline.latest?.totalTests != null &&
-                    pipeline.latest?.passedTests != null
+                    {pipeline.latest?.hasTests
                       ? subtract(pipeline.latest.totalTests, pipeline.latest.passedTests)
                       : '_'}
                   </td>
                   {/* Execution Time */}
                   <td>
                     {pipeline.latest?.hasTests &&
-                    pipeline.latest?.completedDate &&
-                    pipeline.latest?.startedDate
+                    pipeline.latest?.completedDate != null &&
+                    pipeline.latest?.startedDate != null
                       ? prettyMs(
                           pipeline.latest.completedDate.getTime() -
                             pipeline.latest.startedDate.getTime()

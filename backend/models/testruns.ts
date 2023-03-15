@@ -56,7 +56,6 @@ const makeContinuous = async (
   startDate: Date,
   endDate: Date,
   getOneOlderTestRun: () => Promise<TestsForWeek | null>
-  // definitionId: number
 ) => {
   const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
   const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
@@ -249,7 +248,14 @@ export const getOldTestRunsForDefinition = async (
         },
       },
     },
-    { $addFields: { hasTests: { $gt: [{ $size: '$testIds' }, 0] } } },
+    {
+      $addFields: {
+        hasTests: { $gt: [{ $size: '$testIds' }, 0] },
+        foundTests: {
+          $and: [{ $gt: [{ $size: '$testIds' }, 0] }, { $ne: ['$completedDate', null] }],
+        },
+      },
+    },
     { $sort: { weekIndex: -1 } },
     {
       $match: {
@@ -258,6 +264,13 @@ export const getOldTestRunsForDefinition = async (
     },
     {
       $limit: 1,
+    },
+    {
+      $project: {
+        definitionId: 0,
+        testIds: 0,
+        buildId: 0,
+      },
     },
   ]);
 
@@ -426,6 +439,12 @@ export const getTestRunsForRepo = async (
       {
         $addFields: {
           hasTests: { $gt: [{ $size: '$testIds' }, 0] },
+          foundTests: {
+            $and: [
+              { $gt: [{ $size: '$testIds' }, 0] },
+              { $ne: ['$completedDate', null] },
+            ],
+          },
         },
       },
       { $sort: { weekIndex: -1 } },
@@ -438,9 +457,10 @@ export const getTestRunsForRepo = async (
       },
       {
         $project: {
-          _id: 0,
-          definitionId: 1,
-          tests: 1,
+          '_id': 0,
+          'tests.definitionId': 0,
+          'tests.testIds': 0,
+          'tests.buildId': 0,
         },
       },
     ]),
@@ -471,6 +491,11 @@ export const getTestRunsForRepository = async ({
     repositoryId
   );
 
+  console.log(
+    'testRunsForRepo',
+    testRunsForRepo.map(t => t.tests)
+  );
+
   const getOneOlderTestRunForDef = (defId: number) => () => {
     return getOldTestRunsForDefinition(
       collectionName,
@@ -483,15 +508,12 @@ export const getTestRunsForRepository = async ({
 
   const definitionTests = Promise.all(
     testRunsForRepo.map(async def => {
-      // console.log('starting tests', def.id, def.tests);
       const tests = await makeContinuous(
         def.tests,
         startDate,
         endDate,
         getOneOlderTestRunForDef(def.id)
-        // def.id
       );
-      // console.log('after making it continuous', def.id, tests);
 
       return {
         ...def,
