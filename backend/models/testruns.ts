@@ -490,12 +490,6 @@ export const getTestRunsForRepository = async ({
     endDate,
     repositoryId
   );
-
-  console.log(
-    'testRunsForRepo',
-    testRunsForRepo.map(t => t.tests)
-  );
-
   const getOneOlderTestRunForDef = (defId: number) => () => {
     return getOldTestRunsForDefinition(
       collectionName,
