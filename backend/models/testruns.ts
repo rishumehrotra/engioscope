@@ -38,12 +38,17 @@ type BuildDef = { id: number; name: string; url: string };
 
 type TestsForWeek = {
   weekIndex: number;
-  totalTests: number;
-  startedDate: Date | null;
-  completedDate: Date | null;
-  passedTests: number;
-  hasTests: boolean;
-};
+} & (
+  | { hasTests: false }
+  | {
+      hasTests: true;
+      totalTests: number;
+      startedDate: Date;
+      completedDate: Date;
+      passedTests: number;
+    }
+);
+
 type TestsForDef = {
   definitionId: number;
   tests: TestsForWeek[];
@@ -232,28 +237,12 @@ export const getOldTestRunsForDefinition = async (
     {
       $project: {
         _id: 0,
-        definitionId: '$_id.definitionId',
         weekIndex: '$_id.weekIndex',
+        hasTests: { $gt: [{ $size: '$tests' }, 0] },
         totalTests: { $sum: '$tests.totalTests' },
         startedDate: { $min: '$tests.startedDate' },
         completedDate: { $max: '$tests.completedDate' },
         passedTests: { $sum: '$tests.passedCount' },
-        buildId: '$build.buildId',
-        testIds: {
-          $reduce: {
-            input: '$tests.id',
-            initialValue: [],
-            in: { $setUnion: ['$$value', ['$$this']] },
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        hasTests: { $gt: [{ $size: '$testIds' }, 0] },
-        foundTests: {
-          $and: [{ $gt: [{ $size: '$testIds' }, 0] }, { $ne: ['$completedDate', null] }],
-        },
       },
     },
     { $sort: { weekIndex: -1 } },
@@ -264,13 +253,6 @@ export const getOldTestRunsForDefinition = async (
     },
     {
       $limit: 1,
-    },
-    {
-      $project: {
-        definitionId: 0,
-        testIds: 0,
-        buildId: 0,
-      },
     },
   ]);
 
@@ -426,41 +408,16 @@ export const getTestRunsForRepo = async (
           startedDate: { $min: '$tests.startedDate' },
           completedDate: { $max: '$tests.completedDate' },
           passedTests: { $sum: '$tests.passedCount' },
-          buildId: '$build.buildId',
-          testIds: {
-            $reduce: {
-              input: '$tests.id',
-              initialValue: [],
-              in: { $setUnion: ['$$value', ['$$this']] },
-            },
-          },
+          hasTests: { $gt: [{ $size: '$tests' }, 0] },
         },
       },
-      {
-        $addFields: {
-          hasTests: { $gt: [{ $size: '$testIds' }, 0] },
-          foundTests: {
-            $and: [
-              { $gt: [{ $size: '$testIds' }, 0] },
-              { $ne: ['$completedDate', null] },
-            ],
-          },
-        },
-      },
+
       { $sort: { weekIndex: -1 } },
       {
         $group: {
           _id: '$definitionId',
           definitionId: { $first: '$definitionId' },
           tests: { $push: '$$ROOT' },
-        },
-      },
-      {
-        $project: {
-          '_id': 0,
-          'tests.definitionId': 0,
-          'tests.testIds': 0,
-          'tests.buildId': 0,
         },
       },
     ]),

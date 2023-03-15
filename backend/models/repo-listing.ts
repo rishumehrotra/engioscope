@@ -393,7 +393,7 @@ export const getNonYamlPipelines = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof NonYamlPipelinesParser>) => {
-  const activeRepoIds = await getActiveRepos(
+  const activeRepos = await getActiveRepos(
     collectionName,
     project,
     startDate,
@@ -411,7 +411,7 @@ export const getNonYamlPipelines = async ({
       $match: {
         collectionName,
         'project.name': project,
-        'id': { $in: activeRepoIds.map(prop('id')) },
+        'id': { $in: activeRepos.map(prop('id')) },
       },
     },
     {

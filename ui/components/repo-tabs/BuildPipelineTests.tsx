@@ -71,9 +71,9 @@ const BuildPipelineTests: React.FC<{
                             {pipeline.name}
                           </a>
                         }
-                        data={pipeline.tests.map(t => t.totalTests)}
+                        data={pipeline.tests.map(t => (t.hasTests ? t.totalTests : 0))}
                         lineColor={increaseIsBetter(
-                          pipeline.tests.map(t => t.totalTests || 0)
+                          pipeline.tests.map(t => (t.hasTests ? t.totalTests : 0))
                         )}
                       />
                     ) : (
@@ -98,9 +98,7 @@ const BuildPipelineTests: React.FC<{
                   </td>
                   {/* Execution Time */}
                   <td>
-                    {pipeline.latest?.hasTests &&
-                    pipeline.latest?.completedDate != null &&
-                    pipeline.latest?.startedDate != null
+                    {pipeline.latest?.hasTests
                       ? prettyMs(
                           pipeline.latest.completedDate.getTime() -
                             pipeline.latest.startedDate.getTime()
