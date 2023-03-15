@@ -411,7 +411,7 @@ export const getNonYamlPipelines = async ({
       $match: {
         collectionName,
         'project.name': project,
-        'id': { $in: activeRepoIds },
+        'id': { $in: activeRepoIds.map(prop('id')) },
       },
     },
     {
