@@ -354,26 +354,25 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
               {
                 title: 'YAML pipelines',
                 value: divide(
-                  summaries.data.yamlPipelines.yamlCount,
-                  summaries.data.yamlPipelines.totalCount
+                  summaries.data.pipelines.yamlCount,
+                  summaries.data.pipelines.totalCount
                 )
                   .map(toPercentage)
                   .getOr('-'),
-                tooltip: `${num(summaries.data.yamlPipelines.yamlCount)} of ${num(
-                  summaries.data.yamlPipelines.totalCount
+                tooltip: `${num(summaries.data.pipelines.yamlCount)} of ${num(
+                  summaries.data.pipelines.totalCount
                 )} pipelines are set up using a YAML-based configuration`,
               },
             ]}
             onClick={
-              summaries.data.yamlPipelines.totalCount ===
-              summaries.data.yamlPipelines.yamlCount
+              summaries.data.pipelines.totalCount === summaries.data.pipelines.yamlCount
                 ? undefined
                 : {
                     open: 'modal',
                     heading: 'Pipelines not using YAML-based configuration',
                     subheading: `(${
-                      summaries.data.yamlPipelines.totalCount -
-                      summaries.data.yamlPipelines.yamlCount
+                      summaries.data.pipelines.totalCount -
+                      summaries.data.pipelines.yamlCount
                     })`,
                     body: <NonYamlPipeLineBuilds queryPeriodDays={queryPeriodDays} />,
                   }
@@ -386,14 +385,14 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 tooltip: `${num(
                   summaries.data.centralTemplatePipeline.central
                 )} out of ${num(
-                  summaries.data.centralTemplatePipeline.total
-                )} build pipelines use the central template on the master branch <br>
-                  ${num(summaries.data.totalCentralTemplate.templateUsers)} out of ${num(
+                  summaries.data.pipelines.totalCount
+                )} build pipelines use the central template on the master branch<br>
+                  ${num(summaries.data.centralTemplateUsage.templateUsers)} out of ${num(
                   summaries.data.totalBuilds.count
                 )} build runs used the central template`,
                 value: divide(
                   summaries.data.centralTemplatePipeline.central,
-                  summaries.data.centralTemplatePipeline.total
+                  summaries.data.pipelines.totalCount
                 )
                   .map(toPercentage)
                   .getOr('-'),
