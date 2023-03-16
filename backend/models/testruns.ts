@@ -149,6 +149,9 @@ export const getOldTestRunsForDefinition = async (
                   { $eq: ['$project', '$$project'] },
                   { $eq: ['$repository.id', '$$repositoryId'] },
                   { $eq: ['$sourceBranch', '$$defaultBranch'] },
+                  {
+                    $or: [{ $eq: ['$result', 'failed'] }, { $eq: ['$result', 'failed'] }],
+                  },
                   // Different from the original query
                   { $eq: ['$definition.id', definitionId] },
                   { $lt: ['$finishTime', new Date(startDate)] },
@@ -316,6 +319,9 @@ export const getTestRunsForRepo = async (
                     { $eq: ['$project', '$$project'] },
                     { $eq: ['$repository.id', '$$repositoryId'] },
                     { $eq: ['$sourceBranch', '$$defaultBranch'] },
+                    {
+                      $or: [{ $eq: ['$result', 'failed'] },{ $eq: ['$result', 'failed'] },],
+                    },
                   ],
                 },
                 finishTime: inDateRange(startDate, endDate),
