@@ -10,6 +10,7 @@ import { getTestRuns } from './test-runs.js';
 import { setupJob } from './utils.js';
 import { getReleases, getReleaseUpdates } from './releases.js';
 import { getBuildDefinitions } from './build-definitions.js';
+import { refreshSonarProjects } from './sonar.js';
 
 export default () => {
   setupJob('builds', t => t.everyHourAt(45), getBuildsAndTimelines);
@@ -24,4 +25,5 @@ export default () => {
   setupJob('repos', t => t.everyHourAt(35), getTestRuns);
   setupJob('releases', t => t.everyHourAt(20), getReleases);
   setupJob('release updates', t => t.everyHourAt(35), getReleaseUpdates);
+  setupJob('sonar projects', t => t.everyDay(), refreshSonarProjects);
 };

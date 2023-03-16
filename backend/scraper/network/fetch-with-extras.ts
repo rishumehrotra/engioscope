@@ -21,6 +21,8 @@ export default (
       ...restInit,
       signal: controller.signal,
       agent:
+        typeof url === 'string' &&
+        url.toLowerCase().startsWith('https://') &&
         verifySsl === false
           ? new https.Agent({
               rejectUnauthorized: false,

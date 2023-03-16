@@ -1,62 +1,41 @@
-import type { ObjectId } from 'mongoose';
-import { Schema, model } from 'mongoose';
+import type { ObjectId, Schema } from 'mongoose';
+import type {
+  AzurePATConnection,
+  Connection,
+  SonarConnection,
+} from './mongoose-models/ConnectionModel.js';
+import {
+  AzurePATConnectionModel,
+  SonarConnectionModel,
+  ConnectionModel,
+} from './mongoose-models/ConnectionModel.js';
 
-export type AzurePATConnection = {
-  type: 'azure-pat';
-  host: string;
-  token: string;
-  verifySsl: boolean;
-};
-
-export type SonarConnection = {
-  type: 'sonar';
-  url: string;
-  token: string;
-  verifySsl: boolean;
-};
-
-export type Connection = AzurePATConnection | SonarConnection;
-
-const discriminatorKey = { discriminatorKey: 'type' };
-
-const connectionSchema = new Schema<Connection>(
-  {},
-  {
-    timestamps: true,
-    ...discriminatorKey,
+/* eslint-disable no-redeclare */
+export function getConnections(type: 'azure-pat'): Promise<
+  (AzurePATConnection & {
+    _id: Schema.Types.ObjectId;
+  })[]
+>;
+export function getConnections(type: 'sonar'): Promise<
+  (SonarConnection & {
+    _id: Schema.Types.ObjectId;
+  })[]
+>;
+export function getConnections(): Promise<
+  (Connection & {
+    _id: Schema.Types.ObjectId;
+  })[]
+>;
+export function getConnections(type?: Connection['type']) {
+  if (!type) return ConnectionModel.find().lean();
+  if (type === 'azure-pat') {
+    return AzurePATConnectionModel.find().lean();
   }
-);
-const ConnectionModel = model<Connection>('Connection', connectionSchema);
-
-const azurePATConnectionSchema = new Schema<AzurePATConnection>(
-  {
-    host: { type: String, required: true },
-    token: { type: String, required: true },
-    verifySsl: { type: Boolean, default: true },
-  },
-  { ...discriminatorKey }
-);
-
-const AzurePATConnectionModel = ConnectionModel.discriminator(
-  'azure-pat',
-  azurePATConnectionSchema
-);
-
-const sonarConnectionSchema = new Schema<SonarConnection>(
-  {
-    url: { type: String, required: true },
-    token: { type: String },
-    verifySsl: { type: Boolean, default: true },
-  },
-  { ...discriminatorKey }
-);
-
-const SonarConnectionModel = ConnectionModel.discriminator(
-  'sonar',
-  sonarConnectionSchema
-);
-
-export const getConnections = () => ConnectionModel.find().lean();
+  if (type === 'sonar') {
+    return SonarConnectionModel.find().lean();
+  }
+}
+/* eslint-enable */
 
 export const getConnectionById = (id: ObjectId | string) =>
   ConnectionModel.findOne({ _id: id }).lean();
