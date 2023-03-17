@@ -17,7 +17,7 @@ const BuildPipelineTests: React.FC<{
   const { collectionName, project } = useCollectionAndProject();
 
   const dateRange = useDateRange();
-  const tests = trpc.tests.getTestRunsForRepository.useQuery({
+  const tests = trpc.tests.getTestRunsAndCoverageForRepo.useQuery({
     collectionName,
     project,
     repositoryId,
@@ -64,7 +64,7 @@ const BuildPipelineTests: React.FC<{
                             rel="noreferrer"
                             data-tip={pipeline.name}
                             className={
-                              pipeline.latest?.hasTests
+                              pipeline.latestTest?.hasTests
                                 ? 'link-text truncate w-full'
                                 : 'link-text truncate w-full opacity-60'
                             }
@@ -90,19 +90,26 @@ const BuildPipelineTests: React.FC<{
                     )}
                   </td>
                   {/* Passed Tests */}
-                  <td>{pipeline.latest?.hasTests ? pipeline.latest.passedTests : '_'}</td>
+                  <td>
+                    {pipeline.latestTest?.hasTests
+                      ? pipeline.latestTest.passedTests
+                      : '_'}
+                  </td>
                   {/* Failed Tests */}
                   <td>
-                    {pipeline.latest?.hasTests
-                      ? subtract(pipeline.latest.totalTests, pipeline.latest.passedTests)
+                    {pipeline.latestTest?.hasTests
+                      ? subtract(
+                          pipeline.latestTest.totalTests,
+                          pipeline.latestTest.passedTests
+                        )
                       : '_'}
                   </td>
                   {/* Execution Time */}
                   <td>
-                    {pipeline.latest?.hasTests
+                    {pipeline.latestTest?.hasTests
                       ? prettyMs(
-                          pipeline.latest.completedDate.getTime() -
-                            pipeline.latest.startedDate.getTime()
+                          pipeline.latestTest.completedDate.getTime() -
+                            pipeline.latestTest.startedDate.getTime()
                         )
                       : '_'}
                   </td>
@@ -111,10 +118,11 @@ const BuildPipelineTests: React.FC<{
                     {pipeline.coverageByWeek ? (
                       <LabelWithSparkline
                         label={
-                          pipeline.coverageStats
+                          pipeline.latestCoverage?.coverage?.totalBranches &&
+                          pipeline.latestCoverage?.coverage?.coveredBranches
                             ? divide(
-                                pipeline.coverageStats.covered,
-                                pipeline.coverageStats.total
+                                pipeline.latestCoverage.coverage.coveredBranches,
+                                pipeline.latestCoverage.coverage.totalBranches
                               )
                                 .map(toPercentage)
                                 .getOr('-')
