@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
+import type { BranchCoverage } from './code-coverage.js';
+import { getBranchCoverageForRepo } from './code-coverage.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export type TestStatDetails = {
@@ -54,7 +56,12 @@ type TestsForDef = {
   tests: TestsForWeek[];
   latest?: TestsForWeek;
 };
+
 type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
+
+type BuildDefWithTestsAndCoverage = BuildDef &
+  Partial<TestsForDef> &
+  Partial<BranchCoverage>;
 
 const makeContinuous = async (
   tests: TestsForWeek[] | undefined,
@@ -262,14 +269,14 @@ export const getOldTestRunsForDefinition = async (
   return head(result) || null;
 };
 
-export const getTestRunsForRepo = async (
+export const getTestRunsAndCoverageForRepo = async (
   collectionName: string,
   project: string,
   startDate: Date,
   endDate: Date,
   repositoryId: string
 ) => {
-  const [definitionList, definitionTestRuns] = await Promise.all([
+  const [definitionList, definitionTestRuns, branchCoverage] = await Promise.all([
     BuildDefinitionModel.find(
       {
         collectionName,
@@ -320,7 +327,10 @@ export const getTestRunsForRepo = async (
                     { $eq: ['$repository.id', '$$repositoryId'] },
                     { $eq: ['$sourceBranch', '$$defaultBranch'] },
                     {
-                      $or: [{ $eq: ['$result', 'failed'] },{ $eq: ['$result', 'failed'] },],
+                      $or: [
+                        { $eq: ['$result', 'failed'] },
+                        { $eq: ['$result', 'failed'] },
+                      ],
                     },
                   ],
                 },
@@ -427,8 +437,8 @@ export const getTestRunsForRepo = async (
         },
       },
     ]),
+    getBranchCoverageForRepo(collectionName, project, repositoryId, startDate, endDate),
   ]);
-
   // Mapping the build definitions/pipelines with no testruns
   const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
     definition => {
@@ -436,7 +446,15 @@ export const getTestRunsForRepo = async (
       return { ...definition, ...tests } || definition;
     }
   );
-  return buildDefsWithTests;
+
+  const buildDefsWithTestsAndCoverage: BuildDefWithTestsAndCoverage[] = (
+    buildDefsWithTests as BuildDefWithTests[]
+  ).map(definition => {
+    const coverage = branchCoverage.find(def => def.definitionId === definition.id);
+    return { ...definition, coverage } || definition;
+  });
+
+  return buildDefsWithTestsAndCoverage;
 };
 
 export const getTestRunsForRepository = async ({
@@ -446,7 +464,7 @@ export const getTestRunsForRepository = async ({
   startDate,
   endDate,
 }: z.infer<typeof TestRunsForRepositoryInputParser>) => {
-  const testRunsForRepo = await getTestRunsForRepo(
+  const testRunsForRepo = await getTestRunsAndCoverageForRepo(
     collectionName,
     project,
     startDate,

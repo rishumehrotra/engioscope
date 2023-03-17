@@ -1,6 +1,7 @@
 import prettyMs from 'pretty-ms';
-import { subtract } from 'rambda';
+import { multiply, subtract } from 'rambda';
 import React from 'react';
+import { divide, toPercentage } from '../../../shared/utils.js';
 import { trpc } from '../../helpers/trpc.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
@@ -106,7 +107,42 @@ const BuildPipelineTests: React.FC<{
                       : '_'}
                   </td>
                   {/* Branch Coverage */}
-                  <td>-</td>
+                  <td>
+                    {pipeline.coverageByWeek ? (
+                      <LabelWithSparkline
+                        label={
+                          pipeline.coverageStats
+                            ? divide(
+                                pipeline.coverageStats.covered,
+                                pipeline.coverageStats.total
+                              )
+                                .map(toPercentage)
+                                .getOr('-')
+                            : '-'
+                        }
+                        data={(pipeline.coverageByWeek || []).map(c =>
+                          c.coverage
+                            ? divide(c.coverage.coveredBranches, c.coverage.totalBranches)
+                                .map(multiply(100))
+                                .getOr(0)
+                            : 0
+                        )}
+                        lineColor={increaseIsBetter(
+                          (pipeline.coverageByWeek || []).map(c => {
+                            return c.coverage
+                              ? divide(
+                                  c.coverage.coveredBranches,
+                                  c.coverage.totalBranches
+                                ).getOr(0)
+                              : 0;
+                          })
+                        )}
+                        yAxisLabel={x => `${x}%`}
+                      />
+                    ) : (
+                      '-'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
