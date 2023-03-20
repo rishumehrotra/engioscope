@@ -1,6 +1,4 @@
-import type { ObjectId } from 'mongoose';
 import mongoose from 'mongoose';
-import { map } from 'rambda';
 import yaml from 'yaml';
 import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
@@ -119,7 +117,7 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
 
 export const latestBuildReportsForRepoAndBranch =
   (collectionName: string, project: string) => (repo: string, branchName: string) =>
-    AzureBuildReportModel.aggregate([
+    AzureBuildReportModel.aggregate<AzureBuildReport>([
       {
         $match: {
           collectionName,
@@ -130,15 +128,14 @@ export const latestBuildReportsForRepoAndBranch =
       },
       {
         $group: {
-          _id: '$buildId',
-          latestDate: {
+          _id: '$buildDefinitionId',
+          buildReports: {
             $max: { $mergeObjects: [{ updatedAt: '$updatedAt' }, '$$ROOT'] },
           },
         },
       },
-    ])
-      .exec()
-      .then(map(r => r.latestDate as AzureBuildReport & { _id: ObjectId }));
+      { $replaceRoot: { newRoot: '$buildReports' } },
+    ]);
 
 export const centralBuildTemplateBuildCount =
   (collectionName: string, project: string) =>
