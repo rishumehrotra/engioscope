@@ -412,7 +412,6 @@ export type TrackwiseData = {
 };
 
 export type TrackMetrics = {
-  project: [string, string];
   count: number;
   new: number;
   newByWeek: number[];
