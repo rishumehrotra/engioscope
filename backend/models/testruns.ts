@@ -4,11 +4,17 @@ import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import type { BranchCoverage, CoverageByWeek } from './code-coverage.js';
-import {
-  getOldCoverageForDefinition,
-  getBranchCoverageForRepo,
-} from './code-coverage.js';
+// import {
+//   getBranchCoverageForRepo,
+//   getOldCoverageForDefinition,
+// } from './code-coverage.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import {
+  getCoveragesForRepo,
+  getOneOldCoverageForBuildDefID,
+  // getOneOldTestForBuildDefID,
+  getTestsForRepo,
+} from './tests-coverages.js';
 
 export type TestStatDetails = {
   state: string;
@@ -39,9 +45,9 @@ export const TestRunsForRepositoryInputParser = z.object({
   ...dateRangeInputs,
 });
 
-type BuildDef = { id: number; name: string; url: string };
+export type BuildDef = { id: number; name: string; url: string };
 
-type TestsForWeek = {
+export type TestsForWeek = {
   weekIndex: number;
 } & (
   | { hasTests: false }
@@ -54,15 +60,15 @@ type TestsForWeek = {
     }
 );
 
-type TestsForDef = {
+export type TestsForDef = {
   definitionId: number;
   tests: TestsForWeek[];
   latest?: TestsForWeek;
 };
 
-type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
+export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
 
-type BuildDefWithTestsAndCoverage = BuildDef &
+export type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<TestsForDef> &
   Partial<BranchCoverage>;
 
@@ -126,11 +132,11 @@ const makeContinuousCoverage = async (
   const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
 
   if (!coverage) {
-    const olderTest = await getOneOlderCoverageForDef();
-    if (!olderTest) return null;
+    const olderCoverage = await getOneOlderCoverageForDef();
+    if (!olderCoverage) return null;
 
     return range(0, totalIntervals).map(weekIndex => {
-      return { ...olderTest, weekIndex };
+      return { ...olderCoverage, weekIndex };
     });
   }
 
@@ -162,6 +168,58 @@ const makeContinuousCoverage = async (
     }, Promise.resolve([]))
     .then(list => list.slice(totalIntervals - Math.floor(totalDays / 7)));
 };
+
+// const makeContinuousData = async (
+//   data: TestsForWeek[] | CoverageByWeek[] | undefined,
+//   startDate: Date,
+//   endDate: Date,
+//   getOneOlderData: () => Promise<TestsForWeek | CoverageByWeek | null>
+// ) => {
+//   const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+//   const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+//   if()
+
+//   if (!data) {
+//     const olderData = await getOneOlderData();
+//     if (!olderData) return null;
+
+//     return range(0, totalIntervals).map(weekIndex => {
+//       return { ...olderData, weekIndex };
+//     });
+//   }
+
+//   return range(0, totalIntervals)
+//     .reduce<Promise<TestsForWeek[]>>(async (acc, weekIndex, index) => {
+//       const matchingData = tests.find(t => t.weekIndex === weekIndex);
+
+//       if (matchingData) return [...(await acc), matchingData];
+
+//       if (index === 0) {
+//         const olderData = await getOneOlderData();
+
+//         if (!olderData) {
+//           return [
+//             {
+//               weekIndex,
+//               totalTests: 0,
+//               passedTests: 0,
+//               startedDate: null,
+//               completedDate: null,
+//               hasTests: false,
+//             },
+//           ];
+//         }
+
+//         return [{ ...olderData, weekIndex }];
+//       }
+
+//       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+//       const lastItem = last(await acc)!;
+//       return [...(await acc), { ...lastItem, weekIndex }];
+//     }, Promise.resolve([]))
+//     .then(list => list.slice(totalIntervals - Math.floor(totalDays / 7)));
+// };
 export const getOldTestRunsForDefinition = async (
   collectionName: string,
   project: string,
@@ -500,8 +558,10 @@ export const mapDefsTestsAndCoverage = async (
         url: 1,
       }
     ).lean(),
-    getTestrunsForRepo(collectionName, project, repositoryId, startDate, endDate),
-    getBranchCoverageForRepo(collectionName, project, repositoryId, startDate, endDate),
+    // getTestrunsForRepo(collectionName, project, repositoryId, startDate, endDate),
+    // getBranchCoverageForRepo(collectionName, project, repositoryId, startDate, endDate),
+    getTestsForRepo(collectionName, project, repositoryId, startDate, endDate),
+    getCoveragesForRepo(collectionName, project, repositoryId, startDate, endDate),
   ]);
   // Mapping the build definitions/pipelines with no testruns
   const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
@@ -544,15 +604,30 @@ export const getTestRunsAndCoverageForRepo = async ({
       repositoryId,
       defId
     );
+    // return getOneOldTestForBuildDefID(
+    //   collectionName,
+    //   project,
+    //   repositoryId,
+    //   defId,
+    //   startDate
+    // );
   };
 
   const getOneOlderCoverageForDef = (defId: number) => () => {
-    return getOldCoverageForDefinition(
+    // return getOldCoverageForDefinition(
+    //   collectionName,
+    //   project,
+    //   startDate,
+    //   repositoryId,
+    //   defId
+    // );
+
+    return getOneOldCoverageForBuildDefID(
       collectionName,
       project,
-      startDate,
       repositoryId,
-      defId
+      defId,
+      startDate
     );
   };
 
