@@ -352,13 +352,6 @@ export const getBranchCoverageForRepo = async (
         as: 'coverage',
       },
     },
-    // {
-    //   $addFields: {
-    //     hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
-    //     weekIndex: '$_id.weekIndex',
-    //     definitionId: '$_id.definitionId',
-    //   },
-    // },
     {
       $project: {
         hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },

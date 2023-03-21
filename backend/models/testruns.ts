@@ -169,57 +169,6 @@ const makeContinuousCoverage = async (
     .then(list => list.slice(totalIntervals - Math.floor(totalDays / 7)));
 };
 
-// const makeContinuousData = async (
-//   data: TestsForWeek[] | CoverageByWeek[] | undefined,
-//   startDate: Date,
-//   endDate: Date,
-//   getOneOlderData: () => Promise<TestsForWeek | CoverageByWeek | null>
-// ) => {
-//   const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-//   const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-
-//   if()
-
-//   if (!data) {
-//     const olderData = await getOneOlderData();
-//     if (!olderData) return null;
-
-//     return range(0, totalIntervals).map(weekIndex => {
-//       return { ...olderData, weekIndex };
-//     });
-//   }
-
-//   return range(0, totalIntervals)
-//     .reduce<Promise<TestsForWeek[]>>(async (acc, weekIndex, index) => {
-//       const matchingData = tests.find(t => t.weekIndex === weekIndex);
-
-//       if (matchingData) return [...(await acc), matchingData];
-
-//       if (index === 0) {
-//         const olderData = await getOneOlderData();
-
-//         if (!olderData) {
-//           return [
-//             {
-//               weekIndex,
-//               totalTests: 0,
-//               passedTests: 0,
-//               startedDate: null,
-//               completedDate: null,
-//               hasTests: false,
-//             },
-//           ];
-//         }
-
-//         return [{ ...olderData, weekIndex }];
-//       }
-
-//       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-//       const lastItem = last(await acc)!;
-//       return [...(await acc), { ...lastItem, weekIndex }];
-//     }, Promise.resolve([]))
-//     .then(list => list.slice(totalIntervals - Math.floor(totalDays / 7)));
-// };
 export const getOldTestRunsForDefinition = async (
   collectionName: string,
   project: string,
