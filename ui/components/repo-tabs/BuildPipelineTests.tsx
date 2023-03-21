@@ -118,8 +118,7 @@ const BuildPipelineTests: React.FC<{
                     {pipeline.coverageByWeek ? (
                       <LabelWithSparkline
                         label={
-                          pipeline.latestCoverage?.coverage?.totalBranches &&
-                          pipeline.latestCoverage?.coverage?.coveredBranches
+                          pipeline.latestCoverage?.coverage
                             ? divide(
                                 pipeline.latestCoverage.coverage.coveredBranches,
                                 pipeline.latestCoverage.coverage.totalBranches

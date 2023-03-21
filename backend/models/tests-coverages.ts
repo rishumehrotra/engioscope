@@ -1,4 +1,4 @@
-import type { PipelineStage } from 'mongoose';
+import type { FilterQuery, PipelineStage } from 'mongoose';
 import { head } from 'rambda';
 import { oneWeekInMs } from '../../shared/utils.js';
 import type { BranchCoverage, CoverageByWeek } from './code-coverage.js';
@@ -6,14 +6,23 @@ import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { TestsForDef, TestsForWeek } from './testruns.js';
 
+export const queryOlderForDefinitionId = (definitionId: number, startDate: Date) => ({
+  'definition.id': definitionId,
+  'finishTime': { $lt: new Date(startDate) },
+});
+
+export const queryForFinishTimeInRange = (startDate: Date, endDate: Date) => ({
+  finishTime: inDateRange(startDate, endDate),
+});
+
 export const getMainBranchBuildIds = (
   collectionName: string,
   project: string,
   repositoryId: string,
-  definitionId: number | undefined,
   startDate: Date,
-  endDate?: Date
+  additionalQuery: FilterQuery<unknown>
 ): PipelineStage[] => {
+  // Assume we're querying the repository collection
   return [
     {
       $match: {
@@ -58,15 +67,7 @@ export const getMainBranchBuildIds = (
                   },
                 ],
               },
-              ...(definitionId
-                ? {
-                    'definition.id': definitionId,
-                    'finishTime': { $lt: new Date(startDate) },
-                  }
-                : {}),
-              ...(!definitionId && endDate
-                ? { finishTime: inDateRange(startDate, endDate) }
-                : {}),
+              ...additionalQuery,
             },
           },
           { $sort: { finishTime: -1 } },
@@ -109,82 +110,80 @@ export const getMainBranchBuildIds = (
   ];
 };
 
-export const getTestsForBuildIds = (): PipelineStage[] => {
-  return [
-    {
-      $lookup: {
-        from: 'testruns',
-        let: {
-          collectionName: '$collectionName',
-          project: '$project',
-          buildId: '$build.buildId',
+const getTestsForBuildIds: PipelineStage[] = [
+  // Assume we're dealing with the data from getMainBranchBuildIds
+  {
+    $lookup: {
+      from: 'testruns',
+      let: {
+        collectionName: '$collectionName',
+        project: '$project',
+        buildId: '$build.buildId',
+      },
+      pipeline: [
+        {
+          $match: {
+            release: { $exists: false },
+            $expr: {
+              $and: [
+                { $eq: ['$collectionName', '$$collectionName'] },
+                { $eq: ['$project.name', '$$project'] },
+                { $eq: ['$buildConfiguration.id', '$$buildId'] },
+              ],
+            },
+          },
         },
-        pipeline: [
-          {
-            $match: {
-              release: { $exists: false },
-              $expr: {
-                $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project.name', '$$project'] },
-                  { $eq: ['$buildConfiguration.id', '$$buildId'] },
-                ],
+        {
+          $addFields: {
+            passed: {
+              $filter: {
+                input: '$runStatistics',
+                as: 'stats',
+                cond: { $eq: ['$$stats.outcome', 'Passed'] },
               },
             },
           },
-          {
-            $addFields: {
-              passed: {
-                $filter: {
-                  input: '$runStatistics',
-                  as: 'stats',
-                  cond: { $eq: ['$$stats.outcome', 'Passed'] },
-                },
-              },
-            },
+        },
+        {
+          $addFields: {
+            passedCount: { $sum: '$passed.count' },
           },
-          {
-            $addFields: {
-              passedCount: { $sum: '$passed.count' },
-            },
-          },
-        ],
-        as: 'tests',
-      },
+        },
+      ],
+      as: 'tests',
     },
-    {
-      $project: {
-        _id: 0,
-        definitionId: '$_id.definitionId',
-        weekIndex: '$_id.weekIndex',
-        hasTests: { $gt: [{ $size: '$tests' }, 0] },
-        totalTests: { $sum: '$tests.totalTests' },
-        startedDate: { $min: '$tests.startedDate' },
-        completedDate: { $max: '$tests.completedDate' },
-        passedTests: { $sum: '$tests.passedCount' },
-      },
+  },
+  {
+    $project: {
+      _id: 0,
+      definitionId: '$_id.definitionId',
+      weekIndex: '$_id.weekIndex',
+      hasTests: { $gt: [{ $size: '$tests' }, 0] },
+      totalTests: { $sum: '$tests.totalTests' },
+      startedDate: { $min: '$tests.startedDate' },
+      completedDate: { $max: '$tests.completedDate' },
+      passedTests: { $sum: '$tests.passedCount' },
     },
-    { $sort: { weekIndex: -1 } },
-  ];
-};
+  },
+  { $sort: { weekIndex: -1 } },
+];
 
 export const getTestsForRepo = async (
   collectionName: string,
   project: string,
   repositoryId: string,
   startDate: Date,
-  endDate: Date | undefined
+  endDate: Date
 ) => {
   const result = await RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
       collectionName,
       project,
       repositoryId,
-      undefined,
       startDate,
-      endDate
+      queryForFinishTimeInRange(startDate, endDate)
     ),
-    ...getTestsForBuildIds(),
+    ...getTestsForBuildIds,
     {
       $group: {
         _id: '$definitionId',
@@ -209,10 +208,10 @@ export const getOneOldTestForBuildDefID = async (
       collectionName,
       project,
       repositoryId,
-      definitionId,
-      startDate
+      startDate,
+      queryOlderForDefinitionId(definitionId, startDate)
     ),
-    ...getTestsForBuildIds(),
+    ...getTestsForBuildIds,
     {
       $match: {
         totalTests: { $gt: 0 },
@@ -223,100 +222,98 @@ export const getOneOldTestForBuildDefID = async (
   return head(result) || null;
 };
 
-export const getCoverageForBuildIDs = (): PipelineStage[] => {
-  return [
-    {
-      $lookup: {
-        from: 'codecoverages',
-        let: {
-          collectionName: '$collectionName',
-          project: '$project',
-          buildId: '$build.buildId',
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
-                  { $eq: ['$build.id', '$$buildId'] },
-                ],
-              },
+export const getCoverageForBuildIDs: PipelineStage[] = [
+  // Assume we're dealing with the data from getMainBranchBuildIds
+  {
+    $lookup: {
+      from: 'codecoverages',
+      let: {
+        collectionName: '$collectionName',
+        project: '$project',
+        buildId: '$build.buildId',
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ['$collectionName', '$$collectionName'] },
+                { $eq: ['$project', '$$project'] },
+                { $eq: ['$build.id', '$$buildId'] },
+              ],
             },
           },
-          { $unwind: { path: '$coverageData' } },
-          {
-            $addFields: {
-              branchCoverage: {
-                $filter: {
-                  input: '$coverageData.coverageStats',
-                  as: 'stat',
-                  cond: {
-                    $or: [
-                      { $eq: ['$$stat.label', 'Branch'] },
-                      { $eq: ['$$stat.label', 'Branches'] },
-                    ],
-                  },
+        },
+        { $unwind: { path: '$coverageData' } },
+        {
+          $addFields: {
+            branchCoverage: {
+              $filter: {
+                input: '$coverageData.coverageStats',
+                as: 'stat',
+                cond: {
+                  $or: [
+                    { $eq: ['$$stat.label', 'Branch'] },
+                    { $eq: ['$$stat.label', 'Branches'] },
+                  ],
                 },
               },
             },
           },
-          {
-            $addFields: {
-              totalBranches: { $sum: '$branchCoverage.total' },
-              coveredBranches: { $sum: '$branchCoverage.covered' },
-            },
+        },
+        {
+          $addFields: {
+            totalBranches: { $sum: '$branchCoverage.total' },
+            coveredBranches: { $sum: '$branchCoverage.covered' },
           },
-          {
-            $group: {
-              _id: '$build.id',
-              totalBranches: { $sum: '$totalBranches' },
-              coveredBranches: { $sum: '$coveredBranches' },
-            },
+        },
+        {
+          $group: {
+            _id: '$build.id',
+            totalBranches: { $sum: '$totalBranches' },
+            coveredBranches: { $sum: '$coveredBranches' },
           },
-          { $project: { _id: 0 } },
-        ],
-        as: 'coverage',
-      },
+        },
+        { $project: { _id: 0 } },
+      ],
+      as: 'coverage',
     },
-    {
-      $project: {
-        hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
-        weekIndex: '$_id.weekIndex',
-        definitionId: '$_id.definitionId',
-        buildId: '$build.buildId',
-        coverage: '$coverage',
-        _id: 0,
-      },
+  },
+  {
+    $project: {
+      hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
+      weekIndex: '$_id.weekIndex',
+      definitionId: '$_id.definitionId',
+      buildId: '$build.buildId',
+      coverage: '$coverage',
+      _id: 0,
     },
-    {
-      $unwind: {
-        path: '$coverage',
-        preserveNullAndEmptyArrays: true,
-      },
+  },
+  {
+    $unwind: {
+      path: '$coverage',
+      preserveNullAndEmptyArrays: true,
     },
-    { $sort: { weekIndex: -1 } },
-  ];
-};
+  },
+  { $sort: { weekIndex: -1 } },
+];
 
 export const getCoveragesForRepo = async (
   collectionName: string,
   project: string,
   repositoryId: string,
   startDate: Date,
-  endDate: Date | undefined
+  endDate: Date
 ) => {
   const result = await RepositoryModel.aggregate<BranchCoverage>([
     ...getMainBranchBuildIds(
       collectionName,
       project,
       repositoryId,
-      undefined,
       startDate,
-      endDate
+      queryForFinishTimeInRange(startDate, endDate)
     ),
-    ...getCoverageForBuildIDs(),
+    ...getCoverageForBuildIDs,
     {
       $group: {
         _id: '$definitionId',
@@ -347,10 +344,10 @@ export const getOneOldCoverageForBuildDefID = async (
       collectionName,
       project,
       repositoryId,
-      definitionId,
-      startDate
+      startDate,
+      queryOlderForDefinitionId(definitionId, startDate)
     ),
-    ...getCoverageForBuildIDs(),
+    ...getCoverageForBuildIDs,
     { $match: { hasCoverage: true } },
     { $limit: 1 },
   ]);

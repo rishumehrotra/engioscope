@@ -22,7 +22,9 @@ export default () => {
   setupJob('repo policies', t => t.every(3).days(), getPolicyConfigurations);
   setupJob('branch stats', t => t.everyHourAt(15), getBranchesStats);
   setupJob('commits', t => t.every(3).hours(), getCommits);
-  setupJob('repos', t => t.everyHourAt(35), getTestRuns);
+  // Test runs should be called pretty much imimediately after getting builds
+  // Otherwise, test and coverage data looks to be out of sync
+  setupJob('test-runs', t => t.everyHourAt(48), getTestRuns);
   setupJob('releases', t => t.everyHourAt(20), getReleases);
   setupJob('release updates', t => t.everyHourAt(35), getReleaseUpdates);
   setupJob('sonar projects', t => t.everyDay(), refreshSonarProjects);
