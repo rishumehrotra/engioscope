@@ -1,3 +1,4 @@
+import type { PipelineStage } from 'mongoose';
 import { last, range } from 'rambda';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
@@ -227,10 +228,7 @@ export const getPipelinesRunningTests = async (
   project: string,
   repoIds?: string[]
 ) => {
-  const result = await RepositoryModel.aggregate<{
-    defsWithTests: number;
-    defsWithCoverage: number;
-  }>([
+  const getMainBranchBuildIdsStage: PipelineStage[] = [
     {
       $match: {
         collectionName,
@@ -293,90 +291,116 @@ export const getPipelinesRunningTests = async (
       },
     },
     { $unwind: { path: '$build' } },
-    {
-      $lookup: {
-        from: 'testruns',
-        let: {
-          collectionName: '$collectionName',
-          project: '$project',
-          buildId: '$build.buildId',
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project.name', '$$project'] },
-                  { $eq: ['$buildConfiguration.id', '$$buildId'] },
-                ],
-              },
-              release: { $exists: false },
-            },
+  ];
+
+  const [defsWithTests, defsWithCoverage] = await Promise.all([
+    RepositoryModel.aggregate<{ count: number }>([
+      ...getMainBranchBuildIdsStage,
+      {
+        $lookup: {
+          from: 'testruns',
+          let: {
+            collectionName: '$collectionName',
+            project: '$project',
+            buildId: '$build.buildId',
           },
-        ],
-        as: 'tests',
-      },
-    },
-    {
-      $lookup: {
-        from: 'codecoverages',
-        let: {
-          collectionName: '$collectionName',
-          project: '$project',
-          buildId: '$build.buildId',
-        },
-        pipeline: [
-          {
-            $match: {
-              '$expr': {
-                $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
-                  { $eq: ['$build.id', '$$buildId'] },
-                ],
-              },
-              'coverageData.coverageStats.label': {
-                $in: ['Branch', 'Branches'],
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$collectionName'] },
+                    { $eq: ['$project.name', '$$project'] },
+                    { $eq: ['$buildConfiguration.id', '$$buildId'] },
+                  ],
+                },
+                release: { $exists: false },
               },
             },
+            { $project: { _id: 1 } },
+          ],
+          as: 'tests',
+        },
+      },
+      {
+        $project: {
+          definitionId: '$build.definitionId',
+          hasTests: { $gt: [{ $size: '$tests' }, 0] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          defsWithTests: {
+            $addToSet: { $cond: [{ $eq: ['$hasTests', true] }, '$definitionId', null] },
           },
-          { $project: { _id: 0 } },
-        ],
-        as: 'coverage',
-      },
-    },
-    {
-      $project: {
-        definitionId: '$build.definitionId',
-        hasTests: { $gt: [{ $size: '$tests' }, 0] },
-        hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        defsWithTests: {
-          $addToSet: { $cond: [{ $eq: ['$hasTests', true] }, '$definitionId', null] },
-        },
-        defsWithCoverage: {
-          $addToSet: { $cond: [{ $eq: ['$hasCoverage', true] }, '$definitionId', null] },
         },
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        defsWithTests: { $size: '$defsWithTests' },
-        defsWithCoverage: { $size: '$defsWithCoverage' },
+      {
+        $project: {
+          _id: 0,
+          count: { $size: '$defsWithTests' },
+        },
       },
-    },
+    ]),
+
+    RepositoryModel.aggregate<{ count: number }>([
+      ...getMainBranchBuildIdsStage,
+      {
+        $lookup: {
+          from: 'codecoverages',
+          let: {
+            collectionName: '$collectionName',
+            project: '$project',
+            buildId: '$build.buildId',
+          },
+          pipeline: [
+            {
+              $match: {
+                '$expr': {
+                  $and: [
+                    { $eq: ['$collectionName', '$$collectionName'] },
+                    { $eq: ['$project', '$$project'] },
+                    { $eq: ['$build.id', '$$buildId'] },
+                  ],
+                },
+                'coverageData.coverageStats.label': {
+                  $in: ['Branch', 'Branches'],
+                },
+              },
+            },
+            { $project: { _id: 1 } },
+          ],
+          as: 'coverage',
+        },
+      },
+      {
+        $project: {
+          definitionId: '$build.definitionId',
+          hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          defsWithCoverage: {
+            $addToSet: {
+              $cond: [{ $eq: ['$hasCoverage', true] }, '$definitionId', null],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          count: { $size: '$defsWithCoverage' },
+        },
+      },
+    ]),
   ]);
 
-  return (
-    result[0] || {
-      defsWithTests: 0,
-      defsWithCoverage: 0,
-    }
-  );
+  return {
+    defsWithTests: defsWithTests[0]?.count || 0,
+    defsWithCoverage: defsWithCoverage[0]?.count || 0,
+  };
 };
