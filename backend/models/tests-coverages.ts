@@ -33,7 +33,7 @@ export const queryForFinishTimeInRange = (startDate: Date, endDate: Date) => ({
 export const getMainBranchBuildIds = (
   collectionName: string,
   project: string,
-  repositoryId: string,
+  repositoryId: string | string[],
   startDate: Date,
   additionalQuery: FilterQuery<unknown>
 ): PipelineStage[] => {
@@ -43,7 +43,9 @@ export const getMainBranchBuildIds = (
       $match: {
         collectionName,
         'project.name': project,
-        'id': repositoryId,
+        ...(Array.isArray(repositoryId)
+          ? { id: { $in: repositoryId } }
+          : { id: repositoryId }),
       },
     },
     {
@@ -367,4 +369,80 @@ export const getOneOldCoverageForBuildDefID = async (
     { $limit: 1 },
   ]);
   return head(result) || null;
+};
+
+export const getWeeklyProjectCollectionTests = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const result = await RepositoryModel.aggregate<{
+    weekIndex: number;
+    testDataCount: number;
+    totalTests: number;
+    passedTests: number;
+  }>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getTestsForBuildIds,
+    {
+      $group: {
+        _id: '$weekIndex',
+        weekIndex: { $first: '$weekIndex' },
+        testDataCount: { $sum: 1 },
+        totalTests: { $sum: '$totalTests' },
+        passedTests: { $sum: '$passedTests' },
+      },
+    },
+    {
+      $sort: {
+        weekIndex: 1,
+      },
+    },
+  ]);
+
+  return result;
+};
+export const getWeeklyProjectCollectionCoverage = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const result = await RepositoryModel.aggregate<{
+    weekIndex: number;
+    totalBranches: number;
+    coveredBranches: number;
+  }>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getCoverageForBuildIDs,
+    {
+      $group: {
+        _id: '$weekIndex',
+        weekIndex: { $first: '$weekIndex' },
+        totalBranches: { $sum: '$coverage.totalBranches' },
+        coveredBranches: { $sum: '$coverage.coveredBranches' },
+      },
+    },
+    {
+      $sort: {
+        weekIndex: 1,
+      },
+    },
+  ]);
+  return result;
 };

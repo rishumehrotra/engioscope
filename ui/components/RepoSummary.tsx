@@ -132,13 +132,16 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
     ...dateRange,
   });
 
-  const testsCoverageSummaries = trpc.repos.getTestsCoverageSummaries.useQuery({
-    collectionName,
-    project,
-    searchTerm: search || undefined,
-    groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
-    ...dateRange,
-  });
+  const testsCoverageSummaries = trpc.repos.getTestsCoverageSummaries.useQuery(
+    {
+      collectionName,
+      project,
+      searchTerm: search || undefined,
+      groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
+      ...dateRange,
+    },
+    { enabled: showNewBuild }
+  );
 
   return (
     <ProjectStats
@@ -420,36 +423,97 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
         />
       )}
       {showNewBuild && testsCoverageSummaries.data && summaries.data ? (
-        <ProjectStat
-          topStats={[
-            {
-              title: 'Pipelines running tests',
-              value: divide(
-                testsCoverageSummaries.data.defsWithTests,
-                summaries.data.pipelines.totalCount
-              )
-                .map(toPercentage)
-                .getOr('-'),
-              tooltip: `${num(testsCoverageSummaries.data.defsWithTests)} of ${num(
-                summaries.data.pipelines.totalCount
-              )} pipelines report test results`,
-            },
-          ]}
-          childStats={[
-            {
-              title: 'Reporting coverage',
-              value: divide(
-                testsCoverageSummaries.data.defsWithCoverage,
-                summaries.data.pipelines.totalCount
-              )
-                .map(toPercentage)
-                .getOr('-'),
-              tooltip: `${num(testsCoverageSummaries.data.defsWithCoverage)} of ${num(
-                summaries.data.pipelines.totalCount
-              )} pipelines report branch coverage`,
-            },
-          ]}
-        />
+        <>
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Pipelines running tests',
+                value: divide(
+                  testsCoverageSummaries.data.defsWithTests,
+                  summaries.data.pipelines.totalCount
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+                tooltip: `${num(testsCoverageSummaries.data.defsWithTests)} of ${num(
+                  summaries.data.pipelines.totalCount
+                )} pipelines report test results`,
+              },
+            ]}
+            childStats={[
+              {
+                title: 'Reporting coverage',
+                value: divide(
+                  testsCoverageSummaries.data.defsWithCoverage,
+                  summaries.data.pipelines.totalCount
+                )
+                  .map(toPercentage)
+                  .getOr('-'),
+                tooltip: `${num(testsCoverageSummaries.data.defsWithCoverage)} of ${num(
+                  summaries.data.pipelines.totalCount
+                )} pipelines report branch coverage`,
+              },
+            ]}
+          />
+          <ProjectStat
+            topStats={[
+              {
+                title: 'Tests',
+                value: (
+                  <LabelWithSparkline
+                    label={num(
+                      testsCoverageSummaries.data.latestTestsSummary?.totalTests || 0
+                    )}
+                    data={testsCoverageSummaries.data.weeklyTestsSummary.map(
+                      t => t.totalTests
+                    )}
+                    lineColor={increaseIsBetter(
+                      testsCoverageSummaries.data.weeklyTestsSummary.map(
+                        t => t.totalTests
+                      )
+                    )}
+                  />
+                ),
+                tooltip: `Total number of tests across all matching repos.`,
+              },
+            ]}
+            childStats={[
+              {
+                title: 'Coverage',
+                value: (
+                  <LabelWithSparkline
+                    // label={divide(stats.totalCoverage.covered, stats.totalCoverage.total)
+                    //   .map(toPercentage)
+                    //   .getOr('-')}
+                    // data={stats.totalCoverageByWeek}
+                    // lineColor={increaseIsBetter(stats.totalCoverageByWeek)}
+                    label={divide(
+                      testsCoverageSummaries.data.latestCoverageSummary
+                        ?.coveredBranches || 0,
+                      testsCoverageSummaries.data.latestCoverageSummary?.totalBranches ||
+                        0
+                    )
+                      .map(toPercentage)
+                      .getOr('-')}
+                    data={testsCoverageSummaries.data.weeklyCoverageSummary.map(week => {
+                      return divide(week.coveredBranches, week.totalBranches)
+                        .map(multiply(100))
+                        .getOr(0);
+                    })}
+                    lineColor={increaseIsBetter(
+                      testsCoverageSummaries.data.weeklyCoverageSummary.map(week => {
+                        return divide(week.coveredBranches || 0, week.totalBranches || 0)
+                          .map(multiply(100))
+                          .getOr(0);
+                      })
+                    )}
+                    // lineColor={increaseIsBetter(stats.totalCoverageByWeek)}
+                    yAxisLabel={x => `${x}%`}
+                  />
+                ),
+              },
+            ]}
+          />
+        </>
       ) : null}
     </ProjectStats>
   );
