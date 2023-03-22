@@ -124,3 +124,11 @@ export const getMonthName = (monthNumber: number) => {
   if (monthNumber < 1 || monthNumber > 12) return 'Invalid Month Number';
   return months[monthNumber - 1];
 };
+
+// Based on https://2ality.com/2019/12/intl-pluralrules.html
+const pluralRules = new Intl.PluralRules('en-US');
+export const pluralise = (count: number, singular: string, plural: string) => {
+  return pluralRules.select(count) === 'one'
+    ? `${num(count)} ${singular}`
+    : `${num(count)} ${plural}`;
+};

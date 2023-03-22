@@ -1,5 +1,5 @@
 import React, { Fragment, useCallback } from 'react';
-import { num } from '../helpers/utils.js';
+import { num, pluralise } from '../helpers/utils.js';
 import ProjectStat from './ProjectStat.jsx';
 import ProjectStats from './ProjectStats.jsx';
 import { divide, toPercentage } from '../../shared/utils.js';
@@ -60,9 +60,11 @@ const ReleasePipelineSummary2: React.FC = () => {
                   <span className="font-normal text-sm"> / day</span>
                 </>
               ),
-              tooltip: `${num(summary.lastEnv.deploys)} ${
-                summary.lastEnv.envName
-              } deploys over the last ${queryPeriodDays} days`,
+              tooltip: `${pluralise(
+                summary.lastEnv.deploys,
+                'deploy',
+                'deploys'
+              )} over the last ${pluralise(queryPeriodDays, 'day', 'days')}`,
             },
           ]}
           childStats={[
@@ -71,9 +73,11 @@ const ReleasePipelineSummary2: React.FC = () => {
               value: divide(summary.lastEnv.successful, summary.lastEnv.deploys)
                 .map(toPercentage)
                 .getOr('-'),
-              tooltip: `${num(summary.lastEnv.successful)} of ${num(
-                summary.lastEnv.deploys
-              )} deploys were successful over the last ${queryPeriodDays} days`,
+              tooltip: `${num(summary.lastEnv.successful)} of ${pluralise(
+                summary.lastEnv.deploys,
+                'deploy was',
+                'deploys were'
+              )} successful over the last ${pluralise(queryPeriodDays, 'day', 'days')}`,
             },
           ]}
           onClick={{
@@ -89,9 +93,11 @@ const ReleasePipelineSummary2: React.FC = () => {
             value: divide(summary.startsWithArtifact, summary.pipelineCount)
               .map(toPercentage)
               .getOr('-'),
-            tooltip: `${num(summary.startsWithArtifact)} of ${
-              summary.pipelineCount
-            } pipelines started with an artifact`,
+            tooltip: `${num(summary.startsWithArtifact)} of ${pluralise(
+              summary.pipelineCount,
+              'pipeliine',
+              'pipelines'
+            )} started with an artifact`,
           },
         ]}
       />
@@ -104,18 +110,22 @@ const ReleasePipelineSummary2: React.FC = () => {
                 value: divide(stage.exists, summary.pipelineCount)
                   .map(toPercentage)
                   .getOr('-'),
-                tooltip: `${num(stage.exists)} out of ${summary.pipelineCount} release ${
-                  stage.exists === 1 ? 'pipeline has' : 'pipelines have'
-                } a stage named (or containing) ${stage.name}.`,
+                tooltip: `${num(stage.exists)} out of ${pluralise(
+                  summary.pipelineCount,
+                  'release pipeline has',
+                  'release pipelines have'
+                )} a stage named (or containing) ${stage.name}.`,
               },
               {
                 title: `${stage.name}: used`,
                 value: divide(stage.used, summary.pipelineCount)
                   .map(toPercentage)
                   .getOr('-'),
-                tooltip: `${num(stage.used)} out of ${summary.pipelineCount} release ${
-                  stage.used === 1 ? 'pipeline has' : 'pipelines have'
-                } a successful deployment from ${stage.name}.`,
+                tooltip: `${num(stage.used)} out of ${pluralise(
+                  summary.pipelineCount,
+                  'release piipeline has',
+                  'release pipelines have'
+                )} a successful deployment from ${stage.name}.`,
               },
             ]}
           />
@@ -135,9 +145,11 @@ const ReleasePipelineSummary2: React.FC = () => {
             //   lineColor={increaseIsBetter(masterReleasesByWeek.filter(exists))}
             //   renderer={pathRendererSkippingUndefineds}
             // />
-            tooltip: `${num(summary.masterOnly)} out of ${num(
-              summary.runCount
-            )} releases were exclusively from master.${
+            tooltip: `${num(summary.masterOnly)} out of ${pluralise(
+              summary.runCount,
+              'release was',
+              'releases were'
+            )} exclusively from master.${
               summary.ignoredStagesBefore
                 ? `<br />Pipeline runs that didn't go to ${summary.ignoredStagesBefore} are not considered.`
                 : ''
@@ -152,9 +164,11 @@ const ReleasePipelineSummary2: React.FC = () => {
             value: divide(summary.branchPolicy.conforms, summary.branchPolicy.total)
               .map(toPercentage)
               .getOr('-'),
-            tooltip: `${num(summary.branchPolicy.conforms)} out of ${num(
-              summary.branchPolicy.total
-            )} artifacts are from branches that conform<br />to the branch policy.${
+            tooltip: `${num(summary.branchPolicy.conforms)} out of ${pluralise(
+              summary.branchPolicy.total,
+              'artifact is',
+              'artifacts are'
+            )} from branches that conform<br />to the branch policy.${
               summary.ignoredStagesBefore
                 ? `<br />Artifacts that didn't go to ${summary.ignoredStagesBefore} are not considered.`
                 : ''
