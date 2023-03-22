@@ -24,7 +24,7 @@ import type {
 } from '../../shared/types.js';
 import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num } from '../helpers/utils.js';
-import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
@@ -122,8 +122,17 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
+  const [showNewBuild] = useQueryParam('build-v2', asBoolean);
 
   const summaries = trpc.repos.getSummaries.useQuery({
+    collectionName,
+    project,
+    searchTerm: search || undefined,
+    groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
+    ...dateRange,
+  });
+
+  const testsCoverageSummaries = trpc.repos.getTestsCoverageSummaries.useQuery({
     collectionName,
     project,
     searchTerm: search || undefined,
@@ -410,6 +419,38 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           ]}
         />
       )}
+      {showNewBuild && testsCoverageSummaries.data && summaries.data ? (
+        <ProjectStat
+          topStats={[
+            {
+              title: 'Pipelines running tests',
+              value: divide(
+                testsCoverageSummaries.data.defsWithTests,
+                summaries.data.pipelines.totalCount
+              )
+                .map(toPercentage)
+                .getOr('-'),
+              tooltip: `${num(testsCoverageSummaries.data.defsWithTests)} of ${num(
+                summaries.data.pipelines.totalCount
+              )} pipelines report test results`,
+            },
+          ]}
+          childStats={[
+            {
+              title: 'Reporting coverage',
+              value: divide(
+                testsCoverageSummaries.data.defsWithCoverage,
+                summaries.data.pipelines.totalCount
+              )
+                .map(toPercentage)
+                .getOr('-'),
+              tooltip: `${num(testsCoverageSummaries.data.defsWithCoverage)} of ${num(
+                summaries.data.pipelines.totalCount
+              )} pipelines report branch coverage`,
+            },
+          ]}
+        />
+      ) : null}
     </ProjectStats>
   );
 };

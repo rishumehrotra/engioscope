@@ -53,6 +53,13 @@ codeCoverageSchema.index({
   'build.id': 1,
 });
 
+codeCoverageSchema.index({
+  'collectionName': 1,
+  'project': 1,
+  'build.id': 1,
+  'coverageData.coverageStats.label': 1,
+});
+
 export const CodeCoverageModel = model<CodeCoverageSummary>(
   'CodeCoverage',
   codeCoverageSchema

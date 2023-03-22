@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
-import type { BranchCoverage } from './code-coverage.js';
-import { getOldCoverageForDefinition } from './code-coverage.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import type { BranchCoverage } from './tests-coverages.js';
 import {
   getCoveragesForRepo,
+  getOneOldCoverageForBuildDefID,
   getOneOldTestForBuildDefID,
   getTestsForRepo,
 } from './tests-coverages.js';
@@ -177,12 +178,12 @@ export const getTestRunsAndCoverageForRepo = async ({
   };
 
   const getOneOlderCoverageForDef = (defId: number) => () => {
-    return getOldCoverageForDefinition(
+    return getOneOldCoverageForBuildDefID(
       collectionName,
       project,
-      startDate,
       repositoryId,
-      defId
+      defId,
+      startDate
     );
   };
 
@@ -219,4 +220,163 @@ export const getTestRunsAndCoverageForRepo = async ({
     })
   );
   return definitionTestsAndCoverage;
+};
+
+export const getPipelinesRunningTests = async (
+  collectionName: string,
+  project: string,
+  repoIds?: string[]
+) => {
+  const result = await RepositoryModel.aggregate<{
+    defsWithTests: number;
+    defsWithCoverage: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        ...(repoIds ? { id: { $in: repoIds } } : {}),
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        collectionName: '$collectionName',
+        project: '$project.name',
+        repositoryId: '$id',
+        repositoryName: '$name',
+        defaultBranch: '$defaultBranch',
+      },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+          defaultBranch: '$defaultBranch',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$sourceBranch', '$$defaultBranch'] },
+                  {
+                    $or: [
+                      { $eq: ['$result', 'failed'] },
+                      { $eq: ['$result', 'succeeded'] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $sort: { finishTime: -1 } },
+          {
+            $project: {
+              _id: 0,
+              buildId: '$id',
+              sourceBranch: '$sourceBranch',
+              definitionId: '$definition.id',
+              definitionName: '$definition.name',
+              result: '$result',
+              finishTime: '$finishTime',
+            },
+          },
+        ],
+        as: 'build',
+      },
+    },
+    { $unwind: { path: '$build' } },
+    {
+      $lookup: {
+        from: 'testruns',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          buildId: '$build.buildId',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project.name', '$$project'] },
+                  { $eq: ['$buildConfiguration.id', '$$buildId'] },
+                ],
+              },
+              release: { $exists: false },
+            },
+          },
+        ],
+        as: 'tests',
+      },
+    },
+    {
+      $lookup: {
+        from: 'codecoverages',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project',
+          buildId: '$build.buildId',
+        },
+        pipeline: [
+          {
+            $match: {
+              '$expr': {
+                $and: [
+                  { $eq: ['$collectionName', '$$collectionName'] },
+                  { $eq: ['$project', '$$project'] },
+                  { $eq: ['$build.id', '$$buildId'] },
+                ],
+              },
+              'coverageData.coverageStats.label': {
+                $in: ['Branch', 'Branches'],
+              },
+            },
+          },
+          { $project: { _id: 0 } },
+        ],
+        as: 'coverage',
+      },
+    },
+    {
+      $project: {
+        definitionId: '$build.definitionId',
+        hasTests: { $gt: [{ $size: '$tests' }, 0] },
+        hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        defsWithTests: {
+          $addToSet: { $cond: [{ $eq: ['$hasTests', true] }, '$definitionId', null] },
+        },
+        defsWithCoverage: {
+          $addToSet: { $cond: [{ $eq: ['$hasCoverage', true] }, '$definitionId', null] },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        defsWithTests: { $size: '$defsWithTests' },
+        defsWithCoverage: { $size: '$defsWithCoverage' },
+      },
+    },
+  ]);
+
+  return (
+    result[0] || {
+      defsWithTests: 0,
+      defsWithCoverage: 0,
+    }
+  );
 };

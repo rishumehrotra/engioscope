@@ -16,6 +16,7 @@ import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
+import { getPipelinesRunningTests } from './testruns.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -450,6 +451,29 @@ export const getNonYamlPipelines = async ({
     },
     { $sort: { total: -1 } },
   ]);
+
+  return result;
+};
+
+export const getTestsCoverageSummaries = async ({
+  collectionName,
+  project,
+  startDate,
+  endDate,
+  searchTerm,
+  groupsIncluded,
+}: z.infer<typeof getSummaryInputParser>) => {
+  const activeRepos = await getActiveRepos(
+    collectionName,
+    project,
+    startDate,
+    endDate,
+    searchTerm,
+    groupsIncluded
+  );
+
+  const activeRepoIds = activeRepos.map(prop('id'));
+  const result = await getPipelinesRunningTests(collectionName, project, activeRepoIds);
 
   return result;
 };

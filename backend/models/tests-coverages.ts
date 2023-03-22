@@ -1,10 +1,25 @@
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import { head } from 'rambda';
 import { oneWeekInMs } from '../../shared/utils.js';
-import type { BranchCoverage, CoverageByWeek } from './code-coverage.js';
+
 import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { TestsForDef, TestsForWeek } from './testruns.js';
+
+export type CoverageByWeek = {
+  weekIndex: number;
+  hasCoverage: boolean;
+  definitionId: number;
+  buildId: number;
+  coverage?: {
+    totalBranches: number;
+    coveredBranches: number;
+  };
+};
+export type BranchCoverage = {
+  definitionId: number;
+  coverageByWeek: CoverageByWeek[];
+};
 
 export const queryOlderForDefinitionId = (definitionId: number, startDate: Date) => ({
   'definition.id': definitionId,
