@@ -77,8 +77,8 @@ export const getOverviewData = (
       };
 
       if (workItemConfig.groupByField && workItem.fields[workItemConfig.groupByField]) {
-        const groupName = workItem.fields[workItemConfig.groupByField];
-        const groupCacheKey = wit + groupName;
+        const groupName = workItem.fields[workItemConfig.groupByField] || 'no-group';
+        const groupCacheKey = wit.name + groupName;
 
         if (!groupCache.has(groupCacheKey)) {
           groupCache.set(groupCacheKey, {
