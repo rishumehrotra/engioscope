@@ -17,9 +17,9 @@ import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js'
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
 import {
-  getPipelinesRunningTests as getDefinitionsWithTestsAndCoverages,
-  getWeeklyProjectCollectionCoverage2 as getCoveragesByWeek,
-  getWeeklyTests as getTestsByWeek,
+  getCoveragesByWeek,
+  getDefinitionsWithTestsAndCoverages,
+  getTestsByWeek,
 } from './testruns.js';
 
 const getGroupRepositoryNames = (

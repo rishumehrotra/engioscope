@@ -235,7 +235,7 @@ export const getTestRunsAndCoverageForRepo = async ({
   return definitionTestsAndCoverage;
 };
 
-export const getPipelinesRunningTests = async (
+export const getDefinitionsWithTestsAndCoverages = async (
   collectionName: string,
   project: string,
   startDate: Date,
@@ -428,7 +428,7 @@ export const getPipelinesRunningTests = async (
   };
 };
 
-export const getWeeklyTests = async (
+export const getTestsByWeek = async (
   collectionName: string,
   project: string,
   repositoryIds: string[],
@@ -518,7 +518,7 @@ export const getWeeklyTests = async (
   return testsByWeek.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
-export const getWeeklyProjectCollectionCoverage2 = async (
+export const getCoveragesByWeek = async (
   collectionName: string,
   project: string,
   repositoryIds: string[],
@@ -568,7 +568,7 @@ export const getWeeklyProjectCollectionCoverage2 = async (
     );
   };
 
-  const weeklyDefinitionCoverage = Promise.all(
+  const weeklyDefinitionCoverage = await Promise.all(
     coverageForAllDefs.map(async def => {
       const coverageData = await makeContinuous(
         def.coverageByWeek || undefined,
@@ -590,7 +590,7 @@ export const getWeeklyProjectCollectionCoverage2 = async (
     })
   );
 
-  const flatWeeklyDefinitionCoverage = (await weeklyDefinitionCoverage).flatMap(data => {
+  const flatWeeklyDefinitionCoverage = weeklyDefinitionCoverage.flatMap(data => {
     return data.coverageByWeek || [];
   });
 
@@ -615,5 +615,5 @@ export const getWeeklyProjectCollectionCoverage2 = async (
     };
   });
 
-  return coverageByWeek.slice(numberOfDays - Math.floor(numberOfDays / 7));
+  return coverageByWeek.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
