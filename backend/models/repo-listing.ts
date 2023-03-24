@@ -17,9 +17,9 @@ import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js'
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
 import {
-  getPipelinesRunningTests,
-  getWeeklyProjectCollectionCoverage2,
-  getWeeklyTests,
+  getPipelinesRunningTests as getDefinitionsWithTestsAndCoverages,
+  getWeeklyProjectCollectionCoverage2 as getCoveragesByWeek,
+  getWeeklyTests as getTestsByWeek,
 } from './testruns.js';
 
 const getGroupRepositoryNames = (
@@ -479,15 +479,15 @@ export const getTestsCoverageSummaries = async ({
   const activeRepoIds = activeRepos.map(prop('id'));
 
   const [defSummary, weeklyTestsSummary, weeklyCoverageSummary] = await Promise.all([
-    getPipelinesRunningTests(collectionName, project, startDate, endDate, activeRepoIds),
-    getWeeklyTests(collectionName, project, activeRepoIds, startDate, endDate),
-    getWeeklyProjectCollectionCoverage2(
+    getDefinitionsWithTestsAndCoverages(
       collectionName,
       project,
-      activeRepoIds,
       startDate,
-      endDate
+      endDate,
+      activeRepoIds
     ),
+    getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate),
+    getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
   ]);
 
   return {
