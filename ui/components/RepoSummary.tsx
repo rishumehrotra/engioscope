@@ -23,7 +23,7 @@ import type {
   UICodeQuality,
 } from '../../shared/types.js';
 import { divide, exists, toPercentage } from '../../shared/utils.js';
-import { num } from '../helpers/utils.js';
+import { num, pluralise } from '../helpers/utils.js';
 import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
@@ -254,6 +254,11 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 yAxisLabel={x => `${x}%`}
               />
             ),
+            tooltip: `${num(stats.totalCoverage.covered)} of ${pluralise(
+              stats.totalCoverage.total,
+              'branch',
+              'branches'
+            )} in the code are covered`,
           },
         ]}
       />
