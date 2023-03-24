@@ -7,6 +7,10 @@ import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js'
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { BranchCoverage } from './tests-coverages.js';
 import {
+  getTestsForBuildIds,
+  getCoverageForBuildIDs,
+  getMainBranchBuildIds,
+  queryForFinishTimeInRange,
   getCoveragesForRepo,
   getOneOldCoverageForBuildDefID,
   getOneOldTestForBuildDefID,
@@ -61,6 +65,7 @@ export type TestsForDef = {
   definitionId: number;
   tests: TestsForWeek[];
   latest?: TestsForWeek;
+  repositoryId: string;
 };
 
 export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
@@ -69,7 +74,7 @@ export type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<TestsForDef> &
   Partial<BranchCoverage>;
 
-const makeContinuous = async <T extends { weekIndex: number }>(
+export const makeContinuous = async <T extends { weekIndex: number }>(
   tests: T[] | undefined,
   startDate: Date,
   endDate: Date,
@@ -403,4 +408,183 @@ export const getPipelinesRunningTests = async (
     defsWithTests: defsWithTests[0]?.count || 0,
     defsWithCoverage: defsWithCoverage[0]?.count || 0,
   };
+};
+
+export const getWeeklyProjectCollectionTests2 = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const testrunsForAllDefs = await RepositoryModel.aggregate<TestsForDef>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getTestsForBuildIds,
+    {
+      $group: {
+        _id: '$definitionId',
+        definitionId: { $first: '$definitionId' },
+        tests: { $push: '$$ROOT' },
+      },
+    },
+  ]);
+
+  const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
+    return getOneOldTestForBuildDefID(
+      collectionName,
+      project,
+      repositoryId,
+      defId,
+      startDate
+    );
+  };
+
+  const weeklyDefinitionTests = Promise.all(
+    testrunsForAllDefs.map(async def => {
+      const tests = await makeContinuous(
+        def.tests,
+        startDate,
+        endDate,
+        getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
+        { hasTests: false }
+      );
+
+      return {
+        ...def,
+        tests,
+        latestTest: tests ? last(tests) : null,
+      };
+    })
+  );
+
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+  const flatWeeklyDefinitionTests = (await weeklyDefinitionTests).flatMap(data => {
+    if (!data.tests) return [];
+    return data.tests.map(test => ({ ...test }));
+  });
+
+  const finalResult = range(0, totalIntervals).map(weekIndex => {
+    const matchingTests = flatWeeklyDefinitionTests.filter(
+      def => def.weekIndex === weekIndex
+    );
+
+    const totalTests = matchingTests.reduce((acc, curr) => {
+      return curr.hasTests ? acc + curr.totalTests : acc + 0;
+    }, 0);
+
+    const passedTests = matchingTests.reduce((acc, curr) => {
+      return curr.hasTests ? acc + curr.passedTests : acc + 0;
+    }, 0);
+
+    return {
+      weekIndex,
+      passedTests,
+      totalTests,
+    };
+  });
+
+  return finalResult.slice(totalIntervals - Math.floor(totalDays / 7));
+};
+export const getWeeklyProjectCollectionCoverage2 = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const coverageForAllDefs = await RepositoryModel.aggregate<BranchCoverage>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getCoverageForBuildIDs,
+    {
+      $group: {
+        _id: '$definitionId',
+        definitionId: { $first: '$definitionId' },
+        repositoryId: { $first: '$repositoryId' },
+        coverage: { $push: '$$ROOT' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        definitionId: 1,
+        repositoryId: 1,
+        coverageByWeek: '$coverage',
+      },
+    },
+  ]);
+
+  const getOneOlderCoverageForDef = (defId: number, repositoryId: string) => () => {
+    return getOneOldCoverageForBuildDefID(
+      collectionName,
+      project,
+      repositoryId,
+      defId,
+      startDate
+    );
+  };
+
+  const weeklyDefinitionCoverage = Promise.all(
+    coverageForAllDefs.map(async def => {
+      const coverageData = await makeContinuous(
+        def.coverageByWeek || undefined,
+        startDate,
+        endDate,
+        getOneOlderCoverageForDef(def.definitionId, def.repositoryId),
+        {
+          buildId: 0,
+          definitionId: 0,
+          hasCoverage: false,
+        }
+      );
+
+      return {
+        ...def,
+        coverageByWeek: coverageData,
+        latestCoverage: coverageData ? last(coverageData) : null,
+      };
+    })
+  );
+
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+  const flatWeeklyDefinitionCoverage = (await weeklyDefinitionCoverage).flatMap(data => {
+    if (!data.coverageByWeek) return [];
+    return data.coverageByWeek.map(coverage => ({ ...coverage }));
+  });
+
+  const finalResult = range(0, totalIntervals).map(weekIndex => {
+    const matchingCoverage = flatWeeklyDefinitionCoverage.filter(
+      def => def.weekIndex === weekIndex
+    );
+
+    const coveredBranches = matchingCoverage.reduce((acc, curr) => {
+      return curr.coverage ? acc + curr.coverage.coveredBranches : acc + 0;
+    }, 0);
+
+    const totalBranches = matchingCoverage.reduce((acc, curr) => {
+      return curr.coverage ? acc + curr.coverage.totalBranches : acc + 0;
+    }, 0);
+
+    return {
+      weekIndex,
+      coveredBranches,
+      totalBranches,
+    };
+  });
+
+  return finalResult.slice(totalIntervals - Math.floor(totalDays / 7));
 };

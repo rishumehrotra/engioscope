@@ -18,6 +18,7 @@ export type CoverageByWeek = {
 };
 export type BranchCoverage = {
   definitionId: number;
+  repositoryId: string;
   coverageByWeek: CoverageByWeek[];
 };
 
@@ -43,8 +44,10 @@ export const getMainBranchBuildIds = (
       $match: {
         collectionName,
         'project.name': project,
-        ...(Array.isArray(repositoryId)
+        ...(Array.isArray(repositoryId) && repositoryId.length > 1
           ? { id: { $in: repositoryId } }
+          : Array.isArray(repositoryId) && repositoryId.length === 0
+          ? {}
           : { id: repositoryId }),
       },
     },
@@ -127,7 +130,7 @@ export const getMainBranchBuildIds = (
   ];
 };
 
-const getTestsForBuildIds: PipelineStage[] = [
+export const getTestsForBuildIds: PipelineStage[] = [
   // Assume we're dealing with the data from getMainBranchBuildIds
   {
     $lookup: {
@@ -175,6 +178,7 @@ const getTestsForBuildIds: PipelineStage[] = [
       _id: 0,
       definitionId: '$_id.definitionId',
       weekIndex: '$_id.weekIndex',
+      repositoryId: '$repositoryId',
       hasTests: { $gt: [{ $size: '$tests' }, 0] },
       totalTests: { $sum: '$tests.totalTests' },
       startedDate: { $min: '$tests.startedDate' },
@@ -205,6 +209,7 @@ export const getTestsForRepo = async (
       $group: {
         _id: '$definitionId',
         definitionId: { $first: '$definitionId' },
+        repositoryId: { $first: '$repositoryId' },
         tests: { $push: '$$ROOT' },
       },
     },
@@ -299,6 +304,7 @@ export const getCoverageForBuildIDs: PipelineStage[] = [
   {
     $project: {
       hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
+      repositoryId: '$repositoryId',
       weekIndex: '$_id.weekIndex',
       definitionId: '$_id.definitionId',
       buildId: '$build.buildId',
@@ -335,6 +341,7 @@ export const getCoveragesForRepo = async (
       $group: {
         _id: '$definitionId',
         definitionId: { $first: '$definitionId' },
+        repositoryId: { $first: '$repositoryId' },
         coverage: { $push: '$$ROOT' },
       },
     },
@@ -342,6 +349,7 @@ export const getCoveragesForRepo = async (
       $project: {
         _id: 0,
         definitionId: 1,
+        repositoryId: 1,
         coverageByWeek: '$coverage',
       },
     },
@@ -401,11 +409,7 @@ export const getWeeklyProjectCollectionTests = async (
         passedTests: { $sum: '$passedTests' },
       },
     },
-    {
-      $sort: {
-        weekIndex: 1,
-      },
-    },
+    { $sort: { weekIndex: 1 } },
   ]);
 
   return result;
@@ -438,11 +442,7 @@ export const getWeeklyProjectCollectionCoverage = async (
         coveredBranches: { $sum: '$coverage.coveredBranches' },
       },
     },
-    {
-      $sort: {
-        weekIndex: 1,
-      },
-    },
+    { $sort: { weekIndex: 1 } },
   ]);
   return result;
 };
