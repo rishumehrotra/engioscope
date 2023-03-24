@@ -60,4 +60,4 @@ export const getPipelinesCount = (
     },
     { $group: { _id: '$releaseDefinitionId' } },
     { $count: 'count' },
-  ]).then(result => result[0].count);
+  ]).then(result => result[0]?.count || 0);
