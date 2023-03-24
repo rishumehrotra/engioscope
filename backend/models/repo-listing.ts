@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { last, prop, range } from 'rambda';
+import { last, prop } from 'rambda';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
@@ -11,16 +11,16 @@ import {
   getCentralTemplateBuildDefs,
 } from './build-reports.js';
 import { getAllRepoDefaultBranchIDs } from './repos.js';
-import { divide, oneDayInMs, toPercentage } from '../../shared/utils.js';
+import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
-import { getPipelinesRunningTests } from './testruns.js';
 import {
-  getWeeklyProjectCollectionCoverage,
-  getWeeklyProjectCollectionTests,
-} from './tests-coverages.js';
+  getPipelinesRunningTests,
+  getWeeklyProjectCollectionCoverage2,
+  getWeeklyTests,
+} from './testruns.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -479,15 +479,9 @@ export const getTestsCoverageSummaries = async ({
   const activeRepoIds = activeRepos.map(prop('id'));
 
   const [defSummary, weeklyTestsSummary, weeklyCoverageSummary] = await Promise.all([
-    getPipelinesRunningTests(collectionName, project, activeRepoIds),
-    getWeeklyProjectCollectionTests(
-      collectionName,
-      project,
-      activeRepoIds,
-      startDate,
-      endDate
-    ),
-    getWeeklyProjectCollectionCoverage(
+    getPipelinesRunningTests(collectionName, project, startDate, endDate, activeRepoIds),
+    getWeeklyTests(collectionName, project, activeRepoIds, startDate, endDate),
+    getWeeklyProjectCollectionCoverage2(
       collectionName,
       project,
       activeRepoIds,
@@ -496,39 +490,12 @@ export const getTestsCoverageSummaries = async ({
     ),
   ]);
 
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-
-  const weeklyTests = range(0, totalIntervals)
-    .map(id => {
-      return (
-        weeklyTestsSummary.find(obj => obj.weekIndex === id) || {
-          weekIndex: id,
-          totalTests: 0,
-          passedTests: 0,
-        }
-      );
-    })
-    .slice(totalIntervals - Math.floor(totalDays / 7));
-
-  const weeklyCoverage = range(0, totalIntervals)
-    .map(id => {
-      return (
-        weeklyCoverageSummary.find(obj => obj.weekIndex === id) || {
-          weekIndex: id,
-          totalBranches: 0,
-          coveredBranches: 0,
-        }
-      );
-    })
-    .slice(totalIntervals - Math.floor(totalDays / 7));
-
   return {
     defsWithTests: defSummary.defsWithTests,
     defsWithCoverage: defSummary.defsWithCoverage,
-    weeklyTestsSummary: weeklyTests,
-    weeklyCoverageSummary: weeklyCoverage,
-    latestTestsSummary: last(weeklyTests),
-    latestCoverageSummary: last(weeklyCoverage),
+    weeklyTestsSummary,
+    weeklyCoverageSummary,
+    latestTestsSummary: last(weeklyTestsSummary),
+    latestCoverageSummary: last(weeklyCoverageSummary),
   };
 };

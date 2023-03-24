@@ -486,11 +486,6 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Coverage',
                 value: (
                   <LabelWithSparkline
-                    // label={divide(stats.totalCoverage.covered, stats.totalCoverage.total)
-                    //   .map(toPercentage)
-                    //   .getOr('-')}
-                    // data={stats.totalCoverageByWeek}
-                    // lineColor={increaseIsBetter(stats.totalCoverageByWeek)}
                     label={divide(
                       testsCoverageSummaries.data.latestCoverageSummary
                         ?.coveredBranches || 0,

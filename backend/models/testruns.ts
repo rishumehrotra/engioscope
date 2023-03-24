@@ -2,7 +2,7 @@ import type { PipelineStage } from 'mongoose';
 import { last, range } from 'rambda';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
-import { collectionAndProjectInputs, dateRangeInputs } from './helpers.js';
+import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { BranchCoverage } from './tests-coverages.js';
@@ -74,6 +74,14 @@ export type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<TestsForDef> &
   Partial<BranchCoverage>;
 
+const createIntervals = (startDate: Date, endDate: Date) => {
+  const numberOfDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  return {
+    numberOfDays,
+    numberOfIntervals: Math.floor(numberOfDays / 7 + (numberOfDays % 7 === 0 ? 0 : 1)),
+  };
+};
+
 export const makeContinuous = async <T extends { weekIndex: number }>(
   tests: T[] | undefined,
   startDate: Date,
@@ -81,19 +89,18 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
   getOneOlderTestRun: () => Promise<T | null>,
   emptyValue: Omit<T, 'weekIndex'>
 ) => {
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
 
   if (!tests) {
     const olderTest = await getOneOlderTestRun();
     if (!olderTest) return null;
 
-    return range(0, totalIntervals).map(weekIndex => {
+    return range(0, numberOfIntervals).map(weekIndex => {
       return { ...olderTest, weekIndex };
     });
   }
 
-  return range(0, totalIntervals)
+  return range(0, numberOfIntervals)
     .reduce<Promise<T[]>>(async (acc, weekIndex, index) => {
       const matchingTest = tests.find(t => t.weekIndex === weekIndex);
 
@@ -113,7 +120,7 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
       const lastItem = last(await acc)!;
       return [...(await acc), { ...lastItem, weekIndex }];
     }, Promise.resolve([]))
-    .then(list => list.slice(totalIntervals - Math.floor(totalDays / 7)));
+    .then(list => list.slice(numberOfIntervals - Math.floor(numberOfDays / 7)));
 };
 
 export const mapDefsTestsAndCoverage = async (
@@ -231,6 +238,8 @@ export const getTestRunsAndCoverageForRepo = async ({
 export const getPipelinesRunningTests = async (
   collectionName: string,
   project: string,
+  startDate: Date,
+  endDate: Date,
   repoIds?: string[]
 ) => {
   const getMainBranchBuildIdsStage: PipelineStage[] = [
@@ -277,9 +286,14 @@ export const getPipelinesRunningTests = async (
                   },
                 ],
               },
+              finishTime: inDateRange(startDate, endDate),
             },
           },
-          { $sort: { finishTime: -1 } },
+          {
+            $sort: {
+              finishTime: -1,
+            },
+          },
           {
             $project: {
               _id: 0,
@@ -322,7 +336,11 @@ export const getPipelinesRunningTests = async (
                 release: { $exists: false },
               },
             },
-            { $project: { _id: 1 } },
+            {
+              $project: {
+                _id: 1,
+              },
+            },
           ],
           as: 'tests',
         },
@@ -333,11 +351,12 @@ export const getPipelinesRunningTests = async (
           hasTests: { $gt: [{ $size: '$tests' }, 0] },
         },
       },
+      { $match: { hasTests: true } },
       {
         $group: {
           _id: null,
           defsWithTests: {
-            $addToSet: { $cond: [{ $eq: ['$hasTests', true] }, '$definitionId', null] },
+            $addToSet: '$definitionId',
           },
         },
       },
@@ -345,6 +364,7 @@ export const getPipelinesRunningTests = async (
         $project: {
           _id: 0,
           count: { $size: '$defsWithTests' },
+          defsWithTests: 1,
         },
       },
     ]),
@@ -369,11 +389,10 @@ export const getPipelinesRunningTests = async (
                     { $eq: ['$build.id', '$$buildId'] },
                   ],
                 },
-                'coverageData.coverageStats.label': {
-                  $in: ['Branch', 'Branches'],
-                },
+                'coverageData.coverageStats.label': { $in: ['Branch', 'Branches'] },
               },
             },
+
             { $project: { _id: 1 } },
           ],
           as: 'coverage',
@@ -385,13 +404,12 @@ export const getPipelinesRunningTests = async (
           hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
         },
       },
+      { $match: { hasCoverage: true } },
       {
         $group: {
           _id: null,
           defsWithCoverage: {
-            $addToSet: {
-              $cond: [{ $eq: ['$hasCoverage', true] }, '$definitionId', null],
-            },
+            $addToSet: '$definitionId',
           },
         },
       },
@@ -410,7 +428,7 @@ export const getPipelinesRunningTests = async (
   };
 };
 
-export const getWeeklyProjectCollectionTests2 = async (
+export const getWeeklyTests = async (
   collectionName: string,
   project: string,
   repositoryIds: string[],
@@ -429,11 +447,19 @@ export const getWeeklyProjectCollectionTests2 = async (
     {
       $group: {
         _id: '$definitionId',
+        repositoryId: { $first: '$repositoryId' },
         definitionId: { $first: '$definitionId' },
         tests: { $push: '$$ROOT' },
       },
     },
   ]);
+
+  // TODO: Fixing n+1 Problem of fetching older testruns
+
+  // def IDs where tests array do not have element with weekIndex 0
+  // const defsWithoutTests = testrunsForAllDefs.filter(
+  //   def => !def.tests.some(test => test.weekIndex === 0)
+  // );
 
   const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
     return getOneOldTestForBuildDefID(
@@ -445,7 +471,7 @@ export const getWeeklyProjectCollectionTests2 = async (
     );
   };
 
-  const weeklyDefinitionTests = Promise.all(
+  const weeklyDefinitionTests = await Promise.all(
     testrunsForAllDefs.map(async def => {
       const tests = await makeContinuous(
         def.tests,
@@ -463,25 +489,23 @@ export const getWeeklyProjectCollectionTests2 = async (
     })
   );
 
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-
-  const flatWeeklyDefinitionTests = (await weeklyDefinitionTests).flatMap(data => {
-    if (!data.tests) return [];
-    return data.tests.map(test => ({ ...test }));
+  const flatWeeklyDefinitionTests = weeklyDefinitionTests.flatMap(data => {
+    return data.tests || [];
   });
 
-  const finalResult = range(0, totalIntervals).map(weekIndex => {
+  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+
+  const testsByWeek = range(0, numberOfIntervals).map(weekIndex => {
     const matchingTests = flatWeeklyDefinitionTests.filter(
       def => def.weekIndex === weekIndex
     );
 
     const totalTests = matchingTests.reduce((acc, curr) => {
-      return curr.hasTests ? acc + curr.totalTests : acc + 0;
+      return acc + (curr.hasTests ? curr.totalTests : 0);
     }, 0);
 
     const passedTests = matchingTests.reduce((acc, curr) => {
-      return curr.hasTests ? acc + curr.passedTests : acc + 0;
+      return acc + (curr.hasTests ? curr.passedTests : 0);
     }, 0);
 
     return {
@@ -491,8 +515,9 @@ export const getWeeklyProjectCollectionTests2 = async (
     };
   });
 
-  return finalResult.slice(totalIntervals - Math.floor(totalDays / 7));
+  return testsByWeek.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
+
 export const getWeeklyProjectCollectionCoverage2 = async (
   collectionName: string,
   project: string,
@@ -527,6 +552,12 @@ export const getWeeklyProjectCollectionCoverage2 = async (
     },
   ]);
 
+  // TODO: Fixing n+1 Problem of fetching older coverage
+  // def IDs where coverageByWeek array do not have element with weekIndex 0
+  // const defsWithoutCoverage = coverageForAllDefs.filter(
+  //   def => !def.coverageByWeek.some(coverage => coverage.weekIndex === 0)
+  // );
+
   const getOneOlderCoverageForDef = (defId: number, repositoryId: string) => () => {
     return getOneOldCoverageForBuildDefID(
       collectionName,
@@ -559,24 +590,22 @@ export const getWeeklyProjectCollectionCoverage2 = async (
     })
   );
 
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
   const flatWeeklyDefinitionCoverage = (await weeklyDefinitionCoverage).flatMap(data => {
-    if (!data.coverageByWeek) return [];
-    return data.coverageByWeek.map(coverage => ({ ...coverage }));
+    return data.coverageByWeek || [];
   });
 
-  const finalResult = range(0, totalIntervals).map(weekIndex => {
+  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const coverageByWeek = range(0, numberOfIntervals).map(weekIndex => {
     const matchingCoverage = flatWeeklyDefinitionCoverage.filter(
       def => def.weekIndex === weekIndex
     );
 
     const coveredBranches = matchingCoverage.reduce((acc, curr) => {
-      return curr.coverage ? acc + curr.coverage.coveredBranches : acc + 0;
+      return acc + (curr.coverage ? curr.coverage.coveredBranches : 0);
     }, 0);
 
     const totalBranches = matchingCoverage.reduce((acc, curr) => {
-      return curr.coverage ? acc + curr.coverage.totalBranches : acc + 0;
+      return acc + (curr.coverage ? curr.coverage.totalBranches : 0);
     }, 0);
 
     return {
@@ -586,5 +615,5 @@ export const getWeeklyProjectCollectionCoverage2 = async (
     };
   });
 
-  return finalResult.slice(totalIntervals - Math.floor(totalDays / 7));
+  return coverageByWeek.slice(numberOfDays - Math.floor(numberOfDays / 7));
 };

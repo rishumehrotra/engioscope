@@ -34,7 +34,7 @@ export const queryForFinishTimeInRange = (startDate: Date, endDate: Date) => ({
 export const getMainBranchBuildIds = (
   collectionName: string,
   project: string,
-  repositoryId: string | string[],
+  repositoryIds: string[],
   startDate: Date,
   additionalQuery: FilterQuery<unknown>
 ): PipelineStage[] => {
@@ -44,11 +44,7 @@ export const getMainBranchBuildIds = (
       $match: {
         collectionName,
         'project.name': project,
-        ...(Array.isArray(repositoryId) && repositoryId.length > 1
-          ? { id: { $in: repositoryId } }
-          : Array.isArray(repositoryId) && repositoryId.length === 0
-          ? {}
-          : { id: repositoryId }),
+        'id': { $in: repositoryIds },
       },
     },
     {
@@ -200,7 +196,7 @@ export const getTestsForRepo = async (
     ...getMainBranchBuildIds(
       collectionName,
       project,
-      repositoryId,
+      [repositoryId],
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
@@ -229,7 +225,7 @@ export const getOneOldTestForBuildDefID = async (
     ...getMainBranchBuildIds(
       collectionName,
       project,
-      repositoryId,
+      [repositoryId],
       startDate,
       queryOlderForDefinitionId(definitionId, startDate)
     ),
@@ -332,7 +328,7 @@ export const getCoveragesForRepo = async (
     ...getMainBranchBuildIds(
       collectionName,
       project,
-      repositoryId,
+      [repositoryId],
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
@@ -368,7 +364,7 @@ export const getOneOldCoverageForBuildDefID = async (
     ...getMainBranchBuildIds(
       collectionName,
       project,
-      repositoryId,
+      [repositoryId],
       startDate,
       queryOlderForDefinitionId(definitionId, startDate)
     ),
