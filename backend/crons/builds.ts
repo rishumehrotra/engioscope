@@ -10,6 +10,7 @@ import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray } from '../utils.js';
 import { CodeCoverageModel } from '../models/mongoose-models/CodeCoverage.js';
+import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -156,29 +157,71 @@ async function getBuildTimelines(
   }, Promise.resolve());
 }
 
-export const getBuildsAndTimelines = () => {
+const saveBuilds = (collectionName: string, project: string) => {
+  return async (builds: AzureBuild[]) => {
+    await bulkSaveBuilds(collectionName)(builds);
+    await setLastBuildUpdateDate(collectionName, project);
+
+    await Promise.all([
+      getBuildTimelines(collectionName, project, builds),
+      syncTestCoverageForBuildIds(
+        collectionName,
+        project,
+        builds.map(b => b.id)
+      ),
+    ]);
+  };
+};
+
+const deleteBuilds = (collectionName: string, project: string) => {
+  return async (builds: AzureBuild[]) => {
+    const buildIds = builds.map(b => b.id);
+
+    return Promise.all([
+      BuildModel.deleteMany({
+        collectionName,
+        project,
+        id: { $in: buildIds },
+      }),
+      BuildTimelineModel.deleteMany({
+        collectionName,
+        project,
+        buildId: { $in: buildIds },
+      }),
+      TestRunModel.deleteMany({
+        collectionName,
+        project,
+        'buildConfiguration.id': { $in: buildIds },
+        'release': { $exists: false },
+      }),
+      CodeCoverageModel.deleteMany({
+        collectionName,
+        project,
+        'build.id': { $in: buildIds },
+      }),
+    ]);
+  };
+};
+
+export const syncBuildsAndTimelines = () => {
   const { getBuildsAsChunksSince } = azure(getConfig());
   const queryStart = new Date(Date.now() - oneYearInMs);
 
   return collectionsAndProjects().reduce<Promise<void>>(
-    async (acc, [collection, project]) => {
+    async (acc, [{ name: collectionName }, { name: project }]) => {
       await acc;
 
       await getBuildsAsChunksSince(
-        collection.name,
-        project.name,
-        (await getLastBuildUpdateDate(collection.name, project.name)) || queryStart,
-        async builds => {
-          await bulkSaveBuilds(collection.name)(builds);
-          await setLastBuildUpdateDate(collection.name, project.name);
+        collectionName,
+        project,
+        (await getLastBuildUpdateDate(collectionName, project)) || queryStart,
+        builds => {
+          const buildsToSave = builds.filter(b => !b.deleted);
+          const buildsToDelete = builds.filter(b => b.deleted);
 
-          await Promise.all([
-            getBuildTimelines(collection.name, project.name, builds),
-            syncTestCoverageForBuildIds(
-              collection.name,
-              project.name,
-              builds.map(b => b.id)
-            ),
+          return Promise.all([
+            deleteBuilds(collectionName, project)(buildsToDelete),
+            saveBuilds(collectionName, project)(buildsToSave),
           ]);
         }
       );

@@ -1,4 +1,4 @@
-import { getBuildsAndTimelines } from './builds.js';
+import { syncBuildsAndTimelines } from './builds.js';
 import { getWorkItems } from './workitems.js';
 import { getWorkItemTypes } from './work-item-types.js';
 import { getRepositories } from './repos.js';
@@ -13,7 +13,7 @@ import { getBuildDefinitions } from './build-definitions.js';
 import { refreshSonarProjects } from './sonar.js';
 
 export default () => {
-  setupJob('builds', t => t.everyHourAt(45), getBuildsAndTimelines);
+  setupJob('builds', t => t.everyHourAt(45), syncBuildsAndTimelines);
   setupJob('build definitions', t => t.everySunday(), getBuildDefinitions);
   setupJob('workitems', t => t.everyHourAt(55), getWorkItems);
   setupJob('workitem types', t => t.everyWeekAt('Sun', 8, 30), getWorkItemTypes);

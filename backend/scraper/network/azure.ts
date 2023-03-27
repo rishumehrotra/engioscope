@@ -251,6 +251,7 @@ export default (config: ParsedConfig) => {
                     $top: 5000,
                     maxTime: weeks[index].toISOString(),
                     minTime: weekStart.toISOString(),
+                    deletedFilter: 'includeDeleted',
                   })}`
                 ),
                 { headers: authHeader, ...otherFetchParams }

@@ -243,6 +243,7 @@ export type Build = {
   keepForever: boolean;
   retainedByRelease: boolean;
   triggeredByBuild: Build | null;
+  deleted?: true;
 };
 
 export type BuildOverviewStats = {

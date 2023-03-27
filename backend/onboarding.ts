@@ -3,7 +3,7 @@ import { setConfig } from './config.js';
 import type { ParsedConfig } from './scraper/parse-config.js';
 import { getWorkItems } from './crons/workitems.js';
 import { getWorkItemTypes } from './crons/work-item-types.js';
-import { getBuildsAndTimelines } from './crons/builds.js';
+import { syncBuildsAndTimelines } from './crons/builds.js';
 import { getRepositories } from './crons/repos.js';
 import { getReleaseDefinitions } from './crons/release-definitions.js';
 import { getReleases } from './crons/releases.js';
@@ -26,7 +26,7 @@ export default async (config: ParsedConfig) => {
 
   await getWorkItems();
   await getWorkItemTypes();
-  await getBuildsAndTimelines();
+  await syncBuildsAndTimelines();
   await getRepositories();
   await getReleaseDefinitions();
   await getReleases();
