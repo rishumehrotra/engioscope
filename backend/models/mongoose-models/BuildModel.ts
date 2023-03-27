@@ -60,8 +60,6 @@ const buildSchema = new Schema<Build>(
     reason: { type: String, required: true },
     requestedForId: { type: String },
     requestedById: { type: String },
-    lastChangeDate: { type: Date, required: true },
-    lastChangedById: { type: String },
     parameters: { type: String },
     repository: {
       id: { type: String, required: true },
