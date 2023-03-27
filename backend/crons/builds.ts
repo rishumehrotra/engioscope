@@ -173,7 +173,7 @@ const saveBuilds = (collectionName: string, project: string) => {
   };
 };
 
-export const deleteBuilds = (collectionName: string, project: string) => {
+const deleteBuilds = (collectionName: string, project: string) => {
   return async (builds: AzureBuild[]) => {
     const buildIds = builds.map(b => b.id);
 
