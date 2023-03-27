@@ -19,6 +19,6 @@ it('should give a weekly spread of tests', async () => {
     new Date('2022-03-30')
   );
 
-  console.log(testsByWeek);
+  // console.log(testsByWeek);
   expect(testsByWeek.length).toBe(12);
 });
