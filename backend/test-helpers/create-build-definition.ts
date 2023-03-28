@@ -30,8 +30,11 @@ export const createBuildDefinition = (
   buildDefinitionId: number,
   repositoryId: string,
   isYaml?: boolean,
-  latestBuild = createLatestBuildForDefinition(123, new Date('2022-03-25')),
-  latestCompletedBuild = createLatestBuildForDefinition(123, new Date('2022-03-25'))
+  latestBuild = createLatestBuildForDefinition(buildDefinitionId, new Date('2022-03-25')),
+  latestCompletedBuild = createLatestBuildForDefinition(
+    buildDefinitionId,
+    new Date('2022-03-25')
+  )
 ) => {
   return BuildDefinitionModel.insertMany([
     {
