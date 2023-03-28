@@ -3,7 +3,10 @@ import { createBuildDefinition } from '../../test-helpers/create-build-definitio
 import { createBuild } from '../../test-helpers/create-build.js';
 import { createRepo } from '../../test-helpers/create-repo.js';
 import { createTestRun, getTestruns } from '../../test-helpers/create-test-run.js';
+import { needsDB } from '../../test-helpers/mongo-memory-server.js';
 import { getTestsByWeek } from '../testruns.js';
+
+needsDB();
 
 it('Given buildId should give a testrun for it', async () => {
   // Arrange

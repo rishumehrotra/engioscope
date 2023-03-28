@@ -4,6 +4,9 @@ import { createBuild } from '../../test-helpers/create-build.js';
 import { createRepo } from '../../test-helpers/create-repo.js';
 import { getCoveragesByWeek } from '../testruns.js';
 import { createCoverage } from '../../test-helpers/create-coverage';
+import { needsDB } from '../../test-helpers/mongo-memory-server.js';
+
+needsDB();
 
 it('should give right no of weeks for query period', async () => {
   await createRepo('foo', 'bar', 'repo-1');

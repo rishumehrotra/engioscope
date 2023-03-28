@@ -3,6 +3,9 @@ import { getBuilds, getBuildsOverviewForRepository } from '../builds.js';
 import { createRepo } from '../../test-helpers/create-repo.js';
 import { createBuildDefinition } from '../../test-helpers/create-build-definition.js';
 import { createBuild } from '../../test-helpers/create-build.js';
+import { needsDB } from '../../test-helpers/mongo-memory-server.js';
+
+needsDB();
 
 it('Insert build', async () => {
   await createRepo('foo', 'bar', 'repo-1');

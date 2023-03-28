@@ -35,6 +35,7 @@ import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import type { ParsedConfig } from '../parse-config.js';
 import createChunkedPaginatedGetter from './create-chunked-paginated-getter.js';
 import { is404 } from './http-error.js';
+import { oneHourInMs } from '../../../shared/utils.js';
 
 const apiVersion = { 'api-version': '5.1' };
 
@@ -350,11 +351,17 @@ export default (config: ParsedConfig) => {
     getTestRunsAsChunksSince: (
       collectionName: string,
       projectName: string,
-      since: Date,
+      since_: Date,
       chunkHandler: (x: TestRun2[]) => Promise<unknown>
     ) => {
       const weeks: Date[] = [];
       let currentDate = new Date();
+
+      // Azure Devops sets the lastUpdatedDate incorrectly to somewhere just after createdDate,
+      // and not after completedDate. So, we're giving an hour's buffer in the start, assuming
+      // tests should not take longer than an hour.
+      const since = new Date(since_);
+      since.setTime(since.getTime() - oneHourInMs);
 
       while (currentDate >= since) {
         weeks.push(currentDate);
@@ -369,8 +376,9 @@ export default (config: ParsedConfig) => {
         await chunkedList<TestRun2>({
           url: url(collectionName, projectName, '/test/runs'),
           qsParams: {
-            maxLastUpdatedDate: weeks[index].toISOString(),
-            minLastUpdatedDate: weekStart.toISOString(),
+            // ADO barfs if we have a Z at the end of the time string
+            maxLastUpdatedDate: weeks[index].toISOString().replace('Z', ''),
+            minLastUpdatedDate: weekStart.toISOString().replace('Z', ''),
             $top: '100',
             includeRunDetails: 'true',
             isAutomated: 'true',

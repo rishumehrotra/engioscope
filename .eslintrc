@@ -35,6 +35,7 @@
     "react/jsx-uses-vars": "error",
     "react/prop-types": "off",
     "react/require-default-props": "off",
+    "no-multiple-empty-lines": "off",
     "no-param-reassign": [
       "error",
       {
