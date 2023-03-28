@@ -5,7 +5,8 @@ export const createTestRun = (
   collectionName: string,
   project: string,
   buildId: number,
-  buildDefinitionId: number
+  buildDefinitionId: number,
+  totalTests = 10
 ) => {
   return TestRunModel.insertMany([
     {
@@ -31,14 +32,21 @@ export const createTestRun = (
         {
           state: 'Unspecified',
           outcome: 'Passed',
-          count: 1,
+          count: totalTests,
         },
       ],
       startedDate: new Date('2022-03-25'),
       state: 'Completed',
-      totalTests: 1,
+      totalTests,
       url: 'http://example.com/foo',
       webAccessUrl: 'https://example.com/foo',
     },
   ]);
 };
+
+export const getTestruns = (collectionName: string, project: string, buildId: number) =>
+  TestRunModel.find({
+    collectionName,
+    'project.name': project,
+    'buildConfiguration.id': buildId,
+  });

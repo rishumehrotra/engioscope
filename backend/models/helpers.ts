@@ -11,8 +11,8 @@ export const dateRangeInputs = {
 };
 
 export const inDateRange = (startDate: Date, endDate: Date) => ({
-  $gt: startDate,
-  $lte: endDate,
+  $gte: startDate,
+  $lt: endDate,
 });
 
 export const collectionAndProjectInputParser = z.object(collectionAndProjectInputs);

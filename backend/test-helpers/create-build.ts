@@ -31,7 +31,7 @@ export const createBuild = (
       finishTime,
       queueTime,
       reason: 'manual',
-      result: 'success',
+      result: 'succeeded',
       sourceBranch: 'refs/heads/master',
       sourceVersion: 'some-string',
       startTime,

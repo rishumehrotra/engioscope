@@ -4,10 +4,10 @@ import { createRepo } from '../../test-helpers/create-repo.js';
 import { createBuildDefinition } from '../../test-helpers/create-build-definition.js';
 import { createBuild } from '../../test-helpers/create-build.js';
 
-it('Insert Builds', async () => {
+it('Insert build', async () => {
   await createRepo('foo', 'bar', 'repo-1');
   await createBuildDefinition('foo', 'bar', 12_345, 'repo-1');
-  await createBuild('foo', 'bar', 'repo-1', 123, 12_345);
+  await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
 
   const builds = await getBuilds('foo', 'bar', new Date('2022-03-01'));
 
@@ -15,7 +15,7 @@ it('Insert Builds', async () => {
   expect(builds[0].id).toBe(123);
   expect(builds[0].definition.id).toBe(12_345);
 });
-it('gets the build overview', async () => {
+it('Gets the build overview', async () => {
   await createRepo('foo', 'bar', 'repo-1');
   await createBuildDefinition('foo', 'bar', 12_345, 'repo-1');
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345);
