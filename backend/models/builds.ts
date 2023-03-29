@@ -154,10 +154,10 @@ export const getBuildsOverviewForRepository = async ({
             project,
             collectionName,
             'repository.id': repositoryId,
-            'startTime': inDateRange(startDate, endDate),
+            'finishTime': inDateRange(startDate, endDate),
           },
         },
-        { $sort: { startTime: -1 } },
+        { $sort: { finishTime: -1 } },
         {
           $group: {
             _id: {

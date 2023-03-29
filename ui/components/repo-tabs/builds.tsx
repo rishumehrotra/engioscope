@@ -284,10 +284,7 @@ const Builds: React.FC<{
                             </span>
                             <span>
                               {`Failing since ${shortDate(
-                                new Date(
-                                  // pipeline.failingSince.timestamp ||
-                                  pipeline.lastBuildTimestamp
-                                )
+                                new Date(pipeline.failingSince.timestamp)
                               )}`}
                             </span>
                           </>
