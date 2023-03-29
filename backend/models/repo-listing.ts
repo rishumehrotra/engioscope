@@ -84,7 +84,7 @@ export const getActiveRepos = async (
           collectionName,
           project,
           'repository.id': { $in: repos.map(r => r.id) },
-          'startTime': inDateRange(startDate, endDate),
+          'finishTime': inDateRange(startDate, endDate),
         },
       },
       {
