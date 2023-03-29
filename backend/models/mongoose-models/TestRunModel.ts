@@ -86,6 +86,13 @@ const testSchema = new Schema<TestRun>(
   { timestamps: true }
 );
 
+// For writes
+testSchema.index({
+  'collectionName': 1,
+  'project.name': 1,
+  'id': 1,
+});
+
 testSchema.index({
   'collectionName': 1,
   'project.name': 1,
