@@ -14,7 +14,7 @@ it('Given buildId should give a testrun for it', async () => {
   await createBuildDefinition('foo', 'bar', 12_345, 'repo-1');
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
   await createTestRun('foo', 'bar', 123, 12_345);
-  // Action
+  // Act
   const tests = await getTestruns('foo', 'bar', 123);
   // Assert
   expect(tests.length).toBe(1);
