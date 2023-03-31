@@ -166,19 +166,15 @@ export const getCentralTemplatePipeline = async (
       $lookup: {
         from: 'repositories',
         let: {
-          collectionName: '$collectionName',
-          project: '$project',
           repositoryId: '$repositoryId',
         },
         pipeline: [
           {
             $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project.name', '$$project'] },
-                  { $eq: ['$id', '$$repositoryId'] },
-                ],
+              collectionName,
+              'project.name': project,
+              '$expr': {
+                $eq: ['$id', '$$repositoryId'],
               },
             },
           },
@@ -212,8 +208,6 @@ export const getCentralTemplatePipeline = async (
       $lookup: {
         from: 'builds',
         let: {
-          collectionName: '$collectionName',
-          project: '$project',
           repositoryId: '$repositoryId',
           buildDefinitionId: '$buildDefinitionId',
           defaultBranch: '$defaultBranch',
@@ -221,10 +215,10 @@ export const getCentralTemplatePipeline = async (
         pipeline: [
           {
             $match: {
+              collectionName,
+              project,
               $expr: {
                 $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
                   { $eq: ['$repository.id', '$$repositoryId'] },
                   { $eq: ['$definition.id', '$$buildDefinitionId'] },
                   { $eq: ['$sourceBranch', '$$defaultBranch'] },
@@ -401,17 +395,15 @@ export const getNonYamlPipelines = async ({
       $lookup: {
         from: 'builddefinitions',
         let: {
-          collectionName: '$collectionName',
-          project: '$project.name',
           repositoryId: '$id',
         },
         pipeline: [
           {
             $match: {
+              collectionName,
+              project,
               $expr: {
                 $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
                   { $eq: ['$repositoryId', '$$repositoryId'] },
                   { $eq: ['$process.processType', 1] },
                 ],

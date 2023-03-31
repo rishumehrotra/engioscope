@@ -140,7 +140,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
       groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
       ...dateRange,
     },
-    { enabled: showNewBuild }
+    { enabled: showNewBuild === true }
   );
 
   return (
@@ -427,7 +427,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           ]}
         />
       )}
-      {showNewBuild && testsCoverageSummaries.data ? (
+      {showNewBuild === true && testsCoverageSummaries.data ? (
         <>
           <ProjectStat
             topStats={[
@@ -514,16 +514,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             ]}
           />
         </>
-      ) : (
-        <ProjectStat
-          topStats={[
-            {
-              title: 'Loading...',
-              value: '...',
-            },
-          ]}
-        />
-      )}
+      ) : null}
     </ProjectStats>
   );
 };

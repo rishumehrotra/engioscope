@@ -513,18 +513,16 @@ export const getNonYamlPipeLineBuildStats = async ({
       $lookup: {
         from: 'builds',
         let: {
-          collectionName: '$collectionName',
-          project: '$project',
           repositoryId: '$repositoryId',
           definitionId: '$id',
         },
         pipeline: [
           {
             $match: {
+              collectionName,
+              project,
               $expr: {
                 $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
                   { $eq: ['$repository.id', '$$repositoryId'] },
                   { $eq: ['$definition.id', '$$definitionId'] },
                   { $gt: ['$finishTime', startDate] },

@@ -92,18 +92,16 @@ export const getAllRepoDefaultBranchIDs = async (
       $lookup: {
         from: 'branches',
         let: {
-          collectionName: '$collectionName',
-          project: '$project.name',
           id: '$id',
           defaultBranch: '$defaultBranch',
         },
         pipeline: [
           {
             $match: {
+              collectionName,
+              project,
               $expr: {
                 $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
                   { $eq: ['$repositoryId', '$$id'] },
                   { $eq: ['$name', '$$defaultBranch'] },
                 ],

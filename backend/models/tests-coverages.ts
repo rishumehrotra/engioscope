@@ -62,18 +62,16 @@ export const getMainBranchBuildIds = (
       $lookup: {
         from: 'builds',
         let: {
-          collectionName: '$collectionName',
-          project: '$project',
           repositoryId: '$repositoryId',
           defaultBranch: '$defaultBranch',
         },
         pipeline: [
           {
             $match: {
+              collectionName,
+              project,
               $expr: {
                 $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
                   { $eq: ['$repository.id', '$$repositoryId'] },
                   { $eq: ['$sourceBranch', '$$defaultBranch'] },
                   {
@@ -127,27 +125,26 @@ export const getMainBranchBuildIds = (
   ];
 };
 
-export const getTestsForBuildIds: PipelineStage[] = [
+export const getTestsForBuildIds = (
+  collectionName: string,
+  project: string
+): PipelineStage[] => [
   // Assume we're dealing with the data from getMainBranchBuildIds
   {
     $lookup: {
       from: 'testruns',
       let: {
-        collectionName: '$collectionName',
-        project: '$project',
         buildId: '$build.buildId',
       },
       pipeline: [
         {
           $match: {
-            release: { $exists: false },
-            $expr: {
-              $and: [
-                { $eq: ['$collectionName', '$$collectionName'] },
-                { $eq: ['$project.name', '$$project'] },
-                { $eq: ['$buildConfiguration.id', '$$buildId'] },
-              ],
+            collectionName,
+            'project.name': project,
+            '$expr': {
+              $eq: ['$buildConfiguration.id', '$$buildId'],
             },
+            'release': { $exists: false },
           },
         },
         {
@@ -201,7 +198,7 @@ export const getTestsForRepo = async (
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
-    ...getTestsForBuildIds,
+    ...getTestsForBuildIds(collectionName, project),
     {
       $group: {
         _id: '$definitionId',
@@ -230,7 +227,7 @@ export const getOneOldTestForBuildDefID = async (
       startDate,
       queryOlderForDefinitionId(definitionId, startDate)
     ),
-    ...getTestsForBuildIds,
+    ...getTestsForBuildIds(collectionName, project),
     {
       $match: {
         totalTests: { $gt: 0 },

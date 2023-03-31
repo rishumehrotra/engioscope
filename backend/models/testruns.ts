@@ -264,18 +264,16 @@ export const getDefinitionsWithTestsAndCoverages = async (
       $lookup: {
         from: 'builds',
         let: {
-          collectionName: '$collectionName',
-          project: '$project',
           repositoryId: '$repositoryId',
           defaultBranch: '$defaultBranch',
         },
         pipeline: [
           {
             $match: {
+              collectionName,
+              project,
               $expr: {
                 $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
                   { $eq: ['$repository.id', '$$repositoryId'] },
                   { $eq: ['$sourceBranch', '$$defaultBranch'] },
                   {
@@ -440,7 +438,7 @@ export const getTestsByWeek = async (
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
-    ...getTestsForBuildIds,
+    ...getTestsForBuildIds(collectionName, project),
     {
       $group: {
         _id: '$definitionId',
