@@ -1,5 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { last, range } from 'rambda';
+import { byNum, desc } from 'sort-lib';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
@@ -234,35 +235,9 @@ export const getTestRunsAndCoverageForRepo = async ({
     })
   );
 
-  const sortedDefinitionTestsAndCoverage = definitionTestsAndCoverage.sort((a, b) => {
-    if (a.tests && !b.tests) {
-      return -1;
-    }
-
-    if (!a.tests && b.tests) {
-      return 1;
-    }
-
-    if (a.tests && b.tests) {
-      if (a.latestTest?.hasTests && !b.latestTest?.hasTests) {
-        return -1;
-      }
-
-      if (!a.latestTest?.hasTests && b.latestTest?.hasTests) {
-        return 1;
-      }
-
-      if (a.latestTest?.hasTests && b.latestTest?.hasTests) {
-        return a.latestTest.passedTests === b.latestTest.passedTests
-          ? 0
-          : a.latestTest.passedTests > b.latestTest.passedTests
-          ? -1
-          : 1;
-      }
-    }
-    return 0;
-  });
-
+  const sortedDefinitionTestsAndCoverage = definitionTestsAndCoverage.sort(
+    desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)))
+  );
   return sortedDefinitionTestsAndCoverage;
 };
 
