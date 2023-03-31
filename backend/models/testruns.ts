@@ -163,6 +163,7 @@ export const mapDefsTestsAndCoverage = async (
       ? { ...definition, coverageByWeek: coverage.coverageByWeek }
       : definition;
   });
+
   return buildDefsWithTestsAndCoverage;
 };
 
@@ -200,7 +201,7 @@ export const getTestRunsAndCoverageForRepo = async ({
     );
   };
 
-  const definitionTestsAndCoverage = Promise.all(
+  const definitionTestsAndCoverage = await Promise.all(
     testRunsAndCoverageForRepo.map(async def => {
       const tests = await makeContinuous(
         def.tests,
@@ -232,7 +233,37 @@ export const getTestRunsAndCoverageForRepo = async ({
       };
     })
   );
-  return definitionTestsAndCoverage;
+
+  const sortedDefinitionTestsAndCoverage = definitionTestsAndCoverage.sort((a, b) => {
+    if (a.tests && !b.tests) {
+      return -1;
+    }
+
+    if (!a.tests && b.tests) {
+      return 1;
+    }
+
+    if (a.tests && b.tests) {
+      if (a.latestTest?.hasTests && !b.latestTest?.hasTests) {
+        return -1;
+      }
+
+      if (!a.latestTest?.hasTests && b.latestTest?.hasTests) {
+        return 1;
+      }
+
+      if (a.latestTest?.hasTests && b.latestTest?.hasTests) {
+        return a.latestTest.passedTests === b.latestTest.passedTests
+          ? 0
+          : a.latestTest.passedTests > b.latestTest.passedTests
+          ? -1
+          : 1;
+      }
+    }
+    return 0;
+  });
+
+  return sortedDefinitionTestsAndCoverage;
 };
 
 export const getDefinitionsWithTestsAndCoverages = async (
