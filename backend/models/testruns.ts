@@ -1,7 +1,8 @@
 import type { PipelineStage } from 'mongoose';
-import { last, range } from 'rambda';
+import { last, range, tap } from 'rambda';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
+import { startTimer } from '../utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -311,29 +312,31 @@ export const getDefinitionsWithTestsAndCoverages = async (
     },
     { $unwind: { path: '$build' } },
   ];
+  const time = startTimer();
+  const [totalDefs, defsWithTests, defsWithCoverage] = await Promise.all([
+    BuildDefinitionModel.find({
+      collectionName,
+      project,
+      repositoryId: { $in: repoIds },
+    })
+      .count()
+      .then(tap(() => console.log('totalDefs', time()))),
 
-  const [defsWithTests, defsWithCoverage] = await Promise.all([
     RepositoryModel.aggregate<{ count: number }>([
       ...getMainBranchBuildIdsStage,
       {
         $lookup: {
           from: 'testruns',
           let: {
-            collectionName: '$collectionName',
-            project: '$project',
             buildId: '$build.buildId',
           },
           pipeline: [
             {
               $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$collectionName', '$$collectionName'] },
-                    { $eq: ['$project.name', '$$project'] },
-                    { $eq: ['$buildConfiguration.id', '$$buildId'] },
-                  ],
-                },
-                release: { $exists: false },
+                collectionName,
+                'project.name': project,
+                '$expr': { $eq: ['$buildConfiguration.id', '$$buildId'] },
+                'release': { $exists: false },
               },
             },
             {
@@ -367,7 +370,7 @@ export const getDefinitionsWithTestsAndCoverages = async (
           defsWithTests: 1,
         },
       },
-    ]),
+    ]).then(tap(() => console.log('defsWithTests', time()))),
 
     RepositoryModel.aggregate<{ count: number }>([
       ...getMainBranchBuildIdsStage,
@@ -375,19 +378,15 @@ export const getDefinitionsWithTestsAndCoverages = async (
         $lookup: {
           from: 'codecoverages',
           let: {
-            collectionName: '$collectionName',
-            project: '$project',
             buildId: '$build.buildId',
           },
           pipeline: [
             {
               $match: {
+                collectionName,
+                project,
                 '$expr': {
-                  $and: [
-                    { $eq: ['$collectionName', '$$collectionName'] },
-                    { $eq: ['$project', '$$project'] },
-                    { $eq: ['$build.id', '$$buildId'] },
-                  ],
+                  $eq: ['$build.id', '$$buildId'],
                 },
                 'coverageData.coverageStats.label': { $in: ['Branch', 'Branches'] },
               },
@@ -419,10 +418,11 @@ export const getDefinitionsWithTestsAndCoverages = async (
           count: { $size: '$defsWithCoverage' },
         },
       },
-    ]),
+    ]).then(tap(() => console.log('defsWithCoverage', time()))),
   ]);
 
   return {
+    totalDefs,
     defsWithTests: defsWithTests[0]?.count || 0,
     defsWithCoverage: defsWithCoverage[0]?.count || 0,
   };
@@ -533,7 +533,7 @@ export const getCoveragesByWeek = async (
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
-    ...getCoverageForBuildIDs,
+    ...getCoverageForBuildIDs(collectionName, project),
     {
       $group: {
         _id: '$definitionId',

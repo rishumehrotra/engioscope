@@ -45,6 +45,7 @@ export const getMainBranchBuildIds = (
         collectionName,
         'project.name': project,
         'id': { $in: repositoryIds },
+        'defaultBranch': { $exists: true },
       },
     },
     {
@@ -240,25 +241,24 @@ export const getOneOldTestForBuildDefID = async (
   return head(result) || null;
 };
 
-export const getCoverageForBuildIDs: PipelineStage[] = [
+export const getCoverageForBuildIDs = (
+  collectionName: string,
+  project: string
+): PipelineStage[] => [
   // Assume we're dealing with the data from getMainBranchBuildIds
   {
     $lookup: {
       from: 'codecoverages',
       let: {
-        collectionName: '$collectionName',
-        project: '$project',
         buildId: '$build.buildId',
       },
       pipeline: [
         {
           $match: {
+            collectionName,
+            project,
             $expr: {
-              $and: [
-                { $eq: ['$collectionName', '$$collectionName'] },
-                { $eq: ['$project', '$$project'] },
-                { $eq: ['$build.id', '$$buildId'] },
-              ],
+              $eq: ['$build.id', '$$buildId'],
             },
           },
         },
@@ -332,7 +332,7 @@ export const getCoveragesForRepo = async (
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
-    ...getCoverageForBuildIDs,
+    ...getCoverageForBuildIDs(collectionName, project),
     {
       $group: {
         _id: '$definitionId',
@@ -368,7 +368,7 @@ export const getOneOldCoverageForBuildDefID = async (
       startDate,
       queryOlderForDefinitionId(definitionId, startDate)
     ),
-    ...getCoverageForBuildIDs,
+    ...getCoverageForBuildIDs(collectionName, project),
     { $match: { hasCoverage: true } },
     { $limit: 1 },
   ]);

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { last, prop } from 'rambda';
+import { last, prop, tap } from 'rambda';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
@@ -15,7 +15,7 @@ import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
-import { unique } from '../utils.js';
+import { unique, startTimer } from '../utils.js';
 import {
   getCoveragesByWeek,
   getDefinitionsWithTestsAndCoverages,
@@ -33,23 +33,6 @@ const getGroupRepositoryNames = (
   return filterGroups.flatMap(group => groups[group] || []);
 };
 
-const getRepoIdFromNames = async (
-  collectionName: string,
-  project: string,
-  repoNames: string[]
-) => {
-  const result = await RepositoryModel.find(
-    {
-      collectionName,
-      'project.name': project,
-      'name': { $in: repoNames },
-    },
-    { id: 1 }
-  ).lean();
-
-  return result.map(repo => repo.id);
-};
-
 export const getActiveRepos = async (
   collectionName: string,
   project: string,
@@ -58,25 +41,22 @@ export const getActiveRepos = async (
   searchTerm: string | undefined,
   groupsIncluded: string[] | undefined
 ) => {
+  const time = startTimer();
   const groupRepositoryNames = groupsIncluded
     ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
-    : [];
-
-  const groupRepositoryIDs = groupsIncluded
-    ? await getRepoIdFromNames(collectionName, project, groupRepositoryNames)
     : [];
 
   const repos = await RepositoryModel.find(
     {
       collectionName,
       'project.name': project,
-      ...(groupRepositoryIDs.length === 0 ? {} : { id: { $in: groupRepositoryIDs } }),
-
+      ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
       ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
     },
     { id: 1, name: 1 }
   ).lean();
 
+  console.log('Repo names and ids', time());
   const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
     BuildModel.aggregate<{ id: string }>([
       {
@@ -100,13 +80,13 @@ export const getActiveRepos = async (
           id: '$_id',
         },
       },
-    ]),
+    ]).then(tap(() => console.log('has builds', time()))),
     CommitModel.distinct('repositoryId', {
       collectionName,
       project,
       'author.date': inDateRange(startDate, endDate),
       'repositoryId': { $in: repos.map(r => r.id) },
-    }),
+    }).then(tap(() => console.log('has commits', time()))),
   ]);
 
   const activeRepoIds = unique([
@@ -467,6 +447,7 @@ export const getTestsCoverageSummaries = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof getSummaryInputParser>) => {
+  const time = startTimer();
   const activeRepos = await getActiveRepos(
     collectionName,
     project,
@@ -477,7 +458,7 @@ export const getTestsCoverageSummaries = async ({
   );
 
   const activeRepoIds = activeRepos.map(prop('id'));
-
+  console.log('activeRepos', time());
   const [defSummary, weeklyTestsSummary, weeklyCoverageSummary] = await Promise.all([
     getDefinitionsWithTestsAndCoverages(
       collectionName,
@@ -485,12 +466,18 @@ export const getTestsCoverageSummaries = async ({
       startDate,
       endDate,
       activeRepoIds
+    ).then(tap(() => console.log('getDefinitionsWithTestsAndCoverages', time()))),
+    getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate).then(
+      tap(() => console.log('getTestsByWeek', time()))
     ),
-    getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate),
-    getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
+
+    getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate).then(
+      tap(() => console.log('getCoveragesByWeek', time()))
+    ),
   ]);
 
   return {
+    totalDefs: defSummary.totalDefs,
     defsWithTests: defSummary.defsWithTests,
     defsWithCoverage: defSummary.defsWithCoverage,
     weeklyTestsSummary,

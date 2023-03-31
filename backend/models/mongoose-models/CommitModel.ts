@@ -54,7 +54,7 @@ commitSchema.index({
   'collectionName': 1,
   'project': 1,
   'repositoryId': 1,
-  'committer.date': 1,
+  'author.date': 1,
 });
 
 export const CommitModel = model<Commit>('Commit', commitSchema);

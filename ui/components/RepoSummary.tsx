@@ -427,7 +427,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
           ]}
         />
       )}
-      {showNewBuild && testsCoverageSummaries.data && summaries.data ? (
+      {showNewBuild && testsCoverageSummaries.data ? (
         <>
           <ProjectStat
             topStats={[
@@ -435,12 +435,12 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Pipelines running tests',
                 value: divide(
                   testsCoverageSummaries.data.defsWithTests,
-                  summaries.data.pipelines.totalCount
+                  testsCoverageSummaries.data.totalDefs
                 )
                   .map(toPercentage)
                   .getOr('-'),
                 tooltip: `${num(testsCoverageSummaries.data.defsWithTests)} of ${num(
-                  summaries.data.pipelines.totalCount
+                  testsCoverageSummaries.data.totalDefs
                 )} pipelines report test results`,
               },
             ]}
@@ -449,12 +449,12 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Reporting coverage',
                 value: divide(
                   testsCoverageSummaries.data.defsWithCoverage,
-                  summaries.data.pipelines.totalCount
+                  testsCoverageSummaries.data.totalDefs
                 )
                   .map(toPercentage)
                   .getOr('-'),
                 tooltip: `${num(testsCoverageSummaries.data.defsWithCoverage)} of ${num(
-                  summaries.data.pipelines.totalCount
+                  testsCoverageSummaries.data.totalDefs
                 )} pipelines report branch coverage`,
               },
             ]}
@@ -514,7 +514,16 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
             ]}
           />
         </>
-      ) : null}
+      ) : (
+        <ProjectStat
+          topStats={[
+            {
+              title: 'Loading...',
+              value: '...',
+            },
+          ]}
+        />
+      )}
     </ProjectStats>
   );
 };
