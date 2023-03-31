@@ -1,8 +1,7 @@
 import type { PipelineStage } from 'mongoose';
-import { last, range, tap } from 'rambda';
+import { last, range } from 'rambda';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
-import { startTimer } from '../utils.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -312,15 +311,13 @@ export const getDefinitionsWithTestsAndCoverages = async (
     },
     { $unwind: { path: '$build' } },
   ];
-  const time = startTimer();
+
   const [totalDefs, defsWithTests, defsWithCoverage] = await Promise.all([
     BuildDefinitionModel.find({
       collectionName,
       project,
       repositoryId: { $in: repoIds },
-    })
-      .count()
-      .then(tap(() => console.log('totalDefs', time()))),
+    }).count(),
 
     RepositoryModel.aggregate<{ count: number }>([
       ...getMainBranchBuildIdsStage,
@@ -370,7 +367,7 @@ export const getDefinitionsWithTestsAndCoverages = async (
           defsWithTests: 1,
         },
       },
-    ]).then(tap(() => console.log('defsWithTests', time()))),
+    ]),
 
     RepositoryModel.aggregate<{ count: number }>([
       ...getMainBranchBuildIdsStage,
@@ -418,7 +415,7 @@ export const getDefinitionsWithTestsAndCoverages = async (
           count: { $size: '$defsWithCoverage' },
         },
       },
-    ]).then(tap(() => console.log('defsWithCoverage', time()))),
+    ]),
   ]);
 
   return {
