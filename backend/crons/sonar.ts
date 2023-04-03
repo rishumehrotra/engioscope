@@ -1,6 +1,12 @@
-import { getConnections } from '../models/connections.js';
-import { SonarProjectModel } from '../models/mongoose-models/sonar-models.js';
-import { projectsAtSonarServer } from '../scraper/network/sonar2.js';
+import type { ObjectId } from 'mongoose';
+import { getConnectionById, getConnections } from '../models/connections.js';
+import type { SonarConnection } from '../models/mongoose-models/ConnectionModel.js';
+import type { SonarProject } from '../models/mongoose-models/sonar-models.js';
+import {
+  SonarMeasuresModel,
+  SonarProjectModel,
+} from '../models/mongoose-models/sonar-models.js';
+import { getMeasures, projectsAtSonarServer } from '../scraper/network/sonar2.js';
 
 export const refreshSonarProjects = async () => {
   const sonarConnections = await getConnections('sonar');
@@ -23,4 +29,18 @@ export const refreshSonarProjects = async () => {
       );
     })
   );
+};
+
+export const saveMeasuresForProject = async (
+  sonarProject: SonarProject & { _id: ObjectId }
+) => {
+  const connection = await getConnectionById<SonarConnection>(sonarProject.connectionId);
+  const measures = await getMeasures(connection)(sonarProject);
+
+  const doc = new SonarMeasuresModel({
+    fetchDate: new Date(),
+    measures,
+    sonarProjectId: sonarProject._id,
+  });
+  return doc.save();
 };

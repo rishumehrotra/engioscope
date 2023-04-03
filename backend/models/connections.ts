@@ -37,8 +37,8 @@ export function getConnections(type?: Connection['type']) {
 }
 /* eslint-enable */
 
-export const getConnectionById = (id: ObjectId | string) =>
-  ConnectionModel.findOne({ _id: id }).lean();
+export const getConnectionById = <T extends Connection>(id: ObjectId | string) =>
+  ConnectionModel.findOne({ _id: id }).lean() as Promise<T & { _id: ObjectId }>;
 
 export const createAzurePATConnection = (connection: Omit<AzurePATConnection, 'type'>) =>
   AzurePATConnectionModel.create(connection);

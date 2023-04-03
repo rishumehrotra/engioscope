@@ -1,3 +1,4 @@
+import type { Types } from 'mongoose';
 import { normalizeBranchName, unique } from '../utils.js';
 import type { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
@@ -38,7 +39,9 @@ export const attemptMatchFromBuildReports = async (
 };
 
 const attemptExactMatchFind = async (repoName: string) => {
-  const projects = await SonarProjectModel.aggregate<SonarProject>([
+  const projects = await SonarProjectModel.aggregate<
+    SonarProject & { _id: Types.ObjectId }
+  >([
     { $match: { lastAnalysisDate: { $exists: true } } },
     {
       $addFields: {
@@ -56,7 +59,9 @@ const attemptExactMatchFind = async (repoName: string) => {
 };
 
 const attemptStartsWithFind = async (repoName: string) => {
-  const projects = await SonarProjectModel.aggregate<SonarProject>([
+  const projects = await SonarProjectModel.aggregate<
+    SonarProject & { _id: Types.ObjectId }
+  >([
     { $match: { lastAnalysisDate: { $exists: true } } },
     {
       $addFields: {

@@ -1,28 +1,31 @@
-// import qs from 'qs';
+import qs from 'qs';
 import { map } from 'rambda';
-// import fetch from './fetch-with-extras.js';
-// import { requiredMetrics } from '../stats-aggregators/code-quality.js';
-// import fetchWithDiskCache from './fetch-with-disk-cache.js';
+import fetch from './fetch-with-extras.js';
+import { requiredMetrics } from '../stats-aggregators/code-quality.js';
+import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import createPaginatedGetter from './create-paginated-getter.js';
-// import type { Measure, SonarQualityGate } from '../types-sonar.js';
+import type { Measure } from '../types-sonar.js';
 import type { SonarConfig } from '../parse-config.js';
 // import { pastDate } from '../../utils.js';
 import { getConfig } from '../../config.js';
+import type { SonarConnection } from '../../models/mongoose-models/ConnectionModel.js';
+import type { SonarProject } from '../../models/mongoose-models/sonar-models.js';
 
-export type SonarProject = {
-  organization?: string;
-  id: string;
-  key: string;
-  name: string;
-  qualifier: string;
-  visibility: string;
-  lastAnalysisDate?: Date;
-};
-
-type SonarPaging = {
-  pageIndex: number;
-  pageSize: number;
-  total: number;
+type SonarSearchResponse = {
+  paging: {
+    pageIndex: number;
+    pageSize: number;
+    total: number;
+  };
+  components: {
+    organization?: string;
+    id: string;
+    key: string;
+    name: string;
+    qualifier: string;
+    visibility: string;
+    lastAnalysisDate?: Date;
+  }[];
 };
 
 // type MeasureDefinition = {
@@ -67,7 +70,6 @@ export const projectsAtSonarServer = (sonarServer: SonarConfig) => {
     getConfig().cacheTimeMs,
     sonarServer.verifySsl ?? true
   );
-  type SonarSearchResponse = { paging: SonarPaging; components: SonarProject[] };
 
   return paginatedGet<SonarSearchResponse>({
     url: `${sonarServer.url}/api/projects/search`,
@@ -81,7 +83,11 @@ export const projectsAtSonarServer = (sonarServer: SonarConfig) => {
     }),
     hasAnotherPage: previousResponse =>
       previousResponse.data.paging.pageSize === previousResponse.data.components.length,
-    qsParams: pageIndex => ({ ps: '500', p: (pageIndex + 1).toString() }),
+    qsParams: pageIndex => ({
+      qualifiers: 'TRK', // Search projects only
+      ps: '500',
+      p: (pageIndex + 1).toString(),
+    }),
   })
     .then(responses => responses.map(response => response.data.components))
     .then(projects => projects.flat())
@@ -108,35 +114,54 @@ export const projectsAtSonarServer = (sonarServer: SonarConfig) => {
 //   ).then(res => res.data.metrics);
 // };
 
-// export const getMeasures = (sonarProject: SonarProject) => {
-//   const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
+export const lastAnalysisDateForProject =
+  (sonarServer: SonarConnection) => (sonarProject: SonarProject) => {
+    const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
 
-//   return usingDiskCache<{ component?: { measures: Measure[] } }>(
-//     ['sonar', 'measures', sonarProject.key],
-//     () =>
-//       fetch(
-//         `${sonarProject.url}/api/measures/component?${qs.stringify({
-//           component: sonarProject.key,
-//           metricKeys: requiredMetrics.join(','),
-//         })}`,
-//         {
-//           headers: {
-//             Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString(
-//               'base64'
-//             )}`,
-//           },
-//           verifySsl: sonarProject.verifySsl ?? true,
-//         }
-//       )
-//   ).then(res => ({
-//     name: sonarProject.name,
-//     url: `${sonarProject.url}/dashboard?id=${sonarProject.key}`,
-//     measures: res.data.component?.measures || [],
-//     lastAnalysisDate: sonarProject.lastAnalysisDate
-//       ? new Date(sonarProject.lastAnalysisDate)
-//       : null,
-//   }));
-// };
+    return usingDiskCache<{ component?: { analysisDate?: string } }>(
+      ['sonar', 'analysis-date', sonarProject.key],
+      () =>
+        fetch(
+          `${sonarServer.url}/api/components/show?${qs.stringify({
+            component: sonarProject.key,
+          })}`,
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString(
+                'base64'
+              )}`,
+            },
+            verifySsl: sonarServer.verifySsl ?? true,
+          }
+        )
+    ).then(res =>
+      res.data.component?.analysisDate ? new Date(res.data.component.analysisDate) : null
+    );
+  };
+
+export const getMeasures =
+  (sonarServer: SonarConnection) => (sonarProject: SonarProject) => {
+    const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
+
+    return usingDiskCache<{ component?: { measures: Measure[] } }>(
+      ['sonar', 'measures', sonarProject.key],
+      () =>
+        fetch(
+          `${sonarServer.url}/api/measures/component?${qs.stringify({
+            component: sonarProject.key,
+            metricKeys: requiredMetrics.join(','),
+          })}`,
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString(
+                'base64'
+              )}`,
+            },
+            verifySsl: sonarServer.verifySsl ?? true,
+          }
+        )
+    ).then(res => res.data.component?.measures || []);
+  };
 
 // export const getQualityGateName = (sonarProject: SonarProject) => {
 //   const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
