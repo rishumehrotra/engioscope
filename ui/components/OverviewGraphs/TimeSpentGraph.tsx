@@ -20,6 +20,7 @@ import { WorkItemFlatList } from './helpers/modal-helpers.js';
 import { PriorityFilter, SizeFilter } from './helpers/MultiSelectFilters.js';
 import type { TooltipSection } from './helpers/tooltips.js';
 import { createCompletedWorkItemTooltip } from './helpers/tooltips.js';
+import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 
 const indexOfStateLabel = (workItemType: UIWorkItemType, stateLabel: string) => {
   if (stateLabel.startsWith('Before ')) return 0;
@@ -386,6 +387,8 @@ const TimeSpentGraph: React.FC<TimeSpentGraphProps> = ({
   accessors,
   openModal,
 }) => {
+  const [showAll] = useQueryParam('time-spent', asBoolean);
+
   const workItemTooltip = useMemo(
     () => createCompletedWorkItemTooltip(accessors),
     [accessors]
@@ -407,7 +410,8 @@ const TimeSpentGraph: React.FC<TimeSpentGraphProps> = ({
       {Object.entries(organised)
         .filter(([, group]) => Object.values(group).flat().length)
         .filter(
-          ([witId]) => accessors.workItemType(witId).name[0].toLowerCase() === 'feature'
+          ([witId]) =>
+            showAll || accessors.workItemType(witId).name[0].toLowerCase() === 'feature'
         )
         .map(([witId, groups]) => (
           <TimeSpentGraphInner
