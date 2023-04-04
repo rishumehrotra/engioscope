@@ -43,13 +43,14 @@ const Collection: React.FC = () => {
   >();
   const setProjectDetails = useSetProjectDetails();
   const setHeaderDetails = useSetHeaderDetails();
-  const [showNewBuild] = useQueryParam('search-box', asBoolean);
-
-  // const [searchTerm, setSearchTerm] = useState<string>('');
+  const [showSearchBox] = useQueryParam('search-box', asBoolean);
+  const [showCollections, setShowCollections] = useState(false);
 
   const [openedCollections, setOpenedCollections] = useState<string[]>([]);
 
-  const collectionList = trpc.collections.allCollections.useQuery();
+  const collectionList = trpc.collections.allCollections.useQuery(undefined, {
+    enabled: showCollections,
+  });
 
   const handleCollectionToggle = useCallback(
     (collectionName: string) => () => {
@@ -70,6 +71,7 @@ const Collection: React.FC = () => {
   useEffect(() => {
     setProjectDetails(null);
   }, [setProjectDetails]);
+
   useEffect(() => {
     setHeaderDetails({ title: 'Projects', lastUpdated: analysedProjects?.lastUpdated });
   }, [analysedProjects, setHeaderDetails]);
@@ -88,49 +90,60 @@ const Collection: React.FC = () => {
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      <div className="pb-8">
-        <SearchAutocomplete />
-        {showNewBuild && collectionList.data
-          ? collectionList.data.map(collection => (
+      <div>
+        {showSearchBox && <SearchAutocomplete />}
+        {showSearchBox ? (
+          <details>
+            <summary onClick={() => setShowCollections(true)} className="cursor-pointer">
+              Browse collections
+            </summary>
+            {(collectionList.data || []).map(collection => (
               <details
-                className="mb-2 mt-2"
+                className="my-1 ml-4"
                 key={collection.name}
                 onToggle={handleCollectionToggle(collection.name)}
               >
-                <summary className="bg-slate-900 -50 px-6 py-4 rounded-t-lg text-white font-semibold text-2xl">
-                  {collection.name} ({collection.projectsCount})
+                <summary className="cursor-pointer">
+                  {`${collection.name} `}
+                  <span className="text-gray-600">
+                    ({collection.projectsCount} projects)
+                  </span>
                 </summary>
+                <h2 className="bg-slate-900 -50 px-6 py-4 rounded-t-lg text-white font-semibold text-2xl mt-4">
+                  {collection.name}
+                  <span className="text-gray-400">{` (${collection.projectsCount} projects)`}</span>
+                </h2>
                 {openedCollections.includes(collection.name) ? (
                   <CollectionProjectsGrid collectionName={collection.name} />
                 ) : null}
               </details>
-            ))
-          : null}
-      </div>
-      {grouped ? (
-        grouped.map(([collection, projects]) => (
-          <div
-            key={collection}
-            className="bg-gray-100 mb-14 rounded-xl border border-gray-300 overflow-hidden"
-          >
-            <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">
-              {collection}
-              <span className="inline-block pl-4 text-base text-gray-400 pb-2">{`${projects.length} projects`}</span>
-            </h2>
-            <div className="grid grid-flow-row grid-cols-3 gap-4 p-10">
-              {projects.sort(asc(byString(p => p.name[1]))).map(p => (
-                <Project
-                  key={p.name[1]}
-                  projectName={p.name[1]}
-                  route={`/${p.name.join('/')}/`}
-                />
-              ))}
+            ))}
+          </details>
+        ) : grouped ? (
+          grouped.map(([collection, projects]) => (
+            <div
+              key={collection}
+              className="bg-gray-100 mb-14 rounded-xl border border-gray-300 overflow-hidden"
+            >
+              <h2 className="text-2xl px-6 py-4 font-semibold bg-gray-900 text-white">
+                {collection}
+                <span className="inline-block pl-4 text-base text-gray-400 pb-2">{`${projects.length} projects`}</span>
+              </h2>
+              <div className="grid grid-flow-row grid-cols-3 gap-4 p-10">
+                {projects.sort(asc(byString(p => p.name[1]))).map(p => (
+                  <Project
+                    key={p.name[1]}
+                    projectName={p.name[1]}
+                    route={`/${p.name.join('/')}/`}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ))
-      ) : (
-        <Loading />
-      )}
+          ))
+        ) : (
+          <Loading />
+        )}
+      </div>
     </div>
   );
 };

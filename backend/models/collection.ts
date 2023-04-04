@@ -1,27 +1,8 @@
 import { z } from 'zod';
-import { collectionsAndProjects } from '../config.js';
+import { collectionsAndProjects, collections } from '../config.js';
 
 export const getAllCollections = () => {
-  const result = collectionsAndProjects()
-    .map(([collection, project]) => {
-      return {
-        name: collection.name,
-        project: project.name,
-      };
-    })
-    .reduce<{ name: string; projectsCount: number }[]>((acc, curr) => {
-      const index = acc.findIndex(item => item.name === curr.name);
-      if (index < 0) {
-        acc.push({
-          name: curr.name,
-          projectsCount: 1,
-        });
-      } else {
-        acc[index].projectsCount += 1;
-      }
-      return acc;
-    }, []);
-  return result;
+  return collections().map(c => ({ name: c.name, projectsCount: c.projects.length }));
 };
 
 export const CollectionInputParser = z.object({
@@ -30,16 +11,9 @@ export const CollectionInputParser = z.object({
 export const getProjectsForCollection = ({
   collectionName,
 }: z.infer<typeof CollectionInputParser>) => {
-  const result = collectionsAndProjects()
-    .map(([collection, project]) => {
-      return {
-        name: collection.name,
-        project: project.name,
-      };
-    })
-    .filter(item => item.name === collectionName);
-
-  return result;
+  return collections()
+    .find(c => c.name === collectionName)
+    ?.projects.map(p => p.name);
 };
 
 export const ProjectSearchInputParser = z.object({
@@ -49,14 +23,15 @@ export const ProjectSearchInputParser = z.object({
 export const searchProjects = ({
   searchTerm,
 }: z.infer<typeof ProjectSearchInputParser>) => {
-  const result = collectionsAndProjects()
+  return collectionsAndProjects()
+    .filter(([, project]) =>
+      project.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+    )
     .map(([collection, project]) => {
       return {
         name: collection.name,
         project: project.name,
       };
     })
-    .filter(item => item.project.toLowerCase().startsWith(searchTerm));
-
-  return result;
+    .slice(0, 7);
 };

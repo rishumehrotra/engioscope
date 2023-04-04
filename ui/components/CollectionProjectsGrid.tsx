@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { asc, byString } from 'sort-lib';
+import { identity } from 'rambda';
 import { trpc } from '../helpers/trpc.js';
 
 const Project: React.FC<{
@@ -38,11 +39,11 @@ const CollectionProjectsGrid: React.FC<{
 
   return (
     <div className="border border-gray-300 bg-gray-100 rounded-b-lg grid grid-flow-row grid-cols-3 gap-4 p-10">
-      {projectsList.data.sort(asc(byString(c => c.project))).map(collection => (
+      {projectsList.data.sort(asc(byString(identity))).map(project => (
         <Project
-          key={collection.name}
-          projectName={collection.project}
-          route={`/${collection.name}/${collection.project}/`}
+          key={project}
+          projectName={project}
+          route={`/${collectionName}/${project}/`}
         />
       ))}
     </div>
