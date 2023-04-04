@@ -1,11 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { asc, byString } from 'sort-lib';
 import type { AnalysedProjects, ScrapedProject } from '../../shared/types.js';
 import Loading from '../components/Loading.js';
+import SearchAutocomplete from '../components/SearchAutocomplete.jsx';
+import { trpc } from '../helpers/trpc.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
+import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { fetchCollections } from '../network.js';
+import CollectionProjectsGrid from '../components/CollectionProjectsGrid';
 
 const Project: React.FC<{
   projectName: string;
@@ -39,12 +43,30 @@ const Collection: React.FC = () => {
   >();
   const setProjectDetails = useSetProjectDetails();
   const setHeaderDetails = useSetHeaderDetails();
+  const [showNewBuild] = useQueryParam('search-box', asBoolean);
 
+  // const [searchTerm, setSearchTerm] = useState<string>('');
+
+  const [openedCollections, setOpenedCollections] = useState<string[]>([]);
+
+  const collectionList = trpc.collections.allCollections.useQuery();
+
+  const handleCollectionToggle = useCallback(
+    (collectionName: string) => () => {
+      if (openedCollections.includes(collectionName)) {
+        setOpenedCollections(openedCollections.filter(c => c !== collectionName));
+      } else {
+        setOpenedCollections([...openedCollections, collectionName]);
+      }
+    },
+    [openedCollections]
+  );
   useEffect(() => {
     // TODO: Error handling
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     fetchCollections().then(setAnalysedProjects);
   }, []);
+
   useEffect(() => {
     setProjectDetails(null);
   }, [setProjectDetails]);
@@ -66,6 +88,25 @@ const Collection: React.FC = () => {
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
+      <div className="pb-8">
+        <SearchAutocomplete />
+        {showNewBuild && collectionList.data
+          ? collectionList.data.map(collection => (
+              <details
+                className="mb-2 mt-2"
+                key={collection.name}
+                onToggle={handleCollectionToggle(collection.name)}
+              >
+                <summary className="bg-slate-900 -50 px-6 py-4 rounded-t-lg text-white font-semibold text-2xl">
+                  {collection.name} ({collection.projectsCount})
+                </summary>
+                {openedCollections.includes(collection.name) ? (
+                  <CollectionProjectsGrid collectionName={collection.name} />
+                ) : null}
+              </details>
+            ))
+          : null}
+      </div>
       {grouped ? (
         grouped.map(([collection, projects]) => (
           <div
