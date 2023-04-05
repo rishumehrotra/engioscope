@@ -33,7 +33,7 @@ const SearchCombobox = () => {
     <div className="grid place-items-center">
       <div className="w-1/2 relative">
         <input
-          placeholder="Search projects..."
+          placeholder="Search Azure DevOps projects…"
           className="text-3xl py-2 px-3 my-14 inline-block rounded-md border-gray-900 border-1 w-full"
           {...getInputProps()}
           // eslint-disable-next-line jsx-a11y/no-autofocus

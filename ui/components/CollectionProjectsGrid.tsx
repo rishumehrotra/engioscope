@@ -13,7 +13,7 @@ const Project: React.FC<{
     key={route}
     title={projectName}
     className={[
-      'grid grid-flow-col justify-start group link-text text-lg py-3 px-4',
+      'grid grid-flow-col justify-start group link-text py-3 px-4',
       'hover:bg-gray-200 rounded-xl hover:no-underline border border-transparent',
       'hover:border-gray-300',
     ].join(' ')}
@@ -38,7 +38,7 @@ const CollectionProjectsGrid: React.FC<{
   if (!projectsList.data) return null;
 
   return (
-    <div className="border border-gray-300 bg-gray-100 rounded-b-lg grid grid-flow-row grid-cols-3 gap-4 p-10">
+    <div className="border border-gray-300 bg-gray-100 rounded-b-lg grid grid-flow-row grid-cols-4 gap-2 p-4 ml-4">
       {projectsList.data.sort(asc(byString(identity))).map(project => (
         <Project
           key={project}
