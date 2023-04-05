@@ -9,6 +9,7 @@ import AlertMessage from '../common/AlertMessage.jsx';
 import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
 import { increaseIsBetter } from '../summary-page/utils.jsx';
 import TabContents from './TabContents.jsx';
+import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.jsx';
 
 const BuildPipelineTests: React.FC<{
   repositoryId: string;
@@ -72,10 +73,13 @@ const BuildPipelineTests: React.FC<{
                             {pipeline.name}
                           </a>
                         }
-                        data={pipeline.tests.map(t => (t.hasTests ? t.totalTests : 0))}
+                        data={pipeline.tests.map(t =>
+                          t.hasTests ? t.totalTests : undefined
+                        )}
                         lineColor={increaseIsBetter(
                           pipeline.tests.map(t => (t.hasTests ? t.totalTests : 0))
                         )}
+                        renderer={pathRendererSkippingUndefineds}
                       />
                     ) : (
                       <a
@@ -131,8 +135,9 @@ const BuildPipelineTests: React.FC<{
                           c.coverage
                             ? divide(c.coverage.coveredBranches, c.coverage.totalBranches)
                                 .map(multiply(100))
-                                .getOr(0)
-                            : 0
+                                // eslint-disable-next-line unicorn/no-useless-undefined
+                                .getOr(undefined)
+                            : undefined
                         )}
                         lineColor={increaseIsBetter(
                           (pipeline.coverageByWeek || []).map(c => {
@@ -145,6 +150,7 @@ const BuildPipelineTests: React.FC<{
                           })
                         )}
                         yAxisLabel={x => `${x}%`}
+                        renderer={pathRendererSkippingUndefineds}
                       />
                     ) : (
                       '-'
