@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { asc, byString } from 'sort-lib';
 import type { AnalysedProjects, ScrapedProject } from '../../shared/types.js';
 import Loading from '../components/Loading.js';
-import SearchAutocomplete from '../components/SearchAutocomplete.jsx';
 import { trpc } from '../helpers/trpc.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { fetchCollections } from '../network.js';
 import CollectionProjectsGrid from '../components/CollectionProjectsGrid';
+import SearchCombobox from '../components/search-ui/SearchCombobox.jsx';
 
 const Project: React.FC<{
   projectName: string;
@@ -91,7 +91,7 @@ const Collection: React.FC = () => {
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
       <div>
-        {showSearchBox && <SearchAutocomplete />}
+        {showSearchBox && <SearchCombobox />}
         {showSearchBox ? (
           <details>
             <summary onClick={() => setShowCollections(true)} className="cursor-pointer">
