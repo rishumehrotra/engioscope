@@ -9,7 +9,7 @@ import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { fetchCollections } from '../network.js';
 import CollectionProjectsGrid from '../components/CollectionProjectsGrid';
-import SearchCombobox from '../components/search-ui/SearchCombobox.jsx';
+import SearchCombobox from '../components/SearchCombobox.jsx';
 
 const Project: React.FC<{
   projectName: string;

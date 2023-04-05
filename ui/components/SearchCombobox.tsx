@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCombobox } from 'downshift';
 import { useNavigate } from 'react-router-dom';
-import { trpc } from '../../helpers/trpc.js';
+import { trpc } from '../helpers/trpc.js';
 
 const SearchCombobox = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -11,43 +11,37 @@ const SearchCombobox = () => {
     { enabled: searchTerm.length > 0 }
   );
 
-  const {
-    isOpen,
-    getMenuProps,
-    getInputProps,
-    highlightedIndex,
-    getItemProps,
-    selectedItem,
-  } = useCombobox({
-    onSelectedItemChange({ selectedItem }) {
-      if (selectedItem) {
-        navigate(`/${selectedItem.name}/${selectedItem.project}/`);
-      }
-    },
-    onInputValueChange({ inputValue }) {
-      setSearchTerm(inputValue || '');
-    },
-    items: searchResult.data || [],
-    itemToString(item) {
-      return item ? item.name : '';
-    },
-    initialHighlightedIndex: 0,
-    defaultHighlightedIndex: 0,
-  });
+  const { isOpen, getMenuProps, getInputProps, highlightedIndex, getItemProps } =
+    useCombobox({
+      onSelectedItemChange({ selectedItem }) {
+        if (selectedItem) {
+          navigate(`/${selectedItem.name}/${selectedItem.project}/`);
+        }
+      },
+      onInputValueChange({ inputValue }) {
+        setSearchTerm(inputValue || '');
+      },
+      items: searchResult.data || [],
+      itemToString(item) {
+        return item ? item.name : '';
+      },
+      initialHighlightedIndex: 0,
+      defaultHighlightedIndex: 0,
+    });
 
   return (
-    <div className="flex justify-center">
-      <div className="inline-block relative">
+    <div className="grid place-items-center">
+      <div className="w-1/2 relative">
         <input
           placeholder="Search projects..."
-          className="text-2xl py-2 px-3 inline-block rounded-md  border-gray-900 border-1 shadow-md"
+          className="text-3xl py-2 px-3 my-14 inline-block rounded-md border-gray-900 border-1 w-full"
           {...getInputProps()}
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
         />
 
         <ul
-          className={`border-solid border-1 border-stone-950 block bg-white mt-1 p-3 w-full rounded-md shadow-sm absolute ${
+          className={`p-3 w-full rounded-md shadow-sm absolute top-24 mt-5 border border-gray-100 bg-white ${
             !(isOpen && searchResult.data?.length) && 'hidden'
           }`}
           {...getMenuProps()}
@@ -55,16 +49,14 @@ const SearchCombobox = () => {
           {isOpen &&
             searchResult.data &&
             searchResult.data.map((item, index) => (
-              <li
-                className={`py-2 px-3 rounded-md ${
-                  highlightedIndex === index ? 'bg-gray-100' : 'bg-white'
-                } ${selectedItem === item ? 'font-bold' : 'normal'}`}
-                key={`${item.project}`}
-                {...getItemProps({ item, index })}
-              >
+              <li key={`${item.project}`} {...getItemProps({ item, index })}>
                 <button
                   type="button"
-                  className="text-left w-full"
+                  className={`py-2 px-3 mb-1 rounded-md text-left w-full border ${
+                    highlightedIndex === index
+                      ? 'bg-gray-100 border-gray-300'
+                      : 'bg-white border-transparent'
+                  }`}
                   onClick={() => {
                     navigate(`/${item.name}/${item.project}/`);
                   }}
