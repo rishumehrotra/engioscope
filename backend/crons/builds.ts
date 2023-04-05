@@ -1,4 +1,4 @@
-import { oneYearInMs } from '../../shared/utils.js';
+import { exists, oneYearInMs } from '../../shared/utils.js';
 import { collectionsAndProjects, getConfig } from '../config.js';
 import { BuildTimelineModel } from '../models/mongoose-models/BuildTimelineModel.js';
 import {
@@ -11,6 +11,10 @@ import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray } from '../utils.js';
 import { CodeCoverageModel } from '../models/mongoose-models/CodeCoverage.js';
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
+import { getRepoById } from '../models/repos.js';
+import { getMatchingSonarProjects } from '../models/sonar.js';
+import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
+import { saveMeasuresForProject } from './sonar.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -138,11 +142,11 @@ const syncBuildTimelines = (
   );
 };
 
-async function getBuildTimelines(
+const getBuildTimelines = async (
   collection: string,
   project: string,
   builds: AzureBuild[]
-) {
+) => {
   const { getBuildTimeline } = azure(getConfig());
 
   const missingBuildIds = await missingTimelines(
@@ -155,7 +159,41 @@ async function getBuildTimelines(
     await acc;
     await syncBuildTimelines(chunk, getBuildTimeline, collection, project, builds);
   }, Promise.resolve());
-}
+};
+
+const updateSonar = async (
+  collectionName: string,
+  project: string,
+  builds: AzureBuild[]
+) => {
+  const reposToFetch = [
+    ...builds.reduce((acc, build) => {
+      acc.add(build.repository.id);
+      return acc;
+    }, new Set<string>()),
+  ];
+
+  const sonarProjects = (
+    await Promise.all(
+      reposToFetch.map(async repoId => {
+        const repo = await getRepoById(collectionName, project, repoId);
+        if (!repo) return;
+
+        const { defaultBranch, name } = repo;
+
+        return getMatchingSonarProjects(
+          name,
+          defaultBranch,
+          latestBuildReportsForRepoAndBranch(collectionName, project)
+        );
+      })
+    )
+  )
+    .flat()
+    .filter(exists);
+
+  return Promise.all(sonarProjects.map(saveMeasuresForProject));
+};
 
 const saveBuilds = (collectionName: string, project: string) => {
   return async (builds: AzureBuild[]) => {
@@ -169,6 +207,7 @@ const saveBuilds = (collectionName: string, project: string) => {
         project,
         builds.map(b => b.id)
       ),
+      updateSonar(collectionName, project, builds),
     ]);
   };
 };

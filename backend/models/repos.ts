@@ -2,6 +2,7 @@ import type { ObjectId } from 'mongoose';
 import { z } from 'zod';
 import { collectionAndProjectInputs } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import { normalizeBranchName } from '../utils.js';
 
 export const getRepositories = (collectionName: string, project: string) =>
   RepositoryModel.find({ collectionName, 'project.name': project }).lean();
@@ -41,6 +42,18 @@ export const searchRepositories = async (
   return result;
 };
 
+export const getRepoById = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string
+) => {
+  return RepositoryModel.findOne({
+    collectionName,
+    'project.name': project,
+    'id': repositoryId,
+  }).lean();
+};
+
 export const repoDefaultBranch = async (
   collectionName: string,
   project: string,
@@ -56,7 +69,9 @@ export const repoDefaultBranch = async (
       defaultBranch: 1,
     }
   );
-  return repoBranch?.defaultBranch?.replace('refs/heads/', '');
+  return repoBranch?.defaultBranch
+    ? normalizeBranchName(repoBranch.defaultBranch)
+    : undefined;
 };
 
 export const getAllRepoDefaultBranchIDs = async (
