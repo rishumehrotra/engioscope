@@ -224,13 +224,18 @@ export const getTestRunsAndCoverageForRepo = async ({
         }
       );
 
+      const latestTest = tests ? [...tests.reverse()].find(t => t.hasTests) : null;
+      const latestCoverage = coverageData
+        ? [...coverageData.reverse()].find(t => t.hasCoverage)
+        : null;
+
       return {
         ...def,
         url: `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`,
         tests,
         coverageByWeek: coverageData,
-        latestTest: tests ? last(tests) : null,
-        latestCoverage: coverageData ? last(coverageData) : null,
+        latestTest,
+        latestCoverage,
       };
     })
   );

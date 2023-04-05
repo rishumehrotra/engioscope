@@ -34,7 +34,8 @@ const BuildPipelineTests: React.FC<{
           <table className="table">
             <thead>
               <tr>
-                <th>Name</th>
+                {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+                <th />
                 <th>
                   <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
                     {' '}
@@ -94,13 +95,13 @@ const BuildPipelineTests: React.FC<{
                     )}
                   </td>
                   {/* Passed Tests */}
-                  <td>
+                  <td className={pipeline.latestTest?.hasTests ? '' : 'opacity-60'}>
                     {pipeline.latestTest?.hasTests
                       ? pipeline.latestTest.passedTests
                       : '_'}
                   </td>
                   {/* Failed Tests */}
-                  <td>
+                  <td className={pipeline.latestTest?.hasTests ? '' : 'opacity-60'}>
                     {pipeline.latestTest?.hasTests
                       ? subtract(
                           pipeline.latestTest.totalTests,
@@ -109,7 +110,7 @@ const BuildPipelineTests: React.FC<{
                       : '_'}
                   </td>
                   {/* Execution Time */}
-                  <td>
+                  <td className={pipeline.latestTest?.hasTests ? '' : 'opacity-60'}>
                     {pipeline.latestTest?.hasTests
                       ? prettyMs(
                           pipeline.latestTest.completedDate.getTime() -
@@ -122,14 +123,18 @@ const BuildPipelineTests: React.FC<{
                     {pipeline.coverageByWeek ? (
                       <LabelWithSparkline
                         label={
-                          pipeline.latestCoverage?.coverage
-                            ? divide(
-                                pipeline.latestCoverage.coverage.coveredBranches,
-                                pipeline.latestCoverage.coverage.totalBranches
-                              )
-                                .map(toPercentage)
-                                .getOr('-')
-                            : '-'
+                          <span
+                            className={pipeline.latestTest?.hasTests ? '' : 'opacity-60'}
+                          >
+                            {pipeline.latestCoverage?.coverage
+                              ? divide(
+                                  pipeline.latestCoverage.coverage.coveredBranches,
+                                  pipeline.latestCoverage.coverage.totalBranches
+                                )
+                                  .map(toPercentage)
+                                  .getOr('-')
+                              : '-'}
+                          </span>
                         }
                         data={(pipeline.coverageByWeek || []).map(c =>
                           c.coverage
