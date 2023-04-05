@@ -15,7 +15,7 @@ const SearchCombobox = () => {
     useCombobox({
       onSelectedItemChange({ selectedItem }) {
         if (selectedItem) {
-          navigate(`/${selectedItem.name}/${selectedItem.project}/`);
+          navigate(`/${selectedItem.collectionName}/${selectedItem.project}/`);
         }
       },
       onInputValueChange({ inputValue }) {
@@ -23,7 +23,7 @@ const SearchCombobox = () => {
       },
       items: searchResult.data || [],
       itemToString(item) {
-        return item ? item.name : '';
+        return item ? `${item.collectionName}: ${item.project}` : '';
       },
       initialHighlightedIndex: 0,
       defaultHighlightedIndex: 0,
@@ -49,7 +49,10 @@ const SearchCombobox = () => {
           {isOpen &&
             searchResult.data &&
             searchResult.data.map((item, index) => (
-              <li key={`${item.project}`} {...getItemProps({ item, index })}>
+              <li
+                key={`${item.collectionName}-${item.project}`}
+                {...getItemProps({ item, index })}
+              >
                 <button
                   type="button"
                   className={`py-2 px-3 mb-1 rounded-md text-left w-full border ${
@@ -58,11 +61,11 @@ const SearchCombobox = () => {
                       : 'bg-white border-transparent'
                   }`}
                   onClick={() => {
-                    navigate(`/${item.name}/${item.project}/`);
+                    navigate(`/${item.collectionName}/${item.project}/`);
                   }}
                 >
                   <h4 className="text-zinc-950 text-base">{item.project}</h4>
-                  <div className="text-gray-600 text-sm">{item.name}</div>
+                  <div className="text-gray-600 text-sm">{item.collectionName}</div>
                 </button>
               </li>
             ))}
