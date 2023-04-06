@@ -552,3 +552,20 @@ export const getNonYamlPipeLineBuildStats = async ({
   ]);
   return result;
 };
+
+export const getTotalBuildsForRepositoryId = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string,
+  startDate: Date,
+  endDate: Date
+) => {
+  const buildsCount = await BuildModel.countDocuments({
+    collectionName,
+    project,
+    'repository.id': repositoryId,
+    'finishTime': inDateRange(startDate, endDate),
+  });
+
+  return buildsCount || 0;
+};

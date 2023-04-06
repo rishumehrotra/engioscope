@@ -4,7 +4,10 @@ import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
-import { getHealthyBranchesSummary } from './branches.js';
+import {
+  getHealthyBranchesSummary,
+  getTotalBranchesForRepositoryId,
+} from './branches.js';
 import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
 import {
   getTotalCentralTemplateUsage,
@@ -20,7 +23,10 @@ import {
   getCoveragesByWeek,
   getDefinitionsWithTestsAndCoverages,
   getTestsByWeek,
+  getTotalTestsForRepositoryId,
 } from './testruns.js';
+import { getTotalBuildsForRepositoryId } from './builds.js';
+import { getTotalCommitsForRepositoryId } from './commits.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -468,5 +474,51 @@ export const getTestsCoverageSummaries = async ({
     weeklyCoverageSummary,
     latestTestsSummary: last(weeklyTestsSummary),
     latestCoverageSummary: last(weeklyCoverageSummary),
+  };
+};
+
+export const RepositoryInputParser = z.object({
+  ...collectionAndProjectInputs,
+  ...dateRangeInputs,
+  repositoryId: z.string(),
+});
+
+export const getRepoTabHeadStatsCount = async ({
+  collectionName,
+  project,
+  repositoryId,
+  startDate,
+  endDate,
+}: z.infer<typeof RepositoryInputParser>) => {
+  const [totalBuilds, totalBranches, totalCommits, totalTests] = await Promise.all([
+    getTotalBuildsForRepositoryId(
+      collectionName,
+      project,
+      repositoryId,
+      startDate,
+      endDate
+    ),
+    getTotalBranchesForRepositoryId(collectionName, project, repositoryId),
+    getTotalCommitsForRepositoryId(
+      collectionName,
+      project,
+      repositoryId,
+      startDate,
+      endDate
+    ),
+    getTotalTestsForRepositoryId(
+      collectionName,
+      project,
+      repositoryId,
+      startDate,
+      endDate
+    ),
+  ]);
+
+  return {
+    totalBuilds,
+    totalBranches,
+    totalCommits,
+    totalTests,
   };
 };

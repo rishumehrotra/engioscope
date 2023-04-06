@@ -631,3 +631,53 @@ export const getCoveragesByWeek = async (
 
   return coverageByWeek.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
+
+export const getTotalTestsForRepositoryId = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string,
+  startDate: Date,
+  endDate: Date
+) => {
+  const testRunsAndCoverageForRepo = await mapDefsTestsAndCoverage(
+    collectionName,
+    project,
+    startDate,
+    endDate,
+    repositoryId
+  );
+  const getOneOlderTestRunForDef = (defId: number) => () => {
+    return getOneOldTestForBuildDefID(
+      collectionName,
+      project,
+      repositoryId,
+      defId,
+      startDate
+    );
+  };
+
+  const definitionTestsAndCoverage = await Promise.all(
+    testRunsAndCoverageForRepo.map(async def => {
+      const tests = await makeContinuous(
+        def.tests,
+        startDate,
+        endDate,
+        getOneOlderTestRunForDef(def.id),
+        { hasTests: false }
+      );
+
+      const latestTest = tests ? [...tests.reverse()].find(t => t.hasTests) : null;
+
+      return {
+        ...def,
+        latestTest,
+      };
+    })
+  );
+
+  const totalTests = definitionTestsAndCoverage.reduce((acc, curr) => {
+    return acc + (curr.latestTest?.hasTests ? curr.latestTest.totalTests : 0);
+  }, 0);
+
+  return totalTests;
+};

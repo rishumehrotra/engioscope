@@ -188,6 +188,20 @@ export const getRepoBranchStats = async ({
   return result[0];
 };
 
+export const getTotalBranchesForRepositoryId = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string
+) => {
+  const branchesCount = await BranchModel.countDocuments({
+    collectionName,
+    project,
+    repositoryId,
+  });
+
+  return branchesCount || 0;
+};
+
 export const setBranchUrl = (
   branchName: string,
   repoUrl: string,

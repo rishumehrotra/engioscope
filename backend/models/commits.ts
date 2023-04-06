@@ -193,20 +193,19 @@ export const getRepoCommitsDetails = async ({
   ]);
   return result;
 };
-
-export const getRepoTotalCommits = async (
+export const getTotalCommitsForRepositoryId = async (
   collectionName: string,
   project: string,
   repositoryId: string,
   startDate: Date,
   endDate: Date
 ) => {
-  const result = await CommitModel.countDocuments({
+  const totalCommits = await CommitModel.countDocuments({
     collectionName,
     project,
     repositoryId,
     'author.date': inDateRange(startDate, endDate),
   });
 
-  return result;
+  return totalCommits || 0;
 };
