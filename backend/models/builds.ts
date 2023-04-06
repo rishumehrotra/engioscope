@@ -560,7 +560,10 @@ export const getTotalBuildsForRepositoryIds = async (
   startDate: Date,
   endDate: Date
 ) => {
-  const buildsCount = await BuildModel.aggregate([
+  const buildsCount = await BuildModel.aggregate<{
+    repositoryId: string;
+    count: number;
+  }>([
     {
       $match: {
         collectionName,

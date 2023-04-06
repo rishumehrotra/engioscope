@@ -477,19 +477,13 @@ export const getTestsCoverageSummaries = async ({
   };
 };
 
-export const RepositoryInputParser = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
-  repositoryIds: z.string().array(),
-});
-
-export const getRepoTabHeadStatsCount = async ({
-  collectionName,
-  project,
-  repositoryIds,
-  startDate,
-  endDate,
-}: z.infer<typeof RepositoryInputParser>) => {
+export const getRepoTabHeadStatsCount = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
   const [totalBuilds, totalBranches, totalCommits, totalTests] = await Promise.all([
     getTotalBuildsForRepositoryIds(
       collectionName,

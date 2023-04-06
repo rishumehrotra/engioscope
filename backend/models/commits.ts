@@ -200,7 +200,10 @@ export const getTotalCommitsForRepositoryIds = async (
   startDate: Date,
   endDate: Date
 ) => {
-  const result = await CommitModel.aggregate([
+  const result = await CommitModel.aggregate<{
+    repositoryId: string;
+    count: number;
+  }>([
     {
       $match: {
         collectionName,
@@ -212,14 +215,14 @@ export const getTotalCommitsForRepositoryIds = async (
     {
       $group: {
         _id: '$repositoryId',
-        totalCommits: { $sum: 1 },
+        count: { $sum: 1 },
       },
     },
     {
       $project: {
         _id: 0,
         repositoryId: '$_id',
-        totalCommits: 1,
+        count: 1,
       },
     },
   ]);
