@@ -193,19 +193,36 @@ export const getRepoCommitsDetails = async ({
   ]);
   return result;
 };
-export const getTotalCommitsForRepositoryId = async (
+export const getTotalCommitsForRepositoryIds = async (
   collectionName: string,
   project: string,
-  repositoryId: string,
+  repositoryIds: string[],
   startDate: Date,
   endDate: Date
 ) => {
-  const totalCommits = await CommitModel.countDocuments({
-    collectionName,
-    project,
-    repositoryId,
-    'author.date': inDateRange(startDate, endDate),
-  });
+  const result = await CommitModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repositoryId': { $in: repositoryIds },
+        'author.date': inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $group: {
+        _id: '$repositoryId',
+        totalCommits: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$_id',
+        totalCommits: 1,
+      },
+    },
+  ]);
 
-  return totalCommits || 0;
+  return result;
 };

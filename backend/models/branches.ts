@@ -188,18 +188,38 @@ export const getRepoBranchStats = async ({
   return result[0];
 };
 
-export const getTotalBranchesForRepositoryId = async (
+export const getTotalBranchesForRepositoryIds = async (
   collectionName: string,
   project: string,
-  repositoryId: string
+  repositoryIds: string[]
 ) => {
-  const branchesCount = await BranchModel.countDocuments({
-    collectionName,
-    project,
-    repositoryId,
-  });
+  const result = await BranchModel.aggregate<{
+    repositoryId: string;
+    total: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+      },
+    },
+    {
+      $group: {
+        _id: '$repositoryId',
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$_id',
+        total: 1,
+      },
+    },
+  ]);
 
-  return branchesCount || 0;
+  return result;
 };
 
 export const setBranchUrl = (

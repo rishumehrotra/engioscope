@@ -553,19 +553,36 @@ export const getNonYamlPipeLineBuildStats = async ({
   return result;
 };
 
-export const getTotalBuildsForRepositoryId = async (
+export const getTotalBuildsForRepositoryIds = async (
   collectionName: string,
   project: string,
-  repositoryId: string,
+  repositoryIds: string[],
   startDate: Date,
   endDate: Date
 ) => {
-  const buildsCount = await BuildModel.countDocuments({
-    collectionName,
-    project,
-    'repository.id': repositoryId,
-    'finishTime': inDateRange(startDate, endDate),
-  });
+  const buildsCount = await BuildModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repository.id': { $in: repositoryIds },
+        'finishTime': inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $group: {
+        _id: '$repository.id',
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$_id',
+        count: 1,
+      },
+    },
+  ]);
 
-  return buildsCount || 0;
+  return buildsCount;
 };

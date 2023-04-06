@@ -632,21 +632,41 @@ export const getCoveragesByWeek = async (
   return coverageByWeek.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
-export const getTotalTestsForRepositoryId = async (
+export const getTotalTestsForRepositoryIds = async (
   collectionName: string,
   project: string,
-  repositoryId: string,
+  repositoryIds: string[],
   startDate: Date,
   endDate: Date
 ) => {
-  const testRunsAndCoverageForRepo = await mapDefsTestsAndCoverage(
-    collectionName,
-    project,
-    startDate,
-    endDate,
-    repositoryId
-  );
-  const getOneOlderTestRunForDef = (defId: number) => () => {
+  const testsForDefsForRepoIds = await RepositoryModel.aggregate<TestsForDef>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getTestsForBuildIds(collectionName, project),
+    {
+      $group: {
+        _id: '$definitionId',
+        id: { $first: '$definitionId' },
+        repositoryId: { $first: '$repositoryId' },
+        tests: { $push: '$$ROOT' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        id: 1,
+        repositoryId: 1,
+        tests: 1,
+      },
+    },
+  ]);
+
+  const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
     return getOneOldTestForBuildDefID(
       collectionName,
       project,
@@ -656,13 +676,13 @@ export const getTotalTestsForRepositoryId = async (
     );
   };
 
-  const definitionTestsAndCoverage = await Promise.all(
-    testRunsAndCoverageForRepo.map(async def => {
+  const definitionTests = await Promise.all(
+    testsForDefsForRepoIds.map(async def => {
       const tests = await makeContinuous(
         def.tests,
         startDate,
         endDate,
-        getOneOlderTestRunForDef(def.id),
+        getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
         { hasTests: false }
       );
 
@@ -675,9 +695,24 @@ export const getTotalTestsForRepositoryId = async (
     })
   );
 
-  const totalTests = definitionTestsAndCoverage.reduce((acc, curr) => {
-    return acc + (curr.latestTest?.hasTests ? curr.latestTest.totalTests : 0);
-  }, 0);
+  const totalTests = definitionTests.reduce<
+    { repositoryId: string; totalTests: number }[]
+  >((acc, curr) => {
+    const matchingRepo = acc.find(repo => repo.repositoryId === curr.repositoryId);
+
+    if (matchingRepo) {
+      matchingRepo.totalTests += curr.latestTest?.hasTests
+        ? curr.latestTest.totalTests
+        : 0;
+    } else {
+      acc.push({
+        repositoryId: curr.repositoryId,
+        totalTests: curr.latestTest?.hasTests ? curr.latestTest.totalTests : 0,
+      });
+    }
+
+    return acc;
+  }, []);
 
   return totalTests;
 };

@@ -6,7 +6,7 @@ import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './help
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import {
   getHealthyBranchesSummary,
-  getTotalBranchesForRepositoryId,
+  getTotalBranchesForRepositoryIds,
 } from './branches.js';
 import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
 import {
@@ -23,10 +23,10 @@ import {
   getCoveragesByWeek,
   getDefinitionsWithTestsAndCoverages,
   getTestsByWeek,
-  getTotalTestsForRepositoryId,
+  getTotalTestsForRepositoryIds,
 } from './testruns.js';
-import { getTotalBuildsForRepositoryId } from './builds.js';
-import { getTotalCommitsForRepositoryId } from './commits.js';
+import { getTotalBuildsForRepositoryIds } from './builds.js';
+import { getTotalCommitsForRepositoryIds } from './commits.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -480,36 +480,36 @@ export const getTestsCoverageSummaries = async ({
 export const RepositoryInputParser = z.object({
   ...collectionAndProjectInputs,
   ...dateRangeInputs,
-  repositoryId: z.string(),
+  repositoryIds: z.string().array(),
 });
 
 export const getRepoTabHeadStatsCount = async ({
   collectionName,
   project,
-  repositoryId,
+  repositoryIds,
   startDate,
   endDate,
 }: z.infer<typeof RepositoryInputParser>) => {
   const [totalBuilds, totalBranches, totalCommits, totalTests] = await Promise.all([
-    getTotalBuildsForRepositoryId(
+    getTotalBuildsForRepositoryIds(
       collectionName,
       project,
-      repositoryId,
+      repositoryIds,
       startDate,
       endDate
     ),
-    getTotalBranchesForRepositoryId(collectionName, project, repositoryId),
-    getTotalCommitsForRepositoryId(
+    getTotalBranchesForRepositoryIds(collectionName, project, repositoryIds),
+    getTotalCommitsForRepositoryIds(
       collectionName,
       project,
-      repositoryId,
+      repositoryIds,
       startDate,
       endDate
     ),
-    getTotalTestsForRepositoryId(
+    getTotalTestsForRepositoryIds(
       collectionName,
       project,
-      repositoryId,
+      repositoryIds,
       startDate,
       endDate
     ),
