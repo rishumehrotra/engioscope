@@ -55,6 +55,7 @@ export type TestsForWeek = {
   | { hasTests: false }
   | {
       hasTests: true;
+      buildId: number;
       totalTests: number;
       startedDate: Date;
       completedDate: Date;
@@ -64,6 +65,7 @@ export type TestsForWeek = {
 
 export type TestsForDef = {
   definitionId: number;
+  buildId: number;
   tests: TestsForWeek[];
   latest?: TestsForWeek;
   repositoryId: string;
@@ -229,9 +231,15 @@ export const getTestRunsAndCoverageForRepo = async ({
         ? [...coverageData.reverse()].find(t => t.hasCoverage)
         : null;
 
+      const url = latestTest?.hasTests
+        ? `${def.url.split('_apis')[0]}_build/results?buildId=${
+            latestTest.buildId
+          }&view=ms.vss-test-web.build-test-results-tab`
+        : `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`;
+
       return {
         ...def,
-        url: `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`,
+        url,
         tests,
         coverageByWeek: coverageData,
         latestTest,

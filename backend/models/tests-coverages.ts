@@ -178,6 +178,7 @@ export const getTestsForBuildIds = (
       startedDate: { $min: '$tests.startedDate' },
       completedDate: { $max: '$tests.completedDate' },
       passedTests: { $sum: '$tests.passedCount' },
+      buildId: '$build.buildId',
     },
   },
   { $sort: { weekIndex: -1 } },
