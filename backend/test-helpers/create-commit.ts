@@ -5,8 +5,7 @@ export const createCommit = (
   project: string,
   repositoryId: string,
   commitId: string,
-  authorDate: string,
-  committerDate: string
+  authorDate = new Date('2022-03-25')
 ) => {
   return CommitModel.insertMany([
     {
@@ -17,14 +16,14 @@ export const createCommit = (
       author: {
         name: 'Jon Doe',
         email: 'jondoe@email.com',
-        date: new Date(authorDate),
+        date: authorDate,
         imageUrl: 'https://example.com',
       },
       changeCounts: { add: 0, edit: 5, delete: 0 },
       committer: {
         name: 'Jon Doe',
         email: 'jondoe@email.com',
-        date: new Date(committerDate),
+        date: authorDate,
         imageUrl: 'https://example.com',
       },
       remoteUrl: 'https://example.com',
