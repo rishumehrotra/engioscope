@@ -33,7 +33,10 @@ export const refreshSonarProjects = async () => {
 };
 
 export const saveMeasuresForProject = async (
-  sonarProject: SonarProject & { _id: Types.ObjectId }
+  sonarProject: Pick<
+    SonarProject & { _id: Types.ObjectId },
+    'key' | '_id' | 'connectionId'
+  >
 ) => {
   const connection = await getConnectionById<SonarConnection>(sonarProject.connectionId);
   const measures = await getMeasures(connection)(sonarProject);
@@ -44,4 +47,22 @@ export const saveMeasuresForProject = async (
     sonarProjectId: sonarProject._id,
   });
   return doc.save();
+};
+
+export const getMissingSonarMeasures = async () => {
+  const [allProjects, existingProjectIds] = await Promise.all([
+    SonarProjectModel.find({}, { _id: 1, connectionId: 1, key: 1 }).lean() as Promise<
+      Pick<SonarProject & { _id: Types.ObjectId }, 'key' | '_id' | 'connectionId'>[]
+    >,
+    SonarMeasuresModel.distinct('sonarProjectId'),
+  ]);
+
+  const projectsToFetch = allProjects.filter(
+    p => !existingProjectIds.toString().includes(p._id.toString())
+  );
+
+  return projectsToFetch.reduce(async (acc, project) => {
+    await acc;
+    await saveMeasuresForProject(project);
+  }, Promise.resolve());
 };

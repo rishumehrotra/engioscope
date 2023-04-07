@@ -140,7 +140,7 @@ export const lastAnalysisDateForProject =
   };
 
 export const getMeasures =
-  (sonarServer: SonarConnection) => (sonarProject: SonarProject) => {
+  (sonarServer: SonarConnection) => (sonarProject: Pick<SonarProject, 'key'>) => {
     const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
 
     return usingDiskCache<{ component?: { measures: Measure[] } }>(
