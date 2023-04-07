@@ -14,18 +14,19 @@ export const refreshSonarProjects = async () => {
     sonarConnections.map(async conn => {
       const projects = await projectsAtSonarServer(conn);
 
-      await SonarProjectModel.deleteMany({ connectionId: conn._id });
+      await SonarProjectModel.deleteMany({
+        connectionId: conn._id,
+        key: { $nin: projects.map(p => p.key) },
+      });
+
       await SonarProjectModel.bulkWrite(
-        projects.map(project => {
-          return {
-            insertOne: {
-              document: {
-                connectionId: conn._id,
-                ...project,
-              },
-            },
-          };
-        })
+        projects.map(project => ({
+          updateOne: {
+            filter: { connectionId: conn._id, key: project.key },
+            update: { $set: { connectionId: conn._id, ...project } },
+            upsert: true,
+          },
+        }))
       );
     })
   );
