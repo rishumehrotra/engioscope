@@ -1,9 +1,11 @@
 import type { Types } from 'mongoose';
 import { normalizeBranchName, unique } from '../utils.js';
-import type { latestBuildReportsForRepoAndBranch } from './build-reports.js';
+import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarProject } from './mongoose-models/sonar-models.js';
-import { SonarProjectModel } from './mongoose-models/sonar-models.js';
+import { SonarMeasuresModel, SonarProjectModel } from './mongoose-models/sonar-models.js';
+import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
+import type { QualityGateStatus } from '../../shared/types';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -96,4 +98,153 @@ export const getMatchingSonarProjects = async (
     parseReports
   );
   return sonarProjectsFromBuildReports || attemptMatchByRepoName(repoName);
+};
+
+export const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
+  const measures = await SonarMeasuresModel.aggregate([
+    { $match: { sonarProjectId: { $in: sonarProjectIds } } },
+    { $sort: { date: -1 } },
+    { $group: { _id: '$sonarProjectId', first: { $first: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$first' } },
+  ]);
+  return measures;
+};
+
+const isMeasureName = (name: string) => (measure: Measure) => measure.metric === name;
+
+const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
+  switch (gateLabel) {
+    case 'OK': {
+      return 'pass';
+    }
+    case 'WARN': {
+      return 'warn';
+    }
+    case 'ERROR': {
+      return 'fail';
+    }
+    default: {
+      return 'unknown';
+    }
+  }
+};
+
+const getMeasureValue = (fetchDate: Date, measures: Measure[]) => {
+  const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
+
+  const measureAsNumber = (name: string) => {
+    const measure = findMeasure(name);
+    return measure ? Number(measure) : undefined;
+  };
+
+  const qualityGateDetails = JSON.parse(
+    findMeasure('quality_gate_details') || '{}'
+  ) as SonarQualityGateDetails;
+
+  const qualityGateMetric = (metricName: string) => {
+    const metric = qualityGateDetails.conditions?.find(
+      ({ metric }) => metric === metricName
+    );
+
+    if (!metric) return;
+
+    return {
+      value: metric?.actual ? Number(metric.actual) : undefined,
+      op: metric?.op ? (metric.op.toLowerCase() as 'gt' | 'lt') : undefined,
+      level: metric?.error ? Number(metric.error) : undefined,
+      status: parseQualityGateStatus(metric.level),
+    };
+  };
+
+  return {
+    // url,
+    // name,
+    lastAnalysisDate: fetchDate,
+    measureAsNumber,
+    qualityGateMetric,
+    qualityGateStatus: parseQualityGateStatus(qualityGateDetails.level),
+  };
+};
+
+export const getRepoSonarMeasures = async (
+  collectionName: string,
+  project: string,
+  repositoryName: string,
+  defaultBranch: string
+) => {
+  const sonarProjects = await getMatchingSonarProjects(
+    repositoryName,
+    defaultBranch,
+    latestBuildReportsForRepoAndBranch(collectionName, project)
+  );
+
+  if (sonarProjects && sonarProjects.length > 0) {
+    const sonarProjectIds = sonarProjects.map(p => p._id);
+    const measuresData = await getLatestSonarMeasures(sonarProjectIds);
+    return measuresData.map(measure => {
+      const { lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus } =
+        getMeasureValue(measure.fetchDate, measure.measures);
+      return {
+        // url,
+        // name,
+        lastAnalysisDate,
+        // qualityGateName: sonarAnalysis.qualityGateName,
+        files: measureAsNumber('files'),
+        complexity: {
+          cyclomatic: measureAsNumber('complexity'),
+          cognitive: measureAsNumber('cognitive_complexity'),
+        },
+        quality: {
+          gate: qualityGateStatus,
+          securityRating: qualityGateMetric('security_rating'),
+          coverage: qualityGateMetric('coverage'),
+          duplicatedLinesDensity: qualityGateMetric('duplicated_lines_density'),
+          blockerViolations: qualityGateMetric('blocker_violations'),
+          codeSmells: qualityGateMetric('code_smells'),
+          criticalViolations: qualityGateMetric('critical_violations'),
+        },
+        coverage: {
+          byTests: measureAsNumber('coverage'),
+          line: measureAsNumber('line_coverage'),
+          linesToCover: measureAsNumber('lines_to_cover'),
+          uncoveredLines: measureAsNumber('uncovered_lines'),
+          branch: measureAsNumber('branch_coverage'),
+          conditionsToCover: measureAsNumber('conditions_to_cover'),
+          uncoveredConditions: measureAsNumber('uncovered_conditions'),
+        },
+        reliability: {
+          rating: measureAsNumber('reliability_rating'),
+          bugs: measureAsNumber('bugs'),
+        },
+        security: {
+          rating: measureAsNumber('security_rating'),
+          vulnerabilities: measureAsNumber('vulnerabilities'),
+        },
+        duplication: {
+          blocks: measureAsNumber('duplicated_blocks'),
+          files: measureAsNumber('duplicated_files'),
+          lines: measureAsNumber('duplicated_lines'),
+          linesDensity: measureAsNumber('duplicated_lines_density'),
+        },
+        maintainability: {
+          rating: measureAsNumber('sqale_rating'),
+          techDebt: measureAsNumber('sqale_index'),
+          codeSmells: measureAsNumber('code_smells'),
+        },
+        // oldestFoundSample: head(
+        //   sonarAnalysis.qualityGateHistory.sort(desc(byDate(prop('date'))))
+        // )?.date.toISOString(),
+        // qualityGateByWeek: uptillWeeks.map(isUptillWeek => {
+        //   const latestInWeek = head(
+        //     sonarAnalysis.qualityGateHistory
+        //       .filter(({ date }) => isUptillWeek(date))
+        //       .sort(desc(byDate(prop('date'))))
+        //   );
+
+        //   return latestInWeek ? parseQualityGateStatus(latestInWeek.value) : null;
+        // }),
+      };
+    });
+  }
+  return null;
 };

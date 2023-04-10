@@ -51,6 +51,11 @@ const sonarMeasuresSchema = new Schema<SonarMeasures>({
   ],
 });
 
+sonarMeasuresSchema.index({
+  sonarProjectId: 1,
+  fetchDate: 1,
+});
+
 export const SonarMeasuresModel = model<SonarMeasures>(
   'SonarMeasures',
   sonarMeasuresSchema
