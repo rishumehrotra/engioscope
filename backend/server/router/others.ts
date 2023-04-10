@@ -8,6 +8,7 @@ export default {
     hasSummary: Boolean(getConfig().azure.summaryPageGroups?.[0]),
     changeProgramName: getConfig().azure.collections[0]?.changeProgram?.name,
     queryPeriodDays: Math.floor(queryPeriodDays()),
+    hasSonar: Boolean(getConfig().sonar),
   })),
 
   projectConfig: t.procedure.input(collectionAndProjectInputParser).query(
