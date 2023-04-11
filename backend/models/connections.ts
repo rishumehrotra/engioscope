@@ -1,4 +1,4 @@
-import type { ObjectId, Schema } from 'mongoose';
+import type { Types } from 'mongoose';
 import type {
   AzurePATConnection,
   Connection,
@@ -13,17 +13,17 @@ import {
 /* eslint-disable no-redeclare */
 export function getConnections(type: 'azure-pat'): Promise<
   (AzurePATConnection & {
-    _id: Schema.Types.ObjectId;
+    _id: Types.ObjectId;
   })[]
 >;
 export function getConnections(type: 'sonar'): Promise<
   (SonarConnection & {
-    _id: Schema.Types.ObjectId;
+    _id: Types.ObjectId;
   })[]
 >;
 export function getConnections(): Promise<
   (Connection & {
-    _id: Schema.Types.ObjectId;
+    _id: Types.ObjectId;
   })[]
 >;
 export function getConnections(type?: Connection['type']) {
@@ -37,8 +37,8 @@ export function getConnections(type?: Connection['type']) {
 }
 /* eslint-enable */
 
-export const getConnectionById = <T extends Connection>(id: ObjectId | string) =>
-  ConnectionModel.findOne({ _id: id }).lean() as Promise<T & { _id: ObjectId }>;
+export const getConnectionById = <T extends Connection>(id: Types.ObjectId | string) =>
+  ConnectionModel.findOne({ _id: id }).lean() as Promise<T & { _id: Types.ObjectId }>;
 
 export const createAzurePATConnection = (connection: Omit<AzurePATConnection, 'type'>) =>
   AzurePATConnectionModel.create(connection);
@@ -46,8 +46,8 @@ export const createAzurePATConnection = (connection: Omit<AzurePATConnection, 't
 export const createSonarConnection = (connection: Omit<SonarConnection, 'type'>) =>
   SonarConnectionModel.create(connection);
 
-export const modifyConnection = (connection: Connection & { _id: ObjectId }) =>
+export const modifyConnection = (connection: Connection & { _id: Types.ObjectId }) =>
   ConnectionModel.replaceOne({ _id: connection._id }, connection).lean();
 
-export const deleteConnection = (id: ObjectId | string) =>
+export const deleteConnection = (id: Types.ObjectId | string) =>
   ConnectionModel.deleteOne({ _id: id }).lean();

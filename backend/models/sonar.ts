@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
-import type { SonarProject } from './mongoose-models/sonar-models.js';
+import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
 import { SonarMeasuresModel, SonarProjectModel } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
+import { exists } from '../../shared/utils.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -102,7 +103,7 @@ export const getMatchingSonarProjects = async (
 };
 
 export const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
-  const measures = await SonarMeasuresModel.aggregate([
+  const measures = await SonarMeasuresModel.aggregate<SonarMeasures>([
     { $match: { sonarProjectId: { $in: sonarProjectIds } } },
     { $sort: { date: -1 } },
     { $group: { _id: '$sonarProjectId', first: { $first: '$$ROOT' } } },
@@ -186,24 +187,26 @@ export const getRepoSonarMeasures = async ({
     latestBuildReportsForRepoAndBranch(collectionName, project)
   );
 
-  if (sonarProjects && sonarProjects.length > 0) {
-    const sonarProjectIds = sonarProjects.map(p => p._id);
-    const measuresData = await getLatestSonarMeasures(sonarProjectIds);
-    const sonarHosts = await getConnections('sonar');
+  if (!sonarProjects || sonarProjects.length === 0) return null;
 
-    return measuresData.map(measure => {
+  const sonarProjectIds = sonarProjects.map(p => p._id);
+  const measuresData = await getLatestSonarMeasures(sonarProjectIds);
+  const sonarConnections = await getConnections('sonar');
+
+  return measuresData
+    .map(measure => {
       const { lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus } =
         getMeasureValue(measure.fetchDate, measure.measures);
 
-      const sonarProject = sonarProjects.find(
-        p => p._id.toString() === measure.sonarProjectId.toString()
-      );
+      const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
+      if (!sonarProject) return null;
 
-      const sonarHost = sonarProject?.connectionId
-        ? sonarHosts.find(
-            sh => sh._id.toString() === sonarProject.connectionId.toString()
-          )?.url
-        : 'http://#';
+      const sonarConnection = sonarConnections.find(sh =>
+        sh._id.equals(sonarProject.connectionId)
+      );
+      if (!sonarConnection) return null;
+
+      const sonarHost = sonarConnection.url;
 
       return {
         url: `${sonarHost}/dashboard?id=${sonarProject?.key}`,
@@ -265,7 +268,6 @@ export const getRepoSonarMeasures = async ({
         //   return latestInWeek ? parseQualityGateStatus(latestInWeek.value) : null;
         // }),
       };
-    });
-  }
-  return null;
+    })
+    .filter(exists);
 };

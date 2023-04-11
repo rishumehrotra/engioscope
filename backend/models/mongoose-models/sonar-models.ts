@@ -1,9 +1,8 @@
-import type { ObjectId } from 'mongoose';
 import { model, Schema, Types } from 'mongoose';
 import type { Measure, SonarQualityGate } from '../../scraper/types-sonar.js';
 
 export type SonarProject = {
-  connectionId: ObjectId;
+  connectionId: Types.ObjectId;
   organization?: string;
   id?: string;
   key: string;
