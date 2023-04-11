@@ -1,4 +1,5 @@
 import type { Types } from 'mongoose';
+import { z } from 'zod';
 import { normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
@@ -166,12 +167,19 @@ const getMeasureValue = (fetchDate: Date, measures: Measure[]) => {
   };
 };
 
-export const getRepoSonarMeasures = async (
-  collectionName: string,
-  project: string,
-  repositoryName: string,
-  defaultBranch: string
-) => {
+export const RepoSonarMeasuresInputParser = z.object({
+  collectionName: z.string(),
+  project: z.string(),
+  repositoryName: z.string(),
+  defaultBranch: z.string().optional(),
+});
+
+export const getRepoSonarMeasures = async ({
+  collectionName,
+  project,
+  repositoryName,
+  defaultBranch,
+}: z.infer<typeof RepoSonarMeasuresInputParser>) => {
   const sonarProjects = await getMatchingSonarProjects(
     repositoryName,
     defaultBranch,
@@ -181,12 +189,25 @@ export const getRepoSonarMeasures = async (
   if (sonarProjects && sonarProjects.length > 0) {
     const sonarProjectIds = sonarProjects.map(p => p._id);
     const measuresData = await getLatestSonarMeasures(sonarProjectIds);
+    const sonarHosts = await getConnections('sonar');
+
     return measuresData.map(measure => {
       const { lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus } =
         getMeasureValue(measure.fetchDate, measure.measures);
+
+      const sonarProject = sonarProjects.find(
+        p => p._id.toString() === measure.sonarProjectId.toString()
+      );
+
+      const sonarHost = sonarProject?.connectionId
+        ? sonarHosts.find(
+            sh => sh._id.toString() === sonarProject.connectionId.toString()
+          )?.url
+        : 'http://#';
+
       return {
-        // url,
-        // name,
+        url: `${sonarHost}/dashboard?id=${sonarProject?.key}`,
+        name: sonarProject ? sonarProject.name : measure.sonarProjectId,
         lastAnalysisDate,
         // qualityGateName: sonarAnalysis.qualityGateName,
         files: measureAsNumber('files'),

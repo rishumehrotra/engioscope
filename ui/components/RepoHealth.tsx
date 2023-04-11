@@ -95,7 +95,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
       commits(repo, aggregatedDevs, location, queryPeriodDays),
       prs(repo.prs),
       tests(repo, queryPeriodDays),
-      codeQuality(repo.codeQuality),
+      codeQuality(repo.codeQuality, repo.name, repo.defaultBranch),
     ],
     [repo, aggregatedDevs, location, queryPeriodDays]
   );

@@ -1,5 +1,5 @@
-import type { ObjectId, Types } from 'mongoose';
-import { model, Schema } from 'mongoose';
+import type { ObjectId } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 import type { Measure } from '../../scraper/types-sonar.js';
 
 export type SonarProject = {
@@ -15,7 +15,7 @@ export type SonarProject = {
 
 const sonarProjectSchema = new Schema<SonarProject>(
   {
-    connectionId: Schema.Types.ObjectId,
+    connectionId: Types.ObjectId,
     organization: String,
     id: String,
     key: { type: String, required: true },
