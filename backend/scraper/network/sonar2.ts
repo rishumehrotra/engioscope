@@ -4,12 +4,14 @@ import fetch from './fetch-with-extras.js';
 import { requiredMetrics } from '../stats-aggregators/code-quality.js';
 import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import createPaginatedGetter from './create-paginated-getter.js';
-import type { Measure } from '../types-sonar.js';
+import type { Measure, SonarQualityGate } from '../types-sonar.js';
 import type { SonarConfig } from '../parse-config.js';
 // import { pastDate } from '../../utils.js';
 import { getConfig } from '../../config.js';
 import type { SonarConnection } from '../../models/mongoose-models/ConnectionModel.js';
 import type { SonarProject } from '../../models/mongoose-models/sonar-models.js';
+import { pastDate } from '../../utils.js';
+import createChunkedPaginatedGetter from './create-chunked-paginated-getter.js';
 
 type SonarSearchResponse = {
   paging: {
@@ -26,6 +28,12 @@ type SonarSearchResponse = {
     visibility: string;
     lastAnalysisDate?: Date;
   }[];
+};
+
+type SonarPaging = {
+  pageIndex: number;
+  pageSize: number;
+  total: number;
 };
 
 // type MeasureDefinition = {
@@ -185,47 +193,54 @@ export const getMeasures =
 //   ).then(res => res.data.qualityGate.name);
 // };
 
-// export const getQualityGateHistory = (sonarProject: SonarProject) => {
-//   const paginatedGet = createPaginatedGetter(
-//     getConfig().cacheTimeMs,
-//     sonarProject.verifySsl ?? true
-//   );
+export const getQualityGateHistoryAsChunks =
+  (sonarServer: SonarConnection) =>
+  (
+    sonarProject: SonarProject,
+    fetchFrom: Date | undefined,
+    chunkHandler: (chunk: { value: SonarQualityGate; date: Date }[]) => Promise<void>
+  ) => {
+    const chunkedPaginatedGet = createChunkedPaginatedGetter(
+      getConfig().cacheTimeMs,
+      sonarServer.verifySsl ?? true
+    );
 
-//   type SonarMeasureHistoryResponse<T extends string> = {
-//     paging: SonarPaging;
-//     measures: { metric: T; history: { date: Date; value: string }[] }[];
-//   };
+    type SonarMeasureHistoryResponse<T extends string> = {
+      paging: SonarPaging;
+      measures: { metric: T; history: { date: Date; value: string }[] }[];
+    };
 
-//   return paginatedGet<SonarMeasureHistoryResponse<'alert_status'>>({
-//     url: `${sonarProject.url}/api/measures/search_history`,
-//     cacheFile: pageIndex => [
-//       'sonar',
-//       'alert-status-history',
-//       `${sonarProject.url.split('://')[1].replace(/\./g, '-')}`,
-//       `${sonarProject.key}-${pageIndex}`,
-//     ],
-//     headers: () => ({
-//       Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString('base64')}`,
-//     }),
-//     hasAnotherPage: previousResponse =>
-//       previousResponse.data.paging.total >
-//       previousResponse.data.paging.pageSize * previousResponse.data.paging.pageIndex,
-//     qsParams: pageIndex => ({
-//       ps: '500',
-//       p: (pageIndex + 1).toString(),
-//       component: sonarProject.key,
-//       metrics: 'alert_status',
-//       from: pastDate('182 days').toISOString().split('T')[0],
-//     }),
-//   })
-//     .then(responses =>
-//       responses.map(response => response.data.measures.flatMap(m => m.history))
-//     )
-//     .then(history => history.flat())
-//     .then(history =>
-//       history.map(item => ({
-//         value: item.value as SonarQualityGate,
-//         date: new Date(item.date),
-//       }))
-//     );
-// };
+    return chunkedPaginatedGet<SonarMeasureHistoryResponse<'alert_status'>>({
+      url: `${sonarServer.url}/api/measures/search_history`,
+      cacheFile: pageIndex => [
+        'sonar',
+        'alert-status-history',
+        `${sonarServer.url.split('://')[1].replace(/\./g, '-')}`,
+        `${sonarProject.key}-${pageIndex}`,
+      ],
+      headers: () => ({
+        Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}`,
+      }),
+      hasAnotherPage: previousResponse =>
+        previousResponse.data.paging.total >
+        previousResponse.data.paging.pageSize * previousResponse.data.paging.pageIndex,
+      qsParams: pageIndex => ({
+        ps: '500',
+        p: (pageIndex + 1).toString(),
+        component: sonarProject.key,
+        metrics: 'alert_status',
+        from: (fetchFrom || pastDate('365 days')).toISOString().split('T')[0],
+      }),
+      chunkHandler: chunk =>
+        chunkHandler(
+          chunk.data.measures
+            .flatMap(m =>
+              m.history.map(item => ({
+                value: item.value as SonarQualityGate,
+                date: new Date(item.date),
+              }))
+            )
+            .flat()
+        ),
+    });
+  };

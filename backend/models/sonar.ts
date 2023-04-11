@@ -91,7 +91,7 @@ export const getMatchingSonarProjects = async (
   repoName: string,
   defaultBranch: string | undefined,
   parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
-) => {
+): Promise<(SonarProject & { _id: Types.ObjectId })[] | null> => {
   const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
     repoName,
     defaultBranch,

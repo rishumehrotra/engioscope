@@ -3,10 +3,16 @@ import { getConnectionById, getConnections } from '../models/connections.js';
 import type { SonarConnection } from '../models/mongoose-models/ConnectionModel.js';
 import type { SonarProject } from '../models/mongoose-models/sonar-models.js';
 import {
+  SonarAlertHistoryModel,
   SonarMeasuresModel,
   SonarProjectModel,
 } from '../models/mongoose-models/sonar-models.js';
-import { getMeasures, projectsAtSonarServer } from '../scraper/network/sonar2.js';
+import {
+  getMeasures,
+  getQualityGateHistoryAsChunks,
+  projectsAtSonarServer,
+} from '../scraper/network/sonar2.js';
+import { chunkArray, pastDate } from '../utils.js';
 
 export const refreshSonarProjects = async () => {
   const sonarConnections = await getConnections('sonar');
@@ -66,3 +72,70 @@ export const getMissingSonarMeasures = async () => {
     await saveMeasuresForProject(project);
   }, Promise.resolve());
 };
+
+export const updateQualityGateHistory =
+  (collectionName: string, project: string) =>
+  (
+    reposAndSonarProjects: {
+      repoId: string;
+      sonarProjects: (SonarProject & {
+        _id: Types.ObjectId;
+      })[];
+    }[]
+  ) => {
+    const repoAndProjectList = reposAndSonarProjects.flatMap(r => {
+      return r.sonarProjects.map(p => ({ repoId: r.repoId, sonarProject: p }));
+    });
+
+    return chunkArray(repoAndProjectList, 10).reduce<Promise<unknown>>(
+      async (acc, reposAndProjects) => {
+        await acc;
+
+        return Promise.all(
+          reposAndProjects.map(async ({ repoId, sonarProject }) => {
+            const matchingHistoryEntry = await SonarAlertHistoryModel.findOne(
+              {
+                collectionName,
+                project,
+                repositoryId: repoId,
+                sonarProjectId: sonarProject._id,
+              },
+              { date: 1 },
+              { sort: { date: -1 } }
+            );
+
+            const lastFetchDate = matchingHistoryEntry?.date;
+            const sonarConnection = await getConnectionById<SonarConnection>(
+              sonarProject.connectionId
+            );
+
+            await getQualityGateHistoryAsChunks(sonarConnection)(
+              sonarProject,
+              lastFetchDate,
+              async historyItems => {
+                const filteredHistoryItems = historyItems.filter(
+                  ({ date }) =>
+                    new Date(date).getTime() >
+                    (lastFetchDate || pastDate('365 days')).getTime()
+                );
+
+                await SonarAlertHistoryModel.insertMany(
+                  filteredHistoryItems.map(({ value, date }) => {
+                    return {
+                      collectionName,
+                      project,
+                      repositoryId: repoId,
+                      sonarProjectId: sonarProject._id,
+                      date: new Date(date),
+                      value,
+                    };
+                  })
+                );
+              }
+            );
+          })
+        );
+      },
+      Promise.resolve()
+    );
+  };

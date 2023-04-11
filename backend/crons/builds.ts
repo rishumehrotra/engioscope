@@ -1,3 +1,4 @@
+import { prop } from 'rambda';
 import { exists, oneYearInMs } from '../../shared/utils.js';
 import { collectionsAndProjects, getConfig } from '../config.js';
 import { BuildTimelineModel } from '../models/mongoose-models/BuildTimelineModel.js';
@@ -14,7 +15,7 @@ import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 import { getRepoById } from '../models/repos.js';
 import { getMatchingSonarProjects } from '../models/sonar.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
-import { saveMeasuresForProject } from './sonar.js';
+import { saveMeasuresForProject, updateQualityGateHistory } from './sonar.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -173,26 +174,30 @@ const updateSonar = async (
     }, new Set<string>()),
   ];
 
-  const sonarProjects = (
+  const sonarProjectsForRepoIds = (
     await Promise.all(
       reposToFetch.map(async repoId => {
         const repo = await getRepoById(collectionName, project, repoId);
         if (!repo) return;
 
         const { defaultBranch, name } = repo;
-
-        return getMatchingSonarProjects(
+        const sonarProjects = await getMatchingSonarProjects(
           name,
           defaultBranch,
           latestBuildReportsForRepoAndBranch(collectionName, project)
         );
+
+        if (!sonarProjects) return null;
+
+        return { repoId, sonarProjects };
       })
     )
-  )
-    .flat()
-    .filter(exists);
+  ).filter(exists);
 
-  return Promise.all(sonarProjects.map(saveMeasuresForProject));
+  return Promise.all([
+    sonarProjectsForRepoIds.flatMap(prop('sonarProjects')).map(saveMeasuresForProject),
+    updateQualityGateHistory(collectionName, project)(sonarProjectsForRepoIds),
+  ]);
 };
 
 const saveBuilds = (collectionName: string, project: string) => {
