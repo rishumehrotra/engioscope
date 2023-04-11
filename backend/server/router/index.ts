@@ -12,6 +12,7 @@ import tests from './tests.js';
 import { t, trpcContext } from './trpc.js';
 import commits from './commits.js';
 import collections from './collections.js';
+import sonar from './sonar.js';
 
 export const appRouter = t.router({
   builds,
@@ -24,6 +25,7 @@ export const appRouter = t.router({
   commits,
   tests,
   collections,
+  sonar,
   ...others,
 });
 
