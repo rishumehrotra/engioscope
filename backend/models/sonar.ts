@@ -49,7 +49,9 @@ const attemptExactMatchFind = async (repoName: string) => {
     { $match: { lastAnalysisDate: { $exists: true } } },
     {
       $addFields: {
-        projectName: { $replaceAll: { input: '$name', find: '-', replacement: '_' } },
+        projectName: {
+          $toLower: { $replaceAll: { input: '$name', find: '-', replacement: '_' } },
+        },
       },
     },
     { $match: { projectName: repoName.replace(/-/g, '_').toLowerCase() } },
