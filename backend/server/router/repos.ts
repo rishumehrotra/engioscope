@@ -9,7 +9,6 @@ import {
   getSummaryInputParser,
   getNonYamlPipelines,
   NonYamlPipelinesParser,
-  getTestsCoverageSummaries,
 } from '../../models/repo-listing.js';
 
 export default t.router({
@@ -22,8 +21,4 @@ export default t.router({
   getNonYamlPipelines: t.procedure
     .input(NonYamlPipelinesParser)
     .query(passInputTo(getNonYamlPipelines)),
-
-  getTestsCoverageSummaries: t.procedure
-    .input(getSummaryInputParser)
-    .query(passInputTo(getTestsCoverageSummaries)),
 });

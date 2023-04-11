@@ -310,6 +310,9 @@ export const getSummary = async ({
     healthyBranches,
     hasReleasesReposCount,
     centralTemplatePipeline,
+    defSummary,
+    weeklyTestsSummary,
+    weeklyCoverageSummary,
   ] = await Promise.all([
     getSuccessfulBuildsBy(collectionName, project, startDate, endDate, activeRepoIds),
 
@@ -329,6 +332,17 @@ export const getSummary = async ({
     getHasReleasesSummary(collectionName, project, startDate, endDate, activeRepoIds),
 
     getCentralTemplatePipeline(collectionName, project, activeRepoIds),
+
+    getDefinitionsWithTestsAndCoverages(
+      collectionName,
+      project,
+      startDate,
+      endDate,
+      activeRepoIds
+    ),
+    getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate),
+
+    getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
   ]);
 
   const successRate = divide(successfulBuilds.count, totalBuilds.count)
@@ -358,6 +372,13 @@ export const getSummary = async ({
     totalActiveRepos: activeRepoIds.length,
     hasReleasesReposCount,
     centralTemplatePipeline,
+    totalDefs: defSummary.totalDefs,
+    defsWithTests: defSummary.defsWithTests,
+    defsWithCoverage: defSummary.defsWithCoverage,
+    weeklyTestsSummary,
+    weeklyCoverageSummary,
+    latestTestsSummary: last(weeklyTestsSummary),
+    latestCoverageSummary: last(weeklyCoverageSummary),
   };
 };
 
@@ -434,49 +455,6 @@ export const getNonYamlPipelines = async ({
 
   return result;
 };
-
-export const getTestsCoverageSummaries = async ({
-  collectionName,
-  project,
-  startDate,
-  endDate,
-  searchTerm,
-  groupsIncluded,
-}: z.infer<typeof getSummaryInputParser>) => {
-  const activeRepos = await getActiveRepos(
-    collectionName,
-    project,
-    startDate,
-    endDate,
-    searchTerm,
-    groupsIncluded
-  );
-
-  const activeRepoIds = activeRepos.map(prop('id'));
-  const [defSummary, weeklyTestsSummary, weeklyCoverageSummary] = await Promise.all([
-    getDefinitionsWithTestsAndCoverages(
-      collectionName,
-      project,
-      startDate,
-      endDate,
-      activeRepoIds
-    ),
-    getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate),
-
-    getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
-  ]);
-
-  return {
-    totalDefs: defSummary.totalDefs,
-    defsWithTests: defSummary.defsWithTests,
-    defsWithCoverage: defSummary.defsWithCoverage,
-    weeklyTestsSummary,
-    weeklyCoverageSummary,
-    latestTestsSummary: last(weeklyTestsSummary),
-    latestCoverageSummary: last(weeklyCoverageSummary),
-  };
-};
-
 export const getRepoTabHeadStatsCount = async (
   collectionName: string,
   project: string,
