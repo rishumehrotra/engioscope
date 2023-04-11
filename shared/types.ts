@@ -239,6 +239,59 @@ export type UICodeQuality =
       qualityGateByWeek: (QualityGateStatus | null)[];
     }[];
 
+export type UICodeQuality2 =
+  | null
+  | {
+      name: string;
+      url: string;
+      lastAnalysisDate: Date | null;
+      // qualityGateName: string;
+      files?: number;
+      complexity: {
+        cyclomatic?: number;
+        cognitive?: number;
+      };
+      quality: {
+        gate: QualityGateStatus;
+        securityRating?: QualityGateDetails;
+        coverage?: QualityGateDetails;
+        duplicatedLinesDensity?: QualityGateDetails;
+        blockerViolations?: QualityGateDetails;
+        codeSmells?: QualityGateDetails;
+        criticalViolations?: QualityGateDetails;
+      };
+      maintainability: {
+        rating?: number;
+        techDebt?: number;
+        codeSmells?: number;
+      };
+      coverage: {
+        byTests?: number;
+        line?: number;
+        linesToCover?: number;
+        uncoveredLines?: number;
+        branch?: number;
+        conditionsToCover?: number;
+        uncoveredConditions?: number;
+      };
+      reliability: {
+        rating?: number;
+        bugs?: number;
+      };
+      security: {
+        rating?: number;
+        vulnerabilities?: number;
+      };
+      duplication: {
+        blocks?: number;
+        files?: number;
+        lines?: number;
+        linesDensity?: number;
+      };
+      // oldestFoundSample: string | undefined;
+      // qualityGateByWeek: (QualityGateStatus | null)[];
+    }[];
+
 export type AggregatedCommitsByDev = {
   name: string;
   imageUrl: string;
