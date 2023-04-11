@@ -103,13 +103,12 @@ export const getMatchingSonarProjects = async (
 };
 
 export const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
-  const measures = await SonarMeasuresModel.aggregate<SonarMeasures>([
+  return SonarMeasuresModel.aggregate<SonarMeasures>([
     { $match: { sonarProjectId: { $in: sonarProjectIds } } },
     { $sort: { date: -1 } },
     { $group: { _id: '$sonarProjectId', first: { $first: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$first' } },
   ]);
-  return measures;
 };
 
 const isMeasureName = (name: string) => (measure: Measure) => measure.metric === name;
@@ -159,8 +158,6 @@ const getMeasureValue = (fetchDate: Date, measures: Measure[]) => {
   };
 
   return {
-    // url,
-    // name,
     lastAnalysisDate: fetchDate,
     measureAsNumber,
     qualityGateMetric,
@@ -206,11 +203,9 @@ export const getRepoSonarMeasures = async ({
       );
       if (!sonarConnection) return null;
 
-      const sonarHost = sonarConnection.url;
-
       return {
-        url: `${sonarHost}/dashboard?id=${sonarProject?.key}`,
-        name: sonarProject ? sonarProject.name : measure.sonarProjectId,
+        url: `${sonarConnection.url}/dashboard?id=${sonarProject.key}`,
+        name: sonarProject.name,
         lastAnalysisDate,
         // qualityGateName: sonarAnalysis.qualityGateName,
         files: measureAsNumber('files'),
