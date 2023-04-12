@@ -259,6 +259,13 @@ export type UICodeQuality2 =
         blockerViolations?: QualityGateDetails;
         codeSmells?: QualityGateDetails;
         criticalViolations?: QualityGateDetails;
+        newBranchCoverage?: QualityGateDetails;
+        newDuplicatedLinesDensity?: QualityGateDetails;
+        newBlockerViolations?: QualityGateDetails;
+        newBugs?: QualityGateDetails;
+        newCriticalViolations?: QualityGateDetails;
+        newMajorViolations?: QualityGateDetails;
+        newMinorViolations?: QualityGateDetails;
       };
       maintainability: {
         rating?: number;

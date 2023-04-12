@@ -116,6 +116,235 @@ const fieldDefinitions = {
   ],
 } as const;
 
+const fieldDefinitions2 = {
+  qualityGate: [
+    {
+      key: 'securityRating',
+      label: 'Security rating',
+      formatter: rating,
+    },
+    {
+      key: 'coverage',
+      label: 'Coverage',
+      formatter: percent,
+    },
+    {
+      key: 'duplicatedLinesDensity',
+      label: 'Duplicated lines density',
+      formatter: percent,
+    },
+    {
+      key: 'blockerViolations',
+      label: 'Blocker violations',
+      formatter: num,
+    },
+    {
+      key: 'codeSmells',
+      label: 'Code smells',
+      formatter: num,
+    },
+    {
+      key: 'criticalViolations',
+      label: 'Critical violations',
+      formatter: num,
+    },
+    // {
+    //   key: 'new_technical_debt',
+    //   label: 'Added Technical Debt',
+    // },
+    {
+      key: 'newBranchCoverage',
+      label: 'Condition coverage on new code',
+      formatter: percent,
+    },
+    // {
+    //   key: 'new_conditions_to_cover',
+    //   label: 'Conditions to Cover on New Code',
+    // },
+    // {
+    //   key: 'new_coverage',
+    //   label: 'Coverage on New Code',
+    // },
+    // {
+    //   key: 'new_development_cost',
+    //   label: 'Development Cost on New Code',
+    // },
+    // {
+    //   key: 'new_duplicated_blocks',
+    //   label: 'Duplicated Blocks on New Code',
+    // },
+    {
+      key: 'newDuplicatedLinesDensity',
+      label: 'Duplicated lines (%) on new code',
+      formatter: percent,
+    },
+    // {
+    //   key: 'new_duplicated_lines',
+    //   label: 'Duplicated Lines on New Code',
+    // },
+    // {
+    //   key: 'new_line_coverage',
+    //   label: 'Line Coverage on New Code',
+    // },
+    // {
+    //   key: 'new_lines_to_cover',
+    //   label: 'Lines to Cover on New Code',
+    // },
+    // {
+    //   key: 'new_maintainability_rating',
+    //   label: 'Maintainability Rating on New Code',
+    // },
+    {
+      key: 'newBlockerViolations',
+      label: 'New blocker issues',
+      formatter: num,
+    },
+    {
+      key: 'newBugs',
+      label: 'New bugs',
+      formatter: num,
+    },
+    // {
+    //   key: 'new_code_smells',
+    //   label: 'New Code Smells',
+    // },
+    {
+      key: 'newCriticalViolations',
+      label: 'New critical issues',
+      formatter: num,
+    },
+    // {
+    //   key: 'new_info_violations',
+    //   label: 'New Info Issues',
+    // },
+    // {
+    //   key: 'new_violations',
+    //   label: 'New Issues',
+    // },
+    // {
+    //   key: 'new_lines',
+    //   label: 'New Lines',
+    // },
+    {
+      key: 'newMajorViolations',
+      label: 'New major issues',
+      formatter: num,
+    },
+    {
+      key: 'newMinorViolations',
+      label: 'New minor issues',
+      formatter: num,
+    },
+    // {
+    //   key: 'new_security_hotspots',
+    //   label: 'New Security Hotspots',
+    // },
+    // {
+    //   key: 'new_vulnerabilities',
+    //   label: 'New Vulnerabilities',
+    // },
+    // {
+    //   key: 'new_reliability_rating',
+    //   label: 'Reliability Rating on New Code',
+    // },
+    // {
+    //   key: 'new_reliability_remediation_effort',
+    //   label: 'Reliability Remediation Effort on New Code',
+    // },
+    // {
+    //   key: 'new_security_hotspots_reviewed',
+    //   label: 'Security Hotspots Reviewed on New Code',
+    // },
+    // {
+    //   key: 'new_security_rating',
+    //   label: 'Security Rating on New Code',
+    // },
+    // {
+    //   key: 'new_security_remediation_effort',
+    //   label: 'Security Remediation Effort on New Code',
+    // },
+    // {
+    //   key: 'new_security_review_rating',
+    //   label: 'Security Review Rating on New Code',
+    // },
+    // {
+    //   key: 'new_security_hotspots_reviewed_status',
+    //   label: 'Security Review Reviewed Status on New Code',
+    // },
+    // {
+    //   key: 'new_security_hotspots_to_review_status',
+    //   label: 'Security Review To Review Status on New Code',
+    // },
+    // {
+    //   key: 'new_sqale_debt_ratio',
+    //   label: 'Technical Debt Ratio on New Code',
+    // },
+    // {
+    //   key: 'new_uncovered_conditions',
+    //   label: 'Uncovered Conditions on New Code',
+    // },
+    // {
+    //   key: 'new_uncovered_lines',
+    //   label: 'Uncovered Lines on New Code',
+    // },
+  ],
+  complexity: [
+    {
+      key: 'cognitive',
+      label: 'Cognitive Complexity',
+      formatter: num,
+    },
+    {
+      key: 'cyclomatic',
+      label: 'Cyclomatic Complexity',
+      formatter: num,
+    },
+  ],
+  reliability: [
+    {
+      key: 'bugs',
+      label: 'Bugs',
+      formatter: num,
+    },
+  ],
+  security: [
+    {
+      key: 'vulnerabilities',
+      label: 'Vulnerabilities',
+      formatter: num,
+    },
+  ],
+  duplications: [
+    {
+      key: 'blocks',
+      label: 'Duplicated blocks',
+      formatter: num,
+    },
+    {
+      key: 'lines',
+      label: 'Duplicated lines',
+      formatter: num,
+    },
+    {
+      key: 'files',
+      label: 'Files with duplications',
+      formatter: num,
+    },
+  ],
+  maintainability: [
+    {
+      key: 'techDebt',
+      label: 'Technical Debt',
+      formatter: formatDebt,
+    },
+    {
+      key: 'codeSmells',
+      label: 'Code smells',
+      formatter: num,
+    },
+  ],
+} as const;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const reliabilityRatingMeaning = {
   A: 'No bugs',
@@ -483,7 +712,7 @@ const SingleAnalysisV2: React.FC<{
         </div>
         <table className="w-full">
           <tbody>
-            {fieldDefinitions.qualityGate
+            {fieldDefinitions2.qualityGate
               .filter(({ key }) => codeQuality.quality[key] !== undefined)
               .map(({ key, label, formatter }, index) => {
                 const match = codeQuality.quality[key];
@@ -492,7 +721,7 @@ const SingleAnalysisV2: React.FC<{
                   <tr key={key} className={index % 2 === 0 ? '' : 'bg-gray-100'}>
                     <td className="p-1 align-top">
                       {label}
-                      {match.op && match.level && (
+                      {match.op && (match.level || match.level === 0) && (
                         <div className="text-gray-600 text-xs">
                           {`Should not be ${
                             match.op === 'gt' ? 'above' : 'below'
@@ -533,7 +762,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions.maintainability
+              {fieldDefinitions2.maintainability
                 .filter(({ key }) => codeQuality.maintainability[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.maintainability[key];
@@ -555,7 +784,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions.reliability
+              {fieldDefinitions2.reliability
                 .filter(({ key }) => codeQuality.reliability[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.reliability[key];
@@ -577,7 +806,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions.security
+              {fieldDefinitions2.security
                 .filter(({ key }) => codeQuality.security[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.security[key];
@@ -673,7 +902,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions.duplications
+              {fieldDefinitions2.duplications
                 .filter(({ key }) => codeQuality.duplication[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.duplication[key];
@@ -689,14 +918,14 @@ const SingleAnalysisV2: React.FC<{
           </table>
         </SubCard>
         <SubCard heading="Complexity">
-          {fieldDefinitions.complexity.filter(
+          {fieldDefinitions2.complexity.filter(
             ({ key }) => codeQuality.complexity[key] !== undefined
           ).length === 0 ? (
             <div className="text-gray-600 text-sm px-1">No complexity data available</div>
           ) : (
             <table className="w-full">
               <tbody>
-                {fieldDefinitions.complexity.map(({ key, label, formatter }) => {
+                {fieldDefinitions2.complexity.map(({ key, label, formatter }) => {
                   const match = codeQuality.complexity[key];
                   if (match === undefined) return null;
                   return (
@@ -721,12 +950,7 @@ const SingleAnalysisV2: React.FC<{
           : 'Analysis has never been run'}
       </div>
       <div className="items-end">
-        <a
-          className="link-text"
-          href={codeQuality.url}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a className="link-text" href={codeQuality.url} target="_blank" rel="noreferrer">
           See full details on SonarQube
         </a>
       </div>

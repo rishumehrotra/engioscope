@@ -223,6 +223,13 @@ export const getRepoSonarMeasures = async ({
           blockerViolations: qualityGateMetric('blocker_violations'),
           codeSmells: qualityGateMetric('code_smells'),
           criticalViolations: qualityGateMetric('critical_violations'),
+          newBranchCoverage: qualityGateMetric('new_branch_coverage'),
+          newDuplicatedLinesDensity: qualityGateMetric('new_duplicated_lines_density'),
+          newBlockerViolations: qualityGateMetric('new_blocker_violations'),
+          newBugs: qualityGateMetric('new_bugs'),
+          newCriticalViolations: qualityGateMetric('new_critical_violations'),
+          newMajorViolations: qualityGateMetric('new_major_violations'),
+          newMinorViolations: qualityGateMetric('new_minor_violations'),
         },
         coverage: {
           byTests: measureAsNumber('coverage'),
