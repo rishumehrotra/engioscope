@@ -7,10 +7,9 @@ import SummaryByMetric from '../components/summary-page/SummaryByMetric.js';
 import SummaryByTeam from '../components/summary-page/SummaryByTeam.js';
 import { dontFilter, filterBySearch, shortDate } from '../helpers/utils.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
-import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { metricsSummary } from '../network.js';
-import SummaryByCollections from '../components/summary-page/SummaryByCollections.jsx';
 
 const bySearch = (search: string) => (group: SummaryMetrics['groups'][number]) =>
   filterBySearch(search, group.groupName);
@@ -32,7 +31,6 @@ const Summary: React.FC = () => {
   const [search] = useQueryParam('search', asString);
   const [show, setShow] = useQueryParam('show', asString);
   const setHeaderDetails = useSetHeaderDetails();
-  const [showNewSummary] = useQueryParam('summary-v2', asBoolean);
 
   useEffect(() => {
     setHeaderDetails({
@@ -65,13 +63,8 @@ const Summary: React.FC = () => {
                 options={[
                   { label: 'Teams', value: 'teams' },
                   { label: 'Metric', value: 'metric' },
-                  ...(showNewSummary
-                    ? [{ label: 'Collections', value: 'collection' }]
-                    : []),
                 ]}
-                // onChange={value => setShow(value === 'teams' ? undefined : value, true)}
-                // value={show === undefined ? 'teams' : show}
-                onChange={value => setShow(value, true)}
+                onChange={value => setShow(value === 'teams' ? undefined : value, true)}
                 value={show === undefined ? 'teams' : show}
               />
             </div>
@@ -82,33 +75,12 @@ const Summary: React.FC = () => {
       <div className="mx-32">
         {}
         {metrics ? (
-          // show ? (
-          //   <SummaryByMetric
-          //     groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-          //     workItemTypes={metrics.workItemTypes}
-          //     queryPeriodDays={queryPeriodDays}
-          //   />
-          // ) : (
-          //   <SummaryByTeam
-          //     groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-          //     workItemTypes={metrics.workItemTypes}
-          //     queryPeriodDays={queryPeriodDays}
-          //   />
-          // )
-          show === 'teams' ? (
-            <SummaryByTeam
-              groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
-              workItemTypes={metrics.workItemTypes}
-              queryPeriodDays={queryPeriodDays}
-            />
-          ) : show === 'metric' ? (
+          show ? (
             <SummaryByMetric
               groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}
               workItemTypes={metrics.workItemTypes}
               queryPeriodDays={queryPeriodDays}
             />
-          ) : show === 'collection' ? (
-            <SummaryByCollections />
           ) : (
             <SummaryByTeam
               groups={metrics.groups.filter(search ? bySearch(search) : dontFilter)}

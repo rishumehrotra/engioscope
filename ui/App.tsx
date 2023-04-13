@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import superjson from 'superjson';
 import Project from './pages/Project.js';
-import Collection from './pages/Collection.js';
+import HomePage from './pages/HomePage.js';
 import { ProjectDetailsProvider } from './hooks/project-details-hooks.js';
 import { SortContextProvider } from './hooks/sort-hooks.js';
 import RecordAnalytics from './components/RecordAnalytics.js';
@@ -20,6 +20,7 @@ import { trpc } from './helpers/trpc';
 import { oneMinuteInMs } from '../shared/utils.js';
 import { DateRangeProvider } from './hooks/date-range-hooks.jsx';
 import Status from './pages/Status.jsx';
+import Collections from './pages/Collections.jsx';
 
 const App: React.FC = () => {
   const [queryClient] = useState(
@@ -62,8 +63,9 @@ const App: React.FC = () => {
                         <Route path="/change-program" element={<ChangeProgram />} />
                         <Route path="/tracks" element={<Tracks />} />
                         <Route path="/status" element={<Status />} />
+                        <Route path="/:collection" element={<Collections />} />
                         <Route path="/:collection/:project/*" element={<Project />} />
-                        <Route path="/" element={<Collection />} />
+                        <Route path="/" element={<HomePage />} />
                       </Routes>
                     </div>
                   </HeaderProvider>

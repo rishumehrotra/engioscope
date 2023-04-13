@@ -1,8 +1,8 @@
 import React from 'react';
-import { trpc } from '../../helpers/trpc.js';
-import { divide, toPercentage } from '../../../shared/utils.js';
+import { trpc } from '../helpers/trpc.js';
+import { divide, toPercentage } from '../../shared/utils.js';
 
-const CollectionSummaryTable: React.FC<{
+const CollectionsBuildsSummary: React.FC<{
   collectionName: string;
 }> = ({ collectionName }) => {
   const collectionSummary = trpc.summary.getCollectionSummary.useQuery({
@@ -23,19 +23,8 @@ const CollectionSummaryTable: React.FC<{
             <tr>
               <th className="text-xs font-semibold px-4 py-4">Sr.No</th>
               <th className="text-xs font-semibold px-4 py-4 text-left">Project Name</th>
-              <th className="text-xs font-semibold px-4 py-4">Total Tests</th>
-              <th className="text-xs font-semibold px-4 py-4">Coverage</th>
-              <th className="text-xs font-semibold px-4 py-4">Total Pipelines</th>
-              <th className="text-xs font-semibold px-4 py-4">Pipelines Running Tests</th>
-              <th className="text-xs font-semibold px-4 py-4">
-                Pipelines Reporting Coverages
-              </th>
               <th className="text-xs font-semibold px-4 py-4">Total Builds</th>
               <th className="text-xs font-semibold px-4 py-4">Successful Builds</th>
-              <th className="text-xs font-semibold px-4 py-4">Total Branches</th>
-              <th className="text-xs font-semibold px-4 py-4">Healthy Branches</th>
-              <th className="text-xs font-semibold px-4 py-4">Active Repository</th>
-              <th className="text-xs font-semibold px-4 py-4">Has Releases</th>
               <th className="text-xs font-semibold px-4 py-4">YAML Pipelines</th>
               <th className="text-xs font-semibold px-4 py-4">Central Template Usage</th>
             </tr>
@@ -59,43 +48,17 @@ const CollectionSummaryTable: React.FC<{
                   </div>
                 </td>
                 <td className="text-center border px-4 py-2">
-                  {project.latestTestsSummary.totalTests}
+                  {project.totalBuilds.count ?? '-'}
                 </td>
                 <td className="text-center border px-4 py-2">
                   {divide(
-                    project.latestCoverageSummary.coveredBranches ?? 0,
-                    project.latestCoverageSummary.totalBranches ?? 0
+                    project.successfulBuilds.count ?? 0,
+                    project.totalBuilds.count ?? 0
                   )
                     .map(toPercentage)
                     .getOr('-')}
                 </td>
-                <td className="text-center border px-4 py-2">
-                  {project.totalDefs ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.defsWithTests ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.defsWithCoverage ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.totalBuilds.count ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.successfulBuilds.count ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.healthyBranches.total ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.healthyBranches.healthy ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.totalActiveRepos ?? '-'}
-                </td>
-                <td className="text-center border px-4 py-2">
-                  {project.hasReleasesReposCount ?? '-'}
-                </td>
+
                 <td className="text-center border px-4 py-2">
                   {project.pipelines.yamlCount ?? '-'}
                 </td>
@@ -111,4 +74,4 @@ const CollectionSummaryTable: React.FC<{
   );
 };
 
-export default CollectionSummaryTable;
+export default CollectionsBuildsSummary;
