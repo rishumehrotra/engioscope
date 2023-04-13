@@ -14,7 +14,6 @@ import {
   getCentralTemplateBuildDefs,
 } from './build-reports.js';
 import { getAllRepoDefaultBranchIDs, getTotalReposInProject } from './repos.js';
-import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
@@ -159,7 +158,7 @@ export const getCentralTemplatePipeline = async (
     buildDef => buildDef.buildDefinitionId
   );
 
-  const result = await BuildDefinitionModel.aggregate([
+  const result = await BuildDefinitionModel.aggregate<{ matchingCount: number }>([
     {
       $match: {
         collectionName,
@@ -348,11 +347,7 @@ export const getSummary = async ({
     getTotalReposInProject(collectionName, project),
   ]);
 
-  const successRate = divide(successfulBuilds.count, totalBuilds.count)
-    .map(toPercentage)
-    .getOr('-');
-
-  const weeklySuccess = totalBuilds.byWeek.map(({ weekIndex, count }) => {
+  const weeklySuccessfulBuilds = totalBuilds.byWeek.map(({ weekIndex, count }) => {
     const successfulBuildsForWeek = successfulBuilds.byWeek.find(
       s => s.weekIndex === weekIndex
     );
@@ -368,8 +363,7 @@ export const getSummary = async ({
     centralTemplateUsage,
     pipelines,
     healthyBranches,
-    weeklySuccess,
-    successRate,
+    weeklySuccessfulBuilds,
     totalBuilds,
     successfulBuilds,
     totalActiveRepos: activeRepoIds.length,

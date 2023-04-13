@@ -59,12 +59,12 @@ const CollectionSummaryTable: React.FC<{
                   </div>
                 </td>
                 <td className="text-center border px-4 py-2">
-                  {project.latestTestsSummary.totalTests}
+                  {project.latestTestsSummary?.totalTests || 0}
                 </td>
                 <td className="text-center border px-4 py-2">
                   {divide(
-                    project.latestCoverageSummary.coveredBranches ?? 0,
-                    project.latestCoverageSummary.totalBranches ?? 0
+                    project.latestCoverageSummary?.coveredBranches ?? 0,
+                    project.latestCoverageSummary?.totalBranches ?? 0
                   )
                     .map(toPercentage)
                     .getOr('-')}

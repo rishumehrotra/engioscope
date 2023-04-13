@@ -24,10 +24,8 @@ export const paginatedRepoListParser = z.object({
     .nullish(),
 });
 
-export const searchRepositories = async (
-  options: z.infer<typeof paginatedRepoListParser>
-) => {
-  const result = await RepositoryModel.find(
+export const searchRepositories = (options: z.infer<typeof paginatedRepoListParser>) => {
+  return RepositoryModel.find(
     {
       'collectionName': options.collectionName,
       'project.name': options.project,
@@ -38,11 +36,9 @@ export const searchRepositories = async (
     .sort({ id: -1 })
     .skip((options.cursor?.pageNumber || 0) * (options.cursor?.pageSize || 5))
     .limit(options.cursor?.pageSize || 5);
-
-  return result;
 };
 
-export const getRepoById = async (
+export const getRepoById = (
   collectionName: string,
   project: string,
   repositoryId: string
@@ -151,11 +147,8 @@ export const getAllRepoDefaultBranchIDs = async (
   return repoDefaultBranches.map(repo => repo.defaultBranchId);
 };
 
-export const getTotalReposInProject = async (collectionName: string, project: string) => {
-  const totalRepos = await RepositoryModel.countDocuments({
+export const getTotalReposInProject = (collectionName: string, project: string) =>
+  RepositoryModel.countDocuments({
     collectionName,
     'project.name': project,
   });
-
-  return totalRepos;
-};

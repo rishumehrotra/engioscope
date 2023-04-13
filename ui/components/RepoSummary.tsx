@@ -308,14 +308,19 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 title: 'Success',
                 value: (
                   <LabelWithSparkline
-                    label={summaries.data.successRate}
-                    data={summaries.data.weeklySuccess.map(week => {
+                    label={divide(
+                      summaries.data.successfulBuilds.count,
+                      summaries.data.totalBuilds.count
+                    )
+                      .map(toPercentage)
+                      .getOr('-')}
+                    data={summaries.data.weeklySuccessfulBuilds.map(week => {
                       return divide(week.successes, week.count)
                         .map(multiply(100))
                         .getOr(0);
                     })}
                     lineColor={increaseIsBetter(
-                      summaries.data.weeklySuccess.map(week => {
+                      summaries.data.weeklySuccessfulBuilds.map(week => {
                         return divide(week.successes, week.count)
                           .map(multiply(100))
                           .getOr(0);

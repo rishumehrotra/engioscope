@@ -1,26 +1,5 @@
 import { model, Schema } from 'mongoose';
-
-type BuildStats = {
-  count: number;
-  byWeek: {
-    count: number;
-    start: Date;
-    end: Date;
-    weekIndex: number;
-  }[];
-};
-
-type WeeklyTest = {
-  weekIndex: number;
-  passedTests: number;
-  totalTests: number;
-};
-
-type WeeklyCoverage = {
-  weekIndex: number;
-  coveredBranches: number;
-  totalBranches: number;
-};
+import type { getSummary } from '../repo-listing.js';
 
 export type Summary = {
   collectionName: string;
@@ -28,34 +7,7 @@ export type Summary = {
   duration: '30 days' | '90 days' | '180 days';
   startDate: Date;
   endDate: Date;
-  pipelines: {
-    totalCount: number;
-    yamlCount: number;
-  };
-  healthyBranches: {
-    total: number;
-    healthy: number;
-  };
-  centralTemplateUsage: {
-    templateUsers: number;
-  };
-  totalBuilds: BuildStats;
-  successfulBuilds: BuildStats;
-  totalActiveRepos: number;
-  totalRepos: number;
-  hasReleasesReposCount: number;
-  centralTemplatePipeline: {
-    total: number;
-    central: number;
-  };
-  totalDefs: number;
-  defsWithTests: number;
-  defsWithCoverage: number;
-  weeklyTestsSummary: WeeklyTest[];
-  weeklyCoverageSummary: WeeklyCoverage[];
-  latestTestsSummary: WeeklyTest;
-  latestCoverageSummary: WeeklyCoverage;
-};
+} & Awaited<ReturnType<typeof getSummary>>;
 
 const summarySchema = new Schema<Summary>(
   {
@@ -70,11 +22,9 @@ const summarySchema = new Schema<Summary>(
       total: { type: Number },
       healthy: { type: Number },
     },
-
     centralTemplateUsage: {
       templateUsers: { type: Number },
     },
-
     totalBuilds: {
       count: { type: Number },
       byWeek: [
@@ -86,7 +36,6 @@ const summarySchema = new Schema<Summary>(
         },
       ],
     },
-
     successfulBuilds: {
       count: { type: Number },
       byWeek: [
@@ -98,50 +47,35 @@ const summarySchema = new Schema<Summary>(
         },
       ],
     },
-
     totalActiveRepos: { type: Number },
     totalRepos: { type: Number },
     hasReleasesReposCount: { type: Number },
-
     centralTemplatePipeline: {
       total: { type: Number },
       central: { type: Number },
     },
-
     totalDefs: { type: Number },
     defsWithTests: { type: Number },
     defsWithCoverage: { type: Number },
-
     weeklyTestsSummary: [
       {
         weekIndex: { type: Number },
         passedTests: { type: Number },
         totalTests: { type: Number },
       },
-
-      {
-        timestamps: true,
-      },
     ],
-
     weeklyCoverageSummary: [
       {
         weekIndex: { type: Number },
         coveredBranches: { type: Number },
         totalBranches: { type: Number },
       },
-
-      {
-        timestamps: true,
-      },
     ],
-
     latestTestsSummary: {
       weekIndex: { type: Number },
       passedTests: { type: Number },
       totalTests: { type: Number },
     },
-
     latestCoverageSummary: {
       weekIndex: { type: Number },
       coveredBranches: { type: Number },
