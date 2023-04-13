@@ -11,6 +11,7 @@ import { setupJob } from './utils.js';
 import { getReleases, getReleaseUpdates } from './releases.js';
 import { getBuildDefinitions } from './build-definitions.js';
 import { refreshSonarProjects } from './sonar.js';
+import { insertSummarySnapshot } from './summary.js';
 
 export default () => {
   setupJob('builds', t => t.everyHourAt(45), syncBuildsAndTimelines);
@@ -28,4 +29,9 @@ export default () => {
   setupJob('releases', t => t.everyHourAt(20), getReleases);
   setupJob('release updates', t => t.everyHourAt(35), getReleaseUpdates);
   setupJob('sonar projects', t => t.everyDay(), refreshSonarProjects);
+  setupJob(
+    'prepare-summary-snapshot',
+    t => t.everyDayAt(4),
+    () => insertSummarySnapshot('90 days')
+  );
 };

@@ -13,7 +13,7 @@ import {
   getTotalCentralTemplateUsage,
   getCentralTemplateBuildDefs,
 } from './build-reports.js';
-import { getAllRepoDefaultBranchIDs } from './repos.js';
+import { getAllRepoDefaultBranchIDs, getTotalReposInProject } from './repos.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
@@ -313,6 +313,7 @@ export const getSummary = async ({
     defSummary,
     weeklyTestsSummary,
     weeklyCoverageSummary,
+    totalRepos,
   ] = await Promise.all([
     getSuccessfulBuildsBy(collectionName, project, startDate, endDate, activeRepoIds),
 
@@ -343,6 +344,8 @@ export const getSummary = async ({
     getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate),
 
     getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
+
+    getTotalReposInProject(collectionName, project),
   ]);
 
   const successRate = divide(successfulBuilds.count, totalBuilds.count)
@@ -370,6 +373,7 @@ export const getSummary = async ({
     totalBuilds,
     successfulBuilds,
     totalActiveRepos: activeRepoIds.length,
+    totalRepos,
     hasReleasesReposCount,
     centralTemplatePipeline,
     totalDefs: defSummary.totalDefs,
