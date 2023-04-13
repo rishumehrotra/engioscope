@@ -199,7 +199,7 @@ export const trackMetrics = (config: ParsedConfig, results: Result[]) =>
     results
       .map(metricsForResult(isAfter(`${queryPeriodDays(config)} days`)))
       .filter(exists)
-  );
+  ).then(x => x.filter(exists));
 
 export const trackFeatures = (
   config: ParsedConfig,

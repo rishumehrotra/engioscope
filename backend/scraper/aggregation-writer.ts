@@ -3,12 +3,10 @@ import { join } from 'node:path';
 import debug from 'debug';
 import pluralize from 'pluralize';
 import type {
-  AnalysedProjects,
   ProjectOverviewAnalysis,
   ProjectReleasePipelineAnalysis,
   ProjectRepoAnalysis,
   ProjectWorkItemAnalysis,
-  ScrapedProject,
   SummaryMetrics,
   TrackMetricsByTrack,
   TrackFlowMetrics,
@@ -18,20 +16,12 @@ import type {
   TrackwiseData,
   TrackFeatures,
 } from '../../shared/types.js';
-import { doesFileExist, lock } from '../utils.js';
 import type { ProjectAnalysis } from './types.js';
 import type { ParsedConfig, ParsedProjectConfig } from './parse-config.js';
 
 const outputFileLog = debug('write-output');
 
-const [acquireLock, releaseLock] = lock();
-
 const dataFolderPath = join(process.cwd(), 'data');
-const overallSummaryFilePath = join(dataFolderPath, 'index.json');
-const createDataFolder = fs.mkdir(dataFolderPath, { recursive: true });
-
-const projectName = (project: string | ParsedProjectConfig) =>
-  typeof project === 'string' ? project : project.name;
 
 const writeFile = async (path: string[], fileName: string, contents: string) => {
   outputFileLog(
@@ -43,7 +33,6 @@ const writeFile = async (path: string[], fileName: string, contents: string) => 
 };
 
 const projectSummary = (
-  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
@@ -62,13 +51,12 @@ const projectSummary = (
 });
 
 const writeRepoAnalysisFile = async (
-  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectRepoAnalysis = {
-    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
     repos: projectAnalysis.repoAnalysis,
     featureToggles: projectAnalysis.featureToggles,
     groups: projectConfig.groupRepos,
@@ -81,13 +69,12 @@ const writeRepoAnalysisFile = async (
 };
 
 const writeReleaseAnalysisFile = async (
-  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectReleasePipelineAnalysis = {
-    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
     ...projectAnalysis.releaseAnalysis,
     stagesToHighlight: projectConfig.releasePipelines?.stagesToHighlight,
     ignoreStagesBefore: projectConfig.releasePipelines?.ignoreStagesBefore,
@@ -102,13 +89,12 @@ const writeReleaseAnalysisFile = async (
 };
 
 const writeWorkItemAnalysisFile = async (
-  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectWorkItemAnalysis = {
-    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
     workItems: projectAnalysis.workItemAnalysis.analysedWorkItems,
     taskType: projectConfig.workitems.label,
   };
@@ -120,13 +106,12 @@ const writeWorkItemAnalysisFile = async (
 };
 
 const writeOverviewFile = async (
-  config: ParsedConfig,
   collectionName: string,
   projectConfig: ParsedProjectConfig,
   projectAnalysis: ProjectAnalysis
 ) => {
   const analysis: ProjectOverviewAnalysis = {
-    ...projectSummary(config, collectionName, projectConfig, projectAnalysis),
+    ...projectSummary(collectionName, projectConfig, projectAnalysis),
     overview: projectAnalysis.workItemAnalysis?.overview,
     testCases: projectAnalysis.testCasesAnalysis,
     ignoreForWIP: projectConfig.workitems.ignoreForWIP,
@@ -139,79 +124,19 @@ const writeOverviewFile = async (
   );
 };
 
-const matchingProject =
-  (projectSpec: readonly [string, string | ParsedProjectConfig]) =>
-  (scrapedProject: { name: [string, string] }) =>
-    scrapedProject.name[0] === projectSpec[0] &&
-    scrapedProject.name[1] === projectName(projectSpec[1]);
-
-const readOverallSummaryFile = async (): Promise<AnalysedProjects> => {
-  await createDataFolder;
-  return (await doesFileExist(overallSummaryFilePath))
-    ? JSON.parse(await fs.readFile(overallSummaryFilePath, 'utf8'))
-    : { projects: [], lastUpdated: null, hasSummary: false };
-};
-
-const populateWithEmptyValuesIfNeeded =
-  (config: ParsedConfig) =>
-  (projectAnalysis: AnalysedProjects): AnalysedProjects => {
-    const projects = config.azure.collections.flatMap(collection =>
-      collection.projects.map(
-        project => [collection.name, projectName(project)] as ScrapedProject['name']
-      )
-    );
-
-    return {
-      ...projectAnalysis,
-      projects: projects.map(configProjectSpec => {
-        const matchingExistingProject = projectAnalysis.projects.find(
-          matchingProject(configProjectSpec)
-        );
-        if (matchingExistingProject) return matchingExistingProject;
-        return { name: configProjectSpec, rating: null } as ScrapedProject;
-      }),
-    };
-  };
-
-const writeOverallSummaryFile = (analysedProjects: AnalysedProjects) =>
-  writeFile(['./'], 'index.json', JSON.stringify(analysedProjects));
-
-const updateOverallSummary = (config: ParsedConfig) => (scrapedProject: ScrapedProject) =>
-  acquireLock()
-    .then(readOverallSummaryFile)
-    .then(populateWithEmptyValuesIfNeeded(config))
-    .then(analysedProjects => ({
-      ...analysedProjects,
-      hasSummary: Boolean(config.azure.summaryPageGroups?.[0]),
-      changeProgramName: config.azure.collections.find(
-        c => c.name === scrapedProject.name[0]
-      )?.changeProgram?.name,
-      lastUpdated: new Date().toISOString(),
-      projects: analysedProjects.projects.map(p =>
-        matchingProject(p.name)(scrapedProject) ? scrapedProject : p
-      ),
-    }))
-    .then(writeOverallSummaryFile)
-    .finally(releaseLock);
-
-export default (config: ParsedConfig) =>
-  (collectionName: string, projectConfig: ParsedProjectConfig) =>
+export default (collectionName: string, projectConfig: ParsedProjectConfig) =>
   (analysis: ProjectAnalysis) =>
     Promise.all([
-      writeRepoAnalysisFile(config, collectionName, projectConfig, analysis),
-      writeReleaseAnalysisFile(config, collectionName, projectConfig, analysis),
-      writeWorkItemAnalysisFile(config, collectionName, projectConfig, analysis),
-      writeOverviewFile(config, collectionName, projectConfig, analysis),
-      updateOverallSummary(config)({ name: [collectionName, projectConfig.name] }),
+      writeRepoAnalysisFile(collectionName, projectConfig, analysis),
+      writeReleaseAnalysisFile(collectionName, projectConfig, analysis),
+      writeWorkItemAnalysisFile(collectionName, projectConfig, analysis),
+      writeOverviewFile(collectionName, projectConfig, analysis),
     ]);
 
 export const writeSummaryMetricsFile = (summary: SummaryMetrics) =>
   writeFile(['./'], 'summary-metrics.json', JSON.stringify(summary));
 
-export const writeTrackFlowMetrics = (
-  config: ParsedConfig,
-  tracks: TrackMetricsByTrack
-) => {
+export const writeTrackFlowMetrics = (tracks: TrackMetricsByTrack) => {
   const tracksWorkItems: TrackFlowMetrics = {
     tracks,
     lastUpdated: new Date().toISOString(),
@@ -220,7 +145,7 @@ export const writeTrackFlowMetrics = (
   return writeFile(['./'], 'track-flow-metrics.json', JSON.stringify(tracksWorkItems));
 };
 
-export const writeTrackFeatures = (config: ParsedConfig, tracks: TrackwiseData[]) => {
+export const writeTrackFeatures = (tracks: TrackwiseData[]) => {
   const tracksWorkItems: TrackFeatures = {
     tracks,
     lastUpdated: new Date().toISOString(),

@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { exec as cpsExec } from 'node:child_process';
 import { rename, access } from 'node:fs/promises';
 import { join } from 'node:path';
-import aggregationWriter, {
+import writeToFile, {
   writeChangeProgramFile,
   writeSummaryMetricsFile,
   writeTrackFeatures,
@@ -71,7 +71,6 @@ const scrape = async (config: ParsedConfig) => {
     getCollectionWorkItems,
   } = azure(config);
   const analyseProject = projectAnalyser(config);
-  const writeToFile = aggregationWriter(config);
   const collectionWorkItems = workItemsForCollection(config);
 
   const changeProgramWorkItems = Promise.all(
@@ -133,14 +132,14 @@ const scrape = async (config: ParsedConfig) => {
         collectionConfig: r[0][0],
         projectConfig: r[0][1],
       }))
-    ).then(t => writeTrackFlowMetrics(config, t.filter(exists))),
+    ).then(t => writeTrackFlowMetrics(t.filter(exists))),
     trackFeatures(
       config,
       results.map(r => ({
         collectionConfig: r[0][0],
         projectConfig: r[0][1],
       }))
-    ).then(t => writeTrackFeatures(config, t)),
+    ).then(writeTrackFeatures),
     summariseResults(
       config,
       results.map(r => ({

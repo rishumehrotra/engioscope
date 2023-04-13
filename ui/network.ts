@@ -4,21 +4,14 @@ import type {
   ProjectWorkItemAnalysis,
   UIWorkItemRevision,
   ProjectOverviewAnalysis,
-  AnalyticsItem,
   PipelineDefinitions,
   SummaryMetrics,
-  AnalysedProjects,
   UIChangeProgram,
   TrackFlowMetrics,
   TrackFeatures,
 } from '../shared/types.js';
 
 const json = (res: Response) => res.json();
-
-export const fetchCollections = (): Promise<AnalysedProjects> =>
-  fetch('/api/index.json').then(json);
-
-export const fetchAnalytics = (): Promise<AnalyticsItem[]> => fetch('/api/an').then(json);
 
 export const repoMetrics = (
   collection: string,

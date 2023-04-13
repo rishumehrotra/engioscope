@@ -1,6 +1,6 @@
 import Router from 'express-promise-router';
 import { join } from 'node:path';
-import { promises as fs, createWriteStream, createReadStream } from 'node:fs';
+import { promises as fs, createReadStream } from 'node:fs';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';
@@ -21,16 +21,6 @@ export default (config: ParsedConfig) => {
 
   router.get('/api/ui-version', (req, res) => {
     res.send(process.env.npm_package_version);
-  });
-
-  router.post('/api/ft', (req, res) => {
-    req.pipe(createWriteStream(join(process.cwd(), 'ft.json')));
-    req.on('end', () => {
-      res.send(202);
-    });
-    req.on('error', () => {
-      res.send(598);
-    });
   });
 
   router.get('/api/cache', (req, res) => {
