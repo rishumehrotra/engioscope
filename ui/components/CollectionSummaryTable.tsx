@@ -34,7 +34,7 @@ const CollectionSummaryTable: React.FC<{
               <th className="text-xs font-semibold px-4 py-4">Successful Builds</th>
               <th className="text-xs font-semibold px-4 py-4">Total Branches</th>
               <th className="text-xs font-semibold px-4 py-4">Healthy Branches</th>
-              <th className="text-xs font-semibold px-4 py-4">Active Repository</th>
+              <th className="text-xs font-semibold px-4 py-4">Active Repositories</th>
               <th className="text-xs font-semibold px-4 py-4">Has Releases</th>
               <th className="text-xs font-semibold px-4 py-4">YAML Pipelines</th>
               <th className="text-xs font-semibold px-4 py-4">Central Template Usage</th>
@@ -45,7 +45,7 @@ const CollectionSummaryTable: React.FC<{
               <tr key={project.project}>
                 <td className="text-center border px-4 py-2">{index + 1}</td>
                 <td className="border px-4 py-2">
-                  <div className="text-sm font-semibold">{project.project}</div>
+                  <div className="text-base font-semibold">{project.project}</div>
                   <div className="text-gray-700 text-xs py-1">
                     Analyzed
                     <span className="text-gray-800 font-semibold">

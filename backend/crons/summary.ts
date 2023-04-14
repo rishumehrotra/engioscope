@@ -19,13 +19,22 @@ export const insertSummarySnapshot = async (
     collectionsAndProjects().map(
       async ([{ name: collectionName }, { name: project }]) => {
         const summary = await getSummary({ collectionName, project, startDate, endDate });
+
         return SummaryModel.updateOne(
           {
             collectionName,
             project,
             duration,
           },
-          { $set: { collectionName, project, duration, ...summary } },
+          {
+            $set: {
+              collectionName,
+              project,
+              duration,
+              ...summary,
+              weeklySuccessfulBuilds: summary.weeklySuccessfulBuilds,
+            },
+          },
           { upsert: true }
         );
       }
