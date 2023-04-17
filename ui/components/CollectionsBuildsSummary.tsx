@@ -87,11 +87,11 @@ const CollectionsBuildsSummary: React.FC<{
                     <div className="text-base font-semibold">{project.project}</div>
                     <div className="text-gray-600 text-xs py-1">
                       Analyzed
-                      <span className="text-gray-800 font-semibold">
+                      <span className="font-semibold">
                         {` ${project.totalActiveRepos} `}
                       </span>
                       active repositories, excluded{' '}
-                      <span className="text-gray-800 font-semibold">
+                      <span className="font-semibold">
                         {` ${project.totalRepos - project.totalActiveRepos || 0} `}
                       </span>
                       inactive repositories
