@@ -1,5 +1,7 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
 import { BuildDefinitionModel } from '../models/mongoose-models/BuildDefinitionModel.js';
+import { BuildModel } from '../models/mongoose-models/BuildModel.js';
+import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 import azure from '../scraper/network/azure.js';
 import type { BuildDefinitionReference } from '../scraper/types-azure.js';
 
@@ -11,6 +13,18 @@ export const bulkSaveBuildDefinitions =
       collectionName,
       project,
       id: { $nin: buildDefinitions.map(b => b.id) },
+    });
+
+    await BuildModel.deleteMany({
+      collectionName,
+      project,
+      'definition.id': { $nin: buildDefinitions.map(b => b.id) },
+    });
+
+    await TestRunModel.deleteMany({
+      collectionName,
+      'project.name': project,
+      'buildConfiguration.buildDefinitionId': { $nin: buildDefinitions.map(b => b.id) },
     });
 
     return BuildDefinitionModel.bulkWrite(
