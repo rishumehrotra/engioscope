@@ -7,6 +7,7 @@ import type {
   Overview,
   ProjectOverviewAnalysis,
   UIWorkItem,
+  UIWorkItemType,
 } from '../../shared/types.js';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils.js';
 import {
@@ -189,11 +190,46 @@ const analyseProjects = (collectionName: string, projects: ParsedProjectConfig[]
 const collectionWorkitemSummary = () => {
   return Promise.all(
     collections().map(async ({ name: collectionName, projects }) => {
+      const {
+        types,
+        groups,
+        projects: analysedProjects,
+      } = (await analyseProjects(collectionName, projects)).reduce<{
+        types: Record<string, UIWorkItemType>;
+        groups: Record<
+          string,
+          {
+            witId: string;
+            name: string;
+          }
+        >;
+        projects: Omit<
+          Awaited<ReturnType<typeof analyseProjects>>[number],
+          'types' | 'groups'
+        >[];
+      }>(
+        (acc, p) => {
+          const { types, groups, ...rest } = p;
+          return {
+            types: { ...acc.types, ...types },
+            projects: [...acc.projects, rest],
+            groups: { ...acc.groups, ...groups },
+          };
+        },
+        { types: {}, groups: {}, projects: [] }
+      );
+
       return writeFile(
         join(process.cwd(), 'data', collectionName, 'collection-summary.json'),
         JSON.stringify({
           collectionName,
-          projects: await analyseProjects(collectionName, projects),
+          projects: analysedProjects,
+          types: Object.fromEntries(
+            Object.entries(types).filter(([, value]) => {
+              return ['Feature', 'User Story', 'Bug'].includes(value.name[0]);
+            })
+          ),
+          groups,
         })
       );
     })
