@@ -1,6 +1,7 @@
 import prettyMs from 'pretty-ms';
-import { multiply, subtract } from 'rambda';
+import { multiply, prop, subtract } from 'rambda';
 import React from 'react';
+import { asc, byNum } from 'sort-lib';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { trpc } from '../../helpers/trpc.js';
 import { useDateRange } from '../../hooks/date-range-hooks.jsx';
@@ -74,9 +75,9 @@ const BuildPipelineTests: React.FC<{
                             {pipeline.name}
                           </a>
                         }
-                        data={pipeline.tests.map(t =>
-                          t.hasTests ? t.totalTests : undefined
-                        )}
+                        data={pipeline.tests
+                          .sort(asc(byNum(prop('weekIndex'))))
+                          .map(t => (t.hasTests ? t.totalTests : undefined))}
                         lineColor={increaseIsBetter(
                           pipeline.tests.map(t => (t.hasTests ? t.totalTests : 0))
                         )}
@@ -136,14 +137,19 @@ const BuildPipelineTests: React.FC<{
                               : '-'}
                           </span>
                         }
-                        data={(pipeline.coverageByWeek || []).map(c =>
-                          c.coverage
-                            ? divide(c.coverage.coveredBranches, c.coverage.totalBranches)
-                                .map(multiply(100))
-                                // eslint-disable-next-line unicorn/no-useless-undefined
-                                .getOr(undefined)
-                            : undefined
-                        )}
+                        data={(pipeline.coverageByWeek || [])
+                          .sort(asc(byNum(prop('weekIndex'))))
+                          .map(c =>
+                            c.coverage
+                              ? divide(
+                                  c.coverage.coveredBranches,
+                                  c.coverage.totalBranches
+                                )
+                                  .map(multiply(100))
+                                  // eslint-disable-next-line unicorn/no-useless-undefined
+                                  .getOr(undefined)
+                              : undefined
+                          )}
                         lineColor={increaseIsBetter(
                           (pipeline.coverageByWeek || []).map(c => {
                             return c.coverage
