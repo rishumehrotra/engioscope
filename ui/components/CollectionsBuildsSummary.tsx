@@ -90,7 +90,7 @@ const CollectionsBuildsSummary: React.FC<{
                       <span className="text-gray-800 font-semibold">
                         {` ${project.totalActiveRepos} `}
                       </span>
-                      active repositories and excluded{' '}
+                      active repositories, excluded{' '}
                       <span className="text-gray-800 font-semibold">
                         {` ${project.totalRepos - project.totalActiveRepos || 0} `}
                       </span>

@@ -39,7 +39,6 @@ export const getCollectionBuildsSummary = ({
   >(
     { collectionName, duration: '90 days' },
     {
-      collectionName: 1,
       project: 1,
       totalActiveRepos: 1,
       totalRepos: 1,
@@ -67,10 +66,11 @@ export const getCollectionReleasesSummary = ({
 export const getCollectionCodeQualitySummary = async ({
   collectionName,
 }: z.infer<typeof CollectionNameParser>) =>
-  SummaryModel.find<Summary>(
+  SummaryModel.find<
+    Pick<Summary, 'project' | 'totalActiveRepos' | 'totalRepos' | 'healthyBranches'>
+  >(
     { collectionName, duration: '90 days' },
     {
-      collectionName: 1,
       project: 1,
       totalActiveRepos: 1,
       totalRepos: 1,
