@@ -241,6 +241,14 @@ export default collectionWorkitemSummary;
 export type CollectionSummary = {
   collectionName: string;
   projects: Awaited<ReturnType<typeof analyseProjects>>;
+  types: Record<string, UIWorkItemType>;
+  groups: Record<
+    string,
+    {
+      witId: string;
+      name: string;
+    }
+  >;
 };
 
 export const ReadSummaryInputParser = z.object({
