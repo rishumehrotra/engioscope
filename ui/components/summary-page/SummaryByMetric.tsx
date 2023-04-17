@@ -138,7 +138,9 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table 
                     {row.values.map((cell, j) => (
                       // Ok to use indexes as keys since we're never changing order
                       // eslint-disable-next-line react/no-array-index-key
-                      <td key={j}>{cell.content}</td>
+                      <td key={j} className={j === 0 ? 'left' : ''}>
+                        {cell.content}
+                      </td>
                     ))}
                   </tr>
                 ))}
