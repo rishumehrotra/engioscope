@@ -8,10 +8,20 @@ export const CollectionNameParser = z.object({
 export const getCollectionTestAutomationSummary = ({
   collectionName,
 }: z.infer<typeof CollectionNameParser>) =>
-  SummaryModel.find<Summary>(
+  SummaryModel.find<
+    Pick<
+      Summary,
+      | 'project'
+      | 'totalActiveRepos'
+      | 'totalRepos'
+      | 'latestTestsSummary'
+      | 'latestCoverageSummary'
+      | 'weeklyTestsSummary'
+      | 'weeklyCoverageSummary'
+    >
+  >(
     { collectionName, duration: '90 days' },
     {
-      collectionName: 1,
       project: 1,
       totalActiveRepos: 1,
       totalRepos: 1,
@@ -52,10 +62,11 @@ export const getCollectionBuildsSummary = ({
 export const getCollectionReleasesSummary = ({
   collectionName,
 }: z.infer<typeof CollectionNameParser>) =>
-  SummaryModel.find<Summary>(
+  SummaryModel.find<
+    Pick<Summary, 'project' | 'totalActiveRepos' | 'totalRepos' | 'hasReleasesReposCount'>
+  >(
     { collectionName, duration: '90 days' },
     {
-      collectionName: 1,
       project: 1,
       totalActiveRepos: 1,
       totalRepos: 1,
