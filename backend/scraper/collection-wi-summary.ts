@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { anyPass, applySpec, filter, length, map, pipe, sum } from 'rambda';
+import { z } from 'zod';
 import { collections, getConfig, configForProject } from '../config.js';
 import type {
   Overview,
@@ -19,6 +20,7 @@ import {
 } from '../../shared/work-item-utils.js';
 import { isAfter, queryPeriodDays, weekLimits, weeks } from '../utils.js';
 import { divide, mapObj } from '../../shared/utils.js';
+import type { ParsedProjectConfig } from './parse-config.js';
 
 const looksLikeDate = (value: string) =>
   /\d{4}-[01]\d-[0-3]\dT[0-2](?:\d:[0-5]){2}\d(.*Z)/.test(value);
@@ -73,123 +75,149 @@ const organiseWorkItemsIntoGroups = (workItems: UIWorkItem[]) =>
     return acc;
   }, {});
 
-export default () => {
+const analyseProjects = (collectionName: string, projects: ParsedProjectConfig[]) => {
   const isInQueryPeriod = isAfter(`${queryPeriodDays(getConfig())} days`);
   return Promise.all(
-    collections().map(async ({ name: collectionName, projects }) => {
-      const analysedProjects = await Promise.all(
-        projects.map(async ({ name: project }) => {
-          const overview = await getOverview(collectionName, project);
-          const projectConfig = configForProject(collectionName, project);
+    projects.map(async ({ name: project }) => {
+      const overview = await getOverview(collectionName, project);
+      const projectConfig = configForProject(collectionName, project);
 
-          const workItemTimes = (wi: UIWorkItem) => overview.times[wi.id];
-          const workItemType = (witId: string) => overview.types[witId];
+      const workItemTimes = (wi: UIWorkItem) => overview.times[wi.id];
+      const workItemType = (witId: string) => overview.types[witId];
 
-          const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
-          const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
-          const wasWorkItemCompletedInQueryPeriod =
-            wasWorkItemCompletedIn(isInQueryPeriod);
+      const computeTimeDifferenceBetween = computeTimeDifference(workItemTimes);
+      const wasWorkItemCompletedIn = hasWorkItemCompleted(workItemTimes);
+      const wasWorkItemCompletedInQueryPeriod = wasWorkItemCompletedIn(isInQueryPeriod);
 
-          const wipWorkItems = isWIP(
-            workItemTimes,
-            projectConfig?.workitems.ignoreForWIP || []
-          );
-          const isOfType = (type: string) => (workItem: UIWorkItem) =>
-            overview.types[workItem.typeId].name[0] === type;
-          const leakage = isNewInTimeRange(workItemType, workItemTimes);
-          const flowEfficiency = (() => {
-            const tct = totalCycleTime(workItemTimes);
-            const wct = totalWorkCenterTime(workItemTimes);
-
-            return (wis: UIWorkItem[]) => {
-              const total = tct(wis);
-              if (total === 0) {
-                return { total: 0, wcTime: 0 };
-              }
-              const wcTime = wct(wis);
-              return { total, wcTime };
-            };
-          })();
-
-          const isWIPIn = ([, weekEnd]: readonly [Date, Date]) =>
-            isWIPInTimeRange(
-              workItemTimes,
-              projectConfig?.workitems.ignoreForWIP || []
-            )((d, type) => {
-              if (type === 'start') return d <= weekEnd;
-              return d < weekEnd;
-            });
-
-          return {
-            project,
-            types: overview.types,
-            groups: overview.groups,
-            byType: pipe(
-              filter(anyPass(concernedTypes.map(isOfType))),
-              organiseWorkItemsIntoGroups,
-              pipe(
-                mapObj,
-                mapObj
-              )(
-                applySpec({
-                  count: length,
-                  velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
-                  velocityByWeek: (wis: UIWorkItem[]) =>
-                    weeks.map(week => wis.filter(wasWorkItemCompletedIn(week)).length),
-                  cycleTime: pipe(
-                    filter(wasWorkItemCompletedInQueryPeriod),
-                    map(computeTimeDifferenceBetween('start', 'end')),
-                    times => divide(sum(times), times.length).getOr('-')
-                  ),
-                  cycleTimeByWeek: (wis: UIWorkItem[]) =>
-                    weeks.map(week => {
-                      const cycleTimes = wis
-                        .filter(wasWorkItemCompletedIn(week))
-                        .map(computeTimeDifferenceBetween('start', 'end'));
-                      return divide(sum(cycleTimes), cycleTimes.length).getOr('-');
-                    }),
-                  changeLeadTime: pipe(
-                    filter(wasWorkItemCompletedInQueryPeriod),
-                    map(computeTimeDifferenceBetween('devComplete', 'end')),
-                    times => divide(sum(times), times.length).getOr('-')
-                  ),
-                  changeLeadTimeByWeek: (wis: UIWorkItem[]) =>
-                    weeks.map(week => {
-                      const clts = wis
-                        .filter(wasWorkItemCompletedIn(week))
-                        .map(computeTimeDifferenceBetween('devComplete', 'end'));
-                      return divide(sum(clts), clts.length).getOr('-');
-                    }),
-                  flowEfficiency: pipe(
-                    filter(wasWorkItemCompletedInQueryPeriod),
-                    flowEfficiency
-                  ),
-                  flowEfficiencyByWeek: (wis: UIWorkItem[]) =>
-                    weeks.map(week =>
-                      flowEfficiency(wis.filter(wasWorkItemCompletedIn(week)))
-                    ),
-                  wipTrend: (wis: UIWorkItem[]) =>
-                    weekLimits.map(limit => wis.filter(isWIPIn(limit)).length),
-                  wipCount: pipe(filter(wipWorkItems), length),
-                  wipAge: pipe(
-                    filter(wipWorkItems),
-                    map(computeTimeDifferenceBetween('start')),
-                    ages => divide(sum(ages), ages.length).getOr('-')
-                  ),
-                  leakage: pipe(filter(leakage(isInQueryPeriod)), length),
-                  leakageByWeek: (wis: UIWorkItem[]) =>
-                    weeks.map(week => wis.filter(leakage(week)).length),
-                })
-              )
-            )(Object.values(overview.byId)),
-          };
-        })
+      const wipWorkItems = isWIP(
+        workItemTimes,
+        projectConfig?.workitems.ignoreForWIP || []
       );
+      const isOfType = (type: string) => (workItem: UIWorkItem) =>
+        overview.types[workItem.typeId].name[0] === type;
+      const leakage = isNewInTimeRange(workItemType, workItemTimes);
+      const flowEfficiency = (() => {
+        const tct = totalCycleTime(workItemTimes);
+        const wct = totalWorkCenterTime(workItemTimes);
 
+        return (wis: UIWorkItem[]) => {
+          const total = tct(wis);
+          if (total === 0) {
+            return { total: 0, wcTime: 0 };
+          }
+          const wcTime = wct(wis);
+          return { total, wcTime };
+        };
+      })();
+
+      const isWIPIn = ([, weekEnd]: readonly [Date, Date]) =>
+        isWIPInTimeRange(
+          workItemTimes,
+          projectConfig?.workitems.ignoreForWIP || []
+        )((d, type) => {
+          if (type === 'start') return d <= weekEnd;
+          return d < weekEnd;
+        });
+
+      return {
+        project,
+        types: overview.types,
+        groups: overview.groups,
+        byType: pipe(
+          filter(anyPass(concernedTypes.map(isOfType))),
+          organiseWorkItemsIntoGroups,
+          pipe(
+            mapObj,
+            mapObj
+          )(
+            applySpec({
+              count: length,
+              velocity: pipe(filter(wasWorkItemCompletedInQueryPeriod), length),
+              velocityByWeek: (wis: UIWorkItem[]) =>
+                weeks.map(week => wis.filter(wasWorkItemCompletedIn(week)).length),
+              cycleTime: pipe(
+                filter(wasWorkItemCompletedInQueryPeriod),
+                map(computeTimeDifferenceBetween('start', 'end')),
+                times => divide(sum(times), times.length).getOr('-')
+              ),
+              cycleTimeByWeek: (wis: UIWorkItem[]) =>
+                weeks.map(week => {
+                  const cycleTimes = wis
+                    .filter(wasWorkItemCompletedIn(week))
+                    .map(computeTimeDifferenceBetween('start', 'end'));
+                  return divide(sum(cycleTimes), cycleTimes.length).getOr('-');
+                }),
+              changeLeadTime: pipe(
+                filter(wasWorkItemCompletedInQueryPeriod),
+                map(computeTimeDifferenceBetween('devComplete', 'end')),
+                times => divide(sum(times), times.length).getOr('-')
+              ),
+              changeLeadTimeByWeek: (wis: UIWorkItem[]) =>
+                weeks.map(week => {
+                  const clts = wis
+                    .filter(wasWorkItemCompletedIn(week))
+                    .map(computeTimeDifferenceBetween('devComplete', 'end'));
+                  return divide(sum(clts), clts.length).getOr('-');
+                }),
+              flowEfficiency: pipe(
+                filter(wasWorkItemCompletedInQueryPeriod),
+                flowEfficiency
+              ),
+              flowEfficiencyByWeek: (wis: UIWorkItem[]) =>
+                weeks.map(week =>
+                  flowEfficiency(wis.filter(wasWorkItemCompletedIn(week)))
+                ),
+              wipTrend: (wis: UIWorkItem[]) =>
+                weekLimits.map(limit => wis.filter(isWIPIn(limit)).length),
+              wipCount: pipe(filter(wipWorkItems), length),
+              wipAge: pipe(
+                filter(wipWorkItems),
+                map(computeTimeDifferenceBetween('start')),
+                ages => divide(sum(ages), ages.length).getOr('-')
+              ),
+              leakage: pipe(filter(leakage(isInQueryPeriod)), length),
+              leakageByWeek: (wis: UIWorkItem[]) =>
+                weeks.map(week => wis.filter(leakage(week)).length),
+            })
+          )
+        )(Object.values(overview.byId)),
+      };
+    })
+  );
+};
+
+const collectionWorkitemSummary = () => {
+  return Promise.all(
+    collections().map(async ({ name: collectionName, projects }) => {
       return writeFile(
         join(process.cwd(), 'data', collectionName, 'collection-summary.json'),
-        JSON.stringify({ collection: collectionName, projects: analysedProjects })
+        JSON.stringify({
+          collectionName,
+          projects: await analyseProjects(collectionName, projects),
+        })
       );
     })
   );
+};
+
+export default collectionWorkitemSummary;
+
+export type CollectionSummary = {
+  collectionName: string;
+  projects: Awaited<ReturnType<typeof analyseProjects>>;
+};
+
+export const ReadSummaryInputParser = z.object({
+  collectionName: z.string(),
+});
+
+export const readSummary = async ({
+  collectionName,
+}: z.infer<typeof ReadSummaryInputParser>) => {
+  return JSON.parse(
+    await readFile(
+      join(process.cwd(), 'data', collectionName, 'collection-summary.json'),
+      'utf8'
+    )
+  ) as CollectionSummary;
 };

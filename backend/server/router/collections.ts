@@ -6,6 +6,10 @@ import {
   ProjectSearchInputParser,
   searchProjects,
 } from '../../models/collection.js';
+import {
+  ReadSummaryInputParser,
+  readSummary,
+} from '../../scraper/collection-wi-summary.js';
 
 export default t.router({
   allCollections: t.procedure.query(getAllCollections),
@@ -15,4 +19,7 @@ export default t.router({
   searchProjects: t.procedure
     .input(ProjectSearchInputParser)
     .query(passInputTo(searchProjects)),
+  collectionSummary: t.procedure
+    .input(ReadSummaryInputParser)
+    .query(passInputTo(readSummary)),
 });
