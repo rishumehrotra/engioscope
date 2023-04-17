@@ -1,6 +1,5 @@
 import { passInputTo, t } from './trpc.js';
 import {
-  getCollectionSummary,
   CollectionNameParser,
   getCollectionCodeQualitySummary,
   getCollectionReleasesSummary,
@@ -9,10 +8,6 @@ import {
 } from '../../models/summary.js';
 
 export default t.router({
-  getCollectionSummary: t.procedure
-    .input(CollectionNameParser)
-    .query(passInputTo(getCollectionSummary)),
-
   getCollectionTestAutomationSummary: t.procedure
     .input(CollectionNameParser)
     .query(passInputTo(getCollectionTestAutomationSummary)),

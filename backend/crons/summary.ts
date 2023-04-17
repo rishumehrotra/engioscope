@@ -32,7 +32,6 @@ export const insertSummarySnapshot = async (
               project,
               duration,
               ...summary,
-              weeklySuccessfulBuilds: summary.weeklySuccessfulBuilds,
             },
           },
           { upsert: true }

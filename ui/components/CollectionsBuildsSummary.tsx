@@ -7,10 +7,16 @@ import { increaseIsBetter } from './summary-page/utils.jsx';
 
 const CollectionsBuildsSummary: React.FC<{
   collectionName: string;
-}> = ({ collectionName }) => {
-  const collectionSummary = trpc.summary.getCollectionBuildsSummary.useQuery({
-    collectionName,
-  });
+  opened: boolean;
+}> = ({ collectionName, opened }) => {
+  const collectionSummary = trpc.summary.getCollectionBuildsSummary.useQuery(
+    {
+      collectionName,
+    },
+    {
+      enabled: opened,
+    }
+  );
 
   return (
     <div className="py-2">

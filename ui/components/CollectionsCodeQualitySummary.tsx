@@ -4,10 +4,14 @@ import { divide, toPercentage } from '../../shared/utils.js';
 
 const CollectionsCodeQualitySummary: React.FC<{
   collectionName: string;
-}> = ({ collectionName }) => {
-  const collectionSummary = trpc.summary.getCollectionCodeQualitySummary.useQuery({
-    collectionName,
-  });
+  opened: boolean;
+}> = ({ collectionName, opened }) => {
+  const collectionSummary = trpc.summary.getCollectionCodeQualitySummary.useQuery(
+    {
+      collectionName,
+    },
+    { enabled: opened }
+  );
 
   return (
     <div className="py-2">

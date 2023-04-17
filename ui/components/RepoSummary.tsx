@@ -314,14 +314,22 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                     )
                       .map(toPercentage)
                       .getOr('-')}
-                    data={summaries.data.weeklySuccessfulBuilds.map(week => {
-                      return divide(week.successes, week.count)
+                    data={summaries.data.totalBuilds.byWeek.map(build => {
+                      const successfulBuildsForWeek =
+                        summaries.data.successfulBuilds.byWeek.find(
+                          s => s.weekIndex === build.weekIndex
+                        );
+                      return divide(successfulBuildsForWeek?.count ?? 0, build.count)
                         .map(multiply(100))
                         .getOr(0);
                     })}
                     lineColor={increaseIsBetter(
-                      summaries.data.weeklySuccessfulBuilds.map(week => {
-                        return divide(week.successes, week.count)
+                      summaries.data.totalBuilds.byWeek.map(build => {
+                        const successfulBuildsForWeek =
+                          summaries.data.successfulBuilds.byWeek.find(
+                            s => s.weekIndex === build.weekIndex
+                          );
+                        return divide(successfulBuildsForWeek?.count ?? 0, build.count)
                           .map(multiply(100))
                           .getOr(0);
                       })

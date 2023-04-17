@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
@@ -13,6 +13,8 @@ const Collections: React.FC = () => {
   const setHeaderDetails = useSetHeaderDetails();
   const { collection } = useParams();
 
+  const [openedMetrics, setOpenedMetrics] = useState<string[]>([]);
+
   useEffect(() => {
     setProjectDetails(null);
   }, [setProjectDetails]);
@@ -20,6 +22,17 @@ const Collections: React.FC = () => {
   useEffect(() => {
     setHeaderDetails({ title: collection });
   }, [collection, setHeaderDetails]);
+
+  const handleMetricsToggle = useCallback(
+    (metricsName: string) => () => {
+      if (openedMetrics.includes(metricsName)) {
+        setOpenedMetrics(openedMetrics.filter(c => c !== metricsName));
+      } else {
+        setOpenedMetrics([...openedMetrics, metricsName]);
+      }
+    },
+    [openedMetrics]
+  );
 
   if (!collection) {
     return (
@@ -32,25 +45,37 @@ const Collections: React.FC = () => {
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
       <h2 className="text-2xl font-bold mt-8">Health metrics</h2>
-      <details>
+      <details onToggle={handleMetricsToggle('test-automation')}>
         <summary className="font-semibold text-xl my-2 cursor-pointer">
           Test automation
         </summary>
-        <CollectionsTestAutomationSummary collectionName={collection} />
+        <CollectionsTestAutomationSummary
+          collectionName={collection}
+          opened={openedMetrics.includes('test-automation')}
+        />
       </details>
-      <details>
+      <details onToggle={handleMetricsToggle('code-quality')}>
         <summary className="font-semibold text-xl my-2 cursor-pointer">
           Code quality
         </summary>
-        <CollectionsCodeQualitySummary collectionName={collection} />
+        <CollectionsCodeQualitySummary
+          collectionName={collection}
+          opened={openedMetrics.includes('code-quality')}
+        />
       </details>
-      <details>
+      <details onToggle={handleMetricsToggle('ci-builds')}>
         <summary className="font-semibold text-xl my-2 cursor-pointer">CI Builds</summary>
-        <CollectionsBuildsSummary collectionName={collection} />
+        <CollectionsBuildsSummary
+          collectionName={collection}
+          opened={openedMetrics.includes('ci-builds')}
+        />
       </details>
-      <details>
+      <details onToggle={handleMetricsToggle('releases')}>
         <summary className="font-semibold text-xl my-2 cursor-pointer">Releases</summary>
-        <CollectionsReleasesSummary collectionName={collection} />
+        <CollectionsReleasesSummary
+          collectionName={collection}
+          opened={openedMetrics.includes('releases')}
+        />
       </details>
     </div>
   );

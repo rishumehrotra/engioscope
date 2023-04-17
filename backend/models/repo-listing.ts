@@ -347,23 +347,10 @@ export const getSummary = async ({
     getTotalReposInProject(collectionName, project),
   ]);
 
-  const weeklySuccessfulBuilds = totalBuilds.byWeek.map(({ weekIndex, count }) => {
-    const successfulBuildsForWeek = successfulBuilds.byWeek.find(
-      s => s.weekIndex === weekIndex
-    );
-
-    if (!successfulBuildsForWeek) {
-      return { count, successes: 0 };
-    }
-
-    return { count, successes: successfulBuildsForWeek.count };
-  });
-
   return {
     centralTemplateUsage,
     pipelines,
     healthyBranches,
-    weeklySuccessfulBuilds,
     totalBuilds,
     successfulBuilds,
     totalActiveRepos: activeRepoIds.length,

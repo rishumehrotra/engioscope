@@ -5,19 +5,10 @@ import { SummaryModel } from './mongoose-models/SummaryModel.js';
 export const CollectionNameParser = z.object({
   collectionName: z.string(),
 });
-
-export const getCollectionSummary = async ({
+export const getCollectionTestAutomationSummary = ({
   collectionName,
-}: z.infer<typeof CollectionNameParser>) => {
-  const collectionSummary = await SummaryModel.find<Summary>({ collectionName });
-
-  return collectionSummary;
-};
-
-export const getCollectionTestAutomationSummary = async ({
-  collectionName,
-}: z.infer<typeof CollectionNameParser>) => {
-  const collectionSummary = await SummaryModel.find<Summary>(
+}: z.infer<typeof CollectionNameParser>) =>
+  SummaryModel.find<Summary>(
     { collectionName, duration: '90 days' },
     {
       collectionName: 1,
@@ -31,20 +22,16 @@ export const getCollectionTestAutomationSummary = async ({
     }
   );
 
-  return collectionSummary;
-};
-
-export const getCollectionBuildsSummary = async ({
+export const getCollectionBuildsSummary = ({
   collectionName,
-}: z.infer<typeof CollectionNameParser>) => {
-  const collectionSummary = await SummaryModel.find<Summary>(
+}: z.infer<typeof CollectionNameParser>) =>
+  SummaryModel.find<Summary>(
     { collectionName, duration: '90 days' },
     {
       collectionName: 1,
       project: 1,
       totalActiveRepos: 1,
       totalRepos: 1,
-      weeklySuccessfulBuilds: 1,
       totalBuilds: 1,
       successfulBuilds: 1,
       centralTemplatePipeline: 1,
@@ -52,13 +39,10 @@ export const getCollectionBuildsSummary = async ({
     }
   );
 
-  return collectionSummary;
-};
-
-export const getCollectionReleasesSummary = async ({
+export const getCollectionReleasesSummary = ({
   collectionName,
-}: z.infer<typeof CollectionNameParser>) => {
-  const collectionSummary = await SummaryModel.find<Summary>(
+}: z.infer<typeof CollectionNameParser>) =>
+  SummaryModel.find<Summary>(
     { collectionName, duration: '90 days' },
     {
       collectionName: 1,
@@ -69,13 +53,10 @@ export const getCollectionReleasesSummary = async ({
     }
   );
 
-  return collectionSummary;
-};
-
 export const getCollectionCodeQualitySummary = async ({
   collectionName,
-}: z.infer<typeof CollectionNameParser>) => {
-  const collectionSummary = await SummaryModel.find<Summary>(
+}: z.infer<typeof CollectionNameParser>) =>
+  SummaryModel.find<Summary>(
     { collectionName, duration: '90 days' },
     {
       collectionName: 1,
@@ -85,6 +66,3 @@ export const getCollectionCodeQualitySummary = async ({
       healthyBranches: 1,
     }
   );
-
-  return collectionSummary;
-};
