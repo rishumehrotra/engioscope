@@ -25,7 +25,18 @@ export const getCollectionTestAutomationSummary = ({
 export const getCollectionBuildsSummary = ({
   collectionName,
 }: z.infer<typeof CollectionNameParser>) =>
-  SummaryModel.find<Summary>(
+  SummaryModel.find<
+    Pick<
+      Summary,
+      | 'project'
+      | 'totalActiveRepos'
+      | 'totalRepos'
+      | 'totalBuilds'
+      | 'successfulBuilds'
+      | 'centralTemplatePipeline'
+      | 'pipelines'
+    >
+  >(
     { collectionName, duration: '90 days' },
     {
       collectionName: 1,

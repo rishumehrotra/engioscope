@@ -51,7 +51,7 @@ body {
 }
 
 .summary-table {
-  @apply w-full;
+  @apply w-full relative;
 }
 
 .summary-table thead {
@@ -59,10 +59,15 @@ body {
 }
 
 .summary-table thead th {
+  @apply sticky top-0 bg-gray-800 text-white z-10;
 }
 
 .summary-table thead th button {
-  @apply px-6 py-4 text-left text-xs font-medium uppercase tracking-wider w-full flex items-center;
+  @apply px-6 py-4 text-xs text-center font-medium uppercase tracking-wider w-full flex items-center justify-evenly gap-0;
+}
+
+.summary-table thead th.left button {
+  @apply text-left justify-start gap-1;
 }
 
 .summary-table tbody {
@@ -74,9 +79,12 @@ body {
 }
 
 .summary-table tbody tr td {
-  @apply px-6 py-3;
+  @apply px-6 py-3 text-center;
 }
 
+.summary-table tbody tr td.left {
+  @apply text-left;
+}
 .summary-table tbody tr td:first-child {
   @apply font-semibold;
 }
