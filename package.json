@@ -24,7 +24,7 @@
     "scrape:profiler": "DEBUG=* node --max-old-space-size=12288 --expose-gc -r ts-node/register --prof ./backend/dev/scrape.ts",
     "tsc": "tsc --build backend ui",
     "lint": "eslint \"./**/*.ts\" \"./**/*.tsx\" --cache",
-    "scratch": "DEBUG=* ts-node --esm ./backend/scratch.ts",
+    "scratch": "DEBUG=* ts-node --esm ./backend/scratch/sample.ts",
     "install:husky": "husky install",
     "prepare": "npm-run-all --parallel install:husky update-language-colors",
     "checks": "npm-run-all --parallel test:ci tsc lint"

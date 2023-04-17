@@ -24,6 +24,7 @@ ui/tailwind.output.css
 cache
 config.json
 backend/scratch/**
+!backend/scratch/sample.ts
 data
 /build-reports
 
