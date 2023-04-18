@@ -62,6 +62,8 @@ export default (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
   setConfig(config);
 
+  mongoose.set('strictQuery', false);
+
   // Disabling floating promise since mongoose takes care of this internally
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   mongoose.connect(config.mongoUrl);

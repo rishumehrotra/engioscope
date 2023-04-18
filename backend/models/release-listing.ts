@@ -3,7 +3,6 @@ import { last, omit, prop, sum } from 'rambda';
 import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { configForProject } from '../config.js';
-import type { ParsedProjectConfig } from '../scraper/parse-config.js';
 import type { ArtifactType } from '../scraper/types-azure.js';
 import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { conformsToBranchPolicies } from './policy-configuration.js';
@@ -118,88 +117,6 @@ const filterNonMasterReleases = (
       },
     },
     { $match: { filteredEnvs: { $elemMatch: { status: { $ne: 'notStarted' } } } } },
-  ];
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const filterByNotConfirmingToBranchPolicy = (
-  notConfirmingToBranchPolicies: boolean | undefined,
-  configuredBranchPolicies: ParsedProjectConfig['branchPolicies']
-): PipelineStage[] => {
-  if (!notConfirmingToBranchPolicies) {
-    return [];
-  }
-  if (Object.keys(configuredBranchPolicies).length === 0) {
-    return [];
-  }
-
-  const isPassingBranchPolicies = Object.entries(configuredBranchPolicies)
-    .flatMap(([key, value]) => [
-      'isEnabled' in value
-        ? { [`policies.${key}.isEnabled`]: { $ne: !value.isEnabled } }
-        : undefined,
-      'isBlocking' in value
-        ? { [`policies.${key}.isBlocking`]: { $ne: !value.isBlocking } }
-        : undefined,
-      'minimumApproverCount' in value
-        ? {
-            [`policies.${key}.minimumApproverCount`]: {
-              $ne: !value.minimumApproverCount,
-            },
-          }
-        : undefined,
-    ])
-    .filter(exists)
-    .reduce((acc, item) => ({ ...acc, ...item }), {});
-
-  return [
-    {
-      $lookup: {
-        from: 'repopolicies',
-        as: 'policies',
-        let: {
-          collectionName: '$collectionName',
-          project: '$project',
-          repositoryId: '$artifacts.definition.repositoryId',
-          branches: '$artifacts.definition.branch',
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$collectionName', '$$collectionName'] },
-                  { $eq: ['$project', '$$project'] },
-                  { $in: ['$repositoryId', '$$repositoryId'] },
-                  { $in: ['$refName', '$$branches'] },
-                  { $ne: ['$isDeleted', true] },
-                ],
-              },
-            },
-          },
-          {
-            $group: {
-              _id: {
-                repositoryId: '$repositoryId',
-                branch: '$refName',
-              },
-              policies: {
-                $push: {
-                  k: '$type',
-                  v: {
-                    isBlocking: '$isBlocking',
-                    isEnabled: '$isEnabled',
-                    minimumApproverCount: '$settings.minimumApproverCount',
-                  },
-                },
-              },
-            },
-          },
-          { $project: { policies: { $arrayToObject: '$policies' } } },
-          { $match: isPassingBranchPolicies },
-        ],
-      },
-    },
   ];
 };
 

@@ -1,5 +1,6 @@
 import { model, Schema } from 'mongoose';
 import type { getSummary } from '../repo-listing.js';
+import type { summary } from '../release-listing.js';
 
 export type Summary = {
   collectionName: string;
@@ -7,7 +8,8 @@ export type Summary = {
   duration: '30 days' | '90 days' | '180 days';
   startDate: Date;
   endDate: Date;
-} & Awaited<ReturnType<typeof getSummary>>;
+} & Awaited<ReturnType<typeof getSummary>> &
+  Awaited<ReturnType<typeof summary>>;
 
 const summarySchema = new Schema<Summary>(
   {
@@ -81,6 +83,27 @@ const summarySchema = new Schema<Summary>(
       coveredBranches: { type: Number },
       totalBranches: { type: Number },
     },
+    branchPolicy: {
+      conforms: { type: Number },
+      total: { type: Number },
+    },
+    runCount: { type: Number },
+    pipelineCount: { type: Number },
+    lastEnv: {
+      envName: { type: String },
+      deploys: { type: Number },
+      successful: { type: Number },
+    },
+    startsWithArtifact: { type: Number },
+    masterOnly: { type: Number },
+    stagesToHighlight: [
+      {
+        name: { type: String },
+        exists: { type: Number },
+        used: { type: Number },
+      },
+    ],
+    ignoredStagesBefore: { type: String },
   },
   { timestamps: true }
 );
