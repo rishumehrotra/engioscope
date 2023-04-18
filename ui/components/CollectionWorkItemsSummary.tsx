@@ -2,10 +2,14 @@ import React from 'react';
 
 import type { RouterClient } from '../helpers/trpc.js';
 import { trpc } from '../helpers/trpc.js';
-import { divide } from '../../shared/utils';
+import { divide, toPercentage } from '../../shared/utils';
+import type { UIWorkItemType } from '../../shared/types.js';
+import { num, prettyMS } from '../helpers/utils.js';
 
-type ProjectWorkItemSummary =
-  RouterClient['summary']['collectionWorkItemsSummary']['projects'][number]['byType'][string][string];
+type ProjectWorkItemSummaryForType =
+  RouterClient['summary']['collectionWorkItemsSummary']['projects'][number]['byType'][string];
+
+type ProjectWorkItemSummary = ProjectWorkItemSummaryForType[string];
 
 const FlowMetricsTableHeader: React.FC<{
   queryPeriodDays: number;
@@ -13,7 +17,7 @@ const FlowMetricsTableHeader: React.FC<{
   return (
     <thead>
       <tr>
-        <th>Project</th>
+        <th className="left">Project</th>
         <th
           data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
         >
@@ -69,32 +73,94 @@ const QualityMetricsTableHeader: React.FC<{
   );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FlowMetricsRow: React.FC<{
   projectName: string;
   summary: ProjectWorkItemSummary;
 }> = ({ projectName, summary }) => {
   return (
     <tr key={projectName}>
-      <td>{projectName}</td>
+      <td className="left">{projectName}</td>
       {/* New */}
-      <td>{summary.count}</td>
+      <td>{num(summary.count)}</td>
       {/* Velocity */}
-      <td>{summary.velocity}</td>
+      <td>{num(summary.velocity)}</td>
       {/* Cycle time */}
-      <td>cycle time</td>
+      <td>
+        {divide(summary.cycleTime.count, summary.cycleTime.wis).map(prettyMS).getOr('-')}
+      </td>
       {/* CLT */}
-      <td>{divide(summary.cycleTime.count, summary.cycleTime.wis).getOr('-')}</td>
+      <td>
+        {divide(summary.changeLeadTime.count, summary.changeLeadTime.wis)
+          .map(prettyMS)
+          .getOr('-')}
+      </td>
       {/* Flow Efficiency */}
       <td>
-        {divide(summary.flowEfficiency.wcTime, summary.flowEfficiency.total).getOr('-')}
+        {divide(summary.flowEfficiency.wcTime, summary.flowEfficiency.total)
+          .map(toPercentage)
+          .getOr('-')}
       </td>
       {/* WIP trend */}
       <td>{summary.wipTrend}</td>
       {/* WIP age */}
-      <td>{divide(summary.wipAge.count, summary.wipAge.wis).getOr('-')}</td>
+      <td>{divide(summary.wipAge.count, summary.wipAge.wis).map(prettyMS).getOr('-')}</td>
     </tr>
   );
+};
+
+const aggregateAcrossGroups = (typeSummary: ProjectWorkItemSummaryForType) => {
+  return Object.values(typeSummary).reduce<ProjectWorkItemSummary>(
+    (acc, groupSummary) => ({
+      count: acc.count + groupSummary.count || 0,
+      velocity: acc.velocity + groupSummary.velocity || 0,
+      velocityByWeek: [],
+      cycleTime: {
+        count: acc.cycleTime.count + groupSummary.cycleTime.count || 0,
+        wis: acc.cycleTime.wis + groupSummary.cycleTime.wis || 0,
+      },
+      cycleTimeByWeek: [],
+      changeLeadTime: {
+        count: acc.changeLeadTime.count + groupSummary.changeLeadTime.count || 0,
+        wis: acc.changeLeadTime.wis + groupSummary.changeLeadTime.wis || 0,
+      },
+      changeLeadTimeByWeek: [],
+      flowEfficiency: {
+        total: acc.flowEfficiency.total + groupSummary.flowEfficiency.total || 0,
+        wcTime: acc.flowEfficiency.wcTime + groupSummary.flowEfficiency.wcTime || 0,
+      },
+      flowEfficiencyByWeek: [],
+      wipTrend: [],
+      wipCount: acc.wipCount + groupSummary.wipCount || 0,
+      wipAge: {
+        count: acc.wipAge.count + groupSummary.wipAge.count || 0,
+        wis: acc.wipAge.wis + groupSummary.wipAge.wis || 0,
+      },
+      leakage: acc.leakage + groupSummary.leakage || 0,
+      leakageByWeek: [],
+    }),
+    {
+      count: 0,
+      velocity: 0,
+      velocityByWeek: [],
+      cycleTime: { count: 0, wis: 0 },
+      cycleTimeByWeek: [],
+      changeLeadTime: { count: 0, wis: 0 },
+      changeLeadTimeByWeek: [],
+      flowEfficiency: { total: 0, wcTime: 0 },
+      flowEfficiencyByWeek: [],
+      wipTrend: [],
+      wipCount: 0,
+      wipAge: { count: 0, wis: 0 },
+      leakage: 0,
+      leakageByWeek: [],
+    }
+  );
+};
+
+const witByName = (name: string, types: Record<string, UIWorkItemType>) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const [witId, type] = Object.entries(types).find(([, wit]) => wit.name[0] === name)!;
+  return { ...type, witId };
 };
 
 const CollectionWorkItemsSummary: React.FC<{
@@ -104,236 +170,55 @@ const CollectionWorkItemsSummary: React.FC<{
     collectionName,
   });
 
-  if (!collectionName || !workItems.data?.projects.length) {
+  if (!workItems.data?.projects.length) {
     return <div>Sorry No Projects Found</div>;
   }
+
+  const summaries = ['Feature', 'User Story'].map(witName => {
+    const type = witByName(witName, workItems.data.types);
+
+    return {
+      type,
+      projects: workItems.data.projects.map(p => ({
+        name: p.project,
+        data: aggregateAcrossGroups(p.byType[type.witId] || {}),
+      })),
+    };
+  });
 
   return (
     <div>
       <h2 className="font-semibold text-2xl my-2">Flow Metrics</h2>
-      {Object.entries(workItems.data.types)
-        .filter(([, value]) => value.name[0] === 'Feature')
-        .map(([key, value]) => {
-          return (
-            <details key={key}>
-              <summary className="font-semibold text-xl my-2 cursor-pointer">
-                <img
-                  src={value.icon}
-                  alt={`Icon for ${value.name[1]}`}
-                  className="inline-block mr-1"
-                  width="18"
-                />
-                {value.name[1]}
-              </summary>
-              <div>
-                <table className="summary-table">
-                  <FlowMetricsTableHeader queryPeriodDays={90} />
-                  <tbody>
-                    {workItems.data.projects.map(project => {
-                      return (
-                        <tr key={project.project}>
-                          <td>{project.project}</td>
-                          {/* New */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.count || value.count !== null
-                                      ? accumulator + value.count
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* Velocity */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* Cycle time */}
-                          <td>cycle time</td>
-                          {/* CLT */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* Flow Efficiency */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* WIP trend */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* WIP age */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          );
-        })}
-      {Object.entries(workItems.data.types)
-        .filter(([, value]) => value.name[0] === 'User Story')
-        .map(([key, value]) => {
-          return (
-            <details key={key}>
-              <summary className="font-semibold text-xl my-2 cursor-pointer">
-                <img
-                  src={value.icon}
-                  alt={`Icon for ${value.name[1]}`}
-                  className="inline-block mr-1"
-                  width="18"
-                />
-                {value.name[1]}
-              </summary>
-              <div>
-                <table className="summary-table">
-                  <FlowMetricsTableHeader queryPeriodDays={90} />
-                  <tbody>
-                    {workItems.data.projects.map(project => {
-                      return (
-                        <tr key={project.project}>
-                          <td>{project.project}</td>
-                          {/* New */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.leakage || value.leakage !== null
-                                      ? accumulator + value.count
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* Velocity */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* Cycle time */}
-                          <td>cycle time</td>
-                          {/* CLT */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* Flow Efficiency */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* WIP trend */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                          {/* WIP age */}
-                          <td>
-                            {project.byType[key]
-                              ? Object.entries(project.byType[key])?.reduce(
-                                  (accumulator, [, value]) => {
-                                    return value.velocity || value.velocity !== null
-                                      ? accumulator + value.velocity
-                                      : accumulator;
-                                  },
-                                  0
-                                )
-                              : 0}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tbody />
-                </table>
-              </div>
-            </details>
-          );
-        })}
+      {summaries.map(summary => {
+        return (
+          <details key={summary.type.name[0]}>
+            <summary className="font-semibold text-xl my-2 cursor-pointer">
+              <img
+                src={summary.type.icon}
+                alt={`Icon for ${summary.type.name[1]}`}
+                className="inline-block mr-1"
+                width="18"
+              />
+              {summary.type.name[1]}
+            </summary>
+            <div>
+              <table className="summary-table">
+                <FlowMetricsTableHeader queryPeriodDays={90} />
+                <tbody>
+                  {summary.projects.map(project => (
+                    <FlowMetricsRow
+                      key={project.name}
+                      projectName={project.name}
+                      summary={project.data}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        );
+      })}
+
       <h2 className="font-semibold text-2xl my-2">Quality Metrics</h2>
       {Object.entries(workItems.data.types)
         .filter(([, value]) => value.name[1] === 'Bugs')
