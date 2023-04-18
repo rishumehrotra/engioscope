@@ -255,7 +255,7 @@ export const ReadSummaryInputParser = z.object({
   collectionName: z.string(),
 });
 
-export const readSummary = async ({
+export const readCollectionWorkItemsSummary = async ({
   collectionName,
 }: z.infer<typeof ReadSummaryInputParser>) => {
   return JSON.parse(

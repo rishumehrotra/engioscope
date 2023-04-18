@@ -7,6 +7,11 @@ import {
   getCollectionTestAutomationSummary,
 } from '../../models/summary.js';
 
+import {
+  ReadSummaryInputParser,
+  readCollectionWorkItemsSummary,
+} from '../../scraper/collection-wi-summary.js';
+
 export default t.router({
   getCollectionTestAutomationSummary: t.procedure
     .input(CollectionNameParser)
@@ -23,4 +28,8 @@ export default t.router({
   getCollectionCodeQualitySummary: t.procedure
     .input(CollectionNameParser)
     .query(passInputTo(getCollectionCodeQualitySummary)),
+
+  collectionWorkItemsSummary: t.procedure
+    .input(ReadSummaryInputParser)
+    .query(passInputTo(readCollectionWorkItemsSummary)),
 });
