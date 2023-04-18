@@ -7,6 +7,7 @@ import CollectionsCodeQualitySummary from '../components/CollectionsCodeQualityS
 import CollectionsBuildsSummary from '../components/CollectionsBuildsSummary.jsx';
 import CollectionsReleasesSummary from '../components/CollectionsReleasesSummary.jsx';
 import CollectionsTestAutomationSummary from '../components/CollectionsTestAutomationSummary.jsx';
+import CollectionWorkItemsSummary from '../components/CollectionWorkItemsSummary.jsx';
 
 const sections = {
   'ci-builds': { label: 'CI Builds', Component: CollectionsBuildsSummary },
@@ -71,6 +72,7 @@ const Collections: React.FC = () => {
           </details>
         );
       })}
+      <CollectionWorkItemsSummary collectionName={collection} />
     </div>
   );
 };
