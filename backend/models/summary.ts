@@ -63,14 +63,24 @@ export const getCollectionReleasesSummary = ({
   collectionName,
 }: z.infer<typeof CollectionNameParser>) =>
   SummaryModel.find<
-    Pick<Summary, 'project' | 'totalActiveRepos' | 'totalRepos' | 'hasReleasesReposCount'>
+    Pick<
+      Summary,
+      | 'project'
+      | 'masterOnly'
+      | 'runCount'
+      | 'branchPolicy'
+      | 'startsWithArtifact'
+      | 'pipelineCount'
+    >
   >(
     { collectionName, duration: '90 days' },
     {
       project: 1,
-      totalActiveRepos: 1,
-      totalRepos: 1,
-      hasReleasesReposCount: 1,
+      masterOnly: 1,
+      runCount: 1,
+      branchPolicy: 1,
+      startsWithArtifact: 1,
+      pipelineCount: 1,
     }
   );
 
