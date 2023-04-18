@@ -20,7 +20,7 @@ import {
   timeDifference,
 } from '../../shared/work-item-utils.js';
 import { isAfter, queryPeriodDays, weekLimits, weeks } from '../utils.js';
-import { divide, mapObj } from '../../shared/utils.js';
+import { mapObj } from '../../shared/utils.js';
 import type { ParsedProjectConfig } from './parse-config.js';
 
 const looksLikeDate = (value: string) =>
@@ -139,26 +139,26 @@ const analyseProjects = (collectionName: string, projects: ParsedProjectConfig[]
               cycleTime: pipe(
                 filter(wasWorkItemCompletedInQueryPeriod),
                 map(computeTimeDifferenceBetween('start', 'end')),
-                times => divide(sum(times), times.length).getOr('-')
+                times => ({ count: sum(times), wis: times.length })
               ),
               cycleTimeByWeek: (wis: UIWorkItem[]) =>
                 weeks.map(week => {
                   const cycleTimes = wis
                     .filter(wasWorkItemCompletedIn(week))
                     .map(computeTimeDifferenceBetween('start', 'end'));
-                  return divide(sum(cycleTimes), cycleTimes.length).getOr('-');
+                  return { count: sum(cycleTimes), wis: cycleTimes.length };
                 }),
               changeLeadTime: pipe(
                 filter(wasWorkItemCompletedInQueryPeriod),
                 map(computeTimeDifferenceBetween('devComplete', 'end')),
-                times => divide(sum(times), times.length).getOr('-')
+                times => ({ count: sum(times), wis: times.length })
               ),
               changeLeadTimeByWeek: (wis: UIWorkItem[]) =>
                 weeks.map(week => {
                   const clts = wis
                     .filter(wasWorkItemCompletedIn(week))
                     .map(computeTimeDifferenceBetween('devComplete', 'end'));
-                  return divide(sum(clts), clts.length).getOr('-');
+                  return { count: sum(clts), wis: clts.length };
                 }),
               flowEfficiency: pipe(
                 filter(wasWorkItemCompletedInQueryPeriod),
@@ -174,7 +174,7 @@ const analyseProjects = (collectionName: string, projects: ParsedProjectConfig[]
               wipAge: pipe(
                 filter(wipWorkItems),
                 map(computeTimeDifferenceBetween('start')),
-                ages => divide(sum(ages), ages.length).getOr('-')
+                ages => ({ count: sum(ages), wis: ages.length })
               ),
               leakage: pipe(filter(leakage(isInQueryPeriod)), length),
               leakageByWeek: (wis: UIWorkItem[]) =>
