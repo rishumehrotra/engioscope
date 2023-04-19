@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { byNum, byString } from 'sort-lib';
 import { last, prop } from 'rambda';
@@ -21,6 +21,23 @@ type ProjectWorkItemSummaryWithName = {
   summary: ProjectWorkItemSummary;
 };
 
+const emptySummary = {
+  count: 0,
+  velocity: 0,
+  velocityByWeek: [],
+  cycleTime: { count: 0, wis: 0 },
+  cycleTimeByWeek: [],
+  changeLeadTime: { count: 0, wis: 0 },
+  changeLeadTimeByWeek: [],
+  flowEfficiency: { total: 0, wcTime: 0 },
+  flowEfficiencyByWeek: [],
+  wipTrend: [],
+  wipCount: 0,
+  wipAge: { count: 0, wis: 0 },
+  leakage: 0,
+  leakageByWeek: [],
+};
+
 const sorters = {
   byName: byString<ProjectWorkItemSummaryWithName>(prop('name')),
   byNew: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.leakage),
@@ -38,33 +55,6 @@ const sorters = {
   byWipAge: byNum<ProjectWorkItemSummaryWithName>(x =>
     divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)
   ),
-};
-
-const QualityMetricsTableHeader: React.FC<{
-  queryPeriodDays: number;
-}> = ({ queryPeriodDays }) => {
-  return (
-    <thead>
-      <tr>
-        <th>Project</th>
-        <th data-tip={`Number of bugs opened in the last ${queryPeriodDays} days`}>
-          New
-        </th>
-        <th data-tip={`Number of bugs closed in the last ${queryPeriodDays} days`}>
-          Fixed
-        </th>
-        <th data-tip="Average time taken to close a bug">Cycle time</th>
-        <th data-tip="Average time taken to close a bug once development is complete">
-          CLT
-        </th>
-        <th data-tip="Fraction of overall time that work items spend in work centers on average">
-          Flow efficiency
-        </th>
-        <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>WIP trend</th>
-        <th data-tip="Average age of work-in-progress bugs">WIP age</th>
-      </tr>
-    </thead>
-  );
 };
 
 const FlowMetricsRow: React.FC<{
@@ -98,7 +88,7 @@ const FlowMetricsRow: React.FC<{
           .getOr('-')}
       </td>
       {/* WIP trend */}
-      <td>{summary.wipTrend}</td>
+      <td>{last(summary.wipTrend) || 0}</td>
       {/* WIP age */}
       <td>{divide(summary.wipAge.count, summary.wipAge.wis).map(prettyMS).getOr('-')}</td>
     </tr>
@@ -135,22 +125,7 @@ const aggregateAcrossGroups = (typeSummary: ProjectWorkItemSummaryForType) => {
       leakage: acc.leakage + groupSummary.leakage || 0,
       leakageByWeek: [],
     }),
-    {
-      count: 0,
-      velocity: 0,
-      velocityByWeek: [],
-      cycleTime: { count: 0, wis: 0 },
-      cycleTimeByWeek: [],
-      changeLeadTime: { count: 0, wis: 0 },
-      changeLeadTimeByWeek: [],
-      flowEfficiency: { total: 0, wcTime: 0 },
-      flowEfficiencyByWeek: [],
-      wipTrend: [],
-      wipCount: 0,
-      wipAge: { count: 0, wis: 0 },
-      leakage: 0,
-      leakageByWeek: [],
-    }
+    emptySummary
   );
 };
 
@@ -233,26 +208,55 @@ const CollectionWorkItemsSummary: React.FC<{
     collectionName,
   });
 
+  const summariesForFeaturesAndStories = useMemo(() => {
+    if (!workItems.data) return;
+
+    return ['Feature', 'User Story'].map(witName => {
+      const type = witByName(witName, workItems.data.types);
+
+      return {
+        type,
+        projects: workItems.data.projects.map(p => ({
+          name: p.project,
+          summary: aggregateAcrossGroups(p.byType[type.witId] || {}),
+        })),
+      };
+    });
+  }, [workItems.data]);
+
+  const summariesForBugs = useMemo(() => {
+    if (!workItems.data) return;
+
+    const bugType = witByName('Bug', workItems.data.types);
+
+    const groups = Object.entries(workItems.data.groups)
+      .filter(([, group]) => {
+        return group.witId === bugType.witId;
+      })
+      .map(([groupId, group]) => ({ ...group, groupId }));
+
+    return {
+      type: bugType,
+      groups: groups.map(g => ({
+        name: g.name,
+        projects: workItems.data.projects.map(p => {
+          return {
+            name: p.project,
+            summary: p.byType[bugType.witId]?.[g.groupId] || emptySummary,
+          };
+        }),
+      })),
+    };
+  }, [workItems.data]);
+
   if (!workItems.data?.projects.length) {
     return <div>Sorry No Projects Found</div>;
   }
 
-  const summaries = ['Feature', 'User Story'].map(witName => {
-    const type = witByName(witName, workItems.data.types);
-
-    return {
-      type,
-      projects: workItems.data.projects.map(p => ({
-        name: p.project,
-        summary: aggregateAcrossGroups(p.byType[type.witId] || {}),
-      })),
-    };
-  });
-
   return (
     <div>
       <h2 className="font-bold text-2xl my-2">Flow Metrics</h2>
-      {summaries.map(summary => {
+      {summariesForFeaturesAndStories?.map(summary => {
         return (
           <details key={summary.type.name[0]}>
             <summary className="font-semibold text-xl my-2 cursor-pointer">
@@ -270,30 +274,20 @@ const CollectionWorkItemsSummary: React.FC<{
       })}
 
       <h2 className="font-bold text-2xl my-2 mt-6">Quality Metrics</h2>
-      {Object.entries(workItems.data.types)
-        .filter(([, value]) => value.name[1] === 'Bugs')
-        .map(([key, value]) => {
-          return (
-            <details key={key}>
-              <summary className="font-semibold text-xl my-2 cursor-pointer">
-                <img
-                  src={value.icon}
-                  alt={`Icon for ${value.name[1]}`}
-                  className="inline-block mr-1"
-                  width="18"
-                />
-                {value.name[1]}
-              </summary>
-              <div>
-                <table className="summary-table">
-                  <QualityMetricsTableHeader queryPeriodDays={90} />
-
-                  <tbody />
-                </table>
-              </div>
-            </details>
-          );
-        })}
+      {summariesForBugs?.groups.map(group => (
+        <details key={group.name}>
+          <summary className="font-semibold text-xl my-2 cursor-pointer">
+            <img
+              src={summariesForBugs?.type.icon}
+              alt={`Icon for ${group.name}`}
+              className="inline-block mr-1"
+              width="18"
+            />
+            {group.name}
+          </summary>
+          <WorkItemTable summaries={group.projects} />
+        </details>
+      ))}
     </div>
   );
 };
