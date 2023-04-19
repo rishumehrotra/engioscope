@@ -9,6 +9,7 @@ import { divide, toPercentage } from '../../shared/utils';
 import type { UIWorkItemType } from '../../shared/types.js';
 import { num, prettyMS } from '../helpers/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import type { Sorter } from '../hooks/useTableSorter.jsx';
 import { useTableSorter } from '../hooks/useTableSorter.jsx';
 
 type ProjectWorkItemSummaryForType =
@@ -38,23 +39,21 @@ const emptySummary = {
   leakageByWeek: [],
 };
 
-const sorters = {
-  byName: byString<ProjectWorkItemSummaryWithName>(prop('name')),
-  byNew: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.leakage),
-  byVelocity: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.velocity),
-  byCycleTime: byNum<ProjectWorkItemSummaryWithName>(x =>
+const sorters: Sorter<ProjectWorkItemSummaryWithName> = {
+  byName: byString(prop('name')),
+  byNew: byNum(x => x.summary.leakage),
+  byVelocity: byNum(x => x.summary.velocity),
+  byCycleTime: byNum(x =>
     divide(x.summary.cycleTime.count, x.summary.cycleTime.wis).getOr(0)
   ),
-  byChangeLeadTime: byNum<ProjectWorkItemSummaryWithName>(x =>
+  byChangeLeadTime: byNum(x =>
     divide(x.summary.changeLeadTime.count, x.summary.changeLeadTime.wis).getOr(0)
   ),
-  byFlowEfficiency: byNum<ProjectWorkItemSummaryWithName>(x =>
+  byFlowEfficiency: byNum(x =>
     divide(x.summary.flowEfficiency.wcTime, x.summary.flowEfficiency.total).getOr(0)
   ),
-  byWipTrend: byNum<ProjectWorkItemSummaryWithName>(x => last(x.summary.wipTrend) || 0),
-  byWipAge: byNum<ProjectWorkItemSummaryWithName>(x =>
-    divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)
-  ),
+  byWipTrend: byNum(x => last(x.summary.wipTrend) || 0),
+  byWipAge: byNum(x => divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)),
 };
 
 const FlowMetricsRow: React.FC<{
@@ -138,7 +137,7 @@ const witByName = (name: string, types: Record<string, UIWorkItemType>) => {
 const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> = ({
   summaries,
 }) => {
-  const queryPeriodDays = useQueryPeriodDays();
+  const [queryPeriodDays] = useQueryPeriodDays();
   const { buttonProps, sortIcon, sorter } = useTableSorter(sorters, 'byName');
 
   return (
@@ -178,9 +177,7 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
             </button>
           </th>
           <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>
-            <button {...buttonProps('byWipTrend')}>
-              {sortIcon('byWipTrend')} WIP trend
-            </button>
+            <button {...buttonProps('byWipTrend')}>{sortIcon('byWipTrend')} WIP</button>
           </th>
           <th data-tip="Average age of work items in progress">
             <button {...buttonProps('byWipAge')}>{sortIcon('byWipAge')} WIP age</button>

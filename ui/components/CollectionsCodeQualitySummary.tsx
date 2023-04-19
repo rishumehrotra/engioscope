@@ -6,15 +6,15 @@ import { trpc } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import Loading from './Loading.jsx';
 import { num } from '../helpers/utils.js';
+import type { Sorter } from '../hooks/useTableSorter.jsx';
 import { useTableSorter } from '../hooks/useTableSorter.jsx';
 
-type CollectionCodeQualitySummary =
-  RouterClient['summary']['getCollectionCodeQualitySummary'][number];
-
-const sorters = {
-  byName: byString<CollectionCodeQualitySummary>(prop('project')),
-  byBranches: byNum<CollectionCodeQualitySummary>(x => x.healthyBranches.total),
-  byHealthyBranches: byNum<CollectionCodeQualitySummary>(x =>
+const sorters: Sorter<
+  RouterClient['summary']['getCollectionCodeQualitySummary'][number]
+> = {
+  byName: byString(prop('project')),
+  byBranches: byNum(x => x.healthyBranches.total),
+  byHealthyBranches: byNum(x =>
     divide(x.healthyBranches.healthy, x.healthyBranches.total).getOr(0)
   ),
 };
