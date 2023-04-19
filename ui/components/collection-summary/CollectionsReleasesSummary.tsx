@@ -48,16 +48,21 @@ const CollectionsReleasesSummary: React.FC<{
           <thead>
             <tr>
               <th className="left">
-                <button {...buttonProps('byName')}>{sortIcon('byName')} Project</button>
+                <button {...buttonProps('byName')}>
+                  <span>Project</span>
+                  {sortIcon('byName')}
+                </button>
               </th>
               <th>
                 <button {...buttonProps('byMasterOnly')}>
-                  {sortIcon('byMasterOnly')} Master-only releases
+                  <span>Master-only releases</span>
+                  {sortIcon('byMasterOnly')}
                 </button>
               </th>
               <th>
                 <button {...buttonProps('byArtifacts')}>
-                  {sortIcon('byArtifacts')} Starts with artifact
+                  <span>Starts with artifact</span>
+                  {sortIcon('byArtifacts')}
                 </button>
               </th>
             </tr>

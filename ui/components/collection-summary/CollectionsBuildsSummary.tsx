@@ -9,6 +9,7 @@ import { increaseIsBetter } from '../summary-page/utils.jsx';
 import Loading from '../Loading.jsx';
 import { num } from '../../helpers/utils.js';
 import { useTableSorter } from '../../hooks/use-table-sorter.jsx';
+import AnalysedRepos from './AnalysedRepos.jsx';
 
 type CollectionBuildsSummary =
   RouterClient['summary']['getCollectionBuildsSummary'][number];
@@ -55,26 +56,33 @@ const CollectionsBuildsSummary: React.FC<{
           <thead>
             <tr>
               <th className="left">
-                <button {...buttonProps('byName')}>{sortIcon('byName')} Project</button>
+                <button {...buttonProps('byName')}>
+                  <span>Project</span>
+                  {sortIcon('byName')}
+                </button>
               </th>
               <th>
                 <button {...buttonProps('byBuilds')}>
-                  {sortIcon('byBuilds')} Builds
+                  <span>Builds</span>
+                  {sortIcon('byBuilds')}
                 </button>
               </th>
               <th>
                 <button {...buttonProps('bySuccessfulBuilds')}>
-                  {sortIcon('bySuccessfulBuilds')} Successful builds
+                  <span>Successful builds</span>
+                  {sortIcon('bySuccessfulBuilds')}
                 </button>
               </th>
               <th>
                 <button {...buttonProps('byYamlPipelines')}>
-                  {sortIcon('byYamlPipelines')} YAML pipelines
+                  <span>YAML pipelines</span>
+                  {sortIcon('byYamlPipelines')}
                 </button>
               </th>
               <th>
                 <button {...buttonProps('byCentralTemplateUsage')}>
-                  {sortIcon('byCentralTemplateUsage')} Central template usage
+                  <span>Central template usage</span>
+                  {sortIcon('byCentralTemplateUsage')}
                 </button>
               </th>
             </tr>
@@ -84,18 +92,11 @@ const CollectionsBuildsSummary: React.FC<{
               <tr key={project.project}>
                 <td className="left">
                   <a href={`/${collectionName}/${project.project}/repos`}>
-                    <div className="text-base font-semibold">{project.project}</div>
-                    <div className="text-gray-600 text-xs py-1">
-                      Analyzed
-                      <span className="font-semibold">
-                        {` ${project.totalActiveRepos} `}
-                      </span>
-                      active repositories, excluded{' '}
-                      <span className="font-semibold">
-                        {` ${project.totalRepos - project.totalActiveRepos || 0} `}
-                      </span>
-                      inactive repositories
-                    </div>
+                    <div>{project.project}</div>
+                    <AnalysedRepos
+                      total={project.totalRepos}
+                      active={project.totalActiveRepos}
+                    />
                   </a>
                 </td>
                 <td>
@@ -120,7 +121,7 @@ const CollectionsBuildsSummary: React.FC<{
                         project.successfulBuilds.byWeek.find(
                           s => s.weekIndex === build.weekIndex
                         );
-                      return divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                      return divide(successfulBuildsForWeek?.count || 0, build.count)
                         .map(multiply(100))
                         .getOr(0);
                     })}
@@ -130,7 +131,7 @@ const CollectionsBuildsSummary: React.FC<{
                           project.successfulBuilds.byWeek.find(
                             s => s.weekIndex === build.weekIndex
                           );
-                        return divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                        return divide(successfulBuildsForWeek?.count || 0, build.count)
                           .map(multiply(100))
                           .getOr(0);
                       })
@@ -143,7 +144,7 @@ const CollectionsBuildsSummary: React.FC<{
                     .map(toPercentage)
                     .getOr('-')}
                 </td>
-                <td>{project.centralTemplatePipeline.central ?? '-'}</td>
+                <td>{project.centralTemplatePipeline.central}</td>
               </tr>
             ))}
           </tbody>

@@ -145,42 +145,58 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
       <thead>
         <tr>
           <th className="left">
-            <button {...buttonProps('byName')}>{sortIcon('byName')} Project</button>
+            <button {...buttonProps('byName')}>
+              <span>Project</span>
+              {sortIcon('byName')}
+            </button>
           </th>
           <th
             data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
           >
-            <button {...buttonProps('byNew')}>{sortIcon('byNew')} New</button>
+            <button {...buttonProps('byNew')}>
+              <span>New</span>
+              {sortIcon('byNew')}
+            </button>
           </th>
           <th
             data-tip={`Number of work items completed in the last ${queryPeriodDays} days`}
           >
             <button {...buttonProps('byVelocity')}>
-              {sortIcon('byVelocity')} Velocity
+              <span>Velocity</span>
+              {sortIcon('byVelocity')}
             </button>
           </th>
           <th
             data-tip={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
           >
             <button {...buttonProps('byCycleTime')}>
-              {sortIcon('byCycleTime')} Cycle time
+              <span>Cycle time</span>
+              {sortIcon('byCycleTime')}
             </button>
           </th>
           <th data-tip="Average time taken to take a work item to production after development is complete">
             <button {...buttonProps('byChangeLeadTime')}>
-              {sortIcon('byChangeLeadTime')} CLT
+              <span>CLT</span>
+              {sortIcon('byChangeLeadTime')}
             </button>
           </th>
           <th data-tip="Fraction of overall time that work items spend in work centers on average">
             <button {...buttonProps('byFlowEfficiency')}>
-              {sortIcon('byFlowEfficiency')} Flow efficiency
+              <span>Flow efficiency</span>
+              {sortIcon('byFlowEfficiency')}
             </button>
           </th>
           <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>
-            <button {...buttonProps('byWipCount')}>{sortIcon('byWipCount')} WIP</button>
+            <button {...buttonProps('byWipCount')}>
+              <span>WIP</span>
+              {sortIcon('byWipCount')}
+            </button>
           </th>
           <th data-tip="Average age of work items in progress">
-            <button {...buttonProps('byWipAge')}>{sortIcon('byWipAge')} WIP age</button>
+            <button {...buttonProps('byWipAge')}>
+              <span>WIP age</span>
+              {sortIcon('byWipAge')}
+            </button>
           </th>
         </tr>
       </thead>

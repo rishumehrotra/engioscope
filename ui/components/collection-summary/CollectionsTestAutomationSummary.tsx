@@ -9,6 +9,7 @@ import { increaseIsBetter } from '../summary-page/utils.jsx';
 import { useTableSorter } from '../../hooks/use-table-sorter.jsx';
 import Loading from '../Loading.jsx';
 import { num } from '../../helpers/utils.js';
+import AnalysedRepos from './AnalysedRepos.jsx';
 
 type CollectionTestAutomatioinSummary =
   RouterClient['summary']['getCollectionTestAutomationSummary'][number];
@@ -54,14 +55,21 @@ const CollectionsTestAutomationSummary: React.FC<{
           <thead>
             <tr>
               <th className="left">
-                <button {...buttonProps('byName')}>{sortIcon('byName')} Project</button>
+                <button {...buttonProps('byName')}>
+                  <span>Project</span>
+                  {sortIcon('byName')}
+                </button>
               </th>
               <th>
-                <button {...buttonProps('byTests')}>{sortIcon('byTests')} Tests</button>
+                <button {...buttonProps('byTests')}>
+                  <span>Tests</span>
+                  {sortIcon('byTests')}
+                </button>
               </th>
               <th>
                 <button {...buttonProps('byCoverage')}>
-                  {sortIcon('byCoverage')} Coverage
+                  <span>Coverage</span>
+                  {sortIcon('byCoverage')}
                 </button>
               </th>
             </tr>
@@ -71,18 +79,11 @@ const CollectionsTestAutomationSummary: React.FC<{
               <tr key={project.project}>
                 <td className="left">
                   <a href={`${collectionName}/${project.project}/repos`}>
-                    <div className="text-base font-semibold">{project.project}</div>
-                    <div className="text-gray-600 text-xs py-1">
-                      Analyzed
-                      <span className="font-semibold">
-                        {` ${project.totalActiveRepos} `}
-                      </span>
-                      active repositories, excluded{' '}
-                      <span className="font-semibold">
-                        {` ${project.totalRepos - project.totalActiveRepos || 0} `}
-                      </span>
-                      inactive repositories
-                    </div>
+                    <div>{project.project}</div>
+                    <AnalysedRepos
+                      active={project.totalActiveRepos}
+                      total={project.totalRepos}
+                    />
                   </a>
                 </td>
                 <td>

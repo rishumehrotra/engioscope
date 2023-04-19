@@ -63,7 +63,8 @@ body {
 }
 
 .summary-table thead th button {
-  @apply px-6 py-4 text-xs text-center font-medium uppercase tracking-wider w-full flex items-center justify-evenly gap-0;
+  @apply px-6 py-4 text-xs text-center font-medium uppercase tracking-wider
+  w-full inline-flex items-center justify-center gap-1;
 }
 
 .summary-table thead th.left button {
