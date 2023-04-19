@@ -34,8 +34,6 @@ export const insertSummarySnapshot = async (
           }),
         ]);
 
-        console.log(releaseSummary);
-
         return SummaryModel.updateOne(
           {
             collectionName,

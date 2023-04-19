@@ -57,7 +57,9 @@ const Collections: React.FC = () => {
 
   return (
     <div className="mx-32 bg-gray-50 p-8 rounded-lg" style={{ marginTop: '-3.25rem' }}>
-      <h2 className="text-2xl font-bold mt-8">Health metrics</h2>
+      <CollectionWorkItemsSummary collectionName={collection} />
+
+      <h2 className="font-bold text-2xl my-2 mt-6">Health metrics</h2>
       {Object.entries(sections).map(([key, { label, Component }]) => {
         const sectionKey = key as Section;
         return (
@@ -72,7 +74,6 @@ const Collections: React.FC = () => {
           </details>
         );
       })}
-      <CollectionWorkItemsSummary collectionName={collection} />
     </div>
   );
 };

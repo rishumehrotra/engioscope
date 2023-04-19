@@ -1,49 +1,43 @@
 import React from 'react';
 
+import { byNum, byString } from 'sort-lib';
+import { last, prop } from 'rambda';
+import { useParams } from 'react-router-dom';
 import type { RouterClient } from '../helpers/trpc.js';
 import { trpc } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils';
 import type { UIWorkItemType } from '../../shared/types.js';
 import { num, prettyMS } from '../helpers/utils.js';
+import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import { useTableSorter } from '../hooks/useTableSorter.jsx';
 
 type ProjectWorkItemSummaryForType =
   RouterClient['summary']['collectionWorkItemsSummary']['projects'][number]['byType'][string];
 
 type ProjectWorkItemSummary = ProjectWorkItemSummaryForType[string];
 
-const FlowMetricsTableHeader: React.FC<{
-  queryPeriodDays: number;
-}> = ({ queryPeriodDays }) => {
-  return (
-    <thead>
-      <tr>
-        <th className="left">Project</th>
-        <th
-          data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
-        >
-          New
-        </th>
-        <th
-          data-tip={`Number of work items completed in the last ${queryPeriodDays} days`}
-        >
-          Velocity
-        </th>
-        <th
-          data-tip={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
-        >
-          Cycle time
-        </th>
-        <th data-tip="Average time taken to take a work item to production after development is complete">
-          CLT
-        </th>
-        <th data-tip="Fraction of overall time that work items spend in work centers on average">
-          Flow efficiency
-        </th>
-        <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>WIP trend</th>
-        <th data-tip="Average age of work items in progress">WIP age</th>
-      </tr>
-    </thead>
-  );
+type ProjectWorkItemSummaryWithName = {
+  name: string;
+  summary: ProjectWorkItemSummary;
+};
+
+const sorters = {
+  byName: byString<ProjectWorkItemSummaryWithName>(prop('name')),
+  byNew: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.leakage),
+  byVelocity: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.velocity),
+  byCycleTime: byNum<ProjectWorkItemSummaryWithName>(x =>
+    divide(x.summary.cycleTime.count, x.summary.cycleTime.wis).getOr(0)
+  ),
+  byChangeLeadTime: byNum<ProjectWorkItemSummaryWithName>(x =>
+    divide(x.summary.changeLeadTime.count, x.summary.changeLeadTime.wis).getOr(0)
+  ),
+  byFlowEfficiency: byNum<ProjectWorkItemSummaryWithName>(x =>
+    divide(x.summary.flowEfficiency.wcTime, x.summary.flowEfficiency.total).getOr(0)
+  ),
+  byWipTrend: byNum<ProjectWorkItemSummaryWithName>(x => last(x.summary.wipTrend) || 0),
+  byWipAge: byNum<ProjectWorkItemSummaryWithName>(x =>
+    divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)
+  ),
 };
 
 const QualityMetricsTableHeader: React.FC<{
@@ -77,11 +71,14 @@ const FlowMetricsRow: React.FC<{
   projectName: string;
   summary: ProjectWorkItemSummary;
 }> = ({ projectName, summary }) => {
+  const { collection } = useParams();
   return (
     <tr key={projectName}>
-      <td className="left">{projectName}</td>
+      <td className="left">
+        <a href={`/${collection}/${projectName}`}>{projectName}</a>
+      </td>
       {/* New */}
-      <td>{num(summary.count)}</td>
+      <td>{num(summary.leakage)}</td>
       {/* Velocity */}
       <td>{num(summary.velocity)}</td>
       {/* Cycle time */}
@@ -163,6 +160,72 @@ const witByName = (name: string, types: Record<string, UIWorkItemType>) => {
   return { ...type, witId };
 };
 
+const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> = ({
+  summaries,
+}) => {
+  const queryPeriodDays = useQueryPeriodDays();
+  const { buttonProps, sortIcon, sorter } = useTableSorter(sorters, 'byName');
+
+  return (
+    <table className="summary-table">
+      <thead>
+        <tr>
+          <th className="left">
+            <button {...buttonProps('byName')}>{sortIcon('byName')} Project</button>
+          </th>
+          <th
+            data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
+          >
+            <button {...buttonProps('byNew')}>{sortIcon('byNew')} New</button>
+          </th>
+          <th
+            data-tip={`Number of work items completed in the last ${queryPeriodDays} days`}
+          >
+            <button {...buttonProps('byVelocity')}>
+              {sortIcon('byVelocity')} Velocity
+            </button>
+          </th>
+          <th
+            data-tip={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
+          >
+            <button {...buttonProps('byCycleTime')}>
+              {sortIcon('byCycleTime')} Cycle time
+            </button>
+          </th>
+          <th data-tip="Average time taken to take a work item to production after development is complete">
+            <button {...buttonProps('byChangeLeadTime')}>
+              {sortIcon('byChangeLeadTime')} CLT
+            </button>
+          </th>
+          <th data-tip="Fraction of overall time that work items spend in work centers on average">
+            <button {...buttonProps('byFlowEfficiency')}>
+              {sortIcon('byFlowEfficiency')} Flow efficiency
+            </button>
+          </th>
+          <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>
+            <button {...buttonProps('byWipTrend')}>
+              {sortIcon('byWipTrend')} WIP trend
+            </button>
+          </th>
+          <th data-tip="Average age of work items in progress">
+            <button {...buttonProps('byWipAge')}>{sortIcon('byWipAge')} WIP age</button>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {summaries.sort(sorter).map(project => (
+          <FlowMetricsRow
+            key={project.name}
+            projectName={project.name}
+            summary={project.summary}
+          />
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
 const CollectionWorkItemsSummary: React.FC<{
   collectionName: string;
 }> = ({ collectionName }) => {
@@ -181,14 +244,14 @@ const CollectionWorkItemsSummary: React.FC<{
       type,
       projects: workItems.data.projects.map(p => ({
         name: p.project,
-        data: aggregateAcrossGroups(p.byType[type.witId] || {}),
+        summary: aggregateAcrossGroups(p.byType[type.witId] || {}),
       })),
     };
   });
 
   return (
     <div>
-      <h2 className="font-semibold text-2xl my-2">Flow Metrics</h2>
+      <h2 className="font-bold text-2xl my-2">Flow Metrics</h2>
       {summaries.map(summary => {
         return (
           <details key={summary.type.name[0]}>
@@ -201,25 +264,12 @@ const CollectionWorkItemsSummary: React.FC<{
               />
               {summary.type.name[1]}
             </summary>
-            <div>
-              <table className="summary-table">
-                <FlowMetricsTableHeader queryPeriodDays={90} />
-                <tbody>
-                  {summary.projects.map(project => (
-                    <FlowMetricsRow
-                      key={project.name}
-                      projectName={project.name}
-                      summary={project.data}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <WorkItemTable summaries={summary.projects} />
           </details>
         );
       })}
 
-      <h2 className="font-semibold text-2xl my-2">Quality Metrics</h2>
+      <h2 className="font-bold text-2xl my-2 mt-6">Quality Metrics</h2>
       {Object.entries(workItems.data.types)
         .filter(([, value]) => value.name[1] === 'Bugs')
         .map(([key, value]) => {
