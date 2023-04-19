@@ -1,13 +1,13 @@
 import React from 'react';
 import { byNum, byString } from 'sort-lib';
 import { prop } from 'rambda';
-import type { RouterClient } from '../helpers/trpc.js';
-import { trpc } from '../helpers/trpc.js';
-import { divide, toPercentage } from '../../shared/utils.js';
-import Loading from './Loading.jsx';
-import { num } from '../helpers/utils.js';
-import type { Sorter } from '../hooks/useTableSorter.jsx';
-import { useTableSorter } from '../hooks/useTableSorter.jsx';
+import type { RouterClient } from '../../helpers/trpc.js';
+import { trpc } from '../../helpers/trpc.js';
+import { divide, toPercentage } from '../../../shared/utils.js';
+import Loading from '../Loading.jsx';
+import { num } from '../../helpers/utils.js';
+import type { Sorter } from '../../hooks/useTableSorter.jsx';
+import { useTableSorter } from '../../hooks/useTableSorter.jsx';
 
 const sorters: Sorter<
   RouterClient['summary']['getCollectionCodeQualitySummary'][number]

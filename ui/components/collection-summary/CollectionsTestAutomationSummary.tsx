@@ -1,15 +1,15 @@
 import React from 'react';
 import { multiply, prop } from 'rambda';
 import { byNum, byString } from 'sort-lib';
-import type { RouterClient } from '../helpers/trpc.js';
-import { trpc } from '../helpers/trpc.js';
-import { divide, toPercentage } from '../../shared/utils.js';
-import { LabelWithSparkline } from './graphs/Sparkline.jsx';
-import { increaseIsBetter } from './summary-page/utils.jsx';
-import type { Sorter } from '../hooks/useTableSorter.jsx';
-import { useTableSorter } from '../hooks/useTableSorter.jsx';
-import Loading from './Loading.jsx';
-import { num } from '../helpers/utils.js';
+import type { RouterClient } from '../../helpers/trpc.js';
+import { trpc } from '../../helpers/trpc.js';
+import { divide, toPercentage } from '../../../shared/utils.js';
+import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
+import { increaseIsBetter } from '../summary-page/utils.jsx';
+import type { Sorter } from '../../hooks/useTableSorter.jsx';
+import { useTableSorter } from '../../hooks/useTableSorter.jsx';
+import Loading from '../Loading.jsx';
+import { num } from '../../helpers/utils.js';
 
 const sorters: Sorter<
   RouterClient['summary']['getCollectionTestAutomationSummary'][number]

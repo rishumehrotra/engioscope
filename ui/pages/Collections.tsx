@@ -2,12 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
 import { useSetProjectDetails } from '../hooks/project-details-hooks.js';
-
-import CollectionsCodeQualitySummary from '../components/CollectionsCodeQualitySummary.jsx';
-import CollectionsBuildsSummary from '../components/CollectionsBuildsSummary.jsx';
-import CollectionsReleasesSummary from '../components/CollectionsReleasesSummary.jsx';
-import CollectionsTestAutomationSummary from '../components/CollectionsTestAutomationSummary.jsx';
-import CollectionWorkItemsSummary from '../components/CollectionWorkItemsSummary.jsx';
+import CollectionsCodeQualitySummary from '../components/collection-summary/CollectionsCodeQualitySummary.jsx';
+import CollectionsBuildsSummary from '../components/collection-summary/CollectionsBuildsSummary.jsx';
+import CollectionsReleasesSummary from '../components/collection-summary/CollectionsReleasesSummary.jsx';
+import CollectionsTestAutomationSummary from '../components/collection-summary/CollectionsTestAutomationSummary.jsx';
+import CollectionWorkItemsSummary from '../components/collection-summary/CollectionWorkItemsSummary.jsx';
 
 const sections = {
   'ci-builds': { label: 'CI Builds', Component: CollectionsBuildsSummary },

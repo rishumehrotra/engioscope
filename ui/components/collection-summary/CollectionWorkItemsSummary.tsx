@@ -1,16 +1,15 @@
 import React, { useMemo } from 'react';
-
 import { byNum, byString } from 'sort-lib';
-import { last, prop } from 'rambda';
+import { prop } from 'rambda';
 import { useParams } from 'react-router-dom';
-import type { RouterClient } from '../helpers/trpc.js';
-import { trpc } from '../helpers/trpc.js';
-import { divide, toPercentage } from '../../shared/utils';
-import type { UIWorkItemType } from '../../shared/types.js';
-import { num, prettyMS } from '../helpers/utils.js';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
-import type { Sorter } from '../hooks/useTableSorter.jsx';
-import { useTableSorter } from '../hooks/useTableSorter.jsx';
+import type { RouterClient } from '../../helpers/trpc.js';
+import { trpc } from '../../helpers/trpc.js';
+import { divide, toPercentage } from '../../../shared/utils';
+import type { UIWorkItemType } from '../../../shared/types.js';
+import { num, prettyMS } from '../../helpers/utils.js';
+import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
+import type { Sorter } from '../../hooks/useTableSorter.jsx';
+import { useTableSorter } from '../../hooks/useTableSorter.jsx';
 
 type ProjectWorkItemSummaryForType =
   RouterClient['summary']['collectionWorkItemsSummary']['projects'][number]['byType'][string];
@@ -52,7 +51,7 @@ const sorters: Sorter<ProjectWorkItemSummaryWithName> = {
   byFlowEfficiency: byNum(x =>
     divide(x.summary.flowEfficiency.wcTime, x.summary.flowEfficiency.total).getOr(0)
   ),
-  byWipTrend: byNum(x => last(x.summary.wipTrend) || 0),
+  byWipCount: byNum(x => x.summary.wipCount || 0),
   byWipAge: byNum(x => divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)),
 };
 
@@ -87,7 +86,7 @@ const FlowMetricsRow: React.FC<{
           .getOr('-')}
       </td>
       {/* WIP trend */}
-      <td>{last(summary.wipTrend) || 0}</td>
+      <td>{summary.wipCount || 0}</td>
       {/* WIP age */}
       <td>{divide(summary.wipAge.count, summary.wipAge.wis).map(prettyMS).getOr('-')}</td>
     </tr>
@@ -177,7 +176,7 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
             </button>
           </th>
           <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>
-            <button {...buttonProps('byWipTrend')}>{sortIcon('byWipTrend')} WIP</button>
+            <button {...buttonProps('byWipCount')}>{sortIcon('byWipCount')} WIP</button>
           </th>
           <th data-tip="Average age of work items in progress">
             <button {...buttonProps('byWipAge')}>{sortIcon('byWipAge')} WIP age</button>

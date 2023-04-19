@@ -1,7 +1,7 @@
 import React from 'react';
-import { trpc } from '../helpers/trpc.js';
-import { divide, toPercentage } from '../../shared/utils.js';
-import Loading from './Loading.jsx';
+import { trpc } from '../../helpers/trpc.js';
+import { divide, toPercentage } from '../../../shared/utils.js';
+import Loading from '../Loading.jsx';
 
 const CollectionsReleasesSummary: React.FC<{
   collectionName: string;
