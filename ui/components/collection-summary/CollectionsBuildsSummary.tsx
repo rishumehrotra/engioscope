@@ -8,19 +8,23 @@ import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
 import { increaseIsBetter } from '../summary-page/utils.jsx';
 import Loading from '../Loading.jsx';
 import { num } from '../../helpers/utils.js';
-import type { Sorter } from '../../hooks/useTableSorter.jsx';
-import { useTableSorter } from '../../hooks/useTableSorter.jsx';
+import { useTableSorter } from '../../hooks/use-table-sorter.jsx';
 
-const sorters: Sorter<RouterClient['summary']['getCollectionBuildsSummary'][number]> = {
-  byName: byString(prop('project')),
-  byBuilds: byNum(pipe(prop('totalBuilds'), prop('count'))),
-  bySuccessfulBuilds: byNum(x =>
+type CollectionBuildsSummary =
+  RouterClient['summary']['getCollectionBuildsSummary'][number];
+
+const sorters = {
+  byName: byString<CollectionBuildsSummary>(prop('project')),
+  byBuilds: byNum<CollectionBuildsSummary>(pipe(prop('totalBuilds'), prop('count'))),
+  bySuccessfulBuilds: byNum<CollectionBuildsSummary>(x =>
     divide(x.successfulBuilds.count, x.totalBuilds.count).getOr(0)
   ),
-  byYamlPipelines: byNum(x =>
+  byYamlPipelines: byNum<CollectionBuildsSummary>(x =>
     divide(x.pipelines.yamlCount, x.pipelines.totalCount).getOr(0)
   ),
-  byCentralTemplateUsage: byNum(x => x.centralTemplatePipeline.central || 0),
+  byCentralTemplateUsage: byNum<CollectionBuildsSummary>(
+    x => x.centralTemplatePipeline.central || 0
+  ),
 };
 
 const CollectionsBuildsSummary: React.FC<{

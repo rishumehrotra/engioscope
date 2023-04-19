@@ -8,8 +8,7 @@ import { divide, toPercentage } from '../../../shared/utils';
 import type { UIWorkItemType } from '../../../shared/types.js';
 import { num, prettyMS } from '../../helpers/utils.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
-import type { Sorter } from '../../hooks/useTableSorter.jsx';
-import { useTableSorter } from '../../hooks/useTableSorter.jsx';
+import { useTableSorter } from '../../hooks/use-table-sorter.jsx';
 
 type ProjectWorkItemSummaryForType =
   RouterClient['summary']['collectionWorkItemsSummary']['projects'][number]['byType'][string];
@@ -38,21 +37,23 @@ const emptySummary = {
   leakageByWeek: [],
 };
 
-const sorters: Sorter<ProjectWorkItemSummaryWithName> = {
-  byName: byString(prop('name')),
-  byNew: byNum(x => x.summary.leakage),
-  byVelocity: byNum(x => x.summary.velocity),
-  byCycleTime: byNum(x =>
+const sorters = {
+  byName: byString<ProjectWorkItemSummaryWithName>(prop('name')),
+  byNew: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.leakage),
+  byVelocity: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.velocity),
+  byCycleTime: byNum<ProjectWorkItemSummaryWithName>(x =>
     divide(x.summary.cycleTime.count, x.summary.cycleTime.wis).getOr(0)
   ),
-  byChangeLeadTime: byNum(x =>
+  byChangeLeadTime: byNum<ProjectWorkItemSummaryWithName>(x =>
     divide(x.summary.changeLeadTime.count, x.summary.changeLeadTime.wis).getOr(0)
   ),
-  byFlowEfficiency: byNum(x =>
+  byFlowEfficiency: byNum<ProjectWorkItemSummaryWithName>(x =>
     divide(x.summary.flowEfficiency.wcTime, x.summary.flowEfficiency.total).getOr(0)
   ),
-  byWipCount: byNum(x => x.summary.wipCount || 0),
-  byWipAge: byNum(x => divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)),
+  byWipCount: byNum<ProjectWorkItemSummaryWithName>(x => x.summary.wipCount || 0),
+  byWipAge: byNum<ProjectWorkItemSummaryWithName>(x =>
+    divide(x.summary.wipAge.count, x.summary.wipAge.wis).getOr(0)
+  ),
 };
 
 const FlowMetricsRow: React.FC<{
@@ -251,7 +252,7 @@ const CollectionWorkItemsSummary: React.FC<{
 
   return (
     <div>
-      <h2 className="font-bold text-2xl my-2">Flow Metrics</h2>
+      <h2 className="font-bold text-2xl my-2">Flow metrics</h2>
       {summariesForFeaturesAndStories?.map(summary => {
         return (
           <details key={summary.type.name[0]}>
@@ -269,7 +270,7 @@ const CollectionWorkItemsSummary: React.FC<{
         );
       })}
 
-      <h2 className="font-bold text-2xl my-2 mt-6">Quality Metrics</h2>
+      <h2 className="font-bold text-2xl my-2 mt-6">Quality metrics</h2>
       {summariesForBugs?.groups.map(group => (
         <details key={group.name}>
           <summary className="font-semibold text-xl my-2 cursor-pointer">

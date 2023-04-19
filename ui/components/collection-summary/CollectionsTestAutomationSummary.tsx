@@ -6,17 +6,19 @@ import { trpc } from '../../helpers/trpc.js';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
 import { increaseIsBetter } from '../summary-page/utils.jsx';
-import type { Sorter } from '../../hooks/useTableSorter.jsx';
-import { useTableSorter } from '../../hooks/useTableSorter.jsx';
+import { useTableSorter } from '../../hooks/use-table-sorter.jsx';
 import Loading from '../Loading.jsx';
 import { num } from '../../helpers/utils.js';
 
-const sorters: Sorter<
-  RouterClient['summary']['getCollectionTestAutomationSummary'][number]
-> = {
-  byName: byString(prop('project')),
-  byTests: byNum(x => x.latestTestsSummary?.totalTests || 0),
-  byCoverage: byNum(x =>
+type CollectionTestAutomatioinSummary =
+  RouterClient['summary']['getCollectionTestAutomationSummary'][number];
+
+const sorters = {
+  byName: byString<CollectionTestAutomatioinSummary>(prop('project')),
+  byTests: byNum<CollectionTestAutomatioinSummary>(
+    x => x.latestTestsSummary?.totalTests || 0
+  ),
+  byCoverage: byNum<CollectionTestAutomatioinSummary>(x =>
     divide(
       x.latestCoverageSummary?.coveredBranches || 0,
       x.latestCoverageSummary?.totalBranches || 0
