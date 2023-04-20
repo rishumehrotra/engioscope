@@ -2,7 +2,6 @@ import { collections, collectionsAndProjects } from '../config.js';
 import { SummaryModel } from '../models/mongoose-models/SummaryModel.js';
 import { summary } from '../models/release-listing.js';
 import { getSummary } from '../models/repo-listing.js';
-import collectionWorkitemSummary from '../scraper/collection-wi-summary.js';
 import { pastDate } from '../utils.js';
 
 export const getAllProjects = () => {
@@ -17,8 +16,8 @@ export const insertSummarySnapshot = async (
   const endDate = new Date();
   const startDate = pastDate(duration);
 
-  await Promise.all([
-    ...collectionsAndProjects().map(
+  await Promise.all(
+    collectionsAndProjects().map(
       async ([{ name: collectionName }, { name: project }]) => {
         const [repoSummary, releaseSummary] = await Promise.all([
           getSummary({
@@ -53,7 +52,6 @@ export const insertSummarySnapshot = async (
           { upsert: true }
         );
       }
-    ),
-    collectionWorkitemSummary(),
-  ]);
+    )
+  );
 };

@@ -25,6 +25,7 @@ import changeProgramTasks from './stats-aggregators/change-program-tasks.js';
 import { trackFeatures, trackMetrics } from './stats-aggregators/tracks.js';
 import { setConfig } from '../config.js';
 import { exists } from '../../shared/utils.js';
+import collectionWorkitemSummary from './collection-wi-summary.js';
 
 const exec = promisify(cpsExec);
 
@@ -147,6 +148,7 @@ const scrape = async (config: ParsedConfig) => {
         projectConfig: r[0][1],
       }))
     ).then(writeSummaryMetricsFile),
+    collectionWorkitemSummary(),
   ]);
 };
 
