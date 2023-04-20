@@ -21,7 +21,7 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run parallelised-ci-tasks
-      - uses: JS-DevTools/npm-publish@v1
+      - uses: JS-DevTools/npm-publish@v2
         if: github.ref == 'refs/heads/main'
         with:
           check-version: true
