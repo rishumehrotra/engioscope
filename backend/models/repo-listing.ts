@@ -26,6 +26,7 @@ import {
 } from './testruns.js';
 import { getTotalBuildsForRepositoryIds } from './builds.js';
 import { getTotalCommitsForRepositoryIds } from './commits.js';
+import { getSonarProjectsCount } from './sonar.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -313,6 +314,7 @@ export const getSummary = async ({
     weeklyTestsSummary,
     weeklyCoverageSummary,
     totalRepos,
+    sonarProjects,
   ] = await Promise.all([
     getSuccessfulBuildsBy(collectionName, project, startDate, endDate, activeRepoIds),
 
@@ -345,6 +347,8 @@ export const getSummary = async ({
     getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
 
     getTotalReposInProject(collectionName, project),
+
+    getSonarProjectsCount(collectionName, project, activeRepoIds),
   ]);
 
   return {
@@ -364,6 +368,7 @@ export const getSummary = async ({
     weeklyCoverageSummary,
     latestTestsSummary: last(weeklyTestsSummary),
     latestCoverageSummary: last(weeklyCoverageSummary),
+    sonarProjects,
   };
 };
 

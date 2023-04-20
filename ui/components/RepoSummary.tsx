@@ -24,7 +24,7 @@ import type {
 } from '../../shared/types.js';
 import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num } from '../helpers/utils.js';
-import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
@@ -122,6 +122,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
+  const [showNewSonar] = useQueryParam('sonar-v2', asBoolean);
 
   const summaries = trpc.repos.getSummaries.useQuery({
     collectionName,
@@ -217,6 +218,84 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
       />
       {summaries.data ? (
         <>
+          {showNewSonar && (
+            <ProjectStat
+              topStats={[
+                {
+                  title: 'Sonar v2 Powered by DB',
+                  value: stats.repos.length ? (
+                    <LabelWithSparkline
+                      label={`${Math.round(
+                        (stats.repos.filter(r => !!r.codeQuality).length /
+                          stats.repos.length) *
+                          100
+                      )}%`}
+                      data={stats.newSonarByWeek}
+                      lineColor={increaseIsBetter(stats.newSonarByWeek)}
+                    />
+                  ) : (
+                    '-'
+                  ),
+                  tooltip: `${stats.repos.filter(r => !!r.codeQuality).length} of ${
+                    stats.repos.length
+                  } repos have SonarQube configured`,
+                },
+              ]}
+              childStats={[
+                {
+                  title: 'Ok',
+                  value: summaries.data.sonarProjects.total ? (
+                    <LabelWithSparkline
+                      label={`${(
+                        (summaries.data.sonarProjects.totalOk /
+                          summaries.data.sonarProjects.total) *
+                        100
+                      ).toFixed(0)}%`}
+                      data={stats.sonarCountsByWeek.pass}
+                      lineColor={increaseIsBetter(stats.sonarCountsByWeek.pass)}
+                    />
+                  ) : (
+                    '-'
+                  ),
+                  tooltip: `${summaries.data.sonarProjects.totalOk} of ${summaries.data.sonarProjects.total} sonar projects have 'pass' quality gate`,
+                },
+                {
+                  title: 'Warn',
+                  value: summaries.data.sonarProjects.total ? (
+                    <LabelWithSparkline
+                      label={`${(
+                        (summaries.data.sonarProjects.totalWarn /
+                          summaries.data.sonarProjects.total) *
+                        100
+                      ).toFixed(0)}%`}
+                      data={stats.sonarCountsByWeek.warn}
+                      lineColor={increaseIsBetter(stats.sonarCountsByWeek.warn)}
+                    />
+                  ) : (
+                    '-'
+                  ),
+                  tooltip: `${stats.sonarStats.warn} of ${summaries.data.sonarProjects.total} sonar projects have 'warn' quality gate`,
+                },
+                {
+                  title: 'Fail',
+                  value: summaries.data.sonarProjects.total ? (
+                    <LabelWithSparkline
+                      label={`${(
+                        (summaries.data.sonarProjects.totalFailed /
+                          summaries.data.sonarProjects.total) *
+                        100
+                      ).toFixed(0)}%`}
+                      data={stats.sonarCountsByWeek.fail}
+                      lineColor={decreaseIsBetter(stats.sonarCountsByWeek.fail)}
+                    />
+                  ) : (
+                    '-'
+                  ),
+                  tooltip: `${summaries.data.sonarProjects.totalFailed} of ${summaries.data.sonarProjects.total} sonar projects have 'fail' quality gate`,
+                },
+              ]}
+            />
+          )}
           <ProjectStat
             topStats={[
               {

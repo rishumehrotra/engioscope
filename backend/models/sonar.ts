@@ -4,7 +4,11 @@ import { normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
-import { SonarMeasuresModel, SonarProjectModel } from './mongoose-models/sonar-models.js';
+import {
+  SonarAlertHistoryModel,
+  SonarMeasuresModel,
+  SonarProjectModel,
+} from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
 import { exists } from '../../shared/utils.js';
@@ -274,4 +278,45 @@ export const getRepoSonarMeasures = async ({
       };
     })
     .filter(exists);
+};
+
+export const getSonarProjectsCount = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[]
+) => {
+  const sonarProjects = await SonarAlertHistoryModel.aggregate<{
+    total: number;
+    totalOk: number;
+    totalWarn: number;
+    totalFailed: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+      },
+    },
+    { $sort: { date: -1 } },
+    {
+      $group: {
+        _id: '$sonarProjectId',
+        allAlerts: { $push: '$$ROOT' },
+        latest: { $first: '$$ROOT' },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        totalOk: { $sum: { $cond: [{ $eq: ['$latest.value', 'OK'] }, 1, 0] } },
+        totalWarn: { $sum: { $cond: [{ $eq: ['$latest.value', 'WARN'] }, 1, 0] } },
+        totalFailed: { $sum: { $cond: [{ $eq: ['$latest.value', 'ERROR'] }, 1, 0] } },
+      },
+    },
+    { $project: { _id: 0 } },
+  ]);
+
+  return sonarProjects[0] || { total: 0, totalOk: 0, totalWarn: 0, totalFailed: 0 };
 };
