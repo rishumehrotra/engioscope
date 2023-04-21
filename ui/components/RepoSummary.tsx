@@ -244,54 +244,68 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
               childStats={[
                 {
                   title: 'Ok',
-                  value: summaries.data.sonarProjects.total ? (
+                  value: summaries.data.sonarProjects.totalProjects ? (
                     <LabelWithSparkline
                       label={`${(
-                        (summaries.data.sonarProjects.totalOk /
-                          summaries.data.sonarProjects.total) *
+                        (summaries.data.sonarProjects.passedProjects /
+                          summaries.data.sonarProjects.totalProjects) *
                         100
                       ).toFixed(0)}%`}
-                      data={stats.sonarCountsByWeek.pass}
-                      lineColor={increaseIsBetter(stats.sonarCountsByWeek.pass)}
+                      data={summaries.data.weeklySonarProjectsCount.map(
+                        s => s.passedProjects
+                      )}
+                      lineColor={increaseIsBetter(
+                        summaries.data.weeklySonarProjectsCount.map(s => s.passedProjects)
+                      )}
                     />
                   ) : (
                     '-'
                   ),
-                  tooltip: `${summaries.data.sonarProjects.totalOk} of ${summaries.data.sonarProjects.total} sonar projects have 'pass' quality gate`,
+                  tooltip: `${summaries.data.sonarProjects.passedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'pass' quality gate`,
                 },
                 {
                   title: 'Warn',
-                  value: summaries.data.sonarProjects.total ? (
+                  value: summaries.data.sonarProjects.totalProjects ? (
                     <LabelWithSparkline
                       label={`${(
-                        (summaries.data.sonarProjects.totalWarn /
-                          summaries.data.sonarProjects.total) *
+                        (summaries.data.sonarProjects.projectsWithWarning /
+                          summaries.data.sonarProjects.totalProjects) *
                         100
                       ).toFixed(0)}%`}
-                      data={stats.sonarCountsByWeek.warn}
-                      lineColor={increaseIsBetter(stats.sonarCountsByWeek.warn)}
+                      data={summaries.data.weeklySonarProjectsCount.map(
+                        s => s.projectsWithWarnings
+                      )}
+                      lineColor={increaseIsBetter(
+                        summaries.data.weeklySonarProjectsCount.map(
+                          s => s.projectsWithWarnings
+                        )
+                      )}
                     />
                   ) : (
                     '-'
                   ),
-                  tooltip: `${stats.sonarStats.warn} of ${summaries.data.sonarProjects.total} sonar projects have 'warn' quality gate`,
+                  tooltip: `${stats.sonarStats.warn} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'warn' quality gate`,
                 },
                 {
                   title: 'Fail',
-                  value: summaries.data.sonarProjects.total ? (
+                  value: summaries.data.sonarProjects.totalProjects ? (
                     <LabelWithSparkline
                       label={`${(
-                        (summaries.data.sonarProjects.totalFailed /
-                          summaries.data.sonarProjects.total) *
+                        (summaries.data.sonarProjects.failedProjects /
+                          summaries.data.sonarProjects.totalProjects) *
                         100
                       ).toFixed(0)}%`}
-                      data={stats.sonarCountsByWeek.fail}
-                      lineColor={decreaseIsBetter(stats.sonarCountsByWeek.fail)}
+                      data={summaries.data.weeklySonarProjectsCount.map(
+                        s => s.failedProjects
+                      )}
+                      lineColor={decreaseIsBetter(
+                        summaries.data.weeklySonarProjectsCount.map(s => s.failedProjects)
+                      )}
                     />
                   ) : (
                     '-'
                   ),
-                  tooltip: `${summaries.data.sonarProjects.totalFailed} of ${summaries.data.sonarProjects.total} sonar projects have 'fail' quality gate`,
+                  tooltip: `${summaries.data.sonarProjects.failedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'fail' quality gate`,
                 },
               ]}
             />

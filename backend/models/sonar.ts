@@ -11,7 +11,8 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { exists } from '../../shared/utils.js';
+import { exists, oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
+import { inDateRange } from './helpers.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -286,10 +287,10 @@ export const getSonarProjectsCount = async (
   repositoryIds: string[]
 ) => {
   const sonarProjects = await SonarAlertHistoryModel.aggregate<{
-    total: number;
-    totalOk: number;
-    totalWarn: number;
-    totalFailed: number;
+    totalProjects: number;
+    passedProjects: number;
+    projectsWithWarning: number;
+    failedProjects: number;
   }>([
     {
       $match: {
@@ -302,21 +303,292 @@ export const getSonarProjectsCount = async (
     {
       $group: {
         _id: '$sonarProjectId',
-        allAlerts: { $push: '$$ROOT' },
         latest: { $first: '$$ROOT' },
       },
     },
     {
       $group: {
         _id: null,
-        total: { $sum: 1 },
-        totalOk: { $sum: { $cond: [{ $eq: ['$latest.value', 'OK'] }, 1, 0] } },
-        totalWarn: { $sum: { $cond: [{ $eq: ['$latest.value', 'WARN'] }, 1, 0] } },
-        totalFailed: { $sum: { $cond: [{ $eq: ['$latest.value', 'ERROR'] }, 1, 0] } },
+        totalProjects: { $sum: 1 },
+        passedProjects: { $sum: { $cond: [{ $eq: ['$latest.value', 'OK'] }, 1, 0] } },
+        projectsWithWarning: {
+          $sum: { $cond: [{ $eq: ['$latest.value', 'WARN'] }, 1, 0] },
+        },
+        failedProjects: { $sum: { $cond: [{ $eq: ['$latest.value', 'ERROR'] }, 1, 0] } },
       },
     },
     { $project: { _id: 0 } },
   ]);
 
   return sonarProjects[0] || { total: 0, totalOk: 0, totalWarn: 0, totalFailed: 0 };
+};
+
+const getSonarProjectIdsBeforeStartDate = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date
+) => {
+  const sonarProjectIdsBeforeStartDate = await SonarAlertHistoryModel.aggregate<{
+    allProjectIds: string[];
+    okProjectIds: string[];
+    warnProjectIds: string[];
+    failedProjectIds: string[];
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+        date: { $lt: startDate },
+      },
+    },
+    { $sort: { date: -1 } },
+    {
+      $group: {
+        _id: {
+          repositoryId: '$repositoryId',
+          sonarProjectId: '$sonarProjectId',
+        },
+        sonarProjectId: { $first: '$sonarProjectId' },
+        latest: { $first: '$$ROOT' },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        allProjectIds: { $addToSet: { $toString: '$sonarProjectId' } },
+        failedProjectIds: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$latest.value', 'ERROR'] },
+              then: { $toString: '$sonarProjectId' },
+              else: null,
+            },
+          },
+        },
+        okProjectIds: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$latest.value', 'OK'] },
+              then: { $toString: '$sonarProjectId' },
+              else: null,
+            },
+          },
+        },
+        warnProjectIds: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$latest.value', 'WARN'] },
+              then: { $toString: '$sonarProjectId' },
+              else: null,
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        allProjectIds: {
+          $filter: {
+            input: '$allProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        okProjectIds: {
+          $filter: {
+            input: '$okProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        warnProjectIds: {
+          $filter: {
+            input: '$warnProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        failedProjectIds: {
+          $filter: {
+            input: '$failedProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+      },
+    },
+  ]);
+
+  return sonarProjectIdsBeforeStartDate[0];
+};
+
+const getWeeklySonarProjectIds = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const weeklySonarProjectIds = await SonarAlertHistoryModel.aggregate<{
+    weekIndex: number;
+    allProjectIds: string[];
+    okProjectIds: string[];
+    warnProjectIds: string[];
+    failedProjectIds: string[];
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+        date: inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $addFields: {
+        weekIndex: {
+          $trunc: { $divide: [{ $subtract: ['$date', startDate] }, oneWeekInMs] },
+        },
+      },
+    },
+    { $sort: { date: -1 } },
+    {
+      $group: {
+        _id: {
+          repositoryId: '$repositoryId',
+          weekIndex: '$weekIndex',
+          sonarProjectId: '$sonarProjectId',
+        },
+        sonarProjectId: { $first: '$sonarProjectId' },
+        weekIndex: { $first: '$weekIndex' },
+        latest: { $first: '$$ROOT' },
+      },
+    },
+    {
+      $group: {
+        _id: '$weekIndex',
+        weekIndex: { $first: '$weekIndex' },
+        allProjectIds: { $addToSet: { $toString: '$sonarProjectId' } },
+        failedProjectIds: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$latest.value', 'ERROR'] },
+              then: { $toString: '$sonarProjectId' },
+              else: null,
+            },
+          },
+        },
+        okProjectIds: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$latest.value', 'OK'] },
+              then: { $toString: '$sonarProjectId' },
+              else: null,
+            },
+          },
+        },
+        warnProjectIds: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$latest.value', 'WARN'] },
+              then: { $toString: '$sonarProjectId' },
+              else: null,
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        weekIndex: 1,
+        allProjectIds: {
+          $filter: {
+            input: '$allProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        okProjectIds: {
+          $filter: {
+            input: '$okProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        warnProjectIds: {
+          $filter: {
+            input: '$warnProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        failedProjectIds: {
+          $filter: {
+            input: '$failedProjectIds',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+      },
+    },
+    { $sort: { weekIndex: 1 } },
+  ]);
+
+  return weeklySonarProjectIds;
+};
+
+export const updateWeeklySonarProjectCount = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const [preStartDateSonarSummary, weeklySonarProjectIds] = await Promise.all([
+    getSonarProjectIdsBeforeStartDate(collectionName, project, repositoryIds, startDate),
+    getWeeklySonarProjectIds(collectionName, project, repositoryIds, startDate, endDate),
+  ]);
+
+  const passedProjectsSet = new Set(preStartDateSonarSummary.okProjectIds);
+  const warningProjectsSet = new Set(preStartDateSonarSummary.warnProjectIds);
+  const failedProjectsSet = new Set(preStartDateSonarSummary.failedProjectIds);
+  const allProjectsSet = new Set(preStartDateSonarSummary.allProjectIds);
+  const weeklyUpdatedStats = weeklySonarProjectIds.map(week => {
+    week.allProjectIds.forEach(id => {
+      allProjectsSet.add(id);
+    });
+    week.okProjectIds.forEach(id => {
+      passedProjectsSet.add(id);
+      warningProjectsSet.delete(id);
+      failedProjectsSet.delete(id);
+    });
+
+    week.warnProjectIds.forEach(id => {
+      warningProjectsSet.add(id);
+      passedProjectsSet.delete(id);
+      failedProjectsSet.delete(id);
+    });
+
+    week.failedProjectIds.forEach(id => {
+      failedProjectsSet.add(id);
+      passedProjectsSet.delete(id);
+      warningProjectsSet.delete(id);
+    });
+
+    return {
+      weekIndex: week.weekIndex,
+      passedProjects: passedProjectsSet.size,
+      projectsWithWarnings: warningProjectsSet.size,
+      failedProjects: failedProjectsSet.size,
+      totalProjects: allProjectsSet.size,
+    };
+  });
+
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+  return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
 };
