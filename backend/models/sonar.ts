@@ -432,7 +432,7 @@ const getWeeklySonarProjectIds = async (
   startDate: Date,
   endDate: Date
 ) => {
-  const weeklySonarProjectIds = await SonarAlertHistoryModel.aggregate<{
+  return SonarAlertHistoryModel.aggregate<{
     weekIndex: number;
     allProjectIds: string[];
     okProjectIds: string[];
@@ -536,8 +536,6 @@ const getWeeklySonarProjectIds = async (
     },
     { $sort: { weekIndex: 1 } },
   ]);
-
-  return weeklySonarProjectIds;
 };
 
 export const updateWeeklySonarProjectCount = async (
