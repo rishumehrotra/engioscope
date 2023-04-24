@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { last, prop } from 'rambda';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
-import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import {
   getHealthyBranchesSummary,
@@ -338,21 +338,9 @@ export const getSummary = async ({
     getCoveragesByWeek(queryContext, activeRepoIds),
     getTotalReposInProject(collectionName, project),
     getSonarProjectsCount(collectionName, project, activeRepoIds),
-    updateWeeklySonarProjectCount(
-      collectionName,
-      project,
-      activeRepoIds,
-      startDate,
-      endDate
-    ),
+    updateWeeklySonarProjectCount(queryContext, activeRepoIds),
     getReposWithSonarQube(collectionName, project, activeRepoIds),
-    updatedWeeklyReposWithSonarQubeCount(
-      collectionName,
-      project,
-      activeRepoIds,
-      startDate,
-      endDate
-    ),
+    updatedWeeklyReposWithSonarQubeCount(queryContext, activeRepoIds),
   ]);
 
   return {
@@ -380,20 +368,18 @@ export const getSummary = async ({
 };
 
 export const NonYamlPipelinesParser = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
+  queryContext: queryContextInputParser,
   searchTerm: z.union([z.string(), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
 export const getNonYamlPipelines = async ({
-  collectionName,
-  project,
-  startDate,
-  endDate,
+  queryContext,
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof NonYamlPipelinesParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const activeRepos = await getActiveRepos(
     collectionName,
     project,
@@ -451,35 +437,15 @@ export const getNonYamlPipelines = async ({
   ]).exec();
 };
 export const getRepoTabHeadStatsCount = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
   const [totalBuilds, totalBranches, totalCommits, totalTests] = await Promise.all([
-    getTotalBuildsForRepositoryIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      endDate
-    ),
+    getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
     getTotalBranchesForRepositoryIds(collectionName, project, repositoryIds),
-    getTotalCommitsForRepositoryIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      endDate
-    ),
-    getTotalTestsForRepositoryIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      endDate
-    ),
+    getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
+    getTotalTestsForRepositoryIds(queryContext, repositoryIds),
   ]);
 
   return {

@@ -12,7 +12,7 @@ import {
 } from './release-definitions.js';
 import { ReleaseModel } from './mongoose-models/ReleaseEnvironment.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { fromContext, queryContextInputParser } from './utils.js';
 
 export const pipelineFiltersInput = {
   ...collectionAndProjectInputs,
@@ -554,18 +554,16 @@ export const paginatedReleaseIds = async (
 };
 
 export const releasePipelineDetailsInputParser = z.object({
-  ...collectionAndProjectInputs,
+  queryContext: queryContextInputParser,
   releaseDefnId: z.number(),
-  ...dateRangeInputs,
 });
 
 export const releasePipelineStages = async ({
-  collectionName,
-  project,
+  queryContext,
   releaseDefnId,
-  startDate,
-  endDate,
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const [releaseDefn, environments] = await Promise.all([
     ReleaseDefinitionModel.findOne(
       { collectionName, project, id: releaseDefnId },
@@ -623,12 +621,11 @@ export const releasePipelineStages = async ({
 };
 
 export const getArtifacts = async ({
-  collectionName,
-  project,
+  queryContext,
   releaseDefnId,
-  startDate,
-  endDate,
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const projectConfig = configForProject(collectionName, project);
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
 
@@ -795,12 +792,11 @@ export const getArtifacts = async ({
 };
 
 export const releaseBranchesForRepo = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string,
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryId: string
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const projectConfig = configForProject(collectionName, project);
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
 

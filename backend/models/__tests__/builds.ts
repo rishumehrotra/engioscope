@@ -24,10 +24,7 @@ it('Gets the build overview', async () => {
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345);
 
   const overview = await getBuildsOverviewForRepository({
-    collectionName: 'foo',
-    project: 'bar',
-    startDate: new Date('2022-03-01'),
-    endDate: new Date('2023-03-30'),
+    queryContext: ['foo', 'bar', new Date('2022-03-01'), new Date('2023-03-30')],
     repositoryId: 'repo-1',
     repositoryName: 'repo-1',
   });

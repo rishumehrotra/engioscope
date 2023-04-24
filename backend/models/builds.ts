@@ -6,9 +6,11 @@ import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, BuildOverviewStats } from '../scraper/types-azure.js';
 import { getBuildDefinitionsForRepo } from './build-definitions.js';
 import { buildsCentralTemplateStats } from './build-reports.js';
-import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
+import type { QueryContext } from './utils.js';
+import { fromContext, queryContextInputParser } from './utils.js';
 
 export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   const { project, ...rest } = build;
@@ -37,8 +39,7 @@ export const getBuilds = (
     .lean();
 
 export const getBuildsOverviewForRepositoryInputParser = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
+  queryContext: queryContextInputParser,
   repositoryName: z.string(),
   repositoryId: z.string(),
 });
@@ -138,14 +139,11 @@ export const getBuildFailingSince = async (
 
 // Get Overview Stats for a specific repository
 export const getBuildsOverviewForRepository = async ({
-  collectionName,
-  project,
-  startDate,
-  endDate,
+  queryContext,
   repositoryName,
   repositoryId,
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
-  // Make sure to send default start and end date values
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const [result, buildTemplateCounts, buildDefinitions] = await Promise.all([
     Promise.all(
       await BuildModel.aggregate<BuildOverviewStats>([
@@ -299,13 +297,7 @@ export const getBuildsOverviewForRepository = async ({
         })
       )
     ),
-    buildsCentralTemplateStats(
-      collectionName,
-      project,
-      repositoryName,
-      startDate,
-      endDate
-    ),
+    buildsCentralTemplateStats(queryContext, repositoryName),
     getBuildDefinitionsForRepo({
       collectionName,
       project,
@@ -426,19 +418,17 @@ export const getOneBuildBeforeQueryPeriod =
   };
 
 export const NonYamlPipeLineBuildStatsInputParser1 = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
+  queryContext: queryContextInputParser,
   repositoryId: z.string(),
   buildDefIds: z.string().array(),
 });
 export const getNonYamlPipeLineBuildStats1 = async ({
-  collectionName,
-  project,
-  startDate,
-  endDate,
+  queryContext,
   repositoryId,
   buildDefIds,
 }: z.infer<typeof NonYamlPipeLineBuildStatsInputParser1>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return BuildModel.aggregate<{
     buildDefinitionId: string;
     buildDefinitionName: string;
@@ -476,17 +466,15 @@ export const getNonYamlPipeLineBuildStats1 = async ({
 };
 
 export const NonYamlPipeLineBuildStatsInputParser = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
+  queryContext: queryContextInputParser,
   repositoryId: z.string(),
 });
 export const getNonYamlPipeLineBuildStats = async ({
-  collectionName,
-  project,
-  startDate,
-  endDate,
+  queryContext,
   repositoryId,
 }: z.infer<typeof NonYamlPipeLineBuildStatsInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return BuildDefinitionModel.aggregate<{
     definitionId: string;
     definitionUrl: string;
@@ -550,12 +538,11 @@ export const getNonYamlPipeLineBuildStats = async ({
 };
 
 export const getTotalBuildsForRepositoryIds = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return BuildModel.aggregate<{
     repositoryId: string;
     count: number;

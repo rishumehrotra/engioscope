@@ -11,9 +11,9 @@ import BuildInsights from './BuildInsights.jsx';
 import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import Loading from '../Loading.jsx';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
-import { useDateRange } from '../../hooks/date-range-hooks.jsx';
+
 import { PullRequest } from '../common/Icons.jsx';
 
 type CentralTemplateUsageProps = {
@@ -112,16 +112,12 @@ const Builds: React.FC<{
   repositoryName: string;
 }> = ({ repositoryId, repositoryName }) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const { collectionName, project } = useCollectionAndProject();
   const [queryPeriodDays] = useQueryPeriodDays();
-  const dateRange = useDateRange();
 
   const builds = trpc.builds.getBuildsOverviewForRepository.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     repositoryId,
     repositoryName,
-    ...dateRange,
   });
 
   const toggleExpanded = useCallback(

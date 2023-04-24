@@ -13,6 +13,8 @@ import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
 import { exists, oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -426,12 +428,11 @@ const getSonarProjectIdsBeforeStartDate = async (
 };
 
 const getWeeklySonarProjectIds = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return SonarAlertHistoryModel.aggregate<{
     weekIndex: number;
     allProjectIds: string[];
@@ -539,15 +540,13 @@ const getWeeklySonarProjectIds = async (
 };
 
 export const updateWeeklySonarProjectCount = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const [preStartDateSonarSummary, weeklySonarProjectIds] = await Promise.all([
     getSonarProjectIdsBeforeStartDate(collectionName, project, repositoryIds, startDate),
-    getWeeklySonarProjectIds(collectionName, project, repositoryIds, startDate, endDate),
+    getWeeklySonarProjectIds(queryContext, repositoryIds),
   ]);
 
   const passedProjectsSet = new Set(preStartDateSonarSummary.okProjectIds);
@@ -620,12 +619,11 @@ export const getReposWithSonarQubeBeforeStartDate = (
 };
 
 export const getWeeklyReposWithSonarQubeSummary = (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return SonarAlertHistoryModel.aggregate<{
     weekIndex: number;
     repos: string[];
@@ -659,12 +657,10 @@ export const getWeeklyReposWithSonarQubeSummary = (
 };
 
 export const updatedWeeklyReposWithSonarQubeCount = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const [preStartDateReposSummary, weeklyReposSummary] = await Promise.all([
     getReposWithSonarQubeBeforeStartDate(
       collectionName,
@@ -672,13 +668,7 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
       repositoryIds,
       startDate
     ),
-    getWeeklyReposWithSonarQubeSummary(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      endDate
-    ),
+    getWeeklyReposWithSonarQubeSummary(queryContext, repositoryIds),
   ]);
 
   const reposSet = new Set(preStartDateReposSummary);

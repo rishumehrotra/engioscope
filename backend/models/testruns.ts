@@ -3,7 +3,7 @@ import { last, range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
-import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { BranchCoverage } from './tests-coverages.js';
@@ -18,7 +18,7 @@ import {
   getTestsForRepo,
 } from './tests-coverages.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { queryContextInputParser, fromContext } from './utils.js';
 
 export type TestStatDetails = {
   state: string;
@@ -44,9 +44,8 @@ export type BuildPipelineTests = {
   testsName: string;
 };
 export const TestRunsForRepositoryInputParser = z.object({
-  ...collectionAndProjectInputs,
+  queryContext: queryContextInputParser,
   repositoryId: z.string(),
-  ...dateRangeInputs,
 });
 
 export type BuildDef = { id: number; name: string; url: string };
@@ -129,12 +128,11 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
 };
 
 export const mapDefsTestsAndCoverage = async (
-  collectionName: string,
-  project: string,
-  startDate: Date,
-  endDate: Date,
+  queryContext: QueryContext,
   repositoryId: string
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
+
   const [definitionList, definitionTestRuns, branchCoverage] = await Promise.all([
     BuildDefinitionModel.find(
       {
@@ -149,8 +147,8 @@ export const mapDefsTestsAndCoverage = async (
         url: 1,
       }
     ).lean(),
-    getTestsForRepo(collectionName, project, repositoryId, startDate, endDate),
-    getCoveragesForRepo(collectionName, project, repositoryId, startDate, endDate),
+    getTestsForRepo(queryContext, repositoryId),
+    getCoveragesForRepo(queryContext, repositoryId),
   ]);
   // Mapping the build definitions/pipelines with no testruns
   const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
@@ -169,17 +167,13 @@ export const mapDefsTestsAndCoverage = async (
 };
 
 export const getTestRunsAndCoverageForRepo = async ({
-  collectionName,
-  project,
+  queryContext,
   repositoryId,
-  startDate,
-  endDate,
 }: z.infer<typeof TestRunsForRepositoryInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const testRunsAndCoverageForRepo = await mapDefsTestsAndCoverage(
-    collectionName,
-    project,
-    startDate,
-    endDate,
+    queryContext,
     repositoryId
   );
   const getOneOlderTestRunForDef = (defId: number) => () => {
@@ -625,12 +619,11 @@ export const getCoveragesByWeek = async (
 };
 
 export const getTotalTestsForRepositoryIds = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const testsForDefsForRepoIds = await RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
       collectionName,

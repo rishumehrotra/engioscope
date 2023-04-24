@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import type { GitCommitRef } from '../scraper/types-azure.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
-import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { getConfig } from '../config.js';
+import type { QueryContext } from './utils.js';
+import { queryContextInputParser, fromContext } from './utils.js';
 
 export const getLatestCommitIdAndDate = async (
   collectionName: string,
@@ -67,8 +69,7 @@ export const getCommits =
 
 export const RepoCommitsDetailsInputParser = z.object({
   repositoryId: z.string(),
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
+  queryContext: queryContextInputParser,
 });
 
 export type CommitDetails = {
@@ -89,12 +90,11 @@ export type CommitDetails = {
 };
 
 export const getRepoCommitsDetails = ({
-  collectionName,
-  project,
+  queryContext,
   repositoryId,
-  startDate,
-  endDate,
 }: z.infer<typeof RepoCommitsDetailsInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return CommitModel.aggregate<CommitDetails>([
     {
       $match: {
@@ -186,12 +186,11 @@ export const getRepoCommitsDetails = ({
 };
 
 export const getTotalCommitsForRepositoryIds = (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return CommitModel.aggregate<{
     repositoryId: string;
     count: number;

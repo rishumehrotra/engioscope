@@ -5,6 +5,8 @@ import { oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { TestsForDef, TestsForWeek } from './testruns.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export type CoverageByWeek = {
   weekIndex: number;
@@ -185,12 +187,11 @@ export const getTestsForBuildIds = (
 ];
 
 export const getTestsForRepo = async (
-  collectionName: string,
-  project: string,
-  repositoryId: string,
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryId: string
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
       collectionName,
@@ -313,13 +314,9 @@ export const getCoverageForBuildIDs = (
   { $sort: { weekIndex: -1 } },
 ];
 
-export const getCoveragesForRepo = (
-  collectionName: string,
-  project: string,
-  repositoryId: string,
-  startDate: Date,
-  endDate: Date
-) => {
+export const getCoveragesForRepo = (queryContext: QueryContext, repositoryId: string) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   return RepositoryModel.aggregate<BranchCoverage>([
     ...getMainBranchBuildIds(
       collectionName,

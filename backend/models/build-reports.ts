@@ -216,12 +216,10 @@ export const centralTemplateOptions = async ({
 };
 
 export const buildsCentralTemplateStats = async (
-  collectionName: string,
-  project: string,
-  repositoryName: string,
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryName: string
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   type CentralTemplateResult = {
     buildDefinitionId: string;
     templateUsers: number;
