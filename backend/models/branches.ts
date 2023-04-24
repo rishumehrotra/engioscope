@@ -79,7 +79,7 @@ export const getHealthyBranchesSummary = async ({
 };
 
 export const categoryAddFields = (startDate: Date, defaultBranch: string) => {
-  const categoryFields = {
+  return {
     $switch: {
       branches: [
         {
@@ -122,7 +122,6 @@ export const categoryAddFields = (startDate: Date, defaultBranch: string) => {
       default: 'unhealthy',
     },
   };
-  return categoryFields;
 };
 
 export const RepoTotalBranchesInputParser = z.object({
@@ -193,7 +192,7 @@ export const getTotalBranchesForRepositoryIds = async (
   project: string,
   repositoryIds: string[]
 ) => {
-  const result = await BranchModel.aggregate<{
+  return BranchModel.aggregate<{
     repositoryId: string;
     total: number;
   }>([
@@ -218,8 +217,6 @@ export const getTotalBranchesForRepositoryIds = async (
       },
     },
   ]);
-
-  return result;
 };
 
 export const setBranchUrl = (
@@ -227,12 +224,7 @@ export const setBranchUrl = (
   repoUrl: string,
   linkType: 'history' | 'contents'
 ) => {
-  // /?version=GBMultidevice-fix2
-  const branchUrl = `${repoUrl}/?_a=${linkType}&version=GB${encodeURIComponent(
-    branchName
-  )}`;
-
-  return branchUrl;
+  return `${repoUrl}/?_a=${linkType}&version=GB${encodeURIComponent(branchName)}`;
 };
 
 export const BranchesListInputParser = z.object({
@@ -298,12 +290,11 @@ export const getBranches =
         url: setBranchUrl(encodeURIComponent(branch.name), repoUrl, linkType),
       };
     });
-    const updatedResult = {
+    return {
       branches: withUrls || [],
       count: withUrls.length || 0,
       limit,
     };
-    return updatedResult;
   };
 
 export const getHealthyBranchesList = getBranches('healthy', 'contents');

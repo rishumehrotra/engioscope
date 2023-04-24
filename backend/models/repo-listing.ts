@@ -425,7 +425,7 @@ export const getNonYamlPipelines = async ({
     groupsIncluded
   );
 
-  const result = await RepositoryModel.aggregate<{
+  return RepositoryModel.aggregate<{
     repositoryId: string;
     name: string;
     total: number;
@@ -470,9 +470,7 @@ export const getNonYamlPipelines = async ({
       },
     },
     { $sort: { total: -1 } },
-  ]);
-
-  return result;
+  ]).exec();
 };
 export const getRepoTabHeadStatsCount = async (
   collectionName: string,

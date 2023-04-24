@@ -226,7 +226,7 @@ export const buildsCentralTemplateStats = async (
     totalAzureBuilds: number;
   };
 
-  const result = await AzureBuildReportModel.aggregate<CentralTemplateResult>([
+  return AzureBuildReportModel.aggregate<CentralTemplateResult>([
     {
       $match: {
         collectionName,
@@ -274,8 +274,7 @@ export const buildsCentralTemplateStats = async (
         totalAzureBuilds: '$totalAzureBuilds',
       },
     },
-  ]);
-  return result;
+  ]).exec();
 };
 
 export const getTotalCentralTemplateUsage = async (
@@ -326,7 +325,7 @@ export const getCentralTemplateBuildDefs = async (
   collectionName: string,
   project: string
 ) => {
-  const result = await AzureBuildReportModel.aggregate<{
+  return AzureBuildReportModel.aggregate<{
     buildDefinitionId: string;
     collectionName: string;
     project: string;
@@ -376,9 +375,7 @@ export const getCentralTemplateBuildDefs = async (
         },
       },
     },
-  ]);
-
-  return result;
+  ]).exec();
 };
 
 // eslint-disable-next-line no-underscore-dangle

@@ -439,7 +439,7 @@ export const getNonYamlPipeLineBuildStats1 = async ({
   repositoryId,
   buildDefIds,
 }: z.infer<typeof NonYamlPipeLineBuildStatsInputParser1>) => {
-  const result = await BuildModel.aggregate<{
+  return BuildModel.aggregate<{
     buildDefinitionId: string;
     buildDefinitionName: string;
     buildDefinitionUrl: string;
@@ -472,8 +472,7 @@ export const getNonYamlPipeLineBuildStats1 = async ({
         lastResult: { $first: '$result' },
       },
     },
-  ]);
-  return result;
+  ]).exec();
 };
 
 export const NonYamlPipeLineBuildStatsInputParser = z.object({
@@ -488,7 +487,7 @@ export const getNonYamlPipeLineBuildStats = async ({
   endDate,
   repositoryId,
 }: z.infer<typeof NonYamlPipeLineBuildStatsInputParser>) => {
-  const result = await BuildDefinitionModel.aggregate<{
+  return BuildDefinitionModel.aggregate<{
     definitionId: string;
     definitionUrl: string;
     definitionName: string;
@@ -546,11 +545,8 @@ export const getNonYamlPipeLineBuildStats = async ({
         latestBuildResult: '$latestBuild.result',
       },
     },
-    {
-      $sort: { buildsCount: -1 },
-    },
-  ]);
-  return result;
+    { $sort: { buildsCount: -1 } },
+  ]).exec();
 };
 
 export const getTotalBuildsForRepositoryIds = async (
@@ -560,7 +556,7 @@ export const getTotalBuildsForRepositoryIds = async (
   startDate: Date,
   endDate: Date
 ) => {
-  const buildsCount = await BuildModel.aggregate<{
+  return BuildModel.aggregate<{
     repositoryId: string;
     count: number;
   }>([
@@ -585,7 +581,5 @@ export const getTotalBuildsForRepositoryIds = async (
         count: 1,
       },
     },
-  ]);
-
-  return buildsCount;
+  ]).exec();
 };

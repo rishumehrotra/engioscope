@@ -35,6 +35,5 @@ export const filterTree =
     const filtered = tree.children.map(filterTree(predicate)).filter(x => x !== null);
 
     if (filtered.length === 0) return null;
-    const returnValue = { ...tree, children: filtered } as Tree<T>;
-    return returnValue;
+    return { ...tree, children: filtered } as Tree<T>;
   };

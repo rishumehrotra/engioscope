@@ -12,6 +12,7 @@ const cellHorizontalSpacing = 50;
 const cellVerticalSpacing = 15;
 
 const getRowHeightUsing = (nodes: Record<number, number[]>) => {
+  // eslint-disable-next-line no-useless-assign/no-useless-assign
   const getRowHeight = (rank: number): number =>
     nodes[rank]?.length
       ? Math.max(...nodes[rank].map(getRowHeight), nodes[rank].length) + 1
@@ -37,6 +38,7 @@ const stagesTree = (stages: PipelineStageWithCounts[]) =>
   );
 
 const getDepthUsing = (nodes: Record<number, number[]>) => {
+  // eslint-disable-next-line no-useless-assign/no-useless-assign
   const getDepth = (rank: number): number => {
     const children = nodes[rank];
     if (!children?.length) return 1;
@@ -106,13 +108,12 @@ const linePathUsing = (colIndex: number, rowIndex: number) => {
     const startingY = fromRowIndex * (cellHeight + cellVerticalSpacing) + cellHeight / 2;
     const isFarAway = endingX - startingX > cellHorizontalSpacing;
 
-    const path = [
+    return [
       `M${startingX},${startingY}`,
       isFarAway ? `H${endingX - 50}` : '',
       `C${isFarAway ? endingX : startingX + 50},${startingY} ${endingX - 50},${endingY}`,
       `${endingX} ${endingY}`,
     ].join(' ');
-    return path;
   };
 };
 

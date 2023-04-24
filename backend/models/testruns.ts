@@ -158,16 +158,12 @@ export const mapDefsTestsAndCoverage = async (
     }
   );
 
-  const buildDefsWithTestsAndCoverage: BuildDefWithTestsAndCoverage[] = (
-    buildDefsWithTests as BuildDefWithTests[]
-  ).map(definition => {
+  return (buildDefsWithTests as BuildDefWithTests[]).map(definition => {
     const coverage = branchCoverage.find(def => def.definitionId === definition.id);
-    return coverage
-      ? { ...definition, coverageByWeek: coverage.coverageByWeek }
-      : definition;
+    return (
+      coverage ? { ...definition, coverageByWeek: coverage.coverageByWeek } : definition
+    ) as BuildDefWithTestsAndCoverage;
   });
-
-  return buildDefsWithTestsAndCoverage;
 };
 
 export const getTestRunsAndCoverageForRepo = async ({
@@ -248,10 +244,9 @@ export const getTestRunsAndCoverageForRepo = async ({
     })
   );
 
-  const sortedDefinitionTestsAndCoverage = definitionTestsAndCoverage.sort(
+  return definitionTestsAndCoverage.sort(
     desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)))
   );
-  return sortedDefinitionTestsAndCoverage;
 };
 
 export const getDefinitionsWithTestsAndCoverages = async (
@@ -695,24 +690,23 @@ export const getTotalTestsForRepositoryIds = async (
     })
   );
 
-  const totalTests = definitionTests.reduce<
-    { repositoryId: string; totalTests: number }[]
-  >((acc, curr) => {
-    const matchingRepo = acc.find(repo => repo.repositoryId === curr.repositoryId);
+  return definitionTests.reduce<{ repositoryId: string; totalTests: number }[]>(
+    (acc, curr) => {
+      const matchingRepo = acc.find(repo => repo.repositoryId === curr.repositoryId);
 
-    if (matchingRepo) {
-      matchingRepo.totalTests += curr.latestTest?.hasTests
-        ? curr.latestTest.totalTests
-        : 0;
-    } else {
-      acc.push({
-        repositoryId: curr.repositoryId,
-        totalTests: curr.latestTest?.hasTests ? curr.latestTest.totalTests : 0,
-      });
-    }
+      if (matchingRepo) {
+        matchingRepo.totalTests += curr.latestTest?.hasTests
+          ? curr.latestTest.totalTests
+          : 0;
+      } else {
+        acc.push({
+          repositoryId: curr.repositoryId,
+          totalTests: curr.latestTest?.hasTests ? curr.latestTest.totalTests : 0,
+        });
+      }
 
-    return acc;
-  }, []);
-
-  return totalTests;
+      return acc;
+    },
+    []
+  );
 };

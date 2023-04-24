@@ -11,7 +11,7 @@
     "node": true,
     "jest": true
   },
-  "plugins": ["react", "react-hooks", "jest-dom"],
+  "plugins": ["react", "react-hooks", "no-useless-assign", "jest-dom"],
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
@@ -49,6 +49,7 @@
     "react/jsx-props-no-spreading": "off",
     "react/jsx-filename-extension": "off",
     "space-infix-ops": "off",
+    "no-useless-assign/no-useless-assign": "error",
     "import/no-unresolved": [
       "error",
       {

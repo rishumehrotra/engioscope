@@ -198,14 +198,12 @@ const FlowMetricsInner: React.FC<FlowMetricsInnerProps> = ({ tracks }) => {
   const onColumnClick = useCallback(
     (index: number) => () => {
       setSort(sort => {
-        const newSort: typeof sort = {
+        return {
           byIndex: index,
 
           direction:
             sort.byIndex === index ? (sort.direction === 'asc' ? 'desc' : 'asc') : 'asc',
         };
-
-        return newSort;
       });
     },
     []

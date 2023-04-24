@@ -94,7 +94,7 @@ export const pathRendererSkippingUndefineds: Renderer =
         return [...acc, item];
       }, []);
 
-    const toRender = nodes.reduce<ReactNode[]>(
+    return nodes.reduce<ReactNode[]>(
       (acc, item, itemIndex) => {
         if (itemIndex === 0) return acc;
         if (item === undefined) {
@@ -123,6 +123,4 @@ export const pathRendererSkippingUndefineds: Renderer =
         brokenLine([xCoord(0), nodes[0]![1]], nodes[0]!, -1),
       ]
     );
-
-    return toRender;
   };

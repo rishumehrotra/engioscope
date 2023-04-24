@@ -88,14 +88,14 @@ export type CommitDetails = {
   allRepos: string[];
 };
 
-export const getRepoCommitsDetails = async ({
+export const getRepoCommitsDetails = ({
   collectionName,
   project,
   repositoryId,
   startDate,
   endDate,
 }: z.infer<typeof RepoCommitsDetailsInputParser>) => {
-  const result = await CommitModel.aggregate<CommitDetails>([
+  return CommitModel.aggregate<CommitDetails>([
     {
       $match: {
         collectionName,
@@ -141,12 +141,8 @@ export const getRepoCommitsDetails = async ({
         commits: { $push: '$$ROOT' },
       },
     },
-    {
-      $unwind: { path: '$commits' },
-    },
-    {
-      $match: { 'commits.repositoryId': repositoryId },
-    },
+    { $unwind: { path: '$commits' } },
+    { $match: { 'commits.repositoryId': repositoryId } },
     {
       $group: {
         _id: {
@@ -164,9 +160,7 @@ export const getRepoCommitsDetails = async ({
         totalDelete: { $first: '$totalDelete' },
       },
     },
-    {
-      $sort: { '_id.authorDate': 1 },
-    },
+    { $sort: { '_id.authorDate': 1 } },
     {
       $group: {
         _id: '$_id.authorEmail',
@@ -187,20 +181,18 @@ export const getRepoCommitsDetails = async ({
         allRepos: { $first: '$allRepos' },
       },
     },
-    {
-      $sort: { repoCommits: -1 },
-    },
-  ]);
-  return result;
+    { $sort: { repoCommits: -1 } },
+  ]).exec();
 };
-export const getTotalCommitsForRepositoryIds = async (
+
+export const getTotalCommitsForRepositoryIds = (
   collectionName: string,
   project: string,
   repositoryIds: string[],
   startDate: Date,
   endDate: Date
 ) => {
-  const result = await CommitModel.aggregate<{
+  return CommitModel.aggregate<{
     repositoryId: string;
     count: number;
   }>([
@@ -212,12 +204,7 @@ export const getTotalCommitsForRepositoryIds = async (
         'author.date': inDateRange(startDate, endDate),
       },
     },
-    {
-      $group: {
-        _id: '$repositoryId',
-        count: { $sum: 1 },
-      },
-    },
+    { $group: { _id: '$repositoryId', count: { $sum: 1 } } },
     {
       $project: {
         _id: 0,
@@ -225,7 +212,5 @@ export const getTotalCommitsForRepositoryIds = async (
         count: 1,
       },
     },
-  ]);
-
-  return result;
+  ]).exec();
 };

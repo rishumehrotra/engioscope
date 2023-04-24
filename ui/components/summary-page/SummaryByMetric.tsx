@@ -76,14 +76,12 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table 
   const onColumnClick = useCallback(
     (index: number) => () => {
       setSort(sort => {
-        const newSort: typeof sort = {
+        return {
           byIndex: index,
 
           direction:
             sort.byIndex === index ? (sort.direction === 'asc' ? 'desc' : 'asc') : 'asc',
         };
-
-        return newSort;
       });
     },
     []

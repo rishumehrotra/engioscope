@@ -26,12 +26,10 @@ const exaggerateTrendLine = (data: (number | undefined)[]) => {
   const max = Math.max(...dataWithoutUndefineds);
   const diff = max - min;
 
-  const exaggerated = data.map(val => {
+  return data.map(val => {
     if (val === undefined) return;
     return val - (max - diff) + diff * 1;
   });
-
-  return exaggerated;
 };
 
 const computeLineGraphData = (

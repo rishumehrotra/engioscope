@@ -191,7 +191,7 @@ export const getTestsForRepo = async (
   startDate: Date,
   endDate: Date
 ) => {
-  const result = await RepositoryModel.aggregate<TestsForDef>([
+  return RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
       collectionName,
       project,
@@ -208,9 +208,7 @@ export const getTestsForRepo = async (
         tests: { $push: '$$ROOT' },
       },
     },
-  ]);
-
-  return result;
+  ]).exec();
 };
 
 export const getOneOldTestForBuildDefID = async (
@@ -315,14 +313,14 @@ export const getCoverageForBuildIDs = (
   { $sort: { weekIndex: -1 } },
 ];
 
-export const getCoveragesForRepo = async (
+export const getCoveragesForRepo = (
   collectionName: string,
   project: string,
   repositoryId: string,
   startDate: Date,
   endDate: Date
 ) => {
-  const result = await RepositoryModel.aggregate<BranchCoverage>([
+  return RepositoryModel.aggregate<BranchCoverage>([
     ...getMainBranchBuildIds(
       collectionName,
       project,
@@ -347,8 +345,7 @@ export const getCoveragesForRepo = async (
         coverageByWeek: '$coverage',
       },
     },
-  ]);
-  return result;
+  ]).exec();
 };
 
 export const getOneOldCoverageForBuildDefID = async (
