@@ -590,3 +590,115 @@ export const updateWeeklySonarProjectCount = async (
 
   return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
 };
+
+export const getReposWithSonarQube = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[]
+) => {
+  const ReposWithSonarQube = await SonarAlertHistoryModel.distinct('repositoryId', {
+    collectionName,
+    project,
+    repositoryId: { $in: repositoryIds },
+  });
+
+  return ReposWithSonarQube.length;
+};
+
+export const getReposWithSonarQubeBeforeStartDate = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date
+) => {
+  const ReposWithSonarQube = await SonarAlertHistoryModel.distinct('repositoryId', {
+    collectionName,
+    project,
+    repositoryId: { $in: repositoryIds },
+    date: { $lt: startDate },
+  });
+
+  return ReposWithSonarQube;
+};
+
+export const getWeeklyReposWithSonarQubeSummary = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const weeklyReposSummary = await SonarAlertHistoryModel.aggregate<{
+    weekIndex: number;
+    repos: string[];
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+        date: inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $addFields: {
+        weekIndex: {
+          $trunc: { $divide: [{ $subtract: ['$date', startDate] }, oneWeekInMs] },
+        },
+      },
+    },
+    { $sort: { date: -1 } },
+    {
+      $group: {
+        _id: '$weekIndex',
+        weekIndex: { $first: '$weekIndex' },
+        repos: { $addToSet: '$repositoryId' },
+      },
+    },
+    { $project: { _id: 0 } },
+    { $sort: { weekIndex: 1 } },
+  ]);
+  return weeklyReposSummary;
+};
+
+export const updatedWeeklyReposWithSonarQubeCount = async (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  startDate: Date,
+  endDate: Date
+) => {
+  const [preStartDateReposSummary, weeklyReposSummary] = await Promise.all([
+    getReposWithSonarQubeBeforeStartDate(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate
+    ),
+    getWeeklyReposWithSonarQubeSummary(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      endDate
+    ),
+  ]);
+
+  const reposSet = new Set(preStartDateReposSummary);
+
+  const weeklyUpdatedStats = weeklyReposSummary.map(week => {
+    week.repos.forEach(id => {
+      reposSet.add(id);
+    });
+
+    return {
+      weekIndex: week.weekIndex,
+      count: reposSet.size,
+    };
+  });
+
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+  return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
+};

@@ -223,22 +223,24 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
               topStats={[
                 {
                   title: 'Sonar v2 Powered by DB',
-                  value: stats.repos.length ? (
+                  value: summaries.data.reposWithSonarQube ? (
                     <LabelWithSparkline
                       label={`${Math.round(
-                        (stats.repos.filter(r => !!r.codeQuality).length /
-                          stats.repos.length) *
+                        (summaries.data.reposWithSonarQube /
+                          summaries.data.totalActiveRepos) *
                           100
                       )}%`}
-                      data={stats.newSonarByWeek}
-                      lineColor={increaseIsBetter(stats.newSonarByWeek)}
+                      data={summaries.data.weeklyReposWithSonarQubeCount.map(
+                        w => w.count
+                      )}
+                      lineColor={increaseIsBetter(
+                        summaries.data.weeklyReposWithSonarQubeCount.map(w => w.count)
+                      )}
                     />
                   ) : (
                     '-'
                   ),
-                  tooltip: `${stats.repos.filter(r => !!r.codeQuality).length} of ${
-                    stats.repos.length
-                  } repos have SonarQube configured`,
+                  tooltip: `${summaries.data.reposWithSonarQube} of ${summaries.data.totalActiveRepos} repos have SonarQube configured`,
                 },
               ]}
               childStats={[
