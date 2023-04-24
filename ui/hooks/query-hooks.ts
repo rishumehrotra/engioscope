@@ -1,5 +1,7 @@
 import { useParams } from 'react-router-dom';
 import useQueryPeriodDays from './use-query-period-days.js';
+import { useDateRange } from './date-range-hooks.jsx';
+import type { QueryContext } from '../../backend/models/utils.js';
 
 export const useCollectionAndProject = () => {
   const { collection, project } = useParams<{ collection: string; project: string }>();
@@ -23,4 +25,11 @@ export const useQueryPeriod = () => {
       Intl.DateTimeFormat().resolvedOptions().timeZone,
     ] as [Date, Date, string],
   };
+};
+
+export const useQueryContext = () => {
+  const { collectionName, project } = useCollectionAndProject();
+  const { startDate, endDate } = useDateRange();
+
+  return [collectionName, project, startDate, endDate] as QueryContext;
 };

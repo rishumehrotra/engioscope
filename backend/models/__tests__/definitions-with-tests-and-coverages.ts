@@ -13,12 +13,12 @@ it('should return the correct count of tests and coverages (0 test in 1 pipeline
   await createRepo('foo', 'bar', 'repo-1');
   await createBuildDefinition('foo', 'bar', 12_345, 'repo-1');
 
-  const counts = await getDefinitionsWithTestsAndCoverages(
+  const counts = await getDefinitionsWithTestsAndCoverages([
     'foo',
     'bar',
     new Date('2022-01-01'),
-    new Date('2022-03-31')
-  );
+    new Date('2022-03-31'),
+  ]);
 
   expect(counts.defsWithTests).toBe(0);
   expect(counts.defsWithCoverage).toBe(0);
@@ -30,12 +30,12 @@ it('should return the correct count of tests and coverages (1 test in 1 pipeline
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
   await createTestRun('foo', 'bar', 123, 12_345);
 
-  const counts = await getDefinitionsWithTestsAndCoverages(
+  const counts = await getDefinitionsWithTestsAndCoverages([
     'foo',
     'bar',
     new Date('2022-01-01'),
-    new Date('2022-03-31')
-  );
+    new Date('2022-03-31'),
+  ]);
 
   expect(counts.defsWithTests).toBe(1);
   expect(counts.defsWithCoverage).toBe(0);
@@ -53,12 +53,12 @@ it('should return the correct count of tests and coverages (2 test in 2 pipeline
   await createTestRun('foo', 'bar', 321, 54_321);
   await createCoverage('foo', 'bar', 321);
 
-  const counts = await getDefinitionsWithTestsAndCoverages(
+  const counts = await getDefinitionsWithTestsAndCoverages([
     'foo',
     'bar',
     new Date('2022-01-01'),
-    new Date('2022-03-31')
-  );
+    new Date('2022-03-31'),
+  ]);
 
   expect(counts.defsWithTests).toBe(2);
   expect(counts.defsWithCoverage).toBe(1);
@@ -76,12 +76,12 @@ it('should return the correct count of tests and coverages (2 test in 1 pipeline
   await createTestRun('foo', 'bar', 123, 12_345);
   await createCoverage('foo', 'bar', 123);
 
-  const counts = await getDefinitionsWithTestsAndCoverages(
+  const counts = await getDefinitionsWithTestsAndCoverages([
     'foo',
     'bar',
     new Date('2022-01-01'),
-    new Date('2022-03-31')
-  );
+    new Date('2022-03-31'),
+  ]);
 
   expect(counts.defsWithTests).toBe(1);
   expect(counts.defsWithCoverage).toBe(1);

@@ -17,6 +17,8 @@ import {
   getOneOldTestForBuildDefID,
   getTestsForRepo,
 } from './tests-coverages.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export type TestStatDetails = {
   state: string;
@@ -250,12 +252,11 @@ export const getTestRunsAndCoverageForRepo = async ({
 };
 
 export const getDefinitionsWithTestsAndCoverages = async (
-  collectionName: string,
-  project: string,
-  startDate: Date,
-  endDate: Date,
+  queryContext: QueryContext,
   repoIds?: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const getMainBranchBuildIdsStage: PipelineStage[] = [
     {
       $match: {
@@ -438,12 +439,10 @@ export const getDefinitionsWithTestsAndCoverages = async (
 };
 
 export const getTestsByWeek = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const testrunsForAllDefs = await RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
       collectionName,
@@ -528,12 +527,10 @@ export const getTestsByWeek = async (
 };
 
 export const getCoveragesByWeek = async (
-  collectionName: string,
-  project: string,
-  repositoryIds: string[],
-  startDate: Date,
-  endDate: Date
+  queryContext: QueryContext,
+  repositoryIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const coverageForAllDefs = await RepositoryModel.aggregate<BranchCoverage>([
     ...getMainBranchBuildIds(
       collectionName,

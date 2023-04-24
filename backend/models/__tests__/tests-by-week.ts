@@ -27,11 +27,8 @@ it('should give right no of weeks for query period', async () => {
   await createTestRun('foo', 'bar', 122, 12_345);
 
   const testsByWeek = await getTestsByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(testsByWeek.length).toBe(12);
@@ -43,11 +40,8 @@ it('should not give test counts when there are no testruns', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-03-25'));
 
   const testsByWeek = await getTestsByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(testsByWeek.length).toBe(12);
@@ -61,11 +55,8 @@ it('should give test counts when there are testruns', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-01-02'));
   await createTestRun('foo', 'bar', 122, 12_345);
   const testsByWeek = await getTestsByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
   expect(testsByWeek.length).toBe(12);
   expect(testsByWeek.every(t => t.passedTests === 10)).toBe(true);
@@ -80,11 +71,8 @@ it('should handle missing test run counts with no past data', async () => {
   await createTestRun('foo', 'bar', 122, 12_345);
 
   const testsByWeek = await getTestsByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(testsByWeek.length).toBe(12);
@@ -106,11 +94,8 @@ it('should handle missing test run counts with past data', async () => {
   await createTestRun('foo', 'bar', 121, 12_345, 15);
 
   const testsByWeek = await getTestsByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(testsByWeek.length).toBe(12);
@@ -129,11 +114,8 @@ it('should handle missing test run', async () => {
   await createTestRun('foo', 'bar', 122, 12_345);
 
   const testsByWeek = await getTestsByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(testsByWeek).toMatchSnapshot();

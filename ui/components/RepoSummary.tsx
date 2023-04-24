@@ -30,8 +30,7 @@ import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
 import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils.js';
 import { trpc } from '../helpers/trpc.js';
-import { useDateRange } from '../hooks/date-range-hooks.jsx';
-import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { useQueryContext } from '../hooks/query-hooks.js';
 import NonYamlPipeLineBuilds from './NonYamlPipelineBuilds.jsx';
 
 const buildSuccessRate = (repos: RepoAnalysis[]) => {
@@ -118,18 +117,14 @@ type RepoSummaryProps = {
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const stats = useMemo(() => computeStats(repos), [repos]);
-  const { collectionName, project } = useCollectionAndProject();
-  const dateRange = useDateRange();
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
   const [showNewSonar] = useQueryParam('sonar-v2', asBoolean);
 
   const summaries = trpc.repos.getSummaries.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     searchTerm: search || undefined,
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
-    ...dateRange,
   });
 
   return (

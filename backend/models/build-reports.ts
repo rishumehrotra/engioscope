@@ -5,6 +5,8 @@ import { configForProject, getConfig } from '../config.js';
 
 import { collectionAndProjectInputs } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 const { Schema, model } = mongoose;
 
@@ -278,10 +280,11 @@ export const buildsCentralTemplateStats = async (
 };
 
 export const getTotalCentralTemplateUsage = async (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repoNames?: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
+
   const centralTempBuildDefIDs = await AzureBuildReportModel.aggregate<{
     buildId: string;
   }>([

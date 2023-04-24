@@ -15,11 +15,8 @@ it('should give right no of weeks for query period', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const coverageByWeek = await getCoveragesByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
   expect(coverageByWeek.length).toBe(12);
 });
@@ -30,11 +27,8 @@ it('should not give coverage counts when there are no coverages', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-03-25'));
 
   const coverageByWeek = await getCoveragesByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(coverageByWeek.length).toBe(12);
@@ -49,11 +43,8 @@ it('should give coverage counts when there are coverages', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const coverageByWeek = await getCoveragesByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(coverageByWeek.length).toBe(12);
@@ -69,11 +60,8 @@ it('should handle missing coverage counts with no past data', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const coverageByWeek = await getCoveragesByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(coverageByWeek.length).toBe(12);
@@ -93,11 +81,8 @@ it('should handle missing coverage counts with past data', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const coverageByWeek = await getCoveragesByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
 
   expect(coverageByWeek.length).toBe(12);
@@ -116,11 +101,8 @@ it('should handle missing coverages', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const coverageByWeek = await getCoveragesByWeek(
-    'foo',
-    'bar',
-    ['repo-1'],
-    new Date('2022-01-01'),
-    new Date('2022-03-30')
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['repo-1']
   );
   expect(coverageByWeek).toMatchSnapshot();
 });

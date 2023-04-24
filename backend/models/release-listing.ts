@@ -11,6 +11,8 @@ import {
   ReleaseDefinitionModel,
 } from './release-definitions.js';
 import { ReleaseModel } from './mongoose-models/ReleaseEnvironment.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export const pipelineFiltersInput = {
   ...collectionAndProjectInputs,
@@ -882,16 +884,14 @@ export const usageByEnvironment = async (
 };
 
 export const getHasReleasesSummary = async (
-  collectionName: string,
-  project: string,
-  startDate: Date,
-  endDate: Date,
+  queryContext: QueryContext,
   repoIds: string[]
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const result = await ReleaseModel.distinct('artifacts.definition.repositoryId', {
     collectionName,
     project,
-    'modifiedOn': { $gte: new Date(startDate), $lt: new Date(endDate) },
+    'modifiedOn': inDateRange(startDate, endDate),
     'artifacts.type': 'Build',
   });
 

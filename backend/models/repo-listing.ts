@@ -32,6 +32,8 @@ import {
   updateWeeklySonarProjectCount,
   updatedWeeklyReposWithSonarQubeCount,
 } from './sonar.js';
+import type { QueryContext } from './utils.js';
+import { fromContext, queryContextInputParser } from './utils.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -109,10 +111,11 @@ export const getActiveRepos = async (
 };
 
 export const getYamlPipelinesCountSummary = async (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repoIds?: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
+
   const result = await BuildDefinitionModel.aggregate<{
     totalCount: number;
     yamlCount: number;
@@ -151,10 +154,11 @@ export const getYamlPipelinesCountSummary = async (
   return result[0] || { totalCount: 0, yamlCount: 0 };
 };
 export const getCentralTemplatePipeline = async (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repoIds: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
+
   const centralTemplateBuildDefs = await getCentralTemplateBuildDefs(
     collectionName,
     project
@@ -275,20 +279,18 @@ export const getCentralTemplatePipeline = async (
 };
 
 export const getSummaryInputParser = z.object({
-  ...collectionAndProjectInputs,
-  ...dateRangeInputs,
+  queryContext: queryContextInputParser,
   searchTerm: z.union([z.string(), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
 export const getSummary = async ({
-  collectionName,
-  project,
-  startDate,
-  endDate,
+  queryContext,
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof getSummaryInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const activeRepos = await getActiveRepos(
     collectionName,
     project,
@@ -324,40 +326,18 @@ export const getSummary = async ({
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
   ] = await Promise.all([
-    getSuccessfulBuildsBy(collectionName, project, startDate, endDate, activeRepoIds),
-
-    getTotalBuildsBy(collectionName, project, startDate, endDate, activeRepoIds),
-
-    getTotalCentralTemplateUsage(collectionName, project, activeRepoNames),
-
-    getYamlPipelinesCountSummary(collectionName, project, activeRepoIds),
-
-    getHealthyBranchesSummary({
-      collectionName,
-      project,
-      repoIds: activeRepoIds,
-      defaultBranchIDs,
-    }),
-
-    getHasReleasesSummary(collectionName, project, startDate, endDate, activeRepoIds),
-
-    getCentralTemplatePipeline(collectionName, project, activeRepoIds),
-
-    getDefinitionsWithTestsAndCoverages(
-      collectionName,
-      project,
-      startDate,
-      endDate,
-      activeRepoIds
-    ),
-    getTestsByWeek(collectionName, project, activeRepoIds, startDate, endDate),
-
-    getCoveragesByWeek(collectionName, project, activeRepoIds, startDate, endDate),
-
+    getSuccessfulBuildsBy(queryContext, activeRepoIds),
+    getTotalBuildsBy(queryContext, activeRepoIds),
+    getTotalCentralTemplateUsage(queryContext, activeRepoNames),
+    getYamlPipelinesCountSummary(queryContext, activeRepoIds),
+    getHealthyBranchesSummary(queryContext, activeRepoIds, defaultBranchIDs),
+    getHasReleasesSummary(queryContext, activeRepoIds),
+    getCentralTemplatePipeline(queryContext, activeRepoIds),
+    getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds),
+    getTestsByWeek(queryContext, activeRepoIds),
+    getCoveragesByWeek(queryContext, activeRepoIds),
     getTotalReposInProject(collectionName, project),
-
     getSonarProjectsCount(collectionName, project, activeRepoIds),
-
     updateWeeklySonarProjectCount(
       collectionName,
       project,
@@ -365,9 +345,7 @@ export const getSummary = async ({
       startDate,
       endDate
     ),
-
     getReposWithSonarQube(collectionName, project, activeRepoIds),
-
     updatedWeeklyReposWithSonarQubeCount(
       collectionName,
       project,

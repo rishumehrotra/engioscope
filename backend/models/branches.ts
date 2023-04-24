@@ -4,6 +4,8 @@ import { collectionAndProjectInputs } from './helpers.js';
 import { oneFortnightInMs } from '../../shared/utils.js';
 import { repoDefaultBranch } from './repos.js';
 import { BranchModel } from './mongoose-models/BranchModel.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export const branchStatsForRepo =
   (collectionName: string, project: string) => async (repositoryId: string) => {
@@ -15,17 +17,12 @@ export const branchStatsForRepo =
     return result || [];
   };
 
-export const getHealthyBranchesSummary = async ({
-  collectionName,
-  project,
-  repoIds,
-  defaultBranchIDs,
-}: {
-  collectionName: string;
-  project: string;
-  repoIds: string[];
-  defaultBranchIDs: ObjectId[];
-}) => {
+export const getHealthyBranchesSummary = async (
+  queryContext: QueryContext,
+  repoIds: string[],
+  defaultBranchIDs: ObjectId[]
+) => {
+  const { collectionName, project } = fromContext(queryContext);
   const today = new Date();
   const fifteenDaysBack = new Date(today.getTime() - oneFortnightInMs);
 

@@ -2,6 +2,9 @@ import type { PipelineStage } from 'mongoose';
 import { range } from 'rambda';
 import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
+import { inDateRange } from './helpers.js';
 
 export const getSplitUpBy = (
   field: string,
@@ -43,13 +46,8 @@ export const getSplitUpBy = (
 
 export const getBuildsSplitUp =
   (condition: unknown) =>
-  async (
-    collectionName: string,
-    project: string,
-    startDate: Date,
-    endDate: Date,
-    repoIds: string[] | undefined
-  ) => {
+  async (queryContext: QueryContext, repoIds: string[] | undefined) => {
+    const { collectionName, project, startDate, endDate } = fromContext(queryContext);
     const result = await BuildModel.aggregate<{
       weekIndex: number;
       count: number;
@@ -61,10 +59,7 @@ export const getBuildsSplitUp =
           collectionName,
           project,
           'repository.id': { $in: repoIds },
-          'startTime': {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-          },
+          'startTime': inDateRange(startDate, endDate),
         },
       },
       ...getSplitUpBy('$startTime', condition, startDate),
