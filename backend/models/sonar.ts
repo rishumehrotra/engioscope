@@ -605,30 +605,28 @@ export const getReposWithSonarQube = async (
   return ReposWithSonarQube.length;
 };
 
-export const getReposWithSonarQubeBeforeStartDate = async (
+export const getReposWithSonarQubeBeforeStartDate = (
   collectionName: string,
   project: string,
   repositoryIds: string[],
   startDate: Date
 ) => {
-  const ReposWithSonarQube = await SonarAlertHistoryModel.distinct('repositoryId', {
+  return SonarAlertHistoryModel.distinct('repositoryId', {
     collectionName,
     project,
     repositoryId: { $in: repositoryIds },
     date: { $lt: startDate },
   });
-
-  return ReposWithSonarQube;
 };
 
-export const getWeeklyReposWithSonarQubeSummary = async (
+export const getWeeklyReposWithSonarQubeSummary = (
   collectionName: string,
   project: string,
   repositoryIds: string[],
   startDate: Date,
   endDate: Date
 ) => {
-  const weeklyReposSummary = await SonarAlertHistoryModel.aggregate<{
+  return SonarAlertHistoryModel.aggregate<{
     weekIndex: number;
     repos: string[];
   }>([
@@ -658,7 +656,6 @@ export const getWeeklyReposWithSonarQubeSummary = async (
     { $project: { _id: 0 } },
     { $sort: { weekIndex: 1 } },
   ]);
-  return weeklyReposSummary;
 };
 
 export const updatedWeeklyReposWithSonarQubeCount = async (
