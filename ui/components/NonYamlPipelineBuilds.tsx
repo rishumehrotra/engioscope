@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { trpc } from '../helpers/trpc.js';
-import { useDateRange } from '../hooks/date-range-hooks.jsx';
-import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { useQueryContext } from '../hooks/query-hooks.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import NonYamlPipelineBuildDefs from './NonYamlPipelineBuildDefs.jsx';
 
@@ -12,19 +11,15 @@ type NonYamlPipeLineBuildProps = {
 const NonYamlPipeLineBuilds: React.FC<NonYamlPipeLineBuildProps> = ({
   queryPeriodDays,
 }) => {
-  const dateRange = useDateRange();
-  const { collectionName, project } = useCollectionAndProject();
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
 
   const [openedRepos, setOpenedRepos] = useState<string[]>([]);
 
   const nonYamlBuildRepos = trpc.repos.getNonYamlPipelines.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     searchTerm: search || undefined,
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
-    ...dateRange,
   });
 
   const handleRepoToggle = useCallback(

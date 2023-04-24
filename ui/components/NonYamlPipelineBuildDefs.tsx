@@ -1,21 +1,15 @@
 import React from 'react';
 import { trpc } from '../helpers/trpc.js';
 import { num, shortDate } from '../helpers/utils.js';
-import { useDateRange } from '../hooks/date-range-hooks.jsx';
-import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { useQueryContext } from '../hooks/query-hooks.js';
 
 const NonYamlPipelineBuildDefs: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
-  const dateRange = useDateRange();
-  const { collectionName, project } = useCollectionAndProject();
-
   const buildDefStats = trpc.builds.getNonYamlPipeLineBuildStats.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     repositoryId,
-    ...dateRange,
   });
 
   if (!buildDefStats.data) return null;

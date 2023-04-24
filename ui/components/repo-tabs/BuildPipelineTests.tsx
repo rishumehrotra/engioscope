@@ -4,8 +4,8 @@ import React from 'react';
 import { asc, byNum } from 'sort-lib';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { trpc } from '../../helpers/trpc.js';
-import { useDateRange } from '../../hooks/date-range-hooks.jsx';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+
+import { useQueryContext } from '../../hooks/query-hooks.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
 import { increaseIsBetter } from '../summary-page/utils.jsx';
@@ -16,14 +16,9 @@ const BuildPipelineTests: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
-  const { collectionName, project } = useCollectionAndProject();
-
-  const dateRange = useDateRange();
   const tests = trpc.tests.getTestRunsAndCoverageForRepo.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     repositoryId,
-    ...dateRange,
   });
 
   if (!tests.data) return null;

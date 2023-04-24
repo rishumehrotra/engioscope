@@ -5,27 +5,22 @@ import type { RepoAnalysis } from '../../../shared/types.js';
 import type { Tab } from './Tabs.js';
 import type { Dev } from '../../types.js';
 import { trpc } from '../../helpers/trpc.js';
-import { useDateRange } from '../../hooks/date-range-hooks.jsx';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import CommitTimeline from '../commits/CommitTimeline.jsx';
 import AlertMessage from '../common/AlertMessage.jsx';
 import { ProfilePic } from '../common/ProfilePic.jsx';
 import CommitChanges from './CommitChanges.jsx';
 import TabContents from './TabContents.jsx';
 import Loading from '../Loading.jsx';
+import { useQueryContext } from '../../hooks/query-hooks.js';
 
 const CommitsTable: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
-  const { collectionName, project } = useCollectionAndProject();
-  const dateRange = useDateRange();
   const location = useLocation();
   const commitsDetails = trpc.commits.getRepoCommitsDetails.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     repositoryId,
-    ...dateRange,
   });
 
   const max = commitsDetails.data

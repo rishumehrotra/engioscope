@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import ReactTooltip from 'react-tooltip';
 import { exists } from '../../shared/utils.js';
 import { trpc } from '../helpers/trpc.js';
-import { useDateRange } from '../hooks/date-range-hooks.jsx';
-import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { useCollectionAndProject, useQueryContext } from '../hooks/query-hooks.js';
 import AlertMessage from './common/AlertMessage.jsx';
 import Card from './common/ExpandingCard.jsx';
 import Flair from './common/Flair.jsx';
@@ -113,12 +112,9 @@ const Artefacts: React.FC<{
   releaseDefinitionId: number;
 }> = ({ releaseDefinitionId }) => {
   const { collectionName, project } = useCollectionAndProject();
-  const dateRange = useDateRange();
   const artifactsResponse = trpc.releases.getArtifacts.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     releaseDefnId: releaseDefinitionId,
-    ...dateRange,
   });
   const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
 
@@ -239,13 +235,9 @@ const Artefacts: React.FC<{
 };
 
 const Stages: React.FC<{ releaseDefinitionId: number }> = ({ releaseDefinitionId }) => {
-  const { collectionName, project } = useCollectionAndProject();
-  const dateRange = useDateRange();
   const stages = trpc.releases.releasePipelineStages.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     releaseDefnId: releaseDefinitionId,
-    ...dateRange,
   });
   return (
     <>
@@ -268,12 +260,9 @@ export const Pipeline: React.FC<{
 }> = ({ item: { id, name, url } }) => {
   const { collectionName, project } = useCollectionAndProject();
   const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
-  const dateRange = useDateRange();
   const stages = trpc.releases.releasePipelineStages.useQuery({
-    collectionName,
-    project,
+    queryContext: useQueryContext(),
     releaseDefnId: id,
-    ...dateRange,
   });
 
   const stagesToHighlight = projectConfig.data?.releasePipelines.stagesToHighlight;
