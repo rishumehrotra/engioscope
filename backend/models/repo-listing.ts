@@ -29,6 +29,7 @@ import { getTotalCommitsForRepositoryIds } from './commits.js';
 import {
   getReposWithSonarQube,
   getSonarProjectsCount,
+  getSonarQualityGateStatusForRepoIds,
   updateWeeklySonarProjectCount,
   updatedWeeklyReposWithSonarQubeCount,
 } from './sonar.js';
@@ -47,13 +48,12 @@ const getGroupRepositoryNames = (
 };
 
 export const getActiveRepos = async (
-  collectionName: string,
-  project: string,
-  startDate: Date,
-  endDate: Date,
+  queryContext: QueryContext,
   searchTerm: string | undefined,
   groupsIncluded: string[] | undefined
 ) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
   const groupRepositoryNames = groupsIncluded
     ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
     : [];
@@ -289,16 +289,9 @@ export const getSummary = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof getSummaryInputParser>) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { collectionName, project } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(
-    collectionName,
-    project,
-    startDate,
-    endDate,
-    searchTerm,
-    groupsIncluded
-  );
+  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
 
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
@@ -378,16 +371,8 @@ export const getNonYamlPipelines = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof NonYamlPipelinesParser>) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  const activeRepos = await getActiveRepos(
-    collectionName,
-    project,
-    startDate,
-    endDate,
-    searchTerm,
-    groupsIncluded
-  );
+  const { collectionName, project } = fromContext(queryContext);
+  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
 
   return RepositoryModel.aggregate<{
     repositoryId: string;
@@ -440,18 +425,31 @@ export const getRepoTabHeadStatsCount = async (
   queryContext: QueryContext,
   repositoryIds: string[]
 ) => {
-  const { collectionName, project } = fromContext(queryContext);
-  const [totalBuilds, totalBranches, totalCommits, totalTests] = await Promise.all([
-    getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
-    getTotalBranchesForRepositoryIds(collectionName, project, repositoryIds),
-    getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
-    getTotalTestsForRepositoryIds(queryContext, repositoryIds),
-  ]);
-
-  return {
+  const [
+    repoDetails,
     totalBuilds,
     totalBranches,
     totalCommits,
     totalTests,
+    sonarQualityGateStatuses,
+  ] = await Promise.all([
+    RepositoryModel.find(
+      { id: { $in: repositoryIds } },
+      { id: 1, name: 1, defaultBranch: 1 }
+    ),
+    getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
+    getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
+    getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
+    getTotalTestsForRepositoryIds(queryContext, repositoryIds),
+    getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
+  ]);
+
+  return {
+    repoDetails,
+    totalBuilds,
+    totalBranches,
+    totalCommits,
+    totalTests,
+    sonarQualityGateStatuses,
   };
 };

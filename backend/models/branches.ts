@@ -185,10 +185,10 @@ export const getRepoBranchStats = async ({
 };
 
 export const getTotalBranchesForRepositoryIds = async (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repositoryIds: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
   return BranchModel.aggregate<{
     repositoryId: string;
     total: number;

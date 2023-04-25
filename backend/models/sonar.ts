@@ -15,6 +15,7 @@ import { exists, oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -688,4 +689,73 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
   const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
 
   return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
+};
+
+export const getSonarQualityGateStatusForRepoName = async (
+  collectionName: string,
+  project: string,
+  repositoryName: string,
+  defaultBranch: string
+) => {
+  const sonarProjects = await getMatchingSonarProjects(
+    repositoryName,
+    defaultBranch,
+    latestBuildReportsForRepoAndBranch(collectionName, project)
+  );
+
+  if (!sonarProjects || sonarProjects.length === 0) return null;
+
+  const sonarProjectIds = sonarProjects.map(p => p._id);
+  const measuresData = await getLatestSonarMeasures(sonarProjectIds);
+  const sonarConnections = await getConnections('sonar');
+
+  return measuresData
+    .map(measure => {
+      const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
+
+      const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
+      if (!sonarProject) return null;
+
+      const sonarConnection = sonarConnections.find(sh =>
+        sh._id.equals(sonarProject.connectionId)
+      );
+      if (!sonarConnection) return null;
+
+      return {
+        url: `${sonarConnection.url}/dashboard?id=${sonarProject.key}`,
+        name: sonarProject.name,
+        quality: {
+          gate: qualityGateStatus,
+        },
+      };
+    })
+    .filter(exists);
+};
+
+export const getSonarQualityGateStatusForRepoIds = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const repositories = await RepositoryModel.find(
+    { id: { $in: repositoryIds } },
+    { id: 1, name: 1, defaultBranch: 1 }
+  );
+
+  return Promise.all(
+    repositories.map(async repo => {
+      return {
+        repositoryId: repo.id,
+        sonarQualityGateStatus: repo.defaultBranch
+          ? await getSonarQualityGateStatusForRepoName(
+              collectionName,
+              project,
+              repo.name,
+              repo.defaultBranch
+            )
+          : null,
+      };
+    })
+  );
 };
