@@ -16,6 +16,7 @@ import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -713,6 +714,8 @@ export const getSonarQualityGateStatusForRepoName = async (
     getConnections('sonar'),
   ]);
 
+  console.log('measuresData', measuresData);
+
   return measuresData
     .map(measure => {
       const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
@@ -728,9 +731,11 @@ export const getSonarQualityGateStatusForRepoName = async (
       return {
         url: `${sonarConnection.url}/dashboard?id=${sonarProject.key}`,
         name: sonarProject.name,
-        // TODO: uncomment when we have a way to get this data
-        // nonCommentLinesOfCode: qualityGateMetric('ncloc'),
-        // language: qualityGateMetric('ncloc_language_distribution'),
+        nonCommentLinesOfCode: measure.measures.find(m => m.metric === 'ncloc')?.value,
+        language:
+          formatLoc(
+            measure.measures.find(m => m.metric === 'ncloc_language_distribution')?.value
+          ) || null,
         quality: {
           gate: qualityGateStatus,
         },

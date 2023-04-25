@@ -46,7 +46,7 @@ type AggregatedCodeQuality = {
 
 const isMeasureName = (name: string) => (measure: Measure) => measure.metric === name;
 
-const formatLoc = (loc?: string): AggregatedCodeQuality['languages'] => {
+export const formatLoc = (loc?: string): AggregatedCodeQuality['languages'] => {
   if (!loc) return;
   return loc.split(';').map(langGroup => {
     const [lang, loc] = langGroup.split('=');
