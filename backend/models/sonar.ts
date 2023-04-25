@@ -714,8 +714,6 @@ export const getSonarQualityGateStatusForRepoName = async (
     getConnections('sonar'),
   ]);
 
-  console.log('measuresData', measuresData);
-
   return measuresData
     .map(measure => {
       const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
