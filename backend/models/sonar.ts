@@ -197,8 +197,10 @@ export const getRepoSonarMeasures = async ({
   if (!sonarProjects || sonarProjects.length === 0) return null;
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
-  const measuresData = await getLatestSonarMeasures(sonarProjectIds);
-  const sonarConnections = await getConnections('sonar');
+  const [measuresData, sonarConnections] = await Promise.all([
+    getLatestSonarMeasures(sonarProjectIds),
+    getConnections('sonar'),
+  ]);
 
   return measuresData
     .map(measure => {
@@ -706,8 +708,10 @@ export const getSonarQualityGateStatusForRepoName = async (
   if (!sonarProjects || sonarProjects.length === 0) return null;
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
-  const measuresData = await getLatestSonarMeasures(sonarProjectIds);
-  const sonarConnections = await getConnections('sonar');
+  const [measuresData, sonarConnections] = await Promise.all([
+    getLatestSonarMeasures(sonarProjectIds),
+    getConnections('sonar'),
+  ]);
 
   return measuresData
     .map(measure => {
@@ -724,6 +728,9 @@ export const getSonarQualityGateStatusForRepoName = async (
       return {
         url: `${sonarConnection.url}/dashboard?id=${sonarProject.key}`,
         name: sonarProject.name,
+        // TODO: uncomment when we have a way to get this data
+        // nonCommentLinesOfCode: qualityGateMetric('ncloc'),
+        // language: qualityGateMetric('ncloc_language_distribution'),
         quality: {
           gate: qualityGateStatus,
         },
@@ -747,7 +754,7 @@ export const getSonarQualityGateStatusForRepoIds = async (
     repositories.map(async repo => {
       return {
         repositoryId: repo.id,
-        sonarQualityGateStatus: repo.defaultBranch
+        status: repo.defaultBranch
           ? await getSonarQualityGateStatusForRepoName(
               collectionName,
               project,
