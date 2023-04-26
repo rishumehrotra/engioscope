@@ -198,12 +198,12 @@ export const getRepoSonarMeasures = async ({
   if (!sonarProjects || sonarProjects.length === 0) return null;
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measuresData, sonarConnections] = await Promise.all([
+  const [measures, sonarConnections] = await Promise.all([
     getLatestSonarMeasures(sonarProjectIds),
     getConnections('sonar'),
   ]);
 
-  return measuresData
+  return measures
     .map(measure => {
       const { lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus } =
         getMeasureValue(measure.fetchDate, measure.measures);
@@ -709,12 +709,12 @@ export const getSonarQualityGateStatusForRepoName = async (
   if (!sonarProjects || sonarProjects.length === 0) return null;
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measuresData, sonarConnections] = await Promise.all([
+  const [measures, sonarConnections] = await Promise.all([
     getLatestSonarMeasures(sonarProjectIds),
     getConnections('sonar'),
   ]);
 
-  return measuresData
+  return measures
     .map(measure => {
       const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
 
@@ -749,7 +749,7 @@ export const getSonarQualityGateStatusForRepoIds = async (
   const { collectionName, project } = fromContext(queryContext);
 
   const repositories = await RepositoryModel.find(
-    { id: { $in: repositoryIds } },
+    { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
     { id: 1, name: 1, defaultBranch: 1 }
   );
 

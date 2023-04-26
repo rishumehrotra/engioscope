@@ -425,6 +425,7 @@ export const getRepoTabHeadStatsCount = async (
   queryContext: QueryContext,
   repositoryIds: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
   const [
     repoDetails,
     totalBuilds,
@@ -434,7 +435,7 @@ export const getRepoTabHeadStatsCount = async (
     sonarQualityGateStatuses,
   ] = await Promise.all([
     RepositoryModel.find(
-      { id: { $in: repositoryIds } },
+      { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
       { id: 1, name: 1, defaultBranch: 1 }
     ),
     getTotalBuildsForRepositoryIds(queryContext, repositoryIds),

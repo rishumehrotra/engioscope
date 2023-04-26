@@ -42,4 +42,10 @@ repositorySchema.index({
   'name': 1,
 });
 
+repositorySchema.index({
+  'collectionName': 1,
+  'project.name': 1,
+  'id': 1,
+});
+
 export const RepositoryModel = model<Repository>('Repository', repositorySchema);
