@@ -32,7 +32,7 @@ import { getBuildDefinitionsForProject } from '../models/build-definitions.js';
 import { branchStatsForRepo } from '../models/branches.js';
 import { getCommits } from '../models/commits.js';
 
-const getLanguageColor = (lang: string) => {
+export const getLanguageColor = (lang: string) => {
   if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
   if (lang === 'js') return languageColors.javascript;
   if (lang === 'xml') return languageColors.eiffel;

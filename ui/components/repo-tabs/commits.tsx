@@ -128,13 +128,14 @@ export default (
   repo: RepoAnalysis,
   aggregatedDevs: Record<string, Dev>,
   location: Location,
-  queryPeriodDays: number
+  queryPeriodDays: number,
+  commitsCount?: number
 ): Tab => {
   const { commits, id } = repo;
 
   return {
     title: 'Commits',
-    count: commits.count,
+    count: commitsCount ?? commits.count,
     Component: () => {
       return <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />;
     },

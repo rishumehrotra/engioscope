@@ -251,11 +251,12 @@ export default (
   branches: RepoAnalysis['branches'],
   defaultBranch: RepoAnalysis['defaultBranch'],
   repositoryId: string,
-  repoUrl: string
+  repoUrl: string,
+  branchesCount?: number
 ): Tab => {
   return {
     title: 'Branches',
-    count: branches.total,
+    count: branchesCount ?? branches.total,
     Component: () => {
       return (
         <Branches

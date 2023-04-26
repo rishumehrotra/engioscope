@@ -11,12 +11,19 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { exists, oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
+import {
+  divide,
+  exists,
+  oneDayInMs,
+  oneWeekInMs,
+  toPercentage,
+} from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
+import { getLanguageColor } from '../scraper/project-analyser.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -742,6 +749,62 @@ export const getSonarQualityGateStatusForRepoName = async (
     .filter(exists);
 };
 
+const combinedQualityGate = (qualityGateStatus: string[]) => {
+  if (qualityGateStatus.length === 0) return 'Unknown';
+  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
+  const qualityGatesFailed = qualityGateStatus.filter(status => status !== 'fail');
+  return divide(qualityGatesFailed.length, qualityGateStatus.length)
+    .map(toPercentage)
+    .getOr('-');
+};
+
+const reduceCodeStats = (
+  language:
+    | {
+        stats:
+          | {
+              lang: string;
+              loc: number;
+            }[]
+          | null;
+        ncloc: string | undefined;
+      }[]
+    | null
+) => {
+  if (language === null || language.length === 0) return null;
+
+  const stats = language.reduce<{
+    ncloc: number;
+    stats: {
+      lang: string;
+      loc: number;
+      color: string | undefined;
+    }[];
+  }>(
+    (acc, curr) => {
+      if (curr.stats !== null) {
+        acc.ncloc += Number(curr.ncloc);
+
+        curr.stats.forEach(stat => {
+          const existingStat = acc.stats.find(s => s.lang === stat.lang);
+          if (existingStat) {
+            existingStat.loc += stat.loc;
+          } else {
+            acc.stats.push({ ...stat, color: getLanguageColor(stat.lang) });
+          }
+        });
+      }
+      return acc;
+    },
+    { ncloc: 0, stats: [] }
+  );
+
+  return {
+    ncloc: stats.ncloc,
+    stats: stats.stats.sort((a, b) => b.loc - a.loc),
+  };
+};
+
 export const getSonarQualityGateStatusForRepoIds = async (
   queryContext: QueryContext,
   repositoryIds: string[]
@@ -755,16 +818,32 @@ export const getSonarQualityGateStatusForRepoIds = async (
 
   return Promise.all(
     repositories.map(async repo => {
+      const qualityGates = repo.defaultBranch
+        ? await getSonarQualityGateStatusForRepoName(
+            collectionName,
+            project,
+            repo.name,
+            repo.defaultBranch
+          )
+        : null;
+
+      const status =
+        qualityGates === null ? null : qualityGates.map(qg => qg.quality.gate);
+
+      const language =
+        qualityGates === null
+          ? null
+          : qualityGates.map(qg => {
+              return {
+                stats: qg.language,
+                ncloc: qg.nonCommentLinesOfCode,
+              };
+            });
+
       return {
         repositoryId: repo.id,
-        status: repo.defaultBranch
-          ? await getSonarQualityGateStatusForRepoName(
-              collectionName,
-              project,
-              repo.name,
-              repo.defaultBranch
-            )
-          : null,
+        status: combinedQualityGate(status || []),
+        language: reduceCodeStats(language),
       };
     })
   );

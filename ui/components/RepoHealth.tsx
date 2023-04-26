@@ -22,6 +22,9 @@ import branches from './repo-tabs/branches/index.js';
 import { DownChevron } from './common/Icons.jsx';
 import useOnClickOutside from '../hooks/on-click-outside.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
+import { trpc } from '../helpers/trpc.js';
+import { useQueryContext } from '../hooks/query-hooks.js';
+import { divide, toPercentage } from '../../shared/utils.js';
 
 const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
   featureToggles,
@@ -87,17 +90,54 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
 }) => {
   const pageName = usePageName();
   const location = useLocation();
+  const [showNewTabs] = useQueryParam('tabs-v2', asBoolean);
+  const repoTabStats = trpc.repos.getRepoTabHeadStatsCount.useQuery(
+    {
+      queryContext: useQueryContext(),
+      repositoryIds: [repo.id],
+    },
+    {
+      enabled: showNewTabs === true,
+    }
+  );
 
   const tabs = useMemo(
     () => [
-      builds(repo.builds, repo.id, repo.name),
-      branches(repo.branches, repo.defaultBranch, repo.id, repo.url),
-      commits(repo, aggregatedDevs, location, queryPeriodDays),
+      builds(repo.builds, repo.id, repo.name, repoTabStats.data?.builds[0]?.count),
+      branches(
+        repo.branches,
+        repo.defaultBranch,
+        repo.id,
+        repo.url,
+        repoTabStats.data?.branches[0]?.total
+      ),
+      commits(
+        repo,
+        aggregatedDevs,
+        location,
+        queryPeriodDays,
+        repoTabStats.data?.commits[0]?.count
+      ),
       prs(repo.prs),
-      tests(repo, queryPeriodDays),
-      codeQuality(repo.codeQuality, repo.name, repo.defaultBranch),
+      tests(repo, queryPeriodDays, repoTabStats.data?.tests[0]?.totalTests),
+      codeQuality(
+        repo.codeQuality,
+        repo.name,
+        repo.defaultBranch,
+        repoTabStats.data?.sonarQualityGateStatuses[0]?.status
+      ),
     ],
-    [repo, aggregatedDevs, location, queryPeriodDays]
+    [
+      repo,
+      repoTabStats.data?.builds,
+      repoTabStats.data?.branches,
+      repoTabStats.data?.commits,
+      repoTabStats.data?.tests,
+      repoTabStats.data?.sonarQualityGateStatuses,
+      aggregatedDevs,
+      location,
+      queryPeriodDays,
+    ]
   );
 
   const [{ sortBy }] = useSortParams();
@@ -170,6 +210,31 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                     />
                   ))}
                 </span>
+                {showNewTabs &&
+                repoTabStats.data &&
+                repoTabStats.data?.sonarQualityGateStatuses[0] !== null &&
+                repoTabStats.data.sonarQualityGateStatuses[0]?.language !== null &&
+                repoTabStats.data.sonarQualityGateStatuses[0]?.language?.ncloc !==
+                  null ? (
+                  <span className="inline-block ml-4">
+                    {repoTabStats.data.sonarQualityGateStatuses[0].language.stats.map(
+                      l => (
+                        <Flair
+                          key={l.lang}
+                          flairColor={l.color}
+                          title={`${num(l.loc)} lines of code`}
+                          label={`${divide(
+                            l.loc,
+                            repoTabStats.data?.sonarQualityGateStatuses[0]?.language
+                              ?.ncloc || 0
+                          )
+                            .map(toPercentage)
+                            .getOr('-')} ${l.lang}`}
+                        />
+                      )
+                    )}
+                  </span>
+                ) : null}
               </div>
               {repo.pipelineCount ? (
                 <div>
@@ -194,6 +259,22 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                   Default branch{' '}
                   <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
                     {repo.defaultBranch}
+                  </code>
+                </div>
+              ) : null}
+              {showNewTabs && repoTabStats.data ? (
+                <div
+                  className="italic text-sm text-gray-400"
+                  style={{ lineHeight: 'inherit' }}
+                >
+                  Default branch{' '}
+                  <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
+                    {showNewTabs && repoTabStats.data
+                      ? repoTabStats.data?.repoDetails[0].defaultBranch?.replace(
+                          'refs/heads/',
+                          ''
+                        ) || 'N/A'
+                      : null}
                   </code>
                 </div>
               ) : null}

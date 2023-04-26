@@ -13,7 +13,6 @@ import { trpc } from '../../helpers/trpc.js';
 import Loading from '../Loading.jsx';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
-
 import { PullRequest } from '../common/Icons.jsx';
 
 type CentralTemplateUsageProps = {
@@ -337,11 +336,14 @@ const Builds: React.FC<{
 export default (
   builds: RepoAnalysis['builds'],
   repositoryId: string,
-  repositoryName: string
-): Tab => ({
-  title: 'Builds',
-  count: builds?.count || 0,
-  Component: () => {
-    return <Builds repositoryId={repositoryId} repositoryName={repositoryName} />;
-  },
-});
+  repositoryName: string,
+  buildsCount?: number
+): Tab => {
+  return {
+    title: 'Builds',
+    count: buildsCount ?? (builds?.count || 0),
+    Component: () => {
+      return <Builds repositoryId={repositoryId} repositoryName={repositoryName} />;
+    },
+  };
+};

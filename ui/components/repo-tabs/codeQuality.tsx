@@ -1198,10 +1198,11 @@ const tabLabel = (codeQuality: RepoAnalysis['codeQuality']) => {
 export default (
   codeQuality: RepoAnalysis['codeQuality'],
   repositoryName: string,
-  defaultBranch: string | undefined
+  defaultBranch: string | undefined,
+  sonarQualityGate?: string | number
 ): Tab => ({
   title: 'Code quality',
-  count: tabLabel(codeQuality),
+  count: sonarQualityGate ?? tabLabel(codeQuality),
   Component: () => {
     const [showNewSonar] = useQueryParam('sonar-v2', asBoolean);
     const { collectionName, project } = useCollectionAndProject();

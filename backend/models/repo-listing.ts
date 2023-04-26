@@ -421,36 +421,34 @@ export const getNonYamlPipelines = async ({
     { $sort: { total: -1 } },
   ]).exec();
 };
-export const getRepoTabHeadStatsCount = async (
-  queryContext: QueryContext,
-  repositoryIds: string[]
-) => {
+export const RepoTabHeadStatsCountInputParser = z.object({
+  queryContext: queryContextInputParser,
+  repositoryIds: z.array(z.string()),
+});
+export const getRepoTabHeadStatsCount = async ({
+  queryContext,
+  repositoryIds,
+}: z.infer<typeof RepoTabHeadStatsCountInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
-  const [
-    repoDetails,
-    totalBuilds,
-    totalBranches,
-    totalCommits,
-    totalTests,
-    sonarQualityGateStatuses,
-  ] = await Promise.all([
-    RepositoryModel.find(
-      { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
-      { id: 1, name: 1, defaultBranch: 1 }
-    ),
-    getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
-    getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
-    getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
-    getTotalTestsForRepositoryIds(queryContext, repositoryIds),
-    getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
-  ]);
+  const [repoDetails, builds, branches, commits, tests, sonarQualityGateStatuses] =
+    await Promise.all([
+      RepositoryModel.find(
+        { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
+        { id: 1, name: 1, defaultBranch: 1 }
+      ),
+      getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
+      getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
+      getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
+      getTotalTestsForRepositoryIds(queryContext, repositoryIds),
+      getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
+    ]);
 
   return {
     repoDetails,
-    totalBuilds,
-    totalBranches,
-    totalCommits,
-    totalTests,
+    builds,
+    branches,
+    commits,
+    tests,
     sonarQualityGateStatuses,
   };
 };

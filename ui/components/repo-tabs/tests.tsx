@@ -4,9 +4,13 @@ import type { Tab } from './Tabs.js';
 import { numberOfTests } from '../../../shared/repo-utils.js';
 import BuildPipelineTests from './BuildPipelineTests.jsx';
 
-export default (repo: RepoAnalysis, queryPeriodDays: number): Tab => ({
+export default (
+  repo: RepoAnalysis,
+  queryPeriodDays: number,
+  totalTests?: number
+): Tab => ({
   title: 'Tests',
-  count: numberOfTests(repo),
+  count: totalTests ?? numberOfTests(repo),
   Component: () => (
     <BuildPipelineTests repositoryId={repo.id} queryPeriodDays={queryPeriodDays} />
   ),
