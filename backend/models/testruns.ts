@@ -1,5 +1,5 @@
 import type { PipelineStage } from 'mongoose';
-import { last, range } from 'rambda';
+import { last, prop, range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
 import { z } from 'zod';
 import { oneDayInMs } from '../../shared/utils.js';
@@ -87,15 +87,18 @@ const createIntervals = (startDate: Date, endDate: Date) => {
 };
 
 export const makeContinuous = async <T extends { weekIndex: number }>(
-  tests: T[] | undefined,
+  unsortedDataByWeek: T[] | undefined,
   startDate: Date,
   endDate: Date,
   getOneOlderTestRun: () => Promise<T | null>,
   emptyValue: Omit<T, 'weekIndex'>
 ) => {
   const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const sortedDataByWeek = unsortedDataByWeek
+    ? [...unsortedDataByWeek].sort(byNum(prop('weekIndex')))
+    : undefined;
 
-  if (!tests) {
+  if (!sortedDataByWeek) {
     const olderTest = await getOneOlderTestRun();
     if (!olderTest) return null;
 
@@ -106,7 +109,7 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
 
   return range(0, numberOfIntervals)
     .reduce<Promise<T[]>>(async (acc, weekIndex, index) => {
-      const matchingTest = tests.find(t => t.weekIndex === weekIndex);
+      const matchingTest = sortedDataByWeek.find(t => t.weekIndex === weekIndex);
 
       if (matchingTest) return [...(await acc), matchingTest];
 
@@ -124,10 +127,11 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
       const lastItem = last(await acc)!;
       return [...(await acc), { ...lastItem, weekIndex }];
     }, Promise.resolve([]))
-    .then(list => list.slice(numberOfIntervals - Math.floor(numberOfDays / 7)));
+    .then(list => list.slice(numberOfIntervals - Math.floor(numberOfDays / 7)))
+    .then(x => x?.sort(byNum(prop('weekIndex'))));
 };
 
-export const mapDefsTestsAndCoverage = async (
+export const combineTestsAndCoverageForRepo = async (
   queryContext: QueryContext,
   repositoryId: string
 ) => {
@@ -150,6 +154,7 @@ export const mapDefsTestsAndCoverage = async (
     getTestsForRepo(queryContext, repositoryId),
     getCoveragesForRepo(queryContext, repositoryId),
   ]);
+
   // Mapping the build definitions/pipelines with no testruns
   const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
     definition => {
@@ -172,7 +177,7 @@ export const getTestRunsAndCoverageForRepo = async ({
 }: z.infer<typeof TestRunsForRepositoryInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const testRunsAndCoverageForRepo = await mapDefsTestsAndCoverage(
+  const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepo(
     queryContext,
     repositoryId
   );
@@ -218,9 +223,12 @@ export const getTestRunsAndCoverageForRepo = async ({
         }
       );
 
-      const latestTest = tests ? [...tests.reverse()].find(t => t.hasTests) : null;
+      const latestTest = tests
+        ? [...(def.tests || [])].sort(desc(byNum(prop('weekIndex'))))[0]
+        : null;
+
       const latestCoverage = coverageData
-        ? [...coverageData.reverse()].find(t => t.hasCoverage)
+        ? [...(def.coverageByWeek || [])].sort(desc(byNum(prop('weekIndex'))))[0]
         : null;
 
       const url = latestTest?.hasTests

@@ -340,7 +340,7 @@ const getSonarProjectIdsBeforeStartDate = async (
     okProjectIds: string[];
     warnProjectIds: string[];
     failedProjectIds: string[];
-  }>([
+  } | null>([
     {
       $match: {
         collectionName,
@@ -428,7 +428,7 @@ const getSonarProjectIdsBeforeStartDate = async (
     },
   ]);
 
-  return sonarProjectIdsBeforeStartDate[0];
+  return sonarProjectIdsBeforeStartDate[0] || null;
 };
 
 const getWeeklySonarProjectIds = async (
@@ -553,10 +553,10 @@ export const updateWeeklySonarProjectCount = async (
     getWeeklySonarProjectIds(queryContext, repositoryIds),
   ]);
 
-  const passedProjectsSet = new Set(preStartDateSonarSummary.okProjectIds);
-  const warningProjectsSet = new Set(preStartDateSonarSummary.warnProjectIds);
-  const failedProjectsSet = new Set(preStartDateSonarSummary.failedProjectIds);
-  const allProjectsSet = new Set(preStartDateSonarSummary.allProjectIds);
+  const passedProjectsSet = new Set(preStartDateSonarSummary?.okProjectIds || []);
+  const warningProjectsSet = new Set(preStartDateSonarSummary?.warnProjectIds || []);
+  const failedProjectsSet = new Set(preStartDateSonarSummary?.failedProjectIds || []);
+  const allProjectsSet = new Set(preStartDateSonarSummary?.allProjectIds || []);
   const weeklyUpdatedStats = weeklySonarProjectIds.map(week => {
     week.allProjectIds.forEach(id => {
       allProjectsSet.add(id);
