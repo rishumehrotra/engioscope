@@ -214,17 +214,17 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
   );
 };
 
-const CollectionWorkItemsSummary: React.FC<{
-  collectionName: string;
-}> = ({ collectionName }) => {
+const CollectionWorkItemsSummary: React.FC<{ collectionName: string }> = ({
+  collectionName,
+}) => {
   const workItems = trpc.summary.collectionWorkItemsSummary.useQuery({
     collectionName,
   });
 
-  const summariesForFeaturesAndStories = useMemo(() => {
+  const topLevelSummaries = useMemo(() => {
     if (!workItems.data) return;
 
-    return ['Feature', 'User Story'].map(witName => {
+    return ['User Story'].map(witName => {
       const type = witByName(witName, workItems.data.types);
 
       return {
@@ -240,22 +240,46 @@ const CollectionWorkItemsSummary: React.FC<{
   const summariesForBugs = useMemo(() => {
     if (!workItems.data) return;
 
-    const bugType = witByName('Bug', workItems.data.types);
+    const bugTypes = Object.fromEntries(
+      Object.entries(workItems.data.types).filter(([, wit]) =>
+        wit.name[0].toLowerCase().includes('bug')
+      )
+    );
 
-    const groups = Object.entries(workItems.data.groups)
-      .filter(([, group]) => {
-        return group.witId === bugType.witId;
-      })
-      .map(([groupId, group]) => ({ ...group, groupId }));
+    const groupsMap = Object.entries(workItems.data.groups).reduce(
+      (acc, [groupId, group]) => {
+        if (!Object.keys(bugTypes).includes(group.witId)) return acc;
+        if (group.name === 'no-group') return acc;
+
+        acc.set(group.name.toLowerCase(), [
+          ...(acc.get(group.name.toLowerCase()) || []),
+          { ...group, groupId },
+        ]);
+        return acc;
+      },
+      new Map<string, { witId: string; name: string; groupId: string }[]>()
+    );
 
     return {
-      type: bugType,
-      groups: groups.map(g => ({
-        name: g.name,
+      types: bugTypes,
+      groups: [...groupsMap.values()].map(g => ({
+        name: g[0].name,
+        icon: bugTypes[g[0].witId].icon,
         projects: workItems.data.projects.map(p => {
           return {
             name: p.project,
-            summary: p.byType[bugType.witId]?.[g.groupId] || emptySummary,
+            summary: aggregateAcrossGroups(
+              [...groupsMap.values()].reduce<ProjectWorkItemSummaryForType>(
+                (acc, group) => {
+                  group.forEach(g => {
+                    acc[g.witId + g.groupId] =
+                      p.byType[g.witId]?.[g.groupId] || emptySummary;
+                  });
+                  return acc;
+                },
+                {}
+              )
+            ),
           };
         }),
       })),
@@ -269,7 +293,7 @@ const CollectionWorkItemsSummary: React.FC<{
   return (
     <div>
       <h2 className="font-bold text-2xl my-2">Flow metrics</h2>
-      {summariesForFeaturesAndStories?.map(summary => {
+      {topLevelSummaries?.map(summary => {
         return (
           <details key={summary.type.name[0]}>
             <summary className="font-semibold text-xl my-2 cursor-pointer">
@@ -291,7 +315,7 @@ const CollectionWorkItemsSummary: React.FC<{
         <details key={group.name}>
           <summary className="font-semibold text-xl my-2 cursor-pointer">
             <img
-              src={summariesForBugs?.type.icon}
+              src={group.icon}
               alt={`Icon for ${group.name}`}
               className="inline-block mr-1"
               width="18"

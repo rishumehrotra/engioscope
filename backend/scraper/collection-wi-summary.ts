@@ -11,6 +11,7 @@ import type {
 } from '../../shared/types.js';
 import type { WorkItemTimesGetter } from '../../shared/work-item-utils.js';
 import {
+  isBug,
   noGroup,
   isNewInTimeRange,
   isWIP,
@@ -42,7 +43,11 @@ const getOverview = async (collection: string, project: string) =>
   (await parseFile<ProjectOverviewAnalysis>(collection, project, 'overview.json'))
     .overview;
 
-const concernedTypes = ['Feature', 'Bug', 'User Story'];
+const concernedTypes = [
+  (wit: UIWorkItemType) => wit.name[0] === 'Feature',
+  isBug,
+  (wit: UIWorkItemType) => wit.name[0] === 'User Story',
+];
 
 const computeTimeDifference =
   (workItemTimes: WorkItemTimesGetter) =>
@@ -94,8 +99,10 @@ const analyseProjects = (collectionName: string, projects: ParsedProjectConfig[]
         workItemTimes,
         projectConfig?.workitems.ignoreForWIP || []
       );
-      const isOfType = (type: string) => (workItem: UIWorkItem) =>
-        overview.types[workItem.typeId].name[0] === type;
+      const isOfType =
+        (isType: (wit: UIWorkItemType) => boolean) => (workItem: UIWorkItem) =>
+          isType(overview.types[workItem.typeId]);
+
       const leakage = isNewInTimeRange(workItemType, workItemTimes);
       const flowEfficiency = (() => {
         const tct = totalCycleTime(workItemTimes);
@@ -190,11 +197,12 @@ const analyseProjects = (collectionName: string, projects: ParsedProjectConfig[]
 const collectionWorkitemSummary = () => {
   return Promise.all(
     collections().map(async ({ name: collectionName, projects }) => {
+      const analysed = await analyseProjects(collectionName, projects);
       const {
         types,
         groups,
         projects: analysedProjects,
-      } = (await analyseProjects(collectionName, projects)).reduce<{
+      } = analysed.reduce<{
         types: Record<string, UIWorkItemType>;
         groups: Record<
           string,
@@ -226,7 +234,7 @@ const collectionWorkitemSummary = () => {
           projects: analysedProjects,
           types: Object.fromEntries(
             Object.entries(types).filter(([, value]) => {
-              return ['Feature', 'User Story', 'Bug'].includes(value.name[0]);
+              return concernedTypes.some(x => x(value));
             })
           ),
           groups,
