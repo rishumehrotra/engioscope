@@ -13,6 +13,11 @@ import {
   projectsAtSonarServer,
 } from '../scraper/network/sonar2.js';
 import { chunkArray, pastDate } from '../utils.js';
+import { collectionsAndProjects } from '../config.js';
+import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
+import { getMatchingSonarProjects } from '../models/sonar.js';
+import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
+import { exists } from '../../shared/utils.js';
 
 export const refreshSonarProjects = async () => {
   const sonarConnections = await getConnections('sonar');
@@ -139,3 +144,32 @@ export const updateQualityGateHistory =
       Promise.resolve()
     );
   };
+
+export const onboardQuailtyGateHistory = async () => {
+  return collectionsAndProjects().reduce(
+    async (acc, [{ name: collectionName }, { name: project }]) => {
+      await acc;
+
+      const repos = await RepositoryModel.find(
+        { collectionName, 'project.name': project },
+        { id: 1, name: 1, defaultBranch: 1 }
+      );
+
+      const somarProjectsForRepoIds = await Promise.all(
+        repos.map(async repo => {
+          const sonarProjects = await getMatchingSonarProjects(
+            repo.name,
+            repo.defaultBranch,
+            latestBuildReportsForRepoAndBranch(collectionName, project)
+          );
+
+          if (!sonarProjects) return null;
+          return { repoId: repo.id, sonarProjects };
+        })
+      ).then(x => x.filter(exists));
+
+      await updateQualityGateHistory(collectionName, project)(somarProjectsForRepoIds);
+    },
+    Promise.resolve()
+  );
+};

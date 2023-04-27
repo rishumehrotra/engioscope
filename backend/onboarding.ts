@@ -15,7 +15,11 @@ import { getBuildDefinitions } from './crons/build-definitions.js';
 import { getBranchesStats } from './crons/branches.js';
 import { getCommits } from './crons/commits.js';
 import { getTestRuns } from './crons/test-runs.js';
-import { getMissingSonarMeasures, refreshSonarProjects } from './crons/sonar.js';
+import {
+  getMissingSonarMeasures,
+  onboardQuailtyGateHistory,
+  refreshSonarProjects,
+} from './crons/sonar.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -39,6 +43,7 @@ export default async (config: ParsedConfig) => {
   await getTestRuns();
   await refreshSonarProjects();
   await getMissingSonarMeasures();
+  await onboardQuailtyGateHistory();
 
   // eslint-disable-next-line no-console
   console.log('Done.');
