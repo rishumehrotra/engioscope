@@ -76,9 +76,9 @@ const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
 const combinedQualityGate = (qualityGateStatus: string[]) => {
   if (qualityGateStatus.length === 0) return 'Unknown';
   if (qualityGateStatus.length === 1) return qualityGateStatus[0];
-  const qualityGatesFailed = qualityGateStatus.filter(status => status !== 'fail');
-  if (qualityGatesFailed.length === 0) return '100% pass';
-  return `${divide(qualityGatesFailed.length, qualityGateStatus.length)
+  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
+  if (qualityGatesPassed.length === qualityGateStatus.length) return '100% fail';
+  return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
     .map(toPercentage)
     .getOr('-')} pass`;
 };
@@ -106,9 +106,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
       queryContext: useQueryContext(),
       repositoryIds: [repo.id],
     },
-    {
-      enabled: showNewTabs === true,
-    }
+    { enabled: showNewTabs === true }
   );
 
   const tabs = useMemo(
@@ -134,20 +132,14 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
         repo.codeQuality,
         repo.name,
         repo.defaultBranch,
-        combinedQualityGate(repoTabStats.data?.sonarQualityGateStatuses[0]?.status || [])
+        repoTabStats.data
+          ? combinedQualityGate(
+              repoTabStats.data?.sonarQualityGateStatuses[0]?.status || []
+            )
+          : null
       ),
     ],
-    [
-      repo,
-      repoTabStats.data?.builds,
-      repoTabStats.data?.branches,
-      repoTabStats.data?.commits,
-      repoTabStats.data?.tests,
-      repoTabStats.data?.sonarQualityGateStatuses,
-      aggregatedDevs,
-      location,
-      queryPeriodDays,
-    ]
+    [repo, repoTabStats.data, aggregatedDevs, location, queryPeriodDays]
   );
 
   const [{ sortBy }] = useSortParams();

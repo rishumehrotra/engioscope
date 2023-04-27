@@ -1,6 +1,6 @@
 import type { Types } from 'mongoose';
 import { z } from 'zod';
-import { normalizeBranchName, unique } from '../utils.js';
+import { getLanguageColor, normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
@@ -16,7 +16,6 @@ import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
-import { getLanguageColor } from '../scraper/project-analyser.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 
 export const attemptMatchFromBuildReports = async (
@@ -743,20 +742,18 @@ export const getSonarQualityGateStatusForRepoName = async (
     .filter(exists);
 };
 
-const reduceCodeStats = (
-  language:
-    | {
-        stats:
-          | {
-              lang: string;
-              loc: number;
-            }[]
-          | null;
-        ncloc: string | undefined;
-      }[]
-    | null
+const combineCodeStats = (
+  language: {
+    stats:
+      | {
+          lang: string;
+          loc: number;
+        }[]
+      | null;
+    ncloc: string | undefined;
+  }[]
 ) => {
-  if (language === null || language.length === 0) return null;
+  if (language.length === 0) return null;
 
   const stats = language.reduce<{
     ncloc: number;
@@ -812,23 +809,25 @@ export const getSonarQualityGateStatusForRepoIds = async (
           )
         : null;
 
-      const status =
-        qualityGates === null ? null : qualityGates.map(qg => qg.quality.gate);
+      if (!qualityGates) {
+        return {
+          repositoryId: repo.id,
+          status: null,
+          language: null,
+        };
+      }
 
-      const language =
-        qualityGates === null
-          ? null
-          : qualityGates.map(qg => {
-              return {
-                stats: qg.language,
-                ncloc: qg.nonCommentLinesOfCode,
-              };
-            });
+      const status = qualityGates.map(qg => qg.quality.gate);
+
+      const language = qualityGates.map(qg => ({
+        stats: qg.language,
+        ncloc: qg.nonCommentLinesOfCode,
+      }));
 
       return {
         repositoryId: repo.id,
         status,
-        language: reduceCodeStats(language),
+        language: combineCodeStats(language),
       };
     })
   );

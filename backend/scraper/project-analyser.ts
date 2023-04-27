@@ -18,10 +18,9 @@ import type {
   ParsedProjectConfig,
 } from './parse-config.js';
 import aggregateTestRuns from './stats-aggregators/test-runs.js';
-import languageColors from './language-colors.js';
 import type { RepoAnalysis } from '../../shared/types.js';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
-import { startTimer } from '../utils.js';
+import { getLanguageColor, startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
 import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
@@ -31,13 +30,6 @@ import { getPolicyConfigurations } from '../models/policy-configuration.js';
 import { getBuildDefinitionsForProject } from '../models/build-definitions.js';
 import { branchStatsForRepo } from '../models/branches.js';
 import { getCommits } from '../models/commits.js';
-
-export const getLanguageColor = (lang: string) => {
-  if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
-  if (lang === 'js') return languageColors.javascript;
-  if (lang === 'xml') return languageColors.eiffel;
-  return languageColors.eiffel;
-};
 
 const analyserLog = debug('analyser');
 
