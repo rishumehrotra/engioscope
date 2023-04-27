@@ -494,7 +494,9 @@ export const getTestsByWeek = async (
       return {
         ...def,
         tests,
-        latestTest: tests ? last(tests) : null,
+        latestTest: tests
+          ? [...(def.tests || [])].sort(desc(byNum(prop('weekIndex'))))[0]
+          : null,
       };
     })
   );
@@ -632,7 +634,7 @@ export const getTotalTestsForRepositoryIds = async (
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const testsForDefsForRepoIds = await RepositoryModel.aggregate<TestsForDef>([
+  const testsFromDefsOfRepoIds = await RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
       collectionName,
       project,
@@ -670,7 +672,7 @@ export const getTotalTestsForRepositoryIds = async (
   };
 
   const definitionTests = await Promise.all(
-    testsForDefsForRepoIds.map(async def => {
+    testsFromDefsOfRepoIds.map(async def => {
       const tests = await makeContinuous(
         def.tests,
         startDate,
@@ -679,7 +681,9 @@ export const getTotalTestsForRepositoryIds = async (
         { hasTests: false }
       );
 
-      const latestTest = tests ? [...tests.reverse()].find(t => t.hasTests) : null;
+      const latestTest = tests
+        ? [...(def.tests || [])].sort(desc(byNum(prop('weekIndex'))))[0]
+        : null;
 
       return {
         ...def,
