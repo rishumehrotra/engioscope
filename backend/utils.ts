@@ -4,9 +4,10 @@
 
 import { promises as fs } from 'node:fs';
 import ms from 'ms';
-import { allPass, compose, not, range } from 'rambda';
+import { allPass, compose, not, prop, range } from 'rambda';
 import AL from 'await-lock';
 import { fileURLToPath } from 'node:url';
+import { byNum, desc } from 'sort-lib';
 import type { ParsedConfig } from './scraper/parse-config.js';
 import { HTTPError } from './scraper/network/http-error.js';
 import { oneDayInMs } from '../shared/utils.js';
@@ -152,4 +153,8 @@ export const getLanguageColor = (lang: string) => {
   if (lang === 'js') return languageColors.javascript;
   if (lang === 'xml') return languageColors.eiffel;
   return languageColors.eiffel;
+};
+
+export const getLatest = <T extends { weekIndex: number }>(weeklyData: T[]) => {
+  return weeklyData.sort(desc(byNum(prop('weekIndex'))))[0];
 };

@@ -19,6 +19,7 @@ import {
 } from './tests-coverages.js';
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
+import { getLatest } from '../utils.js';
 
 export type TestStatDetails = {
   state: string;
@@ -102,9 +103,11 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
     const olderTest = await getOneOlderTestRun();
     if (!olderTest) return null;
 
-    return range(0, numberOfIntervals).map(weekIndex => {
-      return { ...olderTest, weekIndex };
-    });
+    return range(0, numberOfIntervals)
+      .map(weekIndex => {
+        return { ...olderTest, weekIndex };
+      })
+      .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
   }
 
   return range(0, numberOfIntervals)
@@ -223,13 +226,8 @@ export const getTestRunsAndCoverageForRepo = async ({
         }
       );
 
-      const latestTest = tests
-        ? [...(def.tests || [])].sort(desc(byNum(prop('weekIndex'))))[0]
-        : null;
-
-      const latestCoverage = coverageData
-        ? [...(def.coverageByWeek || [])].sort(desc(byNum(prop('weekIndex'))))[0]
-        : null;
+      const latestTest = tests ? getLatest(def.tests || []) : null;
+      const latestCoverage = coverageData ? getLatest(def.coverageByWeek || []) : null;
 
       const url = latestTest?.hasTests
         ? `${def.url.split('_apis')[0]}_build/results?buildId=${
@@ -494,9 +492,7 @@ export const getTestsByWeek = async (
       return {
         ...def,
         tests,
-        latestTest: tests
-          ? [...(def.tests || [])].sort(desc(byNum(prop('weekIndex'))))[0]
-          : null,
+        latestTest: tests ? getLatest(def.tests || []) : null,
       };
     })
   );
@@ -681,9 +677,7 @@ export const getTotalTestsForRepositoryIds = async (
         { hasTests: false }
       );
 
-      const latestTest = tests
-        ? [...(def.tests || [])].sort(desc(byNum(prop('weekIndex'))))[0]
-        : null;
+      const latestTest = tests ? getLatest(def.tests || []) : null;
 
       return {
         ...def,
