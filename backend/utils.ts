@@ -10,7 +10,6 @@ import { fileURLToPath } from 'node:url';
 import type { ParsedConfig } from './scraper/parse-config.js';
 import { HTTPError } from './scraper/network/http-error.js';
 import { oneDayInMs } from '../shared/utils.js';
-import languageColors from './scraper/language-colors.js';
 
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
@@ -146,10 +145,3 @@ export const splitDateRangeByDays =
     });
   };
 export const splitDateRangeByWeek = splitDateRangeByDays(7);
-
-export const getLanguageColor = (lang: string) => {
-  if (lang in languageColors) return languageColors[lang as keyof typeof languageColors];
-  if (lang === 'js') return languageColors.javascript;
-  if (lang === 'xml') return languageColors.eiffel;
-  return languageColors.eiffel;
-};
