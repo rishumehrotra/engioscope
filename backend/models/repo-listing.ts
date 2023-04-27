@@ -13,7 +13,11 @@ import {
   getTotalCentralTemplateUsage,
   getCentralTemplateBuildDefs,
 } from './build-reports.js';
-import { getAllRepoDefaultBranchIDs, getTotalReposInProject } from './repos.js';
+import {
+  getAllRepoDefaultBranchIDs,
+  getDefaultBranchAndNameForRepoIds,
+  getTotalReposInProject,
+} from './repos.js';
 import { getHasReleasesSummary } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
@@ -421,21 +425,17 @@ export const getNonYamlPipelines = async ({
     { $sort: { total: -1 } },
   ]).exec();
 };
-export const RepoTabHeadStatsCountInputParser = z.object({
+export const RepoOverviewStatsInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryIds: z.array(z.string()),
 });
-export const getRepoTabHeadStatsCount = async ({
+export const getRepoOverviewStats = async ({
   queryContext,
   repositoryIds,
-}: z.infer<typeof RepoTabHeadStatsCountInputParser>) => {
-  const { collectionName, project } = fromContext(queryContext);
+}: z.infer<typeof RepoOverviewStatsInputParser>) => {
   const [repoDetails, builds, branches, commits, tests, sonarQualityGateStatuses] =
     await Promise.all([
-      RepositoryModel.find(
-        { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
-        { id: 1, name: 1, defaultBranch: 1 }
-      ),
+      getDefaultBranchAndNameForRepoIds(queryContext, repositoryIds),
       getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
       getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
       getTotalCommitsForRepositoryIds(queryContext, repositoryIds),

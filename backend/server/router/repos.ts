@@ -9,8 +9,8 @@ import {
   getSummaryInputParser,
   getNonYamlPipelines,
   NonYamlPipelinesParser,
-  RepoTabHeadStatsCountInputParser,
-  getRepoTabHeadStatsCount,
+  RepoOverviewStatsInputParser,
+  getRepoOverviewStats,
 } from '../../models/repo-listing.js';
 
 export default t.router({
@@ -24,7 +24,7 @@ export default t.router({
     .input(NonYamlPipelinesParser)
     .query(passInputTo(getNonYamlPipelines)),
 
-  getRepoTabHeadStatsCount: t.procedure
-    .input(RepoTabHeadStatsCountInputParser)
-    .query(passInputTo(getRepoTabHeadStatsCount)),
+  getRepoOverviewStats: t.procedure
+    .input(RepoOverviewStatsInputParser)
+    .query(passInputTo(getRepoOverviewStats)),
 });

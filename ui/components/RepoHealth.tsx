@@ -73,6 +73,16 @@ const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
   );
 };
 
+const combinedQualityGate = (qualityGateStatus: string[]) => {
+  if (qualityGateStatus.length === 0) return 'Unknown';
+  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
+  const qualityGatesFailed = qualityGateStatus.filter(status => status !== 'fail');
+  if (qualityGatesFailed.length === 0) return '100% pass';
+  return `${divide(qualityGatesFailed.length, qualityGateStatus.length)
+    .map(toPercentage)
+    .getOr('-')} pass`;
+};
+
 type RepoHealthProps = {
   repo: RepoAnalysis;
   aggregatedDevs: Record<string, Dev>;
@@ -91,7 +101,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
   const pageName = usePageName();
   const location = useLocation();
   const [showNewTabs] = useQueryParam('tabs-v2', asBoolean);
-  const repoTabStats = trpc.repos.getRepoTabHeadStatsCount.useQuery(
+  const repoTabStats = trpc.repos.getRepoOverviewStats.useQuery(
     {
       queryContext: useQueryContext(),
       repositoryIds: [repo.id],
@@ -124,7 +134,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
         repo.codeQuality,
         repo.name,
         repo.defaultBranch,
-        repoTabStats.data?.sonarQualityGateStatuses[0]?.status
+        combinedQualityGate(repoTabStats.data?.sonarQualityGateStatuses[0]?.status || [])
       ),
     ],
     [
@@ -212,11 +222,12 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                 </span>
                 {showNewTabs &&
                 repoTabStats.data &&
-                repoTabStats.data?.sonarQualityGateStatuses[0] !== null &&
                 repoTabStats.data.sonarQualityGateStatuses[0]?.language !== null &&
                 repoTabStats.data.sonarQualityGateStatuses[0]?.language?.ncloc !==
                   null ? (
                   <span className="inline-block ml-4">
+                    {' '}
+                    Tab v2 :
                     {repoTabStats.data.sonarQualityGateStatuses[0].language.stats.map(
                       l => (
                         <Flair
@@ -267,7 +278,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                   className="italic text-sm text-gray-400"
                   style={{ lineHeight: 'inherit' }}
                 >
-                  Default branch{' '}
+                  Default branch from Tab v2{' '}
                   <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
                     {showNewTabs && repoTabStats.data
                       ? repoTabStats.data?.repoDetails[0].defaultBranch?.replace(

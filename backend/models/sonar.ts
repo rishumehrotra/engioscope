@@ -11,19 +11,13 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import {
-  divide,
-  exists,
-  oneDayInMs,
-  oneWeekInMs,
-  toPercentage,
-} from '../../shared/utils.js';
+import { exists, oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
-import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getLanguageColor } from '../scraper/project-analyser.js';
+import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -749,15 +743,6 @@ export const getSonarQualityGateStatusForRepoName = async (
     .filter(exists);
 };
 
-const combinedQualityGate = (qualityGateStatus: string[]) => {
-  if (qualityGateStatus.length === 0) return 'Unknown';
-  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
-  const qualityGatesFailed = qualityGateStatus.filter(status => status !== 'fail');
-  return divide(qualityGatesFailed.length, qualityGateStatus.length)
-    .map(toPercentage)
-    .getOr('-');
-};
-
 const reduceCodeStats = (
   language:
     | {
@@ -811,9 +796,9 @@ export const getSonarQualityGateStatusForRepoIds = async (
 ) => {
   const { collectionName, project } = fromContext(queryContext);
 
-  const repositories = await RepositoryModel.find(
-    { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
-    { id: 1, name: 1, defaultBranch: 1 }
+  const repositories = await getDefaultBranchAndNameForRepoIds(
+    queryContext,
+    repositoryIds
   );
 
   return Promise.all(
@@ -842,7 +827,7 @@ export const getSonarQualityGateStatusForRepoIds = async (
 
       return {
         repositoryId: repo.id,
-        status: combinedQualityGate(status || []),
+        status,
         language: reduceCodeStats(language),
       };
     })

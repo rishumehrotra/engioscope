@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { collectionAndProjectInputs } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { normalizeBranchName } from '../utils.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export const getRepositories = (collectionName: string, project: string) =>
   RepositoryModel.find({ collectionName, 'project.name': project }).lean();
@@ -152,3 +154,15 @@ export const getTotalReposInProject = (collectionName: string, project: string) 
     collectionName,
     'project.name': project,
   });
+
+export const getDefaultBranchAndNameForRepoIds = (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  return RepositoryModel.find(
+    { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
+    { id: 1, name: 1, defaultBranch: 1 }
+  );
+};
