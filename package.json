@@ -12,7 +12,7 @@
     "prebuild:ui": "NODE_ENV=production tailwind -c ui/tailwind.config.cjs build -i ui/tailwind.css -o ui/tailwind.output.css",
     "build:ui": "vite build",
     "clean": "rimraf dist",
-    "update-language-colors": "ts-node --esm backend/scraper/update-language-colors.ts",
+    "update-language-colors": "ts-node --esm backend/update-language-colors.ts",
     "prebuild": "npm-run-all --parallel clean update-language-colors",
     "build": "npm-run-all --parallel build:server build:ui",
     "serve": "vite preview",
