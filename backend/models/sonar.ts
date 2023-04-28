@@ -11,6 +11,7 @@ import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
 import {
+  SonarQualityGateUsedModel,
   SonarAlertHistoryModel,
   SonarMeasuresModel,
   SonarProjectModel,
@@ -23,6 +24,7 @@ import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -145,6 +147,37 @@ export const getLatestSonarAlertHistory = async (
   ]);
 };
 
+export const getSonarQualityGatesUsed = async (
+  collectionName: string,
+  project: string,
+  repositoryName: string,
+  sonarProjectIds: Types.ObjectId[]
+) => {
+  const repository = await RepositoryModel.findOne({
+    collectionName,
+    'project.name': project,
+    'name': repositoryName,
+  }).lean();
+
+  return SonarQualityGateUsedModel.aggregate<{
+    repositoryId: string;
+    sonarProjectId: Types.ObjectId;
+    name: string;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: repository?.id,
+        sonarProjectId: { $in: sonarProjectIds },
+      },
+    },
+    { $sort: { date: -1 } },
+    { $group: { _id: '$sonarProjectId', first: { $first: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$first' } },
+  ]);
+};
+
 const isMeasureName = (name: string) => (measure: Measure) => measure.metric === name;
 
 const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
@@ -221,10 +254,11 @@ export const getRepoSonarMeasures = async ({
   if (!sonarProjects || sonarProjects.length === 0) return null;
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measures, sonarConnections, sonarAlert] = await Promise.all([
+  const [measures, sonarConnections, sonarAlert, sonarQualityGates] = await Promise.all([
     getLatestSonarMeasures(sonarProjectIds),
     getConnections('sonar'),
     getLatestSonarAlertHistory(collectionName, project, sonarProjectIds),
+    getSonarQualityGatesUsed(collectionName, project, repositoryName, sonarProjectIds),
   ]);
 
   return measures
@@ -232,6 +266,11 @@ export const getRepoSonarMeasures = async ({
       const latestSonarAlertDate =
         sonarAlert.find(a => a.sonarProjectId.equals(measure.sonarProjectId))?.date ||
         null;
+
+      const qualityGateName =
+        sonarQualityGates.find(s => s.sonarProjectId.equals(measure.sonarProjectId))
+          ?.name || null;
+
       const { measureAsNumber, qualityGateMetric, qualityGateStatus } = getMeasureValue(
         measure.fetchDate,
         measure.measures
@@ -249,7 +288,7 @@ export const getRepoSonarMeasures = async ({
         url: `${sonarConnection.url}/dashboard?id=${sonarProject.key}`,
         name: sonarProject.name,
         lastAnalysisDate: latestSonarAlertDate,
-        // qualityGateName: sonarAnalysis.qualityGateName,
+        qualityGateName,
         files: measureAsNumber('files'),
         complexity: {
           cyclomatic: measureAsNumber('complexity'),
