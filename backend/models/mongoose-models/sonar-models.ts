@@ -88,3 +88,30 @@ export const SonarAlertHistoryModel = model<SonarAlertHistory>(
   'SonarAlertHistory',
   sonarAlertHistorySchema
 );
+
+export type SonarQualityGateUsed = {
+  collectionName: string;
+  project: string;
+  repositoryId: string;
+  sonarProjectId: Types.ObjectId;
+  name: string;
+  id: string;
+  default: boolean;
+  updatedAt: Date;
+};
+
+const sonarQualityGateUsedSchema = new Schema<SonarQualityGateUsed>({
+  collectionName: { type: String, required: true },
+  project: { type: String, required: true },
+  repositoryId: { type: String, required: true },
+  sonarProjectId: { type: Schema.Types.ObjectId, required: true },
+  name: { type: String, required: true },
+  id: { type: String, required: true },
+  default: { type: Boolean },
+  updatedAt: { type: Date, requred: true },
+});
+
+export const SonarQualityGateUsedModel = model<SonarQualityGateUsed>(
+  'SonarQualityGateUsed',
+  sonarQualityGateUsedSchema
+);

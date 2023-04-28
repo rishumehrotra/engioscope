@@ -3,12 +3,14 @@ import { getConnectionById, getConnections } from '../models/connections.js';
 import type { SonarConnection } from '../models/mongoose-models/ConnectionModel.js';
 import type { SonarProject } from '../models/mongoose-models/sonar-models.js';
 import {
+  SonarQualityGateUsedModel,
   SonarAlertHistoryModel,
   SonarMeasuresModel,
   SonarProjectModel,
 } from '../models/mongoose-models/sonar-models.js';
 import {
   getMeasures,
+  getQualityGate,
   getQualityGateHistoryAsChunks,
   projectsAtSonarServer,
 } from '../scraper/network/sonar2.js';
@@ -17,7 +19,8 @@ import { collectionsAndProjects } from '../config.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import { getMatchingSonarProjects } from '../models/sonar.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
-import { exists } from '../../shared/utils.js';
+import { exists, oneDayInMs, oneHourInMs } from '../../shared/utils.js';
+import { createSchedule } from './utils.js';
 
 export const refreshSonarProjects = async () => {
   const sonarConnections = await getConnections('sonar');
@@ -124,19 +127,98 @@ export const updateQualityGateHistory =
                     (lastFetchDate || pastDate('365 days')).getTime()
                 );
 
-                await SonarAlertHistoryModel.insertMany(
+                await SonarAlertHistoryModel.bulkWrite(
                   filteredHistoryItems.map(({ value, date }) => {
                     return {
-                      collectionName,
-                      project,
-                      repositoryId: repoId,
-                      sonarProjectId: sonarProject._id,
-                      date: new Date(date),
-                      value,
+                      updateOne: {
+                        filter: {
+                          collectionName,
+                          project,
+                          repositoryId: repoId,
+                          sonarProjectId: sonarProject._id,
+                          date: new Date(date),
+                        },
+                        update: { $set: { value } },
+                        upsert: true,
+                      },
                     };
                   })
                 );
               }
+            );
+          })
+        );
+      },
+      Promise.resolve()
+    );
+  };
+
+const shouldUpdate = createSchedule({
+  frequency: oneHourInMs,
+  schedule: s => [
+    s`For the first ${oneDayInMs}, check every ${oneHourInMs}.`,
+    s`Then till ${3 * oneDayInMs}, check every ${3 * oneHourInMs}.`,
+    s`Then till ${6 * oneDayInMs}, check every ${12 * oneHourInMs}.`,
+    s`Then till ${18 * oneDayInMs}, check every ${oneDayInMs}.`,
+    s`Then till ${33 * oneDayInMs}, check every ${2 * oneDayInMs}.`,
+    s`Then till ${60 * oneDayInMs}, check every ${6 * oneDayInMs}.`,
+    s`Then till ${90 * oneDayInMs}, check every ${10 * oneDayInMs}.`,
+  ],
+});
+
+export const updateQualityGateDetails =
+  (collectionName: string, project: string) =>
+  async (
+    reposAndSonarProjects: {
+      repoId: string;
+      sonarProjects: (SonarProject & {
+        _id: Types.ObjectId;
+      })[];
+    }[]
+  ) => {
+    const repoAndProjectList = reposAndSonarProjects.flatMap(r => {
+      return r.sonarProjects.map(p => ({ repoId: r.repoId, sonarProject: p }));
+    });
+
+    const sonarServers = await getConnections('sonar');
+
+    return chunkArray(repoAndProjectList, 10).reduce<Promise<unknown>>(
+      async (acc, reposAndProjects) => {
+        await acc;
+
+        return Promise.all(
+          reposAndProjects.map(async ({ repoId, sonarProject }) => {
+            const gateUsed = await SonarQualityGateUsedModel.findOne(
+              {
+                collectionName,
+                project,
+                repositoryId: repoId,
+                sonarProjectId: sonarProject._id,
+              },
+              { updatedAt: 1 }
+            ).exec();
+
+            const isUpdateNeeded = gateUsed ? shouldUpdate(gateUsed.updatedAt) : true;
+
+            if (!isUpdateNeeded) return;
+
+            const sonarServer = sonarServers.find(s =>
+              s._id.equals(sonarProject.connectionId)
+            );
+
+            if (!sonarServer) return;
+
+            const qualityGate = await getQualityGate(sonarServer)(sonarProject);
+
+            await SonarQualityGateUsedModel.updateOne(
+              {
+                collectionName,
+                project,
+                repositoryId: repoId,
+                sonarProjectId: sonarProject._id,
+              },
+              { $set: { ...qualityGate, updatedAt: new Date() } },
+              { upsert: true }
             );
           })
         );
@@ -155,7 +237,7 @@ export const onboardQuailtyGateHistory = async () => {
         { id: 1, name: 1, defaultBranch: 1 }
       );
 
-      const somarProjectsForRepoIds = await Promise.all(
+      const sonarProjectsForRepoIds = await Promise.all(
         repos.map(async repo => {
           const sonarProjects = await getMatchingSonarProjects(
             repo.name,
@@ -168,7 +250,10 @@ export const onboardQuailtyGateHistory = async () => {
         })
       ).then(x => x.filter(exists));
 
-      await updateQualityGateHistory(collectionName, project)(somarProjectsForRepoIds);
+      await Promise.all([
+        updateQualityGateHistory(collectionName, project)(sonarProjectsForRepoIds),
+        updateQualityGateDetails(collectionName, project)(sonarProjectsForRepoIds),
+      ]);
     },
     Promise.resolve()
   );

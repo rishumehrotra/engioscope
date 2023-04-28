@@ -171,27 +171,30 @@ export const getMeasures =
     ).then(res => res.data.component?.measures || []);
   };
 
-// export const getQualityGateName = (sonarProject: SonarProject) => {
-//   const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
+export const getQualityGate =
+  (sonarServer: SonarConnection) => (sonarProject: SonarProject) => {
+    const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
 
-//   return usingDiskCache<{ qualityGate: { name: string } }>(
-//     ['sonar', 'quality-gates', sonarProject.key],
-//     () =>
-//       fetch(
-//         `${sonarProject.url}/api/qualitygates/get_by_project?${qs.stringify({
-//           project: sonarProject.key,
-//         })}`,
-//         {
-//           headers: {
-//             Authorization: `Basic ${Buffer.from(`${sonarProject.token}:`).toString(
-//               'base64'
-//             )}`,
-//           },
-//           verifySsl: sonarProject.verifySsl ?? true,
-//         }
-//       )
-//   ).then(res => res.data.qualityGate.name);
-// };
+    return usingDiskCache<{
+      qualityGate: { name: string; id: string; default: boolean };
+    }>(['sonar', 'quality-gates', sonarProject.key], () =>
+      fetch(
+        `${sonarServer.url}/api/qualitygates/get_by_project?${qs.stringify({
+          project: sonarProject.key,
+        })}`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString(
+              'base64'
+            )}`,
+          },
+          verifySsl: sonarServer.verifySsl ?? true,
+        }
+      )
+    )
+      .then(res => res.data.qualityGate)
+      .then(x => ({ ...x, id: String(x.id) }));
+  };
 
 export const getQualityGateHistoryAsChunks =
   (sonarServer: SonarConnection) =>

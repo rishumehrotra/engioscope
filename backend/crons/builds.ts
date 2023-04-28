@@ -15,7 +15,11 @@ import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 import { getRepoById } from '../models/repos.js';
 import { getMatchingSonarProjects } from '../models/sonar.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
-import { saveMeasuresForProject, updateQualityGateHistory } from './sonar.js';
+import {
+  saveMeasuresForProject,
+  updateQualityGateDetails,
+  updateQualityGateHistory,
+} from './sonar.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -197,6 +201,7 @@ const updateSonar = async (
   return Promise.all([
     sonarProjectsForRepoIds.flatMap(prop('sonarProjects')).map(saveMeasuresForProject),
     updateQualityGateHistory(collectionName, project)(sonarProjectsForRepoIds),
+    updateQualityGateDetails(collectionName, project)(sonarProjectsForRepoIds),
   ]);
 };
 
