@@ -158,3 +158,11 @@ export const getLanguageColor = (lang: string) => {
 export const getLatest = <T extends { weekIndex: number }>(weeklyData: T[]) => {
   return weeklyData.sort(desc(byNum(prop('weekIndex'))))[0];
 };
+
+export const createIntervals = (startDate: Date, endDate: Date) => {
+  const numberOfDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  return {
+    numberOfDays,
+    numberOfIntervals: Math.floor(numberOfDays / 7 + (numberOfDays % 7 === 0 ? 0 : 1)),
+  };
+};

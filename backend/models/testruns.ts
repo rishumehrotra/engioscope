@@ -2,7 +2,6 @@ import type { PipelineStage } from 'mongoose';
 import { last, prop, range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
 import { z } from 'zod';
-import { oneDayInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -19,7 +18,7 @@ import {
 } from './tests-coverages.js';
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
-import { getLatest } from '../utils.js';
+import { createIntervals, getLatest } from '../utils.js';
 
 export type TestStatDetails = {
   state: string;
@@ -78,14 +77,6 @@ export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
 export type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<TestsForDef> &
   Partial<BranchCoverage>;
-
-const createIntervals = (startDate: Date, endDate: Date) => {
-  const numberOfDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  return {
-    numberOfDays,
-    numberOfIntervals: Math.floor(numberOfDays / 7 + (numberOfDays % 7 === 0 ? 0 : 1)),
-  };
-};
 
 export const makeContinuous = async <T extends { weekIndex: number }>(
   unsortedDataByWeek: T[] | undefined,

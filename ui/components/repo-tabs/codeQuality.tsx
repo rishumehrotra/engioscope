@@ -1238,13 +1238,7 @@ export default (
             </h2>
             <hr className="mb-2" />
             {sonarMeasures.data.length === 1 ? (
-              <SingleAnalysisV2
-                codeQuality={sonarMeasures.data[0]}
-                key={`lastFetch${
-                  sonarMeasures?.data[0]?.lastAnalysisDate?.toString() ||
-                  new Date().toString()
-                }`}
-              />
+              <SingleAnalysisV2 codeQuality={sonarMeasures.data[0]} />
             ) : (
               <AnalysisTableV2 codeQuality={sonarMeasures.data} />
             )}

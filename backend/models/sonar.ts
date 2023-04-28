@@ -1,7 +1,12 @@
 import type { Types } from 'mongoose';
 import { z } from 'zod';
 import { range } from 'rambda';
-import { getLanguageColor, normalizeBranchName, unique } from '../utils.js';
+import {
+  createIntervals,
+  getLanguageColor,
+  normalizeBranchName,
+  unique,
+} from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
@@ -12,7 +17,7 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { exists, oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
+import { exists, oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -224,7 +229,7 @@ export const getRepoSonarMeasures = async ({
 
   return measures
     .map(measure => {
-      const latestSonarAlertDate: Date | null =
+      const latestSonarAlertDate =
         sonarAlert.find(a => a.sonarProjectId.equals(measure.sonarProjectId))?.date ||
         null;
       const { measureAsNumber, qualityGateMetric, qualityGateStatus } = getMeasureValue(
@@ -565,10 +570,8 @@ export const updateWeeklySonarProjectCount = async (
     getWeeklySonarProjectIds(queryContext, repositoryIds),
   ]);
 
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-
-  const completeWeeklySonarProjectIds = range(0, totalIntervals).map(weekIndex => {
+  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const completeWeeklySonarProjectIds = range(0, numberOfIntervals).map(weekIndex => {
     return (
       weeklySonarProjectIds.find(week => week.weekIndex === weekIndex) || {
         weekIndex,
@@ -615,7 +618,7 @@ export const updateWeeklySonarProjectCount = async (
     };
   });
 
-  return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
+  return weeklyUpdatedStats.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
 export const getReposWithSonarQube = async (
@@ -699,9 +702,9 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
     getWeeklyReposWithSonarQubeSummary(queryContext, repositoryIds),
   ]);
 
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-  const completeWeeklyReposSummary = range(0, totalIntervals).map(weekIndex => {
+  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+
+  const completeWeeklyReposSummary = range(0, numberOfIntervals).map(weekIndex => {
     return (
       weeklyReposSummary.find(week => week.weekIndex === weekIndex) || {
         weekIndex,
@@ -723,7 +726,7 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
     };
   });
 
-  return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
+  return weeklyUpdatedStats.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
 export const getSonarQualityGateStatusForRepoName = async (
