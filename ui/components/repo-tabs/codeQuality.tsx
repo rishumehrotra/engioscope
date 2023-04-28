@@ -1240,7 +1240,10 @@ export default (
             {sonarMeasures.data.length === 1 ? (
               <SingleAnalysisV2
                 codeQuality={sonarMeasures.data[0]}
-                key={`lastFetch${sonarMeasures.data[0].lastAnalysisDate.toString()}`}
+                key={`lastFetch${
+                  sonarMeasures?.data[0]?.lastAnalysisDate?.toString() ||
+                  new Date().toString()
+                }`}
               />
             ) : (
               <AnalysisTableV2 codeQuality={sonarMeasures.data} />

@@ -1,5 +1,6 @@
 import type { Types } from 'mongoose';
 import { z } from 'zod';
+import { range } from 'rambda';
 import { getLanguageColor, normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
@@ -122,6 +123,23 @@ export const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) 
   ]);
 };
 
+export const getLatestSonarAlertHistory = async (
+  collectionName: string,
+  project: string,
+  sonarProjectIds: Types.ObjectId[]
+) => {
+  return SonarAlertHistoryModel.aggregate<{
+    repositoryId: string;
+    sonarProjectId: Types.ObjectId;
+    date: Date;
+  }>([
+    { $match: { collectionName, project, sonarProjectId: { $in: sonarProjectIds } } },
+    { $sort: { date: -1 } },
+    { $group: { _id: '$sonarProjectId', first: { $first: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$first' } },
+  ]);
+};
+
 const isMeasureName = (name: string) => (measure: Measure) => measure.metric === name;
 
 const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
@@ -198,15 +216,21 @@ export const getRepoSonarMeasures = async ({
   if (!sonarProjects || sonarProjects.length === 0) return null;
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measures, sonarConnections] = await Promise.all([
+  const [measures, sonarConnections, sonarAlert] = await Promise.all([
     getLatestSonarMeasures(sonarProjectIds),
     getConnections('sonar'),
+    getLatestSonarAlertHistory(collectionName, project, sonarProjectIds),
   ]);
 
   return measures
     .map(measure => {
-      const { lastAnalysisDate, measureAsNumber, qualityGateMetric, qualityGateStatus } =
-        getMeasureValue(measure.fetchDate, measure.measures);
+      const latestSonarAlertDate: Date | null =
+        sonarAlert.find(a => a.sonarProjectId.equals(measure.sonarProjectId))?.date ||
+        null;
+      const { measureAsNumber, qualityGateMetric, qualityGateStatus } = getMeasureValue(
+        measure.fetchDate,
+        measure.measures
+      );
 
       const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
       if (!sonarProject) return null;
@@ -219,7 +243,7 @@ export const getRepoSonarMeasures = async ({
       return {
         url: `${sonarConnection.url}/dashboard?id=${sonarProject.key}`,
         name: sonarProject.name,
-        lastAnalysisDate,
+        lastAnalysisDate: latestSonarAlertDate,
         // qualityGateName: sonarAnalysis.qualityGateName,
         files: measureAsNumber('files'),
         complexity: {
@@ -270,18 +294,6 @@ export const getRepoSonarMeasures = async ({
           techDebt: measureAsNumber('sqale_index'),
           codeSmells: measureAsNumber('code_smells'),
         },
-        // oldestFoundSample: head(
-        //   sonarAnalysis.qualityGateHistory.sort(desc(byDate(prop('date'))))
-        // )?.date.toISOString(),
-        // qualityGateByWeek: uptillWeeks.map(isUptillWeek => {
-        //   const latestInWeek = head(
-        //     sonarAnalysis.qualityGateHistory
-        //       .filter(({ date }) => isUptillWeek(date))
-        //       .sort(desc(byDate(prop('date'))))
-        //   );
-
-        //   return latestInWeek ? parseQualityGateStatus(latestInWeek.value) : null;
-        // }),
       };
     })
     .filter(exists);
@@ -553,11 +565,26 @@ export const updateWeeklySonarProjectCount = async (
     getWeeklySonarProjectIds(queryContext, repositoryIds),
   ]);
 
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+
+  const completeWeeklySonarProjectIds = range(0, totalIntervals).map(weekIndex => {
+    return (
+      weeklySonarProjectIds.find(week => week.weekIndex === weekIndex) || {
+        weekIndex,
+        allProjectIds: [],
+        okProjectIds: [],
+        warnProjectIds: [],
+        failedProjectIds: [],
+      }
+    );
+  });
+
   const passedProjectsSet = new Set(preStartDateSonarSummary?.okProjectIds || []);
   const warningProjectsSet = new Set(preStartDateSonarSummary?.warnProjectIds || []);
   const failedProjectsSet = new Set(preStartDateSonarSummary?.failedProjectIds || []);
   const allProjectsSet = new Set(preStartDateSonarSummary?.allProjectIds || []);
-  const weeklyUpdatedStats = weeklySonarProjectIds.map(week => {
+  const weeklyUpdatedStats = completeWeeklySonarProjectIds.map(week => {
     week.allProjectIds.forEach(id => {
       allProjectsSet.add(id);
     });
@@ -587,9 +614,6 @@ export const updateWeeklySonarProjectCount = async (
       totalProjects: allProjectsSet.size,
     };
   });
-
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
 
   return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
 };
@@ -675,9 +699,20 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
     getWeeklyReposWithSonarQubeSummary(queryContext, repositoryIds),
   ]);
 
+  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
+  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
+  const completeWeeklyReposSummary = range(0, totalIntervals).map(weekIndex => {
+    return (
+      weeklyReposSummary.find(week => week.weekIndex === weekIndex) || {
+        weekIndex,
+        repos: [],
+      }
+    );
+  });
+
   const reposSet = new Set(preStartDateReposSummary);
 
-  const weeklyUpdatedStats = weeklyReposSummary.map(week => {
+  const weeklyUpdatedStats = completeWeeklyReposSummary.map(week => {
     week.repos.forEach(id => {
       reposSet.add(id);
     });
@@ -687,9 +722,6 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
       count: reposSet.size,
     };
   });
-
-  const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-  const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
 
   return weeklyUpdatedStats.slice(totalIntervals - Math.floor(totalDays / 7));
 };

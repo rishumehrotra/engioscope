@@ -78,6 +78,12 @@ const sonarAlertHistorySchema = new Schema<SonarAlertHistory>({
   value: { type: String, required: true },
 });
 
+sonarAlertHistorySchema.index({
+  collectionName: 1,
+  project: 1,
+  sonarProjectId: 1,
+});
+
 export const SonarAlertHistoryModel = model<SonarAlertHistory>(
   'SonarAlertHistory',
   sonarAlertHistorySchema
