@@ -36,7 +36,7 @@
     "node": ">=16.16"
   },
   "dependencies": {
-    "@tanstack/react-query-devtools": "4.29.5",
+    "@tanstack/react-query-devtools": "4.29.6",
     "@trpc/server": "10.21.2",
     "@zkochan/rimraf": "2.1.2",
     "abort-controller": "3.0.0",
