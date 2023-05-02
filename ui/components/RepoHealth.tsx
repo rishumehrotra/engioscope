@@ -130,7 +130,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
       tests(repo, queryPeriodDays, repoTabStats.data?.tests[0]?.totalTests),
       codeQuality(
         repo.codeQuality,
-        repo.name,
+        repo.id,
         repo.defaultBranch,
         repoTabStats.data
           ? combinedQualityGate(
