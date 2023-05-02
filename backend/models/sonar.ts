@@ -401,7 +401,14 @@ export const getSonarProjectsCount = async (
     { $project: { _id: 0 } },
   ]);
 
-  return sonarProjects[0] || { total: 0, totalOk: 0, totalWarn: 0, totalFailed: 0 };
+  return (
+    sonarProjects[0] || {
+      totalProjects: 0,
+      passedProjects: 0,
+      projectsWithWarning: 0,
+      failedProjects: 0,
+    }
+  );
 };
 
 const getSonarProjectIdsBeforeStartDate = async (

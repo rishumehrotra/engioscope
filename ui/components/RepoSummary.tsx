@@ -243,11 +243,12 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                   title: 'Ok',
                   value: summaries.data.sonarProjects.totalProjects ? (
                     <LabelWithSparkline
-                      label={`${(
-                        (summaries.data.sonarProjects.passedProjects /
-                          summaries.data.sonarProjects.totalProjects) *
-                        100
-                      ).toFixed(0)}%`}
+                      label={divide(
+                        summaries.data.sonarProjects.passedProjects,
+                        summaries.data.sonarProjects.totalProjects
+                      )
+                        .map(toPercentage)
+                        .getOr('-')}
                       data={summaries.data.weeklySonarProjectsCount.map(
                         s => s.passedProjects
                       )}
