@@ -684,7 +684,9 @@ export const getReposWithSonarQube = async (
   project: string,
   repositoryIds: string[]
 ) => {
-  const ReposWithSonarQube = await SonarAlertHistoryModel.distinct('repositoryId', {
+  // Previously SonarAlertHistoryModel was being used to find the repos with SonarQube
+  // but it was not giving the correct result as the collection didn't more than 1 year old data
+  const ReposWithSonarQube = await SonarQualityGateUsedModel.distinct('repositoryId', {
     collectionName,
     project,
     repositoryId: { $in: repositoryIds },
