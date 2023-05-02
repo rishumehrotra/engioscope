@@ -17,7 +17,7 @@ import {
 import { chunkArray, pastDate } from '../utils.js';
 import { collectionsAndProjects } from '../config.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
-import { getMatchingSonarProjects } from '../models/sonar.js';
+import { getMatchingSonarProjects, lastAlertHistoryFetchDate } from '../models/sonar.js';
 import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
 import { exists, oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 import { createSchedule } from './utils.js';
@@ -101,21 +101,15 @@ export const updateQualityGateHistory =
 
         return Promise.all(
           reposAndProjects.map(async ({ repoId, sonarProject }) => {
-            const matchingHistoryEntry = await SonarAlertHistoryModel.findOne(
-              {
+            const [lastFetchDate, sonarConnection] = await Promise.all([
+              lastAlertHistoryFetchDate({
                 collectionName,
                 project,
                 repositoryId: repoId,
-                sonarProjectId: sonarProject._id,
-              },
-              { date: 1 },
-              { sort: { date: -1 } }
-            );
-
-            const lastFetchDate = matchingHistoryEntry?.date;
-            const sonarConnection = await getConnectionById<SonarConnection>(
-              sonarProject.connectionId
-            );
+                sonarProjectId: sonarProject._id.toString(),
+              }),
+              getConnectionById<SonarConnection>(sonarProject.connectionId),
+            ]);
 
             await getQualityGateHistoryAsChunks(sonarConnection)(
               sonarProject,

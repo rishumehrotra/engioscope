@@ -26,6 +26,21 @@ import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getDefaultBranchAndNameForRepoIds, getRepoById } from './repos.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
+export const lastAlertHistoryFetchDate = async (options: {
+  collectionName: string;
+  project: string;
+  repositoryId: string;
+  sonarProjectId: string;
+}) => {
+  const matchingHistoryEntry = await SonarAlertHistoryModel.findOne(
+    options,
+    { date: 1 },
+    { sort: { date: -1 } }
+  );
+
+  return matchingHistoryEntry?.date;
+};
+
 export const attemptMatchFromBuildReports = async (
   repoName: string,
   defaultBranch: string | undefined,
