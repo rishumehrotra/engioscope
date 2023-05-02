@@ -1197,7 +1197,7 @@ const tabLabel = (codeQuality: RepoAnalysis['codeQuality']) => {
 
 export default (
   codeQuality: RepoAnalysis['codeQuality'],
-  repositoryName: string,
+  repositoryId: string,
   defaultBranch: string | undefined,
   sonarQualityGate: string | null
 ): Tab => ({
@@ -1210,7 +1210,7 @@ export default (
       {
         collectionName,
         project,
-        repositoryName,
+        repositoryId,
         defaultBranch,
       },
       { enabled: showNewSonar === true }

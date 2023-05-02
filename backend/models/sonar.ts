@@ -22,7 +22,7 @@ import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
-import { getDefaultBranchAndNameForRepoIds } from './repos.js';
+import { getDefaultBranchAndNameForRepoIds, getRepoById } from './repos.js';
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
@@ -202,18 +202,22 @@ const getMeasureValue = (fetchDate: Date, measures: Measure[]) => {
 export const RepoSonarMeasuresInputParser = z.object({
   collectionName: z.string(),
   project: z.string(),
-  repositoryName: z.string(),
+  repositoryId: z.string(),
   defaultBranch: z.string().optional(),
 });
 
 export const getRepoSonarMeasures = async ({
   collectionName,
   project,
-  repositoryName,
+  repositoryId,
   defaultBranch,
 }: z.infer<typeof RepoSonarMeasuresInputParser>) => {
+  const repository = await getRepoById(collectionName, project, repositoryId);
+
+  if (!repository) return null;
+
   const sonarProjects = await getMatchingSonarProjects(
-    repositoryName,
+    repository.name,
     defaultBranch,
     latestBuildReportsForRepoAndBranch(collectionName, project)
   );
@@ -732,11 +736,15 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
 export const getSonarQualityGateStatusForRepoName = async (
   collectionName: string,
   project: string,
-  repositoryName: string,
+  repositoryId: string,
   defaultBranch: string
 ) => {
+  const repository = await getRepoById(collectionName, project, repositoryId);
+
+  if (!repository) return null;
+
   const sonarProjects = await getMatchingSonarProjects(
-    repositoryName,
+    repository.name,
     defaultBranch,
     latestBuildReportsForRepoAndBranch(collectionName, project)
   );
@@ -839,7 +847,7 @@ export const getSonarQualityGateStatusForRepoIds = async (
         ? await getSonarQualityGateStatusForRepoName(
             collectionName,
             project,
-            repo.name,
+            repo.id,
             repo.defaultBranch
           )
         : null;
