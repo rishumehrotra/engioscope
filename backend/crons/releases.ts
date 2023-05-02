@@ -16,6 +16,7 @@ import type {
   ReleaseEnvironment as AzureReleaseEnvironment,
   Artifact as AzureArtifact,
 } from '../scraper/types-azure.js';
+import { invokeSeries } from '../utils.js';
 import { shouldUpdate } from './utils.js';
 
 const defaultQueryStart = () => {
@@ -110,9 +111,7 @@ export const getReleases = async () => {
 
   await Promise.all(
     collections().map(({ name: collectionName, projects }) => {
-      return projects.reduce(async (acc, { name: project }) => {
-        await acc;
-
+      return invokeSeries(projects, async ({ name: project }) => {
         await getReleasesAsChunks(
           collectionName,
           project,
@@ -120,7 +119,7 @@ export const getReleases = async () => {
           bulkSaveReleases(collectionName)
         );
         await setLastReleaseFetchDate(collectionName, project);
-      }, Promise.resolve());
+      });
     })
   );
 };

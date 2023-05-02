@@ -9,7 +9,7 @@ import {
 import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
-import { chunkArray } from '../utils.js';
+import { chunkArray, invokeSeries } from '../utils.js';
 import { CodeCoverageModel } from '../models/mongoose-models/CodeCoverage.js';
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 import { getRepoById } from '../models/repos.js';
@@ -160,10 +160,9 @@ const getBuildTimelines = async (
     builds.map(b => b.id)
   );
 
-  await chunkArray(missingBuildIds, 20).reduce(async (acc, chunk) => {
-    await acc;
+  return invokeSeries(chunkArray(missingBuildIds, 20), async chunk => {
     await syncBuildTimelines(chunk, getBuildTimeline, collection, project, builds);
-  }, Promise.resolve());
+  });
 };
 
 const updateSonar = async (
@@ -196,10 +195,14 @@ const updateSonar = async (
         return { repoId, sonarProjects };
       })
     )
-  ).filter(exists);
+  )
+    .filter(exists)
+    .flatMap(({ repoId, sonarProjects }) =>
+      sonarProjects.map(p => ({ repoId, sonarProject: p }))
+    );
 
   return Promise.all([
-    sonarProjectsForRepoIds.flatMap(prop('sonarProjects')).map(saveMeasuresForProject),
+    sonarProjectsForRepoIds.map(prop('sonarProject')).map(saveMeasuresForProject),
     updateQualityGateHistory(collectionName, project)(sonarProjectsForRepoIds),
     updateQualityGateDetails(collectionName, project)(sonarProjectsForRepoIds),
   ]);
@@ -256,11 +259,10 @@ export const syncBuildsAndTimelines = () => {
   const { getBuildsAsChunksSince } = azure(getConfig());
   const queryStart = new Date(Date.now() - oneYearInMs);
 
-  return collectionsAndProjects().reduce<Promise<void>>(
-    async (acc, [{ name: collectionName }, { name: project }]) => {
-      await acc;
-
-      await getBuildsAsChunksSince(
+  return invokeSeries(
+    collectionsAndProjects(),
+    async ([{ name: collectionName }, { name: project }]) => {
+      return getBuildsAsChunksSince(
         collectionName,
         project,
         (await getLastBuildUpdateDate(collectionName, project)) || queryStart,
@@ -274,7 +276,6 @@ export const syncBuildsAndTimelines = () => {
           ]);
         }
       );
-    },
-    Promise.resolve()
+    }
   );
 };

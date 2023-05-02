@@ -94,6 +94,16 @@ export const mapSettleSeries = <T, U>(xs: T[], fn: (x: T) => Promise<U>) =>
     Promise.resolve([])
   );
 
+export const invokeSeries = <T, U>(
+  xs: T[],
+  fn: (value: T, previous: U | undefined, index: number) => Promise<U>
+) =>
+  xs.reduce<Promise<U | undefined>>(
+    (acc, x, index) => acc.then(previous => fn(x, previous, index)),
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    Promise.resolve(undefined)
+  );
+
 export const startTimer = () => {
   const start = Date.now();
   return () => `${(Date.now() - start) / 1000}s`;

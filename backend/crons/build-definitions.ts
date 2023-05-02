@@ -4,6 +4,7 @@ import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
 import azure from '../scraper/network/azure.js';
 import type { BuildDefinitionReference } from '../scraper/types-azure.js';
+import { invokeSeries } from '../utils.js';
 
 export const bulkSaveBuildDefinitions =
   (collectionName: string, project: string) =>
@@ -63,14 +64,9 @@ export const bulkSaveBuildDefinitions =
 export const getBuildDefinitions = () => {
   const { getBuildDefinitions } = azure(getConfig());
 
-  return collectionsAndProjects().reduce<Promise<unknown>>(
-    async (acc, [collection, project]) => {
-      await acc;
-
-      return getBuildDefinitions(collection.name, project.name).then(
-        bulkSaveBuildDefinitions(collection.name, project.name)
-      );
-    },
-    Promise.resolve()
-  );
+  return invokeSeries(collectionsAndProjects(), async ([collection, project]) => {
+    return getBuildDefinitions(collection.name, project.name).then(
+      bulkSaveBuildDefinitions(collection.name, project.name)
+    );
+  });
 };

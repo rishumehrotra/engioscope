@@ -2,7 +2,7 @@ import qs from 'qs';
 import md5 from 'md5';
 import { filter } from 'rambda';
 import fetch from './fetch-with-extras.js';
-import { chunkArray, pastDate } from '../../utils.js';
+import { chunkArray, invokeSeries, pastDate } from '../../utils.js';
 import type {
   Build,
   BuildDefinitionReference,
@@ -392,10 +392,8 @@ export default (config: ParsedConfig) => {
       }
       weeks.push(since);
 
-      return weeks.slice(1).reduce<Promise<unknown>>(async (acc, weekStart, index) => {
-        await acc;
-
-        await chunkedList<TestRun2>({
+      return invokeSeries(weeks.slice(1), (weekStart, _, index) => {
+        return chunkedList<TestRun2>({
           url: url(collectionName, projectName, '/test/runs'),
           qsParams: {
             // ADO barfs if we have a Z at the end of the time string
@@ -414,7 +412,7 @@ export default (config: ParsedConfig) => {
           ],
           chunkHandler,
         });
-      }, Promise.resolve());
+      });
     },
 
     getTestRunsByReleaseDefnIdAndBranch:

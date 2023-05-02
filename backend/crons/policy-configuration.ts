@@ -6,6 +6,7 @@ import {
 } from '../models/mongoose-models/RepoPoliciesModel.js';
 import azure from '../scraper/network/azure.js';
 import type { PolicyConfiguration as AzurePolicyConfiguration } from '../scraper/types-azure.js';
+import { invokeSeries } from '../utils.js';
 
 export const bulkSavePolicies =
   (collectionName: string, project: string) => (policies: AzurePolicyConfiguration[]) =>
@@ -124,15 +125,11 @@ export const refreshCombinedBranchPoliciesView = async () => {
 export const getPolicyConfigurations = async () => {
   const { getPolicyConfigurations } = azure(getConfig());
 
-  await collectionsAndProjects().reduce<Promise<void>>(
-    async (acc, [collection, project]) => {
-      await acc;
-      await getPolicyConfigurations(collection.name, project.name).then(
-        bulkSavePolicies(collection.name, project.name)
-      );
-    },
-    Promise.resolve()
-  );
+  await invokeSeries(collectionsAndProjects(), ([collection, project]) => {
+    return getPolicyConfigurations(collection.name, project.name).then(
+      bulkSavePolicies(collection.name, project.name)
+    );
+  });
 
   return refreshCombinedBranchPoliciesView();
 };
