@@ -20,6 +20,7 @@ import {
   onboardQuailtyGateHistory,
   refreshSonarProjects,
 } from './crons/sonar.js';
+import { updatePullRequests } from './crons/pull-requests.js';
 
 export default async (config: ParsedConfig) => {
   // TODO: This belongs at a higher layer, maybe
@@ -44,6 +45,7 @@ export default async (config: ParsedConfig) => {
   await refreshSonarProjects();
   await getMissingSonarMeasures();
   await onboardQuailtyGateHistory();
+  await updatePullRequests();
 
   // eslint-disable-next-line no-console
   console.log('Done.');

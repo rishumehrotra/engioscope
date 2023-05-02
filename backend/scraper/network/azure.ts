@@ -319,6 +319,28 @@ export default (config: ParsedConfig) => {
         cacheFile: pageIndex => [collectionName, projectName, `prs_${pageIndex}`],
       }).then(flattenToValues),
 
+    getPRsAsChunks: async (
+      collectionName: string,
+      projectName: string,
+      chunkHandler: (x: GitPullRequest[]) => Promise<unknown>
+    ) => {
+      const pageSize = 1000;
+
+      return chunkedPaginatedGet<ListOf<GitPullRequest>>({
+        url: url(collectionName, projectName, `/git/pullrequests`),
+        qsParams: pageIndex => ({
+          ...apiVersion,
+          'searchCriteria.status': 'all',
+          '$top': String(pageSize),
+          ...(pageIndex === 0 ? {} : { $skip: (pageIndex * pageSize).toString() }),
+        }),
+        hasAnotherPage: previousResponse => previousResponse.data.count === pageSize,
+        headers: () => authHeader,
+        cacheFile: pageIndex => [collectionName, projectName, `prs_${pageIndex}`],
+        chunkHandler: chunk => chunkHandler(chunk.data.value),
+      });
+    },
+
     getBranchesStats: (collectionName: string, projectName: string) => (repoId: string) =>
       list<GitBranchStats>({
         url: url(

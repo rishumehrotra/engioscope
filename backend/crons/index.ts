@@ -12,6 +12,7 @@ import { getReleases, getReleaseUpdates } from './releases.js';
 import { getBuildDefinitions } from './build-definitions.js';
 import { refreshSonarProjects } from './sonar.js';
 import { insertSummarySnapshot } from './summary.js';
+import { updatePullRequests } from './pull-requests.js';
 
 export default () => {
   setupJob('builds', t => t.everyHourAt(45), syncBuildsAndTimelines);
@@ -34,4 +35,5 @@ export default () => {
     t => t.everyDayAt(4),
     () => insertSummarySnapshot('90 days')
   );
+  setupJob('pull-requests', t => t.everyDayAt(3), updatePullRequests);
 };
