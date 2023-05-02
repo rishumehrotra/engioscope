@@ -245,7 +245,7 @@ export type UICodeQuality2 =
       name: string;
       url: string;
       lastAnalysisDate: Date | null;
-      // qualityGateName: string;
+      qualityGateName: string | null;
       files?: number;
       complexity: {
         cyclomatic?: number;

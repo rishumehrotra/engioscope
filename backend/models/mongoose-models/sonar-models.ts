@@ -111,6 +111,12 @@ const sonarQualityGateUsedSchema = new Schema<SonarQualityGateUsed>({
   updatedAt: { type: Date, requred: true },
 });
 
+sonarQualityGateUsedSchema.index({
+  collectionName: 1,
+  project: 1,
+  repositoryId: 1,
+});
+
 export const SonarQualityGateUsedModel = model<SonarQualityGateUsed>(
   'SonarQualityGateUsed',
   sonarQualityGateUsedSchema

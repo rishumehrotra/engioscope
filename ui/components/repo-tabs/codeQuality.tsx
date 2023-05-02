@@ -706,8 +706,9 @@ const SingleAnalysisV2: React.FC<{
         <div className="-mt-7 mb-5 pl-1 text-xs text-gray-600">
           {'Using '}
           <strong className="font-semibold">
-            {/* { codeQuality.qualityGateName } */}
-            Quality Gate Name
+            {codeQuality.qualityGateName === null
+              ? 'Unknown'
+              : codeQuality.qualityGateName}
           </strong>
         </div>
         <table className="w-full">
