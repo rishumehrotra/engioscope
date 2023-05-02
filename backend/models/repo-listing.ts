@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { last, prop } from 'rambda';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
-import { inDateRange } from './helpers.js';
+import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import {
   getHealthyBranchesSummary,
@@ -450,5 +450,103 @@ export const getRepoOverviewStats = async ({
     commits,
     tests,
     sonarQualityGateStatuses,
+  };
+};
+
+export const RepoFiltersInput = {
+  ...collectionAndProjectInputs,
+  searchTerm: z.string().optional(),
+  repoGroups: z.array(z.string()).optional(),
+  ...dateRangeInputs,
+};
+
+export const PaginatedReposInputParser = z.object({
+  ...RepoFiltersInput,
+  cursor: z
+    .object({
+      pageSize: z.number().optional(),
+      pageNumber: z.number().optional(),
+    })
+    .nullish(),
+  sortBy: z.string().optional(),
+  sortDirection: z.string().optional(),
+});
+
+export const getPaginatedReposList = async (
+  options: z.infer<typeof PaginatedReposInputParser>
+) => {
+  const {
+    collectionName,
+    project,
+    searchTerm,
+    repoGroups,
+    cursor,
+    // sortBy,
+    // sortDirection,
+    startDate,
+    endDate,
+  } = options;
+
+  // const { pageSize, pageNumber } = cursor ?? { pageSize: 10, pageNumber: 1 };
+  const pageSize = cursor?.pageSize || 5;
+  const pageNumber = cursor?.pageNumber || 0;
+
+  const activeRepos = await getActiveRepos(
+    [collectionName, project, startDate, endDate],
+    searchTerm,
+    repoGroups
+  );
+
+  const totalRepos = activeRepos.length;
+
+  const paginatedRepos = await RepositoryModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: activeRepos.map(prop('id')) },
+      },
+    },
+
+    {
+      $lookup: {
+        from: 'builddefinitions',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repositoryId', '$$repositoryId'] },
+                  { $eq: ['$process.processType', 1] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'buildsDefinitions',
+      },
+    },
+    { $match: { $expr: { $gt: [{ $size: '$buildsDefinitions' }, 0] } } },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        name: 1,
+        total: { $size: '$buildsDefinitions' },
+      },
+    },
+    { $sort: { total: -1 } },
+    { $skip: pageNumber * pageSize },
+    { $limit: pageSize },
+  ]).exec();
+
+  return {
+    totalRepos,
+    paginatedRepos,
   };
 };
