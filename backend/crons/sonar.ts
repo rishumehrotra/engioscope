@@ -80,7 +80,7 @@ export const getMissingSonarMeasures = async () => {
 
 export const updateQualityGateHistory =
   (collectionName: string, project: string) =>
-  (
+  async (
     reposAndSonarProjects: {
       repoId: string;
       sonarProject: SonarProject & {
@@ -88,18 +88,23 @@ export const updateQualityGateHistory =
       };
     }[]
   ) => {
+    const sonarConnections = await getConnections('sonar');
+
     return invokeSeries(chunkArray(reposAndSonarProjects, 10), async reposAndProjects => {
       return Promise.all(
         reposAndProjects.map(async ({ repoId, sonarProject }) => {
-          const [lastFetchDate, sonarConnection] = await Promise.all([
-            lastAlertHistoryFetchDate({
-              collectionName,
-              project,
-              repositoryId: repoId,
-              sonarProjectId: sonarProject._id.toString(),
-            }),
-            getConnectionById<SonarConnection>(sonarProject.connectionId),
-          ]);
+          const lastFetchDate = await lastAlertHistoryFetchDate({
+            collectionName,
+            project,
+            repositoryId: repoId,
+            sonarProjectId: sonarProject._id.toString(),
+          });
+
+          const sonarConnection = sonarConnections.find(c =>
+            c._id.equals(sonarProject.connectionId)
+          );
+
+          if (!sonarConnection) return;
 
           await getQualityGateHistoryAsChunks(sonarConnection)(
             sonarProject,
