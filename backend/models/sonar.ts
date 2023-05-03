@@ -24,7 +24,6 @@ import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getDefaultBranchAndNameForRepoIds, getRepoById } from './repos.js';
-import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const lastAlertHistoryFetchDate = async (options: {
   collectionName: string;
@@ -136,7 +135,7 @@ export const getMatchingSonarProjects = async (
   return sonarProjectsFromBuildReports || attemptMatchByRepoName(repoName);
 };
 
-export const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
+const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
   return SonarMeasuresModel.aggregate<SonarMeasures>([
     { $match: { sonarProjectId: { $in: sonarProjectIds } } },
     { $sort: { date: -1 } },
@@ -145,7 +144,7 @@ export const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) 
   ]);
 };
 
-export const getLatestSonarAlertHistory = async (
+const getLatestSonarAlertHistory = async (
   collectionName: string,
   project: string,
   sonarProjectIds: Types.ObjectId[]
@@ -162,18 +161,12 @@ export const getLatestSonarAlertHistory = async (
   ]);
 };
 
-export const getSonarQualityGatesUsed = async (
+const getSonarQualityGatesUsed = async (
   collectionName: string,
   project: string,
-  repositoryName: string,
+  repositoryId: string,
   sonarProjectIds: Types.ObjectId[]
 ) => {
-  const repository = await RepositoryModel.findOne({
-    collectionName,
-    'project.name': project,
-    'name': repositoryName,
-  }).lean();
-
   return SonarQualityGateUsedModel.aggregate<{
     repositoryId: string;
     sonarProjectId: Types.ObjectId;
@@ -183,7 +176,7 @@ export const getSonarQualityGatesUsed = async (
       $match: {
         collectionName,
         project,
-        repositoryId: repository?.id,
+        repositoryId,
         sonarProjectId: { $in: sonarProjectIds },
       },
     },
