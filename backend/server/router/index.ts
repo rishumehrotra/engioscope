@@ -14,6 +14,7 @@ import commits from './commits.js';
 import collections from './collections.js';
 import sonar from './sonar.js';
 import summary from './summary.js';
+import pullRequests from './pull-requests.js';
 
 export const appRouter = t.router({
   builds,
@@ -28,6 +29,7 @@ export const appRouter = t.router({
   collections,
   sonar,
   summary,
+  pullRequests,
   ...others,
 });
 

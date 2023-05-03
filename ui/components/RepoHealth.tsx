@@ -126,7 +126,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
         queryPeriodDays,
         repoTabStats.data?.commits[0]?.count
       ),
-      prs(repo.prs),
+      prs(repo.id, repo.prs),
       tests(repo, queryPeriodDays, repoTabStats.data?.tests[0]?.totalTests),
       codeQuality(
         repo.codeQuality,
