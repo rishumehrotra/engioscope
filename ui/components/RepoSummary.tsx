@@ -1,4 +1,4 @@
-import { multiply } from 'rambda';
+import { compose, multiply, not } from 'rambda';
 import React from 'react';
 
 import { divide, exists, toPercentage } from '../../shared/utils.js';
@@ -11,12 +11,19 @@ import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils.js';
 import { trpc } from '../helpers/trpc.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import NonYamlPipeLineBuilds from './NonYamlPipelineBuilds.jsx';
+import { isInactive } from '../../shared/repo-utils.js';
+import type { RepoAnalysis } from '../../shared/types.js';
 
 type RepoSummaryProps = {
   queryPeriodDays: number;
+  repos: RepoAnalysis[];
 };
 
-const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
+const active = compose(not, isInactive);
+
+const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
+  const activeRepos = repos.filter(active);
+
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
 
@@ -42,10 +49,10 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
   return (
     <ProjectStats
       note={
-        summaries.data.totalRepos - summaries.data.totalActiveRepos === 0 ? undefined : (
+        repos.length - activeRepos.length === 0 ? undefined : (
           <>
             {'Excluded '}
-            <b>{summaries.data.totalRepos - summaries.data.totalActiveRepos}</b>
+            <b>{repos.length - activeRepos.length}</b>
             {' inactive repositories from analysis'}
           </>
         )
