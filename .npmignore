@@ -4,3 +4,5 @@ dist/config.json
 __tests__
 dist/backend/start-dev-server.js
 dist/backend/dev-scrape.js
+dist/backend/test-helpers/**
+dist/tsconfig.tsbuildinfo
