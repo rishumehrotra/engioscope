@@ -23,7 +23,7 @@ const rating = (rating: number | undefined) => {
   return 'E';
 };
 
-const fieldDefinitions2 = {
+const fieldDefinitions = {
   qualityGate: [
     {
       key: 'securityRating',
@@ -336,7 +336,7 @@ const SubCard: React.FC<SubCardProps> = ({
   </div>
 );
 
-const SingleAnalysisV2: React.FC<{
+const SingleAnalysis: React.FC<{
   codeQuality: NonNullable<UICodeQuality2>[number];
 }> = ({ codeQuality }) => (
   <>
@@ -357,7 +357,7 @@ const SingleAnalysisV2: React.FC<{
         </div>
         <table className="w-full">
           <tbody>
-            {fieldDefinitions2.qualityGate
+            {fieldDefinitions.qualityGate
               .filter(({ key }) => codeQuality.quality[key] !== undefined)
               .map(({ key, label, formatter }, index) => {
                 const match = codeQuality.quality[key];
@@ -413,7 +413,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions2.maintainability
+              {fieldDefinitions.maintainability
                 .filter(({ key }) => codeQuality.maintainability[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.maintainability[key];
@@ -435,7 +435,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions2.reliability
+              {fieldDefinitions.reliability
                 .filter(({ key }) => codeQuality.reliability[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.reliability[key];
@@ -457,7 +457,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions2.security
+              {fieldDefinitions.security
                 .filter(({ key }) => codeQuality.security[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.security[key];
@@ -569,7 +569,7 @@ const SingleAnalysisV2: React.FC<{
         >
           <table className="w-full">
             <tbody>
-              {fieldDefinitions2.duplications
+              {fieldDefinitions.duplications
                 .filter(({ key }) => codeQuality.duplication[key] !== undefined)
                 .map(({ key, label, formatter }) => {
                   const match = codeQuality.duplication[key];
@@ -585,14 +585,14 @@ const SingleAnalysisV2: React.FC<{
           </table>
         </SubCard>
         <SubCard heading="Complexity">
-          {fieldDefinitions2.complexity.filter(
+          {fieldDefinitions.complexity.filter(
             ({ key }) => codeQuality.complexity[key] !== undefined
           ).length === 0 ? (
             <div className="text-gray-600 text-sm px-1">No complexity data available</div>
           ) : (
             <table className="w-full">
               <tbody>
-                {fieldDefinitions2.complexity.map(({ key, label, formatter }) => {
+                {fieldDefinitions.complexity.map(({ key, label, formatter }) => {
                   const match = codeQuality.complexity[key];
                   if (match === undefined) return null;
                   return (
@@ -625,7 +625,7 @@ const SingleAnalysisV2: React.FC<{
   </>
 );
 
-const AnalysisTableV2: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
+const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
   codeQuality,
 }) => {
   const [expandedRows, setExpandedRows] = useState<NonNullable<UICodeQuality2>>([]);
@@ -727,7 +727,7 @@ const AnalysisTableV2: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = 
                   colSpan={8}
                   className="px-6 py-4 whitespace-nowrap text-left bg-gray-100 ml-2"
                 >
-                  <SingleAnalysisV2 codeQuality={codeQualityItem} />
+                  <SingleAnalysis codeQuality={codeQualityItem} />
                 </td>
               </tr>
             )}
@@ -773,13 +773,14 @@ export default (
         </TabContents>
       );
     }
-    if (sonarMeasures.data) {
+
+    if (sonarMeasures.data.length > 0) {
       return (
         <TabContents gridCols={1}>
           {sonarMeasures.data.length === 1 ? (
-            <SingleAnalysisV2 codeQuality={sonarMeasures.data[0]} />
+            <SingleAnalysis codeQuality={sonarMeasures.data[0]} />
           ) : (
-            <AnalysisTableV2 codeQuality={sonarMeasures.data} />
+            <AnalysisTable codeQuality={sonarMeasures.data} />
           )}
         </TabContents>
       );
