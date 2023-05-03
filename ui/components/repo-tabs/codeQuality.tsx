@@ -16,7 +16,7 @@ import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 
 // https://docs.sonarqube.org/latest/user-guide/metric-definitions/
 
-const percent = pipe(num, n => `${n}%`);
+const percent = pipe(num, n => `${Number(n).toFixed(1)}%`);
 const rating = (rating: number | undefined) => {
   if (rating === undefined) return 'unknown';
   if (rating <= 1) return 'A';
@@ -718,15 +718,24 @@ const SingleAnalysisV2: React.FC<{
               .map(({ key, label, formatter }, index) => {
                 const match = codeQuality.quality[key];
                 if (!match) return null;
+
                 return (
                   <tr key={key} className={index % 2 === 0 ? '' : 'bg-gray-100'}>
                     <td className="p-1 align-top">
                       {label}
                       {match.op && (match.level || match.level === 0) && (
                         <div className="text-gray-600 text-xs">
-                          {`Should not be ${
-                            match.op === 'gt' ? 'above' : 'below'
-                          } ${formatter(match.level)}`}
+                          {key === 'securityRating'
+                            ? `Should be ${
+                                match.op === 'gt' ? 'better than' : 'lower than'
+                              } ${formatter(match.level)}`
+                            : `Should be ${
+                                match.op === 'gt'
+                                  ? match.level === 0
+                                    ? ''
+                                    : 'less than'
+                                  : 'higher than'
+                              } ${formatter(match.level)}`}
                         </div>
                       )}
                     </td>
@@ -747,9 +756,6 @@ const SingleAnalysisV2: React.FC<{
               })}
           </tbody>
         </table>
-        <div className="text-xs text-gray-600 mt-4 p-1">
-          Some quality gates are not shown.
-        </div>
       </SubCard>
       <div className="col-span-2 grid grid-cols-3 gap-4">
         <SubCard
@@ -836,61 +842,77 @@ const SingleAnalysisV2: React.FC<{
           codeQuality.coverage.branch === undefined ? (
             <div className="text-gray-600 text-sm px-1">No coverage data available</div>
           ) : (
-            <table className="w-full">
-              <tbody>
-                {(
-                  [
-                    {
-                      label: 'Line coverage',
-                      stat: 'line',
-                      uncovered: 'uncoveredLines',
-                      toCover: 'linesToCover',
-                    },
-                    {
-                      label: 'Branch coverage',
-                      stat: 'branch',
-                      uncovered: 'uncoveredConditions',
-                      toCover: 'conditionsToCover',
-                    },
-                  ] as const
-                )
-                  .filter(({ stat }) => codeQuality.coverage[stat] !== undefined)
-                  .map(({ label, stat, uncovered, toCover }) => {
-                    if (codeQuality.coverage[stat] === undefined) return null;
-                    return (
-                      <React.Fragment key={stat}>
-                        <tr>
-                          <td
-                            className={`px-1 pt-1 ${
-                              codeQuality.coverage[uncovered] === undefined ? 'pb-1' : ''
-                            }`}
-                          >
-                            {label}
-                          </td>
-                          {}
-                          <td className="text-right p-1 font-semibold">
-                            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                            {percent(codeQuality.coverage[stat]!)}
-                          </td>
-                        </tr>
-                        {codeQuality.coverage[uncovered] !== undefined && (
+            <>
+              <table className="w-full">
+                <tbody>
+                  {(
+                    [
+                      {
+                        label: 'Line coverage',
+                        stat: 'line',
+                        uncovered: 'uncoveredLines',
+                        toCover: 'linesToCover',
+                      },
+                      {
+                        label: 'Branch coverage',
+                        stat: 'branch',
+                        uncovered: 'uncoveredConditions',
+                        toCover: 'conditionsToCover',
+                      },
+                    ] as const
+                  )
+                    .filter(({ stat }) => codeQuality.coverage[stat] !== undefined)
+                    .map(({ label, stat, uncovered, toCover }) => {
+                      if (codeQuality.coverage[stat] === undefined) return null;
+                      return (
+                        <React.Fragment key={stat}>
                           <tr>
-                            <td colSpan={2} className="px-1 pb-1 text-xs text-gray-600">
+                            <td
+                              className={`px-1 pt-1 ${
+                                codeQuality.coverage[uncovered] === undefined
+                                  ? 'pb-1'
+                                  : ''
+                              }`}
+                            >
+                              {label}
+                            </td>
+                            {}
+                            <td className="text-right p-1 font-semibold">
                               {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                              {`${num(codeQuality.coverage[uncovered]!)} ${
-                                codeQuality.coverage[toCover] === undefined
-                                  ? ''
-                                  : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                    ` of ${num(codeQuality.coverage[toCover]!)}`
-                              } to be covered`}
+                              {percent(codeQuality.coverage[stat]!)}
                             </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-              </tbody>
-            </table>
+                          {codeQuality.coverage[uncovered] !== undefined && (
+                            <tr>
+                              <td colSpan={2} className="px-1 pb-1 text-xs text-gray-600">
+                                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                                {`${num(codeQuality.coverage[uncovered]!)} ${
+                                  codeQuality.coverage[toCover] === undefined
+                                    ? ''
+                                    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                      ` of ${num(codeQuality.coverage[toCover]!)}`
+                                } to be covered`}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                </tbody>
+              </table>
+              <p className="text-xs text-gray-600 mt-6">
+                Note, SonarQube computes its own values for coverage.{' '}
+                <a
+                  href="https://community.sonarsource.com/t/sonarqube-and-code-coverage/4725/1"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="link-text"
+                >
+                  Details
+                </a>
+                .
+              </p>
+            </>
           )}
         </SubCard>
         <SubCard

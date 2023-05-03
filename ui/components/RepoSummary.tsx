@@ -218,13 +218,14 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
               topStats={[
                 {
                   title: 'Sonar v2 Powered by DB',
-                  value: summaries.data.reposWithSonarQube ? (
+                  value: (
                     <LabelWithSparkline
-                      label={`${Math.round(
-                        (summaries.data.reposWithSonarQube /
-                          summaries.data.totalActiveRepos) *
-                          100
-                      )}%`}
+                      label={divide(
+                        summaries.data.reposWithSonarQube,
+                        summaries.data.totalActiveRepos
+                      )
+                        .map(toPercentage)
+                        .getOr('-')}
                       data={summaries.data.weeklyReposWithSonarQubeCount.map(
                         w => w.count
                       )}
@@ -232,80 +233,84 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                         summaries.data.weeklyReposWithSonarQubeCount.map(w => w.count)
                       )}
                     />
-                  ) : (
-                    '-'
                   ),
                   tooltip: `${summaries.data.reposWithSonarQube} of ${summaries.data.totalActiveRepos} repos have SonarQube configured`,
                 },
               ]}
               childStats={[
-                {
-                  title: 'Ok',
-                  value: summaries.data.sonarProjects.totalProjects ? (
-                    <LabelWithSparkline
-                      label={divide(
-                        summaries.data.sonarProjects.passedProjects,
-                        summaries.data.sonarProjects.totalProjects
-                      )
-                        .map(toPercentage)
-                        .getOr('-')}
-                      data={summaries.data.weeklySonarProjectsCount.map(
-                        s => s.passedProjects
-                      )}
-                      lineColor={increaseIsBetter(
-                        summaries.data.weeklySonarProjectsCount.map(s => s.passedProjects)
-                      )}
-                    />
-                  ) : (
-                    '-'
-                  ),
-                  tooltip: `${summaries.data.sonarProjects.passedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'pass' quality gate`,
-                },
-                {
-                  title: 'Warn',
-                  value: summaries.data.sonarProjects.totalProjects ? (
-                    <LabelWithSparkline
-                      label={`${(
-                        (summaries.data.sonarProjects.projectsWithWarning /
-                          summaries.data.sonarProjects.totalProjects) *
-                        100
-                      ).toFixed(0)}%`}
-                      data={summaries.data.weeklySonarProjectsCount.map(
-                        s => s.projectsWithWarnings
-                      )}
-                      lineColor={increaseIsBetter(
-                        summaries.data.weeklySonarProjectsCount.map(
-                          s => s.projectsWithWarnings
-                        )
-                      )}
-                    />
-                  ) : (
-                    '-'
-                  ),
-                  tooltip: `${stats.sonarStats.warn} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'warn' quality gate`,
-                },
-                {
-                  title: 'Fail',
-                  value: summaries.data.sonarProjects.totalProjects ? (
-                    <LabelWithSparkline
-                      label={`${(
-                        (summaries.data.sonarProjects.failedProjects /
-                          summaries.data.sonarProjects.totalProjects) *
-                        100
-                      ).toFixed(0)}%`}
-                      data={summaries.data.weeklySonarProjectsCount.map(
-                        s => s.failedProjects
-                      )}
-                      lineColor={decreaseIsBetter(
-                        summaries.data.weeklySonarProjectsCount.map(s => s.failedProjects)
-                      )}
-                    />
-                  ) : (
-                    '-'
-                  ),
-                  tooltip: `${summaries.data.sonarProjects.failedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'fail' quality gate`,
-                },
-              ]}
+                summaries.data.sonarProjects.passedProjects === 0
+                  ? null
+                  : {
+                      title: 'Ok',
+                      value: (
+                        <LabelWithSparkline
+                          label={divide(
+                            summaries.data.sonarProjects.passedProjects,
+                            summaries.data.sonarProjects.totalProjects
+                          )
+                            .map(toPercentage)
+                            .getOr('-')}
+                          data={summaries.data.weeklySonarProjectsCount.map(
+                            s => s.passedProjects
+                          )}
+                          lineColor={increaseIsBetter(
+                            summaries.data.weeklySonarProjectsCount.map(
+                              s => s.passedProjects
+                            )
+                          )}
+                        />
+                      ),
+                      tooltip: `${summaries.data.sonarProjects.passedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'pass' quality gate`,
+                    },
+                summaries.data.sonarProjects.projectsWithWarning === 0
+                  ? null
+                  : {
+                      title: 'Warn',
+                      value: (
+                        <LabelWithSparkline
+                          label={divide(
+                            summaries.data.sonarProjects.projectsWithWarning,
+                            summaries.data.sonarProjects.totalProjects
+                          )
+                            .map(toPercentage)
+                            .getOr('-')}
+                          data={summaries.data.weeklySonarProjectsCount.map(
+                            s => s.projectsWithWarnings
+                          )}
+                          lineColor={increaseIsBetter(
+                            summaries.data.weeklySonarProjectsCount.map(
+                              s => s.projectsWithWarnings
+                            )
+                          )}
+                        />
+                      ),
+                      tooltip: `${stats.sonarStats.warn} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'warn' quality gate`,
+                    },
+                summaries.data.sonarProjects.failedProjects === 0
+                  ? null
+                  : {
+                      title: 'Fail',
+                      value: (
+                        <LabelWithSparkline
+                          label={divide(
+                            summaries.data.sonarProjects.failedProjects,
+                            summaries.data.sonarProjects.totalProjects
+                          )
+                            .map(toPercentage)
+                            .getOr('-')}
+                          data={summaries.data.weeklySonarProjectsCount.map(
+                            s => s.failedProjects
+                          )}
+                          lineColor={decreaseIsBetter(
+                            summaries.data.weeklySonarProjectsCount.map(
+                              s => s.failedProjects
+                            )
+                          )}
+                        />
+                      ),
+                      tooltip: `${summaries.data.sonarProjects.failedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'fail' quality gate`,
+                    },
+              ].filter(exists)}
             />
           )}
           <ProjectStat

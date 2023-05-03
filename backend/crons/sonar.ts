@@ -10,6 +10,7 @@ import {
 } from '../models/mongoose-models/sonar-models.js';
 import {
   getMeasures,
+  getOneOlderQualityGateHistoryEntry,
   getQualityGate,
   getQualityGateHistoryAsChunks,
   projectsAtSonarServer,
@@ -206,6 +207,7 @@ export const updateQualityGateDetails =
   };
 
 export const onboardQuailtyGateHistory = async () => {
+  const sonarServers = await getConnections('sonar');
   return invokeSeries(
     collectionsAndProjects(),
     async ([{ name: collectionName }, { name: project }]) => {
@@ -237,6 +239,40 @@ export const onboardQuailtyGateHistory = async () => {
         updateQualityGateHistory(collectionName, project)(sonarProjectsForRepoIds),
         updateQualityGateDetails(collectionName, project)(sonarProjectsForRepoIds),
       ]);
+
+      // It's possible that after trying to get quality gate history above for the past
+      // one year, we still don't have even one quality gate history entry for some projects.
+      // This can happen if they were last run over a year ago. This causes inconsistencies
+      // on the UI, so we need to fetch at least one past quality gate entry for such projects.
+
+      const olderSonarProjects = sonarProjectsForRepoIds.filter(p => {
+        if (!p.sonarProject.lastAnalysisDate) return false;
+        return p.sonarProject.lastAnalysisDate < pastDate('365 days');
+      });
+
+      await Promise.all(
+        olderSonarProjects.map(async p => {
+          const sonarServer = sonarServers.find(s =>
+            s._id.equals(p.sonarProject.connectionId)
+          );
+          if (!sonarServer) return;
+
+          const oneOlderEntry = await getOneOlderQualityGateHistoryEntry(sonarServer)(
+            p.sonarProject
+          );
+          if (!oneOlderEntry) return;
+
+          await SonarAlertHistoryModel.insertMany([
+            {
+              collectionName,
+              project,
+              repositoryId: p.repoId,
+              sonarProjectId: p.sonarProject._id,
+              ...oneOlderEntry,
+            },
+          ]);
+        })
+      );
     }
   );
 };

@@ -1,5 +1,6 @@
 import qs from 'qs';
-import { map } from 'rambda';
+import { map, prop } from 'rambda';
+import { byDate, desc } from 'sort-lib';
 import fetch from './fetch-with-extras.js';
 import { requiredMetrics } from '../stats-aggregators/code-quality.js';
 import fetchWithDiskCache from './fetch-with-disk-cache.js';
@@ -245,5 +246,56 @@ export const getQualityGateHistoryAsChunks =
             )
             .flat()
         ),
+    });
+  };
+
+export const getOneOlderQualityGateHistoryEntry =
+  (sonarServer: SonarConnection) => async (sonarProject: SonarProject) => {
+    const { lastAnalysisDate, key } = sonarProject;
+    if (!lastAnalysisDate) return;
+
+    const toDate = lastAnalysisDate.toISOString().split('T')[0];
+
+    const temp = new Date(lastAnalysisDate);
+    temp.setDate(temp.getDate() - 1);
+    const fromDate = temp.toISOString().split('T')[0];
+
+    const { usingDiskCache } = fetchWithDiskCache(getConfig().cacheTimeMs);
+
+    type SonarMeasureHistoryResponse<T extends string> = {
+      paging: SonarPaging;
+      measures: { metric: T; history: { date: Date; value: string }[] }[];
+    };
+
+    return usingDiskCache<SonarMeasureHistoryResponse<'alert_status'>>(
+      ['sonar', 'quality-gates-older', key],
+      () => {
+        return fetch(
+          `${sonarServer.url}/api/measures/search_history?${qs.stringify({
+            component: key,
+            metrics: 'alert_status',
+            from: fromDate,
+            to: toDate,
+          })}`,
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString(
+                'base64'
+              )}`,
+            },
+            verifySsl: sonarServer.verifySsl ?? true,
+          }
+        );
+      }
+    ).then(result => {
+      return result.data.measures
+        .flatMap(m =>
+          m.history.map(item => ({
+            value: item.value as SonarQualityGate,
+            date: new Date(item.date),
+          }))
+        )
+        .flat()
+        .sort(desc(byDate(prop('date'))))[0];
     });
   };
