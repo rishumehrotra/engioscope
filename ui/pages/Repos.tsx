@@ -146,7 +146,7 @@ const Repos: React.FC = () => {
         </div>
       ) : null}
       <AppliedFilters type="repos" count={repos.length} />
-      <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
+      <RepoSummary queryPeriodDays={queryPeriodDays} />
       <InfiniteScrollList
         items={repos}
         itemKey={repo => repo.id}
