@@ -255,7 +255,7 @@ export const getRepoSonarMeasures = async ({
 }: z.infer<typeof RepoSonarMeasuresInputParser>) => {
   const repository = await getRepoById(collectionName, project, repositoryId);
 
-  if (!repository) return null;
+  if (!repository) return [];
 
   const sonarProjects = await getMatchingSonarProjects(
     repository.name,
@@ -263,7 +263,7 @@ export const getRepoSonarMeasures = async ({
     latestBuildReportsForRepoAndBranch(collectionName, project)
   );
 
-  if (!sonarProjects || sonarProjects.length === 0) return null;
+  if (!sonarProjects || sonarProjects.length === 0) return [];
 
   const sonarProjectIds = sonarProjects.map(p => p._id);
   const [measures, sonarConnections, sonarAlert, sonarQualityGates] = await Promise.all([

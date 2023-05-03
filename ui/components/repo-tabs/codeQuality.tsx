@@ -723,10 +723,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
             </tr>
             {expandedRows.includes(codeQualityItem) && (
               <tr>
-                <td
-                  colSpan={8}
-                  className="px-6 py-4 whitespace-nowrap text-left bg-gray-100 ml-2"
-                >
+                <td colSpan={8} className="px-6 py-4 text-left bg-gray-100 ml-2">
                   <SingleAnalysis codeQuality={codeQualityItem} />
                 </td>
               </tr>
