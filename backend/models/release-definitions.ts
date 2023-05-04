@@ -91,30 +91,36 @@ export const getReleaseEnvironments = (
     .lean()
     .then(r => r?.environments);
 
-const getMinimalReleaseDefinitionsInner = (
+const searchClause = (searchTerm?: string) => {
+  if (!searchTerm) return {};
+  if (/^repo:"(.*)"$/.test(searchTerm)) return {}; // If this is a repo search, skip other factors
+
+  return {
+    $or: [
+      { name: { $regex: new RegExp(searchTerm, 'i') } },
+      { 'environments.name': { $regex: new RegExp(searchTerm, 'i') } },
+    ],
+  };
+};
+
+const getMinimalReleaseDefinitionsInner = async (
   collectionName: string,
   project: string,
   searchTerm?: string,
   stageNameContaining?: string
-) =>
-  ReleaseDefinitionModel.find(
+) => {
+  return ReleaseDefinitionModel.find(
     {
       collectionName,
       project,
-      ...(searchTerm
-        ? {
-            $or: [
-              { name: { $regex: new RegExp(searchTerm, 'i') } },
-              { 'environments.name': { $regex: new RegExp(searchTerm, 'i') } },
-            ],
-          }
-        : {}),
+      ...searchClause(searchTerm),
       ...(stageNameContaining
         ? { 'environments.name': { $regex: new RegExp(stageNameContaining, 'i') } }
         : {}),
     },
     { name: 1, id: 1, url: 1 }
   ).lean() as unknown as Promise<Pick<ReleaseDefinition, 'id' | 'name' | 'url'>[]>;
+};
 
 const cache = new ExpiryMap(5 * oneMinuteInMs);
 export const getMinimalReleaseDefinitions = pMemoize(getMinimalReleaseDefinitionsInner, {

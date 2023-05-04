@@ -55,6 +55,16 @@ const filterRepos = (
   return { 'artifacts.definition.repositoryName': { $in: repos } };
 };
 
+const addExactRepoSearch = (searchTerm?: string) => {
+  if (!searchTerm) return [];
+
+  const repoSearch = searchTerm.match(/^repo:"(.*)"$/);
+  if (!repoSearch) return [];
+
+  const repoName = repoSearch[1];
+  return [{ $match: { 'artifacts.definition.repositoryName': repoName } }];
+};
+
 const addFilteredEnvsField = (ignoreStagesBefore: string | undefined): PipelineStage[] =>
   ignoreStagesBefore
     ? [
@@ -226,6 +236,7 @@ const createFilter = async (
         ...filterRepos(collectionName, project, repoGroups),
       },
     },
+    ...addExactRepoSearch(searchTerm),
     ...addFilteredEnvsField(ignoreStagesBefore),
     ...filterNonMasterReleases(nonMasterReleases),
     ...filterStageNameUsed(stageNameUsed),
