@@ -1,7 +1,10 @@
 import { oneDayInMs, oneMonthInMs } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
+import { inDateRange } from './helpers.js';
 import type { Release } from './mongoose-models/ReleaseEnvironment.js';
 import { ReleaseModel } from './mongoose-models/ReleaseEnvironment.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export const getReleaseUpdateDates = (collectionName: string, project: string) =>
   ReleaseModel.aggregate<{ date: Date; id: number }>([
@@ -61,3 +64,23 @@ export const getPipelinesCount = (
     { $group: { _id: '$releaseDefinitionId' } },
     { $count: 'count' },
   ]).then(result => result[0]?.count || 0);
+
+export const pipelineCountForRepo = (queryContext: QueryContext, repoId: string) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  return ReleaseModel.aggregate([
+    {
+      $match: {
+        'collectionName': collectionName,
+        'project': project,
+        'environments.deploySteps.queuedOn': inDateRange(startDate, endDate),
+        'artifacts.definition.repositoryId': repoId,
+      },
+    },
+    {
+      $group: {
+        _id: '$releaseDefinitionId',
+      },
+    },
+    { $count: 'count' },
+  ]).then(result => result[0]?.count || 0);
+};
