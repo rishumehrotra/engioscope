@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PullRequestModel } from './mongoose-models/PullRequestModel.js';
 import { inDateRange } from './helpers.js';
+import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
 
 export const PullRequestsSummaryForRepoInputParser = z.object({
@@ -102,4 +103,77 @@ export const getPullRequestsSummaryForRepo = async ({
     maxTime: otherPrs.find((pr: PrStats) => pr.prStatus === 'completed')?.maxTime || 0,
     avgTime: otherPrs.find((pr: PrStats) => pr.prStatus === 'completed')?.avgTime || 0,
   };
+};
+
+export const getTotalPullRequestsForRepositoryIds = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const [activePrs, otherPrs] = await Promise.all([
+    PullRequestModel.aggregate<{ repositoryId: string; total: number }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          repositoryId: { $in: repositoryIds },
+          status: 'active',
+        },
+      },
+      {
+        $group: {
+          _id: '$repositoryId',
+          total: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          repositoryId: '$_id',
+          total: 1,
+        },
+      },
+    ]),
+
+    PullRequestModel.aggregate<{
+      repositoryId: string;
+      total: number;
+    }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          repositoryId: { $in: repositoryIds },
+          status: { $in: ['abandoned', 'completed'] },
+          closedDate: inDateRange(startDate, endDate),
+        },
+      },
+      {
+        $group: {
+          _id: '$repositoryId',
+          total: { $sum: 1 },
+          abandoned: { $sum: { $cond: [{ $eq: ['$status', 'abandoned'] }, 1, 0] } },
+          completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          repositoryId: '$_id',
+          total: 1,
+          abandoned: 1,
+          completed: 1,
+        },
+      },
+    ]),
+  ]);
+
+  return activePrs.map(pr => {
+    const otherPr = otherPrs.find(otherPr => otherPr.repositoryId === pr.repositoryId);
+    return {
+      repositoryId: pr.repositoryId,
+      total: pr.total + (otherPr?.total || 0),
+    };
+  });
 };

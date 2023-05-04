@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { last, prop } from 'rambda';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
-import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import {
   getHealthyBranchesSummary,
+  getReposSortedByBranchesCount,
   getTotalBranchesForRepositoryIds,
 } from './branches.js';
 import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
@@ -16,6 +17,7 @@ import {
 import {
   getAllRepoDefaultBranchIDs,
   getDefaultBranchAndNameForRepoIds,
+  getReposSortedByName,
   getTotalReposInProject,
 } from './repos.js';
 import { getHasReleasesSummary } from './release-listing.js';
@@ -28,8 +30,11 @@ import {
   getTestsByWeek,
   getTotalTestsForRepositoryIds,
 } from './testruns.js';
-import { getTotalBuildsForRepositoryIds } from './builds.js';
-import { getTotalCommitsForRepositoryIds } from './commits.js';
+import { getReposSortedByBuildCount, getTotalBuildsForRepositoryIds } from './builds.js';
+import {
+  getReposSortedByCommitsCount,
+  getTotalCommitsForRepositoryIds,
+} from './commits.js';
 import {
   getReposWithSonarQube,
   getSonarProjectsCount,
@@ -39,6 +44,7 @@ import {
 } from './sonar.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
+import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -433,15 +439,23 @@ export const getRepoOverviewStats = async ({
   queryContext,
   repositoryIds,
 }: z.infer<typeof RepoOverviewStatsInputParser>) => {
-  const [repoDetails, builds, branches, commits, tests, sonarQualityGateStatuses] =
-    await Promise.all([
-      getDefaultBranchAndNameForRepoIds(queryContext, repositoryIds),
-      getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
-      getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
-      getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
-      getTotalTestsForRepositoryIds(queryContext, repositoryIds),
-      getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
-    ]);
+  const [
+    repoDetails,
+    builds,
+    branches,
+    commits,
+    tests,
+    sonarQualityGateStatuses,
+    pullRequests,
+  ] = await Promise.all([
+    getDefaultBranchAndNameForRepoIds(queryContext, repositoryIds),
+    getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
+    getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
+    getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
+    getTotalTestsForRepositoryIds(queryContext, repositoryIds),
+    getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
+    getTotalPullRequestsForRepositoryIds(queryContext, repositoryIds),
+  ]);
 
   return {
     repoDetails,
@@ -450,103 +464,173 @@ export const getRepoOverviewStats = async ({
     commits,
     tests,
     sonarQualityGateStatuses,
+    pullRequests,
   };
 };
 
-export const RepoFiltersInput = {
-  ...collectionAndProjectInputs,
-  searchTerm: z.string().optional(),
-  repoGroups: z.array(z.string()).optional(),
-  ...dateRangeInputs,
+export const getFilteredRepos = async (
+  queryContext: QueryContext,
+  searchTerm: string | undefined,
+  groupsIncluded: string[] | undefined
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const groupRepositoryNames = groupsIncluded
+    ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
+    : [];
+
+  return RepositoryModel.find(
+    {
+      collectionName,
+      'project.name': project,
+      ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
+      ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
+    },
+    { id: 1, name: 1 }
+  ).lean();
 };
 
-export const PaginatedReposInputParser = z.object({
-  ...RepoFiltersInput,
-  cursor: z
-    .object({
-      pageSize: z.number().optional(),
-      pageNumber: z.number().optional(),
-    })
-    .nullish(),
-  sortBy: z.string().optional(),
-  sortDirection: z.string().optional(),
+type RepoSortBy =
+  | 'builds'
+  | 'branches'
+  | 'commits'
+  | 'pull-requests'
+  | 'tests'
+  | 'code-quality';
+type SortDirection = 'asc' | 'desc';
+const sortReposBy = (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortBy: RepoSortBy,
+  sortDirection: SortDirection,
+  pageSize: number,
+  pageNumber: number
+) => {
+  switch (sortBy) {
+    case 'builds': {
+      return getReposSortedByBuildCount(
+        queryContext,
+        repositoryIds,
+        sortDirection,
+        pageSize,
+        pageNumber
+      );
+    }
+    case 'branches': {
+      return getReposSortedByBranchesCount(
+        queryContext,
+        repositoryIds,
+        sortDirection,
+        pageSize,
+        pageNumber
+      );
+    }
+    case 'commits': {
+      return getReposSortedByCommitsCount(
+        queryContext,
+        repositoryIds,
+        sortDirection,
+        pageSize,
+        pageNumber
+      );
+    }
+    // case 'pull-requests': {
+    //   return { totalPullRequests: sortDirectionValue };
+    // }
+    // case 'tests': {
+    //   return { totalTests: sortDirectionValue };
+    // }
+    // case 'code-quality': {
+    //   return { codeQuality: sortDirectionValue };
+    // }
+    default: {
+      return getReposSortedByName(
+        queryContext,
+        repositoryIds,
+        sortDirection,
+        pageSize,
+        pageNumber
+      );
+    }
+  }
+};
+
+export const RepoFiltersAndSorterInputParser = z.object({
+  queryContext: queryContextInputParser,
+  searchTerm: z.string().optional(),
+  groupsIncluded: z.array(z.string()).optional(),
+  pageSize: z.number(),
+  pageNumber: z.number(),
+  sortBy: z.enum([
+    'builds',
+    'branches',
+    'commits',
+    'pull-requests',
+    'tests',
+    'code-quality',
+  ]),
+  sortDirection: z.enum(['asc', 'desc']),
 });
 
-export const getPaginatedReposList = async (
-  options: z.infer<typeof PaginatedReposInputParser>
-) => {
-  const {
-    collectionName,
-    project,
-    searchTerm,
-    repoGroups,
-    cursor,
-    // sortBy,
-    // sortDirection,
-    startDate,
-    endDate,
-  } = options;
+export const getFilteredAndSortedReposWithStats = async ({
+  queryContext,
+  searchTerm,
+  groupsIncluded,
+  pageSize,
+  pageNumber,
+  sortBy,
+  sortDirection,
+}: z.infer<typeof RepoFiltersAndSorterInputParser>) => {
+  const filteredRepos = await getFilteredRepos(queryContext, searchTerm, groupsIncluded);
 
-  // const { pageSize, pageNumber } = cursor ?? { pageSize: 10, pageNumber: 1 };
-  const pageSize = cursor?.pageSize || 5;
-  const pageNumber = cursor?.pageNumber || 0;
+  const repositoryIds = filteredRepos.map(prop('id'));
 
-  const activeRepos = await getActiveRepos(
-    [collectionName, project, startDate, endDate],
-    searchTerm,
-    repoGroups
+  const sortedRepos = await sortReposBy(
+    queryContext,
+    repositoryIds,
+    sortBy,
+    sortDirection,
+    pageSize,
+    pageNumber
   );
 
-  const totalRepos = activeRepos.length;
+  const sortedRepoIds = sortedRepos.map(repo => repo.repositoryId);
 
-  const paginatedRepos = await RepositoryModel.aggregate([
-    {
-      $match: {
-        collectionName,
-        'project.name': project,
-        'id': { $in: activeRepos.map(prop('id')) },
-      },
-    },
+  const [
+    repoDetails,
+    builds,
+    branches,
+    commits,
+    tests,
+    sonarQualityGateStatuses,
+    pullRequests,
+  ] = await Promise.all([
+    getDefaultBranchAndNameForRepoIds(queryContext, sortedRepoIds),
+    getTotalBuildsForRepositoryIds(queryContext, sortedRepoIds),
+    getTotalBranchesForRepositoryIds(queryContext, sortedRepoIds),
+    getTotalCommitsForRepositoryIds(queryContext, sortedRepoIds),
+    getTotalTestsForRepositoryIds(queryContext, sortedRepoIds),
+    getSonarQualityGateStatusForRepoIds(queryContext, sortedRepoIds),
+    getTotalPullRequestsForRepositoryIds(queryContext, sortedRepoIds),
+  ]);
 
-    {
-      $lookup: {
-        from: 'builddefinitions',
-        let: {
-          repositoryId: '$id',
-        },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              project,
-              $expr: {
-                $and: [
-                  { $eq: ['$repositoryId', '$$repositoryId'] },
-                  { $eq: ['$process.processType', 1] },
-                ],
-              },
-            },
-          },
-        ],
-        as: 'buildsDefinitions',
-      },
-    },
-    { $match: { $expr: { $gt: [{ $size: '$buildsDefinitions' }, 0] } } },
-    {
-      $project: {
-        _id: 0,
-        repositoryId: '$id',
-        name: 1,
-        total: { $size: '$buildsDefinitions' },
-      },
-    },
-    { $sort: { total: -1 } },
-    { $skip: pageNumber * pageSize },
-    { $limit: pageSize },
-  ]).exec();
-
-  return {
-    totalRepos,
-    paginatedRepos,
-  };
+  return sortedRepos.map(repo => {
+    const repoId = repo.repositoryId;
+    const repoStats = {
+      repoDetails: repoDetails.find(repoDetail => repoDetail.id === repoId),
+      builds: builds.find(build => build.repositoryId === repoId)?.count || 0,
+      branches: branches.find(branch => branch.repositoryId === repoId)?.total || 0,
+      commits: commits.find(commit => commit.repositoryId === repoId)?.count || 0,
+      tests: tests.find(test => test.repositoryId === repoId)?.totalTests || 0,
+      sonarQualityGateStatuses: sonarQualityGateStatuses.find(
+        sonarQualityGateStatus => sonarQualityGateStatus.repositoryId === repoId
+      ),
+      pullRequests:
+        pullRequests.find(pullRequest => pullRequest.repositoryId === repoId)?.total || 0,
+    };
+    return {
+      ...repo,
+      ...repoStats,
+    };
+  });
 };

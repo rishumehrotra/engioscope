@@ -9,9 +9,13 @@ import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 import { trpc } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 
-export default (repositoryId: string, prs: RepoAnalysis['prs']): Tab => ({
+export default (
+  repositoryId: string,
+  prs: RepoAnalysis['prs'],
+  totalPullRequests?: number
+): Tab => ({
   title: 'Pull requests',
-  count: prs.total,
+  count: totalPullRequests ?? prs.total,
   Component: () => {
     const [showNewPrs] = useQueryParam('pr-v2', asBoolean);
     const pullRequest = trpc.pullRequests.getPullRequestsSummaryForRepo.useQuery(
