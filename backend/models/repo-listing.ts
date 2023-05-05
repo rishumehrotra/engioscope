@@ -492,93 +492,26 @@ export const getFilteredRepos = async (
   ).lean();
 };
 
-type RepoSortBy =
-  | 'builds'
-  | 'branches'
-  | 'commits'
-  | 'pull-requests'
-  | 'tests'
-  | 'code-quality';
-type SortDirection = 'asc' | 'desc';
-const sortReposBy = (
-  queryContext: QueryContext,
-  repositoryIds: string[],
-  sortBy: RepoSortBy,
-  sortDirection: SortDirection,
-  pageSize: number,
-  pageNumber: number
-) => {
-  switch (sortBy) {
-    case 'builds': {
-      return getReposSortedByBuildCount(
-        queryContext,
-        repositoryIds,
-        sortDirection,
-        pageSize,
-        pageNumber
-      );
-    }
-    case 'branches': {
-      return getReposSortedByBranchesCount(
-        queryContext,
-        repositoryIds,
-        sortDirection,
-        pageSize,
-        pageNumber
-      );
-    }
-    case 'commits': {
-      return getReposSortedByCommitsCount(
-        queryContext,
-        repositoryIds,
-        sortDirection,
-        pageSize,
-        pageNumber
-      );
-    }
-    case 'pull-requests': {
-      return getReposSortedByPullRequestsCount(
-        queryContext,
-        repositoryIds,
-        sortDirection,
-        pageSize,
-        pageNumber
-      );
-    }
-    // case 'tests': {
-    //   return { totalTests: sortDirectionValue };
-    // }
-    // case 'code-quality': {
-    //   return { codeQuality: sortDirectionValue };
-    // }
-    default: {
-      return getReposSortedByBuildCount(
-        queryContext,
-        repositoryIds,
-        sortDirection,
-        pageSize,
-        pageNumber
-      );
-    }
-  }
-};
+const sorters = {
+  'builds': getReposSortedByBuildCount,
+  'branches': getReposSortedByBranchesCount,
+  'commits': getReposSortedByCommitsCount,
+  'pull-requests': getReposSortedByPullRequestsCount,
+} as const;
 
-export const RepoFiltersAndSorterInputParser = z.object({
+const sortKeys = ['builds', 'branches', 'commits', 'pull-requests'] as const;
+
+export const repoFiltersAndSorterInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.string().optional(),
   groupsIncluded: z.array(z.string()).optional(),
   pageSize: z.number(),
   pageNumber: z.number(),
-  sortBy: z.enum([
-    'builds',
-    'branches',
-    'commits',
-    'pull-requests',
-    'tests',
-    'code-quality',
-  ]),
+  sortBy: z.enum(sortKeys),
   sortDirection: z.enum(['asc', 'desc']),
 });
+
+export type RepoFilters = z.infer<typeof repoFiltersAndSorterInputParser>;
 
 export const getFilteredAndSortedReposWithStats = async ({
   queryContext,
@@ -588,15 +521,14 @@ export const getFilteredAndSortedReposWithStats = async ({
   pageNumber,
   sortBy,
   sortDirection,
-}: z.infer<typeof RepoFiltersAndSorterInputParser>) => {
+}: z.infer<typeof repoFiltersAndSorterInputParser>) => {
   const filteredRepos = await getFilteredRepos(queryContext, searchTerm, groupsIncluded);
 
   const repositoryIds = filteredRepos.map(prop('id'));
 
-  const sortedRepos = await sortReposBy(
+  const sortedRepos = await sorters[sortBy](
     queryContext,
     repositoryIds,
-    sortBy,
     sortDirection,
     pageSize,
     pageNumber
