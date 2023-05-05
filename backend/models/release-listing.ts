@@ -708,20 +708,19 @@ export const getArtifacts = async ({
     },
   ]);
 
-  const rnb = results
-    .map(r => {
-      if (r._id.type !== 'Build') return;
-      return { repositoryId: r._id.repositoryId, refName: r._id.branch };
-    })
-    .filter(exists);
-
   const conformsStatus = await Promise.all(
-    rnb.map(async r => {
-      return {
-        ...r,
-        conforms: await conformsToBranchPolicies({ collectionName, project, ...r }),
-      };
-    })
+    results
+      .map(r => {
+        if (r._id.type !== 'Build') return;
+        return { repositoryId: r._id.repositoryId, refName: r._id.branch };
+      })
+      .filter(exists)
+      .map(async r => {
+        return {
+          ...r,
+          conforms: await conformsToBranchPolicies({ collectionName, project, ...r }),
+        };
+      })
   );
 
   const { builds, others } = results.reduce<{
@@ -817,7 +816,7 @@ export const releaseBranchesForRepo = async (
         collectionName,
         project,
         'artifacts.definition.repositoryId': repositoryId,
-        'modifiedOn': { $gte: startDate, $lt: endDate },
+        'modifiedOn': inDateRange(startDate, endDate),
       },
     },
     ...(ignoreStagesBefore

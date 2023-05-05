@@ -4,7 +4,6 @@ import type {
   ProjectWorkItemAnalysis,
   UIWorkItemRevision,
   ProjectOverviewAnalysis,
-  PipelineDefinitions,
   SummaryMetrics,
   UIChangeProgram,
   TrackFlowMetrics,
@@ -42,15 +41,6 @@ export const overview = (
   project: string
 ): Promise<ProjectOverviewAnalysis> =>
   fetch(`/api/${collection}/${project}/overview.json`).then(json);
-
-export const releaseDefinitions = (
-  collection: string,
-  project: string,
-  definitionIds: number[]
-): Promise<PipelineDefinitions> =>
-  fetch(
-    `/api/${collection}/${project}/release-definitions?ids=${definitionIds.join(',')}`
-  ).then(json);
 
 export const metricsSummary = (): Promise<SummaryMetrics> =>
   fetch('/api/summary-metrics.json').then(json);

@@ -5,18 +5,6 @@ import { combineColumnsInArray, divide, exists } from './utils.js';
 
 export type PipelineStageWithCounts = PipelineStage & PipelineCount;
 
-export const mergeStagesAndCounts =
-  (stageCounts: PipelineCount[]) =>
-  (stage: PipelineStage): PipelineStageWithCounts => {
-    const matchingExistingStage = stageCounts.find(s => s.name === stage.name);
-
-    return {
-      ...stage,
-      successful: matchingExistingStage?.successful ?? 0,
-      total: matchingExistingStage?.total ?? 0,
-    };
-  };
-
 const stageHasName = (stageName: string) => (stage: PipelineStage | PipelineCount) =>
   stage.name.toLowerCase().includes(stageName.toLowerCase());
 
@@ -29,25 +17,8 @@ export const pipelineUsesStageNamed = (stageName: string) => (pipeline: Pipeline
   return matchingStages.some(stage => stage.successful > 0);
 };
 
-export const pipelineHasUnusedStageNamed =
-  (stageName: string) => (pipeline: Pipeline) => {
-    const matchingStages = pipeline.stageCounts.filter(stageHasName(stageName));
-    if (!matchingStages.length) return false;
-    return matchingStages.every(stage => stage.successful === 0);
-  };
-
 export const pipelineHasStartingArtifact = (pipeline: Pipeline) =>
   Object.entries(pipeline.repos).length > 0;
-
-const repoBranches = (pipeline: Pipeline) => [
-  ...new Set(Object.values(pipeline.repos).flatMap(r => r.branches)),
-];
-
-export const pipelineDeploysExclusivelyFromMaster = (pipeline: Pipeline) => {
-  const branches = repoBranches(pipeline);
-  if (!branches.length) return null;
-  return branches.length === 1 && branches[0] === 'refs/heads/master';
-};
 
 export const normalizePolicy = (policies: BranchPolicies) => ({
   minimumNumberOfReviewers: {
@@ -154,7 +125,7 @@ export const isPipelineInGroup =
       ? true
       : Object.values(pipeline.repos).some(r => repos.includes(r.name));
 
-export const usageByEnvironment = (environments?: string[]) => (pipeline: Pipeline) => {
+const usageByEnvironment = (environments?: string[]) => (pipeline: Pipeline) => {
   if (!environments) return;
 
   return environments.reduce<Record<string, { successful: number; total: number }>>(

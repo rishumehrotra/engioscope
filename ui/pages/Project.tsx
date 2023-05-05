@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Routes, Route, useParams, useLocation } from 'react-router-dom';
 import NavBar from '../components/common/NavBar.js';
 import Repos from './Repos.js';
-import ReleasePipelines from './ReleasePipelines.js';
 import WorkItems from './WorkItems.js';
 import SortControls from '../components/SortControls.js';
 import Devs from './Devs.js';
@@ -130,7 +129,6 @@ const Project: React.FC = () => {
       <Routes>
         <Route path="repos" element={<Repos />} />
         <Route path="release-pipelines" element={<ReleasePipelines2 />} />
-        <Route path="release-pipelines2" element={<ReleasePipelines />} />
         <Route path="devs" element={<Devs />} />
         <Route path="build-timelines" element={<BuildTimelines />} />
         <Route path="workitems" element={<WorkItems />} />
