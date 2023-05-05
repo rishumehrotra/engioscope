@@ -19,7 +19,7 @@ import {
   getDefaultBranchAndNameForRepoIds,
   getTotalReposInProject,
 } from './repos.js';
-import { getHasReleasesSummary } from './release-listing.js';
+import { getHasReleasesSummary, releaseBranchesForRepo } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
@@ -47,6 +47,7 @@ import {
   getReposSortedByPullRequestsCount,
   getTotalPullRequestsForRepositoryIds,
 } from './pull-requests.js';
+import { pipelineCountForRepo } from './releases.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -459,6 +460,24 @@ export const getRepoOverviewStats = async ({
     getTotalPullRequestsForRepositoryIds(queryContext, repositoryIds),
   ]);
 
+  const pipelineCounts = await Promise.all(
+    repositoryIds.map(async id => {
+      return {
+        repositoryId: id,
+        count: await pipelineCountForRepo(queryContext, id),
+      };
+    })
+  );
+
+  const releaseBranches = await Promise.all(
+    repositoryIds.map(async id => {
+      return {
+        repositoryId: id,
+        count: await releaseBranchesForRepo(queryContext, id),
+      };
+    })
+  );
+
   return {
     repoDetails,
     builds,
@@ -467,6 +486,8 @@ export const getRepoOverviewStats = async ({
     tests,
     sonarQualityGateStatuses,
     pullRequests,
+    pipelineCounts,
+    releaseBranches,
   };
 };
 

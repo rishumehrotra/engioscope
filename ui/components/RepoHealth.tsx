@@ -249,6 +249,29 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                   </Link>
                 </div>
               ) : null}
+              {showNewTabs && repoTabStats.data ? (
+                <div>
+                  <Link to={pipelinesUrl} className="link-text">
+                    {`Used in ${
+                      repoTabStats.data?.pipelineCounts[0]?.count || 0
+                    } ${pageName(
+                      'release-pipelines',
+                      repoTabStats.data?.pipelineCounts[0]?.count || 0
+                    ).toLowerCase()}`}{' '}
+                    : v2
+                  </Link>
+                </div>
+              ) : null}
+              {showNewTabs && repoTabStats.data ? (
+                <div>
+                  <Link to={pipelinesUrl} className="link-text">
+                    {`Has ${
+                      repoTabStats.data?.releaseBranches[0]?.count?.length || 0
+                    } release branches`}{' '}
+                    : v2
+                  </Link>
+                </div>
+              ) : null}
             </div>
             <div
               className="text-gray-600 font-semibold text-right"
