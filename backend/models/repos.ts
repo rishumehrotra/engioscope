@@ -164,5 +164,5 @@ export const getDefaultBranchAndNameForRepoIds = (
   return RepositoryModel.find(
     { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
     { _id: 0, id: 1, name: 1, defaultBranch: 1 }
-  );
+  ).lean();
 };

@@ -19,12 +19,13 @@ import usePageName from '../hooks/use-page-name.js';
 import type { Dev } from '../types.js';
 import { isInactive } from '../../shared/repo-utils.js';
 import branches from './repo-tabs/branches/index.js';
-import { DownChevron } from './common/Icons.jsx';
+import { Branches, DownChevron } from './common/Icons.jsx';
 import useOnClickOutside from '../hooks/on-click-outside.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { trpc } from '../helpers/trpc.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import { divide, toPercentage } from '../../shared/utils.js';
+import BranchPolicyPill from './BranchPolicyPill.jsx';
 
 const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
   featureToggles,
@@ -263,14 +264,34 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                 </div>
               ) : null}
               {showNewTabs && repoTabStats.data ? (
-                <div>
-                  <Link to={pipelinesUrl} className="link-text">
-                    {`Has ${
-                      repoTabStats.data?.releaseBranches[0]?.count?.length || 0
-                    } release branches`}{' '}
-                    : v2
-                  </Link>
-                </div>
+                <>
+                  <div>
+                    <Link to={pipelinesUrl} className="link-text">
+                      {`Has ${
+                        repoTabStats.data?.releaseBranches[0]?.branches?.length || 0
+                      } release branches`}{' '}
+                      : v2
+                    </Link>
+                  </div>
+                  <ol className="flex flex-wrap">
+                    {repoTabStats.data?.releaseBranches[0]?.branches?.map(branch => (
+                      <li
+                        key={`gone-forward-${branch.name}`}
+                        className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm"
+                      >
+                        <Branches className="h-4 mr-1" />
+                        {branch.name.replace('refs/heads/', '')}
+                        <BranchPolicyPill
+                          repositoryId={
+                            repoTabStats.data?.releaseBranches[0]?.repositoryId
+                          }
+                          refName={branch.name}
+                          conforms={branch.conforms}
+                        />
+                      </li>
+                    ))}
+                  </ol>
+                </>
               ) : null}
             </div>
             <div

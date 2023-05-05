@@ -434,6 +434,35 @@ export const getNonYamlPipelines = async ({
     { $sort: { total: -1 } },
   ]).exec();
 };
+
+const getTotalPipelineCountForRepositoryIds = (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  return Promise.all(
+    repositoryIds.map(async id => {
+      return {
+        repositoryId: id,
+        count: await pipelineCountForRepo(queryContext, id),
+      };
+    })
+  );
+};
+
+const getTotalReleaseBranchesForRepositoryIds = (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  return Promise.all(
+    repositoryIds.map(async id => {
+      return {
+        repositoryId: id,
+        branches: await releaseBranchesForRepo(queryContext, id),
+      };
+    })
+  );
+};
+
 export const RepoOverviewStatsInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryIds: z.array(z.string()),
@@ -450,6 +479,8 @@ export const getRepoOverviewStats = async ({
     tests,
     sonarQualityGateStatuses,
     pullRequests,
+    pipelineCounts,
+    releaseBranches,
   ] = await Promise.all([
     getDefaultBranchAndNameForRepoIds(queryContext, repositoryIds),
     getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
@@ -458,25 +489,9 @@ export const getRepoOverviewStats = async ({
     getTotalTestsForRepositoryIds(queryContext, repositoryIds),
     getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
     getTotalPullRequestsForRepositoryIds(queryContext, repositoryIds),
+    getTotalPipelineCountForRepositoryIds(queryContext, repositoryIds),
+    getTotalReleaseBranchesForRepositoryIds(queryContext, repositoryIds),
   ]);
-
-  const pipelineCounts = await Promise.all(
-    repositoryIds.map(async id => {
-      return {
-        repositoryId: id,
-        count: await pipelineCountForRepo(queryContext, id),
-      };
-    })
-  );
-
-  const releaseBranches = await Promise.all(
-    repositoryIds.map(async id => {
-      return {
-        repositoryId: id,
-        count: await releaseBranchesForRepo(queryContext, id),
-      };
-    })
-  );
 
   return {
     repoDetails,

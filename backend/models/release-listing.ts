@@ -845,7 +845,21 @@ export const releaseBranchesForRepo = async (
     { $group: { _id: '$branch' } },
   ]);
 
-  return results.map(r => r._id);
+  return Promise.all(
+    results
+      .map(r => r._id)
+      .map(async refName => {
+        return {
+          name: refName,
+          conforms: await conformsToBranchPolicies({
+            collectionName,
+            project,
+            repositoryId,
+            refName,
+          }),
+        };
+      })
+  );
 };
 
 export const usageByEnvironment = async (
