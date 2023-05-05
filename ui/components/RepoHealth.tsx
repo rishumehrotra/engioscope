@@ -5,7 +5,7 @@ import { not, prop } from 'rambda';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { byNum, desc } from 'sort-lib';
 import type { FeatureToggle, RepoAnalysis } from '../../shared/types.js';
-import { num } from '../helpers/utils.js';
+import { num, pluralise } from '../helpers/utils.js';
 import Flair from './common/Flair.js';
 import builds from './repo-tabs/builds.js';
 import commits from './repo-tabs/commits.js';
@@ -19,13 +19,12 @@ import usePageName from '../hooks/use-page-name.js';
 import type { Dev } from '../types.js';
 import { isInactive } from '../../shared/repo-utils.js';
 import branches from './repo-tabs/branches/index.js';
-import { Branches, DownChevron } from './common/Icons.jsx';
+import { DownChevron } from './common/Icons.jsx';
 import useOnClickOutside from '../hooks/on-click-outside.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import { trpc } from '../helpers/trpc.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import { divide, toPercentage } from '../../shared/utils.js';
-import BranchPolicyPill from './BranchPolicyPill.jsx';
 
 const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
   featureToggles,
@@ -240,40 +239,22 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                   </span>
                 ) : null}
               </div>
-              {repo.pipelineCount ? (
-                <div>
-                  <Link to={pipelinesUrl} className="link-text">
-                    {`Used in ${repo.pipelineCount} ${pageName(
-                      'release-pipelines',
-                      repo.pipelineCount
-                    ).toLowerCase()}`}
-                  </Link>
-                </div>
-              ) : null}
               {showNewTabs && repoTabStats.data ? (
                 <div>
                   <Link to={pipelinesUrl} className="link-text">
-                    {`Used in ${
+                    {`Has ${pluralise(
+                      repoTabStats.data?.releaseBranches[0]?.branches?.length || 0,
+                      'release branch',
+                      `release branches`
+                    )},`}{' '}
+                    {`used in ${
                       repoTabStats.data?.pipelineCounts[0]?.count || 0
                     } ${pageName(
                       'release-pipelines',
                       repoTabStats.data?.pipelineCounts[0]?.count || 0
                     ).toLowerCase()}`}{' '}
-                    : v2
                   </Link>
-                </div>
-              ) : null}
-              {showNewTabs && repoTabStats.data ? (
-                <>
-                  <div>
-                    <Link to={pipelinesUrl} className="link-text">
-                      {`Has ${
-                        repoTabStats.data?.releaseBranches[0]?.branches?.length || 0
-                      } release branches`}{' '}
-                      : v2
-                    </Link>
-                  </div>
-                  <ol className="flex flex-wrap">
+                  {/* <ol className="flex flex-wrap">
                     {repoTabStats.data?.releaseBranches[0]?.branches?.map(branch => (
                       <li
                         key={`gone-forward-${branch.name}`}
@@ -290,8 +271,8 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                         />
                       </li>
                     ))}
-                  </ol>
-                </>
+                  </ol> */}
+                </div>
               ) : null}
             </div>
             <div
