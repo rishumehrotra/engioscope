@@ -166,36 +166,3 @@ export const getDefaultBranchAndNameForRepoIds = (
     { _id: 0, id: 1, name: 1, defaultBranch: 1 }
   );
 };
-
-export const getReposSortedByName = (
-  queryContext: QueryContext,
-  repositoryIds: string[],
-  sortOrder: 'asc' | 'desc',
-  pageSize: number,
-  pageNumber: number
-) => {
-  const { collectionName, project } = fromContext(queryContext);
-
-  return RepositoryModel.aggregate<{
-    repositoryId: string;
-    name: string;
-  }>([
-    {
-      $match: {
-        collectionName,
-        'project.name': project,
-        'id': { $in: repositoryIds },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        repositoryId: '$id',
-        name: '$name',
-      },
-    },
-    { $sort: { name: sortOrder === 'asc' ? 1 : -1 } },
-    { $skip: pageSize * pageNumber },
-    { $limit: pageSize },
-  ]).exec();
-};

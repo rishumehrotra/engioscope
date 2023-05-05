@@ -17,7 +17,6 @@ import {
 import {
   getAllRepoDefaultBranchIDs,
   getDefaultBranchAndNameForRepoIds,
-  getReposSortedByName,
   getTotalReposInProject,
 } from './repos.js';
 import { getHasReleasesSummary } from './release-listing.js';
@@ -44,7 +43,10 @@ import {
 } from './sonar.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
-import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
+import {
+  getReposSortedByPullRequestsCount,
+  getTotalPullRequestsForRepositoryIds,
+} from './pull-requests.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -534,9 +536,15 @@ const sortReposBy = (
         pageNumber
       );
     }
-    // case 'pull-requests': {
-    //   return { totalPullRequests: sortDirectionValue };
-    // }
+    case 'pull-requests': {
+      return getReposSortedByPullRequestsCount(
+        queryContext,
+        repositoryIds,
+        sortDirection,
+        pageSize,
+        pageNumber
+      );
+    }
     // case 'tests': {
     //   return { totalTests: sortDirectionValue };
     // }
@@ -544,7 +552,7 @@ const sortReposBy = (
     //   return { codeQuality: sortDirectionValue };
     // }
     default: {
-      return getReposSortedByName(
+      return getReposSortedByBuildCount(
         queryContext,
         repositoryIds,
         sortDirection,
