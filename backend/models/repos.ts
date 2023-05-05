@@ -40,22 +40,6 @@ export const searchRepositories = (options: z.infer<typeof paginatedRepoListPars
     .limit(options.cursor?.pageSize || 5);
 };
 
-export const getRepoIdByName = (
-  collectionName: string,
-  project: string,
-  repoName: string
-) =>
-  RepositoryModel.findOne(
-    {
-      collectionName,
-      'project.name': project,
-      'name': repoName,
-    },
-    { id: 1 }
-  )
-    .lean()
-    .then(x => x?.id);
-
 export const getRepoById = (
   collectionName: string,
   project: string,

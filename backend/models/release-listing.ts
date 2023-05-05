@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { configForProject } from '../config.js';
 import type { ArtifactType } from '../scraper/types-azure.js';
-import { collectionAndProjectInputs, dateRangeInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { conformsToBranchPolicies } from './policy-configuration.js';
 import {
   getMinimalReleaseDefinitions,
@@ -15,7 +15,7 @@ import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
 
 export const pipelineFiltersInput = {
-  ...collectionAndProjectInputs,
+  queryContext: queryContextInputParser,
   searchTerm: z.string().optional(),
   nonMasterReleases: z.boolean().optional(),
   notStartingWithBuildArtifact: z.boolean().optional(),
@@ -23,7 +23,6 @@ export const pipelineFiltersInput = {
   stageNameUsed: z.string().optional(),
   notConfirmingToBranchPolicies: z.boolean().optional(),
   repoGroups: z.array(z.string()).optional(),
-  ...dateRangeInputs,
 };
 
 export const pipelineFiltersInputParser = z.object(pipelineFiltersInput);
@@ -202,8 +201,7 @@ const createFilter = async (
   options: z.infer<typeof pipelineFiltersInputParser>
 ): Promise<PipelineStage[]> => {
   const {
-    collectionName,
-    project,
+    queryContext,
     nonMasterReleases,
     /* notConfirmingToBranchPolicies, */
     searchTerm,
@@ -211,9 +209,9 @@ const createFilter = async (
     stageNameContaining,
     stageNameUsed,
     repoGroups,
-    startDate,
-    endDate,
   } = options;
+
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   const releaseDefns = await getMinimalReleaseDefinitions(
     collectionName,
@@ -404,7 +402,8 @@ const conformsToBranchPoliciesSummary = async (
   options: z.infer<typeof pipelineFiltersInputParser>
 ) => {
   const filter = await createFilter(options);
-  const projectConfig = configForProject(options.collectionName, options.project);
+  const { collectionName, project } = fromContext(options.queryContext);
+  const projectConfig = configForProject(collectionName, project);
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
 
   const result = await ReleaseModel.aggregate<{ _id: boolean; count: number }>([
@@ -472,13 +471,14 @@ const conformsToBranchPoliciesSummary = async (
 };
 
 export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
+  const { collectionName, project } = fromContext(options.queryContext);
   const filter = await createFilter(options);
 
   const [[summary], branchPolicy] = await Promise.all([
     ReleaseModel.aggregate<Summary & { _id: null }>([
       ...filter,
-      addBooleanFields(options.collectionName, options.project),
-      ...createSummary(options.collectionName, options.project),
+      addBooleanFields(collectionName, project),
+      ...createSummary(collectionName, project),
     ]),
     conformsToBranchPoliciesSummary(options),
   ]);
@@ -853,7 +853,8 @@ export const usageByEnvironment = async (
   options: z.infer<typeof pipelineFiltersInputParser>
 ) => {
   const filter = await createFilter(options);
-  const projectConfig = configForProject(options.collectionName, options.project);
+  const { collectionName, project } = fromContext(options.queryContext);
+  const projectConfig = configForProject(collectionName, project);
 
   const result = await ReleaseModel.aggregate<Record<string, number>>([
     ...filter,

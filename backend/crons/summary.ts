@@ -21,12 +21,7 @@ export const insertSummarySnapshot = async (
       async ([{ name: collectionName }, { name: project }]) => {
         const [repoSummary, releaseSummary] = await Promise.all([
           getSummary({ queryContext: [collectionName, project, startDate, endDate] }),
-          summary({
-            collectionName,
-            project,
-            startDate,
-            endDate,
-          }),
+          summary({ queryContext: [collectionName, project, startDate, endDate] }),
         ]);
 
         return SummaryModel.updateOne(
