@@ -131,11 +131,11 @@ export default (
   queryPeriodDays: number,
   commitsCount?: number
 ): Tab => {
-  const { commits, id } = repo;
+  const { id } = repo;
 
   return {
     title: 'Commits',
-    count: commitsCount ?? commits.count,
+    count: commitsCount ?? 0,
     Component: () => {
       return <CommitsTable repositoryId={id} queryPeriodDays={queryPeriodDays} />;
     },

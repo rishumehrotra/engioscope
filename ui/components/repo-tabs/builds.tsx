@@ -1,7 +1,6 @@
 import React, { Fragment, useCallback, useState } from 'react';
 import ReactTooltip from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
-import type { RepoAnalysis } from '../../../shared/types.js';
 import { num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.js';
 import type { Tab } from './Tabs.js';
@@ -334,14 +333,13 @@ const Builds: React.FC<{
 };
 
 export default (
-  builds: RepoAnalysis['builds'],
   repositoryId: string,
   repositoryName: string,
   buildsCount?: number
 ): Tab => {
   return {
     title: 'Builds',
-    count: buildsCount ?? (builds?.count || 0),
+    count: buildsCount ?? 0,
     Component: () => {
       return <Builds repositoryId={repositoryId} repositoryName={repositoryName} />;
     },
