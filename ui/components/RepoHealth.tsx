@@ -73,7 +73,7 @@ const FeatureToggleDropdown: React.FC<{ featureToggles: FeatureToggle[] }> = ({
 };
 
 const combinedQualityGate = (qualityGateStatus: string[]) => {
-  if (qualityGateStatus.length === 0) return 'Unknown';
+  if (qualityGateStatus.length === 0) return 'unknown';
   if (qualityGateStatus.length === 1) return qualityGateStatus[0];
   const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
   if (qualityGatesPassed.length === qualityGateStatus.length) return '100% fail';
@@ -124,7 +124,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
       prs(repo.id, repo.prs, repoTabStats.data?.pullRequests[0]?.total),
       tests(repo, queryPeriodDays, repoTabStats.data?.tests[0]?.totalTests),
       codeQuality(
-        repo.codeQuality,
         repo.id,
         repo.defaultBranch,
         repoTabStats.data
