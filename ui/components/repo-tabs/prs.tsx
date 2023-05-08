@@ -15,7 +15,7 @@ export default (
   totalPullRequests?: number
 ): Tab => ({
   title: 'Pull requests',
-  count: totalPullRequests ?? prs.total,
+  count: totalPullRequests ?? 0,
   Component: () => {
     const [showNewPrs] = useQueryParam('pr-v2', asBoolean);
     const pullRequest = trpc.pullRequests.getPullRequestsSummaryForRepo.useQuery(

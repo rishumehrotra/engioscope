@@ -256,7 +256,7 @@ export default (
 ): Tab => {
   return {
     title: 'Branches',
-    count: branchesCount ?? branches.total,
+    count: branchesCount ?? 0,
     Component: () => {
       return (
         <Branches

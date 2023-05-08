@@ -5,8 +5,6 @@ import { formatDebt, num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.js';
 import type { Tab } from './Tabs.js';
 import TabContents from './TabContents.js';
-import { combinedQualityGateStatus } from '../code-quality-utils.js';
-
 import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import Loading from '../Loading.jsx';
@@ -734,18 +732,6 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
     </table>
   );
 };
-
-const tabLabel = (codeQuality: RepoAnalysis['codeQuality']) => {
-  const state = combinedQualityGateStatus(codeQuality);
-  if (state !== 'fail') return state;
-  if (codeQuality?.length === 1) return state;
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const warnCount = codeQuality!.filter(q => q.quality.gate === 'fail').length;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return `${Math.round((warnCount * 100) / codeQuality!.length)}% fail`;
-};
-
 export default (
   codeQuality: RepoAnalysis['codeQuality'],
   repositoryId: string,
@@ -753,7 +739,7 @@ export default (
   sonarQualityGate: string | null
 ): Tab => ({
   title: 'Code quality',
-  count: sonarQualityGate || tabLabel(codeQuality),
+  count: sonarQualityGate || 'unknown',
   Component: () => {
     const { collectionName, project } = useCollectionAndProject();
     const sonarMeasures = trpc.sonar.getRepoSonarMeasures.useQuery({

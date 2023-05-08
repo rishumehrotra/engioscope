@@ -1,7 +1,6 @@
 import React from 'react';
 import type { RepoAnalysis } from '../../../shared/types.js';
 import type { Tab } from './Tabs.js';
-import { numberOfTests } from '../../../shared/repo-utils.js';
 import BuildPipelineTests from './BuildPipelineTests.jsx';
 
 export default (
@@ -10,7 +9,7 @@ export default (
   totalTests?: number
 ): Tab => ({
   title: 'Tests',
-  count: totalTests ?? numberOfTests(repo),
+  count: totalTests ?? 0,
   Component: () => (
     <BuildPipelineTests repositoryId={repo.id} queryPeriodDays={queryPeriodDays} />
   ),

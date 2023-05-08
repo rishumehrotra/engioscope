@@ -1,9 +1,8 @@
 import type { MouseEventHandler } from 'react';
 import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { not, prop } from 'rambda';
+import { not } from 'rambda';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { byNum, desc } from 'sort-lib';
 import type { FeatureToggle, RepoAnalysis } from '../../shared/types.js';
 import { num, pluralise } from '../helpers/utils.js';
 import Flair from './common/Flair.js';
@@ -100,18 +99,14 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
 }) => {
   const pageName = usePageName();
   const location = useLocation();
-  const [showNewTabs] = useQueryParam('tabs-v2', asBoolean);
-  const repoTabStats = trpc.repos.getRepoOverviewStats.useQuery(
-    {
-      queryContext: useQueryContext(),
-      repositoryIds: [repo.id],
-    },
-    { enabled: showNewTabs === true }
-  );
+  const repoTabStats = trpc.repos.getRepoOverviewStats.useQuery({
+    queryContext: useQueryContext(),
+    repositoryIds: [repo.id],
+  });
 
   const tabs = useMemo(
     () => [
-      builds(repo.builds, repo.id, repo.name, repoTabStats.data?.builds[0]?.count),
+      builds(repo.id, repo.name, repoTabStats.data?.builds[0]?.count),
       branches(
         repo.branches,
         repo.defaultBranch,
@@ -164,16 +159,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
   );
   const isExpanded = selectedTab !== null || isFirst || false;
 
-  const languages = useMemo(
-    () => [...(repo.languages || [])].sort(desc(byNum(prop('loc')))),
-    [repo.languages]
-  );
-
-  const totalLoc = useMemo(
-    () => languages.reduce((acc, lang) => acc + lang.loc, 0),
-    [languages]
-  );
-
   return (
     <div
       className={`bg-white ease-in-out rounded-lg shadow relative ${
@@ -202,24 +187,10 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                 >
                   {repo.name}
                 </a>
-                <span className="inline-block ml-4">
-                  {languages.map(l => (
-                    <Flair
-                      key={l.lang}
-                      flairColor={l.color}
-                      title={`${num(l.loc)} lines of code`}
-                      label={`${Math.round((l.loc * 100) / totalLoc)}% ${l.lang}`}
-                    />
-                  ))}
-                </span>
-                {showNewTabs &&
-                repoTabStats.data &&
-                repoTabStats.data.sonarQualityGateStatuses[0]?.language !== null &&
-                repoTabStats.data.sonarQualityGateStatuses[0]?.language?.ncloc !==
-                  null ? (
+                {repoTabStats.data?.sonarQualityGateStatuses[0]?.language?.ncloc ==
+                null ? null : (
                   <span className="inline-block ml-4">
                     {' '}
-                    Tab v2 :
                     {repoTabStats.data.sonarQualityGateStatuses[0].language.stats.map(
                       l => (
                         <Flair
@@ -237,9 +208,9 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
                       )
                     )}
                   </span>
-                ) : null}
+                )}
               </div>
-              {showNewTabs && repoTabStats.data ? (
+              {repoTabStats.data ? (
                 <div>
                   <Link to={pipelinesUrl} className="link-text">
                     {`Has ${pluralise(
@@ -279,25 +250,14 @@ const RepoHealth: React.FC<RepoHealthProps> = ({
               className="text-gray-600 font-semibold text-right"
               style={{ lineHeight: '27px' }}
             >
-              {repo.defaultBranch ? (
+              {repoTabStats.data ? (
                 <div
                   className="italic text-sm text-gray-400"
                   style={{ lineHeight: 'inherit' }}
                 >
                   Default branch{' '}
                   <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
-                    {repo.defaultBranch}
-                  </code>
-                </div>
-              ) : null}
-              {showNewTabs && repoTabStats.data ? (
-                <div
-                  className="italic text-sm text-gray-400"
-                  style={{ lineHeight: 'inherit' }}
-                >
-                  Default branch from Tab v2{' '}
-                  <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
-                    {showNewTabs && repoTabStats.data
+                    {repoTabStats.data
                       ? repoTabStats.data?.repoDetails[0].defaultBranch?.replace(
                           'refs/heads/',
                           ''
