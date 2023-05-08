@@ -733,7 +733,6 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
   );
 };
 export default (
-  codeQuality: RepoAnalysis['codeQuality'],
   repositoryId: string,
   defaultBranch: string | undefined,
   sonarQualityGate: string | null
