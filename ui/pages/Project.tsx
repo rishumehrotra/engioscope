@@ -12,7 +12,7 @@ import { useProjectDetails } from '../hooks/project-details-hooks.js';
 import usePageName from '../hooks/use-page-name.js';
 import Overview from './Overview.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
-import ReleasePipelines2 from './ReleasePipelines2.jsx';
+import ReleasePipelines2 from './ReleasePipelines.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
 import BuildTimelines from './BuildTimelines.jsx';

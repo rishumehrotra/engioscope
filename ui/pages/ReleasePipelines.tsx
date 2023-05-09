@@ -2,8 +2,8 @@ import React from 'react';
 import AppliedFilters from '../components/AppliedFilters.jsx';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.jsx';
-import { Pipeline } from '../components/ReleasePipelineHealth2.jsx';
-import ReleasePipelineSummary2 from '../components/ReleasePipelineSummary2.jsx';
+import { Pipeline } from '../components/ReleasePipelineHealth.jsx';
+import ReleasePipelineSummary from '../components/ReleasePipelineSummary.jsx';
 import { trpc } from '../helpers/trpc.js';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { useRemoveSort } from '../hooks/sort-hooks.js';
@@ -40,7 +40,7 @@ const ReleasePipelines2: React.FC = () => {
         </div>
       ) : null}
       <AppliedFilters type="release-pipelines" count={count.data} />
-      <ReleasePipelineSummary2 />
+      <ReleasePipelineSummary />
       <InfiniteScrollList2
         items={query.data?.pages.flatMap(page => page.items) || []}
         itemKey={pipeline => pipeline.id.toString()}
