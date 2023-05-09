@@ -83,6 +83,28 @@ const summarySchema = new Schema<Summary>(
       coveredBranches: { type: Number },
       totalBranches: { type: Number },
     },
+    sonarProjects: {
+      totalProjects: { type: Number },
+      passedProjects: { type: Number },
+      projectsWithWarning: { type: Number },
+      failedProjects: { type: Number },
+    },
+    weeklySonarProjectsCount: [
+      {
+        weekIndex: { type: Number },
+        passedProjects: { type: Number },
+        projectsWithWarnings: { type: Number },
+        failedProjects: { type: Number },
+        totalProjects: { type: Number },
+      },
+    ],
+    reposWithSonarQube: { type: Number },
+    weeklyReposWithSonarQubeCount: [
+      {
+        weekIndex: { type: Number },
+        count: { type: Number },
+      },
+    ],
     branchPolicy: {
       conforms: { type: Number },
       total: { type: Number },
