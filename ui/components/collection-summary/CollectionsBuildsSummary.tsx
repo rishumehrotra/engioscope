@@ -23,8 +23,8 @@ const sorters = {
   byYamlPipelines: byNum<CollectionBuildsSummary>(x =>
     divide(x.pipelines.yamlCount, x.pipelines.totalCount).getOr(0)
   ),
-  byCentralTemplateUsage: byNum<CollectionBuildsSummary>(
-    x => x.centralTemplatePipeline.central || 0
+  byCentralTemplateUsage: byNum<CollectionBuildsSummary>(x =>
+    divide(x.centralTemplatePipeline.central, x.centralTemplatePipeline.total).getOr(0)
   ),
 };
 
@@ -144,7 +144,18 @@ const CollectionsBuildsSummary: React.FC<{
                     .map(toPercentage)
                     .getOr('-')}
                 </td>
-                <td>{project.centralTemplatePipeline.central}</td>
+                <td
+                  data-tip={`${num(project.centralTemplatePipeline.central)} of ${num(
+                    project.centralTemplatePipeline.total
+                  )} build pipelines use the central template`}
+                >
+                  {divide(
+                    project.centralTemplatePipeline.central,
+                    project.centralTemplatePipeline.total
+                  )
+                    .map(toPercentage)
+                    .getOr('-')}
+                </td>
               </tr>
             ))}
           </tbody>

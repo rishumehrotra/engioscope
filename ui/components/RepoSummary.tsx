@@ -2,7 +2,7 @@ import { compose, multiply, not } from 'rambda';
 import React from 'react';
 
 import { divide, exists, toPercentage } from '../../shared/utils.js';
-import { num } from '../helpers/utils.js';
+import { num, pluralise } from '../helpers/utils.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
@@ -76,7 +76,11 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                 )}
               />
             ),
-            tooltip: `${summaries.data.reposWithSonarQube} of ${summaries.data.totalActiveRepos} repos have SonarQube configured`,
+            tooltip: `${summaries.data.reposWithSonarQube} of ${pluralise(
+              summaries.data.totalActiveRepos,
+              'repo has',
+              'repos have'
+            )} SonarQube configured`,
           },
         ]}
         childStats={[
@@ -100,7 +104,11 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                     )}
                   />
                 ),
-                tooltip: `${summaries.data.sonarProjects.passedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'pass' quality gate`,
+                tooltip: `${summaries.data.sonarProjects.passedProjects} of ${pluralise(
+                  summaries.data.sonarProjects.totalProjects,
+                  'sonar project has',
+                  'sonar projects have'
+                )} 'pass' quality gate`,
               },
           summaries.data.sonarProjects.projectsWithWarning === 0
             ? null
@@ -146,7 +154,11 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
                     )}
                   />
                 ),
-                tooltip: `${summaries.data.sonarProjects.failedProjects} of ${summaries.data.sonarProjects.totalProjects} sonar projects have 'fail' quality gate`,
+                tooltip: `${summaries.data.sonarProjects.failedProjects} of ${pluralise(
+                  summaries.data.sonarProjects.totalProjects,
+                  'sonar project has',
+                  'sonar projects have'
+                )} 'fail' quality gate`,
               },
         ].filter(exists)}
       />
