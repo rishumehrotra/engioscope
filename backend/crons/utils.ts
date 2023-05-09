@@ -1,6 +1,7 @@
 import { CronJob } from 'cron';
 import cronTime from 'cron-time-generator';
 import debug from 'debug';
+import { last } from 'rambda';
 import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 import { appendCronLog, registerCron } from '../models/cron-status.js';
 
@@ -43,7 +44,8 @@ export const createSchedule = ({ frequency, schedule }: CreateScheduleArgs) => {
   const currentCallFrequency = (timeSinceLastUpdate: number) => {
     const sch = schedule(scheduleLine);
     const match = sch.find(([limit]) => timeSinceLastUpdate < limit);
-    return match ? match[1] : sch[sch.length - 1][1];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return match ? match[1] : last(sch)![1];
   };
 
   return (lastUpdateDate: Date) => {

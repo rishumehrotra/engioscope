@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import debug from 'debug';
 import { join } from 'node:path';
 import rimraf from '@zkochan/rimraf';
+import { last } from 'rambda';
 import { doesFileExist, retry } from '../../utils.js';
 
 const logFetch = debug('fetch');
@@ -33,10 +34,7 @@ const cacheLocation = join(process.cwd(), 'cache');
 const cachePath = (pathParts: string[]): FileLocation =>
   pathParts.length === 0
     ? [cacheLocation, `${pathParts[0]}.txt`]
-    : [
-        join(cacheLocation, ...pathParts.slice(0, -1)),
-        `${pathParts[pathParts.length - 1]}.txt`,
-      ];
+    : [join(cacheLocation, ...pathParts.slice(0, -1)), `${last(pathParts)}.txt`];
 
 const fileNameForLogs = (fileName: string) => fileName.replace(`${process.cwd()}/`, '');
 

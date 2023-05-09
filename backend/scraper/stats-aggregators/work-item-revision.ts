@@ -1,3 +1,4 @@
+import { last } from 'rambda';
 import type { UIWorkItemRevision } from '../../../shared/types.js';
 import type { WorkItemRevision } from '../types-azure.js';
 
@@ -11,7 +12,7 @@ export default (revisions: WorkItemRevision[]) =>
       return [transformRevision(revision)];
     }
 
-    if (acc[acc.length - 1].state === revision.fields['System.State']) {
+    if (last(acc)?.state === revision.fields['System.State']) {
       return acc;
     }
 

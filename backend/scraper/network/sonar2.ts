@@ -85,7 +85,7 @@ export const projectsAtSonarServer = (sonarServer: SonarConfig) => {
     cacheFile: pageIndex => [
       'sonar',
       'projects',
-      `${sonarServer.url.split('://')[1].replace(/\./g, '-')}-${pageIndex}`,
+      `${sonarServer.url.split('://')[1].replaceAll('.', '-')}-${pageIndex}`,
     ],
     headers: () => ({
       Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}`,
@@ -219,7 +219,7 @@ export const getQualityGateHistoryAsChunks =
       cacheFile: pageIndex => [
         'sonar',
         'alert-status-history',
-        `${sonarServer.url.split('://')[1].replace(/\./g, '-')}`,
+        `${sonarServer.url.split('://')[1].replaceAll('.', '-')}`,
         `${sonarProject.key}-${pageIndex}`,
       ],
       headers: () => ({

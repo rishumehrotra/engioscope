@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useParams, useLocation } from 'react-router-dom';
+import { last } from 'rambda';
 import NavBar from '../components/common/NavBar.js';
 import Repos from './Repos.js';
 import WorkItems from './WorkItems.js';
@@ -29,7 +30,8 @@ const renderStatIfAvailable = (count: number | undefined, label: string) =>
 const useNavItems = () => {
   const location = useLocation();
   const pathParts = location.pathname.split('/');
-  const selectedTab = pathParts[pathParts.length - 1];
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const selectedTab = last(pathParts)!;
 
   const cnp = useCollectionAndProject();
   const projectSummary = trpc.projects.summary.useQuery(cnp);

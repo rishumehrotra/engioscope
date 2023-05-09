@@ -28,7 +28,7 @@ export const formatDebt = (debtInMins: number) => {
 export const generateId = () =>
   Math.random()
     .toString(36)
-    .replace(/[^a-z]+/g, '')
+    .replaceAll(/[^a-z]+/g, '')
     .slice(2, 10);
 
 export const dontFilter = Boolean;
@@ -87,7 +87,6 @@ export const priorityBasedColor = (priority: number) => {
 export const prettyMS = (ms: number) =>
   prettyMilliseconds(ms, { unitCount: ms > oneYear ? 2 : 1 });
 
-export const last = <T>(arr: T[]) => (arr.length ? arr[arr.length - 1] : undefined);
 export const getWeekDates = (week: number, year: number) => {
   const firstDayOfYear = new Date(year, 0, 1);
   const start = new Date(firstDayOfYear.getTime() + week * oneWeekInMs);

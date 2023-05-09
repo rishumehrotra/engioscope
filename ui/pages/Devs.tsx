@@ -16,8 +16,8 @@ const sorters: SortMap<Dev> = {
   Name: (a, b) =>
     b.name
       .toLowerCase()
-      .replace(/["“”]/gi, '')
-      .localeCompare(a.name.toLowerCase().replace(/["“”]/gi, '')),
+      .replaceAll(/["“”]/gi, '')
+      .localeCompare(a.name.toLowerCase().replaceAll(/["“”]/gi, '')),
 };
 
 const bySearch = (search: string) => (d: Dev) => filterBySearch(search, d.name);

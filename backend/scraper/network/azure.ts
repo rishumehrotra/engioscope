@@ -1,6 +1,6 @@
 import qs from 'qs';
 import md5 from 'md5';
-import { filter } from 'rambda';
+import { filter, last } from 'rambda';
 import fetch from './fetch-with-extras.js';
 import { chunkArray, invokeSeries, pastDate } from '../../utils.js';
 import type {
@@ -90,7 +90,7 @@ export default (config: ParsedConfig) => {
       headers: () => authHeader,
       cacheFile: pageIndex => [
         ...cacheFile.slice(0, -1),
-        `${cacheFile[cacheFile.length - 1]}_${pageIndex}`,
+        `${last(cacheFile)}_${pageIndex}`,
       ],
     }).then(flattenToValues);
 
@@ -112,7 +112,7 @@ export default (config: ParsedConfig) => {
       headers: () => authHeader,
       cacheFile: pageIndex => [
         ...cacheFile.slice(0, -1),
-        `${cacheFile[cacheFile.length - 1]}_${pageIndex}`,
+        `${last(cacheFile)}_${pageIndex}`,
       ],
       chunkHandler: x => chunkHandler(x.data.value),
     });

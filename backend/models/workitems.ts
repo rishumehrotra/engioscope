@@ -141,7 +141,7 @@ const formatUrl = <T extends { url: string }>(wi: T) => ({
 });
 
 const sanitizeFieldName = (field: string) =>
-  field.replace(/\s/g, '_').replace(/\./g, '_').replace(/\$/g, '_');
+  field.replaceAll(/\s/g, '_').replaceAll('.', '_').replaceAll('$', '_');
 
 const applyAdditionalFilters = (
   collectionName: string,
