@@ -17,11 +17,14 @@ export function useTableSorter<
           if (sorter.currentSorter === sorters[sorterName]) {
             return { ...sorter, direction: sorter.direction === asc ? desc : asc };
           }
-          return { currentSorter: sorters[sorterName], direction: asc };
+          return {
+            currentSorter: sorters[sorterName],
+            direction: sorterName === defaultSorter ? asc : desc,
+          };
         });
       },
     }),
-    [sorters]
+    [defaultSorter, sorters]
   );
 
   const sortIcon = useCallback(
