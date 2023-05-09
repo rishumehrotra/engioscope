@@ -17,17 +17,19 @@ type CollectionCodeQualitySummary =
 const sorters = {
   byName: byString<CollectionCodeQualitySummary>(prop('project')),
   bySonarCount: byNum<CollectionCodeQualitySummary>(x =>
-    divide(x.reposWithSonarQube, x.totalActiveRepos).getOr(0)
+    divide(x.reposWithSonarQube, x.totalActiveRepos).getOr(-1)
   ),
   bySonarPass: byNum<CollectionCodeQualitySummary>(x =>
-    divide(x.sonarProjects.passedProjects, x.sonarProjects.totalProjects).getOr(0)
+    divide(x.sonarProjects.passedProjects, x.sonarProjects.totalProjects).getOr(-1)
   ),
   bySonarFail: byNum<CollectionCodeQualitySummary>(x =>
-    divide(x.sonarProjects.failedProjects, x.sonarProjects.totalProjects).getOr(0)
+    divide(x.sonarProjects.failedProjects, x.sonarProjects.totalProjects).getOr(-1)
   ),
-  byBranches: byNum<CollectionCodeQualitySummary>(x => x.healthyBranches.total),
+  byBranchPolicy: byNum<CollectionCodeQualitySummary>(x =>
+    divide(x.branchPolicy.conforms, x.branchPolicy.total).getOr(-1)
+  ),
   byHealthyBranches: byNum<CollectionCodeQualitySummary>(x =>
-    divide(x.healthyBranches.healthy, x.healthyBranches.total).getOr(0)
+    divide(x.healthyBranches.healthy, x.healthyBranches.total).getOr(-1)
   ),
 };
 
@@ -83,9 +85,9 @@ const CollectionsCodeQualitySummary: React.FC<{
                 </button>
               </th>
               <th>
-                <button {...buttonProps('byBranches')}>
-                  <span>Branches</span>
-                  {sortIcon('byBranches')}
+                <button {...buttonProps('byBranchPolicy')}>
+                  <span>Branch policies</span>
+                  {sortIcon('byBranchPolicy')}
                 </button>
               </th>
               <th>
@@ -110,6 +112,7 @@ const CollectionsCodeQualitySummary: React.FC<{
                 </td>
 
                 <td
+                  className="bg-slate-100"
                   data-tip={`${project.reposWithSonarQube} of ${pluralise(
                     project.totalActiveRepos,
                     'repo has',
@@ -127,6 +130,7 @@ const CollectionsCodeQualitySummary: React.FC<{
                   />
                 </td>
                 <td
+                  className="bg-slate-100"
                   data-tip={`${project.sonarProjects.passedProjects} of ${pluralise(
                     project.sonarProjects.totalProjects,
                     'sonar project has',
@@ -147,6 +151,7 @@ const CollectionsCodeQualitySummary: React.FC<{
                   />
                 </td>
                 <td
+                  className="bg-slate-100"
                   data-tip={`${project.sonarProjects.failedProjects} of ${pluralise(
                     project.sonarProjects.totalProjects,
                     'sonar project has',
@@ -167,7 +172,18 @@ const CollectionsCodeQualitySummary: React.FC<{
                   />
                 </td>
 
-                <td>{num(project.healthyBranches.total || 0)}</td>
+                <td
+                  data-tip={`${num(project.branchPolicy.conforms)} out of ${pluralise(
+                    project.branchPolicy.total,
+                    'artifact is',
+                    'artifacts are'
+                  )} from branches that conform<br />to the branch policy.`}
+                  data-html
+                >
+                  {divide(project.branchPolicy.conforms, project.branchPolicy.total)
+                    .map(toPercentage)
+                    .getOr('-')}
+                </td>
                 <td>
                   {divide(
                     project.healthyBranches.healthy ?? 0,

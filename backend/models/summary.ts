@@ -98,6 +98,7 @@ export const getCollectionCodeQualitySummary = async ({
       | 'sonarProjects'
       | 'weeklyReposWithSonarQubeCount'
       | 'weeklySonarProjectsCount'
+      | 'branchPolicy'
     >
   >(
     { collectionName, duration: '90 days' },
@@ -111,5 +112,6 @@ export const getCollectionCodeQualitySummary = async ({
       sonarProjects: 1,
       weeklyReposWithSonarQubeCount: 1,
       weeklySonarProjectsCount: 1,
+      branchPolicy: 1,
     }
   );
