@@ -1,23 +1,13 @@
 {
   "extends": "../tsconfig-base.json",
-  "include": [
-    "./**/*.ts",
-    "../shared/**/*.ts"
-  ],
+  "include": ["./**/*.ts", "../shared/**/*.ts"],
   "compilerOptions": {
     "target": "ES2018",
-    "lib": [
-      "es2020"
-    ],
-    "types": [
-      "jest",
-      "node"
-    ],
+    "lib": ["ESNext"],
+    "types": ["jest", "node"],
     "noEmit": false,
     "outDir": "../dist",
     "allowSyntheticDefaultImports": true
   },
-  "exclude": [
-    "server/cache"
-  ]
+  "exclude": ["server/cache"]
 }

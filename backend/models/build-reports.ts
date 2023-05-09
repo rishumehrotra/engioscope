@@ -209,7 +209,7 @@ export const centralTemplateOptions = async ({
 
   return Object.fromEntries(
     Object.entries(result[0].centralTemplate).map(([key, value]) => [
-      key.trim().replace(/_/g, ' '),
+      key.trim().replaceAll('_', ' '),
       value.trim() === 'true' ? true : value.trim() === 'false' ? false : value.trim(),
     ])
   );

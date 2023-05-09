@@ -76,7 +76,7 @@ const projectsAtSonarServer = (config: ParsedConfig) => (sonarServer: SonarConfi
     cacheFile: pageIndex => [
       'sonar',
       'projects',
-      `${sonarServer.url.split('://')[1].replace(/\./g, '-')}-${pageIndex}`,
+      `${sonarServer.url.split('://')[1].replaceAll('.', '-')}-${pageIndex}`,
     ],
     headers: () => ({
       Authorization: `Basic ${Buffer.from(`${sonarServer.token}:`).toString('base64')}`,
@@ -110,7 +110,7 @@ const getMeasureDefinitions =
     const { usingDiskCache } = fetchWithDiskCache(config.cacheTimeMs);
 
     return usingDiskCache<{ metrics: MeasureDefinition[] }>(
-      ['sonar', 'measures-definitions', url.split('://')[1].replace(/\./g, '-')],
+      ['sonar', 'measures-definitions', url.split('://')[1].replaceAll('.', '-')],
       () =>
         fetch(`${url}/api/metrics/search?ps=200`, {
           headers: {
@@ -189,7 +189,7 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
     cacheFile: pageIndex => [
       'sonar',
       'alert-status-history',
-      `${sonarProject.url.split('://')[1].replace(/\./g, '-')}`,
+      `${sonarProject.url.split('://')[1].replaceAll('.', '-')}`,
       `${sonarProject.key}-${pageIndex}`,
     ],
     headers: () => ({
@@ -223,7 +223,7 @@ const getQualityGateHistory = (config: ParsedConfig) => (sonarProject: SonarProj
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const sortByLastAnalysedDate = desc<SonarProject>(byDate(x => x.lastAnalysisDate!));
 
-const normliseNameForMatching = (name: string) => name.replace(/-/g, '_').toLowerCase();
+const normliseNameForMatching = (name: string) => name.replaceAll('-', '_').toLowerCase();
 
 // #region Attempt to find a sonar project
 const attemptExactMatchFind = (repoName: string, sonarProjects: SonarProject[]) => {

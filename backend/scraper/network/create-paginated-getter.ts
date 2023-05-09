@@ -1,4 +1,5 @@
 import qs from 'qs';
+import { last } from 'rambda';
 import fetch from './fetch-with-extras.js';
 import type { FetchResponse } from './fetch-with-disk-cache.js';
 import fetchWithDiskCache from './fetch-with-disk-cache.js';
@@ -34,8 +35,9 @@ export default (diskCacheTimeMs: number, verifySsl: boolean, requestTimeout?: nu
       ),
     ];
 
-    while (hasAnotherPage(responses[responses.length - 1])) {
-      const previousResponse = responses[responses.length - 1];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    while (hasAnotherPage(last(responses)!)) {
+      const previousResponse = last(responses);
       responses.push(
         // eslint-disable-next-line no-await-in-loop
         await usingDiskCache<T>(cacheFile(responses.length.toString()), () =>

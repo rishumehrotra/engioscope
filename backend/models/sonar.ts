@@ -85,7 +85,7 @@ const attemptExactMatchFind = async (repoName: string) => {
         },
       },
     },
-    { $match: { projectName: repoName.replace(/-/g, '_').toLowerCase() } },
+    { $match: { projectName: repoName.replaceAll('-', '_').toLowerCase() } },
     { $unset: 'projectName' },
     { $sort: { lastAnalysisDate: -1 } },
     { $group: { _id: null, first: { $first: '$$ROOT' } } },
@@ -108,7 +108,7 @@ const attemptStartsWithFind = async (repoName: string) => {
     {
       $match: {
         projectName: {
-          $regex: new RegExp(`^${repoName.replace(/-/g, '_').toLowerCase()}`, 'i'),
+          $regex: new RegExp(`^${repoName.replaceAll('-', '_').toLowerCase()}`, 'i'),
         },
       },
     },

@@ -8,6 +8,7 @@ import { htmlReportToObj } from '../scraper/parse-build-reports.js';
 const getReportOutputPath = (html: string) => {
   const root = parseHtml(html);
   const readFromHtml = (key: string) => {
+    // eslint-disable-next-line unicorn/prefer-dom-node-text-content
     const value = root.querySelector(`#${key}`)?.innerText;
     if (!value) {
       throw new Error(`400 - Could not find value for ${key}`);

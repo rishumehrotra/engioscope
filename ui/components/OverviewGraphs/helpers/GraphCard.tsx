@@ -14,13 +14,15 @@ type GraphCardProps = {
   csvData?: (string | number)[][];
 };
 
-const titleToUrlFragment = (title: string) => title.toLowerCase().replace(/\s/g, '-');
+const titleToUrlFragment = (title: string) => title.toLowerCase().replaceAll(/\s/g, '-');
 
 const convertToCSV = (data: (string | number)[][]) =>
   data
     .map(row =>
       row
-        .map(cell => (typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell))
+        .map(cell =>
+          typeof cell === 'string' ? `"${cell.replaceAll('"', '""')}"` : cell
+        )
         .join(',')
     )
     .join('\n');
