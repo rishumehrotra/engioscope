@@ -22,6 +22,11 @@ import useQueryParam, {
   asStringArray,
 } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
+
+import { trpc } from '../helpers/trpc.js';
+import useRepoFilters from '../hooks/use-repo-filters.jsx';
+import RepoHealth2 from '../components/RepoHealth2.jsx';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -68,7 +73,11 @@ const Repos: React.FC = () => {
     'group',
     asStringArray
   );
-
+  const filters = useRepoFilters();
+  const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
+    getNextPageParam: lastPage => lastPage.nextCursor,
+  });
+  const [showNewListing] = useQueryParam('listing-v2', asBoolean);
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
     return aggregateDevs(projectAnalysis);
@@ -147,11 +156,25 @@ const Repos: React.FC = () => {
       ) : null}
       <AppliedFilters type="repos" count={repos.length} />
       <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
-      <InfiniteScrollList
-        items={repos}
-        itemKey={repo => repo.id}
-        itemRenderer={showRepo}
-      />
+      {showNewListing ? null : (
+        <InfiniteScrollList
+          items={repos}
+          itemKey={repo => repo.id}
+          itemRenderer={showRepo}
+        />
+      )}
+
+      {showNewListing ? (
+        <>
+          <h4>Repo Listing v2</h4>
+          <InfiniteScrollList2
+            items={query.data?.pages.flatMap(page => page.items) || []}
+            itemKey={repo => repo.repositoryId}
+            itemComponent={RepoHealth2}
+            loadNextPage={query.fetchNextPage}
+          />
+        </>
+      ) : null}
     </>
   ) : (
     <AlertMessage message="No repos found" />

@@ -1,4 +1,4 @@
-import { passInputTo, t } from './trpc.js';
+import { memoizeForUI, passInputTo, t } from './trpc.js';
 import {
   branchPoliciesInputParser,
   getBranchPolicies,
@@ -11,6 +11,8 @@ import {
   NonYamlPipelinesParser,
   RepoOverviewStatsInputParser,
   getRepoOverviewStats,
+  repoFiltersAndSorterInputParser,
+  getFilteredAndSortedReposWithStats,
 } from '../../models/repo-listing.js';
 
 export default t.router({
@@ -27,4 +29,8 @@ export default t.router({
   getRepoOverviewStats: t.procedure
     .input(RepoOverviewStatsInputParser)
     .query(passInputTo(getRepoOverviewStats)),
+
+  getFilteredAndSortedReposWithStats: t.procedure
+    .input(repoFiltersAndSorterInputParser)
+    .query(passInputTo(memoizeForUI(getFilteredAndSortedReposWithStats))),
 });
