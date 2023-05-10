@@ -537,14 +537,22 @@ const sorters = {
 
 const sortKeys = ['builds', 'branches', 'commits', 'pull-requests'] as const;
 
+export type SortKey = (typeof sortKeys)[number];
+
 export const repoFiltersAndSorterInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.string().optional(),
   groupsIncluded: z.array(z.string()).optional(),
   pageSize: z.number(),
   pageNumber: z.number(),
-  sortBy: z.enum(sortKeys),
-  sortDirection: z.enum(['asc', 'desc']),
+  sortBy: z.enum(sortKeys).optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
+  cursor: z
+    .object({
+      pageSize: z.number().optional(),
+      pageNumber: z.number().optional(),
+    })
+    .nullish(),
 });
 
 export type RepoFilters = z.infer<typeof repoFiltersAndSorterInputParser>;
@@ -553,10 +561,9 @@ export const getFilteredAndSortedReposWithStats = async ({
   queryContext,
   searchTerm,
   groupsIncluded,
-  pageSize,
-  pageNumber,
-  sortBy,
-  sortDirection,
+  sortBy = 'builds',
+  sortDirection = 'desc',
+  cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
   const filteredRepos = await getFilteredRepos(queryContext, searchTerm, groupsIncluded);
 
@@ -566,8 +573,8 @@ export const getFilteredAndSortedReposWithStats = async ({
     queryContext,
     repositoryIds,
     sortDirection,
-    pageSize,
-    pageNumber
+    cursor?.pageSize || 10,
+    cursor?.pageNumber || 0
   );
 
   const sortedRepoIds = sortedRepos.map(repo => repo.repositoryId);
@@ -580,6 +587,8 @@ export const getFilteredAndSortedReposWithStats = async ({
     tests,
     sonarQualityGateStatuses,
     pullRequests,
+    pipelineCounts,
+    releaseBranches,
   ] = await Promise.all([
     getDefaultBranchAndNameForRepoIds(queryContext, sortedRepoIds),
     getTotalBuildsForRepositoryIds(queryContext, sortedRepoIds),
@@ -588,12 +597,15 @@ export const getFilteredAndSortedReposWithStats = async ({
     getTotalTestsForRepositoryIds(queryContext, sortedRepoIds),
     getSonarQualityGateStatusForRepoIds(queryContext, sortedRepoIds),
     getTotalPullRequestsForRepositoryIds(queryContext, sortedRepoIds),
+    getTotalPipelineCountForRepositoryIds(queryContext, sortedRepoIds),
+    getTotalReleaseBranchesForRepositoryIds(queryContext, sortedRepoIds),
   ]);
 
-  return sortedRepos.map(repo => {
+  const repos = sortedRepos.map((repo, index) => {
     const repoId = repo.repositoryId;
     const repoStats = {
-      repoDetails: repoDetails.find(repoDetail => repoDetail.id === repoId),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      repoDetails: repoDetails.find(repoDetail => repoDetail.id === repoId)!,
       builds: builds.find(build => build.repositoryId === repoId)?.count || 0,
       branches: branches.find(branch => branch.repositoryId === repoId)?.total || 0,
       commits: commits.find(commit => commit.repositoryId === repoId)?.count || 0,
@@ -603,10 +615,25 @@ export const getFilteredAndSortedReposWithStats = async ({
       ),
       pullRequests:
         pullRequests.find(pullRequest => pullRequest.repositoryId === repoId)?.total || 0,
+      pipelineCounts: pipelineCounts.find(
+        pipelineCount => pipelineCount.repositoryId === repoId
+      ),
+      releaseBranches: releaseBranches.find(
+        releaseBranch => releaseBranch.repositoryId === repoId
+      ),
     };
     return {
       ...repo,
       ...repoStats,
+      index,
     };
   });
+
+  return {
+    items: repos,
+    nextCursor: {
+      pageNumber: (cursor?.pageNumber || 0) + 1,
+      pageSize: cursor?.pageSize || 10,
+    },
+  };
 };

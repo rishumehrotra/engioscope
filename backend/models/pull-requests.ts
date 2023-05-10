@@ -155,7 +155,7 @@ export const getReposSortedByPullRequestsCount = (
         total: 1,
       },
     },
-    { $sort: { count: sortOrder === 'asc' ? 1 : -1 } },
+    { $sort: { total: sortOrder === 'asc' ? 1 : -1 } },
     { $skip: pageSize * pageNumber },
     { $limit: pageSize },
   ]).exec();
