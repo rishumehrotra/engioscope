@@ -571,8 +571,6 @@ export const getFilteredAndSortedReposWithStats = async ({
 
   const repositoryIds = filteredRepos.map(prop('id'));
 
-  sortBy.replace(' ', '-').toLowerCase();
-
   const sortedRepos = await sorters[sortBy](
     queryContext,
     repositoryIds,

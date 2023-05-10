@@ -73,11 +73,13 @@ const Repos: React.FC = () => {
     'group',
     asStringArray
   );
+  const [showNewListing] = useQueryParam('listing-v2', asBoolean);
   const filters = useRepoFilters();
   const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
+    enabled: showNewListing === true,
   });
-  const [showNewListing] = useQueryParam('listing-v2', asBoolean);
+
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
     return aggregateDevs(projectAnalysis);
@@ -169,7 +171,7 @@ const Repos: React.FC = () => {
           <h4>Repo Listing v2</h4>
           <InfiniteScrollList2
             items={query.data?.pages.flatMap(page => page.items) || []}
-            itemKey={repo => repo.repositoryId}
+            itemKey={repo => repo.repoDetails.id}
             itemComponent={RepoHealth2}
             loadNextPage={query.fetchNextPage}
           />
