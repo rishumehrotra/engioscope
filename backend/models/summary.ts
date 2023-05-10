@@ -45,6 +45,7 @@ export const getCollectionBuildsSummary = ({
       | 'successfulBuilds'
       | 'centralTemplatePipeline'
       | 'pipelines'
+      | 'centralTemplateUsage'
     >
   >(
     { collectionName, duration: '90 days' },
@@ -56,6 +57,7 @@ export const getCollectionBuildsSummary = ({
       successfulBuilds: 1,
       centralTemplatePipeline: 1,
       pipelines: 1,
+      centralTemplateUsage: 1,
     }
   );
 
