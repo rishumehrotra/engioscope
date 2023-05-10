@@ -236,6 +236,7 @@ export const getReposSortedByCommitsCount = (
       },
     },
     { $group: { _id: '$repositoryId', count: { $sum: 1 } } },
+    { $sort: { count: sortOrder === 'asc' ? 1 : -1, _id: -1 } },
     {
       $project: {
         _id: 0,
@@ -243,7 +244,6 @@ export const getReposSortedByCommitsCount = (
         count: 1,
       },
     },
-    { $sort: { count: sortOrder === 'asc' ? 1 : -1 } },
     { $skip: pageSize * pageNumber },
     { $limit: pageSize },
   ]).exec();

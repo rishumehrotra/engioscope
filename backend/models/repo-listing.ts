@@ -601,7 +601,7 @@ export const getFilteredAndSortedReposWithStats = async ({
     getTotalReleaseBranchesForRepositoryIds(queryContext, sortedRepoIds),
   ]);
 
-  const repos = sortedRepos.map((repo, index) => {
+  const repos = sortedRepos.map(repo => {
     const repoId = repo.repositoryId;
     const repoStats = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -622,10 +622,10 @@ export const getFilteredAndSortedReposWithStats = async ({
         releaseBranch => releaseBranch.repositoryId === repoId
       ),
     };
+
     return {
       ...repo,
       ...repoStats,
-      index,
     };
   });
 

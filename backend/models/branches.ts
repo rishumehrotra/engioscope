@@ -241,6 +241,7 @@ export const getReposSortedByBranchesCount = async (
         total: { $sum: 1 },
       },
     },
+    { $sort: { total: sortOrder === 'asc' ? 1 : -1, _id: -1 } },
     {
       $project: {
         _id: 0,
@@ -248,7 +249,6 @@ export const getReposSortedByBranchesCount = async (
         total: 1,
       },
     },
-    { $sort: { total: sortOrder === 'asc' ? 1 : -1 } },
     { $skip: pageSize * pageNumber },
     { $limit: pageSize },
   ]);
