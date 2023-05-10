@@ -210,10 +210,8 @@ const updateSonar = async (
 
 const saveBuilds = (collectionName: string, project: string) => {
   return async (builds: AzureBuild[]) => {
-    await bulkSaveBuilds(collectionName)(builds);
-    await setLastBuildUpdateDate(collectionName, project);
-
     await Promise.all([
+      bulkSaveBuilds(collectionName)(builds),
       getBuildTimelines(collectionName, project, builds),
       syncTestCoverageForBuildIds(
         collectionName,
@@ -222,6 +220,8 @@ const saveBuilds = (collectionName: string, project: string) => {
       ),
       updateSonar(collectionName, project, builds),
     ]);
+
+    await setLastBuildUpdateDate(collectionName, project);
   };
 };
 
