@@ -18,13 +18,13 @@ const sorters = {
   byName: byString<CollectionBuildsSummary>(prop('project')),
   byBuilds: byNum<CollectionBuildsSummary>(pipe(prop('totalBuilds'), prop('count'))),
   bySuccessfulBuilds: byNum<CollectionBuildsSummary>(x =>
-    divide(x.successfulBuilds.count, x.totalBuilds.count).getOr(0)
+    divide(x.successfulBuilds.count, x.totalBuilds.count).getOr(-1)
   ),
   byYamlPipelines: byNum<CollectionBuildsSummary>(x =>
-    divide(x.pipelines.yamlCount, x.pipelines.totalCount).getOr(0)
+    divide(x.pipelines.yamlCount, x.pipelines.totalCount).getOr(-1)
   ),
   byCentralTemplateUsage: byNum<CollectionBuildsSummary>(x =>
-    divide(x.centralTemplatePipeline.central, x.centralTemplatePipeline.total).getOr(0)
+    divide(x.centralTemplatePipeline.central, x.pipelines.totalCount).getOr(-1)
   ),
 };
 
@@ -155,7 +155,7 @@ const CollectionsBuildsSummary: React.FC<{
                 >
                   {divide(
                     project.centralTemplatePipeline.central,
-                    project.centralTemplatePipeline.total
+                    project.pipelines.totalCount
                   )
                     .map(toPercentage)
                     .getOr('-')}
