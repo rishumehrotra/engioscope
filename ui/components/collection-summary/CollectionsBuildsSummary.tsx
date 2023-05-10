@@ -145,9 +145,13 @@ const CollectionsBuildsSummary: React.FC<{
                     .getOr('-')}
                 </td>
                 <td
-                  data-tip={`${num(project.centralTemplatePipeline.central)} of ${num(
-                    project.centralTemplatePipeline.total
-                  )} build pipelines use the central template`}
+                  data-html
+                  data-tip={`${num(project.centralTemplatePipeline.central)} out of ${num(
+                    project.pipelines.totalCount
+                  )} build pipelines use the central template on the master branch<br>
+                        ${num(project.centralTemplateUsage.templateUsers)} out of ${num(
+                    project.totalBuilds.count
+                  )} build runs used the central template`}
                 >
                   {divide(
                     project.centralTemplatePipeline.central,
