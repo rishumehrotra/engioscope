@@ -47,14 +47,6 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
       );
     }
 
-    lis.forEach(li => {
-      if (li.offsetTop > offsetTopOfFirstElement) {
-        li.classList.add('invisible');
-      } else {
-        li.classList.remove('invisible');
-      }
-    });
-
     const lastVisible = [...lis]
       .reverse()
       .find(li => li.offsetTop === offsetTopOfFirstElement);

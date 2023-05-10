@@ -66,6 +66,7 @@ const Artefacts: React.FC<{
                               <Branches className="h-4 mr-1" />
                               {branch.name.replace('refs/heads/', '')}
                               <BranchPolicyPill
+                                className="m-2"
                                 repositoryId={artifact.repoId}
                                 refName={branch.name}
                                 conforms={branch.conforms}
@@ -98,6 +99,7 @@ const Artefacts: React.FC<{
                                 <Branches className="h-4 mr-1" />
                                 {(branch.name || '(unknown)').replace('refs/heads/', '')}
                                 <BranchPolicyPill
+                                  className="m-2"
                                   repositoryId={artifact.repoId}
                                   refName={branch.name}
                                   conforms={branch.conforms}

@@ -22,7 +22,8 @@ const BranchPolicyPill: React.FC<{
   repositoryId: string;
   refName: string;
   conforms: boolean | undefined;
-}> = ({ conforms, repositoryId, refName }) => {
+  className?: string;
+}> = ({ conforms, repositoryId, refName, className }) => {
   const { collectionName, project } = useCollectionAndProject();
   const domId = `bdi-${repositoryId}-${refName}`;
   const [hasHovered, setHasHovered] = useState(false);
@@ -72,7 +73,7 @@ const BranchPolicyPill: React.FC<{
   return (
     <>
       <span
-        className={`text-xs border-2 rounded-full px-2 inline-block m-2 ${
+        className={`text-xs border-2 rounded-full px-2 inline-block ${className || ''} ${
           conforms ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'
         }`}
         onMouseOver={() => setHasHovered(true)}
