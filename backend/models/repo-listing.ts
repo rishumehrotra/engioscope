@@ -561,10 +561,8 @@ export const getFilteredAndSortedReposWithStats = async ({
   queryContext,
   searchTerm,
   groupsIncluded,
-  // pageSize,
-  // pageNumber,
   sortBy = 'builds',
-  sortDirection,
+  sortDirection = 'desc',
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
   const filteredRepos = await getFilteredRepos(queryContext, searchTerm, groupsIncluded);
@@ -574,7 +572,7 @@ export const getFilteredAndSortedReposWithStats = async ({
   const sortedRepos = await sorters[sortBy](
     queryContext,
     repositoryIds,
-    sortDirection || 'desc',
+    sortDirection,
     cursor?.pageSize || 10,
     cursor?.pageNumber || 0
   );

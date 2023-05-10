@@ -12,7 +12,7 @@ import { TopLevelTab } from './repo-tabs2/Tabs.js';
 import { useSortParams } from '../hooks/sort-hooks.js';
 import usePageName from '../hooks/use-page-name.js';
 import branches from './repo-tabs2/branches/index.js';
-import type { RepoItem } from '../helpers/trpc.js';
+import type { RouterClient } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 
@@ -27,7 +27,7 @@ const combinedQualityGate = (qualityGateStatus: string[]) => {
 };
 
 type RepoHealthProps2 = {
-  item: RepoItem;
+  item: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number];
   isFirst?: boolean;
 };
 
