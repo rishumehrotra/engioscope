@@ -599,8 +599,8 @@ export const getFilteredAndSortedReposWithStats = async ({
     getTotalTestsForRepositoryIds(queryContext, sortedRepoIds),
     getSonarQualityGateStatusForRepoIds(queryContext, sortedRepoIds),
     getTotalPullRequestsForRepositoryIds(queryContext, sortedRepoIds),
-    getTotalPipelineCountForRepositoryIds(queryContext, repositoryIds),
-    getTotalReleaseBranchesForRepositoryIds(queryContext, repositoryIds),
+    getTotalPipelineCountForRepositoryIds(queryContext, sortedRepoIds),
+    getTotalReleaseBranchesForRepositoryIds(queryContext, sortedRepoIds),
   ]);
 
   const repos = sortedRepos.map((repo, index) => {
