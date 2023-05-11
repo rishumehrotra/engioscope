@@ -374,7 +374,7 @@ export const getSummary = async ({
     totalBuilds,
     successfulBuilds,
     totalActiveRepos: activeRepoIds.length,
-    totalRepos: totalRepos.map(prop('id'))?.length || 0,
+    totalRepos: totalRepos.length,
     hasReleasesReposCount,
     centralTemplatePipeline,
     totalDefs: defSummary.totalDefs,
