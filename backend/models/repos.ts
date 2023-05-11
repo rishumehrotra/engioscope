@@ -150,12 +150,6 @@ export const getAllRepoDefaultBranchIDs = async (
   return repoDefaultBranches.map(repo => repo.defaultBranchId);
 };
 
-export const getTotalReposInProject = (collectionName: string, project: string) =>
-  RepositoryModel.countDocuments({
-    collectionName,
-    'project.name': project,
-  });
-
 export const getDefaultBranchAndNameForRepoIds = (
   queryContext: QueryContext,
   repositoryIds: string[]

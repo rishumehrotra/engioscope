@@ -20,7 +20,6 @@ import {
   getReposSortedByBuildCount,
   getReposSortedByCommitsCount,
   getReposSortedByPullRequestsCount,
-  getTotalReposInProject,
 } from './repos.js';
 import { getHasReleasesSummary, releaseBranchesForRepo } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
@@ -288,6 +287,28 @@ export const getCentralTemplatePipeline = async (
   };
 };
 
+export const getFilteredRepos = async (
+  queryContext: QueryContext,
+  searchTerm: string | undefined,
+  groupsIncluded: string[] | undefined
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const groupRepositoryNames = groupsIncluded
+    ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
+    : [];
+
+  return RepositoryModel.find(
+    {
+      collectionName,
+      'project.name': project,
+      ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
+      ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
+    },
+    { id: 1, name: 1 }
+  ).lean();
+};
+
 export const getSummaryInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.union([z.string(), z.undefined()]),
@@ -339,7 +360,7 @@ export const getSummary = async ({
     getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds),
     getTestsByWeek(queryContext, activeRepoIds),
     getCoveragesByWeek(queryContext, activeRepoIds),
-    getTotalReposInProject(collectionName, project),
+    getFilteredRepos(queryContext, searchTerm, groupsIncluded),
     getSonarProjectsCount(collectionName, project, activeRepoIds),
     updateWeeklySonarProjectCount(queryContext, activeRepoIds),
     getReposWithSonarQube(collectionName, project, activeRepoIds),
@@ -353,7 +374,7 @@ export const getSummary = async ({
     totalBuilds,
     successfulBuilds,
     totalActiveRepos: activeRepoIds.length,
-    totalRepos,
+    totalRepos: totalRepos.map(prop('id'))?.length || 0,
     hasReleasesReposCount,
     centralTemplatePipeline,
     totalDefs: defSummary.totalDefs,
@@ -501,28 +522,6 @@ export const getRepoOverviewStats = async ({
     pipelineCounts,
     releaseBranches,
   };
-};
-
-export const getFilteredRepos = async (
-  queryContext: QueryContext,
-  searchTerm: string | undefined,
-  groupsIncluded: string[] | undefined
-) => {
-  const { collectionName, project } = fromContext(queryContext);
-
-  const groupRepositoryNames = groupsIncluded
-    ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
-    : [];
-
-  return RepositoryModel.find(
-    {
-      collectionName,
-      'project.name': project,
-      ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
-      ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
-    },
-    { id: 1, name: 1 }
-  ).lean();
 };
 
 const sorters = {

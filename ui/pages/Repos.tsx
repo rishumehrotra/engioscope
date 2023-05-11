@@ -153,7 +153,14 @@ const Repos: React.FC = () => {
           />
         </div>
       ) : null}
-      <AppliedFilters type="repos" count={repos.length} />
+      <AppliedFilters
+        type="repos"
+        count={
+          showNewListing
+            ? query.data?.pages.flatMap(page => page.items)?.length || 0
+            : repos.length
+        }
+      />
       <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
       {showNewListing ? null : (
         <InfiniteScrollList

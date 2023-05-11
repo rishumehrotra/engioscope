@@ -3,7 +3,7 @@ import React from 'react';
 
 import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num, pluralise } from '../helpers/utils.js';
-import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
@@ -23,7 +23,7 @@ const active = compose(not, isInactive);
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const activeRepos = repos.filter(active);
-
+  const [showNewListing] = useQueryParam('listing-v2', asBoolean);
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
 
@@ -49,7 +49,16 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   return (
     <ProjectStats
       note={
-        repos.length - activeRepos.length === 0 ? undefined : (
+        showNewListing ? (
+          summaries.data.totalRepos - summaries.data.totalActiveRepos ===
+          0 ? undefined : (
+            <>
+              {'Excluded '}
+              <b>{summaries.data.totalRepos - summaries.data.totalActiveRepos}</b>
+              {' inactive repositories from analysis'}
+            </>
+          )
+        ) : repos.length - activeRepos.length === 0 ? undefined : (
           <>
             {'Excluded '}
             <b>{repos.length - activeRepos.length}</b>
