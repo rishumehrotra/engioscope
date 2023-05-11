@@ -1,7 +1,7 @@
 import type { ObjectId } from 'mongoose';
 import { z } from 'zod';
 import { map } from 'rambda';
-import { collectionAndProjectInputs } from './helpers.js';
+import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { normalizeBranchName } from '../utils.js';
 import type { QueryContext } from './utils.js';
@@ -175,4 +175,235 @@ export const getDefaultBranchAndNameForRepoIds = (
         url: repo.url,
       }))
     );
+};
+
+export const getReposSortedByBuildCount = async (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return RepositoryModel.aggregate<{
+    repositoryId: string;
+    count: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: repositoryIds },
+      },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $gte: ['$finishTime', startDate] },
+                  { $lte: ['$finishTime', endDate] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'builds',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        count: { $size: '$builds' },
+      },
+    },
+    { $sort: { count: sortOrder === 'asc' ? 1 : -1, repositoryId: -1 } },
+    { $skip: pageSize * pageNumber },
+    { $limit: pageSize },
+  ]).exec();
+};
+
+export const getReposSortedByBranchesCount = async (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+  return RepositoryModel.aggregate<{
+    repositoryId: string;
+    count: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: repositoryIds },
+      },
+    },
+    {
+      $lookup: {
+        from: 'branches',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $eq: ['$repositoryId', '$$repositoryId'],
+              },
+            },
+          },
+        ],
+        as: 'branches',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        count: { $size: '$branches' },
+      },
+    },
+    { $sort: { count: sortOrder === 'asc' ? 1 : -1, repositoryId: -1 } },
+    { $skip: pageSize * pageNumber },
+    { $limit: pageSize },
+  ]).exec();
+};
+
+export const getReposSortedByCommitsCount = (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return RepositoryModel.aggregate<{
+    repositoryId: string;
+    count: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: repositoryIds },
+      },
+    },
+    {
+      $lookup: {
+        from: 'commits',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              '$expr': {
+                $eq: ['$repositoryId', '$$repositoryId'],
+              },
+              'author.date': inDateRange(startDate, endDate),
+            },
+          },
+        ],
+        as: 'commits',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        count: { $size: '$commits' },
+      },
+    },
+    { $sort: { count: sortOrder === 'asc' ? 1 : -1, repositoryId: -1 } },
+    { $skip: pageSize * pageNumber },
+    { $limit: pageSize },
+  ]).exec();
+};
+
+export const getReposSortedByPullRequestsCount = (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return RepositoryModel.aggregate<{
+    repositoryId: string;
+    count: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: repositoryIds },
+      },
+    },
+    {
+      $lookup: {
+        from: 'pullrequests',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repositoryId', '$$repositoryId'] },
+                  {
+                    $or: [
+                      { $eq: ['$status', 'active'] },
+                      {
+                        $and: [
+                          { $in: ['$status', ['abandoned', 'completed']] },
+                          { $gte: ['$closedDate', startDate] },
+                          { $lt: ['$closedDate', endDate] },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'pullrequests',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        count: { $size: '$pullrequests' },
+        name: 1,
+      },
+    },
+    { $sort: { count: sortOrder === 'asc' ? 1 : -1, repositoryId: -1 } },
+    { $skip: pageSize * pageNumber },
+    { $limit: pageSize },
+  ]).exec();
 };

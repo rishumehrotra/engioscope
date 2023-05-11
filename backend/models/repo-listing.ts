@@ -6,7 +6,6 @@ import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import {
   getHealthyBranchesSummary,
-  getReposSortedByBranchesCount,
   getTotalBranchesForRepositoryIds,
 } from './branches.js';
 import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
@@ -17,6 +16,10 @@ import {
 import {
   getAllRepoDefaultBranchIDs,
   getDefaultBranchAndNameForRepoIds,
+  getReposSortedByBranchesCount,
+  getReposSortedByBuildCount,
+  getReposSortedByCommitsCount,
+  getReposSortedByPullRequestsCount,
   getTotalReposInProject,
 } from './repos.js';
 import { getHasReleasesSummary, releaseBranchesForRepo } from './release-listing.js';
@@ -29,11 +32,8 @@ import {
   getTestsByWeek,
   getTotalTestsForRepositoryIds,
 } from './testruns.js';
-import { getReposSortedByBuildCount, getTotalBuildsForRepositoryIds } from './builds.js';
-import {
-  getReposSortedByCommitsCount,
-  getTotalCommitsForRepositoryIds,
-} from './commits.js';
+import { getTotalBuildsForRepositoryIds } from './builds.js';
+import { getTotalCommitsForRepositoryIds } from './commits.js';
 import {
   getReposWithSonarQube,
   getSonarProjectsCount,
@@ -43,10 +43,7 @@ import {
 } from './sonar.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
-import {
-  getReposSortedByPullRequestsCount,
-  getTotalPullRequestsForRepositoryIds,
-} from './pull-requests.js';
+import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
 import { pipelineCountForRepo } from './releases.js';
 
 const getGroupRepositoryNames = (
@@ -566,9 +563,7 @@ export const getFilteredAndSortedReposWithStats = async ({
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
   const filteredRepos = await getFilteredRepos(queryContext, searchTerm, groupsIncluded);
-
   const repositoryIds = filteredRepos.map(prop('id'));
-
   const sortedRepos = await sorters[sortBy](
     queryContext,
     repositoryIds,
@@ -576,7 +571,6 @@ export const getFilteredAndSortedReposWithStats = async ({
     cursor?.pageSize || 10,
     cursor?.pageNumber || 0
   );
-
   const sortedRepoIds = sortedRepos.map(repo => repo.repositoryId);
 
   const [

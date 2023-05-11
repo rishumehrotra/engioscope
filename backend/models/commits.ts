@@ -213,38 +213,3 @@ export const getTotalCommitsForRepositoryIds = (
     },
   ]).exec();
 };
-
-export const getReposSortedByCommitsCount = (
-  queryContext: QueryContext,
-  repositoryIds: string[],
-  sortOrder: 'asc' | 'desc',
-  pageSize: number,
-  pageNumber: number
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return CommitModel.aggregate<{
-    repositoryId: string;
-    count: number;
-  }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'repositoryId': { $in: repositoryIds },
-        'author.date': inDateRange(startDate, endDate),
-      },
-    },
-    { $group: { _id: '$repositoryId', count: { $sum: 1 } } },
-    { $sort: { count: sortOrder === 'asc' ? 1 : -1, _id: -1 } },
-    {
-      $project: {
-        _id: 0,
-        repositoryId: '$_id',
-        count: 1,
-      },
-    },
-    { $skip: pageSize * pageNumber },
-    { $limit: pageSize },
-  ]).exec();
-};

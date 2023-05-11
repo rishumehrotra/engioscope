@@ -216,44 +216,6 @@ export const getTotalBranchesForRepositoryIds = async (
   ]);
 };
 
-export const getReposSortedByBranchesCount = async (
-  queryContext: QueryContext,
-  repositoryIds: string[],
-  sortOrder: 'asc' | 'desc',
-  pageSize: number,
-  pageNumber: number
-) => {
-  const { collectionName, project } = fromContext(queryContext);
-  return BranchModel.aggregate<{
-    repositoryId: string;
-    total: number;
-  }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        repositoryId: { $in: repositoryIds },
-      },
-    },
-    {
-      $group: {
-        _id: '$repositoryId',
-        total: { $sum: 1 },
-      },
-    },
-    { $sort: { total: sortOrder === 'asc' ? 1 : -1, _id: -1 } },
-    {
-      $project: {
-        _id: 0,
-        repositoryId: '$_id',
-        total: 1,
-      },
-    },
-    { $skip: pageSize * pageNumber },
-    { $limit: pageSize },
-  ]);
-};
-
 export const setBranchUrl = (
   branchName: string,
   repoUrl: string,
