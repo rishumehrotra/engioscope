@@ -138,7 +138,7 @@ export const getMatchingSonarProjects = async (
 const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
   return SonarMeasuresModel.aggregate<SonarMeasures>([
     { $match: { sonarProjectId: { $in: sonarProjectIds } } },
-    { $sort: { date: -1 } },
+    { $sort: { fetchDate: -1 } },
     { $group: { _id: '$sonarProjectId', first: { $first: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$first' } },
   ]);
