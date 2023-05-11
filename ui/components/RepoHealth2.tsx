@@ -149,7 +149,7 @@ const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
               <div>
                 <Link to={pipelinesUrl} className="link-text">
                   {`Has ${pluralise(
-                    item.releaseBranches?.branches?.length || 0,
+                    item.releaseBranches?.length || 0,
                     'release branch',
                     `release branches`
                   )},`}{' '}

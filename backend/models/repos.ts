@@ -1,5 +1,6 @@
 import type { ObjectId } from 'mongoose';
 import { z } from 'zod';
+import { map } from 'rambda';
 import { collectionAndProjectInputs } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { normalizeBranchName } from '../utils.js';
@@ -163,8 +164,15 @@ export const getDefaultBranchAndNameForRepoIds = (
 
   return RepositoryModel.find(
     { collectionName, 'project.name': project, 'id': { $in: repositoryIds } },
-    { _id: 0, id: 1, name: 1, defaultBranch: 1 }
+    { _id: 0, id: 1, name: 1, defaultBranch: 1, url: 1 }
   )
     .lean()
-    .exec();
+    .then(
+      map(repo => ({
+        id: repo.id,
+        name: repo.name,
+        defaultBranch: repo.defaultBranch,
+        url: repo.url,
+      }))
+    );
 };

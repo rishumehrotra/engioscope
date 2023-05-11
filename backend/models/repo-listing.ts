@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { last, prop } from 'rambda';
+import { last, prop, propEq } from 'rambda';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import { inDateRange } from './helpers.js';
@@ -602,30 +602,19 @@ export const getFilteredAndSortedReposWithStats = async ({
   ]);
 
   const repos = sortedRepos.map(repo => {
-    const repoId = repo.repositoryId;
-    const repoStats = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      repoDetails: repoDetails.find(repoDetail => repoDetail.id === repoId)!,
-      builds: builds.find(build => build.repositoryId === repoId)?.count || 0,
-      branches: branches.find(branch => branch.repositoryId === repoId)?.total || 0,
-      commits: commits.find(commit => commit.repositoryId === repoId)?.count || 0,
-      tests: tests.find(test => test.repositoryId === repoId)?.totalTests || 0,
-      sonarQualityGateStatuses: sonarQualityGateStatuses.find(
-        sonarQualityGateStatus => sonarQualityGateStatus.repositoryId === repoId
-      ),
-      pullRequests:
-        pullRequests.find(pullRequest => pullRequest.repositoryId === repoId)?.total || 0,
-      pipelineCounts: pipelineCounts.find(
-        pipelineCount => pipelineCount.repositoryId === repoId
-      ),
-      releaseBranches: releaseBranches.find(
-        releaseBranch => releaseBranch.repositoryId === repoId
-      ),
-    };
-
+    const matchingRepo = propEq('repositoryId', repo.repositoryId);
     return {
-      ...repo,
-      ...repoStats,
+      repositoryId: repo.repositoryId,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      repoDetails: repoDetails.find(repoDetail => repoDetail.id === repo.repositoryId)!,
+      builds: builds.find(matchingRepo)?.count || 0,
+      branches: branches.find(matchingRepo)?.total || 0,
+      commits: commits.find(matchingRepo)?.count || 0,
+      tests: tests.find(matchingRepo)?.totalTests || 0,
+      sonarQualityGateStatuses: sonarQualityGateStatuses.find(matchingRepo),
+      pullRequests: pullRequests.find(matchingRepo)?.total || 0,
+      pipelineCounts: pipelineCounts.find(matchingRepo)?.count,
+      releaseBranches: releaseBranches.find(matchingRepo)?.branches,
     };
   });
 
