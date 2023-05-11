@@ -1,5 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { byNum, desc } from 'sort-lib';
+import { not } from 'rambda';
+import useResizeObserver from '@react-hook/resize-observer';
 import { num, pluralise } from '../helpers/utils.js';
 import Flair from './common/Flair.js';
 import builds from './repo-tabs2/builds.js';
@@ -10,14 +20,125 @@ import codeQuality from './repo-tabs2/codeQuality.js';
 import type { Tab } from './repo-tabs2/Tabs.js';
 import { TopLevelTab } from './repo-tabs2/Tabs.js';
 import { useSortParams } from '../hooks/sort-hooks.js';
-import usePageName from '../hooks/use-page-name.js';
 import branches from './repo-tabs2/branches/index.js';
 import type { RouterClient } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import { Branches } from './common/Icons.jsx';
+import BranchPolicyPill from './BranchPolicyPill.jsx';
+
+type ReleaseBranchesProps = {
+  repositoryId: string;
+  defaultBranch: string | undefined;
+  branches: {
+    name: string;
+    conforms: boolean | undefined;
+  }[];
+};
+
+const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
+  branches,
+  repositoryId,
+  defaultBranch,
+}) => {
+  const branchesToShow = useMemo(() => {
+    return [...branches].sort(desc(byNum(b => (b.name === defaultBranch ? 1 : 0))));
+  }, [branches, defaultBranch]);
+
+  const [overflowBranchCount, setOverflowBranchCount] = useState<number | null>(null);
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+  const containerRef = useRef<HTMLUListElement | null>(null);
+  const overflowButtonRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleOverflow = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setIsOverflowOpen(not);
+  }, []);
+
+  const onResize = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const lis = [
+      ...(container?.querySelectorAll<HTMLLIElement>('li:not(.overflow-menu)') || []),
+    ];
+    const offsetTops = lis.map(e => e.offsetTop);
+    const offsetTopOfFirstElement = offsetTops[0];
+
+    if (offsetTops.every(e => e === offsetTopOfFirstElement)) {
+      setOverflowBranchCount(null);
+    } else {
+      setOverflowBranchCount(
+        branchesToShow.filter((_, i) => offsetTops[i] > offsetTopOfFirstElement).length +
+          1
+      );
+    }
+
+    const lastVisible = [...lis]
+      .reverse()
+      .find(li => li.offsetTop === offsetTopOfFirstElement);
+    if (!lastVisible) return; // stupid TS
+    if (!overflowButtonRef.current) return;
+
+    overflowButtonRef.current.style.left = `${
+      lastVisible.offsetLeft + lastVisible.offsetWidth
+    }px`;
+  }, [branchesToShow]);
+
+  useResizeObserver(containerRef, onResize);
+  useLayoutEffect(() => {
+    onResize();
+  }, [onResize]);
+
+  if (!branches.length) return null;
+
+  return (
+    <div className="relative cursor-default">
+      <ul
+        className={`flex flex-wrap mr-20 ${
+          isOverflowOpen ? '' : 'overflow-hidden max-h-8'
+        }`}
+        ref={containerRef}
+      >
+        {branchesToShow.length ? (
+          <li className="mr-1 mb-1 pr-1 py-0 border-0 rounded-md bg-white flex items-center text-sm">
+            Release branches:
+          </li>
+        ) : null}
+        {branchesToShow.map(branch => (
+          <li
+            key={`gone-forward-${branch.name}`}
+            className="mr-1 mb-1 pl-2 pr-0 py-0 border-2 rounded-md bg-white flex items-center text-sm"
+          >
+            <Branches className="h-4 mr-1" />
+            {branch.name.replace('refs/heads/', '')}
+            <BranchPolicyPill
+              className="m-1"
+              repositoryId={repositoryId}
+              refName={branch.name}
+              conforms={branch.conforms}
+            />
+          </li>
+        ))}
+      </ul>
+      <div className="absolute top-0" ref={overflowButtonRef}>
+        {overflowBranchCount ? (
+          <div className="relative">
+            <button
+              className="mr-1 mb-1 px-2 py-1 border-2 rounded-md bg-white flex items-center text-sm text-gray-500 hover:text-gray-900 hover:border-gray-500"
+              onClick={toggleOverflow}
+            >
+              {isOverflowOpen ? '-' : '+'} {overflowBranchCount}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 const combinedQualityGate = (qualityGateStatus: string[]) => {
-  if (qualityGateStatus.length === 0) return 'Unknown';
+  if (qualityGateStatus.length === 0) return 'unknown';
   if (qualityGateStatus.length === 1) return qualityGateStatus[0];
   const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
   if (qualityGatesPassed.length === qualityGateStatus.length) return '100% fail';
@@ -33,7 +154,6 @@ type RepoHealthProps2 = {
 
 const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
-  const pageName = usePageName();
   const location = useLocation();
 
   const tabs = useMemo(
@@ -121,10 +241,9 @@ const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
                   className="link-text font-bold text-lg truncate max-width-full"
                   onClick={event => event.stopPropagation()}
                 >
-                  {item.repoDetails.name || 'Repo Name'}
+                  {item.repoDetails.name}
                 </a>
-                {!item.sonarQualityGateStatuses ||
-                item.sonarQualityGateStatuses.language === null ? null : (
+                {item.sonarQualityGateStatuses?.language ? (
                   <span className="inline-block ml-4">
                     {' '}
                     {item.sonarQualityGateStatuses.language.stats.map(l => (
@@ -144,38 +263,7 @@ const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
                       />
                     ))}
                   </span>
-                )}
-              </div>
-              <div>
-                <Link to={pipelinesUrl} className="link-text">
-                  {`Has ${pluralise(
-                    item.releaseBranches?.length || 0,
-                    'release branch',
-                    `release branches`
-                  )},`}{' '}
-                  {`used in ${item.pipelineCounts?.count || 0} ${pageName(
-                    'release-pipelines',
-                    item.pipelineCounts?.count || 0
-                  ).toLowerCase()}`}{' '}
-                </Link>
-                {/* <ol className="flex flex-wrap">
-                    {repoTabStats.data?.releaseBranches[0]?.branches?.map(branch => (
-                      <li
-                        key={`gone-forward-${branch.name}`}
-                        className="mr-1 mb-1 px-2 border-2 rounded-md bg-white flex items-center text-sm"
-                      >
-                        <Branches className="h-4 mr-1" />
-                        {branch.name.replace('refs/heads/', '')}
-                        <BranchPolicyPill
-                          repositoryId={
-                            repoTabStats.data?.releaseBranches[0]?.repositoryId
-                          }
-                          refName={branch.name}
-                          conforms={branch.conforms}
-                        />
-                      </li>
-                    ))}
-                  </ol> */}
+                ) : null}
               </div>
             </div>
             <div
@@ -197,6 +285,23 @@ const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
           </div>
         </div>
       </div>
+
+      {item.releaseBranches ? (
+        <div className="px-6 py-1">
+          <ReleaseBranches
+            repositoryId={item.repoDetails.id}
+            defaultBranch={item.repoDetails.defaultBranch}
+            branches={item.releaseBranches}
+          />
+          <Link to={pipelinesUrl} className="link-text">
+            {`Used in ${pluralise(
+              item.pipelineCounts ?? 0,
+              'release pipeline',
+              'release pipelines'
+            )}`}{' '}
+          </Link>
+        </div>
+      ) : null}
 
       {item.builds === 0 && item.commits === 0 ? (
         <p className="pl-5">

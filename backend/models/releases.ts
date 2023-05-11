@@ -67,7 +67,7 @@ export const getPipelinesCount = (
 
 export const pipelineCountForRepo = (queryContext: QueryContext, repoId: string) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  return ReleaseModel.aggregate([
+  return ReleaseModel.aggregate<{ count: number }>([
     {
       $match: {
         'collectionName': collectionName,
