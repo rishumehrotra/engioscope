@@ -7,10 +7,7 @@ import { syncBuildsAndTimelines } from './crons/builds.js';
 import { getRepositories } from './crons/repos.js';
 import { getReleaseDefinitions } from './crons/release-definitions.js';
 import { getReleases } from './crons/releases.js';
-import {
-  getPolicyConfigurations,
-  refreshCombinedBranchPoliciesView,
-} from './crons/policy-configuration.js';
+import { getPolicyConfigurations } from './crons/policy-configuration.js';
 import { getBuildDefinitions } from './crons/build-definitions.js';
 import { getBranchesStats } from './crons/branches.js';
 import { getCommits } from './crons/commits.js';
@@ -37,7 +34,6 @@ export default async (config: ParsedConfig) => {
   await getReleaseDefinitions();
   await getReleases();
   await getPolicyConfigurations();
-  await refreshCombinedBranchPoliciesView();
   await getBuildDefinitions();
   await getBranchesStats();
   await getCommits();

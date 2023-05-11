@@ -114,6 +114,20 @@ const addFilteredEnvsField = (ignoreStagesBefore: string | undefined): PipelineS
       ]
     : [{ $addFields: { filteredEnvs: '$environments' } }];
 
+const addHasGoneAhead = {
+  $addFields: {
+    hasGoneAhead: {
+      $anyElementTrue: {
+        $map: {
+          input: '$filteredEnvs',
+          as: 'env',
+          in: { $ne: ['$$env.status', 'notStarted'] },
+        },
+      },
+    },
+  },
+};
+
 const filterNonMasterReleases = (
   nonMasterReleases: boolean | undefined
 ): PipelineStage[] => {
@@ -380,23 +394,6 @@ const addBooleanFields = (collectionName: string, project: string): PipelineStag
     },
   };
 };
-type Summary = {
-  runCount: number;
-  pipelineCount: number;
-  lastEnv: {
-    envName: string;
-    deploys: number;
-    successful: number;
-  };
-  startsWithArtifact: number;
-  masterOnly: number;
-  stagesToHighlight: {
-    name: string;
-    exists: number;
-    used: number;
-  }[];
-  ignoredStagesBefore?: string;
-};
 
 const conformsToBranchPoliciesSummary = async (
   options: z.infer<typeof pipelineFiltersInputParser>
@@ -409,28 +406,28 @@ const conformsToBranchPoliciesSummary = async (
   const result = await ReleaseModel.aggregate<{ _id: boolean; count: number }>([
     ...filter,
     ...addFilteredEnvsField(ignoreStagesBefore),
-    {
-      $addFields: {
-        hasGoneAhead: {
-          $anyElementTrue: {
-            $map: {
-              input: '$filteredEnvs',
-              as: 'env',
-              in: { $ne: ['$$env.status', 'notStarted'] },
-            },
-          },
-        },
-      },
-    },
+    addHasGoneAhead,
     { $match: { hasGoneAhead: true } },
     { $unwind: '$artifacts' },
     { $match: { 'artifacts.type': 'Build' } },
     {
+      $group: {
+        _id: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$artifacts.definition.repositoryId',
+          branch: '$artifacts.definition.branch',
+        },
+        count: { $sum: 1 },
+      },
+    },
+    {
       $project: {
-        collectionName: '$collectionName',
-        project: '$project',
-        repositoryId: '$artifacts.definition.repositoryId',
-        branch: '$artifacts.definition.branch',
+        collectionName: '$_id.collectionName',
+        project: '$_id.project',
+        repositoryId: '$_id.repositoryId',
+        branch: '$_id.branch',
+        count: '$count',
       },
     },
     {
@@ -459,15 +456,35 @@ const conformsToBranchPoliciesSummary = async (
         as: 'conforms',
       },
     },
-    { $project: { conforms: { $arrayElemAt: ['$conforms', 0] } } },
-    { $project: { conforms: { $ifNull: ['$conforms.conforms', false] } } },
-    { $group: { _id: '$conforms', count: { $sum: 1 } } },
+    { $project: { conforms: { $arrayElemAt: ['$conforms', 0] }, count: '$count' } },
+    {
+      $project: { conforms: { $ifNull: ['$conforms.conforms', false] }, count: '$count' },
+    },
+    { $group: { _id: '$conforms', count: { $sum: '$count' } } },
   ]);
 
   return {
     conforms: result.find(x => x._id)?.count || 0,
     total: sum(result.map(x => x.count)),
   };
+};
+
+type Summary = {
+  runCount: number;
+  pipelineCount: number;
+  lastEnv: {
+    envName: string;
+    deploys: number;
+    successful: number;
+  };
+  startsWithArtifact: number;
+  masterOnly: number;
+  stagesToHighlight: {
+    name: string;
+    exists: number;
+    used: number;
+  }[];
+  ignoredStagesBefore?: string;
 };
 
 export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
@@ -670,19 +687,7 @@ export const getArtifacts = async ({
     ...(ignoreStagesBefore
       ? [
           ...addFilteredEnvsField(ignoreStagesBefore),
-          {
-            $addFields: {
-              hasGoneAhead: {
-                $anyElementTrue: {
-                  $map: {
-                    input: '$filteredEnvs',
-                    as: 'env',
-                    in: { $ne: ['$$env.status', 'notStarted'] },
-                  },
-                },
-              },
-            },
-          },
+          addHasGoneAhead,
           { $unset: 'filteredEnvs' },
         ]
       : []),
@@ -822,19 +827,7 @@ export const releaseBranchesForRepo = async (
     ...(ignoreStagesBefore
       ? [
           ...addFilteredEnvsField(ignoreStagesBefore),
-          {
-            $addFields: {
-              hasGoneAhead: {
-                $anyElementTrue: {
-                  $map: {
-                    input: '$filteredEnvs',
-                    as: 'env',
-                    in: { $ne: ['$$env.status', 'notStarted'] },
-                  },
-                },
-              },
-            },
-          },
+          addHasGoneAhead,
           { $unset: 'filteredEnvs' },
         ]
       : []),
