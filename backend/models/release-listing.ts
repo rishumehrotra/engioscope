@@ -491,6 +491,7 @@ export const getReposConformingToBranchPolicies = async (
       },
     },
     ...branchPolicyConformanceWithCount(queryContext),
+    { $match: { repositoryId: { $in: repoIds } } },
     {
       $group: {
         _id: { repositoryId: '$repositoryId', conforms: '$conforms' },
