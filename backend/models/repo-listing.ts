@@ -287,11 +287,17 @@ export const getCentralTemplatePipeline = async (
   };
 };
 
-export const getFilteredRepos = async (
-  queryContext: QueryContext,
-  searchTerm: string | undefined,
-  groupsIncluded: string[] | undefined
-) => {
+export const FilteredReposInputParser = z.object({
+  queryContext: queryContextInputParser,
+  searchTerm: z.union([z.string(), z.undefined()]),
+  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
+});
+
+export const getFilteredRepos = async ({
+  queryContext,
+  searchTerm,
+  groupsIncluded,
+}: z.infer<typeof FilteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
@@ -307,6 +313,19 @@ export const getFilteredRepos = async (
     },
     { id: 1, name: 1 }
   ).lean();
+};
+export const getFilteredReposCount = async ({
+  queryContext,
+  searchTerm,
+  groupsIncluded,
+}: z.infer<typeof FilteredReposInputParser>) => {
+  return (
+    await getFilteredRepos({
+      queryContext,
+      searchTerm,
+      groupsIncluded,
+    })
+  ).length;
 };
 
 export const getSummaryInputParser = z.object({
@@ -360,7 +379,7 @@ export const getSummary = async ({
     getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds),
     getTestsByWeek(queryContext, activeRepoIds),
     getCoveragesByWeek(queryContext, activeRepoIds),
-    getFilteredRepos(queryContext, searchTerm, groupsIncluded),
+    getFilteredRepos({ queryContext, searchTerm, groupsIncluded }),
     getSonarProjectsCount(collectionName, project, activeRepoIds),
     updateWeeklySonarProjectCount(queryContext, activeRepoIds),
     getReposWithSonarQube(collectionName, project, activeRepoIds),
@@ -561,7 +580,11 @@ export const getFilteredAndSortedReposWithStats = async ({
   sortDirection = 'desc',
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
-  const filteredRepos = await getFilteredRepos(queryContext, searchTerm, groupsIncluded);
+  const filteredRepos = await getFilteredRepos({
+    queryContext,
+    searchTerm,
+    groupsIncluded,
+  });
   const repositoryIds = filteredRepos.map(prop('id'));
   const sortedRepos = await sorters[sortBy](
     queryContext,

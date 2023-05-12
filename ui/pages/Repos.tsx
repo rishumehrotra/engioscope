@@ -80,6 +80,17 @@ const Repos: React.FC = () => {
     enabled: showNewListing === true,
   });
 
+  const filteredReposCount = trpc.repos.getFilteredReposCount.useQuery(
+    {
+      queryContext: filters.queryContext,
+      searchTerm: filters.searchTerm,
+      groupsIncluded: filters.groupsIncluded,
+    },
+    {
+      enabled: showNewListing === true,
+    }
+  );
+
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
     return aggregateDevs(projectAnalysis);
@@ -155,11 +166,7 @@ const Repos: React.FC = () => {
       ) : null}
       <AppliedFilters
         type="repos"
-        count={
-          showNewListing
-            ? query.data?.pages.flatMap(page => page.items)?.length || 0
-            : repos.length
-        }
+        count={showNewListing ? filteredReposCount?.data || 0 : repos.length}
       />
       <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
       {showNewListing ? null : (

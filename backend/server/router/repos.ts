@@ -13,6 +13,8 @@ import {
   getRepoOverviewStats,
   repoFiltersAndSorterInputParser,
   getFilteredAndSortedReposWithStats,
+  FilteredReposInputParser,
+  getFilteredReposCount,
 } from '../../models/repo-listing.js';
 
 export default t.router({
@@ -33,4 +35,8 @@ export default t.router({
   getFilteredAndSortedReposWithStats: t.procedure
     .input(repoFiltersAndSorterInputParser)
     .query(passInputTo(memoizeForUI(getFilteredAndSortedReposWithStats))),
+
+  getFilteredReposCount: t.procedure
+    .input(FilteredReposInputParser)
+    .query(passInputTo(getFilteredReposCount)),
 });
