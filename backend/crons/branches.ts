@@ -74,7 +74,7 @@ const saveFromAPI = async (repo: Repo) => {
     await saveRepoBranch(repo.collectionName, repo.project, repo.id, branchStats);
   } catch (error) {
     if (is404(error)) return; // Repo probably doesn't exist anymore.
-    if (is400(error) && error.message.includes('Cannot find any branches')) return;
+    if (is400(error)) return; // Happens when a repo doesn't have any branches.
     throw error;
   }
 };
@@ -102,5 +102,5 @@ export const getBranchesStats = async () => {
   }
 
   // eslint-disable-next-line no-console
-  console.log('Repo cron done.', counters);
+  console.log('Branch stats cron done.', counters);
 };
