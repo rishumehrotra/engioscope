@@ -32,6 +32,7 @@ import { unique } from '../utils.js';
 import {
   getCoveragesByWeek,
   getDefinitionsWithTestsAndCoverages,
+  getReposSortedByTests,
   getTestsByWeek,
   getTotalTestsForRepositoryIds,
 } from './testruns.js';
@@ -555,9 +556,10 @@ const sorters = {
   'branches': getReposSortedByBranchesCount,
   'commits': getReposSortedByCommitsCount,
   'pull-requests': getReposSortedByPullRequestsCount,
+  'tests': getReposSortedByTests,
 } as const;
 
-const sortKeys = ['builds', 'branches', 'commits', 'pull-requests'] as const;
+const sortKeys = ['builds', 'branches', 'commits', 'pull-requests', 'tests'] as const;
 
 export type SortKey = (typeof sortKeys)[number];
 
@@ -592,6 +594,7 @@ export const getFilteredAndSortedReposWithStats = async ({
     searchTerm,
     groupsIncluded,
   });
+
   const repositoryIds = filteredRepos.map(prop('id'));
   const sortedRepos = await sorters[sortBy](
     queryContext,
@@ -601,7 +604,6 @@ export const getFilteredAndSortedReposWithStats = async ({
     cursor?.pageNumber || 0
   );
   const sortedRepoIds = sortedRepos.map(repo => repo.repositoryId);
-
   const [
     repoDetails,
     builds,
@@ -640,6 +642,11 @@ export const getFilteredAndSortedReposWithStats = async ({
       releaseBranches: releaseBranches.find(matchingRepo)?.branches,
     };
   });
+
+  // TODO: Remove this console log after performance testing
+  // console.log(
+  //   `Sort By : ${sortBy}, Time: ${time()} Page Number: ${cursor?.pageNumber || 0}`
+  // );
 
   return {
     items: repos,

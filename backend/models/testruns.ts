@@ -697,3 +697,81 @@ export const getTotalTestsForRepositoryIds = async (
     []
   );
 };
+
+export const getReposSortedByTests = async (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const testrunsForAllDefs = await RepositoryModel.aggregate<TestsForDef>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getTestsForBuildIds(collectionName, project),
+    {
+      $group: {
+        _id: '$definitionId',
+        repositoryId: { $first: '$repositoryId' },
+        definitionId: { $first: '$definitionId' },
+        tests: { $push: '$$ROOT' },
+      },
+    },
+  ]);
+
+  const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
+    return getOneOldTestForBuildDefID(
+      collectionName,
+      project,
+      repositoryId,
+      defId,
+      startDate
+    );
+  };
+
+  const latestDefinitionTests = await Promise.all(
+    testrunsForAllDefs.map(async def => {
+      const tests = await makeContinuous(
+        def.tests,
+        startDate,
+        endDate,
+        getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
+        { hasTests: false }
+      );
+
+      return {
+        ...def,
+        latestTest: tests ? getLatest(def.tests || []) : null,
+      };
+    })
+  );
+
+  const allRepos = latestDefinitionTests
+    .reduce<{ repositoryId: string; totalTests: number }[]>((acc, curr) => {
+      const matchingRepo = acc.find(repo => repo.repositoryId === curr.repositoryId);
+
+      if (matchingRepo) {
+        matchingRepo.totalTests += curr.latestTest?.hasTests
+          ? curr.latestTest.totalTests
+          : 0;
+      } else {
+        acc.push({
+          repositoryId: curr.repositoryId,
+          totalTests: curr.latestTest?.hasTests ? curr.latestTest.totalTests : 0,
+        });
+      }
+
+      return acc;
+    }, [])
+    .sort(desc(byNum(repo => repo.totalTests)));
+
+  const sortedRepos = sortOrder === 'asc' ? allRepos.reverse() : allRepos;
+
+  return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
+};
