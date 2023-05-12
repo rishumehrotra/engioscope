@@ -25,3 +25,4 @@ const isStatusCode =
   };
 
 export const is404 = isStatusCode(404);
+export const is400 = isStatusCode(400);
