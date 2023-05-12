@@ -1,5 +1,5 @@
 import type { PipelineStage } from 'mongoose';
-import { last, omit, prop, sum } from 'rambda';
+import { head, last, omit, prop, sum } from 'rambda';
 import { z } from 'zod';
 import { exists } from '../../shared/utils.js';
 import { configForProject } from '../config.js';
@@ -520,8 +520,10 @@ export const getReposConformingToBranchPolicies = async (
     },
   ]);
 
+  const first = head(result);
+  if (!first) return;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { _id, ...rest } = result[0];
+  const { _id, ...rest } = first;
   return rest;
 };
 

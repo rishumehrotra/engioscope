@@ -380,18 +380,22 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
         topStats={[
           {
             title: 'Conforms to branch policies',
-            tooltip: `${num(summaries.data.branchPolicies.conformingRepos)} out of ${num(
-              summaries.data.branchPolicies.repoCount
-            )} repositories produced artifacts from branches<br />that conform to branch policies.<br>
+            tooltip: summaries.data.branchPolicies
+              ? `${num(summaries.data.branchPolicies.conformingRepos)} out of ${num(
+                  summaries.data.branchPolicies.repoCount
+                )} repositories produced artifacts from branches<br />that conform to branch policies.<br>
               ${num(summaries.data.branchPolicies.conformingBranches)} out of ${num(
-              summaries.data.branchPolicies.totalBranches
-            )} release branches conform to branch policies`,
-            value: divide(
-              summaries.data.branchPolicies.conformingRepos,
-              summaries.data.branchPolicies.repoCount
-            )
-              .map(toPercentage)
-              .getOr('-'),
+                  summaries.data.branchPolicies.totalBranches
+                )} release branches conform to branch policies`
+              : undefined,
+            value: summaries.data.branchPolicies
+              ? divide(
+                  summaries.data.branchPolicies.conformingRepos,
+                  summaries.data.branchPolicies.repoCount
+                )
+                  .map(toPercentage)
+                  .getOr('-')
+              : '-',
           },
         ]}
       />
