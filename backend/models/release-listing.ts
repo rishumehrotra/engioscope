@@ -395,16 +395,14 @@ const addBooleanFields = (collectionName: string, project: string): PipelineStag
   };
 };
 
-const conformsToBranchPoliciesSummary = async (
-  options: z.infer<typeof pipelineFiltersInputParser>
-) => {
-  const filter = await createFilter(options);
-  const { collectionName, project } = fromContext(options.queryContext);
+const branchPolicyConformanceWithCount = (
+  queryContext: QueryContext
+): PipelineStage[] => {
+  const { collectionName, project } = fromContext(queryContext);
   const projectConfig = configForProject(collectionName, project);
   const ignoreStagesBefore = projectConfig?.releasePipelines.ignoreStagesBefore;
 
-  const result = await ReleaseModel.aggregate<{ _id: boolean; count: number }>([
-    ...filter,
+  return [
     ...addFilteredEnvsField(ignoreStagesBefore),
     addHasGoneAhead,
     { $match: { hasGoneAhead: true } },
@@ -460,6 +458,80 @@ const conformsToBranchPoliciesSummary = async (
     {
       $project: { conforms: { $ifNull: ['$conforms.conforms', false] }, count: '$count' },
     },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$_id.repositoryId',
+        branch: '$_id.branch',
+        conforms: '$conforms',
+        count: '$count',
+      },
+    },
+  ];
+};
+
+export const getReposConformingToBranchPolicies = async (
+  queryContext: QueryContext,
+  repoIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const result = await ReleaseModel.aggregate<{
+    _id: null;
+    repoCount: number;
+    conformingRepos: number;
+    conformingBranches: number;
+    totalBranches: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'modifiedOn': inDateRange(startDate, endDate),
+        'artifacts.definition.repositoryId': { $in: repoIds },
+      },
+    },
+    ...branchPolicyConformanceWithCount(queryContext),
+    {
+      $group: {
+        _id: { repositoryId: '$repositoryId', conforms: '$conforms' },
+        branch: { $addToSet: '$branch' },
+      },
+    },
+    {
+      $group: {
+        _id: '$_id.repositoryId',
+        conforming: {
+          $sum: { $cond: [{ $eq: ['$_id.conforms', true] }, { $size: '$branch' }, 0] },
+        },
+        notConforming: {
+          $sum: { $cond: [{ $eq: ['$_id.conforms', false] }, { $size: '$branch' }, 0] },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        repoCount: { $sum: 1 },
+        conformingRepos: { $sum: { $cond: [{ $gt: ['$notConforming', 0] }, 0, 1] } },
+        conformingBranches: { $sum: '$conforming' },
+        totalBranches: { $sum: { $add: ['$conforming', '$notConforming'] } },
+      },
+    },
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, ...rest } = result[0];
+  return rest;
+};
+
+const conformsToBranchPoliciesSummary = async (
+  options: z.infer<typeof pipelineFiltersInputParser>
+) => {
+  const filter = await createFilter(options);
+
+  const result = await ReleaseModel.aggregate<{ _id: boolean; count: number }>([
+    ...filter,
+    ...branchPolicyConformanceWithCount(options.queryContext),
     { $group: { _id: '$conforms', count: { $sum: '$count' } } },
   ]);
 

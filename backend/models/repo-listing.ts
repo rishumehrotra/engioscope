@@ -21,7 +21,11 @@ import {
   getReposSortedByCommitsCount,
   getReposSortedByPullRequestsCount,
 } from './repos.js';
-import { getHasReleasesSummary, releaseBranchesForRepo } from './release-listing.js';
+import {
+  getHasReleasesSummary,
+  getReposConformingToBranchPolicies,
+  releaseBranchesForRepo,
+} from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
@@ -368,6 +372,7 @@ export const getSummary = async ({
     weeklySonarProjectsCount,
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
+    branchPolicies,
   ] = await Promise.all([
     getSuccessfulBuildsBy(queryContext, activeRepoIds),
     getTotalBuildsBy(queryContext, activeRepoIds),
@@ -384,6 +389,7 @@ export const getSummary = async ({
     updateWeeklySonarProjectCount(queryContext, activeRepoIds),
     getReposWithSonarQube(collectionName, project, activeRepoIds),
     updatedWeeklyReposWithSonarQubeCount(queryContext, activeRepoIds),
+    getReposConformingToBranchPolicies(queryContext, activeRepoIds),
   ]);
 
   return {
@@ -407,6 +413,7 @@ export const getSummary = async ({
     weeklySonarProjectsCount,
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
+    branchPolicies,
   };
 };
 
