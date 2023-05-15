@@ -27,6 +27,7 @@ import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
 import RepoHealth2 from '../components/RepoHealth2.jsx';
+import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -74,6 +75,7 @@ const Repos: React.FC = () => {
     asStringArray
   );
   const [showNewListing] = useQueryParam('listing-v2', asBoolean);
+
   const filters = useRepoFilters();
   const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
@@ -149,8 +151,8 @@ const Repos: React.FC = () => {
 
   return repos.length ? (
     <>
-      {projectAnalysis.groups?.groups ? (
-        <div className="mb-6">
+      <div className="flex items-end mb-6 justify-between mx-1">
+        {projectAnalysis.groups?.groups ? (
           <MultiSelectDropdownWithLabel
             label={projectAnalysis.groups.label}
             options={Object.keys(projectAnalysis.groups.groups).map(groupName => ({
@@ -162,8 +164,11 @@ const Repos: React.FC = () => {
               setSelectedGroupLabels(x.length === 0 ? undefined : x);
             }}
           />
-        </div>
-      ) : null}
+        ) : (
+          <div />
+        )}
+        <QueryPeriodSelector />
+      </div>
       <AppliedFilters
         type="repos"
         count={showNewListing ? filteredReposCount?.data || 0 : repos.length}
