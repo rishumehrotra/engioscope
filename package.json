@@ -64,7 +64,7 @@
     "p-memoize": "^7.1.1",
     "pluralize": "8.0.0",
     "pretty-ms": "8.0.0",
-    "qs": "6.11.1",
+    "qs": "6.11.2",
     "rambda": "7.3.0",
     "react-hotkeys-hook": "4.4.0",
     "sort-lib": "^1.0.2",
