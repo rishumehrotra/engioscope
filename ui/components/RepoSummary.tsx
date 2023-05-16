@@ -35,14 +35,16 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
 
   if (!summaries.data) {
     return (
-      <ProjectStat
-        topStats={[
-          {
-            title: 'Loading...',
-            value: '...',
-          },
-        ]}
-      />
+      <ProjectStats>
+        <ProjectStat
+          topStats={[
+            {
+              title: 'Loading...',
+              value: '...',
+            },
+          ]}
+        />
+      </ProjectStats>
     );
   }
 
