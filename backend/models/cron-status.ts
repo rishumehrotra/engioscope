@@ -1,5 +1,6 @@
 import { model, Schema } from 'mongoose';
 import { asc, byString } from 'sort-lib';
+import cronstrue from 'cronstrue';
 
 type CronStatus = {
   date: Date;
@@ -61,7 +62,7 @@ export const getCronStatusOverview = async () => {
   return [...cronDefs.entries()].sort(asc(byString(x => x[0]))).map(([name, pattern]) => {
     return {
       name,
-      pattern,
+      frequency: cronstrue.toString(pattern),
       date: byKey.get(name)?.date,
       status: byKey.get(name)?.status,
     };

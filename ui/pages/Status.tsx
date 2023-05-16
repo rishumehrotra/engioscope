@@ -19,7 +19,7 @@ const Status: React.FC = () => {
               {' '}
             </th>
             <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-left">
-              Pattern
+              Frequency
             </th>
             <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider text-right">
               status
@@ -30,9 +30,7 @@ const Status: React.FC = () => {
           {cronStatus.data?.map(line => (
             <tr key={line.name}>
               <td className="pl-6 py-4 whitespace-nowrap text-left">{line.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-left">
-                <code>{line.pattern}</code>
-              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-left">{line.frequency}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right">
                 {line.status ? (
                   <>
