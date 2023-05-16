@@ -1,6 +1,7 @@
 import type { Types } from 'mongoose';
 import { z } from 'zod';
-import { range } from 'rambda';
+import { multiply, range } from 'rambda';
+import { byNum, desc } from 'sort-lib';
 import {
   createIntervals,
   getLanguageColor,
@@ -18,7 +19,7 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { exists, oneWeekInMs } from '../../shared/utils.js';
+import { divide, exists, oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -930,4 +931,108 @@ export const getSonarQualityGateStatusForRepoIds = async (
       };
     })
   );
+};
+
+//  TODO: Solving N+1 problem of getting sonar quality gate status for each repo
+
+export const getSonarQualityGateStatusForRepoId = async (
+  collectionName: string,
+  project: string,
+  repositoryId: string,
+  defaultBranch: string
+) => {
+  const repository = await getRepoById(collectionName, project, repositoryId);
+
+  if (!repository) return null;
+
+  const sonarProjects = await getMatchingSonarProjects(
+    repository.name,
+    defaultBranch,
+    latestBuildReportsForRepoAndBranch(collectionName, project)
+  );
+
+  if (!sonarProjects || sonarProjects.length === 0) return null;
+
+  const sonarProjectIds = sonarProjects.map(p => p._id);
+  const [measures, sonarConnections] = await Promise.all([
+    getLatestSonarMeasures(sonarProjectIds),
+    getConnections('sonar'),
+  ]);
+
+  return measures
+    .map(measure => {
+      const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
+      const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
+
+      if (!sonarProject) return null;
+
+      const sonarConnection = sonarConnections.find(sh =>
+        sh._id.equals(sonarProject.connectionId)
+      );
+
+      if (!sonarConnection) return null;
+
+      return {
+        name: sonarProject.name,
+        quality: {
+          gate: qualityGateStatus,
+        },
+      };
+    })
+    .filter(exists);
+};
+
+const weightedQualityGate = (qualityGateStatus: string[]) => {
+  if (qualityGateStatus.length === 0) return -1;
+  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
+  if (qualityGatesPassed.length === qualityGateStatus.length) return 100;
+  return divide(qualityGatesPassed.length, qualityGateStatus.length)
+    .map(multiply(100))
+    .getOr(0);
+};
+
+export const getReposSortedByCodeQuality = async (
+  queryContext: QueryContext,
+  repositoryIds: string[],
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const repositories = await getDefaultBranchAndNameForRepoIds(
+    queryContext,
+    repositoryIds
+  );
+
+  const qualityGateStatus = await Promise.all(
+    repositories.map(async repo => {
+      const qualityGates = repo.defaultBranch
+        ? await getSonarQualityGateStatusForRepoId(
+            collectionName,
+            project,
+            repo.id,
+            repo.defaultBranch
+          )
+        : null;
+
+      if (!qualityGates) {
+        return {
+          repositoryId: repo.id,
+          status: -1,
+        };
+      }
+
+      const status = qualityGates.map(qg => qg.quality.gate);
+      return {
+        repositoryId: repo.id,
+        status: weightedQualityGate(status),
+      };
+    })
+  );
+
+  const allRepos = qualityGateStatus.sort(desc(byNum(repo => repo.status)));
+  const sortedRepos = sortOrder === 'asc' ? allRepos.reverse() : allRepos;
+
+  return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
 };

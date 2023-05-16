@@ -39,6 +39,7 @@ import {
 import { getTotalBuildsForRepositoryIds } from './builds.js';
 import { getTotalCommitsForRepositoryIds } from './commits.js';
 import {
+  getReposSortedByCodeQuality,
   getReposWithSonarQube,
   getSonarProjectsCount,
   getSonarQualityGateStatusForRepoIds,
@@ -557,9 +558,17 @@ const sorters = {
   'commits': getReposSortedByCommitsCount,
   'pull-requests': getReposSortedByPullRequestsCount,
   'tests': getReposSortedByTests,
+  'code-quality': getReposSortedByCodeQuality,
 } as const;
 
-const sortKeys = ['builds', 'branches', 'commits', 'pull-requests', 'tests'] as const;
+const sortKeys = [
+  'builds',
+  'branches',
+  'commits',
+  'pull-requests',
+  'tests',
+  'code-quality',
+] as const;
 
 export type SortKey = (typeof sortKeys)[number];
 
@@ -589,6 +598,9 @@ export const getFilteredAndSortedReposWithStats = async ({
   sortDirection = 'desc',
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
+  // NOTE - this is for debugging purposes only
+  // const time = startTimer();
+
   const filteredRepos = await getFilteredRepos({
     queryContext,
     searchTerm,
