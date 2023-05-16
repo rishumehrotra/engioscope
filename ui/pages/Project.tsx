@@ -16,11 +16,12 @@ import ReleasePipelines2 from './ReleasePipelines.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
 import BuildTimelines from './BuildTimelines.jsx';
+import { num } from '../helpers/utils.js';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) =>
   count ? (
     <>
-      <span className="font-bold text-lg">{count}</span>{' '}
+      <span className="font-bold text-lg">{num(count)}</span>{' '}
       <span>{label.toLowerCase()}</span>
     </>
   ) : (
@@ -85,16 +86,18 @@ const Project: React.FC = () => {
                   projectSummary.repos,
                   pageName('repos', projectSummary.repos)
                 )}
+                {` | `}
+                {renderStatIfAvailable(
+                  projectSummary.buildPipelines,
+                  projectSummary.buildPipelines === 1
+                    ? 'build pipeline'
+                    : 'build pipelines'
+                )}
                 {projectSummary.releasePipelines ? ' | ' : ''}
                 {renderStatIfAvailable(
                   projectSummary.releasePipelines,
                   pageName('release-pipelines', projectSummary.releasePipelines)
                 )}
-                {/* {projectSummary.workItemCount ? ' | ' : ''}
-                {renderStatIfAvailable(
-                  projectSummary.workItemCount,
-                  pageName('workitems', projectSummary.workItemCount)
-                )} */}
               </>
             ) : (
               <span className="font-bold text-lg">&nbsp;</span>

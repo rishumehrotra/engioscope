@@ -12,4 +12,4 @@ export const getBuildDefinitionsForRepo = (options: {
 };
 
 export const getBuildPipelineCount = (collectionName: string, project: string) =>
-  BuildDefinitionModel.count({ collectionName, project }).lean();
+  BuildDefinitionModel.count({ collectionName, project }).count().exec();
