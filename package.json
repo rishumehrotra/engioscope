@@ -153,7 +153,7 @@
     "ts-node": "10.9.1",
     "typescript": "^5.0.2",
     "vite": "^4.1.4",
-    "vitest": "0.31.0",
+    "vitest": "0.31.1",
     "vitest-mongodb": "^0.0.5"
   },
   "repository": {
