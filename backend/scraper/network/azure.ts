@@ -821,6 +821,17 @@ export default (config: ParsedConfig) => {
         ).then(res => res.data.value)
       ),
 
+    getDeletedWorkItems: (collectionName: string, project: string) => {
+      return usingDiskCache<{ count: number; value: { id: string; url: string }[] }>(
+        [collectionName, project, 'work-items', 'deleted'],
+        () =>
+          fetch(
+            url(collectionName, project, `/wit/recyclebin?${qs.stringify(apiVersion)}`),
+            { headers: authHeader, ...otherFetchParams }
+          )
+      ).then(res => res.data.value);
+    },
+
     getCollectionWorkItemFields: (collectionName: string) =>
       usingDiskCache<{ count: number; value: WorkItemField[] }>(
         [collectionName, 'work-items', 'fields'],

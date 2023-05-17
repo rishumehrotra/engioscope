@@ -1,5 +1,5 @@
 import { syncBuildsAndTimelines } from './builds.js';
-import { getWorkItems } from './workitems.js';
+import { getWorkItems, removeDeletedWorkItems } from './workitems.js';
 import { getWorkItemTypes } from './work-item-types.js';
 import { getRepositories } from './repos.js';
 import { getReleaseDefinitions } from './release-definitions.js';
@@ -19,6 +19,7 @@ export default () => {
   setupJob('build definitions', t => t.everySunday(), getBuildDefinitions);
   setupJob('workitems', t => t.everyHourAt(55), getWorkItems);
   setupJob('workitem types', t => t.everyWeekAt('Sun', 8, 30), getWorkItemTypes);
+  setupJob('workitem cleanup', t => t.everyDayAt(1), removeDeletedWorkItems);
   setupJob('repos', t => t.everyDayAt(22, 45), getRepositories);
   setupJob('release definitions', t => t.everySundayAt(5, 30), getReleaseDefinitions);
   setupJob('repo policies', t => t.every(3).days(), getPolicyConfigurations);

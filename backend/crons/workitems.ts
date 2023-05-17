@@ -1,14 +1,21 @@
-import { collections, configForCollection, getConfig } from '../config.js';
+import {
+  collections,
+  collectionsAndProjects,
+  configForCollection,
+  getConfig,
+} from '../config.js';
 import {
   getWorkItemUpdateDate,
   setWorkItemUpdateDate,
 } from '../models/cron-update-dates.js';
+import { WorkItemModel } from '../models/mongoose-models/WorkItem.js';
 import { bulkUpsertWorkItems } from '../models/workitems.js';
 import azure from '../scraper/network/azure.js';
 import type {
   WorkItemQueryFlatResult,
   WorkItemQueryResult,
 } from '../scraper/types-azure.js';
+import { chunkArray, invokeSeries } from '../utils.js';
 
 const formatDate = (date: Date) => `'${date.toISOString()}'`;
 
@@ -68,4 +75,22 @@ export const getWorkItems = () => {
       );
     })
   );
+};
+
+export const removeDeletedWorkItems = () => {
+  return invokeSeries(chunkArray(collectionsAndProjects(), 10), async cnps => {
+    await Promise.all(
+      cnps.map(async ([{ name: collectionName }, { name: project }]) => {
+        const { getDeletedWorkItems } = azure(getConfig());
+
+        const deleted = await getDeletedWorkItems(collectionName, project);
+
+        await WorkItemModel.deleteMany({
+          collectionName,
+          project,
+          id: { $in: deleted.map(d => d.id) },
+        });
+      })
+    );
+  });
 };
