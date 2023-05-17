@@ -23,7 +23,7 @@ const active = compose(not, isInactive);
 
 const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
   const activeRepos = repos.filter(active);
-  const [showNewListing] = useQueryParam('listing-v2', asBoolean);
+  const [showOldListing] = useQueryParam('listing-v1', asBoolean);
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
 
@@ -51,19 +51,19 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   return (
     <ProjectStats
       note={
-        showNewListing ? (
-          summaries.data.totalRepos - summaries.data.totalActiveRepos ===
-          0 ? undefined : (
+        showOldListing ? (
+          repos.length - activeRepos.length === 0 ? undefined : (
             <>
               {'Excluded '}
-              <b>{summaries.data.totalRepos - summaries.data.totalActiveRepos}</b>
+              <b>{repos.length - activeRepos.length}</b>
               {' inactive repositories from analysis'}
             </>
           )
-        ) : repos.length - activeRepos.length === 0 ? undefined : (
+        ) : summaries.data.totalRepos - summaries.data.totalActiveRepos ===
+          0 ? undefined : (
           <>
             {'Excluded '}
-            <b>{repos.length - activeRepos.length}</b>
+            <b>{summaries.data.totalRepos - summaries.data.totalActiveRepos}</b>
             {' inactive repositories from analysis'}
           </>
         )
