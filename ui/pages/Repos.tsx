@@ -181,8 +181,9 @@ const Repos: React.FC = () => {
     );
   }
 
-  if (query.isFetching) return <Loading />;
-  return query.data?.pages.flatMap(page => page.items).length ? (
+  if (!query.data) return <Loading />;
+
+  return query.data.pages.flatMap(page => page.items).length ? (
     <>
       <div className="flex items-end mb-6 justify-between mx-1">
         {projectAnalysis.groups?.groups ? (
@@ -208,11 +209,12 @@ const Repos: React.FC = () => {
       />
       <RepoSummary repos={repos} queryPeriodDays={queryPeriodDays} />
       <InfiniteScrollList2
-        items={query.data?.pages.flatMap(page => page.items) || []}
+        items={query.data.pages.flatMap(page => page.items) || []}
         itemKey={repo => repo.repoDetails.id}
         itemComponent={RepoHealth2}
         loadNextPage={query.fetchNextPage}
       />
+      {query.isFetching ? <Loading /> : null}
     </>
   ) : (
     <AlertMessage message="No repos found" />

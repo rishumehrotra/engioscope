@@ -127,13 +127,13 @@ const PipelinesFilters: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
 const AdvancedFilters: React.FC = () => {
   const [selectedTab] = useTabs();
   const [ref, isOpen, setIsOpen] = usePopover();
-  const [listingV2] = useQueryParam('listing-v2', asBoolean);
+  const [listingV1] = useQueryParam('listing-v1', asBoolean);
 
   if (selectedTab === 'workitems' || selectedTab === 'devs' || selectedTab === '') {
     return null;
   }
 
-  if (selectedTab === 'repos' && listingV2) return null;
+  if (selectedTab === 'repos' && !listingV1) return null;
 
   return (
     <span className="relative">

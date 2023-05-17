@@ -7,15 +7,31 @@ import TabContents from './TabContents.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import Loading from '../Loading.jsx';
+import AlertMessage from '../common/AlertMessage.jsx';
+import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
 export default (repositoryId: string, totalPullRequests: number): Tab => ({
   title: 'Pull requests',
   count: totalPullRequests,
   Component: () => {
-    const pullRequest = trpc.pullRequests.getPullRequestsSummaryForRepo.useQuery({
-      queryContext: useQueryContext(),
-      repositoryId,
-    });
+    const [queryPeriodDays] = useQueryPeriodDays();
+    const pullRequest = trpc.pullRequests.getPullRequestsSummaryForRepo.useQuery(
+      {
+        queryContext: useQueryContext(),
+        repositoryId,
+      },
+      { enabled: totalPullRequests !== 0 }
+    );
+
+    if (totalPullRequests === 0) {
+      return (
+        <TabContents gridCols={1}>
+          <AlertMessage
+            message={`This repo has had no PR activity in the last ${queryPeriodDays} days`}
+          />
+        </TabContents>
+      );
+    }
 
     if (!pullRequest.data) {
       return (
