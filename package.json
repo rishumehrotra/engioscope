@@ -106,7 +106,7 @@
     "@types/md5": "2.3.2",
     "@types/morgan": "1.9.4",
     "@types/ms": "0.7.31",
-    "@types/node": "18.16.12",
+    "@types/node": "18.16.13",
     "@types/node-fetch": "2.6.4",
     "@types/pluralize": "0.0.29",
     "@types/qs": "6.9.7",
