@@ -24,7 +24,8 @@ import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
-import { getDefaultBranchAndNameForRepoIds, getRepoById } from './repos.js';
+import { getDefaultBranchAndNameForRepoIds } from './repos.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const lastAlertHistoryFetchDate = async (options: {
   collectionName: string;
@@ -124,16 +125,27 @@ const attemptMatchByRepoName = async (repoName: string) =>
   (await attemptExactMatchFind(repoName)) || attemptStartsWithFind(repoName);
 
 export const getMatchingSonarProjects = async (
-  repoName: string,
-  defaultBranch: string | undefined,
-  parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
+  collectionName: string,
+  project: string,
+  repoId: string
 ): Promise<(SonarProject & { _id: Types.ObjectId })[] | null> => {
-  const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
-    repoName,
-    defaultBranch,
-    parseReports
+  const repo = await RepositoryModel.findOne(
+    {
+      collectionName,
+      'project.name': project,
+      'id': repoId,
+    },
+    { defaultBranch: 1, repoName: 1 }
   );
-  return sonarProjectsFromBuildReports || attemptMatchByRepoName(repoName);
+
+  if (!repo) return null;
+
+  const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
+    repo.name,
+    repo.defaultBranch,
+    latestBuildReportsForRepoAndBranch(collectionName, project)
+  );
+  return sonarProjectsFromBuildReports || attemptMatchByRepoName(repo.name);
 };
 
 const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
@@ -252,16 +264,11 @@ export const getRepoSonarMeasures = async ({
   collectionName,
   project,
   repositoryId,
-  defaultBranch,
 }: z.infer<typeof RepoSonarMeasuresInputParser>) => {
-  const repository = await getRepoById(collectionName, project, repositoryId);
-
-  if (!repository) return [];
-
   const sonarProjects = await getMatchingSonarProjects(
-    repository.name,
-    defaultBranch,
-    latestBuildReportsForRepoAndBranch(collectionName, project)
+    collectionName,
+    project,
+    repositoryId
   );
 
   if (!sonarProjects || sonarProjects.length === 0) return [];
@@ -793,17 +800,12 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
 export const getSonarQualityGateStatusForRepoName = async (
   collectionName: string,
   project: string,
-  repositoryId: string,
-  defaultBranch: string
+  repositoryId: string
 ) => {
-  const repository = await getRepoById(collectionName, project, repositoryId);
-
-  if (!repository) return null;
-
   const sonarProjects = await getMatchingSonarProjects(
-    repository.name,
-    defaultBranch,
-    latestBuildReportsForRepoAndBranch(collectionName, project)
+    collectionName,
+    project,
+    repositoryId
   );
 
   if (!sonarProjects || sonarProjects.length === 0) return null;
@@ -901,12 +903,7 @@ export const getSonarQualityGateStatusForRepoIds = async (
   return Promise.all(
     repositories.map(async repo => {
       const qualityGates = repo.defaultBranch
-        ? await getSonarQualityGateStatusForRepoName(
-            collectionName,
-            project,
-            repo.id,
-            repo.defaultBranch
-          )
+        ? await getSonarQualityGateStatusForRepoName(collectionName, project, repo.id)
         : null;
 
       if (!qualityGates) {
@@ -938,17 +935,12 @@ export const getSonarQualityGateStatusForRepoIds = async (
 export const getSonarQualityGateStatusForRepoId = async (
   collectionName: string,
   project: string,
-  repositoryId: string,
-  defaultBranch: string
+  repositoryId: string
 ) => {
-  const repository = await getRepoById(collectionName, project, repositoryId);
-
-  if (!repository) return null;
-
   const sonarProjects = await getMatchingSonarProjects(
-    repository.name,
-    defaultBranch,
-    latestBuildReportsForRepoAndBranch(collectionName, project)
+    collectionName,
+    project,
+    repositoryId
   );
 
   if (!sonarProjects || sonarProjects.length === 0) return null;
@@ -1008,12 +1000,7 @@ export const getReposSortedByCodeQuality = async (
   const qualityGateStatus = await Promise.all(
     repositories.map(async repo => {
       const qualityGates = repo.defaultBranch
-        ? await getSonarQualityGateStatusForRepoId(
-            collectionName,
-            project,
-            repo.id,
-            repo.defaultBranch
-          )
+        ? await getSonarQualityGateStatusForRepoId(collectionName, project, repo.id)
         : null;
 
       if (!qualityGates) {

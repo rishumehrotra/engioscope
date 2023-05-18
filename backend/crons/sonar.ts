@@ -19,7 +19,6 @@ import { chunkArray, invokeSeries, pastDate } from '../utils.js';
 import { collectionsAndProjects } from '../config.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
 import { getMatchingSonarProjects, lastAlertHistoryFetchDate } from '../models/sonar.js';
-import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
 import { exists, oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 import { createSchedule } from './utils.js';
 
@@ -213,15 +212,15 @@ export const onboardQuailtyGateHistory = async () => {
     async ([{ name: collectionName }, { name: project }]) => {
       const repos = await RepositoryModel.find(
         { collectionName, 'project.name': project },
-        { id: 1, name: 1, defaultBranch: 1 }
+        { id: 1 }
       );
 
       const sonarProjectsForRepoIds = await Promise.all(
         repos.map(async repo => {
           const sonarProjects = await getMatchingSonarProjects(
-            repo.name,
-            repo.defaultBranch,
-            latestBuildReportsForRepoAndBranch(collectionName, project)
+            collectionName,
+            project,
+            repo.id
           );
 
           if (!sonarProjects) return null;

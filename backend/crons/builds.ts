@@ -12,9 +12,7 @@ import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray, invokeSeries } from '../utils.js';
 import { CodeCoverageModel } from '../models/mongoose-models/CodeCoverage.js';
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
-import { getRepoById } from '../models/repos.js';
 import { getMatchingSonarProjects } from '../models/sonar.js';
-import { latestBuildReportsForRepoAndBranch } from '../models/build-reports.js';
 import {
   saveMeasuresForProject,
   updateQualityGateDetails,
@@ -180,14 +178,10 @@ const updateSonar = async (
   const sonarProjectsForRepoIds = (
     await Promise.all(
       reposToFetch.map(async repoId => {
-        const repo = await getRepoById(collectionName, project, repoId);
-        if (!repo) return;
-
-        const { defaultBranch, name } = repo;
         const sonarProjects = await getMatchingSonarProjects(
-          name,
-          defaultBranch,
-          latestBuildReportsForRepoAndBranch(collectionName, project)
+          collectionName,
+          project,
+          repoId
         );
 
         if (!sonarProjects) return null;
