@@ -598,9 +598,6 @@ export const getFilteredAndSortedReposWithStats = async ({
   sortDirection = 'desc',
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
-  // NOTE - this is for debugging purposes only
-  // const time = startTimer();
-
   const filteredRepos = await getFilteredRepos({
     queryContext,
     searchTerm,
@@ -654,11 +651,6 @@ export const getFilteredAndSortedReposWithStats = async ({
       releaseBranches: releaseBranches.find(matchingRepo)?.branches,
     };
   });
-
-  // TODO: Remove this console log after performance testing
-  // console.log(
-  //   `Sort By : ${sortBy}, Time: ${time()} Page Number: ${cursor?.pageNumber || 0}`
-  // );
 
   return {
     items: repos,

@@ -121,3 +121,28 @@ export const SonarQualityGateUsedModel = model<SonarQualityGateUsed>(
   'SonarQualityGateUsed',
   sonarQualityGateUsedSchema
 );
+
+export type SonarProjectsForRepo = {
+  collectionName: string;
+  project: string;
+  repositoryId: string;
+  sonarProjectIds: Types.ObjectId[];
+};
+
+const sonarProjectsForRepoSchema = new Schema<SonarProjectsForRepo>({
+  collectionName: { type: String, required: true },
+  project: { type: String, required: true },
+  repositoryId: { type: String, required: true },
+  sonarProjectIds: [{ type: Schema.Types.ObjectId, required: true }],
+});
+
+sonarProjectsForRepoSchema.index({
+  collectionName: 1,
+  project: 1,
+  repositoryId: 1,
+});
+
+export const SonarProjectsForRepoModel = model<SonarProjectsForRepo>(
+  'SonarProjectsForRepo',
+  sonarProjectsForRepoSchema
+);

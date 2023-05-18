@@ -16,6 +16,7 @@ import {
   getMissingSonarMeasures,
   onboardQuailtyGateHistory,
   refreshSonarProjects,
+  updateRepoToSonarMapping,
 } from './crons/sonar.js';
 import { updatePullRequests } from './crons/pull-requests.js';
 
@@ -42,6 +43,7 @@ export default async (config: ParsedConfig) => {
   await getMissingSonarMeasures();
   await onboardQuailtyGateHistory();
   await updatePullRequests();
+  await updateRepoToSonarMapping();
 
   // eslint-disable-next-line no-console
   console.log('Done.');

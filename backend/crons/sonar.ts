@@ -3,6 +3,7 @@ import { getConnectionById, getConnections } from '../models/connections.js';
 import type { SonarConnection } from '../models/mongoose-models/ConnectionModel.js';
 import type { SonarProject } from '../models/mongoose-models/sonar-models.js';
 import {
+  SonarProjectsForRepoModel,
   SonarQualityGateUsedModel,
   SonarAlertHistoryModel,
   SonarMeasuresModel,
@@ -18,8 +19,12 @@ import {
 import { chunkArray, invokeSeries, pastDate } from '../utils.js';
 import { collectionsAndProjects } from '../config.js';
 import { RepositoryModel } from '../models/mongoose-models/RepositoryModel.js';
-import { getMatchingSonarProjects, lastAlertHistoryFetchDate } from '../models/sonar.js';
-import { exists, oneDayInMs, oneHourInMs } from '../../shared/utils.js';
+import {
+  getSonarProjectsForRepoIds,
+  lastAlertHistoryFetchDate,
+  matchingSonarProjectsForRepo,
+} from '../models/sonar.js';
+import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
 import { createSchedule } from './utils.js';
 
 export const refreshSonarProjects = async () => {
@@ -215,23 +220,10 @@ export const onboardQuailtyGateHistory = async () => {
         { id: 1 }
       );
 
-      const sonarProjectsForRepoIds = await Promise.all(
-        repos.map(async repo => {
-          const sonarProjects = await getMatchingSonarProjects(
-            collectionName,
-            project,
-            repo.id
-          );
-
-          if (!sonarProjects) return null;
-          return { repoId: repo.id, sonarProjects };
-        })
-      ).then(x =>
-        x
-          .filter(exists)
-          .flatMap(({ repoId, sonarProjects }) =>
-            sonarProjects.map(p => ({ repoId, sonarProject: p }))
-          )
+      const sonarProjectsForRepoIds = await getSonarProjectsForRepoIds(
+        collectionName,
+        project,
+        repos.map(r => r.id)
       );
 
       await Promise.all([
@@ -270,6 +262,55 @@ export const onboardQuailtyGateHistory = async () => {
               ...oneOlderEntry,
             },
           ]);
+        })
+      );
+    }
+  );
+};
+
+export const updateRepoToSonarMapping = () => {
+  return invokeSeries(
+    collectionsAndProjects(),
+    async ([{ name: collectionName }, { name: project }]) => {
+      const repos = await RepositoryModel.find(
+        { collectionName, 'project.name': project },
+        { id: 1 }
+      ).lean();
+
+      const repoIds = repos.map(r => r.id);
+
+      await SonarProjectsForRepoModel.deleteMany({
+        collectionName,
+        project,
+        repositoryId: { $nin: repoIds },
+      });
+
+      const newMapping = await Promise.all(
+        repoIds.map(async id => {
+          return {
+            repoId: id,
+            sonarProjects: await matchingSonarProjectsForRepo(
+              collectionName,
+              project,
+              id
+            ),
+          };
+        })
+      );
+
+      await SonarProjectsForRepoModel.bulkWrite(
+        newMapping.map(({ repoId, sonarProjects }) => {
+          return {
+            updateOne: {
+              filter: {
+                collectionName,
+                project,
+                repositoryId: repoId,
+              },
+              update: { $set: { sonarProjectIds: sonarProjects.map(p => p._id) } },
+              upsert: true,
+            },
+          };
         })
       );
     }

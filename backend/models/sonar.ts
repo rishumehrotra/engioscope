@@ -12,6 +12,7 @@ import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
 import {
+  SonarProjectsForRepoModel,
   SonarQualityGateUsedModel,
   SonarAlertHistoryModel,
   SonarMeasuresModel,
@@ -94,7 +95,7 @@ const attemptExactMatchFind = async (repoName: string) => {
     { $replaceRoot: { newRoot: '$first' } },
   ]);
 
-  return projects.length > 0 ? [projects[0]] : null;
+  return projects.length > 0 ? [projects[0]] : [];
 };
 
 const attemptStartsWithFind = async (repoName: string) => {
@@ -118,27 +119,27 @@ const attemptStartsWithFind = async (repoName: string) => {
     { $sort: { lastAnalysisDate: -1 } },
   ]);
 
-  return projects.length > 0 ? projects : null;
+  return projects.length > 0 ? projects : [];
 };
 
 const attemptMatchByRepoName = async (repoName: string) =>
   (await attemptExactMatchFind(repoName)) || attemptStartsWithFind(repoName);
 
-export const getMatchingSonarProjects = async (
+export const matchingSonarProjectsForRepo = async (
   collectionName: string,
   project: string,
   repoId: string
-): Promise<(SonarProject & { _id: Types.ObjectId })[] | null> => {
+): Promise<(SonarProject & { _id: Types.ObjectId })[]> => {
   const repo = await RepositoryModel.findOne(
     {
       collectionName,
       'project.name': project,
       'id': repoId,
     },
-    { defaultBranch: 1, repoName: 1 }
-  );
+    { defaultBranch: 1, name: 1 }
+  ).lean();
 
-  if (!repo) return null;
+  if (!repo) return [];
 
   const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
     repo.name,
@@ -146,6 +147,23 @@ export const getMatchingSonarProjects = async (
     latestBuildReportsForRepoAndBranch(collectionName, project)
   );
   return sonarProjectsFromBuildReports || attemptMatchByRepoName(repo.name);
+};
+
+const getSonarProjectIdsForRepo = async (
+  collectionName: string,
+  project: string,
+  repoId: string
+): Promise<Types.ObjectId[]> => {
+  return SonarProjectsForRepoModel.findOne(
+    {
+      collectionName,
+      project,
+      repositoryId: repoId,
+    },
+    { sonarProjectIds: 1 }
+  )
+    .lean()
+    .then(x => x?.sonarProjectIds || []);
 };
 
 const getLatestSonarMeasures = async (sonarProjectIds: Types.ObjectId[]) => {
@@ -260,26 +278,75 @@ export const RepoSonarMeasuresInputParser = z.object({
   defaultBranch: z.string().optional(),
 });
 
+export const sonarProjectsForIds = async (sonarProjectIds: Types.ObjectId[]) => {
+  const sonarProjects = await SonarProjectModel.find({
+    _id: { $in: sonarProjectIds },
+  }).lean();
+
+  return (sonarProjectId?: Types.ObjectId) => {
+    if (!sonarProjectId) return;
+    return sonarProjects.find(p => p._id.equals(sonarProjectId));
+  };
+};
+
+export const getSonarProjectsForRepoIds = async (
+  collectionName: string,
+  project: string,
+  repoIds: string[]
+) => {
+  const sonarProjectIdsForRepoIds = await Promise.all(
+    repoIds.map(async repoId => {
+      const sonarProjectIds = await getSonarProjectIdsForRepo(
+        collectionName,
+        project,
+        repoId
+      );
+
+      if (!sonarProjectIds) {
+        return null;
+      }
+      return { repoId, sonarProjectIds };
+    })
+  ).then(x => x.filter(exists));
+
+  const sonarProjectsById = await sonarProjectsForIds(
+    sonarProjectIdsForRepoIds.flatMap(p => p.sonarProjectIds)
+  );
+
+  return sonarProjectIdsForRepoIds
+    .flatMap(({ repoId, sonarProjectIds }) =>
+      sonarProjectIds.map(p => {
+        const sonarProject = sonarProjectsById(p);
+        if (!sonarProject) {
+          return;
+        }
+        return { repoId, sonarProject };
+      })
+    )
+    .filter(exists);
+};
+
 export const getRepoSonarMeasures = async ({
   collectionName,
   project,
   repositoryId,
 }: z.infer<typeof RepoSonarMeasuresInputParser>) => {
-  const sonarProjects = await getMatchingSonarProjects(
+  const sonarProjectIds = await getSonarProjectIdsForRepo(
     collectionName,
     project,
     repositoryId
   );
 
-  if (!sonarProjects || sonarProjects.length === 0) return [];
+  if (!sonarProjectIds.length) return [];
 
-  const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measures, sonarConnections, sonarAlert, sonarQualityGates] = await Promise.all([
-    getLatestSonarMeasures(sonarProjectIds),
-    getConnections('sonar'),
-    getLatestSonarAlertHistory(collectionName, project, sonarProjectIds),
-    getSonarQualityGatesUsed(collectionName, project, repositoryId, sonarProjectIds),
-  ]);
+  const [measures, sonarConnections, sonarAlert, sonarQualityGates, sonarProjectById] =
+    await Promise.all([
+      getLatestSonarMeasures(sonarProjectIds),
+      getConnections('sonar'),
+      getLatestSonarAlertHistory(collectionName, project, sonarProjectIds),
+      getSonarQualityGatesUsed(collectionName, project, repositoryId, sonarProjectIds),
+      sonarProjectsForIds(sonarProjectIds),
+    ]);
 
   return measures
     .map(measure => {
@@ -296,7 +363,10 @@ export const getRepoSonarMeasures = async ({
         measure.measures
       );
 
-      const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
+      const sonarProject = sonarProjectById(
+        sonarProjectIds.find(p => p._id.equals(measure.sonarProjectId))
+      );
+
       if (!sonarProject) return null;
 
       const sonarConnection = sonarConnections.find(sh =>
@@ -802,25 +872,27 @@ export const getSonarQualityGateStatusForRepoName = async (
   project: string,
   repositoryId: string
 ) => {
-  const sonarProjects = await getMatchingSonarProjects(
+  const sonarProjectIds = await getSonarProjectIdsForRepo(
     collectionName,
     project,
     repositoryId
   );
 
-  if (!sonarProjects || sonarProjects.length === 0) return null;
+  if (!sonarProjectIds.length) return null;
 
-  const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measures, sonarConnections] = await Promise.all([
+  const [measures, sonarConnections, sonarProjectById] = await Promise.all([
     getLatestSonarMeasures(sonarProjectIds),
     getConnections('sonar'),
+    sonarProjectsForIds(sonarProjectIds),
   ]);
 
   return measures
     .map(measure => {
       const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
 
-      const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
+      const sonarProject = sonarProjectById(
+        sonarProjectIds.find(p => p._id.equals(measure.sonarProjectId))
+      );
       if (!sonarProject) return null;
 
       const sonarConnection = sonarConnections.find(sh =>
@@ -937,24 +1009,26 @@ export const getSonarQualityGateStatusForRepoId = async (
   project: string,
   repositoryId: string
 ) => {
-  const sonarProjects = await getMatchingSonarProjects(
+  const sonarProjectIds = await getSonarProjectIdsForRepo(
     collectionName,
     project,
     repositoryId
   );
 
-  if (!sonarProjects || sonarProjects.length === 0) return null;
+  if (!sonarProjectIds.length) return null;
 
-  const sonarProjectIds = sonarProjects.map(p => p._id);
-  const [measures, sonarConnections] = await Promise.all([
+  const [measures, sonarConnections, sonarProjectById] = await Promise.all([
     getLatestSonarMeasures(sonarProjectIds),
     getConnections('sonar'),
+    sonarProjectsForIds(sonarProjectIds),
   ]);
 
   return measures
     .map(measure => {
       const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
-      const sonarProject = sonarProjects.find(p => p._id.equals(measure.sonarProjectId));
+      const sonarProject = sonarProjectById(
+        sonarProjectIds.find(p => p._id.equals(measure.sonarProjectId))
+      );
 
       if (!sonarProject) return null;
 

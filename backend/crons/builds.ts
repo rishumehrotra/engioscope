@@ -1,5 +1,5 @@
 import { prop } from 'rambda';
-import { exists, oneYearInMs } from '../../shared/utils.js';
+import { oneYearInMs } from '../../shared/utils.js';
 import { collectionsAndProjects, getConfig } from '../config.js';
 import { BuildTimelineModel } from '../models/mongoose-models/BuildTimelineModel.js';
 import {
@@ -12,7 +12,7 @@ import type { Build as AzureBuild, Timeline } from '../scraper/types-azure.js';
 import { chunkArray, invokeSeries } from '../utils.js';
 import { CodeCoverageModel } from '../models/mongoose-models/CodeCoverage.js';
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
-import { getMatchingSonarProjects } from '../models/sonar.js';
+import { getSonarProjectsForRepoIds } from '../models/sonar.js';
 import {
   saveMeasuresForProject,
   updateQualityGateDetails,
@@ -175,25 +175,11 @@ const updateSonar = async (
     }, new Set<string>()),
   ];
 
-  const sonarProjectsForRepoIds = (
-    await Promise.all(
-      reposToFetch.map(async repoId => {
-        const sonarProjects = await getMatchingSonarProjects(
-          collectionName,
-          project,
-          repoId
-        );
-
-        if (!sonarProjects) return null;
-
-        return { repoId, sonarProjects };
-      })
-    )
-  )
-    .filter(exists)
-    .flatMap(({ repoId, sonarProjects }) =>
-      sonarProjects.map(p => ({ repoId, sonarProject: p }))
-    );
+  const sonarProjectsForRepoIds = await getSonarProjectsForRepoIds(
+    collectionName,
+    project,
+    reposToFetch
+  );
 
   return Promise.all([
     sonarProjectsForRepoIds.map(prop('sonarProject')).map(saveMeasuresForProject),

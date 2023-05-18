@@ -10,7 +10,7 @@ import { getTestRuns } from './test-runs.js';
 import { setupJob } from './utils.js';
 import { getReleases, getReleaseUpdates } from './releases.js';
 import { getBuildDefinitions } from './build-definitions.js';
-import { refreshSonarProjects } from './sonar.js';
+import { refreshSonarProjects, updateRepoToSonarMapping } from './sonar.js';
 import { insertSummarySnapshot } from './summary.js';
 import { updatePullRequests } from './pull-requests.js';
 
@@ -31,6 +31,7 @@ export default () => {
   setupJob('releases', t => t.everyHourAt(20), getReleases);
   setupJob('release updates', t => t.everyHourAt(35), getReleaseUpdates);
   setupJob('sonar projects', t => t.everyDay(), refreshSonarProjects);
+  setupJob('repos to sonar mapping', t => t.everyHourAt(52), updateRepoToSonarMapping);
   setupJob(
     'prepare-summary-snapshot',
     t => t.everyDayAt(4),
