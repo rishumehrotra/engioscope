@@ -150,6 +150,9 @@ export const getAllRepoDefaultBranchIDs = async (
   return repoDefaultBranches.map(repo => repo.defaultBranchId);
 };
 
+const formatRepoUrlForUI = (repoUrl: string) =>
+  repoUrl.replace('/_apis/git/repositories/', '/_git/');
+
 export const getDefaultBranchAndNameForRepoIds = (
   queryContext: QueryContext,
   repositoryIds: string[]
@@ -166,7 +169,7 @@ export const getDefaultBranchAndNameForRepoIds = (
         id: repo.id,
         name: repo.name,
         defaultBranch: repo.defaultBranch,
-        url: repo.url,
+        url: formatRepoUrlForUI(repo.url),
       }))
     );
 };
