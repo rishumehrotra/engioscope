@@ -46,9 +46,7 @@ const saveBuildTimeline =
           },
           { $set: { ...buildTimeline, buildDefinitionId } },
           { upsert: true }
-        )
-          .lean()
-          .then(result => result._id)
+        ).then(result => result.upsertedId)
       : null;
 
 const putBuildTimelineInDb =

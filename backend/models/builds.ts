@@ -24,9 +24,7 @@ export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
     },
     { $set: rest },
     { upsert: true }
-  )
-    .lean()
-    .then(result => result._id);
+  ).then(result => result.upsertedId);
 };
 
 export const getBuilds = (
