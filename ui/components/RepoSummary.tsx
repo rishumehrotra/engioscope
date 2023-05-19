@@ -1,9 +1,9 @@
-import { compose, multiply, not } from 'rambda';
+import { multiply } from 'rambda';
 import React from 'react';
 
 import { divide, exists, toPercentage } from '../../shared/utils.js';
 import { num, pluralise } from '../helpers/utils.js';
-import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
+import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import { LabelWithSparkline } from './graphs/Sparkline.js';
 import ProjectStat from './ProjectStat.js';
 import ProjectStats from './ProjectStats.js';
@@ -11,19 +11,12 @@ import { decreaseIsBetter, increaseIsBetter } from './summary-page/utils.js';
 import { trpc } from '../helpers/trpc.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import NonYamlPipeLineBuilds from './NonYamlPipelineBuilds.jsx';
-import { isInactive } from '../../shared/repo-utils.js';
-import type { RepoAnalysis } from '../../shared/types.js';
 
 type RepoSummaryProps = {
   queryPeriodDays: number;
-  repos: RepoAnalysis[];
 };
 
-const active = compose(not, isInactive);
-
-const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => {
-  const activeRepos = repos.filter(active);
-  const [showOldListing] = useQueryParam('listing-v1', asBoolean);
+const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
 
@@ -51,16 +44,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ repos, queryPeriodDays }) => 
   return (
     <ProjectStats
       note={
-        showOldListing ? (
-          repos.length - activeRepos.length === 0 ? undefined : (
-            <>
-              {'Excluded '}
-              <b>{repos.length - activeRepos.length}</b>
-              {' inactive repositories from analysis'}
-            </>
-          )
-        ) : summaries.data.totalRepos - summaries.data.totalActiveRepos ===
-          0 ? undefined : (
+        summaries.data.totalRepos - summaries.data.totalActiveRepos === 0 ? undefined : (
           <>
             {'Excluded '}
             <b>{summaries.data.totalRepos - summaries.data.totalActiveRepos}</b>

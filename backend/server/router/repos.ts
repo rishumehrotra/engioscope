@@ -9,8 +9,6 @@ import {
   getSummaryInputParser,
   getNonYamlPipelines,
   NonYamlPipelinesParser,
-  RepoOverviewStatsInputParser,
-  getRepoOverviewStats,
   repoFiltersAndSorterInputParser,
   getFilteredAndSortedReposWithStats,
   FilteredReposInputParser,
@@ -27,10 +25,6 @@ export default t.router({
   getNonYamlPipelines: t.procedure
     .input(NonYamlPipelinesParser)
     .query(passInputTo(getNonYamlPipelines)),
-
-  getRepoOverviewStats: t.procedure
-    .input(RepoOverviewStatsInputParser)
-    .query(passInputTo(getRepoOverviewStats)),
 
   getFilteredAndSortedReposWithStats: t.procedure
     .input(repoFiltersAndSorterInputParser)

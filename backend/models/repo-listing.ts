@@ -509,49 +509,6 @@ const getTotalReleaseBranchesForRepositoryIds = (
   );
 };
 
-export const RepoOverviewStatsInputParser = z.object({
-  queryContext: queryContextInputParser,
-  repositoryIds: z.array(z.string()),
-});
-export const getRepoOverviewStats = async ({
-  queryContext,
-  repositoryIds,
-}: z.infer<typeof RepoOverviewStatsInputParser>) => {
-  const [
-    repoDetails,
-    builds,
-    branches,
-    commits,
-    tests,
-    sonarQualityGateStatuses,
-    pullRequests,
-    pipelineCounts,
-    releaseBranches,
-  ] = await Promise.all([
-    getDefaultBranchAndNameForRepoIds(queryContext, repositoryIds),
-    getTotalBuildsForRepositoryIds(queryContext, repositoryIds),
-    getTotalBranchesForRepositoryIds(queryContext, repositoryIds),
-    getTotalCommitsForRepositoryIds(queryContext, repositoryIds),
-    getTotalTestsForRepositoryIds(queryContext, repositoryIds),
-    getSonarQualityGateStatusForRepoIds(queryContext, repositoryIds),
-    getTotalPullRequestsForRepositoryIds(queryContext, repositoryIds),
-    getTotalPipelineCountForRepositoryIds(queryContext, repositoryIds),
-    getTotalReleaseBranchesForRepositoryIds(queryContext, repositoryIds),
-  ]);
-
-  return {
-    repoDetails,
-    builds,
-    branches,
-    commits,
-    tests,
-    sonarQualityGateStatuses,
-    pullRequests,
-    pipelineCounts,
-    releaseBranches,
-  };
-};
-
 const sorters = {
   'builds': getReposSortedByBuildCount,
   'branches': getReposSortedByBranchesCount,
