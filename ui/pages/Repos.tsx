@@ -14,10 +14,35 @@ import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
 import RepoHealth2 from '../components/RepoHealth2.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
+import { combinedQualityGateStatus } from '../components/code-quality-utils.js';
+import type { RepoAnalysis } from '../../shared/types.js';
+import type { SortMap } from '../hooks/sort-hooks.js';
+import { useSort } from '../hooks/sort-hooks.js';
+import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
+
+const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
+  if (!codeQuality) return 1000;
+  const status = combinedQualityGateStatus(codeQuality);
+  if (status === 'pass') return 3;
+  if (status === 'warn') return 2;
+  return 1;
+};
+
+const sorters: SortMap<RepoAnalysis> = {
+  'Builds': (a, b) => numberOfBuilds(a) - numberOfBuilds(b),
+  'Branches': (a, b) => a.branches.total - b.branches.total,
+  'Commits': (a, b) => a.commits.count - b.commits.count,
+  'Pull requests': (a, b) => a.prs.total - b.prs.total,
+  'Tests': (a, b) => numberOfTests(a) - numberOfTests(b),
+  'Code quality': (a, b) =>
+    qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality),
+};
 
 const Repos: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const sorter = useSort(sorters, 'Builds');
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
     asStringArray
