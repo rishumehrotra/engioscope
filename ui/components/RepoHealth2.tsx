@@ -141,7 +141,7 @@ const combinedQualityGate = (qualityGateStatus: string[]) => {
   if (qualityGateStatus.length === 0) return 'unknown';
   if (qualityGateStatus.length === 1) return qualityGateStatus[0];
   const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
-  if (qualityGatesPassed.length === qualityGateStatus.length) return '100% fail';
+
   return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
     .map(toPercentage)
     .getOr('-')} pass`;
