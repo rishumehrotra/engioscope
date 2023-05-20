@@ -15,6 +15,7 @@ export const needsDB = () => {
 
   afterAll(async () => {
     await teardown();
+    await mongoose.disconnect();
     await mongoose.connection.close();
   });
 
