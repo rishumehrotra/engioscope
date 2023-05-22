@@ -135,7 +135,6 @@ export const getBuildFailingSince = async (
   return result[0].failingSince;
 };
 
-// Get Overview Stats for a specific repository
 export const getBuildsOverviewForRepository = async ({
   queryContext,
   repositoryName,

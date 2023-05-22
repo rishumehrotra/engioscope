@@ -1,7 +1,6 @@
 import type { ObjectId } from 'mongoose';
-import { z } from 'zod';
 import { map } from 'rambda';
-import { collectionAndProjectInputs, inDateRange } from './helpers.js';
+import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { normalizeBranchName } from '../utils.js';
 import type { QueryContext } from './utils.js';
@@ -15,43 +14,6 @@ export const getRepoCount = (collectionName: string, project: string) =>
     .lean()
     // Stupid mongoose types
     .then(x => x as unknown as number);
-
-export const paginatedRepoListParser = z.object({
-  ...collectionAndProjectInputs,
-  searchTerm: z.string().optional(),
-  cursor: z
-    .object({
-      pageSize: z.number().optional(),
-      pageNumber: z.number().optional(),
-    })
-    .nullish(),
-});
-
-export const searchRepositories = (options: z.infer<typeof paginatedRepoListParser>) => {
-  return RepositoryModel.find(
-    {
-      'collectionName': options.collectionName,
-      'project.name': options.project,
-      ...(options.searchTerm ? { name: new RegExp(options.searchTerm, 'i') } : {}),
-    },
-    { id: 1, name: 1, url: 1 }
-  )
-    .sort({ id: -1 })
-    .skip((options.cursor?.pageNumber || 0) * (options.cursor?.pageSize || 5))
-    .limit(options.cursor?.pageSize || 5);
-};
-
-export const getRepoById = (
-  collectionName: string,
-  project: string,
-  repositoryId: string
-) => {
-  return RepositoryModel.findOne({
-    collectionName,
-    'project.name': project,
-    'id': repositoryId,
-  }).lean();
-};
 
 export const repoDefaultBranch = async (
   collectionName: string,

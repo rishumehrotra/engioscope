@@ -20,36 +20,12 @@ import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
 import { createIntervals, getLatest } from '../utils.js';
 
-export type TestStatDetails = {
-  state: string;
-  outcome: string;
-  count: number;
-};
-
-export type BuildPipelineTests = {
-  _id: number;
-  collectionName: string;
-  project: string;
-  repositoryId: string;
-  repositoryName: string;
-  defaultBranch: string;
-  buildId: number;
-  sourceBranch: string;
-  definitionId: number;
-  definitionName: string;
-  definitionUrl: string;
-  testDuration: number;
-  totalTests: number;
-  testStats: TestStatDetails[];
-  testsName: string;
-};
 export const TestRunsForRepositoryInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryId: z.string(),
 });
 
 export type BuildDef = { id: number; name: string; url: string };
-
 export type TestsForWeek = {
   weekIndex: number;
 } & (
@@ -63,7 +39,6 @@ export type TestsForWeek = {
       passedTests: number;
     }
 );
-
 export type TestsForDef = {
   definitionId: number;
   buildId: number;
@@ -454,7 +429,6 @@ export const getTestsByWeek = async (
   ]);
 
   // TODO: Fixing n+1 Problem of fetching older testruns
-
   // def IDs where tests array do not have element with weekIndex 0
   // const defsWithoutTests = testrunsForAllDefs.filter(
   //   def => !def.tests.some(test => test.weekIndex === 0)

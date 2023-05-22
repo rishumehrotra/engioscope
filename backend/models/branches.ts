@@ -216,7 +216,7 @@ export const getTotalBranchesForRepositoryIds = async (
   ]);
 };
 
-export const setBranchUrl = (
+const setBranchUrl = (
   branchName: string,
   repoUrl: string,
   linkType: 'history' | 'contents'
