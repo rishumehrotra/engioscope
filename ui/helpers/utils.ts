@@ -1,5 +1,11 @@
 import prettyMilliseconds from 'pretty-ms';
-import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
+import {
+  oneDayInMs,
+  oneHourInMs,
+  oneMinuteInMs,
+  oneSecondInMs,
+  oneWeekInMs,
+} from '../../shared/utils.js';
 
 export const oneYear = 1000 * 60 * 60 * 24 * 365;
 
@@ -14,6 +20,29 @@ export const mediumDate = (date: Date) =>
     day: 'numeric',
     year: 'numeric',
   }).format(date);
+
+export const relativeTime = (date: Date): string => {
+  const currentTime = Date.now();
+  const timestamp = date.getTime();
+  const timeDifference = currentTime - timestamp;
+
+  if (timeDifference < oneWeekInMs) {
+    const units = [
+      { label: 'day', duration: oneDayInMs },
+      { label: 'hour', duration: oneHourInMs },
+      { label: 'minute', duration: oneMinuteInMs },
+      { label: 'second', duration: oneSecondInMs },
+    ];
+
+    const unit = units.find(unit => Math.floor(timeDifference / unit.duration) >= 1);
+    if (unit) {
+      const value = Math.floor(timeDifference / unit.duration);
+      return `${value} ${unit.label}${value > 1 ? 's' : ''} ago`;
+    }
+  }
+
+  return shortDate(new Date(timestamp));
+};
 
 export const formatDebt = (debtInMins: number) => {
   if (debtInMins > 60 && debtInMins < 60 * 24) {

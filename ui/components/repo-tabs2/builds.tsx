@@ -1,7 +1,7 @@
 import React, { Fragment, useCallback, useState } from 'react';
 import ReactTooltip from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
-import { num, shortDate } from '../../helpers/utils.js';
+import { relativeTime, num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import type { Tab } from './Tabs.jsx';
 import TabContents from './TabContents.jsx';
@@ -266,6 +266,16 @@ const Builds: React.FC<{
                               <span className="capitalize">
                                 {pipeline.lastBuildStatus}
                               </span>
+                              <div
+                                className="text-gray-400 text-xs ml-4 mr-2"
+                                data-tip={`${shortDate(
+                                  new Date(pipeline.lastBuildTimestamp)
+                                )}, ${new Date(
+                                  pipeline.lastBuildTimestamp
+                                ).getFullYear()}`}
+                              >
+                                {relativeTime(new Date(pipeline.lastBuildTimestamp))}
+                              </div>
                             </>
                           )}
                         {pipeline.type === 'recent' &&
