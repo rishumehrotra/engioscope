@@ -67,6 +67,7 @@ export const getActiveRepos = async (
   searchTerm: string | undefined,
   groupsIncluded: string[] | undefined
 ) => {
+  const isExactRepoSearch = !!(searchTerm?.startsWith('"') && searchTerm?.endsWith('"'));
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
@@ -78,7 +79,11 @@ export const getActiveRepos = async (
       collectionName,
       'project.name': project,
       ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
-      ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
+      ...(searchTerm && isExactRepoSearch
+        ? { name: searchTerm.replaceAll('"', '') }
+        : searchTerm && !isExactRepoSearch
+        ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+        : {}),
     },
     { id: 1, name: 1 }
   ).lean();
@@ -304,6 +309,8 @@ export const getFilteredRepos = async ({
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof FilteredReposInputParser>) => {
+  const isExactRepoSearch = !!(searchTerm?.startsWith('"') && searchTerm?.endsWith('"'));
+
   const { collectionName, project } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
@@ -315,7 +322,11 @@ export const getFilteredRepos = async ({
       collectionName,
       'project.name': project,
       ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
-      ...(searchTerm ? { name: { $regex: new RegExp(searchTerm, 'i') } } : {}),
+      ...(searchTerm && isExactRepoSearch
+        ? { name: searchTerm.replaceAll('"', '') }
+        : searchTerm && !isExactRepoSearch
+        ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+        : {}),
     },
     { id: 1, name: 1 }
   ).lean();
