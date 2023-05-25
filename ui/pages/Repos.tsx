@@ -39,7 +39,7 @@ const sorters: SortMap<RepoAnalysis> = {
     qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality),
 };
 
-const Repos: React.FC = () => {
+const SummaryAndImpactSystemGroups: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -50,9 +50,6 @@ const Repos: React.FC = () => {
   );
 
   const filters = useRepoFilters();
-  const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
-    getNextPageParam: lastPage => lastPage.nextCursor,
-  });
 
   const filteredReposCount = trpc.repos.getFilteredReposCount.useQuery({
     queryContext: filters.queryContext,
@@ -65,11 +62,9 @@ const Repos: React.FC = () => {
     return aggregateDevs(projectAnalysis);
   }, [projectAnalysis]);
 
-  if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
+  if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return null;
 
-  if (!query.data) return <Loading />;
-
-  return query.data.pages.flatMap(page => page.items).length ? (
+  return (
     <>
       <div className="flex items-end mb-6 justify-between mx-1">
         {projectAnalysis.groups?.groups ? (
@@ -91,10 +86,35 @@ const Repos: React.FC = () => {
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
       <RepoSummary queryPeriodDays={queryPeriodDays} />
-      <div className="mb-6 flex flex-row gap-2 items-center">
+      <div className="mb-6 flex flex-row gap-2 items-center w-full">
         <h4 className="text-slate-500">Sort by</h4>
         <SortControls />
       </div>
+    </>
+  );
+};
+
+const RepoListing: React.FC = () => {
+  const projectAnalysis = useFetchForProject(repoMetrics);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const sorter = useSort(sorters, 'Builds');
+
+  const filters = useRepoFilters();
+  const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
+    getNextPageParam: lastPage => lastPage.nextCursor,
+  });
+
+  const aggregatedDevs = useMemo(() => {
+    if (projectAnalysis === 'loading') return 'loading';
+    return aggregateDevs(projectAnalysis);
+  }, [projectAnalysis]);
+
+  if (projectAnalysis === 'loading' || aggregatedDevs === 'loading') return <Loading />;
+
+  if (!query.data) return <Loading />;
+
+  return query.data.pages.flatMap(page => page.items).length ? (
+    <>
       <InfiniteScrollList2
         items={query.data.pages.flatMap(page => page.items) || []}
         itemKey={repo => repo.repoDetails.id}
@@ -107,5 +127,11 @@ const Repos: React.FC = () => {
     <AlertMessage message="No repos found" />
   );
 };
-
-export default Repos;
+export default () => {
+  return (
+    <>
+      <SummaryAndImpactSystemGroups />
+      <RepoListing />
+    </>
+  );
+};
