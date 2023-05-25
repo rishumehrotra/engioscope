@@ -62,19 +62,19 @@ const getGroupRepositoryNames = (
   return filterGroups.flatMap(group => groups[group] || []);
 };
 
-export const getActiveRepos = async (
+export const searchAndFilterReposBy = async (
   queryContext: QueryContext,
   searchTerm: string | undefined,
   groupsIncluded: string[] | undefined
 ) => {
   const isExactRepoSearch = !!(searchTerm?.startsWith('"') && searchTerm?.endsWith('"'));
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { collectionName, project } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
     ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
     : [];
 
-  const repos = await RepositoryModel.find(
+  return RepositoryModel.find(
     {
       collectionName,
       'project.name': project,
@@ -88,6 +88,16 @@ export const getActiveRepos = async (
     },
     { id: 1, name: 1 }
   ).lean();
+};
+
+export const getActiveRepos = async (
+  queryContext: QueryContext,
+  searchTerm: string | undefined,
+  groupsIncluded: string[] | undefined
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const repos = await searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded);
 
   const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
     BuildModel.aggregate<{ id: string }>([
@@ -305,46 +315,12 @@ export const FilteredReposInputParser = z.object({
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
-export const getFilteredRepos = async ({
-  queryContext,
-  searchTerm,
-  groupsIncluded,
-}: z.infer<typeof FilteredReposInputParser>) => {
-  const isExactRepoSearch = !!(searchTerm?.startsWith('"') && searchTerm?.endsWith('"'));
-
-  const { collectionName, project } = fromContext(queryContext);
-
-  const groupRepositoryNames = groupsIncluded
-    ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
-    : [];
-
-  return RepositoryModel.find(
-    {
-      collectionName,
-      'project.name': project,
-      '$and': [
-        groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
-        searchTerm && isExactRepoSearch ? { name: searchTerm.replaceAll('"', '') } : {},
-        searchTerm && !isExactRepoSearch
-          ? { name: { $regex: new RegExp(searchTerm, 'i') } }
-          : {},
-      ],
-    },
-    { id: 1, name: 1 }
-  ).lean();
-};
 export const getFilteredReposCount = async ({
   queryContext,
   searchTerm,
   groupsIncluded,
 }: z.infer<typeof FilteredReposInputParser>) => {
-  return (
-    await getFilteredRepos({
-      queryContext,
-      searchTerm,
-      groupsIncluded,
-    })
-  ).length;
+  return (await searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded)).length;
 };
 
 export const getSummaryInputParser = z.object({
@@ -399,7 +375,7 @@ export const getSummary = async ({
     getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds),
     getTestsByWeek(queryContext, activeRepoIds),
     getCoveragesByWeek(queryContext, activeRepoIds),
-    getFilteredRepos({ queryContext, searchTerm, groupsIncluded }),
+    searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded),
     getSonarProjectsCount(collectionName, project, activeRepoIds),
     updateWeeklySonarProjectCount(queryContext, activeRepoIds),
     getReposWithSonarQube(collectionName, project, activeRepoIds),
@@ -568,11 +544,11 @@ export const getFilteredAndSortedReposWithStats = async ({
   sortDirection = 'desc',
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
-  const filteredRepos = await getFilteredRepos({
+  const filteredRepos = await searchAndFilterReposBy(
     queryContext,
     searchTerm,
-    groupsIncluded,
-  });
+    groupsIncluded
+  );
 
   const repositoryIds = filteredRepos.map(prop('id'));
   const sortedRepos = await sorters[sortBy](
