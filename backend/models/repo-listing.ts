@@ -78,12 +78,13 @@ export const getActiveRepos = async (
     {
       collectionName,
       'project.name': project,
-      ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
-      ...(searchTerm && isExactRepoSearch
-        ? { name: searchTerm.replaceAll('"', '') }
-        : searchTerm && !isExactRepoSearch
-        ? { name: { $regex: new RegExp(searchTerm, 'i') } }
-        : {}),
+      '$and': [
+        groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
+        searchTerm && isExactRepoSearch ? { name: searchTerm.replaceAll('"', '') } : {},
+        searchTerm && !isExactRepoSearch
+          ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+          : {},
+      ],
     },
     { id: 1, name: 1 }
   ).lean();
@@ -321,12 +322,13 @@ export const getFilteredRepos = async ({
     {
       collectionName,
       'project.name': project,
-      ...(groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {}),
-      ...(searchTerm && isExactRepoSearch
-        ? { name: searchTerm.replaceAll('"', '') }
-        : searchTerm && !isExactRepoSearch
-        ? { name: { $regex: new RegExp(searchTerm, 'i') } }
-        : {}),
+      '$and': [
+        groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
+        searchTerm && isExactRepoSearch ? { name: searchTerm.replaceAll('"', '') } : {},
+        searchTerm && !isExactRepoSearch
+          ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+          : {},
+      ],
     },
     { id: 1, name: 1 }
   ).lean();
