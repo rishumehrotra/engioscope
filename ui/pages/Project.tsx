@@ -4,7 +4,6 @@ import { last } from 'rambda';
 import NavBar from '../components/common/NavBar.js';
 import Repos from './Repos.js';
 import WorkItems from './WorkItems.js';
-import SortControls from '../components/SortControls.js';
 import Devs from './Devs.js';
 import SearchInput from '../components/common/SearchInput.js';
 import AdvancedFilters from '../components/AdvancedFilters.js';
@@ -126,7 +125,6 @@ const Project: React.FC = () => {
               <SearchInput />
               <AdvancedFilters />
             </div>
-            <SortControls />
           </div>
         }
       />

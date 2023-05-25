@@ -11,6 +11,7 @@ import type { Dev } from '../types.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import SortControls from '../components/SortControls.jsx';
 
 const sorters: SortMap<Dev> = {
   Name: (a, b) =>
@@ -40,7 +41,10 @@ const Devs: React.FC = () => {
   return (
     <>
       <AppliedFilters type="devs" count={devs.length} />
-
+      <div className="mb-6 flex flex-row gap-2 items-center">
+        <h4 className="text-slate-500">Sort by</h4>
+        <SortControls />
+      </div>
       <ul>
         {devs.map((dev, index) => (
           <Developer

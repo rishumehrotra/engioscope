@@ -19,6 +19,7 @@ import type { RepoAnalysis } from '../../shared/types.js';
 import type { SortMap } from '../hooks/sort-hooks.js';
 import { useSort } from '../hooks/sort-hooks.js';
 import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
+import SortControls from '../components/SortControls.jsx';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -90,6 +91,10 @@ const Repos: React.FC = () => {
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
       <RepoSummary queryPeriodDays={queryPeriodDays} />
+      <div className="mb-6 flex flex-row gap-2 items-center">
+        <h4 className="text-slate-500">Sort by</h4>
+        <SortControls />
+      </div>
       <InfiniteScrollList2
         items={query.data.pages.flatMap(page => page.items) || []}
         itemKey={repo => repo.repoDetails.id}
