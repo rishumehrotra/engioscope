@@ -23,8 +23,8 @@ export default (config: ParsedConfig) => {
     res.send(process.env.npm_package_version);
   });
 
-  router.get('/api/cache', (req, res) => {
-    const filePath = join(process.cwd(), 'data', 'cache.tar.gz');
+  router.get('/api/dump', (req, res) => {
+    const filePath = join(process.cwd(), 'data', 'data.tar.gz');
     res.setHeader('Content-type', 'application/gzip');
     createReadStream(filePath).pipe(res);
   });

@@ -6,7 +6,7 @@ import tar from 'tar';
 import mongoose from 'mongoose';
 import { promisify } from 'node:util';
 import { exec as cpsExec } from 'node:child_process';
-import { rename, access } from 'node:fs/promises';
+import { rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import writeToFile, {
   writeChangeProgramFile,
@@ -33,34 +33,6 @@ process.on('uncaughtException', console.error);
 process.on('unhandledRejection', console.error);
 
 const logStep = debug('step');
-
-const fileExists = async (path: string) => {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const restoreFromMongo = async () => {
-  logStep('Checking if restoring mongodump is possible');
-  if (process.platform !== 'darwin' && process.platform !== 'win32') {
-    // Skip restore if prod, since this might lead to data-loss.
-    logStep('Probably running on linux. Skipping restore.');
-    return;
-  }
-
-  if (!(await fileExists(join(process.cwd(), 'cache', 'dump.gz')))) {
-    logStep("Couldn't find mongodump. Skipping");
-    return;
-  }
-
-  logStep('Starting mongorestore...');
-  await exec('mongosh engioscope --eval "db.dropDatabase()"');
-  await exec('mongorestore --gzip --archive=cache/dump.gz --drop');
-  logStep('Mongodb restored');
-};
 
 const scrape = async (config: ParsedConfig) => {
   logStep('Starting scrape...');
@@ -161,25 +133,29 @@ const printFetchCounters = () => {
   );
 };
 
-const createTarGz = async () => {
-  logStep('Creating data/cache.tar.gz...');
-  const time = startTimer();
-  await tar.create(
-    {
-      gzip: true,
-      file: 'data/cache.tar.gz',
-    },
-    ['cache']
-  );
-  logStep(`Created data/cache.tar.gz in ${time()}`);
-};
-
 const dumpMongo = async () => {
   logStep('Creating a mongodump...');
   const time = startTimer();
   await exec('mongodump --archive=dump.gz --gzip --db=engioscope');
-  await rename(join(process.cwd(), 'dump.gz'), join(process.cwd(), 'cache', 'dump.gz'));
+  await rename(join(process.cwd(), 'dump.gz'), join(process.cwd(), 'data', 'dump.gz'));
   logStep(`Mongodump done in ${time()}`);
+};
+
+const createTarGz = async () => {
+  logStep('Creating data/data.tar.gz...');
+  const time = startTimer();
+  await tar.create(
+    {
+      gzip: true,
+      file: 'data.tar.gz',
+    },
+    ['data']
+  );
+  await rename(
+    join(process.cwd(), 'data.tar.gz'),
+    join(process.cwd(), 'data', 'data.tar.gz')
+  );
+  logStep(`Created data/data.tar.gz in ${time()}`);
 };
 
 export default (config: ParsedConfig) => {
@@ -193,7 +169,6 @@ export default (config: ParsedConfig) => {
   mongoose.connect(config.mongoUrl);
 
   return Promise.resolve()
-    .then(restoreFromMongo)
     .then(() => scrape(config))
     .then(tap(printFetchCounters))
     .then(dumpMongo)
