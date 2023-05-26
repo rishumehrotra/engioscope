@@ -1,10 +1,12 @@
 import { z } from 'zod';
+import type { PipelineStage } from 'mongoose';
 import type { GitCommitRef } from '../scraper/types-azure.js';
 import { CommitModel } from './mongoose-models/CommitModel.js';
 import { inDateRange } from './helpers.js';
 import { getConfig } from '../config.js';
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const getLatestCommitIdAndDate = async (
   collectionName: string,
@@ -212,4 +214,176 @@ export const getTotalCommitsForRepositoryIds = (
       },
     },
   ]).exec();
+};
+
+export const getSortedDevListing = async (
+  queryContext: QueryContext,
+  sortOrder: 'asc' | 'desc',
+  pageSize: number,
+  pageNumber: number,
+  sortBy:
+    | 'authorName'
+    | 'totalReposCommitted'
+    | 'totalCommits'
+    | 'totalAdd'
+    | 'totalEdit'
+    | 'totalDelete'
+    | undefined
+) => {
+  type DailyCommit = {
+    dailyCommitsCount: number;
+    dailyAdd: number;
+    dailyEdit: number;
+    dailyDelete: number;
+    authorDate: string;
+  };
+
+  type AllCommits = {
+    repoDailyCommits: DailyCommit[];
+    repoCommitsCount: number;
+    repoAdd: number;
+    repoEdit: number;
+    repoDelete: number;
+    authorEmail: string;
+    authorName: string;
+    repositoryId: string;
+  };
+
+  type DevListing = {
+    totalCommits: number;
+    allCommits: AllCommits[];
+    totalAdd: number;
+    totalEdit: number;
+    totalDelete: number;
+    authorEmail: string;
+    authorName: string;
+    totalReposCommitted: number;
+  };
+
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const sortOrderNum = sortOrder === 'asc' ? 1 : -1;
+  const sortStage: PipelineStage = {
+    $sort: {
+      ...(!sortBy || sortBy === 'authorName'
+        ? { authorName: sortOrderNum }
+        : {
+            [sortBy]: sortOrderNum,
+          }),
+      authorEmail: sortOrderNum,
+    },
+  };
+
+  const [repos, commits] = await Promise.all([
+    RepositoryModel.find({ collectionName, 'project.name': project }).lean(),
+
+    CommitModel.aggregate<DevListing>([
+      {
+        $match: {
+          collectionName,
+          project,
+          'author.date': inDateRange(startDate, endDate),
+          'author.email': { $exists: true },
+        },
+      },
+      {
+        $addFields: {
+          authorDate: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$author.date',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            authorEmail: '$author.email',
+            repositoryId: '$repositoryId',
+            authorDate: '$authorDate',
+          },
+          dailyCommitsCount: { $sum: 1 },
+          dailyAdd: { $sum: '$changeCounts.add' },
+          dailyEdit: { $sum: '$changeCounts.edit' },
+          dailyDelete: { $sum: '$changeCounts.delete' },
+          authorEmail: { $first: '$author.email' },
+          repositoryId: { $first: '$repositoryId' },
+          authorDate: { $first: '$authorDate' },
+          authorName: { $first: '$author.name' },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            authorEmail: '$authorEmail',
+            repositoryId: '$repositoryId',
+          },
+          repoDailyCommits: {
+            $push: {
+              dailyCommitsCount: '$dailyCommitsCount',
+              dailyAdd: '$dailyAdd',
+              dailyEdit: '$dailyEdit',
+              dailyDelete: '$dailyDelete',
+              authorDate: '$authorDate',
+            },
+          },
+          repoCommitsCount: { $sum: '$dailyCommitsCount' },
+          repoAdd: { $sum: '$dailyAdd' },
+          repoEdit: { $sum: '$dailyEdit' },
+          repoDelete: { $sum: '$dailyDelete' },
+          authorEmail: { $first: '$authorEmail' },
+          repositoryId: { $first: '$repositoryId' },
+          authorName: { $first: '$authorName' },
+        },
+      },
+      {
+        $group: {
+          _id: '$authorEmail',
+          totalCommits: { $sum: '$repoCommitsCount' },
+          allCommits: { $push: '$$ROOT' },
+          totalAdd: { $sum: '$repoAdd' },
+          totalEdit: { $sum: '$repoEdit' },
+          totalDelete: { $sum: '$repoDelete' },
+          authorEmail: { $first: '$authorEmail' },
+          authorName: { $first: '$authorName' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalCommits: 1,
+          totalReposCommitted: { $size: '$allCommits' },
+          allCommits: 1,
+          totalAdd: 1,
+          totalEdit: 1,
+          totalDelete: 1,
+          authorEmail: 1,
+          authorName: 1,
+        },
+      },
+      sortStage,
+      { $skip: pageSize * pageNumber },
+      { $limit: pageSize },
+    ]).exec(),
+  ]);
+
+  const findRepoName = (repoId: string) => {
+    const repo = repos.find(repo => repo.name === repoId);
+
+    return repo ? repo.name : '';
+  };
+
+  return commits.map(commit => {
+    const allCommits = commit.allCommits.map(repo => {
+      return {
+        ...repo,
+        repoName: findRepoName(repo.repositoryId),
+      };
+    });
+
+    return {
+      ...commit,
+      allCommits,
+    };
+  });
 };
