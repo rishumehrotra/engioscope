@@ -9,9 +9,14 @@ import useFetchForProject from '../hooks/use-fetch-for-project.js';
 import { repoMetrics } from '../network.js';
 import type { Dev } from '../types.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
-import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import SortControls from '../components/SortControls.jsx';
+import Developer2 from '../components/Dev2.jsx';
+import { trpc } from '../helpers/trpc.js';
+import useDevFilters from '../hooks/use-dev-filters.jsx';
+// import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
+import AlertMessage from '../components/common/AlertMessage.jsx';
 
 const sorters: SortMap<Dev> = {
   Name: (a, b) =>
@@ -27,8 +32,13 @@ const Devs: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
   const [search] = useQueryParam('search', asString);
-
+  const [showNewDevListing] = useQueryParam('dev-listing', asBoolean);
   const sorter = useSort(sorters, 'Name');
+
+  const filters = useDevFilters();
+  const query = trpc.commits.getSortedDevListing.useInfiniteQuery(filters, {
+    getNextPageParam: lastPage => lastPage.nextCursor,
+  });
   const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
     return Object.values(aggregateDevs(projectAnalysis))
@@ -36,7 +46,7 @@ const Devs: React.FC = () => {
       .sort(sorter);
   }, [projectAnalysis, search, sorter]);
 
-  if (devs === 'loading') return <Loading />;
+  if (devs === 'loading' || (showNewDevListing && !query.data)) return <Loading />;
 
   return (
     <>
@@ -46,14 +56,38 @@ const Devs: React.FC = () => {
         <SortControls />
       </div>
       <ul>
-        {devs.map((dev, index) => (
-          <Developer
-            key={dev.name}
-            dev={dev}
-            isFirst={index === 0}
-            queryPeriodDays={queryPeriodDays}
-          />
-        ))}
+        {showNewDevListing ? (
+          query?.data?.pages?.flatMap(page => page.items).length ? (
+            <>
+              {/* <InfiniteScrollList2
+                items={query.data.pages.flatMap(page => page.items) || []}
+                itemKey={dev => dev.authorEmail}
+                itemComponent={Developer2}
+                loadNextPage={query.fetchNextPage}
+              /> */}
+              {devs.map((dev, index) => (
+                <Developer2
+                  key={dev.name}
+                  dev={dev}
+                  isFirst={index === 0}
+                  queryPeriodDays={queryPeriodDays}
+                />
+              ))}
+              {query.isFetching ? <Loading /> : null}
+            </>
+          ) : (
+            <AlertMessage message="No Developers found" />
+          )
+        ) : (
+          devs.map((dev, index) => (
+            <Developer
+              key={dev.name}
+              dev={dev}
+              isFirst={index === 0}
+              queryPeriodDays={queryPeriodDays}
+            />
+          ))
+        )}
       </ul>
     </>
   );

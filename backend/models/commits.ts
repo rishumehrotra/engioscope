@@ -216,12 +216,23 @@ export const getTotalCommitsForRepositoryIds = (
   ]).exec();
 };
 
-export const devListingInputParser = z.object({
+const devSortKeys = [
+  'authorName',
+  'totalReposCommitted',
+  'commits',
+  'pull-requests',
+  'tests',
+  'code-quality',
+] as const;
+
+export type DevSortKey = (typeof devSortKeys)[number];
+
+export const DevListingInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.string().optional(),
   pageSize: z.number(),
   pageNumber: z.number(),
-  sortBy: z.enum(['authorName', 'totalReposCommitted']).optional(),
+  sortBy: z.enum(devSortKeys).optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   cursor: z
     .object({
@@ -231,13 +242,15 @@ export const devListingInputParser = z.object({
     .nullish(),
 });
 
+export type DevListingFilters = z.infer<typeof DevListingInputParser>;
+
 export const getSortedDevListing = async ({
   queryContext,
   searchTerm,
   sortBy,
   sortDirection,
   cursor,
-}: z.infer<typeof devListingInputParser>) => {
+}: z.infer<typeof DevListingInputParser>) => {
   type DailyCommit = {
     dailyCommitsCount: number;
     dailyAdd: number;
