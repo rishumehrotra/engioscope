@@ -3,7 +3,7 @@ import yaml from 'yaml';
 import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
 
-import { collectionAndProjectInputs } from './helpers.js';
+import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -281,7 +281,7 @@ export const getTotalCentralTemplateUsage = async (
   queryContext: QueryContext,
   repoNames?: string[]
 ) => {
-  const { collectionName, project } = fromContext(queryContext);
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   const centralTempBuildDefIDs = await AzureBuildReportModel.aggregate<{
     buildId: string;
@@ -316,7 +316,10 @@ export const getTotalCentralTemplateUsage = async (
   if (centralTempBuildDefIDs?.length === 0) return { templateUsers: 0 };
 
   const count = await BuildModel.find({
+    collectionName,
+    project,
     id: { $in: centralTempBuildDefIDs.map(r => r.buildId) },
+    finishTime: inDateRange(startDate, endDate),
   }).count();
 
   return { templateUsers: count };
