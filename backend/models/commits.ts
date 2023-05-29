@@ -218,6 +218,7 @@ export const getTotalCommitsForRepositoryIds = (
 
 export const devListingInputParser = z.object({
   queryContext: queryContextInputParser,
+  searchTerm: z.string().optional(),
   pageSize: z.number(),
   pageNumber: z.number(),
   sortBy: z.enum(['authorName', 'totalReposCommitted']).optional(),
@@ -232,6 +233,7 @@ export const devListingInputParser = z.object({
 
 export const getSortedDevListing = async ({
   queryContext,
+  searchTerm,
   sortBy,
   sortDirection,
   cursor,
@@ -285,7 +287,12 @@ export const getSortedDevListing = async ({
           collectionName,
           project,
           'author.date': inDateRange(startDate, endDate),
-          'author.email': { $exists: true },
+          '$and': [
+            { 'author.email': { $exists: true } },
+            ...(searchTerm
+              ? [{ 'author.name': { $regex: new RegExp(searchTerm, 'i') } }]
+              : []),
+          ],
         },
       },
       {
