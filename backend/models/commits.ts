@@ -216,14 +216,7 @@ export const getTotalCommitsForRepositoryIds = (
   ]).exec();
 };
 
-const devSortKeys = [
-  'authorName',
-  'totalReposCommitted',
-  'commits',
-  'pull-requests',
-  'tests',
-  'code-quality',
-] as const;
+const devSortKeys = ['authorName', 'totalReposCommitted'] as const;
 
 export type DevSortKey = (typeof devSortKeys)[number];
 
