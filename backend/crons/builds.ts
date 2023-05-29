@@ -18,6 +18,7 @@ import {
   updateQualityGateDetails,
   updateQualityGateHistory,
 } from './sonar.js';
+import { AzureBuildReportModel } from '../models/build-reports.js';
 
 const missingTimelines = async (
   collectionName: string,
@@ -228,6 +229,11 @@ const deleteBuilds = (collectionName: string, project: string) => {
         collectionName,
         project,
         'build.id': { $in: buildIds },
+      }),
+      AzureBuildReportModel.deleteMany({
+        collectionName,
+        project,
+        buildId: { $in: buildIds.map(String) },
       }),
     ]);
   };

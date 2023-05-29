@@ -65,7 +65,7 @@ azureBuildReportSchema.index({
   buildId: 1,
 });
 
-const AzureBuildReportModel = model<AzureBuildReport>(
+export const AzureBuildReportModel = model<AzureBuildReport>(
   'AzureBuildReport',
   azureBuildReportSchema
 );
@@ -381,6 +381,3 @@ export const getCentralTemplateBuildDefs = async (
     },
   ]).exec();
 };
-
-// eslint-disable-next-line no-underscore-dangle
-export const __AzureBuildReportModelDONOTUSE = AzureBuildReportModel;
