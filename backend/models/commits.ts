@@ -216,20 +216,26 @@ export const getTotalCommitsForRepositoryIds = (
   ]).exec();
 };
 
-export const getSortedDevListing = async (
-  queryContext: QueryContext,
-  sortOrder: 'asc' | 'desc',
-  pageSize: number,
-  pageNumber: number,
-  sortBy:
-    | 'authorName'
-    | 'totalReposCommitted'
-    | 'totalCommits'
-    | 'totalAdd'
-    | 'totalEdit'
-    | 'totalDelete'
-    | undefined
-) => {
+export const devListingInputParser = z.object({
+  queryContext: queryContextInputParser,
+  pageSize: z.number(),
+  pageNumber: z.number(),
+  sortBy: z.enum(['authorName', 'totalReposCommitted']).optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
+  cursor: z
+    .object({
+      pageSize: z.number().optional(),
+      pageNumber: z.number().optional(),
+    })
+    .nullish(),
+});
+
+export const getSortedDevListing = async ({
+  queryContext,
+  sortBy,
+  sortDirection,
+  cursor,
+}: z.infer<typeof devListingInputParser>) => {
   type DailyCommit = {
     dailyCommitsCount: number;
     dailyAdd: number;
@@ -241,9 +247,6 @@ export const getSortedDevListing = async (
   type AllCommits = {
     repoDailyCommits: DailyCommit[];
     repoCommitsCount: number;
-    repoAdd: number;
-    repoEdit: number;
-    repoDelete: number;
     authorEmail: string;
     authorName: string;
     repositoryId: string;
@@ -252,16 +255,16 @@ export const getSortedDevListing = async (
   type DevListing = {
     totalCommits: number;
     allCommits: AllCommits[];
-    totalAdd: number;
-    totalEdit: number;
-    totalDelete: number;
     authorEmail: string;
     authorName: string;
     totalReposCommitted: number;
   };
 
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const sortOrderNum = sortOrder === 'asc' ? 1 : -1;
+  const sortOrderNum = sortDirection === 'asc' ? 1 : -1;
+  const pageSize = cursor?.pageSize || 10;
+  const pageNumber = cursor?.pageNumber || 0;
+
   const sortStage: PipelineStage = {
     $sort: {
       ...(!sortBy || sortBy === 'authorName'
@@ -328,9 +331,6 @@ export const getSortedDevListing = async (
             },
           },
           repoCommitsCount: { $sum: '$dailyCommitsCount' },
-          repoAdd: { $sum: '$dailyAdd' },
-          repoEdit: { $sum: '$dailyEdit' },
-          repoDelete: { $sum: '$dailyDelete' },
           authorEmail: { $first: '$authorEmail' },
           repositoryId: { $first: '$repositoryId' },
           authorName: { $first: '$authorName' },
@@ -341,9 +341,6 @@ export const getSortedDevListing = async (
           _id: '$authorEmail',
           totalCommits: { $sum: '$repoCommitsCount' },
           allCommits: { $push: '$$ROOT' },
-          totalAdd: { $sum: '$repoAdd' },
-          totalEdit: { $sum: '$repoEdit' },
-          totalDelete: { $sum: '$repoDelete' },
           authorEmail: { $first: '$authorEmail' },
           authorName: { $first: '$authorName' },
         },
@@ -354,9 +351,6 @@ export const getSortedDevListing = async (
           totalCommits: 1,
           totalReposCommitted: { $size: '$allCommits' },
           allCommits: 1,
-          totalAdd: 1,
-          totalEdit: 1,
-          totalDelete: 1,
           authorEmail: 1,
           authorName: 1,
         },
@@ -373,7 +367,7 @@ export const getSortedDevListing = async (
     return repo ? repo.name : '';
   };
 
-  return commits.map(commit => {
+  const devCommits = commits.map(commit => {
     const allCommits = commit.allCommits.map(repo => {
       return {
         ...repo,
@@ -386,4 +380,12 @@ export const getSortedDevListing = async (
       allCommits,
     };
   });
+
+  return {
+    items: devCommits,
+    nextCursor: {
+      pageNumber: (cursor?.pageNumber || 0) + 1,
+      pageSize: cursor?.pageSize || 10,
+    },
+  };
 };
