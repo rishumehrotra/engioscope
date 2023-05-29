@@ -24,7 +24,7 @@ export default (config: ParsedConfig) => {
   });
 
   router.get('/api/dump', (req, res) => {
-    const filePath = join(process.cwd(), 'data', 'data.tar.gz');
+    const filePath = join(process.cwd(), 'data', 'dump.gz');
     res.setHeader('Content-type', 'application/gzip');
     createReadStream(filePath).pipe(res);
   });

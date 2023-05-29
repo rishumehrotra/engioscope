@@ -2,7 +2,6 @@
 import chalk from 'chalk';
 import debug from 'debug';
 import { tap, zip } from 'rambda';
-import tar from 'tar';
 import mongoose from 'mongoose';
 import { promisify } from 'node:util';
 import { exec as cpsExec } from 'node:child_process';
@@ -141,23 +140,6 @@ const dumpMongo = async () => {
   logStep(`Mongodump done in ${time()}`);
 };
 
-const createTarGz = async () => {
-  logStep('Creating data/data.tar.gz...');
-  const time = startTimer();
-  await tar.create(
-    {
-      gzip: true,
-      file: 'data.tar.gz',
-    },
-    ['data']
-  );
-  await rename(
-    join(process.cwd(), 'data.tar.gz'),
-    join(process.cwd(), 'data', 'data.tar.gz')
-  );
-  logStep(`Created data/data.tar.gz in ${time()}`);
-};
-
 export default (config: ParsedConfig) => {
   const time = startTimer();
 
@@ -172,7 +154,6 @@ export default (config: ParsedConfig) => {
     .then(() => scrape(config))
     .then(tap(printFetchCounters))
     .then(dumpMongo)
-    .then(createTarGz)
     .then(() => debug('done')(`in ${time()}.`))
     .finally(() => mongoose.disconnect());
 };
