@@ -13,7 +13,7 @@ export default (): DevListingFilters => {
   return {
     queryContext,
     searchTerm: search,
-    pageSize: pageSize || 10,
+    pageSize: pageSize || 20,
     pageNumber: pageNumber || 0,
     sortBy: (sortBy as DevSortKey) || ('authorName' as DevSortKey),
     sortDirection: sort ? (sort === 'asc' ? 'asc' : 'desc') : 'desc',

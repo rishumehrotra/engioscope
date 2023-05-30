@@ -15,7 +15,7 @@ import SortControls from '../components/SortControls.jsx';
 import Developer2 from '../components/Dev2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useDevFilters from '../hooks/use-dev-filters.jsx';
-// import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
+import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import AlertMessage from '../components/common/AlertMessage.jsx';
 
 const sorters: SortMap<Dev> = {
@@ -38,6 +38,7 @@ const Devs: React.FC = () => {
   const filters = useDevFilters();
   const query = trpc.commits.getSortedDevListing.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
+    enabled: showNewDevListing === true,
   });
   const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
@@ -59,20 +60,12 @@ const Devs: React.FC = () => {
         {showNewDevListing ? (
           query?.data?.pages?.flatMap(page => page.items).length ? (
             <>
-              {/* <InfiniteScrollList2
+              <InfiniteScrollList2
                 items={query.data.pages.flatMap(page => page.items) || []}
                 itemKey={dev => dev.authorEmail}
                 itemComponent={Developer2}
                 loadNextPage={query.fetchNextPage}
-              /> */}
-              {devs.map((dev, index) => (
-                <Developer2
-                  key={dev.name}
-                  dev={dev}
-                  isFirst={index === 0}
-                  queryPeriodDays={queryPeriodDays}
-                />
-              ))}
+              />
               {query.isFetching ? <Loading /> : null}
             </>
           ) : (

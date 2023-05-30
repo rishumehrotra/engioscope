@@ -237,6 +237,34 @@ export const DevListingInputParser = z.object({
 
 export type DevListingFilters = z.infer<typeof DevListingInputParser>;
 
+type DailyCommit = {
+  dailyCommitsCount: number;
+  dailyAdd: number;
+  dailyEdit: number;
+  dailyDelete: number;
+  authorDate: string;
+};
+
+type AllCommits = {
+  repoName: string;
+  repoDailyCommits: DailyCommit[];
+  repoCommitsCount: number;
+  authorEmail: string;
+  authorName: string;
+  repositoryId: string;
+  repoAdd: number;
+  repoEdit: number;
+  repoDelete: number;
+};
+
+export type DevListing = {
+  totalCommits: number;
+  allCommits: AllCommits[];
+  authorEmail: string;
+  authorName: string;
+  authorImage: string;
+  totalReposCommitted: number;
+};
 export const getSortedDevListing = async ({
   queryContext,
   searchTerm,
@@ -244,33 +272,9 @@ export const getSortedDevListing = async ({
   sortDirection,
   cursor,
 }: z.infer<typeof DevListingInputParser>) => {
-  type DailyCommit = {
-    dailyCommitsCount: number;
-    dailyAdd: number;
-    dailyEdit: number;
-    dailyDelete: number;
-    authorDate: string;
-  };
-
-  type AllCommits = {
-    repoDailyCommits: DailyCommit[];
-    repoCommitsCount: number;
-    authorEmail: string;
-    authorName: string;
-    repositoryId: string;
-  };
-
-  type DevListing = {
-    totalCommits: number;
-    allCommits: AllCommits[];
-    authorEmail: string;
-    authorName: string;
-    totalReposCommitted: number;
-  };
-
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const sortOrderNum = sortDirection === 'asc' ? 1 : -1;
-  const pageSize = cursor?.pageSize || 10;
+  const pageSize = cursor?.pageSize || 20;
   const pageNumber = cursor?.pageNumber || 0;
 
   const sortStage: PipelineStage = {
@@ -280,7 +284,7 @@ export const getSortedDevListing = async ({
         : {
             [sortBy]: sortOrderNum,
           }),
-      authorEmail: sortOrderNum,
+      authorEmail: sortDirection === 'desc' ? -1 : 1,
     },
   };
 
@@ -303,11 +307,17 @@ export const getSortedDevListing = async ({
       },
       {
         $addFields: {
-          authorDate: {
+          'authorDate': {
             $dateToString: {
               format: '%Y-%m-%d',
               date: '$author.date',
             },
+          },
+          'author.email': {
+            $toLower: '$author.email',
+          },
+          'author.name': {
+            $toLower: '$author.name',
           },
         },
       },
@@ -326,6 +336,7 @@ export const getSortedDevListing = async ({
           repositoryId: { $first: '$repositoryId' },
           authorDate: { $first: '$authorDate' },
           authorName: { $first: '$author.name' },
+          authorImage: { $first: '$author.imageUrl' },
         },
       },
       {
@@ -343,10 +354,14 @@ export const getSortedDevListing = async ({
               authorDate: '$authorDate',
             },
           },
+          repoAdd: { $sum: '$dailyAdd' },
+          repoEdit: { $sum: '$dailyEdit' },
+          repoDelete: { $sum: '$dailyDelete' },
           repoCommitsCount: { $sum: '$dailyCommitsCount' },
           authorEmail: { $first: '$authorEmail' },
           repositoryId: { $first: '$repositoryId' },
           authorName: { $first: '$authorName' },
+          authorImage: { $first: '$authorImage' },
         },
       },
       {
@@ -356,6 +371,7 @@ export const getSortedDevListing = async ({
           allCommits: { $push: '$$ROOT' },
           authorEmail: { $first: '$authorEmail' },
           authorName: { $first: '$authorName' },
+          authorImage: { $first: '$authorImage' },
         },
       },
       {
@@ -366,6 +382,7 @@ export const getSortedDevListing = async ({
           allCommits: 1,
           authorEmail: 1,
           authorName: 1,
+          authorImage: 1,
         },
       },
       sortStage,
@@ -375,7 +392,7 @@ export const getSortedDevListing = async ({
   ]);
 
   const findRepoName = (repoId: string) => {
-    const repo = repos.find(repo => repo.name === repoId);
+    const repo = repos.find(repo => repo.id === repoId);
 
     return repo ? repo.name : '';
   };
@@ -398,7 +415,7 @@ export const getSortedDevListing = async ({
     items: devCommits,
     nextCursor: {
       pageNumber: (cursor?.pageNumber || 0) + 1,
-      pageSize: cursor?.pageSize || 10,
+      pageSize: cursor?.pageSize || 20,
     },
   };
 };
