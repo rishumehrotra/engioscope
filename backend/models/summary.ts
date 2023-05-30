@@ -14,8 +14,6 @@ export const getCollectionTestAutomationSummary = ({
       | 'project'
       | 'totalActiveRepos'
       | 'totalRepos'
-      | 'latestTestsSummary'
-      | 'latestCoverageSummary'
       | 'weeklyTestsSummary'
       | 'weeklyCoverageSummary'
     >
@@ -25,8 +23,6 @@ export const getCollectionTestAutomationSummary = ({
       project: 1,
       totalActiveRepos: 1,
       totalRepos: 1,
-      latestTestsSummary: 1,
-      latestCoverageSummary: 1,
       weeklyTestsSummary: 1,
       weeklyCoverageSummary: 1,
     }

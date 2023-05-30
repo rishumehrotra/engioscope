@@ -56,9 +56,11 @@ const summarySchema = new Schema<Summary>(
       total: { type: Number },
       central: { type: Number },
     },
-    totalDefs: { type: Number },
-    defsWithTests: { type: Number },
-    defsWithCoverage: { type: Number },
+    defSummary: {
+      totalDefs: { type: Number },
+      defsWithTests: { type: Number },
+      defsWithCoverage: { type: Number },
+    },
     weeklyTestsSummary: [
       {
         weekIndex: { type: Number },
@@ -73,16 +75,6 @@ const summarySchema = new Schema<Summary>(
         totalBranches: { type: Number },
       },
     ],
-    latestTestsSummary: {
-      weekIndex: { type: Number },
-      passedTests: { type: Number },
-      totalTests: { type: Number },
-    },
-    latestCoverageSummary: {
-      weekIndex: { type: Number },
-      coveredBranches: { type: Number },
-      totalBranches: { type: Number },
-    },
     sonarProjects: {
       totalProjects: { type: Number },
       passedProjects: { type: Number },

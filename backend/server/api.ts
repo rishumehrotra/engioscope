@@ -1,6 +1,7 @@
 import Router from 'express-promise-router';
 import { join } from 'node:path';
 import { promises as fs, createReadStream } from 'node:fs';
+import type { Request } from 'express';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';
@@ -10,6 +11,10 @@ import { formatReleaseDefinition } from '../scraper/stats-aggregators/releases.j
 import saveBuildReport from './save-build-report.js';
 import { getReleaseEnvironments } from '../models/release-definitions.js';
 import { trpcExpressHandler } from './router/index.js';
+import {
+  getSummaryInputParser,
+  sendSummaryAsEventStream,
+} from '../models/repo-listing.js';
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
@@ -73,6 +78,36 @@ export default (config: ParsedConfig) => {
       ).reduce<PipelineDefinitions>((acc, curr) => ({ ...acc, ...curr }), {});
 
       res.status(200).send(releases);
+    }
+  );
+
+  router.get(
+    `/api/:collectionName/:project/repos/summary`,
+    (
+      req: Request<
+        { collectionName: string; project: string },
+        object,
+        object,
+        {
+          startDate: string;
+          endDate: string;
+          searchTerm: string | undefined;
+          selectedGroupLabels: string | undefined;
+        }
+      >,
+      res
+    ) => {
+      const args = getSummaryInputParser.parse({
+        queryContext: [
+          req.params.collectionName,
+          req.params.project,
+          req.query.startDate && new Date(req.query.startDate),
+          req.query.endDate && new Date(req.query.endDate),
+        ],
+        searchTerm: req.query.searchTerm || undefined,
+        groupsIncluded: req.query.selectedGroupLabels,
+      });
+      return sendSummaryAsEventStream(args, res, res.flush);
     }
   );
 

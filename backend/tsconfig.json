@@ -7,7 +7,8 @@
     "types": ["jest", "node"],
     "noEmit": false,
     "outDir": "../dist",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "noErrorTruncation": true
   },
   "exclude": ["server/cache"]
 }

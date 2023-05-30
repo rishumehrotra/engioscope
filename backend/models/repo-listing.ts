@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { last, prop, propEq } from 'rambda';
+import { prop, propEq } from 'rambda';
+import type { Response } from 'express';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import { inDateRange } from './helpers.js';
@@ -393,19 +394,120 @@ export const getSummary = async ({
     totalRepos: totalRepos.length,
     hasReleasesReposCount,
     centralTemplatePipeline,
-    totalDefs: defSummary.totalDefs,
-    defsWithTests: defSummary.defsWithTests,
-    defsWithCoverage: defSummary.defsWithCoverage,
+    defSummary,
     weeklyTestsSummary,
     weeklyCoverageSummary,
-    latestTestsSummary: last(weeklyTestsSummary),
-    latestCoverageSummary: last(weeklyCoverageSummary),
     sonarProjects,
     weeklySonarProjectsCount,
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
     branchPolicies,
   };
+};
+
+export type SummaryStats = {
+  totalActiveRepos: number;
+  totalRepos: number;
+  hasReleasesReposCount: number;
+  reposWithSonarQube: number;
+  centralTemplateUsage: Awaited<ReturnType<typeof getTotalCentralTemplateUsage>>;
+  pipelines: Awaited<ReturnType<typeof getYamlPipelinesCountSummary>>;
+  healthyBranches: Awaited<ReturnType<typeof getHealthyBranchesSummary>>;
+  totalBuilds: Awaited<ReturnType<typeof getTotalBuildsBy>>;
+  successfulBuilds: Awaited<ReturnType<typeof getSuccessfulBuildsBy>>;
+  centralTemplatePipeline: Awaited<ReturnType<typeof getCentralTemplatePipeline>>;
+  defSummary: Awaited<ReturnType<typeof getDefinitionsWithTestsAndCoverages>>;
+  weeklyTestsSummary: Awaited<ReturnType<typeof getTestsByWeek>>;
+  weeklyCoverageSummary: Awaited<ReturnType<typeof getCoveragesByWeek>>;
+  sonarProjects: Awaited<ReturnType<typeof getSonarProjectsCount>>;
+  weeklySonarProjectsCount: Awaited<ReturnType<typeof updateWeeklySonarProjectCount>>;
+  weeklyReposWithSonarQubeCount: Awaited<
+    ReturnType<typeof updatedWeeklyReposWithSonarQubeCount>
+  >;
+  branchPolicies: Awaited<ReturnType<typeof getReposConformingToBranchPolicies>>;
+};
+
+export const sendSummaryAsEventStream = async (
+  { queryContext, searchTerm, groupsIncluded }: z.infer<typeof getSummaryInputParser>,
+  response: Response,
+  flush: () => void
+) => {
+  response.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache',
+  });
+
+  const sendChunk =
+    <T extends keyof SummaryStats>(key: T) =>
+    (data: SummaryStats[typeof key]) => {
+      response.write(`data: ${JSON.stringify({ [key]: data })}\n\n`);
+      flush();
+    };
+
+  const { collectionName, project } = fromContext(queryContext);
+
+  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
+
+  const activeRepoIds = activeRepos.map(prop('id'));
+  const activeRepoNames = activeRepos.map(prop('name'));
+
+  sendChunk('totalActiveRepos')(activeRepoIds.length);
+
+  const defaultBranchIDs = await getAllRepoDefaultBranchIDs(
+    collectionName,
+    project,
+    activeRepoIds
+  );
+
+  await Promise.all([
+    getSuccessfulBuildsBy(queryContext, activeRepoIds).then(
+      sendChunk('successfulBuilds')
+    ),
+    getTotalBuildsBy(queryContext, activeRepoIds).then(sendChunk('totalBuilds')),
+    getTotalCentralTemplateUsage(queryContext, activeRepoNames).then(
+      sendChunk('centralTemplateUsage')
+    ),
+    getYamlPipelinesCountSummary(queryContext, activeRepoIds).then(
+      sendChunk('pipelines')
+    ),
+    getHealthyBranchesSummary(queryContext, activeRepoIds, defaultBranchIDs).then(
+      sendChunk('healthyBranches')
+    ),
+    getHasReleasesSummary(queryContext, activeRepoIds).then(
+      sendChunk('hasReleasesReposCount')
+    ),
+    getCentralTemplatePipeline(queryContext, activeRepoIds).then(
+      sendChunk('centralTemplatePipeline')
+    ),
+    getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds).then(
+      sendChunk('defSummary')
+    ),
+    getTestsByWeek(queryContext, activeRepoIds).then(sendChunk('weeklyTestsSummary')),
+    getCoveragesByWeek(queryContext, activeRepoIds).then(
+      sendChunk('weeklyCoverageSummary')
+    ),
+    searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded).then(x =>
+      sendChunk('totalRepos')(x.length)
+    ),
+    getSonarProjectsCount(collectionName, project, activeRepoIds).then(
+      sendChunk('sonarProjects')
+    ),
+    updateWeeklySonarProjectCount(queryContext, activeRepoIds).then(
+      sendChunk('weeklySonarProjectsCount')
+    ),
+    getReposWithSonarQube(collectionName, project, activeRepoIds).then(
+      sendChunk('reposWithSonarQube')
+    ),
+    updatedWeeklyReposWithSonarQubeCount(queryContext, activeRepoIds).then(
+      sendChunk('weeklyReposWithSonarQubeCount')
+    ),
+    getReposConformingToBranchPolicies(queryContext, activeRepoIds).then(
+      sendChunk('branchPolicies')
+    ),
+  ]);
+
+  response.end();
 };
 
 export const NonYamlPipelinesParser = z.object({

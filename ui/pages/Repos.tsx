@@ -85,7 +85,10 @@ const SummaryAndImpactSystemGroups: React.FC = () => {
         <QueryPeriodSelector />
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
+      {/* <div className="h-64"> */}
       <RepoSummary queryPeriodDays={queryPeriodDays} />
+      {/* </div>
+      <StreamingRepoSummary queryPeriodDays={queryPeriodDays} /> */}
       <div className="mb-6 flex flex-row gap-2 items-center w-full">
         <h4 className="text-slate-500">Sort by</h4>
         <SortControls />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { multiply, prop } from 'rambda';
+import { last, multiply, prop } from 'rambda';
 import { byNum, byString } from 'sort-lib';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
@@ -17,12 +17,12 @@ type CollectionTestAutomatioinSummary =
 const sorters = {
   byName: byString<CollectionTestAutomatioinSummary>(prop('project')),
   byTests: byNum<CollectionTestAutomatioinSummary>(
-    x => x.latestTestsSummary?.totalTests || 0
+    x => last(x.weeklyTestsSummary)?.totalTests || 0
   ),
   byCoverage: byNum<CollectionTestAutomatioinSummary>(x =>
     divide(
-      x.latestCoverageSummary?.coveredBranches || 0,
-      x.latestCoverageSummary?.totalBranches || 0
+      last(x.weeklyCoverageSummary)?.coveredBranches || 0,
+      last(x.weeklyCoverageSummary)?.totalBranches || 0
     ).getOr(0)
   ),
 };
@@ -88,7 +88,7 @@ const CollectionsTestAutomationSummary: React.FC<{
                 </td>
                 <td>
                   <LabelWithSparkline
-                    label={num(project.latestTestsSummary?.totalTests || 0)}
+                    label={num(last(project.weeklyTestsSummary)?.totalTests || 0)}
                     data={project.weeklyTestsSummary.map(t => t.totalTests)}
                     lineColor={increaseIsBetter(
                       project.weeklyTestsSummary.map(t => t.totalTests)
@@ -98,8 +98,8 @@ const CollectionsTestAutomationSummary: React.FC<{
                 <td>
                   <LabelWithSparkline
                     label={divide(
-                      project.latestCoverageSummary?.coveredBranches || 0,
-                      project.latestCoverageSummary?.totalBranches || 0
+                      last(project.weeklyCoverageSummary)?.coveredBranches || 0,
+                      last(project.weeklyCoverageSummary)?.totalBranches || 0
                     )
                       .map(toPercentage)
                       .getOr('-')}

@@ -1,4 +1,4 @@
-import { multiply } from 'rambda';
+import { last, multiply } from 'rambda';
 import React from 'react';
 
 import { divide, exists, toPercentage } from '../../shared/utils.js';
@@ -19,9 +19,10 @@ type RepoSummaryProps = {
 const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
+  const queryContext = useQueryContext();
 
   const summaries = trpc.repos.getSummaries.useQuery({
-    queryContext: useQueryContext(),
+    queryContext,
     searchTerm: search || undefined,
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
   });
@@ -164,7 +165,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
             title: 'Tests',
             value: (
               <LabelWithSparkline
-                label={num(summaries.data.latestTestsSummary?.totalTests || 0)}
+                label={num(last(summaries.data.weeklyTestsSummary)?.totalTests || 0)}
                 data={summaries.data.weeklyTestsSummary.map(t => t.totalTests)}
                 lineColor={increaseIsBetter(
                   summaries.data.weeklyTestsSummary.map(t => t.totalTests)
@@ -180,8 +181,8 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
             value: (
               <LabelWithSparkline
                 label={divide(
-                  summaries.data.latestCoverageSummary?.coveredBranches || 0,
-                  summaries.data.latestCoverageSummary?.totalBranches || 0
+                  last(summaries.data.weeklyCoverageSummary)?.coveredBranches || 0,
+                  last(summaries.data.weeklyCoverageSummary)?.totalBranches || 0
                 )
                   .map(toPercentage)
                   .getOr('-')}
@@ -207,22 +208,28 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
         topStats={[
           {
             title: 'Pipelines running tests',
-            value: divide(summaries.data.defsWithTests, summaries.data.totalDefs)
+            value: divide(
+              summaries.data.defSummary.defsWithTests,
+              summaries.data.defSummary.totalDefs
+            )
               .map(toPercentage)
               .getOr('-'),
-            tooltip: `${num(summaries.data.defsWithTests)} of ${num(
-              summaries.data.totalDefs
+            tooltip: `${num(summaries.data.defSummary.defsWithTests)} of ${num(
+              summaries.data.defSummary.totalDefs
             )} pipelines report test results`,
           },
         ]}
         childStats={[
           {
             title: 'Reporting coverage',
-            value: divide(summaries.data.defsWithCoverage, summaries.data.totalDefs)
+            value: divide(
+              summaries.data.defSummary.defsWithCoverage,
+              summaries.data.defSummary.totalDefs
+            )
               .map(toPercentage)
               .getOr('-'),
-            tooltip: `${num(summaries.data.defsWithCoverage)} of ${num(
-              summaries.data.totalDefs
+            tooltip: `${num(summaries.data.defSummary.defsWithCoverage)} of ${num(
+              summaries.data.defSummary.totalDefs
             )} pipelines report branch coverage`,
           },
         ]}
