@@ -57,9 +57,7 @@ const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
             className="rounded-full inline-block"
           />
           <div>
-            <h3 className="font-bold text-md">
-              {item.authorName} {item.authorEmail}
-            </h3>
+            <h3 className="font-bold text-md">{item.authorName}</h3>
             <div className="text-base font-normal text-gray-600">
               <span className="text-blue-gray text-sm my-2">
                 <span className="font-semibold text-base">{item.totalCommits}</span>
