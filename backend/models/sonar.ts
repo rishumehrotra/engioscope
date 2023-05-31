@@ -2,12 +2,7 @@ import type { Types } from 'mongoose';
 import { z } from 'zod';
 import { multiply, range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
-import {
-  createIntervals,
-  getLanguageColor,
-  normalizeBranchName,
-  unique,
-} from '../utils.js';
+import { createIntervals, normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
@@ -27,6 +22,7 @@ import { fromContext } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import { getLanguageColor } from '../language-colors.js';
 
 export const lastAlertHistoryFetchDate = async (options: {
   collectionName: string;

@@ -20,7 +20,7 @@ import type {
 import aggregateTestRuns from './stats-aggregators/test-runs.js';
 import type { RepoAnalysis } from '../../shared/types.js';
 import addPipelinesToRepos from './stats-aggregators/add-pipelines-to-repos.js';
-import { getLanguageColor, startTimer } from '../utils.js';
+import { startTimer } from '../utils.js';
 import { featureTogglesForRepos } from './stats-aggregators/feature-toggles.js';
 import { centralBuildTemplateBuildCount } from '../models/build-reports.js';
 import { getBuilds, getOneBuildBeforeQueryPeriod } from '../models/builds.js';
@@ -30,6 +30,7 @@ import { getPolicyConfigurations } from '../models/policy-configuration.js';
 import { getBuildDefinitionsForProject } from '../models/build-definitions.js';
 import { branchStatsForRepo } from '../models/branches.js';
 import { getCommits } from '../models/commits.js';
+import { getLanguageColor } from '../language-colors.js';
 
 const analyserLog = debug('analyser');
 
