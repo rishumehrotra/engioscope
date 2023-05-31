@@ -157,7 +157,7 @@
     "ts-prune": "^0.10.3",
     "typescript": "^5.0.2",
     "vite": "^4.1.4",
-    "vitest": "0.31.2",
+    "vitest": "0.31.3",
     "vitest-mongodb": "^0.0.5"
   },
   "repository": {
