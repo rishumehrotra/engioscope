@@ -7,7 +7,7 @@ import Loading from '../components/Loading.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
 import RepoSummary from '../components/RepoSummary.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
-import useQueryParam, { asStringArray } from '../hooks/use-query-param.js';
+import useQueryParam, { asString, asStringArray } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
@@ -20,6 +20,7 @@ import type { SortMap } from '../hooks/sort-hooks.js';
 import { useSort } from '../hooks/sort-hooks.js';
 import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
 import SortControls from '../components/SortControls.jsx';
+import StreamingRepoSummary from '../components/StreamingRepoSummary.jsx';
 
 const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
   if (!codeQuality) return 1000;
@@ -44,6 +45,7 @@ const SummaryAndImpactSystemGroups: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const sorter = useSort(sorters, 'Builds');
+  const [summaryV2] = useQueryParam('summary-v2', asString);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
     asStringArray
@@ -85,10 +87,8 @@ const SummaryAndImpactSystemGroups: React.FC = () => {
         <QueryPeriodSelector />
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
-      {/* <div className="h-64"> */}
+      {summaryV2 ? <StreamingRepoSummary queryPeriodDays={queryPeriodDays} /> : null}
       <RepoSummary queryPeriodDays={queryPeriodDays} />
-      {/* </div>
-      <StreamingRepoSummary queryPeriodDays={queryPeriodDays} /> */}
       <div className="mb-6 flex flex-row gap-2 items-center w-full">
         <h4 className="text-slate-500">Sort by</h4>
         <SortControls />
