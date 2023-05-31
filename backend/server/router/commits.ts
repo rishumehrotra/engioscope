@@ -1,5 +1,5 @@
 import {
-  DevListingInputParser,
+  devListingInputParser,
   getRepoCommitsDetails,
   getSortedDevListing,
   RepoCommitsDetailsInputParser,
@@ -12,6 +12,6 @@ export default t.router({
     .query(passInputTo(getRepoCommitsDetails)),
 
   getSortedDevListing: t.procedure
-    .input(DevListingInputParser)
+    .input(devListingInputParser)
     .query(passInputTo(memoizeForUI(getSortedDevListing))),
 });

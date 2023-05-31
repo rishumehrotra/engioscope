@@ -9,6 +9,7 @@ import CommitChanges from './CommitChanges.jsx';
 import TabContents from './TabContents.jsx';
 import Loading from '../Loading.jsx';
 import { useQueryContext } from '../../hooks/query-hooks.js';
+import { timelineProp } from '../../helpers/utils.js';
 
 const CommitsTable: React.FC<{
   repositoryId: string;
@@ -23,19 +24,6 @@ const CommitsTable: React.FC<{
   const max = commitsDetails.data
     ? Math.max(...commitsDetails.data.flatMap(obj => obj.daily.map(item => item.total)))
     : 0;
-  type CommitsParam = {
-    date: string;
-    total: number;
-  };
-
-  const timelineProp = (commits: CommitsParam[]) => {
-    const dateCommits: Record<string, number> = {};
-    commits.forEach(commit => {
-      dateCommits[commit.date] = commit.total;
-    });
-
-    return dateCommits;
-  };
 
   return (
     <TabContents gridCols={1}>

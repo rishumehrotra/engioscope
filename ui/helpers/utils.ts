@@ -160,3 +160,17 @@ export const pluralise = (count: number, singular: string, plural: string) => {
     ? `${num(count)} ${singular}`
     : `${num(count)} ${plural}`;
 };
+
+type CommitsTimelineProp = {
+  date: string;
+  total: number;
+}[];
+
+export const timelineProp = (commits: CommitsTimelineProp) => {
+  const dateCommits: Record<string, number> = {};
+  commits.forEach(commit => {
+    dateCommits[commit.date] = commit.total;
+  });
+
+  return dateCommits;
+};

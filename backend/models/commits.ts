@@ -220,7 +220,7 @@ const devSortKeys = ['authorName', 'totalReposCommitted'] as const;
 
 export type DevSortKey = (typeof devSortKeys)[number];
 
-export const DevListingInputParser = z.object({
+export const devListingInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.string().optional(),
   pageSize: z.number(),
@@ -235,7 +235,7 @@ export const DevListingInputParser = z.object({
     .nullish(),
 });
 
-export type DevListingFilters = z.infer<typeof DevListingInputParser>;
+export type DevListingFilters = z.infer<typeof devListingInputParser>;
 
 type DailyCommit = {
   dailyCommitsCount: number;
@@ -271,7 +271,7 @@ export const getSortedDevListing = async ({
   sortBy,
   sortDirection,
   cursor,
-}: z.infer<typeof DevListingInputParser>) => {
+}: z.infer<typeof devListingInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const sortOrderNum = sortDirection === 'asc' ? 1 : -1;
   const pageSize = cursor?.pageSize || 20;
@@ -307,24 +307,20 @@ export const getSortedDevListing = async ({
       },
       {
         $addFields: {
-          'authorDate': {
+          authorDate: {
             $dateToString: {
               format: '%Y-%m-%d',
               date: '$author.date',
             },
-          },
-          'author.email': {
-            $toLower: '$author.email',
-          },
-          'author.name': {
-            $toLower: '$author.name',
           },
         },
       },
       {
         $group: {
           _id: {
-            authorEmail: '$author.email',
+            authorEmail: {
+              $toLower: '$author.email',
+            },
             repositoryId: '$repositoryId',
             authorDate: '$authorDate',
           },
@@ -342,7 +338,9 @@ export const getSortedDevListing = async ({
       {
         $group: {
           _id: {
-            authorEmail: '$authorEmail',
+            authorEmail: {
+              $toLower: '$authorEmail',
+            },
             repositoryId: '$repositoryId',
           },
           repoDailyCommits: {
@@ -366,7 +364,9 @@ export const getSortedDevListing = async ({
       },
       {
         $group: {
-          _id: '$authorEmail',
+          _id: {
+            $toLower: '$authorEmail',
+          },
           totalCommits: { $sum: '$repoCommitsCount' },
           allCommits: { $push: '$$ROOT' },
           authorEmail: { $first: '$authorEmail' },
@@ -414,8 +414,8 @@ export const getSortedDevListing = async ({
   return {
     items: devCommits,
     nextCursor: {
-      pageNumber: (cursor?.pageNumber || 0) + 1,
-      pageSize: cursor?.pageSize || 20,
+      pageNumber: pageNumber + 1,
+      pageSize,
     },
   };
 };

@@ -7,6 +7,7 @@ import { ProfilePic } from './common/ProfilePic.js';
 import type { DevListing } from '../../backend/models/commits.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import Changes2 from './commits/Changes2.jsx';
+import { timelineProp } from '../helpers/utils.js';
 
 type DeveloperProps = {
   item: DevListing;
@@ -17,20 +18,6 @@ const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const [isExpanded, setIsExpanded] = useState<boolean>(index === 0);
   const location = useLocation();
-
-  type CommitsTimelineProp = {
-    date: string;
-    total: number;
-  }[];
-  const timelineProp = (commits: CommitsTimelineProp) => {
-    const dateCommits: Record<string, number> = {};
-    commits.forEach(commit => {
-      dateCommits[commit.date] = commit.total;
-    });
-
-    return dateCommits;
-  };
-
   const max =
     Math.max(
       ...item.allCommits.flatMap(obj =>
@@ -102,36 +89,6 @@ const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
               </tr>
             </thead>
             <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
-              {/* {dev.repos
-                .sort(desc(byNum(r => sum(Object.values(r.byDate)))))
-                .map(repo => (
-                  <tr key={repo.name}>
-                    <td className="px-6 py-4 text-left w-5/12">
-                      <Link
-                        to={location.pathname.replace(
-                          '/devs',
-                          `/repos?search="${repo.name}"`
-                        )}
-                        className="link-text"
-                      >
-                        {repo.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap w-1/12">
-                      {sum(Object.values(repo.byDate))}
-                    </td>
-                    <td className="whitespace-nowrap">
-                      <Changes changes={repo.changes} />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap w-4/12">
-                      <CommitTimeline
-                        timeline={repo.byDate}
-                        max={Math.max(...allCommits)}
-                        queryPeriodDays={queryPeriodDays}
-                      />
-                    </td>
-                  </tr>
-                ))} */}
               {item.allCommits.sort(asc(byString(r => r.repoName))).map(repo => (
                 <tr key={repo.repoName}>
                   <td className="px-6 py-4 text-left w-5/12">
