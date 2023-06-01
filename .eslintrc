@@ -115,6 +115,7 @@
     "func-call-spacing": "off",
     "react/jsx-indent": "off",
     "react/jsx-curly-newline": "off",
+    "react/jsx-closing-tag-location": "off",
     "comma-spacing": "off",
     "object-property-newline": "off",
     "arrow-body-style": "off",
