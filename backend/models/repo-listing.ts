@@ -414,9 +414,9 @@ export const getSummary = async ({
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
     branchPolicies,
-    activePipelinesCount: activePipelines.ids.length,
+    activePipelinesCount: activePipelines.length,
     activePipelineWithCentralTemplateCount: intersection(
-      activePipelines.ids,
+      activePipelines,
       centralTemplatePipeline.idsWithMainBranchBuilds
     ).length,
     activePipelineCentralTemplateBuilds,

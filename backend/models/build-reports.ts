@@ -406,7 +406,7 @@ export const getActivePipelineCentralTemplateBuilds = async (
         collectionName,
         project,
         repo: { $in: repoNames },
-        buildDefinitionId: { $in: activePipelines.ids.map(String) },
+        buildDefinitionId: { $in: activePipelines.map(String) },
       },
     },
     {
@@ -435,8 +435,8 @@ export const getActivePipelineCentralTemplateBuilds = async (
     collectionName,
     project,
     id: { $in: centralTempBuildIds.map(r => Number(r.buildId)) },
-    ...(activePipelines && activePipelines.ids.length > 0
-      ? { 'definition.id': { $in: activePipelines.ids } }
+    ...(activePipelines && activePipelines.length > 0
+      ? { 'definition.id': { $in: activePipelines } }
       : {}),
     finishTime: inDateRange(startDate, endDate),
   }).count();

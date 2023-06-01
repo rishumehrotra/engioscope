@@ -568,22 +568,6 @@ export const getTotalBuildsForRepositoryIds = async (
   ]).exec();
 };
 
-// export const getActivePipelineBuilds = async (
-//   queryContext: QueryContext,
-//   repoIds: string[]
-// ) => {
-//   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-//   const activePipelines = await getActivePipelineIds(queryContext, repoIds);
-
-//   return BuildModel.find({
-//     collectionName,
-//     project,
-//     'repository.id': { $in: repoIds },
-//     'definition.id': { $in: activePipelines.ids },
-//     'finishTime': inDateRange(startDate, endDate),
-//   }).count();
-// };
-
 export const getActivePipelineBuilds = async (
   queryContext: QueryContext,
   repoIds: string[]
@@ -595,22 +579,9 @@ export const getActivePipelineBuilds = async (
       $match: {
         collectionName,
         project,
-        repositoryId: { $in: repoIds },
+        'repositoryId': { $in: repoIds },
+        'latestBuild.finishTime': inDateRange(startDate, endDate),
       },
-    },
-    {
-      $addFields: {
-        isActive: {
-          $cond: {
-            if: { $gte: ['$latestBuild.finishTime', startDate] },
-            then: true,
-            else: false,
-          },
-        },
-      },
-    },
-    {
-      $match: { isActive: true },
     },
     {
       $lookup: {
