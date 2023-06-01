@@ -1,3 +1,4 @@
+import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -24,7 +25,7 @@ export const getPipelineIds =
       project,
       repositoryId: { $in: repoIds },
       ...(type === 'active'
-        ? { 'latestBuild.finishTime': { $gte: startDate, $lte: endDate } }
+        ? { 'latestBuild.finishTime': inDateRange(startDate, endDate) }
         : { 'latestBuild.finishTime': { $lt: startDate } }),
     })
       .distinct('id')
