@@ -200,122 +200,127 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
           />
         </SummaryCard>
 
-        <SummaryCard className="col-span-4 grid grid-cols-5 gap-6">
-          <div className="border-r border-gray-200">
-            <Stat
-              title="Branch policies"
-              tooltip={
-                summaries.branchPolicies
-                  ? `${num(summaries.branchPolicies.conformingBranches)} out of ${num(
-                      summaries.branchPolicies.totalBranches
-                    )} release branches conform to branch policies<br />
+        <SummaryCard className="col-span-4">
+          <div className="grid grid-cols-5 gap-6">
+            <div className="border-r border-gray-200">
+              <Stat
+                title="Branch policies"
+                tooltip={
+                  summaries.branchPolicies
+                    ? `${num(summaries.branchPolicies.conformingBranches)} out of ${num(
+                        summaries.branchPolicies.totalBranches
+                      )} release branches conform to branch policies<br />
                   ${num(summaries.branchPolicies.conformingRepos)} out of ${num(
-                      summaries.branchPolicies.repoCount
-                    )} repositories produced artifacts from branches<br />that conform to branch policies`
-                  : null
-              }
-              value={
-                summaries.branchPolicies
-                  ? divide(
-                      summaries.branchPolicies.conformingBranches,
-                      summaries.branchPolicies.totalBranches
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-            />
-          </div>
-          <div className="border-r border-gray-200">
-            <Stat
-              title="Healthy branches"
-              tooltip={
-                isDefined(summaries.healthyBranches)
-                  ? `${num(summaries.healthyBranches.healthy)} out of ${num(
-                      summaries.healthyBranches.total
-                    )} branches are healthy`
-                  : null
-              }
-              value={
-                isDefined(summaries.healthyBranches)
-                  ? divide(
-                      summaries.healthyBranches.healthy,
-                      summaries.healthyBranches.total
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-            />
-          </div>
-          <div className="border-r border-gray-200">
-            <Stat
-              title="Has releases"
-              tooltip={
-                isDefined(summaries.hasReleasesReposCount) &&
-                isDefined(summaries.totalActiveRepos)
-                  ? `${num(summaries.hasReleasesReposCount)} out of ${num(
-                      summaries.totalActiveRepos
-                    )} repos have made releases in the last ${queryPeriodDays} days`
-                  : null
-              }
-              value={
-                isDefined(summaries.hasReleasesReposCount) &&
-                isDefined(summaries.totalActiveRepos)
-                  ? divide(summaries.hasReleasesReposCount, summaries.totalActiveRepos)
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-            />
-          </div>
-          <div className="border-r border-gray-200">
-            <Stat
-              title="YAML pipelines"
-              tooltip={
-                isDefined(summaries.pipelines)
-                  ? `${num(summaries.pipelines.yamlCount)} of ${num(
-                      summaries.pipelines.totalCount
-                    )} pipelines are set up using a YAML-based configuration`
-                  : null
-              }
-              value={
-                isDefined(summaries.pipelines)
-                  ? divide(summaries.pipelines.yamlCount, summaries.pipelines.totalCount)
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-            />
-          </div>
-          <div className="border-r border-gray-200">
-            <Stat
-              title="Central template"
-              tooltip={
-                isDefined(summaries.centralTemplatePipeline) &&
-                isDefined(summaries.pipelines) &&
-                isDefined(summaries.centralTemplateUsage) &&
-                isDefined(summaries.totalBuilds)
-                  ? `${num(summaries.centralTemplatePipeline.central)} out of ${num(
-                      summaries.pipelines.totalCount
-                    )} build pipelines use the central template on the master branch<br>
+                        summaries.branchPolicies.repoCount
+                      )} repositories produced artifacts from branches<br />that conform to branch policies`
+                    : null
+                }
+                value={
+                  summaries.branchPolicies
+                    ? divide(
+                        summaries.branchPolicies.conformingBranches,
+                        summaries.branchPolicies.totalBranches
+                      )
+                        .map(toPercentage)
+                        .getOr('-')
+                    : null
+                }
+              />
+            </div>
+            <div className="border-r border-gray-200">
+              <Stat
+                title="Healthy branches"
+                tooltip={
+                  isDefined(summaries.healthyBranches)
+                    ? `${num(summaries.healthyBranches.healthy)} out of ${num(
+                        summaries.healthyBranches.total
+                      )} branches are healthy`
+                    : null
+                }
+                value={
+                  isDefined(summaries.healthyBranches)
+                    ? divide(
+                        summaries.healthyBranches.healthy,
+                        summaries.healthyBranches.total
+                      )
+                        .map(toPercentage)
+                        .getOr('-')
+                    : null
+                }
+              />
+            </div>
+            <div className="border-r border-gray-200">
+              <Stat
+                title="Has releases"
+                tooltip={
+                  isDefined(summaries.hasReleasesReposCount) &&
+                  isDefined(summaries.totalActiveRepos)
+                    ? `${num(summaries.hasReleasesReposCount)} out of ${num(
+                        summaries.totalActiveRepos
+                      )} repos have made releases in the last ${queryPeriodDays} days`
+                    : null
+                }
+                value={
+                  isDefined(summaries.hasReleasesReposCount) &&
+                  isDefined(summaries.totalActiveRepos)
+                    ? divide(summaries.hasReleasesReposCount, summaries.totalActiveRepos)
+                        .map(toPercentage)
+                        .getOr('-')
+                    : null
+                }
+              />
+            </div>
+            <div className="border-r border-gray-200">
+              <Stat
+                title="YAML pipelines"
+                tooltip={
+                  isDefined(summaries.pipelines)
+                    ? `${num(summaries.pipelines.yamlCount)} of ${num(
+                        summaries.pipelines.totalCount
+                      )} pipelines are set up using a YAML-based configuration`
+                    : null
+                }
+                value={
+                  isDefined(summaries.pipelines)
+                    ? divide(
+                        summaries.pipelines.yamlCount,
+                        summaries.pipelines.totalCount
+                      )
+                        .map(toPercentage)
+                        .getOr('-')
+                    : null
+                }
+              />
+            </div>
+            <div className="border-r border-gray-200">
+              <Stat
+                title="Central template"
+                tooltip={
+                  isDefined(summaries.centralTemplatePipeline) &&
+                  isDefined(summaries.pipelines) &&
+                  isDefined(summaries.centralTemplateUsage) &&
+                  isDefined(summaries.totalBuilds)
+                    ? `${num(summaries.centralTemplatePipeline.central)} out of ${num(
+                        summaries.pipelines.totalCount
+                      )} build pipelines use the central template on the master branch<br>
                   ${num(summaries.centralTemplateUsage.templateUsers)} out of ${num(
-                      summaries.totalBuilds.count
-                    )} build runs used the central template`
-                  : undefined
-              }
-              value={
-                isDefined(summaries.centralTemplatePipeline) &&
-                isDefined(summaries.pipelines)
-                  ? divide(
-                      summaries.centralTemplatePipeline.central,
-                      summaries.pipelines.totalCount
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-            />
+                        summaries.totalBuilds.count
+                      )} build runs used the central template`
+                    : undefined
+                }
+                value={
+                  isDefined(summaries.centralTemplatePipeline) &&
+                  isDefined(summaries.pipelines)
+                    ? divide(
+                        summaries.centralTemplatePipeline.central,
+                        summaries.pipelines.totalCount
+                      )
+                        .map(toPercentage)
+                        .getOr('-')
+                    : null
+                }
+              />
+            </div>
           </div>
         </SummaryCard>
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
