@@ -567,3 +567,94 @@ export const getTotalBuildsForRepositoryIds = async (
     },
   ]).exec();
 };
+
+// export const getActivePipelineBuilds = async (
+//   queryContext: QueryContext,
+//   repoIds: string[]
+// ) => {
+//   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+//   const activePipelines = await getActivePipelineIds(queryContext, repoIds);
+
+//   return BuildModel.find({
+//     collectionName,
+//     project,
+//     'repository.id': { $in: repoIds },
+//     'definition.id': { $in: activePipelines.ids },
+//     'finishTime': inDateRange(startDate, endDate),
+//   }).count();
+// };
+
+export const getActivePipelineBuilds = async (
+  queryContext: QueryContext,
+  repoIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const totalBuilds = await BuildDefinitionModel.aggregate<{ totalBuilds: number }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repoIds },
+      },
+    },
+    {
+      $addFields: {
+        isActive: {
+          $cond: {
+            if: { $gte: ['$latestBuild.finishTime', startDate] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $match: { isActive: true },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          repositoryId: '$repositoryId',
+          definitionId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$definition.id', '$$definitionId'] },
+                  { $gte: ['$finishTime', startDate] },
+                  { $lt: ['$finishTime', endDate] },
+                ],
+              },
+            },
+          },
+          { $count: 'total' },
+        ],
+        as: 'builds',
+      },
+    },
+    {
+      $unwind: {
+        path: '$builds',
+        includeArrayIndex: 'string',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalBuilds: {
+          $sum: '$builds.total',
+        },
+      },
+    },
+  ]);
+
+  return totalBuilds[0]?.totalBuilds ?? 0;
+};

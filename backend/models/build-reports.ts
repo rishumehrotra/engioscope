@@ -7,6 +7,7 @@ import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
+import { getActivePipelineIds } from './build-definitions.js';
 
 const { Schema, model } = mongoose;
 
@@ -63,6 +64,13 @@ azureBuildReportSchema.index({
   collectionName: 1,
   project: 1,
   buildId: 1,
+});
+
+azureBuildReportSchema.index({
+  collectionName: 1,
+  project: 1,
+  repo: 1,
+  buildDefinitionId: 1,
 });
 
 export const AzureBuildReportModel = model<AzureBuildReport>(
@@ -380,4 +388,58 @@ export const getCentralTemplateBuildDefs = async (
       },
     },
   ]).exec();
+};
+
+export const getActivePipelineCentralTemplateBuilds = async (
+  queryContext: QueryContext,
+  repoNames: string[],
+  repoIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const activePipelines = await getActivePipelineIds(queryContext, repoIds);
+
+  const centralTempBuildIds = await AzureBuildReportModel.aggregate<{
+    buildId: string;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repo: { $in: repoNames },
+        buildDefinitionId: { $in: activePipelines.ids.map(String) },
+      },
+    },
+    {
+      $addFields: {
+        usesCentralTemplate: {
+          $or: [
+            { $eq: ['$centralTemplate', true] },
+            { $eq: [{ $type: '$centralTemplate' }, 'object'] },
+            { $eq: ['$templateRepo', 'build-pipeline-templates'] },
+          ],
+        },
+      },
+    },
+    { $match: { usesCentralTemplate: true } },
+    {
+      $project: {
+        _id: 0,
+        buildId: 1,
+      },
+    },
+  ]);
+
+  if (centralTempBuildIds?.length === 0) return { count: 0 };
+
+  const count = await BuildModel.find({
+    collectionName,
+    project,
+    id: { $in: centralTempBuildIds.map(r => Number(r.buildId)) },
+    ...(activePipelines && activePipelines.ids.length > 0
+      ? { 'definition.id': { $in: activePipelines.ids } }
+      : {}),
+    finishTime: inDateRange(startDate, endDate),
+  }).count();
+
+  return { count } || { count: 0 };
 };

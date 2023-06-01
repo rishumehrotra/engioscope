@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { prop, propEq } from 'rambda';
+import { prop, propEq, intersection } from 'rambda';
 import type { Response } from 'express';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
@@ -13,6 +13,7 @@ import { getSuccessfulBuildsBy, getTotalBuildsBy } from './build-listing.js';
 import {
   getTotalCentralTemplateUsage,
   getCentralTemplateBuildDefs,
+  getActivePipelineCentralTemplateBuilds,
 } from './build-reports.js';
 import {
   getAllRepoDefaultBranchIDs,
@@ -37,7 +38,7 @@ import {
   getTestsByWeek,
   getTotalTestsForRepositoryIds,
 } from './testruns.js';
-import { getTotalBuildsForRepositoryIds } from './builds.js';
+import { getActivePipelineBuilds, getTotalBuildsForRepositoryIds } from './builds.js';
 import { getTotalCommitsForRepositoryIds } from './commits.js';
 import {
   getReposSortedByCodeQuality,
@@ -51,6 +52,7 @@ import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
 import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
 import { pipelineCountForRepo } from './releases.js';
+import { getActivePipelineIds } from './build-definitions.js';
 
 const getGroupRepositoryNames = (
   collectionName: string,
@@ -200,7 +202,7 @@ export const getCentralTemplatePipeline = async (
     buildDef => buildDef.buildDefinitionId
   );
 
-  const result = await BuildDefinitionModel.aggregate<{ matchingCount: number }>([
+  const result = await BuildDefinitionModel.aggregate<{ buildDefinitionId: number }>([
     {
       $match: {
         collectionName,
@@ -297,7 +299,10 @@ export const getCentralTemplatePipeline = async (
       },
     },
     {
-      $count: 'matchingCount',
+      $project: {
+        _id: 0,
+        buildDefinitionId: 1,
+      },
     },
   ]);
 
@@ -306,7 +311,8 @@ export const getCentralTemplatePipeline = async (
       (total, build) => total + build.centralTemplateBuilds,
       0
     ),
-    central: result[0]?.matchingCount || 0,
+    central: result.length,
+    idsWithMainBranchBuilds: result.map(r => r.buildDefinitionId),
   };
 };
 
@@ -365,6 +371,9 @@ export const getSummary = async ({
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
     branchPolicies,
+    activePipelines,
+    activePipelineCentralTemplateBuilds,
+    activePipelineBuilds,
   ] = await Promise.all([
     getSuccessfulBuildsBy(queryContext, activeRepoIds),
     getTotalBuildsBy(queryContext, activeRepoIds),
@@ -382,6 +391,9 @@ export const getSummary = async ({
     getReposWithSonarQube(collectionName, project, activeRepoIds),
     updatedWeeklyReposWithSonarQubeCount(queryContext, activeRepoIds),
     getReposConformingToBranchPolicies(queryContext, activeRepoIds),
+    getActivePipelineIds(queryContext, activeRepoIds),
+    getActivePipelineCentralTemplateBuilds(queryContext, activeRepoNames, activeRepoIds),
+    getActivePipelineBuilds(queryContext, activeRepoIds),
   ]);
 
   return {
@@ -402,6 +414,13 @@ export const getSummary = async ({
     reposWithSonarQube,
     weeklyReposWithSonarQubeCount,
     branchPolicies,
+    activePipelinesCount: activePipelines.ids.length,
+    activePipelineWithCentralTemplateCount: intersection(
+      activePipelines.ids,
+      centralTemplatePipeline.idsWithMainBranchBuilds
+    ).length,
+    activePipelineCentralTemplateBuilds,
+    activePipelineBuilds,
   };
 };
 

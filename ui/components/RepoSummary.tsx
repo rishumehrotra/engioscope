@@ -357,9 +357,15 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
             tooltip: `${num(summaries.data.centralTemplatePipeline.central)} out of ${num(
               summaries.data.pipelines.totalCount
             )} build pipelines use the central template on the master branch<br>
+            ${num(summaries.data.activePipelineWithCentralTemplateCount)} out of ${num(
+              summaries.data.activePipelinesCount
+            )} active build pipelines use the central template on the master branch<br>
                   ${num(summaries.data.centralTemplateUsage.templateUsers)} out of ${num(
               summaries.data.totalBuilds.count
-            )} build runs used the central template`,
+            )} build runs used the central template<br>
+            ${num(summaries.data.activePipelineCentralTemplateBuilds.count)} out of ${num(
+              summaries.data.activePipelineBuilds
+            )} build runs from active pipeline used the central template`,
             value: divide(
               summaries.data.centralTemplatePipeline.central,
               summaries.data.pipelines.totalCount

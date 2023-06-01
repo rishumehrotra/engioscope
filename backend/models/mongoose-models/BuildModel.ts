@@ -86,4 +86,12 @@ buildSchema.index({
   'finishTime': 1,
 });
 
+buildSchema.index({
+  'collectionName': 1,
+  'project': 1,
+  'repository.id': 1,
+  'definition.id': 1,
+  'finishTime': 1,
+});
+
 export const BuildModel = model<Build>('Build', buildSchema);
