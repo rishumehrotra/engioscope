@@ -45,15 +45,15 @@ const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
 };
 
 const DevsNew: React.FC = () => {
-  const [showNewDevListing] = useQueryParam('dev-listing', asBoolean);
+  const [showOldDevListing] = useQueryParam('dev-listing-v1', asBoolean);
 
   const filters = useDevFilters();
   const query = trpc.commits.getSortedDevListing.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
-    enabled: showNewDevListing === true,
+    enabled: !showOldDevListing,
   });
 
-  if (showNewDevListing && !query.data) return <Loading />;
+  if (!showOldDevListing && !query.data) return <Loading />;
 
   return (
     <ul>
@@ -99,7 +99,7 @@ const DevsOld: React.FC<{ devs: 'loading' | Dev[] }> = ({ devs }) => {
 export default () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   const [search] = useQueryParam('search', asString);
-  const [showNewDevListing] = useQueryParam('dev-listing', asBoolean);
+  const [showOldDevListing] = useQueryParam('dev-listing-v1', asBoolean);
   const sorter = useSort(sorters, 'Name');
   const filters = useDevFilters();
   const filteredDevs = trpc.commits.getFilteredDevCount.useQuery(
@@ -107,7 +107,7 @@ export default () => {
       queryContext: filters.queryContext,
       searchTerm: filters.searchTerm,
     },
-    { enabled: showNewDevListing === true }
+    { enabled: !showOldDevListing }
   );
   const devs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';
@@ -119,9 +119,9 @@ export default () => {
   return (
     <>
       <FiltersAndSorters
-        devsCount={showNewDevListing ? filteredDevs?.data || 0 : devs.length}
+        devsCount={showOldDevListing ? devs.length : filteredDevs?.data || 0}
       />
-      {showNewDevListing ? <DevsNew /> : <DevsOld devs={devs || 'loading'} />}
+      {showOldDevListing ? <DevsOld devs={devs || 'loading'} /> : <DevsNew />}
     </>
   );
 };
