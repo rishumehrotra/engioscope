@@ -280,11 +280,11 @@ export const getSortedDevListing = async ({
   const sortStage: PipelineStage = {
     $sort: {
       ...(!sortBy || sortBy === 'authorName'
-        ? { authorName: sortOrderNum }
+        ? { lowerAuthorName: sortOrderNum }
         : {
             [sortBy]: sortOrderNum,
           }),
-      authorEmail: sortDirection === 'desc' ? -1 : 1,
+      lowerAuthorEmail: sortDirection === 'desc' ? -1 : 1,
     },
   };
 
@@ -383,6 +383,8 @@ export const getSortedDevListing = async ({
           authorEmail: 1,
           authorName: 1,
           authorImage: 1,
+          lowerAuthorName: { $toLower: '$authorName' },
+          lowerAuthorImage: { $toLower: '$authorImage' },
         },
       },
       sortStage,
@@ -418,4 +420,35 @@ export const getSortedDevListing = async ({
       pageSize,
     },
   };
+};
+export const devFilterInputParser = z.object({
+  queryContext: queryContextInputParser,
+  searchTerm: z.string().optional(),
+});
+export const getFilteredDevCount = async ({
+  queryContext,
+  searchTerm,
+}: z.infer<typeof devFilterInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const filteredDevs = await CommitModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        'author.date': inDateRange(startDate, endDate),
+        '$and': [
+          { 'author.email': { $exists: true } },
+          ...(searchTerm
+            ? [{ 'author.name': { $regex: new RegExp(searchTerm, 'i') } }]
+            : []),
+        ],
+      },
+    },
+    { $group: { _id: { authorEmail: { $toLower: '$author.email' } } } },
+  ])
+    .count('total')
+    .exec();
+
+  return filteredDevs[0]?.total || 0;
 };

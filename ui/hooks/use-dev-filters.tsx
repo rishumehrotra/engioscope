@@ -10,12 +10,19 @@ export default (): DevListingFilters => {
   const [pageSize] = useQueryParam('pageSize', asNumber);
   const [pageNumber] = useQueryParam('pageSize', asNumber);
 
+  const sortKey =
+    sortBy && sortBy === 'Name'
+      ? ('authorName' as DevSortKey)
+      : sortBy && sortBy === 'Repos Committed'
+      ? ('totalReposCommitted' as DevSortKey)
+      : ('authorName' as DevSortKey);
+
   return {
     queryContext,
     searchTerm: search,
     pageSize: pageSize || 20,
     pageNumber: pageNumber || 0,
-    sortBy: (sortBy as DevSortKey) || ('authorName' as DevSortKey),
-    sortDirection: sort ? (sort === 'asc' ? 'asc' : 'desc') : 'desc',
+    sortBy: sortKey,
+    sortDirection: sort ? (sort === 'asc' ? 'asc' : 'desc') : 'asc',
   };
 };
