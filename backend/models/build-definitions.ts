@@ -29,7 +29,8 @@ export const getPipelineIds =
         : { 'latestBuild.finishTime': { $lt: startDate } }),
     })
       .distinct('id')
-      .lean();
+      .lean()
+      .exec() as Promise<number[]>;
   };
 
 export const getActivePipelineIds = getPipelineIds('active');

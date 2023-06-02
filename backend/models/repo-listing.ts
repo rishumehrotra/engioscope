@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { prop, propEq, intersection } from 'rambda';
+import { prop, propEq, intersection, length } from 'rambda';
 import type { Response } from 'express';
 import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
@@ -434,7 +434,10 @@ export type SummaryStats = {
   healthyBranches: Awaited<ReturnType<typeof getHealthyBranchesSummary>>;
   totalBuilds: Awaited<ReturnType<typeof getTotalBuildsBy>>;
   successfulBuilds: Awaited<ReturnType<typeof getSuccessfulBuildsBy>>;
-  centralTemplatePipeline: Awaited<ReturnType<typeof getCentralTemplatePipeline>>;
+  centralTemplatePipeline: Omit<
+    Awaited<ReturnType<typeof getCentralTemplatePipeline>>,
+    'idsWithMainBranchBuilds'
+  >;
   defSummary: Awaited<ReturnType<typeof getDefinitionsWithTestsAndCoverages>>;
   weeklyTestsSummary: Awaited<ReturnType<typeof getTestsByWeek>>;
   weeklyCoverageSummary: Awaited<ReturnType<typeof getCoveragesByWeek>>;
@@ -444,6 +447,12 @@ export type SummaryStats = {
     ReturnType<typeof updatedWeeklyReposWithSonarQubeCount>
   >;
   branchPolicies: Awaited<ReturnType<typeof getReposConformingToBranchPolicies>>;
+  activePipelinesCount: number;
+  activePipelineWithCentralTemplateCount: number;
+  activePipelineCentralTemplateBuilds: Awaited<
+    ReturnType<typeof getActivePipelineCentralTemplateBuilds>
+  >;
+  activePipelineBuilds: Awaited<ReturnType<typeof getActivePipelineBuilds>>;
 };
 
 export const sendSummaryAsEventStream = async (
@@ -479,6 +488,22 @@ export const sendSummaryAsEventStream = async (
     activeRepoIds
   );
 
+  const activePipelineIdsPromise = getActivePipelineIds(queryContext, activeRepoIds);
+  const centralTemplatePipelinePromise = getCentralTemplatePipeline(
+    queryContext,
+    activeRepoIds
+  );
+
+  const activePipelineWithCentralTemplateCountPromise = Promise.all([
+    activePipelineIdsPromise,
+    centralTemplatePipelinePromise,
+  ]).then(([activePipelineIds, centralTemplatePipeline]) => {
+    return intersection(
+      activePipelineIds,
+      centralTemplatePipeline.idsWithMainBranchBuilds
+    ).length;
+  });
+
   await Promise.all([
     getSuccessfulBuildsBy(queryContext, activeRepoIds).then(
       sendChunk('successfulBuilds')
@@ -496,9 +521,13 @@ export const sendSummaryAsEventStream = async (
     getHasReleasesSummary(queryContext, activeRepoIds).then(
       sendChunk('hasReleasesReposCount')
     ),
-    getCentralTemplatePipeline(queryContext, activeRepoIds).then(
-      sendChunk('centralTemplatePipeline')
-    ),
+    centralTemplatePipelinePromise
+      .then(x => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { idsWithMainBranchBuilds, ...rest } = x;
+        return rest;
+      })
+      .then(sendChunk('centralTemplatePipeline')),
     getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds).then(
       sendChunk('defSummary')
     ),
@@ -523,6 +552,18 @@ export const sendSummaryAsEventStream = async (
     ),
     getReposConformingToBranchPolicies(queryContext, activeRepoIds).then(
       sendChunk('branchPolicies')
+    ),
+    activePipelineIdsPromise.then(length).then(sendChunk('activePipelinesCount')),
+    getActivePipelineCentralTemplateBuilds(
+      queryContext,
+      activeRepoNames,
+      activeRepoIds
+    ).then(sendChunk('activePipelineCentralTemplateBuilds')),
+    getActivePipelineBuilds(queryContext, activeRepoIds).then(
+      sendChunk('activePipelineBuilds')
+    ),
+    activePipelineWithCentralTemplateCountPromise.then(
+      sendChunk('activePipelineWithCentralTemplateCount')
     ),
   ]);
 
