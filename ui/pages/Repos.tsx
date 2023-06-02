@@ -14,37 +14,12 @@ import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
 import RepoHealth2 from '../components/RepoHealth2.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
-import { combinedQualityGateStatus } from '../components/code-quality-utils.js';
-import type { RepoAnalysis } from '../../shared/types.js';
-import type { SortMap } from '../hooks/sort-hooks.js';
-import { useSort } from '../hooks/sort-hooks.js';
-import { numberOfBuilds, numberOfTests } from '../../shared/repo-utils.js';
-import SortControls from '../components/SortControls.jsx';
 import StreamingRepoSummary from '../components/StreamingRepoSummary.jsx';
+import SortControls from '../components/SortControls.jsx';
 
-const qualityGateNumber = (codeQuality: RepoAnalysis['codeQuality']) => {
-  if (!codeQuality) return 1000;
-  const status = combinedQualityGateStatus(codeQuality);
-  if (status === 'pass') return 3;
-  if (status === 'warn') return 2;
-  return 1;
-};
-
-const sorters: SortMap<RepoAnalysis> = {
-  'Builds': (a, b) => numberOfBuilds(a) - numberOfBuilds(b),
-  'Branches': (a, b) => a.branches.total - b.branches.total,
-  'Commits': (a, b) => a.commits.count - b.commits.count,
-  'Pull requests': (a, b) => a.prs.total - b.prs.total,
-  'Tests': (a, b) => numberOfTests(a) - numberOfTests(b),
-  'Code quality': (a, b) =>
-    qualityGateNumber(b.codeQuality) - qualityGateNumber(a.codeQuality),
-};
-
-const SummaryAndImpactSystemGroups: React.FC = () => {
+const SummaryAndRepoGroups: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const sorter = useSort(sorters, 'Builds');
   const [summaryV2] = useQueryParam('summary-v2', asString);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
@@ -89,19 +64,12 @@ const SummaryAndImpactSystemGroups: React.FC = () => {
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
       {summaryV2 ? <StreamingRepoSummary queryPeriodDays={queryPeriodDays} /> : null}
       <RepoSummary queryPeriodDays={queryPeriodDays} />
-      <div className="mb-6 flex flex-row gap-2 items-center w-full">
-        <h4 className="text-slate-500">Sort by</h4>
-        <SortControls />
-      </div>
     </>
   );
 };
 
 const RepoListing: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const sorter = useSort(sorters, 'Builds');
-
   const filters = useRepoFilters();
   const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
@@ -133,7 +101,20 @@ const RepoListing: React.FC = () => {
 export default () => {
   return (
     <>
-      <SummaryAndImpactSystemGroups />
+      <SummaryAndRepoGroups />
+      <div className="mb-6 flex flex-row gap-2 items-center w-full">
+        <h4 className="text-slate-500">Sort by</h4>
+        <SortControls
+          sortByList={[
+            'Builds',
+            'Branches',
+            'Commits',
+            'Pull requests',
+            'Tests',
+            'Code quality',
+          ]}
+        />
+      </div>
       <RepoListing />
     </>
   );

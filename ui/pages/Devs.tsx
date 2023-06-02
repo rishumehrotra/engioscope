@@ -11,12 +11,12 @@ import type { Dev } from '../types.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
 import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
-import SortControls from '../components/SortControls.jsx';
 import Developer2 from '../components/Dev2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useDevFilters from '../hooks/use-dev-filters.jsx';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import AlertMessage from '../components/common/AlertMessage.jsx';
+import SortControls from '../components/SortControls.jsx';
 
 const sorters: SortMap<Dev> = {
   Name: (a, b) =>
@@ -54,7 +54,7 @@ const Devs: React.FC = () => {
       <AppliedFilters type="devs" count={devs.length} />
       <div className="mb-6 flex flex-row gap-2 items-center">
         <h4 className="text-slate-500">Sort by</h4>
-        <SortControls />
+        <SortControls sortByList={['Name']} defaultSortDirection="asc" />
       </div>
       <ul>
         {showNewDevListing ? (

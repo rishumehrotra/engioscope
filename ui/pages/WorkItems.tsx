@@ -146,7 +146,7 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
       </div>
       <div className="mb-6 flex flex-row gap-2 items-center">
         <h4 className="text-slate-500">Sort by</h4>
-        <SortControls />
+        <SortControls sortByList={['Bundle size']} />
       </div>
       <InfiniteScrollList
         items={filteredWorkItems}
