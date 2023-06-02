@@ -116,7 +116,6 @@ export default () => {
       .sort(sorter);
   }, [projectAnalysis, search, sorter]);
 
-  // if (devs === 'loading' || (showNewDevListing && !query.data)) return <Loading />;
   return (
     <>
       <FiltersAndSorters
