@@ -297,12 +297,10 @@ export const getSortedDevListing = async ({
           collectionName,
           project,
           'author.date': inDateRange(startDate, endDate),
-          '$and': [
-            { 'author.email': { $exists: true } },
-            ...(searchTerm
-              ? [{ 'author.name': { $regex: new RegExp(searchTerm, 'i') } }]
-              : []),
-          ],
+          'author.email': { $exists: true },
+          ...(searchTerm
+            ? { 'author.name': { $regex: new RegExp(searchTerm, 'i') } }
+            : {}),
         },
       },
       {
@@ -384,7 +382,7 @@ export const getSortedDevListing = async ({
           authorName: 1,
           authorImage: 1,
           lowerAuthorName: { $toLower: '$authorName' },
-          lowerAuthorImage: { $toLower: '$authorImage' },
+          lowerAuthorEmail: { $toLower: '$authorEmail' },
         },
       },
       sortStage,
