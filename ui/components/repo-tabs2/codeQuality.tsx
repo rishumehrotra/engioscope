@@ -657,9 +657,8 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
       </thead>
       <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
         {codeQuality.map(codeQualityItem => (
-          <>
+          <React.Fragment key={codeQualityItem.name}>
             <tr
-              key={codeQualityItem.lastAnalysisDate?.toDateString()}
               className="group cursor-pointer"
               onClick={() => {
                 if (expandedRows.includes(codeQualityItem)) {
@@ -726,7 +725,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
                 </td>
               </tr>
             )}
-          </>
+          </React.Fragment>
         ))}
       </tbody>
     </table>
