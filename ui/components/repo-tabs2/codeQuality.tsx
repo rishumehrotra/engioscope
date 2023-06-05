@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import { pipe } from 'rambda';
 import type { RepoAnalysis, UICodeQuality2 } from '../../../shared/types.js';
 import { formatDebt, num, shortDate } from '../../helpers/utils.js';
@@ -657,7 +657,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
       </thead>
       <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
         {codeQuality.map(codeQualityItem => (
-          <React.Fragment key={codeQualityItem.name}>
+          <Fragment key={codeQualityItem.name}>
             <tr
               className="group cursor-pointer"
               onClick={() => {
@@ -725,7 +725,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
                 </td>
               </tr>
             )}
-          </React.Fragment>
+          </Fragment>
         ))}
       </tbody>
     </table>
