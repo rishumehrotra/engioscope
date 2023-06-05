@@ -10,29 +10,8 @@
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifierEnding": "js",
   "typescript.preferences.importModuleSpecifierEnding": "js",
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "typescript.tsdk": "node_modules/typescript/lib",
-  "cSpell.words": [
-    "Gantt",
-    "Repos",
-    "accordian",
-    "artefacts",
-    "devs",
-    "dont",
-    "engioscope",
-    "initialise",
-    "rerender",
-    "semibold",
-    "squale",
-    "timeframe",
-    "workitems"
-  ],
-  "eslint.alwaysShowStatus": true,
   "eslint.codeActionsOnSave.mode": "all",
   "eslint.lintTask.enable": true,
   "files.watcherExclude": {
@@ -65,6 +44,7 @@
       "query": "state:open repo:${owner}/${repository} sort:created-desc"
     }
   ],
-  "vitest.commandLine": "",
-  "vitest.enable": true
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
 }
