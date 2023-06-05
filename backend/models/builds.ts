@@ -547,6 +547,78 @@ export const getNonYamlPipeLineBuildStats = async ({
   ]).exec();
 };
 
+export const pipeLineBuildStatsInputParser = z.object({
+  queryContext: queryContextInputParser,
+  repositoryId: z.string(),
+  pipelineType: z.enum(['1', '2']).optional(),
+});
+export const getPipeLineBuildStatsForRepoIds = async ({
+  queryContext,
+  repositoryId,
+  pipelineType,
+}: z.infer<typeof pipeLineBuildStatsInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return BuildDefinitionModel.aggregate<{
+    definitionId: string;
+    definitionUrl: string;
+    definitionName: string;
+    buildsCount: number;
+    latestBuildTimestamp: Date;
+    latestBuildResult: string;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId,
+        ...(pipelineType ? { 'process.processType': Number(pipelineType) } : {}),
+      },
+    },
+    {
+      $sort: { finishTime: -1 },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          repositoryId: '$repositoryId',
+          definitionId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$definition.id', '$$definitionId'] },
+                  { $gt: ['$finishTime', startDate] },
+                  { $lt: ['$finishTime', endDate] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'builds',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        definitionId: '$id',
+        definitionUrl: '$url',
+        definitionName: '$name',
+        buildsCount: { $size: '$builds' },
+        latestBuildTimestamp: '$latestBuild.finishTime',
+        latestBuildResult: '$latestBuild.result',
+      },
+    },
+    { $sort: { buildsCount: -1 } },
+  ]).exec();
+};
+
 export const getTotalBuildsForRepositoryIds = async (
   queryContext: QueryContext,
   repositoryIds: string[]

@@ -632,6 +632,72 @@ export const getNonYamlPipelines = async ({
   ]).exec();
 };
 
+export const repoListWithPipelineCount = z.object({
+  queryContext: queryContextInputParser,
+  searchTerm: z.union([z.string(), z.undefined()]),
+  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
+  pipelineType: z.enum(['1', '2']).optional(),
+});
+
+export const getRepoListingWithPipelineCount = async ({
+  queryContext,
+  searchTerm,
+  groupsIncluded,
+  pipelineType,
+}: z.infer<typeof repoListWithPipelineCount>) => {
+  const { collectionName, project } = fromContext(queryContext);
+  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
+
+  return RepositoryModel.aggregate<{
+    repositoryId: string;
+    name: string;
+    total: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: activeRepos.map(prop('id')) },
+      },
+    },
+    {
+      $lookup: {
+        from: 'builddefinitions',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repositoryId', '$$repositoryId'] },
+                  pipelineType
+                    ? { $eq: ['$process.processType', Number(pipelineType)] }
+                    : {},
+                ],
+              },
+            },
+          },
+        ],
+        as: 'buildsDefinitions',
+      },
+    },
+    { $match: { $expr: { $gt: [{ $size: '$buildsDefinitions' }, 0] } } },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$id',
+        name: 1,
+        total: { $size: '$buildsDefinitions' },
+      },
+    },
+    { $sort: { total: -1 } },
+  ]).exec();
+};
+
 const getTotalPipelineCountForRepositoryIds = (
   queryContext: QueryContext,
   repositoryIds: string[]
