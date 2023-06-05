@@ -299,13 +299,23 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                   isDefined(summaries.centralTemplatePipeline) &&
                   isDefined(summaries.pipelines) &&
                   isDefined(summaries.centralTemplateUsage) &&
-                  isDefined(summaries.totalBuilds)
+                  isDefined(summaries.totalBuilds) &&
+                  isDefined(summaries.activePipelinesCount) &&
+                  isDefined(summaries.activePipelineWithCentralTemplateCount) &&
+                  isDefined(summaries.activePipelineCentralTemplateBuilds) &&
+                  isDefined(summaries.activePipelineBuilds)
                     ? `${num(summaries.centralTemplatePipeline.central)} out of ${num(
                         summaries.pipelines.totalCount
                       )} build pipelines use the central template on the master branch<br>
+            ${num(summaries.activePipelineWithCentralTemplateCount)} out of ${num(
+                        summaries.activePipelinesCount
+                      )}<br>
                   ${num(summaries.centralTemplateUsage.templateUsers)} out of ${num(
                         summaries.totalBuilds.count
-                      )} build runs used the central template`
+                      )} build runs used the central template<br>
+            ${num(summaries.activePipelineCentralTemplateBuilds.count)} out of ${num(
+                        summaries.activePipelineBuilds
+                      )} build runs from active pipeline used the central template`
                     : undefined
                 }
                 value={
