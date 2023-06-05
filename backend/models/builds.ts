@@ -38,7 +38,6 @@ export const getBuilds = (
 
 export const getBuildsOverviewForRepositoryInputParser = z.object({
   queryContext: queryContextInputParser,
-  repositoryName: z.string(),
   repositoryId: z.string(),
 });
 
@@ -143,7 +142,6 @@ export const getBuildFailingSince = async (
 
 export const getBuildsOverviewForRepository = async ({
   queryContext,
-  repositoryName,
   repositoryId,
 }: z.infer<typeof getBuildsOverviewForRepositoryInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
@@ -300,7 +298,7 @@ export const getBuildsOverviewForRepository = async ({
         })
       )
     ),
-    buildsCentralTemplateStats(queryContext, repositoryName, repositoryId),
+    buildsCentralTemplateStats(queryContext, repositoryId),
     getBuildDefinitionsForRepo({
       collectionName,
       project,
@@ -324,15 +322,15 @@ export const getBuildsOverviewForRepository = async ({
           latestBuildResult: buildDefinition.latestBuild?.result,
           latestBuildTime: buildDefinition.latestBuild?.startTime,
           mainBranchCentralTemplateBuilds:
-            buildTemplateCounts.find(
+            buildTemplateCounts?.find(
               t => Number(t.buildDefinitionId) === buildDefinition.id
             )?.mainBranchCentralTemplateBuilds || 0,
           centralTemplateCount:
-            buildTemplateCounts.find(
+            buildTemplateCounts?.find(
               t => Number(t.buildDefinitionId) === buildDefinition.id
             )?.templateUsers || 0,
           totalBuilds:
-            buildTemplateCounts.find(
+            buildTemplateCounts?.find(
               t => Number(t.buildDefinitionId) === buildDefinition.id
             )?.totalAzureBuilds || 0,
         };
@@ -344,12 +342,12 @@ export const getBuildsOverviewForRepository = async ({
         url: buildDefinitionWebUrl(buildStatsForDefinition.url),
         ui: buildDefinition.process.processType === 1,
         mainBranchCentralTemplateBuilds:
-          buildTemplateCounts.find(
+          buildTemplateCounts?.find(
             t => Number(t.buildDefinitionId) === buildDefinition.id
           )?.mainBranchCentralTemplateBuilds || 0,
 
         centralTemplateCount:
-          buildTemplateCounts.find(
+          buildTemplateCounts?.find(
             t => Number(t.buildDefinitionId) === buildDefinition.id
           )?.templateUsers || 0,
       };

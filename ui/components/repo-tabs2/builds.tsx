@@ -125,15 +125,13 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
 
 const Builds: React.FC<{
   repositoryId: string;
-  repositoryName: string;
-}> = ({ repositoryId, repositoryName }) => {
+}> = ({ repositoryId }) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [queryPeriodDays] = useQueryPeriodDays();
 
   const builds = trpc.builds.getBuildsOverviewForRepository.useQuery({
     queryContext: useQueryContext(),
     repositoryId,
-    repositoryName,
   });
 
   const toggleExpanded = useCallback(
@@ -372,7 +370,7 @@ export default (
     title: 'Builds',
     count: buildsCount ?? 0,
     Component: () => {
-      return <Builds repositoryId={repositoryId} repositoryName={repositoryName} />;
+      return <Builds repositoryId={repositoryId} />;
     },
   };
 };

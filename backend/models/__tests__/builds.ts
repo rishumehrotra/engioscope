@@ -26,7 +26,6 @@ it('Gets the build overview', async () => {
   const overview = await getBuildsOverviewForRepository({
     queryContext: ['foo', 'bar', new Date('2022-03-01'), new Date('2023-03-30')],
     repositoryId: 'repo-1',
-    repositoryName: 'repo-1',
   });
 
   expect(overview.length).toBe(1);

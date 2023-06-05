@@ -8,7 +8,7 @@ import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { getActivePipelineIds } from './build-definitions.js';
-import { repoDefaultBranch } from './repos.js';
+import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 
 const { Schema, model } = mongoose;
 
@@ -226,12 +226,15 @@ export const centralTemplateOptions = async ({
 
 export const buildsCentralTemplateStats = async (
   queryContext: QueryContext,
-  repositoryName: string,
   repositoryId: string
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const defaultBranch = await repoDefaultBranch(collectionName, project, repositoryId);
+  const repo = await getDefaultBranchAndNameForRepoIds(queryContext, [repositoryId]).then(
+    results => results[0]
+  );
+
+  if (!repo) return null;
   type CentralTemplateResult = {
     buildDefinitionId: string;
     templateUsers: number;
@@ -244,7 +247,7 @@ export const buildsCentralTemplateStats = async (
       $match: {
         collectionName,
         project,
-        repo: repositoryName,
+        repo: repo.name,
         createdAt: { $gte: new Date(startDate), $lt: new Date(endDate) },
       },
     },
@@ -282,7 +285,7 @@ export const buildsCentralTemplateStats = async (
               if: {
                 $and: [
                   { $eq: ['$usesCentralTemplate', true] },
-                  { $eq: ['$branchName', defaultBranch] },
+                  { $eq: ['$branchName', repo.defaultBranch] },
                 ],
               },
               then: 1,
