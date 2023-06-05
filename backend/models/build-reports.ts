@@ -9,6 +9,7 @@ import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { getActivePipelineIds } from './build-definitions.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
+import { normalizeBranchName } from '../utils.js';
 
 const { Schema, model } = mongoose;
 
@@ -285,7 +286,14 @@ export const buildsCentralTemplateStats = async (
               if: {
                 $and: [
                   { $eq: ['$usesCentralTemplate', true] },
-                  { $eq: ['$branchName', repo.defaultBranch] },
+                  {
+                    $eq: [
+                      '$branchName',
+                      repo.defaultBranch
+                        ? normalizeBranchName(repo.defaultBranch)
+                        : undefined,
+                    ],
+                  },
                 ],
               },
               then: 1,
