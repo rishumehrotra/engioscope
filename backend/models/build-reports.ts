@@ -8,6 +8,7 @@ import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { getActivePipelineIds } from './build-definitions.js';
+import { repoDefaultBranch } from './repos.js';
 
 const { Schema, model } = mongoose;
 
@@ -225,13 +226,17 @@ export const centralTemplateOptions = async ({
 
 export const buildsCentralTemplateStats = async (
   queryContext: QueryContext,
-  repositoryName: string
+  repositoryName: string,
+  repositoryId: string
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const defaultBranch = await repoDefaultBranch(collectionName, project, repositoryId);
   type CentralTemplateResult = {
     buildDefinitionId: string;
     templateUsers: number;
     totalAzureBuilds: number;
+    mainBranchCentralTemplateBuilds: number;
   };
 
   return AzureBuildReportModel.aggregate<CentralTemplateResult>([
@@ -271,6 +276,20 @@ export const buildsCentralTemplateStats = async (
             },
           },
         },
+        mainBranchCentralTemplateBuilds: {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  { $eq: ['$usesCentralTemplate', true] },
+                  { $eq: ['$branchName', defaultBranch] },
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
         totalAzureBuilds: { $sum: 1 },
       },
     },
@@ -278,8 +297,9 @@ export const buildsCentralTemplateStats = async (
       $project: {
         _id: 0,
         buildDefinitionId: '$_id.buildDefinitionId',
-        templateUsers: '$templateUsers',
-        totalAzureBuilds: '$totalAzureBuilds',
+        templateUsers: 1,
+        totalAzureBuilds: 1,
+        mainBranchCentralTemplateBuilds: 1,
       },
     },
   ]).exec();

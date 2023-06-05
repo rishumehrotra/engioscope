@@ -48,7 +48,12 @@ const buildDefinitionWebUrl = pipe(
 );
 
 type BuildsResponse =
-  | ({ type: 'recent'; centralTemplateCount: number; ui: boolean } & BuildOverviewStats)
+  | ({
+      type: 'recent';
+      centralTemplateCount: number;
+      mainBranchCentralTemplateBuilds: number;
+      ui: boolean;
+    } & BuildOverviewStats)
   | {
       type: 'old';
       definitionName: string;
@@ -56,6 +61,7 @@ type BuildsResponse =
       buildDefinitionId: number;
       ui: boolean;
       centralTemplateCount: number;
+      mainBranchCentralTemplateBuilds: number;
       latestBuildResult: string | undefined;
       latestBuildTime: Date | undefined;
       totalBuilds: number;
@@ -294,7 +300,7 @@ export const getBuildsOverviewForRepository = async ({
         })
       )
     ),
-    buildsCentralTemplateStats(queryContext, repositoryName),
+    buildsCentralTemplateStats(queryContext, repositoryName, repositoryId),
     getBuildDefinitionsForRepo({
       collectionName,
       project,
@@ -317,6 +323,10 @@ export const getBuildsOverviewForRepository = async ({
           ui: buildDefinition.process.processType === 1,
           latestBuildResult: buildDefinition.latestBuild?.result,
           latestBuildTime: buildDefinition.latestBuild?.startTime,
+          mainBranchCentralTemplateBuilds:
+            buildTemplateCounts.find(
+              t => Number(t.buildDefinitionId) === buildDefinition.id
+            )?.mainBranchCentralTemplateBuilds || 0,
           centralTemplateCount:
             buildTemplateCounts.find(
               t => Number(t.buildDefinitionId) === buildDefinition.id
@@ -333,6 +343,11 @@ export const getBuildsOverviewForRepository = async ({
         ...buildStatsForDefinition,
         url: buildDefinitionWebUrl(buildStatsForDefinition.url),
         ui: buildDefinition.process.processType === 1,
+        mainBranchCentralTemplateBuilds:
+          buildTemplateCounts.find(
+            t => Number(t.buildDefinitionId) === buildDefinition.id
+          )?.mainBranchCentralTemplateBuilds || 0,
+
         centralTemplateCount:
           buildTemplateCounts.find(
             t => Number(t.buildDefinitionId) === buildDefinition.id

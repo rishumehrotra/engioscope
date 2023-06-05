@@ -16,12 +16,14 @@ import { PullRequest } from '../common/Icons.jsx';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
+  mainBranchCentralTemplateBuilds: number;
   totalRuns: number;
   buildDefinitionId: string;
 };
 
 const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   centralTemplateRuns,
+  mainBranchCentralTemplateBuilds,
   totalRuns,
   buildDefinitionId,
 }) => {
@@ -79,6 +81,22 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
             {` build ${
               totalRuns === 1 ? 'run' : 'runs'
             } used the central build template.`}
+          </div>
+          <div className="mb-2 leading-snug">
+            {mainBranchCentralTemplateBuilds >= centralTemplateRuns ? (
+              <strong>All</strong>
+            ) : (
+              <>
+                <strong>
+                  {num(Math.min(mainBranchCentralTemplateBuilds, centralTemplateRuns))}
+                </strong>
+                {' out of the '}
+                <strong>{num(centralTemplateRuns)}</strong>
+              </>
+            )}
+            {` central template build ${
+              centralTemplateRuns === 1 ? 'run' : 'runs'
+            } were on main branch.`}
           </div>
           {centralTemplateOptions.data ? (
             <>
@@ -209,6 +227,9 @@ const Builds: React.FC<{
                         <CentralTemplateUsage
                           buildDefinitionId={String(pipeline.buildDefinitionId)}
                           centralTemplateRuns={pipeline.centralTemplateCount}
+                          mainBranchCentralTemplateBuilds={
+                            pipeline.mainBranchCentralTemplateBuilds
+                          }
                           totalRuns={pipeline.totalBuilds}
                         />
                       </td>
