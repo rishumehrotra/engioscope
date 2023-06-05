@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode, ReactEventHandler, MouseEventHandler } from 'react';
 import { Close } from './Icons.jsx';
 
@@ -15,17 +15,57 @@ type DrawerProps = {
   close: () => void;
   heading?: ReactNode;
   children?: ReactNode;
+  onClosed: () => void;
 };
 
-const Drawer: React.FC<DrawerProps> = ({ children, isOpen = false, close, heading }) => {
+const Drawer: React.FC<DrawerProps> = ({
+  children,
+  isOpen = false,
+  close,
+  heading,
+  onClosed,
+}) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [animationState, setAnimationState] = useState<'open' | 'closing' | 'closed'>(
+    'closed'
+  );
   const previousOpenState = usePrevious(isOpen);
 
+  const startClose = useCallback(() => {
+    setAnimationState('closing');
+    dialogRef.current?.classList.add('backdrop:opacity-0');
+    dialogRef.current?.classList.remove('backdrop:opacity-25');
+
+    dialogRef.current?.classList.add('translate-x-full');
+    dialogRef.current?.classList.add('translate-x-0');
+
+    const onTransitionEnd = () => {
+      dialogRef.current?.close();
+      const bodyScroll = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      window.scrollTo(0, Number.parseInt(bodyScroll || '0', 10) * -1);
+      setAnimationState('closed');
+      onClosed();
+      dialogRef.current?.removeEventListener('transitionend', onTransitionEnd);
+    };
+
+    dialogRef.current?.addEventListener('transitionend', onTransitionEnd, { once: true });
+  }, [onClosed]);
+
   useEffect(() => {
-    if (!previousOpenState && isOpen) {
+    const mustClose = animationState === 'open' && !isOpen;
+    if (mustClose) {
+      startClose();
+    }
+  }, [animationState, isOpen, previousOpenState, startClose]);
+
+  useEffect(() => {
+    const mustOpen = animationState === 'closed' && isOpen;
+    if (mustOpen) {
       dialogRef.current?.showModal();
-      dialogRef.current?.classList.remove('backdrop:opacity-0');
       dialogRef.current?.classList.add('backdrop:opacity-25');
+      dialogRef.current?.classList.remove('backdrop:opacity-0');
 
       dialogRef.current?.classList.remove('translate-x-full');
       dialogRef.current?.classList.remove('translate-x-0');
@@ -33,34 +73,9 @@ const Drawer: React.FC<DrawerProps> = ({ children, isOpen = false, close, headin
       const bodyScroll = window.scrollY;
       document.body.style.position = 'fixed';
       document.body.style.top = `-${bodyScroll}px`;
+      setAnimationState('open');
     }
-  }, [isOpen, previousOpenState]);
-
-  const startClose = useCallback(() => {
-    dialogRef.current?.classList.add('backdrop:opacity-0');
-    dialogRef.current?.classList.remove('backdrop:opacity-25');
-
-    dialogRef.current?.classList.add('translate-x-full');
-    dialogRef.current?.classList.add('translate-x-0');
-
-    dialogRef.current?.addEventListener(
-      'transitionend',
-      () => {
-        dialogRef.current?.close();
-        const bodyScroll = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        window.scrollTo(0, Number.parseInt(bodyScroll || '0', 10) * -1);
-      },
-      { once: true }
-    );
-  }, []);
-
-  useEffect(() => {
-    if (previousOpenState && !isOpen) {
-      startClose();
-    }
-  }, [isOpen, previousOpenState, startClose]);
+  }, [animationState, isOpen, previousOpenState]);
 
   const onClick = useCallback<MouseEventHandler<HTMLDialogElement>>(
     evt => {
@@ -85,22 +100,26 @@ const Drawer: React.FC<DrawerProps> = ({ children, isOpen = false, close, headin
       ref={dialogRef}
       className={[
         'backdrop:bg-gray-800 backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200',
-        'w-[600px] max-w-[80%] h-full max-h-full m-0',
+        'w-[600px] max-w-[80%] h-screen max-h-screen m-0',
         'translate-x-full duration-200 p-0',
+        'grid grid-flow-row grid-rows-[auto_1fr]',
       ].join(' ')}
       style={{ inset: 'unset', top: 0, right: 0 }}
       onClick={onClick}
       onCancel={onCancel}
     >
-      <div className="h-full w-full">
-        <div className="grid grid-flow-col grid-cols-[1fr_min-content] pl-4 pr-2 py-3 border-b border-gray-200">
-          <h1 className="font-semibold text-xl">{heading}</h1>
-          <button onClick={close} className="p-2 self-start">
-            <Close />
-          </button>
-        </div>
-        <div className="h-full">{children}</div>
+      <div
+        className={[
+          'max-h-screen grid grid-flow-col grid-cols-[1fr_min-content]',
+          'pl-4 pr-2 py-3 border-b border-gray-200',
+        ].join(' ')}
+      >
+        <h1 className="font-semibold text-xl">{heading}</h1>
+        <button onClick={close} className="p-2 self-start">
+          <Close />
+        </button>
       </div>
+      <div className="overflow-y-auto">{children}</div>
     </dialog>
   );
 };
@@ -115,10 +134,14 @@ export const useDrawer = () => {
     setIsOpen(false);
   }, [setIsOpen]);
 
-  const drawerProps = {
-    close,
-    isOpen,
-  };
+  const drawerProps = useMemo(
+    () => ({
+      close,
+      isOpen,
+      onClosed: close,
+    }),
+    [close, isOpen]
+  );
 
-  return [Drawer, drawerProps, open, isOpen, close] as const;
+  return [Drawer, drawerProps, open] as const;
 };

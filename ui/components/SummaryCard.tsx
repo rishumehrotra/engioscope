@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import type { ReactNode } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { head, last } from 'rambda';
-import { Info } from './common/Icons.jsx';
+import { ExternalLink, Info } from './common/Icons.jsx';
 import type { Renderer } from './graphs/TinyAreaGraph.jsx';
 import TinyAreaGraph, { pathRenderer } from './graphs/TinyAreaGraph.jsx';
+import { useDrawer } from './common/Drawer.jsx';
 
 export const SummaryHeading: React.FC<{
   children?: React.ReactNode;
@@ -18,20 +20,6 @@ export const SummaryHeading: React.FC<{
 export const SummaryStat: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return <div className="text-2xl font-bold">{children}</div>;
 };
-
-export type StatProps = {
-  title: string;
-  value: string | null;
-  tooltip?: string | null;
-} & (
-  | { graphPosition?: undefined }
-  | {
-      graphPosition: 'right' | 'bottom';
-      graph: number[] | null;
-      graphColor: { line: string; area: string } | null;
-      graphRenderer?: Renderer;
-    }
-);
 
 const colors = {
   good: {
@@ -62,7 +50,45 @@ export const decreaseIsBetter = (data: number[]) => {
   return end - start < 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
 };
 
-export const Stat: React.FC<StatProps> = ({ title, value, tooltip, ...graphProps }) => {
+export type StatProps = {
+  title: string;
+  value: string | null;
+  tooltip?: string | null;
+  onClick?: {
+    open: 'drawer';
+    heading: string;
+    body: () => ReactNode;
+  };
+} & (
+  | { graphPosition?: undefined }
+  | {
+      graphPosition: 'right' | 'bottom';
+      graph: number[] | null;
+      graphColor: { line: string; area: string } | null;
+      graphRenderer?: Renderer;
+    }
+);
+
+export const Stat: React.FC<StatProps> = ({
+  title,
+  value,
+  tooltip,
+  onClick,
+  ...graphProps
+}) => {
+  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [drawerDetails, setDrawerDetails] = useState<{
+    heading: ReactNode;
+    children: ReactNode;
+  }>({ heading: 'Loading...', children: 'Loading...' });
+
+  const onStatClick = useCallback(() => {
+    if (!onClick) return;
+    if (onClick.open !== 'drawer') return;
+    setDrawerDetails({ heading: onClick.heading, children: onClick.body() });
+    openDrawer();
+  }, [onClick, openDrawer]);
+
   const statMarkup = (
     <>
       <h3 className="font-semibold mb-3 flex items-center">
@@ -78,7 +104,12 @@ export const Stat: React.FC<StatProps> = ({ title, value, tooltip, ...graphProps
           value === null ? 'opacity-0' : ''
         }`}
       >
-        {value || '...'}
+        {value || ' '}
+        {onClick?.open === 'drawer' ? (
+          <button onClick={onStatClick}>
+            <ExternalLink className="w-5 mx-2 link-text" />
+          </button>
+        ) : null}
       </div>
     </>
   );
@@ -98,10 +129,22 @@ export const Stat: React.FC<StatProps> = ({ title, value, tooltip, ...graphProps
     );
   }, [graphProps]);
 
-  if (!graphProps.graphPosition) return statMarkup;
+  const withOuter = useCallback(
+    (contents: ReactNode) => {
+      return (
+        <>
+          <Drawer {...drawerDetails} {...drawerProps} />
+          {contents}
+        </>
+      );
+    },
+    [Drawer, drawerDetails, drawerProps]
+  );
+
+  if (!graphProps.graphPosition) return withOuter(statMarkup);
 
   if (graphProps.graphPosition === 'bottom') {
-    return (
+    return withOuter(
       <div className="grid grid-rows-2 gap-6">
         <div>{statMarkup}</div>
         {graphMarkup}
@@ -109,11 +152,14 @@ export const Stat: React.FC<StatProps> = ({ title, value, tooltip, ...graphProps
     );
   }
 
-  return (
-    <div className="grid grid-cols-2">
-      <div>{statMarkup}</div>
-      <div className="grid items-end">{graphMarkup}</div>
-    </div>
+  return withOuter(
+    <>
+      <Drawer {...drawerDetails} {...drawerProps} />
+      <div className="grid grid-cols-2">
+        <div>{statMarkup}</div>
+        <div className="grid items-end">{graphMarkup}</div>
+      </div>
+    </>
   );
 };
 

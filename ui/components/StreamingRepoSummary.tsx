@@ -290,6 +290,11 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                         .getOr('-')
                     : null
                 }
+                onClick={{
+                  open: 'drawer',
+                  heading: 'Pipeline details',
+                  body: () => 'Hello world',
+                }}
               />
             </div>
             <div className="border-r border-gray-200">
