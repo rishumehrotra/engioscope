@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import React, { useMemo, useState } from 'react';
 import { Tab, Tabs as ReactTabs, TabList, TabPanel } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css';
 import Loading from '../Loading.jsx';
 
 type DrawerTabsProps = {
@@ -25,10 +24,17 @@ const DrawerTabs: React.FC<DrawerTabsProps> = ({
   }, [selectedTabIndex, tabs]);
 
   return (
-    <ReactTabs selectedIndex={selectedTabIndex} onSelect={setSelectedTabIndex}>
-      <TabList>
+    <ReactTabs
+      selectedIndex={selectedTabIndex}
+      onSelect={setSelectedTabIndex}
+      className="mt-4"
+      selectedTabClassName="border-b-[3px] border-blue-600 text-blue-600 font-semibold"
+    >
+      <TabList className="grid grid-flow-col border-b border-gray-300">
         {tabs.map(tab => (
-          <Tab key={`tab-${tab.key}`}>{tab.title}</Tab>
+          <Tab key={`tab-${tab.key}`} className="text-center p-2 cursor-pointer">
+            {tab.title}
+          </Tab>
         ))}
       </TabList>
 
