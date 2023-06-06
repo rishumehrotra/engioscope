@@ -636,23 +636,25 @@ export const repoListWithPipelineCount = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.union([z.string(), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-  pipelineType: z.enum(['1', '2']).optional(),
 });
 
 export const getRepoListingWithPipelineCount = async ({
   queryContext,
   searchTerm,
   groupsIncluded,
-  pipelineType,
 }: z.infer<typeof repoListWithPipelineCount>) => {
   const { collectionName, project } = fromContext(queryContext);
   const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
 
-  return RepositoryModel.aggregate<{
-    repositoryId: string;
+  type RepoListingWithPipelineCount = {
     name: string;
+    repositoryId: string;
     total: number;
-  }>([
+    yaml: number;
+    nonYaml: number;
+  };
+
+  return RepositoryModel.aggregate<RepoListingWithPipelineCount>([
     {
       $match: {
         collectionName,
@@ -663,21 +665,14 @@ export const getRepoListingWithPipelineCount = async ({
     {
       $lookup: {
         from: 'builddefinitions',
-        let: {
-          repositoryId: '$id',
-        },
+        let: { repositoryId: '$id' },
         pipeline: [
           {
             $match: {
               collectionName,
               project,
               $expr: {
-                $and: [
-                  { $eq: ['$repositoryId', '$$repositoryId'] },
-                  pipelineType
-                    ? { $eq: ['$process.processType', Number(pipelineType)] }
-                    : {},
-                ],
+                $and: [{ $eq: ['$repositoryId', '$$repositoryId'] }],
               },
             },
           },
@@ -692,6 +687,24 @@ export const getRepoListingWithPipelineCount = async ({
         repositoryId: '$id',
         name: 1,
         total: { $size: '$buildsDefinitions' },
+        nonYaml: {
+          $size: {
+            $filter: {
+              input: '$buildsDefinitions',
+              as: 'def',
+              cond: { $eq: ['$$def.process.processType', 1] },
+            },
+          },
+        },
+        yaml: {
+          $size: {
+            $filter: {
+              input: '$buildsDefinitions',
+              as: 'def',
+              cond: { $eq: ['$$def.process.processType', 2] },
+            },
+          },
+        },
       },
     },
     { $sort: { total: -1 } },

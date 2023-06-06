@@ -427,54 +427,6 @@ export const getOneBuildBeforeQueryPeriod =
     return [...foundBuilds, ...refetchedAdditionalBuilds];
   };
 
-export const NonYamlPipeLineBuildStatsInputParser1 = z.object({
-  queryContext: queryContextInputParser,
-  repositoryId: z.string(),
-  buildDefIds: z.string().array(),
-});
-export const getNonYamlPipeLineBuildStats1 = async ({
-  queryContext,
-  repositoryId,
-  buildDefIds,
-}: z.infer<typeof NonYamlPipeLineBuildStatsInputParser1>) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return BuildModel.aggregate<{
-    buildDefinitionId: string;
-    buildDefinitionName: string;
-    buildDefinitionUrl: string;
-    buildCount: number;
-    lastUsed: Date;
-    lastResult: string;
-  }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'repository.id': repositoryId,
-        'definition.id': { $in: buildDefIds },
-        'finishTime': inDateRange(startDate, endDate),
-      },
-    },
-    {
-      $sort: {
-        finishTime: -1,
-      },
-    },
-    {
-      $group: {
-        _id: '$definition.id',
-        buildDefinitionId: { $first: '$definition.id' },
-        buildDefinitionName: { $first: '$definition.name' },
-        buildDefinitionUrl: { $first: '$definition.url' },
-        buildCount: { $sum: 1 },
-        lastUsed: { $first: '$finishTime' },
-        lastResult: { $first: '$result' },
-      },
-    },
-  ]).exec();
-};
-
 export const NonYamlPipeLineBuildStatsInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryId: z.string(),
@@ -501,11 +453,7 @@ export const getNonYamlPipeLineBuildStats = async ({
         'process.processType': 1,
       },
     },
-    {
-      $sort: {
-        finishTime: -1,
-      },
-    },
+    { $sort: { finishTime: -1 } },
     {
       $lookup: {
         from: 'builds',
@@ -575,9 +523,7 @@ export const getPipeLineBuildStatsForRepoIds = async ({
         ...(pipelineType ? { 'process.processType': Number(pipelineType) } : {}),
       },
     },
-    {
-      $sort: { finishTime: -1 },
-    },
+    { $sort: { finishTime: -1 } },
     {
       $lookup: {
         from: 'builds',
