@@ -498,7 +498,7 @@ export const getNonYamlPipeLineBuildStats = async ({
 export const pipeLineBuildStatsInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryId: z.string(),
-  pipelineType: z.enum(['1', '2']).optional(),
+  pipelineType: z.enum(['yaml', 'non-yaml']).optional(),
 });
 export const getPipeLineBuildStatsForRepoIds = async ({
   queryContext,
@@ -506,6 +506,9 @@ export const getPipeLineBuildStatsForRepoIds = async ({
   pipelineType,
 }: z.infer<typeof pipeLineBuildStatsInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const pipelineTypeNum =
+    pipelineType === 'yaml' ? 2 : pipelineType === 'non-yaml' ? 1 : undefined;
 
   return BuildDefinitionModel.aggregate<{
     definitionId: string;
@@ -520,7 +523,7 @@ export const getPipeLineBuildStatsForRepoIds = async ({
         collectionName,
         project,
         repositoryId,
-        ...(pipelineType ? { 'process.processType': Number(pipelineType) } : {}),
+        ...(pipelineType ? { 'process.processType': pipelineTypeNum } : {}),
       },
     },
     { $sort: { finishTime: -1 } },
