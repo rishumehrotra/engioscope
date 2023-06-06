@@ -4,7 +4,7 @@ import { Tab, Tabs as ReactTabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 import Loading from '../Loading.jsx';
 
-type TabsProps = {
+type DrawerTabsProps = {
   tabs: {
     title: ReactNode;
     key: string;
@@ -13,7 +13,7 @@ type TabsProps = {
   selectedTabIndex?: number;
 };
 
-const Tabs: React.FC<TabsProps> = ({
+const DrawerTabs: React.FC<DrawerTabsProps> = ({
   tabs,
   selectedTabIndex: inputSelectedTabIndex = 0,
 }) => {
@@ -41,4 +41,4 @@ const Tabs: React.FC<TabsProps> = ({
   );
 };
 
-export default Tabs;
+export default DrawerTabs;

@@ -1,9 +1,9 @@
 import React from 'react';
-import Tabs from '../common/Tabs.jsx';
+import DrawerTabs from './DrawerTabs.jsx';
 
 const YAMLPipelinesDrawer = () => {
   return (
-    <Tabs
+    <DrawerTabs
       tabs={[
         {
           title: 'Not using YAML',
