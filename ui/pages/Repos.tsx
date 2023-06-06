@@ -14,7 +14,7 @@ import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
 import RepoHealth2 from '../components/RepoHealth2.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
-import StreamingRepoSummary from '../components/StreamingRepoSummary.jsx';
+import StreamingRepoSummary from '../components/repo-summary/RepoSummary.jsx';
 import SortControls from '../components/SortControls.jsx';
 
 const SummaryAndRepoGroups: React.FC = () => {

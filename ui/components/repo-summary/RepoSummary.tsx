@@ -1,12 +1,19 @@
 import { last, multiply } from 'rambda';
-import React, { useMemo } from 'react';
-import { divide, toPercentage } from '../../shared/utils.js';
-import { num, pluralise } from '../helpers/utils.js';
-import useQueryParam, { asString } from '../hooks/use-query-param.js';
-import { useQueryContext } from '../hooks/query-hooks.js';
-import useSse from '../hooks/use-merge-over-sse.js';
-import type { SummaryStats } from '../../backend/models/repo-listing.js';
-import { Stat, SummaryCard, decreaseIsBetter, increaseIsBetter } from './SummaryCard.jsx';
+import React, { lazy, useMemo } from 'react';
+import { divide, toPercentage } from '../../../shared/utils.js';
+import { num, pluralise } from '../../helpers/utils.js';
+import useQueryParam, { asString } from '../../hooks/use-query-param.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
+import useSse from '../../hooks/use-merge-over-sse.js';
+import type { SummaryStats } from '../../../backend/models/repo-listing.js';
+import {
+  Stat,
+  SummaryCard,
+  decreaseIsBetter,
+  increaseIsBetter,
+} from '../SummaryCard.jsx';
+
+const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 
 type RepoSummaryProps = {
   queryPeriodDays: number;
@@ -293,7 +300,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 onClick={{
                   open: 'drawer',
                   heading: 'Pipeline details',
-                  body: () => 'Hello world',
+                  body: <YAMLPipelinesDrawer />,
                 }}
               />
             </div>

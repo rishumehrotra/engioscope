@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { Suspense, useCallback, useState, useMemo } from 'react';
 import { head, last } from 'rambda';
 import { ExternalLink, Info } from './common/Icons.jsx';
 import type { Renderer } from './graphs/TinyAreaGraph.jsx';
 import TinyAreaGraph, { pathRenderer } from './graphs/TinyAreaGraph.jsx';
 import { useDrawer } from './common/Drawer.jsx';
+import Loading from './Loading.jsx';
 
 export const SummaryHeading: React.FC<{
   children?: React.ReactNode;
@@ -57,7 +58,7 @@ export type StatProps = {
   onClick?: {
     open: 'drawer';
     heading: string;
-    body: () => ReactNode;
+    body: ReactNode;
   };
 } & (
   | { graphPosition?: undefined }
@@ -85,7 +86,10 @@ export const Stat: React.FC<StatProps> = ({
   const onStatClick = useCallback(() => {
     if (!onClick) return;
     if (onClick.open !== 'drawer') return;
-    setDrawerDetails({ heading: onClick.heading, children: onClick.body() });
+    setDrawerDetails({
+      heading: onClick.heading,
+      children: <Suspense fallback={<Loading />}>{onClick.body}</Suspense>,
+    });
     openDrawer();
   }, [onClick, openDrawer]);
 
