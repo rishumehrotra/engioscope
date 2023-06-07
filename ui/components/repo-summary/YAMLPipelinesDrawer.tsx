@@ -4,10 +4,6 @@ import { useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import { trpc } from '../../helpers/trpc.js';
 
-// const TabBody:React.FC<> = ( { children } ) => {
-//   return <div>{children}</div>;
-// }
-
 const YAMLPipelinesDrawer: React.FC<{
   totalPipelines: number;
   yamlPipelines: number;
