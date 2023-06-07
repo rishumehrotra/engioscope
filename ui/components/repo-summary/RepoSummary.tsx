@@ -300,7 +300,12 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 onClick={{
                   open: 'drawer',
                   heading: 'Pipeline details',
-                  body: <YAMLPipelinesDrawer />,
+                  body: (
+                    <YAMLPipelinesDrawer
+                      totalPipelines={summaries?.pipelines?.totalCount || 0}
+                      yamlPipelines={summaries?.pipelines?.yamlCount || 0}
+                    />
+                  ),
                 }}
               />
             </div>
