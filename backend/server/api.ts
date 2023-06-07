@@ -91,8 +91,8 @@ export default (config: ParsedConfig) => {
         {
           startDate: string;
           endDate: string;
-          searchTerm: string | undefined;
-          selectedGroupLabels: string | undefined;
+          search: string | undefined;
+          groupsIncluded: string | undefined;
         }
       >,
       res
@@ -104,8 +104,8 @@ export default (config: ParsedConfig) => {
           req.query.startDate && new Date(req.query.startDate),
           req.query.endDate && new Date(req.query.endDate),
         ],
-        searchTerm: req.query.searchTerm || undefined,
-        groupsIncluded: req.query.selectedGroupLabels,
+        searchTerm: req.query.search || undefined,
+        groupsIncluded: req.query.groupsIncluded?.split(','),
       });
       return sendSummaryAsEventStream(args, res, res.flush);
     }

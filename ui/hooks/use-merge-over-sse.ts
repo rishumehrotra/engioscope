@@ -5,6 +5,11 @@ export default <T>(url: string) => {
   const ref = useRef<EventSource>();
 
   useEffect(() => {
+    if (ref.current) {
+      ref.current.close();
+      ref.current = undefined;
+    }
+
     if (!ref.current) {
       const sse = new EventSource(url, { withCredentials: true });
       sse.addEventListener('message', e => {
@@ -16,6 +21,7 @@ export default <T>(url: string) => {
 
       ref.current = sse;
     }
+
     return () => {
       if (ref.current) {
         ref.current.close();

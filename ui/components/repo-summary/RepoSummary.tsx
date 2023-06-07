@@ -41,7 +41,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
 
   return (
     <>
-      <div className="mb-8 grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-4 gap-6">
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
           <div className="row-span-2 border-r border-gray-200 pr-6">
             <Stat
@@ -475,12 +475,14 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
       </div>
       {isDefined(summaries.totalRepos) &&
       isDefined(summaries.totalActiveRepos) &&
-      summaries.totalRepos === summaries.totalActiveRepos ? (
-        <>
+      summaries.totalRepos - summaries.totalActiveRepos !== 0 ? (
+        <p className="my-5 text-gray-500">
           {'Excluded '}
-          <b>{summaries.totalRepos - summaries.totalActiveRepos}</b>
+          <b className="text-gray-900">
+            {summaries.totalRepos - summaries.totalActiveRepos}
+          </b>
           {' inactive repositories from analysis'}
-        </>
+        </p>
       ) : null}
     </>
   );

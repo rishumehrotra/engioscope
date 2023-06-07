@@ -1,8 +1,9 @@
 import type { MouseEvent, MouseEventHandler, ReactNode } from 'react';
 import React, { useMemo, Fragment, useState } from 'react';
 import { asc, desc } from 'sort-lib';
-import { ChevronRight, ArrowUp } from 'react-feather';
+import { ChevronRight } from 'react-feather';
 import AnimateHeight from '../common/AnimateHeight.jsx';
+import { ArrowDown2 } from '../common/Icons.jsx';
 
 export type DrawerTableProps<T> = {
   data: T[] | undefined;
@@ -51,14 +52,14 @@ const DrawerTable = <T,>({
             return (
               <th
                 key={`heading-${col.key}`}
-                className={`font-normal py-2 whitespace-nowrap ${
+                className={`font-normal whitespace-nowrap ${
                   colIndex === 0 ? 'text-left' : 'text-right pr-4'
                 }`}
               >
                 <button
                   className={`${isChild ? '' : 'uppercase'} ${
-                    colIndex === 0 ? 'pr-1' : 'pl-1'
-                  }`}
+                    colIndex === 0 ? 'pr-6' : 'pl-6'
+                  } py-2`}
                   onClick={() => {
                     if (sortColumnIndex === colIndex) {
                       return setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -72,11 +73,15 @@ const DrawerTable = <T,>({
                   <span
                     className={`inline-block -mb-[0.125em] ml-1 transition-transform duration-200 ${
                       sortColumnIndex === colIndex
-                        ? `w-3 ${sortDirection === 'asc' ? 'rotate-180' : ''}`
+                        ? `w-3 ${sortDirection === 'asc' ? '' : 'rotate-180'}`
                         : 'mr-3'
                     }`}
                   >
-                    {sortColumnIndex === colIndex ? <ArrowUp size={12} /> : ''}
+                    {sortColumnIndex === colIndex ? (
+                      <ArrowDown2 className="w-3 h-3" />
+                    ) : (
+                      ''
+                    )}
                   </span>
                 </button>
               </th>
@@ -107,7 +112,7 @@ const DrawerTable = <T,>({
               <tr
                 className={`border-b border-gray-100 ${
                   ChildComponent ? 'cursor-pointer' : ''
-                } ${isChild ? 'text-sm' : ''}`}
+                } ${isChild ? 'text-sm' : ''} hover:bg-gray-50`}
                 onClick={toggleRow}
               >
                 <td>
