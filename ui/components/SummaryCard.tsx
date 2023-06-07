@@ -108,7 +108,7 @@ export const Stat: React.FC<StatProps> = ({
           value === null ? 'opacity-0' : ''
         }`}
       >
-        {value || ' '}
+        {value || '.'}
         {onClick?.open === 'drawer' ? (
           <button onClick={onStatClick}>
             <ExternalLink className="w-5 mx-2 link-text" />
@@ -121,7 +121,6 @@ export const Stat: React.FC<StatProps> = ({
   const graphMarkup = useMemo(() => {
     if (!graphProps.graphPosition) return null;
     const { graph, graphColor, graphRenderer } = graphProps;
-    if (graph === null || graphColor === null) return null;
 
     return (
       <TinyAreaGraph

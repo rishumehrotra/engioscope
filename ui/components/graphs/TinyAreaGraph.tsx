@@ -6,11 +6,6 @@ import { exists } from '../../helpers/utils.js';
 const graphConfig = {
   width: 300,
   height: 60,
-  yAxisLabelHeight: 0,
-  yAxisLabelWidth: 0,
-  xAxisLabelHeight: 0,
-  xAxisOverhang: 0,
-  yAxisOverhang: 0,
   topPadding: 2,
 };
 
@@ -151,41 +146,23 @@ const computeLineGraphData = (
   const dataWithoutUndefineds = data.filter(exists);
   const maxValue = Math.max(...dataWithoutUndefineds);
   const popoverSpacing = config.width / (data.length - 1);
-  const xAxisYLocation = config.height + config.yAxisOverhang + config.topPadding;
-  const yAxisXLocation = config.yAxisLabelWidth;
-  const popoverXCoord = (index: number) =>
-    index * popoverSpacing + config.yAxisLabelWidth;
+  const popoverXCoord = (index: number) => index * popoverSpacing;
   const popoverYCoord = (value: number) =>
-    config.height -
-    (value / maxValue) * config.height +
-    config.yAxisOverhang +
-    config.topPadding;
+    config.height - (value / maxValue) * config.height + config.topPadding;
 
-  return {
-    svgHeight:
-      config.height + config.yAxisOverhang + config.xAxisLabelHeight + config.topPadding,
-    svgWidth: config.width + config.yAxisLabelWidth + config.xAxisOverhang,
-    xAxisCoords: {
-      x1: config.yAxisLabelWidth - config.xAxisOverhang,
-      y1: xAxisYLocation,
-      x2: config.yAxisLabelWidth + config.width + config.xAxisOverhang,
-      y2: xAxisYLocation,
-    },
-    yAxisCoords: {
-      x1: yAxisXLocation,
-      y1: config.topPadding,
-      x2: yAxisXLocation,
-      y2: config.height + config.yAxisOverhang * 2 + config.topPadding,
-    },
-    paths: renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord }),
-  };
+  return renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord });
 };
 
 type TinyAreaGraphProps = {
-  color: { line: string; area: string };
-  data: (number | undefined)[];
+  color: { line: string; area: string } | null;
+  data: (number | undefined)[] | null;
   renderer: Renderer;
   className?: string;
+};
+
+const staticProperties = {
+  svgHeight: graphConfig.height + graphConfig.topPadding,
+  svgWidth: graphConfig.width,
 };
 
 const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
@@ -196,22 +173,24 @@ const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
 }) => {
   const lineGraph = useMemo(
     () =>
-      computeLineGraphData(
-        graphConfig,
-        data,
-        renderer({ color, lineStrokeWidth: 2, strokeDasharray: '7,5' })
-      ),
+      data === null || color === null
+        ? null
+        : computeLineGraphData(
+            graphConfig,
+            data,
+            renderer({ color, lineStrokeWidth: 2, strokeDasharray: '7,5' })
+          ),
     [color, data, renderer]
   );
 
   return (
     <svg
-      height={lineGraph.svgHeight}
-      width={lineGraph.svgWidth}
-      viewBox={`0 0 ${lineGraph.svgWidth} ${lineGraph.svgHeight}`}
+      height={staticProperties.svgHeight}
+      width={staticProperties.svgWidth}
+      viewBox={`0 0 ${staticProperties.svgWidth} ${staticProperties.svgHeight}`}
       className={className}
     >
-      {lineGraph.paths}
+      {lineGraph}
     </svg>
   );
 };

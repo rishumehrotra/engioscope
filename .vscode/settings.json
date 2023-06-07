@@ -4,6 +4,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
+  "tailwindCSS.classAttributes": ["class", "className", "(.*)ClassName"],
   "eslint.format.enable": true,
   "editor.tabSize": 2,
   "typescript.preferences.importModuleSpecifier": "relative",
