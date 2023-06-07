@@ -353,10 +353,7 @@ export const getSummary = async ({
   searchTerms,
   groupsIncluded,
 }: z.infer<typeof getSummaryInputParser>) => {
-  console.log(`=====${new Date().toLocaleString()}=====`);
-  console.log('Querying summary data...', { queryContext, searchTerms, groupsIncluded });
   const { collectionName, project } = fromContext(queryContext);
-
   const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
   const activeRepoIds = activeRepos.map(prop('id'));

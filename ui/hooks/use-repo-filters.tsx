@@ -11,8 +11,6 @@ export default (): RepoFilters => {
   const [pageSize] = useQueryParam('pageSize', asNumber);
   const [pageNumber] = useQueryParam('pageSize', asNumber);
 
-  console.log('use-repo-filters', search);
-
   return {
     queryContext,
     searchTerms: (search ? [search] : undefined) as RepoFilters['searchTerms'],
