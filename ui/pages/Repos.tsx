@@ -71,12 +71,9 @@ const SummaryAndRepoGroups: React.FC = () => {
 const RepoListing: React.FC = () => {
   const projectAnalysis = useFetchForProject(repoMetrics);
   const filters = useRepoFilters();
-  const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(
-    { ...filters, searchTerms: filters.searchTerms },
-    {
-      getNextPageParam: lastPage => lastPage.nextCursor,
-    }
-  );
+  const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
+    getNextPageParam: lastPage => lastPage.nextCursor,
+  });
 
   const aggregatedDevs = useMemo(() => {
     if (projectAnalysis === 'loading') return 'loading';

@@ -466,21 +466,13 @@ export type SummaryStats = {
   activePipelineBuilds: Awaited<ReturnType<typeof getActivePipelineBuilds>>;
 };
 
-export const getSummaryAsEventInputParser = z.object({
-  queryContext: queryContextInputParser,
-  searchTerm: z.union([z.string(), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-});
-
 export const sendSummaryAsEventStream = async (
-  {
-    queryContext,
-    searchTerm,
-    groupsIncluded,
-  }: z.infer<typeof getSummaryAsEventInputParser>,
+  { queryContext, searchTerms, groupsIncluded }: z.infer<typeof getSummaryInputParser>,
   response: Response,
   flush: () => void
 ) => {
+  console.log({ searchTerms });
+
   response.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Connection': 'keep-alive',
@@ -496,11 +488,7 @@ export const sendSummaryAsEventStream = async (
 
   const { collectionName, project } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(
-    queryContext,
-    searchTerm ? [searchTerm] : undefined,
-    groupsIncluded
-  );
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
@@ -560,11 +548,9 @@ export const sendSummaryAsEventStream = async (
     getCoveragesByWeek(queryContext, activeRepoIds).then(
       sendChunk('weeklyCoverageSummary')
     ),
-    searchAndFilterReposBy(
-      queryContext,
-      searchTerm ? [searchTerm] : undefined,
-      groupsIncluded
-    ).then(x => sendChunk('totalRepos')(x.length)),
+    searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded).then(x =>
+      sendChunk('totalRepos')(x.length)
+    ),
     getSonarProjectsCount(collectionName, project, activeRepoIds).then(
       sendChunk('sonarProjects')
     ),

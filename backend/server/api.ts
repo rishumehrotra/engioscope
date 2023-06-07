@@ -104,7 +104,7 @@ export default (config: ParsedConfig) => {
           req.query.startDate && new Date(req.query.startDate),
           req.query.endDate && new Date(req.query.endDate),
         ],
-        searchTerm: req.query.search || undefined,
+        searchTerms: req.query.search ? [req.query.search] : undefined,
         groupsIncluded: req.query.groupsIncluded?.split(','),
       });
       return sendSummaryAsEventStream(args, res, res.flush);
