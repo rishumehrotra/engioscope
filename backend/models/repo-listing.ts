@@ -64,13 +64,15 @@ const getGroupRepositoryNames = (
 
   return filterGroups.flatMap(group => groups[group] || []);
 };
+const isExactSearchString = (searchTerm: string) => {
+  return searchTerm.startsWith('"') && searchTerm.endsWith('"');
+};
 
 export const searchAndFilterReposBy = async (
   queryContext: QueryContext,
-  searchTerm: string | undefined,
+  searchTerms: string[] | undefined,
   groupsIncluded: string[] | undefined
 ) => {
-  const isExactRepoSearch = !!(searchTerm?.startsWith('"') && searchTerm?.endsWith('"'));
   const { collectionName, project } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
@@ -81,13 +83,23 @@ export const searchAndFilterReposBy = async (
     {
       collectionName,
       'project.name': project,
-      '$and': [
-        groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
-        searchTerm && isExactRepoSearch ? { name: searchTerm.replaceAll('"', '') } : {},
-        searchTerm && !isExactRepoSearch
-          ? { name: { $regex: new RegExp(searchTerm, 'i') } }
-          : {},
-      ],
+      ...(groupRepositoryNames.length || (searchTerms && searchTerms.length > 0)
+        ? {
+            $and: [
+              groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
+              searchTerms && searchTerms.length > 0
+                ? {
+                    $or: searchTerms.map(term => {
+                      if (isExactSearchString(term)) {
+                        return { name: term.replaceAll('"', '') };
+                      }
+                      return { name: { $regex: new RegExp(term, 'i') } };
+                    }),
+                  }
+                : {},
+            ],
+          }
+        : {}),
     },
     { id: 1, name: 1 }
   ).lean();
@@ -95,12 +107,12 @@ export const searchAndFilterReposBy = async (
 
 export const getActiveRepos = async (
   queryContext: QueryContext,
-  searchTerm: string | undefined,
+  searchTerms: string[] | undefined,
   groupsIncluded: string[] | undefined
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const repos = await searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded);
+  const repos = await searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded);
 
   const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
     BuildModel.aggregate<{ id: string }>([
@@ -318,32 +330,34 @@ export const getCentralTemplatePipeline = async (
 
 export const FilteredReposInputParser = z.object({
   queryContext: queryContextInputParser,
-  searchTerm: z.union([z.string(), z.undefined()]),
+  searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
 export const getFilteredReposCount = async ({
   queryContext,
-  searchTerm,
+  searchTerms,
   groupsIncluded,
 }: z.infer<typeof FilteredReposInputParser>) => {
-  return (await searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded)).length;
+  return (await searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded)).length;
 };
 
 export const getSummaryInputParser = z.object({
   queryContext: queryContextInputParser,
-  searchTerm: z.union([z.string(), z.undefined()]),
+  searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
 export const getSummary = async ({
   queryContext,
-  searchTerm,
+  searchTerms,
   groupsIncluded,
 }: z.infer<typeof getSummaryInputParser>) => {
+  console.log(`=====${new Date().toLocaleString()}=====`);
+  console.log('Querying summary data...', { queryContext, searchTerms, groupsIncluded });
   const { collectionName, project } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
@@ -385,7 +399,7 @@ export const getSummary = async ({
     getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds),
     getTestsByWeek(queryContext, activeRepoIds),
     getCoveragesByWeek(queryContext, activeRepoIds),
-    searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded),
+    searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded),
     getSonarProjectsCount(collectionName, project, activeRepoIds),
     updateWeeklySonarProjectCount(queryContext, activeRepoIds),
     getReposWithSonarQube(collectionName, project, activeRepoIds),
@@ -455,8 +469,18 @@ export type SummaryStats = {
   activePipelineBuilds: Awaited<ReturnType<typeof getActivePipelineBuilds>>;
 };
 
+export const getSummaryAsEventInputParser = z.object({
+  queryContext: queryContextInputParser,
+  searchTerm: z.union([z.string(), z.undefined()]),
+  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
+});
+
 export const sendSummaryAsEventStream = async (
-  { queryContext, searchTerm, groupsIncluded }: z.infer<typeof getSummaryInputParser>,
+  {
+    queryContext,
+    searchTerm,
+    groupsIncluded,
+  }: z.infer<typeof getSummaryAsEventInputParser>,
   response: Response,
   flush: () => void
 ) => {
@@ -475,7 +499,11 @@ export const sendSummaryAsEventStream = async (
 
   const { collectionName, project } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerm ? [searchTerm] : undefined,
+    groupsIncluded
+  );
 
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
@@ -535,9 +563,11 @@ export const sendSummaryAsEventStream = async (
     getCoveragesByWeek(queryContext, activeRepoIds).then(
       sendChunk('weeklyCoverageSummary')
     ),
-    searchAndFilterReposBy(queryContext, searchTerm, groupsIncluded).then(x =>
-      sendChunk('totalRepos')(x.length)
-    ),
+    searchAndFilterReposBy(
+      queryContext,
+      searchTerm ? [searchTerm] : undefined,
+      groupsIncluded
+    ).then(x => sendChunk('totalRepos')(x.length)),
     getSonarProjectsCount(collectionName, project, activeRepoIds).then(
       sendChunk('sonarProjects')
     ),
@@ -572,17 +602,17 @@ export const sendSummaryAsEventStream = async (
 
 export const NonYamlPipelinesParser = z.object({
   queryContext: queryContextInputParser,
-  searchTerm: z.union([z.string(), z.undefined()]),
+  searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
 export const getNonYamlPipelines = async ({
   queryContext,
-  searchTerm,
+  searchTerms,
   groupsIncluded,
 }: z.infer<typeof NonYamlPipelinesParser>) => {
   const { collectionName, project } = fromContext(queryContext);
-  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
   return RepositoryModel.aggregate<{
     repositoryId: string;
@@ -634,17 +664,17 @@ export const getNonYamlPipelines = async ({
 
 export const repoListWithPipelineCount = z.object({
   queryContext: queryContextInputParser,
-  searchTerm: z.union([z.string(), z.undefined()]),
+  searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
 });
 
 export const getRepoListingWithPipelineCount = async ({
   queryContext,
-  searchTerm,
+  searchTerms,
   groupsIncluded,
 }: z.infer<typeof repoListWithPipelineCount>) => {
   const { collectionName, project } = fromContext(queryContext);
-  const activeRepos = await getActiveRepos(queryContext, searchTerm, groupsIncluded);
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
   type RepoListingWithPipelineCount = {
     name: string;
@@ -761,7 +791,7 @@ export type SortKey = (typeof sortKeys)[number];
 
 export const repoFiltersAndSorterInputParser = z.object({
   queryContext: queryContextInputParser,
-  searchTerm: z.string().optional(),
+  searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.array(z.string()).optional(),
   pageSize: z.number(),
   pageNumber: z.number(),
@@ -779,7 +809,7 @@ export type RepoFilters = z.infer<typeof repoFiltersAndSorterInputParser>;
 
 export const getFilteredAndSortedReposWithStats = async ({
   queryContext,
-  searchTerm,
+  searchTerms,
   groupsIncluded,
   sortBy = 'builds',
   sortDirection = 'desc',
@@ -787,7 +817,7 @@ export const getFilteredAndSortedReposWithStats = async ({
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
   const filteredRepos = await searchAndFilterReposBy(
     queryContext,
-    searchTerm,
+    searchTerms,
     groupsIncluded
   );
 

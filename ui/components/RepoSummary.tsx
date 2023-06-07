@@ -23,7 +23,7 @@ const RepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
 
   const summaries = trpc.repos.getSummaries.useQuery({
     queryContext,
-    searchTerm: search || undefined,
+    searchTerms: search ? [search] : undefined,
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
   });
 

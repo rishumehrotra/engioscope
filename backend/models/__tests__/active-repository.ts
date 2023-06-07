@@ -82,7 +82,7 @@ it('should return active repository for matching search terms and having builds 
   const groupsIncluded = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
-    searchTerm,
+    [searchTerm],
     groupsIncluded
   );
 
@@ -97,7 +97,7 @@ it('should not return active repository if not matching search terms', async () 
   const groupsIncluded = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
-    searchTerm,
+    [searchTerm],
     groupsIncluded
   );
 

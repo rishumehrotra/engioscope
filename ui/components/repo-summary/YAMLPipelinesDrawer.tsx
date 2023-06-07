@@ -126,7 +126,7 @@ const YAMLPipelinesDrawer: React.FC<{
   const repoListingWithPipelineCount =
     trpc.repos.getRepoListingWithPipelineCount.useQuery({
       queryContext,
-      searchTerm: search || undefined,
+      searchTerms: search ? [search] : undefined,
       groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
     });
 

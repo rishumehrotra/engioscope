@@ -18,7 +18,7 @@ const NonYamlPipeLineBuilds: React.FC<NonYamlPipeLineBuildProps> = ({
 
   const nonYamlBuildRepos = trpc.repos.getNonYamlPipelines.useQuery({
     queryContext: useQueryContext(),
-    searchTerm: search || undefined,
+    searchTerms: search ? [search] : undefined,
     groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
   });
 
