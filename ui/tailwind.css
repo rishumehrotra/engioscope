@@ -2,15 +2,14 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-body {
-  @apply bg-gray-50;
+@layer base {
+  :root {
+    --color-text-base: 3, 7, 18;
+  }
 }
 
-.accordian-content {
-  max-height: 0;
-  -webkit-transition: max-height 0.55s;
-  -o-transition: max-height 0.55s;
-  transition: max-height 0.55s;
+body {
+  @apply bg-gray-50 text-theme-base;
 }
 
 .max-width-full {

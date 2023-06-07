@@ -12,6 +12,7 @@ import {
   decreaseIsBetter,
   increaseIsBetter,
 } from '../SummaryCard.jsx';
+import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 
@@ -24,18 +25,25 @@ const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
+  const filters = useRepoFilters();
   const queryContext = useQueryContext();
 
   const sseUrl = useMemo(() => {
     return `/api/${queryContext[0]}/${
       queryContext[1]
     }/repos/summary?${new URLSearchParams({
-      startDate: queryContext[2].toISOString(),
-      endDate: queryContext[3].toISOString(),
-      ...(search ? { search } : {}),
+      startDate: filters.queryContext[2].toISOString(),
+      endDate: filters.queryContext[3].toISOString(),
+      ...(search ? { search: filters.searchTerms?.join(',') } : {}),
       ...(selectedGroupLabels ? { groupsIncluded: selectedGroupLabels } : {}),
     }).toString()}`;
-  }, [queryContext, search, selectedGroupLabels]);
+  }, [
+    filters.queryContext,
+    filters.searchTerms,
+    queryContext,
+    search,
+    selectedGroupLabels,
+  ]);
 
   const summaries = useSse<SummaryStats>(sseUrl);
 

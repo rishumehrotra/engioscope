@@ -2,12 +2,12 @@ import React from 'react';
 import { byDate, byNum, byString } from 'sort-lib';
 import DrawerTabs from './DrawerTabs.jsx';
 import { useQueryContext } from '../../hooks/query-hooks.js';
-import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import { shortDate } from '../../helpers/utils.js';
+import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 
 type RepoItem = RouterClient['repos']['getRepoListingWithPipelineCount'][number];
 
@@ -37,7 +37,7 @@ const PipelinesList: React.FC<PipelineListProps> = ({ item, pipelineType }) => {
           value: x => (
             <>
               <a
-                className="link-text truncate"
+                className="link-text"
                 href={x.definitionUrl
                   .replace('/_apis/build/Definitions/', '/_build?definitionId=')
                   .replace(/\?revision=(.*)/, '')}
@@ -102,11 +102,21 @@ const reposTableProps = (
         value: x => x.name,
         sorter: byString(x => x.name.toLocaleLowerCase()),
       },
+      ...(pipelineType
+        ? []
+        : [
+            {
+              title: 'Not using YAML',
+              key: 'non-yaml',
+              value: (x: RepoItem) => x.nonYaml,
+              sorter: byNum((x: RepoItem) => x.nonYaml),
+            },
+          ]),
       {
         title: 'Pipelines',
         key: 'pipelines',
         value: pipelineCount,
-        sorter: byNum(x => x.nonYaml),
+        sorter: byNum(pipelineCount),
       },
     ],
     ChildComponent: ({ item }) => (
@@ -120,14 +130,12 @@ const YAMLPipelinesDrawer: React.FC<{
   totalPipelines: number;
   yamlPipelines: number;
 }> = ({ totalPipelines, yamlPipelines }) => {
-  const [search] = useQueryParam('search', asString);
-  const [selectedGroupLabels] = useQueryParam('group', asString);
-  const queryContext = useQueryContext();
+  const filters = useRepoFilters();
   const repoListingWithPipelineCount =
     trpc.repos.getRepoListingWithPipelineCount.useQuery({
-      queryContext,
-      searchTerms: search ? [search] : undefined,
-      groupsIncluded: selectedGroupLabels ? selectedGroupLabels.split(',') : undefined,
+      queryContext: filters.queryContext,
+      searchTerms: filters.searchTerms,
+      groupsIncluded: filters.groupsIncluded,
     });
 
   return (
