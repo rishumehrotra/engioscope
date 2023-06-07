@@ -1,8 +1,120 @@
 import React from 'react';
+import { byDate, byNum, byString } from 'sort-lib';
 import DrawerTabs from './DrawerTabs.jsx';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
+import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
+import type { DrawerTableProps } from './DrawerTable.jsx';
+import DrawerTable from './DrawerTable.jsx';
+import { shortDate } from '../../helpers/utils.js';
+
+type RepoItem = RouterClient['repos']['getRepoListingWithPipelineCount'][number];
+
+type PipelineListProps = {
+  item: RepoItem;
+  pipelineType?: 'yaml' | 'non-yaml';
+};
+
+const PipelinesList: React.FC<PipelineListProps> = ({ item, pipelineType }) => {
+  const queryContext = useQueryContext();
+  const pipelines = trpc.builds.getPipeLineBuildStatsForRepoIds.useQuery({
+    queryContext,
+    repositoryId: item.repositoryId,
+    pipelineType,
+  });
+
+  return (
+    <DrawerTable
+      data={pipelines.data}
+      rowKey={x => x.definitionId}
+      isChild
+      columns={[
+        {
+          title: 'Name',
+          key: 'name',
+          // eslint-disable-next-line react/no-unstable-nested-components
+          value: x => (
+            <>
+              <a
+                className="link-text truncate"
+                href={x.definitionUrl
+                  .replace('/_apis/build/Definitions/', '/_build?definitionId=')
+                  .replace(/\?revision=(.*)/, '')}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {x.definitionName}
+              </a>
+              {pipelineType === undefined && !x.isYaml ? (
+                <span
+                  className={[
+                    'inline-block ml-2 uppercase text-xs px-2 py-1 bg-red-100',
+                    'rounded-sm text-red-400 font-semibold no-underline',
+                  ].join(' ')}
+                >
+                  UI
+                </span>
+              ) : null}
+            </>
+          ),
+          sorter: byString(x => x.definitionName.toLocaleLowerCase()),
+        },
+        {
+          title: 'Runs in the last 90 days',
+          key: 'runs',
+          value: x => x.buildsCount,
+          sorter: byNum(x => x.buildsCount),
+        },
+        {
+          title: 'Last used',
+          key: 'last-used-date',
+          value: x =>
+            x.latestBuildTimestamp
+              ? `${shortDate(new Date(x.latestBuildTimestamp))}, ${new Date(
+                  x.latestBuildTimestamp
+                ).getFullYear()}`
+              : '_',
+          sorter: byDate(x => x.latestBuildTimestamp || new Date(0)),
+        },
+      ]}
+      defaultSortColumnIndex={1}
+    />
+  );
+};
+
+const reposTableProps = (
+  pipelineType?: 'yaml' | 'non-yaml'
+): Omit<DrawerTableProps<RepoItem>, 'data'> => {
+  const pipelineCount: (x: RepoItem) => number =
+    pipelineType === 'yaml'
+      ? x => x.yaml
+      : pipelineType === 'non-yaml'
+      ? x => x.nonYaml
+      : x => x.total;
+
+  return {
+    rowKey: x => x.repositoryId,
+    columns: [
+      {
+        title: 'Repositories',
+        key: 'repos',
+        value: x => x.name,
+        sorter: byString(x => x.name.toLocaleLowerCase()),
+      },
+      {
+        title: 'Pipelines',
+        key: 'pipelines',
+        value: pipelineCount,
+        sorter: byNum(x => x.nonYaml),
+      },
+    ],
+    ChildComponent: ({ item }) => (
+      <PipelinesList item={item} pipelineType={pipelineType} />
+    ),
+    defaultSortColumnIndex: 1,
+  };
+};
 
 const YAMLPipelinesDrawer: React.FC<{
   totalPipelines: number;
@@ -27,34 +139,12 @@ const YAMLPipelinesDrawer: React.FC<{
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
             return (
-              <div className="p-3">
-                <table className="w-full border-collapse border border-slate-400">
-                  <thead>
-                    <tr>
-                      <th className="border border-slate-300 text-left  p-2">
-                        Repositories
-                      </th>
-                      <th className="border border-slate-300 text-right p-2">
-                        Pipelines
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {repoListingWithPipelineCount?.data
-                      ?.filter(repoPipelines => repoPipelines.nonYaml > 0)
-                      ?.map(repoPipelines => (
-                        <tr key={repoPipelines.repositoryId}>
-                          <td className="border border-slate-300 p-2">
-                            {repoPipelines.name}
-                          </td>
-                          <td className="border border-slate-300 p-2 text-right ">
-                            {repoPipelines.nonYaml}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
+              <DrawerTable
+                data={repoListingWithPipelineCount?.data?.filter(
+                  repoPipelines => repoPipelines.nonYaml > 0
+                )}
+                {...reposTableProps('non-yaml')}
+              />
             );
           },
         },
@@ -64,34 +154,12 @@ const YAMLPipelinesDrawer: React.FC<{
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
             return (
-              <div className="p-3">
-                <table className="w-full border-collapse border border-slate-400">
-                  <thead>
-                    <tr className="p-2">
-                      <th className="border border-slate-300 text-left p-2">
-                        Repositories
-                      </th>
-                      <th className="border border-slate-300 p-2 text-right ">
-                        Pipelines
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {repoListingWithPipelineCount?.data
-                      ?.filter(repoPipelines => repoPipelines.yaml > 0)
-                      ?.map(repoPipelines => (
-                        <tr key={repoPipelines.repositoryId} className="p-2">
-                          <td className="border border-slate-300 p-2">
-                            {repoPipelines.name}
-                          </td>
-                          <td className="border border-slate-300 p-2 text-right ">
-                            {repoPipelines.yaml}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
+              <DrawerTable
+                data={repoListingWithPipelineCount?.data?.filter(
+                  repoPipelines => repoPipelines.yaml > 0
+                )}
+                {...reposTableProps('yaml')}
+              />
             );
           },
         },
@@ -101,38 +169,10 @@ const YAMLPipelinesDrawer: React.FC<{
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
             return (
-              <div className="p-3">
-                <table className="w-full border-collapse border border-slate-400">
-                  <thead>
-                    <tr className="p-2">
-                      <th className="border border-slate-300 text-left  p-2">
-                        Repositories
-                      </th>
-                      <th className="border border-slate-300  p-2 text-right ">
-                        Not Using Yaml
-                      </th>
-                      <th className="border border-slate-300  p-2 text-right ">
-                        All Pipelines
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {repoListingWithPipelineCount?.data?.map(repoPipelines => (
-                      <tr key={repoPipelines.repositoryId} className="p-2">
-                        <td className="border border-slate-300 p-2">
-                          {repoPipelines.name}
-                        </td>
-                        <td className="border border-slate-300 p-2 text-right ">
-                          {repoPipelines.nonYaml}
-                        </td>
-                        <td className="border border-slate-300 p-2 text-right ">
-                          {repoPipelines.total}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DrawerTable
+                data={repoListingWithPipelineCount?.data}
+                {...reposTableProps()}
+              />
             );
           },
         },

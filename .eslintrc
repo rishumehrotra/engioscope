@@ -27,6 +27,7 @@
     "comma-dangle": "off",
     "function-paren-newline": "off",
     "max-len": "off",
+    "key-spacing": "off",
     "arrow-parens": "off",
     "object-curly-newline": "off",
     "operator-linebreak": "off",

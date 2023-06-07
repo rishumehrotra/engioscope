@@ -515,8 +515,9 @@ export const getPipeLineBuildStatsForRepoIds = async ({
     definitionUrl: string;
     definitionName: string;
     buildsCount: number;
-    latestBuildTimestamp: Date;
-    latestBuildResult: string;
+    latestBuildTimestamp: Date | undefined;
+    latestBuildResult: string | undefined;
+    isYaml: boolean;
   }>([
     {
       $match: {
@@ -562,6 +563,13 @@ export const getPipeLineBuildStatsForRepoIds = async ({
         buildsCount: { $size: '$builds' },
         latestBuildTimestamp: '$latestBuild.finishTime',
         latestBuildResult: '$latestBuild.result',
+        isYaml: {
+          $cond: {
+            if: { $eq: ['$process.processType', 2] },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
     { $sort: { buildsCount: -1 } },

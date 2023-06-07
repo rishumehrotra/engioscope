@@ -4,7 +4,7 @@ import { asc, desc } from 'sort-lib';
 import { ChevronRight, ArrowUp } from 'react-feather';
 import AnimateHeight from '../common/AnimateHeight.jsx';
 
-type DrawerTableProps<T> = {
+export type DrawerTableProps<T> = {
   data: T[] | undefined;
   columns: {
     title: string;
@@ -41,18 +41,24 @@ const DrawerTable = <T,>({
   return (
     <table className={`w-full ${isChild ? 'bg-gray-50' : ''}`}>
       <thead>
-        <tr className="bg-gray-100 text-xs text-gray-600">
+        <tr
+          className={`bg-gray-100 text-xs text-gray-600 ${
+            isChild ? 'border-y border-gray-200' : ''
+          }`}
+        >
           <th className="w-12"> </th>
           {columns.map((col, colIndex) => {
             return (
               <th
                 key={`heading-${col.key}`}
-                className={`font-normal py-2 ${
+                className={`font-normal py-2 whitespace-nowrap ${
                   colIndex === 0 ? 'text-left' : 'text-right pr-4'
                 }`}
               >
                 <button
-                  className={isChild ? '' : 'uppercase'}
+                  className={`${isChild ? '' : 'uppercase'} ${
+                    colIndex === 0 ? 'pr-1' : 'pl-1'
+                  }`}
                   onClick={() => {
                     if (sortColumnIndex === colIndex) {
                       return setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -87,6 +93,7 @@ const DrawerTable = <T,>({
           const toggleRow: MouseEventHandler = (evt: MouseEvent) => {
             evt.stopPropagation();
 
+            if (!ChildComponent) return;
             if (isRowExpanded) {
               setExpandedRows(rows => rows.filter(r => r !== rk));
               setCollapsingRows(rows => [...rows, rk]);
@@ -97,7 +104,12 @@ const DrawerTable = <T,>({
 
           return (
             <Fragment key={rk}>
-              <tr className="border-b border-gray-100 cursor-pointer" onClick={toggleRow}>
+              <tr
+                className={`border-b border-gray-100 ${
+                  ChildComponent ? 'cursor-pointer' : ''
+                } ${isChild ? 'text-sm' : ''}`}
+                onClick={toggleRow}
+              >
                 <td>
                   {ChildComponent ? (
                     <button
@@ -121,9 +133,9 @@ const DrawerTable = <T,>({
                     <td
                       key={`${rk}-${col.key}`}
                       className={`${
-                        colIndex === 0 ? 'text-left' : 'text-right pr-8'
+                        colIndex === 0 ? 'text-left' : 'text-right pr-8 whitespace-nowrap'
                       } py-3 ${
-                        colIndex === 0 && !expandedRows.includes(rk)
+                        (colIndex === 0 && !expandedRows.includes(rk)) || isChild
                           ? ''
                           : 'font-semibold'
                       }`}
@@ -136,7 +148,7 @@ const DrawerTable = <T,>({
               {ChildComponent &&
               (expandedRows.includes(rk) || collapsingRows.includes(rk)) ? (
                 <tr>
-                  <td colSpan={columns.length + 1}>
+                  <td colSpan={columns.length + 1} className="p-0">
                     <AnimateHeight
                       collapse={collapsingRows.includes(rk)}
                       onCollapsed={() =>
