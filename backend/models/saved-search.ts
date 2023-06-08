@@ -3,7 +3,7 @@ import type { SavedSearch } from './mongoose-models/SavedSearchModel.js';
 import { SavedSearchModel } from './mongoose-models/SavedSearchModel.js';
 
 export const insertSavedSearch = (searchView: SavedSearch) =>
-  SavedSearchModel.create(searchView);
+  SavedSearchModel.create(searchView).then(x => x._id);
 
 export const deleteSavedSearch = (searchId: Types.ObjectId) =>
   SavedSearchModel.deleteOne({ _id: searchId }).then(x => x.deletedCount);
