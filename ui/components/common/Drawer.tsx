@@ -100,7 +100,7 @@ const Drawer: React.FC<DrawerProps> = ({
       ref={dialogRef}
       className={[
         'backdrop:bg-gray-800 backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200',
-        'w-[600px] max-w-[80%] h-screen max-h-screen m-0',
+        'w-[700px] max-w-[80%] h-screen max-h-screen m-0',
         'translate-x-full duration-200 p-0',
         'grid grid-flow-row grid-rows-[auto_1fr]',
       ].join(' ')}
