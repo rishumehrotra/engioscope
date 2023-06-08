@@ -5,9 +5,8 @@ import { repoMetrics } from '../network.js';
 import useFetchForProject from '../hooks/use-fetch-for-project.js';
 import Loading from '../components/Loading.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
-import RepoSummary from '../components/RepoSummary.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
-import useQueryParam, { asString, asStringArray } from '../hooks/use-query-param.js';
+import useQueryParam, { asStringArray } from '../hooks/use-query-param.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
@@ -20,7 +19,6 @@ import SortControls from '../components/SortControls.jsx';
 const SummaryAndRepoGroups: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
-  const [summaryV2] = useQueryParam('summary-v2', asString);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
     asStringArray
@@ -62,8 +60,7 @@ const SummaryAndRepoGroups: React.FC = () => {
         <QueryPeriodSelector />
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
-      {summaryV2 ? <StreamingRepoSummary queryPeriodDays={queryPeriodDays} /> : null}
-      <RepoSummary queryPeriodDays={queryPeriodDays} />
+      <StreamingRepoSummary queryPeriodDays={queryPeriodDays} />
     </>
   );
 };
