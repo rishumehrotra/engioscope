@@ -471,8 +471,6 @@ export const sendSummaryAsEventStream = async (
   response: Response,
   flush: () => void
 ) => {
-  console.log({ searchTerms });
-
   response.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Connection': 'keep-alive',

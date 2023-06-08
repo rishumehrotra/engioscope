@@ -1,15 +1,14 @@
 import { model, Schema } from 'mongoose';
 
-export type SearchView = {
+export type SavedSearch = {
   collectionName: string;
   project: string;
   id: string;
   name: string;
   keywords: string[];
-  description: string;
 };
 
-const searchViewSchema = new Schema<SearchView>({
+const savedSearchSchema = new Schema<SavedSearch>({
   collectionName: { type: String, required: true },
   project: { type: String, required: true },
   id: { type: String, required: true },
@@ -17,10 +16,10 @@ const searchViewSchema = new Schema<SearchView>({
   keywords: { type: [String], required: true },
 });
 
-searchViewSchema.index({
+savedSearchSchema.index({
   collectionName: 1,
   project: 1,
   id: 1,
 });
 
-export const SearchViewModel = model<SearchView>('SearchView', searchViewSchema);
+export const SavedSearchModel = model<SavedSearch>('SavedSearch', savedSearchSchema);
