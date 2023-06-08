@@ -5,27 +5,20 @@
 @layer base {
   :root {
     --color-text-base: 3, 7, 18;
+    --color-text-helptext: 75, 85, 99;
+    --color-text-icon: 156, 163, 175;
+    --color-text-icon-active: 3, 7, 18;
+
+    --color-bg-col-header: 243, 244, 246;
+    --color-bg-secondary: 249, 250, 251;
+    --color-bg-hover: 249, 250, 251;
+
+    --color-border-separator: 229, 231, 235;
   }
 }
 
 body {
   @apply bg-gray-50 text-theme-base;
-}
-
-.max-width-full {
-  max-width: 100%;
-}
-
-.artifact:hover .artifact-title {
-  text-decoration: underline;
-}
-
-.show-more {
-  visibility: hidden;
-}
-
-.workitem-body:hover .show-more {
-  visibility: visible;
 }
 
 .link-text {

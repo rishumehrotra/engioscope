@@ -238,7 +238,7 @@ const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
                   href={item.repoDetails.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="link-text font-bold text-lg truncate max-width-full"
+                  className="link-text font-bold text-lg truncate max-w-full"
                   onClick={event => event.stopPropagation()}
                 >
                   {item.repoDetails.name}

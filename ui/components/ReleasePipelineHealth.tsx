@@ -49,10 +49,10 @@ const Artefacts: React.FC<{
               >
                 <div className="inline-flex bg-gray-100 py-3 px-4 rounded-lg">
                   {artifact.type === 'Build' ? (
-                    <div className="bg-gray-100 rounded self-start artifact">
+                    <div className="bg-gray-100 rounded self-start">
                       <Link
                         to={`/${collectionName}/${project}/repos?search="${artifact.name}"`}
-                        className="font-semibold flex items-center mb-1 text-blue-600 artifact-title"
+                        className="font-semibold flex items-center mb-1 link-text"
                       >
                         {artifact.name}
                       </Link>

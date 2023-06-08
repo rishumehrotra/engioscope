@@ -317,7 +317,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 }}
               />
             </div>
-            <div className="border-r border-gray-200">
+            <div>
               <Stat
                 title="Central template"
                 tooltip={

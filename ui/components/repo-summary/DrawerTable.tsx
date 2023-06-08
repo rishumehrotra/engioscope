@@ -40,11 +40,11 @@ const DrawerTable = <T,>({
   }, [columns, data, sortColumnIndex, sortDirection]);
 
   return (
-    <table className={`w-full ${isChild ? 'bg-gray-50' : ''}`}>
+    <table className={`w-full ${isChild ? 'bg-theme-secondary' : ''}`}>
       <thead>
         <tr
-          className={`bg-gray-100 text-xs text-gray-600 ${
-            isChild ? 'border-y border-gray-200' : ''
+          className={`bg-theme-col-header text-xs text-theme-helptext ${
+            isChild ? 'border-y border-theme-seperator' : ''
           }`}
         >
           <th className="w-12"> </th>
@@ -110,9 +110,9 @@ const DrawerTable = <T,>({
           return (
             <Fragment key={rk}>
               <tr
-                className={`border-b border-gray-100 ${
+                className={`border-b border-theme-seperator ${
                   ChildComponent ? 'cursor-pointer' : ''
-                } ${isChild ? 'text-sm' : ''} hover:bg-gray-50`}
+                } ${isChild ? 'text-sm' : ''} hover:bg-theme-hover`}
                 onClick={toggleRow}
               >
                 <td>
@@ -124,8 +124,8 @@ const DrawerTable = <T,>({
                     >
                       <ChevronRight
                         size={18}
-                        className={`inline-block mb-[0.125rem] ml-4 transition-all duration-200 text-gray-400 ${
-                          isRowExpanded ? 'rotate-90 text-gray-500' : ''
+                        className={`inline-block mb-[0.125rem] ml-4 transition-all duration-200 text-theme-icon ${
+                          isRowExpanded ? 'rotate-90 text-theme-icon-active' : ''
                         }`}
                       />
                     </button>

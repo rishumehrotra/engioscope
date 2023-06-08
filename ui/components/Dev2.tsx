@@ -28,7 +28,7 @@ const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
   return (
     <div
       className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out
-        rounded-lg shadow relative workitem-body"
+        rounded-lg shadow relative group"
       style={{ contain: 'content' }}
     >
       <button
@@ -64,7 +64,7 @@ const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
           </span>
         ) : (
           <span className="flex text-gray-500">
-            <span className="show-more">Show more</span>
+            <span className="invisible group-hover:visible">Show more</span>
             <DownChevron />
           </span>
         )}

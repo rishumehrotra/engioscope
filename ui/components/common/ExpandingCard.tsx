@@ -16,7 +16,7 @@ const CardTitle: React.FC<CardTitleProps> = ({ title, subtitle, titleUrl }) => (
           href={titleUrl}
           target="_blank"
           rel="noreferrer"
-          className="link-text font-bold text-lg truncate max-width-full"
+          className="link-text font-bold text-lg truncate max-w-full"
           onClick={e => e.stopPropagation()}
         >
           {title}

@@ -102,7 +102,7 @@ const WorkItem: React.FC<WorkItemProps> = ({
         <div className="w-4/5">
           <a
             href={workItem.url}
-            className="font-bold text-lg truncate max-width-full inline-block link-text"
+            className="font-bold text-lg truncate max-w-full inline-block link-text"
             target="_blank"
             rel="noreferrer"
             data-tip={titleTooltip(workItem, workItemType(workItem))}
