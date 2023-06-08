@@ -4,14 +4,14 @@ export type SavedSearch = {
   collectionName: string;
   project: string;
   name: string;
-  keywords: string[];
+  searchTerms: string[];
 };
 
 const savedSearchSchema = new Schema<SavedSearch>({
   collectionName: { type: String, required: true },
   project: { type: String, required: true },
   name: { type: String, required: true },
-  keywords: { type: [String], required: true },
+  searchTerms: { type: [String], required: true },
 });
 
 savedSearchSchema.index({

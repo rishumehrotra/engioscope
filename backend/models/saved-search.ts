@@ -2,28 +2,22 @@ import type { Types } from 'mongoose';
 import type { SavedSearch } from './mongoose-models/SavedSearchModel.js';
 import { SavedSearchModel } from './mongoose-models/SavedSearchModel.js';
 
-export const insertSearchView = (searchView: SavedSearch) =>
+export const insertSavedSearch = (searchView: SavedSearch) =>
   SavedSearchModel.create(searchView);
 
-export const deleteSearchView = (collectionName: string, project: string, id: string) =>
-  SavedSearchModel.deleteOne({ collectionName, project, id }).exec();
+export const deleteSavedSearch = (collectionName: string, project: string, id: string) =>
+  SavedSearchModel.deleteOne({ collectionName, project, id }).then(x => x.deletedCount);
 
-export const updateSearchView = (searchView: SavedSearch, searchId: Types.ObjectId) => {
-  return SavedSearchModel.updateOne(
+export const updateSavedSearch = (searchView: SavedSearch, searchId: Types.ObjectId) =>
+  SavedSearchModel.updateOne(
     {
       collectionName: searchView.collectionName,
       project: searchView.project,
       _id: searchId,
     },
-    searchView
-  ).exec();
-};
+    searchView,
+    { upsert: true }
+  ).then(x => x.upsertedId ?? null);
 
-export const getSearchViews = (collectionName: string, project: string) =>
+export const getSavedSearches = (collectionName: string, project: string) =>
   SavedSearchModel.find({ collectionName, project }).lean().exec();
-
-export const getSearchViewsCount = (collectionName: string, project: string) =>
-  SavedSearchModel.find({ collectionName, project }).count().exec();
-
-export const getSearchViewById = (collectionName: string, project: string, id: string) =>
-  SavedSearchModel.find({ collectionName, project, id }).lean().exec();
