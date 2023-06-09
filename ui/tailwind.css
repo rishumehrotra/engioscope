@@ -15,6 +15,31 @@
 
     --color-border-separator: 229, 231, 235;
   }
+
+  [type='text'],
+  [type='email'],
+  [type='url'],
+  [type='password'],
+  [type='number'],
+  [type='date'],
+  [type='datetime-local'],
+  [type='month'],
+  [type='search'],
+  [type='tel'],
+  [type='time'],
+  [type='week'],
+  [multiple],
+  [select],
+  textarea,
+  select {
+    @apply border border-gray-300 rounded focus:border-blue-600 focus:ring-1 focus:ring-blue-600 hover:border-blue-600 hover:ring-1 hover:ring-blue-600 hover:border-opacity-50;
+  }
+
+  [type='checkbox'],
+  [type='radio'] {
+    @apply border border-gray-300 rounded-sm focus:border-gray-950 focus:ring-1 focus:ring-gray-950 hover:border-gray-950 hover:ring-1 hover:ring-gray-950 hover:border-opacity-50 mr-1 cursor-pointer ring-offset-0;
+    color: theme('colors.gray.950', colors.gray[950]);
+  }
 }
 
 body {
@@ -104,4 +129,18 @@ body {
 
 .table tbody td:first-child {
   @apply pl-6 text-left;
+}
+
+.react-select {
+  @apply border border-gray-300 rounded focus:border-blue-600 focus:ring-2 focus:ring-blue-600 hover:border-blue-600 hover:ring-1 hover:ring-blue-600 hover:border-opacity-50;
+}
+
+.react-select > div {
+  border: none;
+}
+
+.react-select input,
+.react-select input:focus,
+.react-select input:hover {
+  box-shadow: none;
 }

@@ -27,6 +27,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   options,
 }) => (
   <Select
+    className="react-select"
     isMulti
     isClearable
     styles={styles}
