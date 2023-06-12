@@ -18,7 +18,7 @@ type PipelineListProps = {
 
 const PipelinesList: React.FC<PipelineListProps> = ({ item, pipelineType }) => {
   const queryContext = useQueryContext();
-  const pipelines = trpc.builds.getPipeLineBuildStatsForRepoIds.useQuery({
+  const pipelines = trpc.builds.getPipeLineBuildStatsForRepo.useQuery({
     queryContext,
     repositoryId: item.repositoryId,
     pipelineType,
@@ -147,12 +147,17 @@ const YAMLPipelinesDrawer: React.FC<{
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
             return (
-              <DrawerTable
-                data={repoListingWithPipelineCount?.data?.filter(
-                  repoPipelines => repoPipelines.nonYaml > 0
-                )}
-                {...reposTableProps('non-yaml')}
-              />
+              <>
+                {/* <div className="text-right p-2 pr-6">
+                  <DownloadXLSXButton href="foo" />
+                </div> */}
+                <DrawerTable
+                  data={repoListingWithPipelineCount?.data?.filter(
+                    repoPipelines => repoPipelines.nonYaml > 0
+                  )}
+                  {...reposTableProps('non-yaml')}
+                />
+              </>
             );
           },
         },

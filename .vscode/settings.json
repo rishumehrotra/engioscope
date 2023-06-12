@@ -7,6 +7,7 @@
   "tailwindCSS.classAttributes": ["class", "className", "(.*)ClassName"],
   "eslint.format.enable": true,
   "editor.tabSize": 2,
+  "editor.linkedEditing": true,
   "typescript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifierEnding": "js",

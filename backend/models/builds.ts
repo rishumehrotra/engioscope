@@ -500,7 +500,7 @@ export const pipeLineBuildStatsInputParser = z.object({
   repositoryId: z.string(),
   pipelineType: z.enum(['yaml', 'non-yaml']).optional(),
 });
-export const getPipeLineBuildStatsForRepoIds = async ({
+export const getPipeLineBuildStatsForRepo = async ({
   queryContext,
   repositoryId,
   pipelineType,
