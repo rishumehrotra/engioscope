@@ -1,7 +1,7 @@
 import Router from 'express-promise-router';
 import { join } from 'node:path';
 import { promises as fs, createReadStream } from 'node:fs';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';
@@ -15,6 +15,43 @@ import {
   getSummaryInputParser,
   sendSummaryAsEventStream,
 } from '../models/repo-listing.js';
+import { createXLSX } from './create-xlsx.js';
+
+type RequestWithFilter = Request<
+  {
+    collectionName: string;
+    project: string;
+  },
+  object,
+  object,
+  {
+    startDate: string;
+    endDate: string;
+    search: string | undefined;
+    groupsIncluded: string | undefined;
+  }
+>;
+
+const parseSummaryInput = (req: RequestWithFilter) => {
+  return getSummaryInputParser.parse({
+    queryContext: [
+      req.params.collectionName,
+      req.params.project,
+      req.query.startDate && new Date(req.query.startDate),
+      req.query.endDate && new Date(req.query.endDate),
+    ],
+    searchTerms: req.query.search ? [req.query.search] : undefined,
+    groupsIncluded: req.query.groupsIncluded?.split(','),
+  });
+};
+
+const sendBufferAsXls = (res: Response, buffer: Buffer, fileName: string) => {
+  res.writeHead(200, [
+    ['Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    ['Content-Disposition', `attachment; filename=${fileName}.xlsx`],
+  ]);
+  res.end(buffer);
+};
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
@@ -83,31 +120,34 @@ export default (config: ParsedConfig) => {
 
   router.get(
     `/api/:collectionName/:project/repos/summary`,
-    (
-      req: Request<
-        { collectionName: string; project: string },
-        object,
-        object,
-        {
-          startDate: string;
-          endDate: string;
-          search: string | undefined;
-          groupsIncluded: string | undefined;
-        }
-      >,
-      res
-    ) => {
-      const args = getSummaryInputParser.parse({
-        queryContext: [
-          req.params.collectionName,
-          req.params.project,
-          req.query.startDate && new Date(req.query.startDate),
-          req.query.endDate && new Date(req.query.endDate),
-        ],
-        searchTerms: req.query.search ? [req.query.search] : undefined,
-        groupsIncluded: req.query.groupsIncluded?.split(','),
-      });
+    (req: RequestWithFilter, res) => {
+      const args = parseSummaryInput(req);
       return sendSummaryAsEventStream(args, res, res.flush);
+    }
+  );
+
+  router.get(
+    '/api/:collectionName/:project/repos/yaml-pipelines',
+    (req: RequestWithFilter, res) => {
+      // const args = parseSummaryInput(req);
+      const buf = createXLSX({
+        data: [
+          { str: 'Hello', i: 0 },
+          { str: 'World', i: 1 },
+        ],
+        columns: [
+          {
+            title: 'Index',
+            value: x => x.i,
+          },
+          {
+            title: 'Label here',
+            value: x => x.str,
+          },
+        ],
+      });
+
+      return sendBufferAsXls(res, buf, 'yaml-pipelines');
     }
   );
 
