@@ -6,15 +6,12 @@ import {
 
 import {
   getSummary,
-  getSummaryInputParser,
+  filteredReposInputParser,
   getNonYamlPipelines,
-  NonYamlPipelinesParser,
   repoFiltersAndSorterInputParser,
   getFilteredAndSortedReposWithStats,
-  FilteredReposInputParser,
   getFilteredReposCount,
   getRepoListingWithPipelineCount,
-  repoListWithPipelineCount,
 } from '../../models/repo-listing.js';
 
 export default t.router({
@@ -22,10 +19,12 @@ export default t.router({
     .input(branchPoliciesInputParser)
     .query(passInputTo(getBranchPolicies)),
 
-  getSummaries: t.procedure.input(getSummaryInputParser).query(passInputTo(getSummary)),
+  getSummaries: t.procedure
+    .input(filteredReposInputParser)
+    .query(passInputTo(getSummary)),
 
   getNonYamlPipelines: t.procedure
-    .input(NonYamlPipelinesParser)
+    .input(filteredReposInputParser)
     .query(passInputTo(getNonYamlPipelines)),
 
   getFilteredAndSortedReposWithStats: t.procedure
@@ -33,10 +32,10 @@ export default t.router({
     .query(passInputTo(memoizeForUI(getFilteredAndSortedReposWithStats))),
 
   getFilteredReposCount: t.procedure
-    .input(FilteredReposInputParser)
+    .input(filteredReposInputParser)
     .query(passInputTo(getFilteredReposCount)),
 
   getRepoListingWithPipelineCount: t.procedure
-    .input(repoListWithPipelineCount)
+    .input(filteredReposInputParser)
     .query(passInputTo(getRepoListingWithPipelineCount)),
 });

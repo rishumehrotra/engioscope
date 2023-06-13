@@ -1,6 +1,6 @@
 import type { Request, Response, Router } from 'express';
 import type { z } from 'zod';
-import { getSummaryInputParser } from '../models/repo-listing.js';
+import { filteredReposInputParser } from '../models/repo-listing.js';
 import { createXLSX } from './create-xlsx.js';
 
 export type RequestWithFilter = Request<
@@ -19,7 +19,7 @@ export type RequestWithFilter = Request<
 >;
 
 export const parseSummaryInput = (req: RequestWithFilter) => {
-  return getSummaryInputParser.parse({
+  return filteredReposInputParser.parse({
     queryContext: [
       req.params.collectionName,
       req.params.project,
@@ -39,7 +39,7 @@ const sendBufferAsXls = (res: Response, buffer: Buffer, fileName: string) => {
   res.end(buffer);
 };
 
-type FilterArgs = z.infer<typeof getSummaryInputParser>;
+type FilterArgs = z.infer<typeof filteredReposInputParser>;
 const drawerDownloads = {
   'yaml-pipelines': (args: FilterArgs) => {
     console.log(args);

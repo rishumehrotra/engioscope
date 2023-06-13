@@ -328,7 +328,7 @@ export const getCentralTemplatePipeline = async (
   };
 };
 
-export const FilteredReposInputParser = z.object({
+export const filteredReposInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
@@ -338,21 +338,15 @@ export const getFilteredReposCount = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
-}: z.infer<typeof FilteredReposInputParser>) => {
+}: z.infer<typeof filteredReposInputParser>) => {
   return (await searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded)).length;
 };
-
-export const getSummaryInputParser = z.object({
-  queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-});
 
 export const getSummary = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
-}: z.infer<typeof getSummaryInputParser>) => {
+}: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
   const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
@@ -467,7 +461,7 @@ export type SummaryStats = {
 };
 
 export const sendSummaryAsEventStream = async (
-  { queryContext, searchTerms, groupsIncluded }: z.infer<typeof getSummaryInputParser>,
+  { queryContext, searchTerms, groupsIncluded }: z.infer<typeof filteredReposInputParser>,
   response: Response,
   flush: () => void
 ) => {
@@ -581,17 +575,11 @@ export const sendSummaryAsEventStream = async (
   response.end();
 };
 
-export const NonYamlPipelinesParser = z.object({
-  queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-});
-
 export const getNonYamlPipelines = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
-}: z.infer<typeof NonYamlPipelinesParser>) => {
+}: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
   const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
@@ -643,17 +631,11 @@ export const getNonYamlPipelines = async ({
   ]).exec();
 };
 
-export const repoListWithPipelineCount = z.object({
-  queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-});
-
 export const getRepoListingWithPipelineCount = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
-}: z.infer<typeof repoListWithPipelineCount>) => {
+}: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
   const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
 
@@ -770,10 +752,7 @@ const sortKeys = [
 
 export type SortKey = (typeof sortKeys)[number];
 
-export const repoFiltersAndSorterInputParser = z.object({
-  queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.array(z.string()).optional(),
+export const repoFiltersAndSorterInputParser = filteredReposInputParser.extend({
   pageSize: z.number(),
   pageNumber: z.number(),
   sortBy: z.enum(sortKeys).optional(),
