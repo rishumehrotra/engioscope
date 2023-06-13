@@ -325,6 +325,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 onClick={{
                   open: 'drawer',
                   heading: 'Pipeline details',
+                  enabledIf: (summaries?.pipelines?.totalCount || 0) > 0,
                   downloadUrl: drawerDownloadUrl('yaml-pipelines'),
                   body: (
                     <YAMLPipelinesDrawer
@@ -502,7 +503,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
       {isDefined(summaries.totalRepos) &&
       isDefined(summaries.totalActiveRepos) &&
       summaries.totalRepos - summaries.totalActiveRepos !== 0 ? (
-        <p className="my-5 text-gray-500">
+        <p className="mt-5 text-gray-500">
           {'Excluded '}
           <b className="text-gray-900">
             {summaries.totalRepos - summaries.totalActiveRepos}

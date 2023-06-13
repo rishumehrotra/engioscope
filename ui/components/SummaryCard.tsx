@@ -59,6 +59,7 @@ export type StatProps = {
     open: 'drawer';
     heading: string;
     body: ReactNode;
+    enabledIf?: boolean;
     downloadUrl?: string;
   };
 } & (
@@ -112,7 +113,7 @@ export const Stat: React.FC<StatProps> = ({
         }`}
       >
         {value || '.'}
-        {onClick?.open === 'drawer' ? (
+        {onClick?.open === 'drawer' && (onClick?.enabledIf ?? true) ? (
           <button onClick={onStatClick}>
             <ExternalLink className="w-5 mx-2 link-text" />
           </button>

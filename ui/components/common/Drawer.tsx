@@ -43,6 +43,7 @@ const Drawer: React.FC<DrawerProps> = ({
 
     const onTransitionEnd = () => {
       dialogRef.current?.close();
+      dialogRef.current?.classList.add('hidden');
       const bodyScroll = document.body.style.top;
       document.body.style.position = '';
       document.body.style.top = '';
@@ -69,8 +70,11 @@ const Drawer: React.FC<DrawerProps> = ({
       dialogRef.current?.classList.add('backdrop:opacity-25');
       dialogRef.current?.classList.remove('backdrop:opacity-0');
 
-      dialogRef.current?.classList.remove('translate-x-full');
-      dialogRef.current?.classList.remove('translate-x-0');
+      dialogRef.current?.classList.remove('hidden');
+      setTimeout(() => {
+        dialogRef.current?.classList.remove('translate-x-full');
+        dialogRef.current?.classList.remove('translate-x-0');
+      }, 0);
 
       const bodyScroll = window.scrollY;
       document.body.style.position = 'fixed';
@@ -103,7 +107,7 @@ const Drawer: React.FC<DrawerProps> = ({
       className={[
         'backdrop:bg-gray-800 backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200',
         'w-[700px] max-w-[80%] h-screen max-h-screen m-0',
-        'translate-x-full duration-200 p-0',
+        'translate-x-full duration-200 p-0 hidden',
         'grid grid-flow-row grid-rows-[auto_1fr]',
       ].join(' ')}
       style={{ inset: 'unset', top: 0, right: 0 }}

@@ -99,7 +99,7 @@ export default () => {
   return (
     <>
       <SummaryAndRepoGroups />
-      <div className="mb-6 flex flex-row gap-2 items-center w-full">
+      <div className="mb-6 flex flex-row gap-2 items-center w-full mt-5">
         <h4 className="text-slate-500">Sort by</h4>
         <SortControls
           sortByList={[

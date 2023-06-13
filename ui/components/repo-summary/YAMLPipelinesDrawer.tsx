@@ -8,6 +8,7 @@ import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import { shortDate } from '../../helpers/utils.js';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
+import { HappyEmpty, SadEmpty } from './Empty.jsx';
 
 type RepoItem = RouterClient['repos']['getRepoListingWithPipelineCount'][number];
 
@@ -146,19 +147,17 @@ const YAMLPipelinesDrawer: React.FC<{
           key: 'non-yaml',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
-            return (
-              <>
-                {/* <div className="text-right p-2 pr-6">
-                  <DownloadXLSXButton href="foo" />
-                </div> */}
-                <DrawerTable
-                  data={repoListingWithPipelineCount?.data?.filter(
-                    repoPipelines => repoPipelines.nonYaml > 0
-                  )}
-                  {...reposTableProps('non-yaml')}
-                />
-              </>
+            const repos = repoListingWithPipelineCount?.data?.filter(
+              repoPipelines => repoPipelines.nonYaml > 0
             );
+
+            if (repos?.length === 0) {
+              return (
+                <HappyEmpty body="Looks like all repositories are using YAML pipelines" />
+              );
+            }
+
+            return <DrawerTable data={repos} {...reposTableProps('non-yaml')} />;
           },
         },
         {
@@ -166,14 +165,20 @@ const YAMLPipelinesDrawer: React.FC<{
           key: 'yaml',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
-            return (
-              <DrawerTable
-                data={repoListingWithPipelineCount?.data?.filter(
-                  repoPipelines => repoPipelines.yaml > 0
-                )}
-                {...reposTableProps('yaml')}
-              />
+            const repos = repoListingWithPipelineCount?.data?.filter(
+              repoPipelines => repoPipelines.yaml > 0
             );
+
+            if (repos?.length === 0) {
+              return (
+                <SadEmpty
+                  heading="No repositories found"
+                  body="There are currently no repositories using YAML pipelines"
+                />
+              );
+            }
+
+            return <DrawerTable data={repos} {...reposTableProps('yaml')} />;
           },
         },
         {
