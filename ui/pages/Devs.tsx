@@ -2,7 +2,7 @@ import React from 'react';
 import AppliedFilters from '../components/AppliedFilters.js';
 import Loading from '../components/Loading.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
-import Developer2 from '../components/Dev2.jsx';
+import Developer from '../components/Dev.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useDevFilters from '../hooks/use-dev-filters.jsx';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
@@ -42,7 +42,7 @@ const DevsNew: React.FC = () => {
           <InfiniteScrollList2
             items={query.data.pages.flatMap(page => page.items) || []}
             itemKey={dev => dev.authorEmail}
-            itemComponent={Developer2}
+            itemComponent={Developer}
             loadNextPage={query.fetchNextPage}
           />
           {query.isFetching ? <Loading /> : null}

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { byString, asc } from 'sort-lib';
-import CommitTimeline from './commits/CommitTimeline.js';
-import { DownChevron, UpChevron } from './common/Icons.js';
-import { ProfilePic } from './common/ProfilePic.js';
+import CommitTimeline from './commits/CommitTimeline.jsx';
+import { DownChevron, UpChevron } from './common/Icons.jsx';
+import { ProfilePic } from './common/ProfilePic.jsx';
 import type { DevListing } from '../../backend/models/commits.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import Changes2 from './commits/Changes2.jsx';
@@ -14,7 +14,7 @@ type DeveloperProps = {
   index: number;
 };
 
-const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
+const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const [isExpanded, setIsExpanded] = useState<boolean>(index === 0);
   const location = useLocation();
@@ -137,4 +137,4 @@ const Developer2: React.FC<DeveloperProps> = ({ item, index }) => {
   );
 };
 
-export default Developer2;
+export default Developer;
