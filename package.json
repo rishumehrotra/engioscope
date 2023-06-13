@@ -1,6 +1,6 @@
 {
   "name": "engioscope",
-  "version": "0.1.261",
+  "version": "0.1.262",
   "type": "module",
   "scripts": {
     "watch:tailwind": "tailwind -c ui/tailwind.config.cjs build -i ui/tailwind.css -o ui/tailwind.output.css --watch",
