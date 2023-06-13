@@ -1,33 +1,13 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import AppliedFilters from '../components/AppliedFilters.js';
-import Developer from '../components/Dev.js';
 import Loading from '../components/Loading.js';
-import { dontFilter, filterBySearch } from '../helpers/utils.js';
-import type { SortMap } from '../hooks/sort-hooks.js';
-import { useSort } from '../hooks/sort-hooks.js';
-import useFetchForProject from '../hooks/use-fetch-for-project.js';
-import { repoMetrics } from '../network.js';
-import type { Dev } from '../types.js';
-import { aggregateDevs } from '../helpers/aggregate-devs.js';
-import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import Developer2 from '../components/Dev2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useDevFilters from '../hooks/use-dev-filters.jsx';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import AlertMessage from '../components/common/AlertMessage.jsx';
 import SortControls from '../components/SortControls.jsx';
-
-const sorters: SortMap<Dev> = {
-  'Name': (a, b) =>
-    b.name
-      .toLowerCase()
-      .replaceAll(/["“”]/gi, '')
-      .localeCompare(a.name.toLowerCase().replaceAll(/["“”]/gi, '')),
-  'Repos Committed': (a, b) => b.repos.length - a.repos.length,
-};
-
-const bySearch = (search: string) => (d: Dev) => filterBySearch(search, d.name);
 
 const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
   return (
@@ -74,54 +54,17 @@ const DevsNew: React.FC = () => {
   );
 };
 
-const DevsOld: React.FC<{ devs: 'loading' | Dev[] }> = ({ devs }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
-  if (devs === 'loading') return <Loading />;
-
-  return (
-    <ul>
-      {devs.length > 0 ? (
-        devs.map((dev, index) => (
-          <Developer
-            key={dev.name}
-            dev={dev}
-            isFirst={index === 0}
-            queryPeriodDays={queryPeriodDays}
-          />
-        ))
-      ) : (
-        <AlertMessage message="No Developers found" />
-      )}
-    </ul>
-  );
-};
-
 export default () => {
-  const projectAnalysis = useFetchForProject(repoMetrics);
-  const [search] = useQueryParam('search', asString);
-  const [showOldDevListing] = useQueryParam('dev-listing-v1', asBoolean);
-  const sorter = useSort(sorters, 'Name');
   const filters = useDevFilters();
-  const filteredDevs = trpc.commits.getFilteredDevCount.useQuery(
-    {
-      queryContext: filters.queryContext,
-      searchTerm: filters.searchTerm,
-    },
-    { enabled: !showOldDevListing }
-  );
-  const devs = useMemo(() => {
-    if (projectAnalysis === 'loading') return 'loading';
-    return Object.values(aggregateDevs(projectAnalysis))
-      .filter(search === undefined ? dontFilter : bySearch(search))
-      .sort(sorter);
-  }, [projectAnalysis, search, sorter]);
+  const filteredDevs = trpc.commits.getFilteredDevCount.useQuery({
+    queryContext: filters.queryContext,
+    searchTerm: filters.searchTerm,
+  });
 
   return (
     <>
-      <FiltersAndSorters
-        devsCount={showOldDevListing ? devs.length : filteredDevs?.data || 0}
-      />
-      {showOldDevListing ? <DevsOld devs={devs || 'loading'} /> : <DevsNew />}
+      <FiltersAndSorters devsCount={filteredDevs?.data || 0} />
+      <DevsNew />
     </>
   );
 };

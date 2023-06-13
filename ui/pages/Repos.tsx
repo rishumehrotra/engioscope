@@ -11,7 +11,7 @@ import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
-import RepoHealth2 from '../components/RepoHealth2.jsx';
+import RepoHealth from '../components/RepoHealth.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 import StreamingRepoSummary from '../components/repo-summary/RepoSummary.jsx';
 import SortControls from '../components/SortControls.jsx';
@@ -86,7 +86,7 @@ const RepoListing: React.FC = () => {
       <InfiniteScrollList2
         items={query.data.pages.flatMap(page => page.items) || []}
         itemKey={repo => repo.repoDetails.id}
-        itemComponent={RepoHealth2}
+        itemComponent={RepoHealth}
         loadNextPage={query.fetchNextPage}
       />
       {query.isFetching ? <Loading /> : null}

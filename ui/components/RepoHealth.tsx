@@ -11,16 +11,16 @@ import { byNum, desc } from 'sort-lib';
 import { not } from 'rambda';
 import useResizeObserver from '@react-hook/resize-observer';
 import { num, pluralise } from '../helpers/utils.js';
-import Flair from './common/Flair.js';
-import builds from './repo-tabs2/builds.js';
-import commits from './repo-tabs2/commits.js';
-import prs from './repo-tabs2/prs.js';
-import tests from './repo-tabs2/tests.js';
-import codeQuality from './repo-tabs2/codeQuality.js';
-import type { Tab } from './repo-tabs2/Tabs.js';
-import { TopLevelTab } from './repo-tabs2/Tabs.js';
+import Flair from './common/Flair.jsx';
+import builds from './repo-tabs/builds.jsx';
+import commits from './repo-tabs/commits.jsx';
+import prs from './repo-tabs/prs.jsx';
+import tests from './repo-tabs/tests.jsx';
+import codeQuality from './repo-tabs/codeQuality.jsx';
+import type { Tab } from './repo-tabs/Tabs.jsx';
+import { TopLevelTab } from './repo-tabs/Tabs.jsx';
 import { useSortParams } from '../hooks/sort-hooks.js';
-import branches from './repo-tabs2/branches/index.js';
+import branches from './repo-tabs/branches/index.jsx';
 import type { RouterClient } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
@@ -147,12 +147,12 @@ const combinedQualityGate = (qualityGateStatus: string[]) => {
     .getOr('-')} pass`;
 };
 
-type RepoHealthProps2 = {
+type RepoHealthProps = {
   item: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number];
   isFirst?: boolean;
 };
 
-const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
+const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const location = useLocation();
 
@@ -332,4 +332,4 @@ const RepoHealth2: React.FC<RepoHealthProps2> = ({ item, isFirst }) => {
   );
 };
 
-export default RepoHealth2;
+export default RepoHealth;
