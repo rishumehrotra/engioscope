@@ -344,3 +344,16 @@ export const ArrowDown2: React.FC<{ className?: string }> = ({ className }) => (
     />
   </svg>
 );
+
+export const Download: React.FC<{ className?: string }> = ({ className }) => (
+  <svg width="20" height="20" fill="none" className={className}>
+    <path
+      stroke="currentColor"
+      d="M10.834 1.666H5a1.667 1.667 0 0 0-1.667 1.667v13.333A1.667 1.667 0 0 0 5 18.333h10a1.667 1.667 0 0 0 1.667-1.667V7.499l-5.834-5.833Z"
+    />
+    <path
+      stroke="currentColor"
+      d="M10.834 1.666v5.833h5.833M8 12.916l2.083 2.083 2.083-2.083M10.084 15v-5"
+    />
+  </svg>
+);

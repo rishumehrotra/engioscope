@@ -1,5 +1,5 @@
 import { last, multiply } from 'rambda';
-import React, { lazy, useMemo } from 'react';
+import React, { lazy, useCallback, useMemo } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
@@ -13,6 +13,7 @@ import {
   increaseIsBetter,
 } from '../SummaryCard.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
+import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 
@@ -22,16 +23,14 @@ type RepoSummaryProps = {
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
-const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
+const useCreateUrlWithFilter = (slug: string) => {
   const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
   const filters = useRepoFilters();
   const queryContext = useQueryContext();
 
-  const sseUrl = useMemo(() => {
-    return `/api/${queryContext[0]}/${
-      queryContext[1]
-    }/repos/summary?${new URLSearchParams({
+  return useMemo(() => {
+    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
       startDate: filters.queryContext[2].toISOString(),
       endDate: filters.queryContext[3].toISOString(),
       ...(search ? { search: filters.searchTerms?.join(',') } : {}),
@@ -43,7 +42,25 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
     queryContext,
     search,
     selectedGroupLabels,
+    slug,
   ]);
+};
+
+const useCreateDownloadUrl = () => {
+  // Dirty hack, but works
+  const url = useCreateUrlWithFilter('repos/::placeholder::');
+
+  return useCallback(
+    (slug: DrawerDownloadSlugs) => {
+      return url.replace('::placeholder::', slug);
+    },
+    [url]
+  );
+};
+
+const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
+  const sseUrl = useCreateUrlWithFilter('repos/summary');
+  const drawerDownloadUrl = useCreateDownloadUrl();
 
   const summaries = useSse<SummaryStats>(sseUrl);
 
@@ -308,6 +325,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 onClick={{
                   open: 'drawer',
                   heading: 'Pipeline details',
+                  downloadUrl: drawerDownloadUrl('yaml-pipelines'),
                   body: (
                     <YAMLPipelinesDrawer
                       totalPipelines={summaries?.pipelines?.totalCount || 0}

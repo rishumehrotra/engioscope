@@ -26,5 +26,5 @@ export const createXLSX = <T>({ data, columns }: CreateXLSXArg<T>) => {
   const workbook = xlsx.utils.book_new();
   xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
 
-  return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 };

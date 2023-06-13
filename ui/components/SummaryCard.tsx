@@ -59,6 +59,7 @@ export type StatProps = {
     open: 'drawer';
     heading: string;
     body: ReactNode;
+    downloadUrl?: string;
   };
 } & (
   | { graphPosition?: undefined }
@@ -81,6 +82,7 @@ export const Stat: React.FC<StatProps> = ({
   const [drawerDetails, setDrawerDetails] = useState<{
     heading: ReactNode;
     children: ReactNode;
+    downloadUrl?: string;
   }>({ heading: 'Loading...', children: 'Loading...' });
 
   const onStatClick = useCallback(() => {
@@ -89,6 +91,7 @@ export const Stat: React.FC<StatProps> = ({
     setDrawerDetails({
       heading: onClick.heading,
       children: <Suspense fallback={<Loading />}>{onClick.body}</Suspense>,
+      downloadUrl: onClick.downloadUrl,
     });
     openDrawer();
   }, [onClick, openDrawer]);

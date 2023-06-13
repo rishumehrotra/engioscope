@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode, ReactEventHandler, MouseEventHandler } from 'react';
-import { Close } from './Icons.jsx';
+import { Close, Download } from './Icons.jsx';
 
 const usePrevious = <T,>(value: T) => {
   const ref = useRef<T>(value);
@@ -15,6 +15,7 @@ type DrawerProps = {
   close: () => void;
   heading?: ReactNode;
   children?: ReactNode;
+  downloadUrl?: string;
   onClosed: () => void;
 };
 
@@ -23,6 +24,7 @@ const Drawer: React.FC<DrawerProps> = ({
   isOpen = false,
   close,
   heading,
+  downloadUrl,
   onClosed,
 }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -110,11 +112,24 @@ const Drawer: React.FC<DrawerProps> = ({
     >
       <div
         className={[
-          'max-h-screen grid grid-flow-col grid-cols-[1fr_min-content]',
-          'pl-4 pr-2 py-3 border-b border-gray-200',
+          'max-h-screen grid grid-flow-col grid-cols-[1fr_min-content_min-content]',
+          'pl-4 pr-2 py-3 border-b border-gray-200 items-center',
         ].join(' ')}
       >
         <h1 className="font-semibold text-xl">{heading}</h1>
+        <div>
+          {/* eslint-disable-next-line no-constant-condition */}
+          {downloadUrl && false ? (
+            <a
+              href={downloadUrl}
+              download
+              className="inline-flex items-center link-text p-2 text-sm font-medium whitespace-nowrap"
+            >
+              <Download className="inline-block mr-2" />
+              Download XLSX
+            </a>
+          ) : null}
+        </div>
         <button onClick={close} className="p-2 self-start">
           <Close />
         </button>
