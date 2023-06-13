@@ -9,5 +9,6 @@ export default () =>
       hasSummary: false,
       changeProgramName: undefined,
       queryPeriodDays: 90,
+      hasSonar: false,
     },
   }).data!;
