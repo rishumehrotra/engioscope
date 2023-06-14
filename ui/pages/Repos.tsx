@@ -99,19 +99,16 @@ export default () => {
   return (
     <>
       <SummaryAndRepoGroups />
-      <div className="mb-6 flex flex-row gap-2 items-center w-full mt-5">
-        <h4 className="text-slate-500">Sort by</h4>
-        <SortControls
-          sortByList={[
-            'Builds',
-            'Branches',
-            'Commits',
-            'Pull requests',
-            'Tests',
-            'Code quality',
-          ]}
-        />
-      </div>
+      <SortControls
+        sortByList={[
+          'Builds',
+          'Branches',
+          'Commits',
+          'Pull requests',
+          'Tests',
+          'Code quality',
+        ]}
+      />
       <RepoListing />
     </>
   );

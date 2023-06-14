@@ -144,10 +144,7 @@ const WorkItemsInternal: React.FC<{ workItemAnalysis: ProjectWorkItemAnalysis }>
       <div className="flex justify-between items-center my-3 w-full -mt-5">
         <AppliedFilters type="workitems" count={filteredWorkItems.length} />
       </div>
-      <div className="mb-6 flex flex-row gap-2 items-center">
-        <h4 className="text-slate-500">Sort by</h4>
-        <SortControls sortByList={['Bundle size']} />
-      </div>
+      <SortControls sortByList={['Bundle size']} />
       <InfiniteScrollList
         items={filteredWorkItems}
         itemKey={({ id }) => id}

@@ -37,22 +37,25 @@ const SortControls: React.FC<SortControlsProps> = ({
   }, [currentSortDirection, defaultSortDirection, setSortDirection]);
 
   return (
-    <div className="flex items-center">
-      <Select
-        className="bg-transparent text-gray-900 form-select sm:text-sm font-medium
-          focus:shadow-none focus-visible:ring-2 focus-visible:ring-teal-500 w-32 border rounded border-gray-400 "
-        onChange={onSortByChange}
-        options={sortByList.map(x => ({ label: x, value: x }))}
-        value={sortBy || defaultSortBy}
-      />
-      <button
-        className="text-base font-medium text-gray-500 flex items-center justify-end
+    <div className="my-6 flex flex-row gap-2 items-center">
+      <h4 className="text-theme-helptext">Sort by</h4>
+
+      <div className="flex items-center">
+        <Select
+          className="bg-transparent text-sm font-medium"
+          onChange={onSortByChange}
+          options={sortByList.map(x => ({ label: x, value: x }))}
+          value={sortBy || defaultSortBy}
+        />
+        <button
+          className="text-base font-medium text-gray-500 flex items-center justify-end
          cursor-pointer ml-1 hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400"
-        onClick={toggleSortDirection}
-        data-tip={`Sort ${currentSortDirection === 'asc' ? 'descending' : 'ascending'}`}
-      >
-        {currentSortDirection === 'asc' ? <Ascending /> : <Descending />}
-      </button>
+          onClick={toggleSortDirection}
+          data-tip={`Sort ${currentSortDirection === 'asc' ? 'descending' : 'ascending'}`}
+        >
+          {currentSortDirection === 'asc' ? <Ascending /> : <Descending />}
+        </button>
+      </div>
     </div>
   );
 };

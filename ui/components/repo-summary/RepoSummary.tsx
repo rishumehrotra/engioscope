@@ -68,7 +68,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
     <>
       <div className="grid grid-cols-4 gap-6">
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="row-span-2 border-r border-gray-200 pr-6">
+          <div className="row-span-2 border-r border-theme-seperator pr-6">
             <Stat
               title="Sonar"
               tooltip={
@@ -234,7 +234,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
 
         <SummaryCard className="col-span-4">
           <div className="grid grid-cols-5 gap-6">
-            <div className="border-r border-gray-200">
+            <div className="border-r border-theme-seperator">
               <Stat
                 title="Branch policies"
                 tooltip={
@@ -259,7 +259,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 }
               />
             </div>
-            <div className="border-r border-gray-200">
+            <div className="border-r border-theme-seperator">
               <Stat
                 title="Healthy branches"
                 tooltip={
@@ -281,7 +281,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 }
               />
             </div>
-            <div className="border-r border-gray-200">
+            <div className="border-r border-theme-seperator">
               <Stat
                 title="Has releases"
                 tooltip={
@@ -302,7 +302,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 }
               />
             </div>
-            <div className="border-r border-gray-200">
+            <div className="border-r border-theme-seperator">
               <Stat
                 title="YAML pipelines"
                 tooltip={
@@ -378,7 +378,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
           </div>
         </SummaryCard>
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="border-r border-gray-200 pr-6">
+          <div className="border-r border-theme-seperator pr-6">
             <Stat
               title="Builds"
               tooltip="Total number of builds across all matching repos"
@@ -454,7 +454,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
           </div>
         </SummaryCard>
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="border-r border-gray-200">
+          <div className="border-r border-theme-seperator">
             <Stat
               title="Pipelines running tests"
               tooltip={
@@ -503,9 +503,9 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
       {isDefined(summaries.totalRepos) &&
       isDefined(summaries.totalActiveRepos) &&
       summaries.totalRepos - summaries.totalActiveRepos !== 0 ? (
-        <p className="mt-5 text-gray-500">
+        <p className="mt-5 text-theme-helptext">
           {'Excluded '}
-          <b className="text-gray-900">
+          <b className="text-theme-helptext-emphasis">
             {summaries.totalRepos - summaries.totalActiveRepos}
           </b>
           {' inactive repositories from analysis'}

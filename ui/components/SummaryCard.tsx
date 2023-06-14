@@ -24,16 +24,16 @@ export const SummaryStat: React.FC<{ children?: React.ReactNode }> = ({ children
 
 const colors = {
   good: {
-    line: 'rgba(52, 199, 89, 1)',
-    area: 'rgba(243, 251, 244, 1)',
+    line: 'rgba(var(--color-text-success), 1)',
+    area: 'rgba(var(--color-bg-success), 0.1)',
   },
   bad: {
-    line: 'rgba(243, 25, 25, 1)',
-    area: 'rgba(251, 246, 255, 1)',
+    line: 'rgba(var(--color-text-danger), 1)',
+    area: 'rgba(var(--color-bg-danger), 0.1)',
   },
   neutral: {
-    line: '#6B7280',
-    area: '#F3F4F6',
+    line: 'rgba(var(--color-text-helptext), 1)',
+    area: 'rgba(var(--color-text-helptext), 0.1)',
   },
 };
 

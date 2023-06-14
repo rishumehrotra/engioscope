@@ -6,9 +6,12 @@
   :root {
     --color-text-base: 3, 7, 18;
     --color-text-helptext: 75, 85, 99;
+    --color-text-helptext-emphasis: 17, 24, 39;
     --color-text-icon: 156, 163, 175;
     --color-text-icon-active: 3, 7, 18;
     --color-text-highlight: 37, 99, 235;
+    --color-text-success: 52, 199, 89;
+    --color-text-danger: 243, 25, 25;
 
     --color-bg-page: 249, 250, 251;
     --color-bg-page-content: 255, 255, 255;
@@ -16,6 +19,8 @@
     --color-bg-secondary: 249, 250, 251;
     --color-bg-hover: 249, 250, 251;
     --color-bg-backdrop: 31, 41, 55;
+    --color-bg-success: 52, 199, 89;
+    --color-bg-danger: 199, 52, 52;
 
     --color-border-separator: 229, 231, 235;
 

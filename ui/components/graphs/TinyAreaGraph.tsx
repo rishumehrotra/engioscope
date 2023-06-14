@@ -178,7 +178,7 @@ const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
         : computeLineGraphData(
             graphConfig,
             data,
-            renderer({ color, lineStrokeWidth: 2, strokeDasharray: '7,5' })
+            renderer({ color, lineStrokeWidth: 1, strokeDasharray: '7,5' })
           ),
     [color, data, renderer]
   );

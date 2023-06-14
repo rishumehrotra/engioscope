@@ -13,13 +13,7 @@ const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
   return (
     <>
       <AppliedFilters type="devs" count={devsCount} />
-      <div className="mb-6 flex flex-row gap-2 items-center">
-        <h4 className="text-slate-500">Sort by</h4>
-        <SortControls
-          sortByList={['Name', 'Repos Committed']}
-          defaultSortDirection="asc"
-        />
-      </div>
+      <SortControls sortByList={['Name', 'Repos Committed']} defaultSortDirection="asc" />
     </>
   );
 };

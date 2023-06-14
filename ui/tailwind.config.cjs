@@ -15,9 +15,12 @@ module.exports = {
         theme: {
           'base': withOpacity('--color-text-base'),
           'helptext': withOpacity('--color-text-helptext'),
+          'helptext-emphasis': withOpacity('--color-text-helptext-emphasis'),
           'highlight': withOpacity('--color-text-highlight'),
           'icon': withOpacity('--color-text-icon'),
           'icon-active': withOpacity('--color-text-icon-active'),
+          'success': withOpacity('--color-text-success'),
+          'danger': withOpacity('--color-text-danger'),
         },
       },
 
@@ -29,6 +32,8 @@ module.exports = {
           'page': withOpacity('--color-bg-page'),
           'page-content': withOpacity('--color-bg-page-content'),
           'backdrop': withOpacity('--color-bg-backdrop'),
+          'success': withOpacity('--color-bg-success'),
+          'danger': withOpacity('--color-bg-danger'),
         },
       },
 
