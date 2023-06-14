@@ -105,7 +105,7 @@ const Drawer: React.FC<DrawerProps> = ({
     <dialog
       ref={dialogRef}
       className={[
-        'backdrop:bg-gray-800 backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200',
+        'backdrop:bg-theme-backdrop backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200',
         'w-[700px] max-w-[80%] h-screen max-h-screen m-0',
         'translate-x-full duration-200 p-0 hidden',
         'grid grid-flow-row grid-rows-[auto_1fr]',
@@ -117,7 +117,7 @@ const Drawer: React.FC<DrawerProps> = ({
       <div
         className={[
           'max-h-screen grid grid-flow-col grid-cols-[1fr_min-content_min-content]',
-          'pl-4 pr-2 py-3 border-b border-gray-200 items-center',
+          'pl-4 pr-2 py-3 border-b border-theme-seperator items-center',
         ].join(' ')}
       >
         <h1 className="font-semibold text-xl">{heading}</h1>

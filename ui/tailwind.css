@@ -8,12 +8,23 @@
     --color-text-helptext: 75, 85, 99;
     --color-text-icon: 156, 163, 175;
     --color-text-icon-active: 3, 7, 18;
+    --color-text-highlight: 37, 99, 235;
 
+    --color-bg-page: 249, 250, 251;
+    --color-bg-page-content: 255, 255, 255;
     --color-bg-col-header: 243, 244, 246;
     --color-bg-secondary: 249, 250, 251;
     --color-bg-hover: 249, 250, 251;
+    --color-bg-backdrop: 31, 41, 55;
 
     --color-border-separator: 229, 231, 235;
+
+    --color-input-highlight: 37, 99, 235;
+    --color-input-border: 209, 213, 219;
+  }
+
+  ::backdrop {
+    --color-bg-backdrop: 31, 41, 55;
   }
 
   [type='text'],
@@ -28,26 +39,44 @@
   [type='tel'],
   [type='time'],
   [type='week'],
+  [type='checkbox'],
+  [type='radio'],
   [multiple],
   [select],
   textarea,
-  select {
-    @apply border border-gray-300 rounded focus:border-blue-600 focus:ring-1 focus:ring-blue-600 hover:border-blue-600 hover:ring-1 hover:ring-blue-600 hover:border-opacity-50;
+  select,
+  .react-select {
+    @apply border border-theme-input rounded
+      focus:border-theme-input-highlight focus:ring-1 focus:ring-theme-input-highlight
+      hover:border-theme-input-highlight hover:ring-0 hover:ring-theme-input-highlight;
   }
 
   [type='checkbox'],
   [type='radio'] {
-    @apply border border-gray-300 rounded-sm focus:border-gray-950 focus:ring-1 focus:ring-gray-950 hover:border-gray-950 hover:ring-1 hover:ring-gray-950 hover:border-opacity-50 mr-1 cursor-pointer ring-offset-0;
-    color: theme('colors.gray.950', colors.gray[950]);
+    @apply focus:ring-0 focus:shadow-none focus-visible:ring-1;
   }
 }
 
+.react-select:focus-within {
+  @apply border-theme-input-highlight ring-1 ring-theme-input-highlight;
+}
+
+.react-select > div {
+  border: none;
+}
+
+.react-select input,
+.react-select input:focus,
+.react-select input:hover {
+  box-shadow: none;
+}
+
 body {
-  @apply bg-gray-50 text-theme-base;
+  @apply bg-theme-page text-theme-base;
 }
 
 .link-text {
-  @apply text-blue-600 hover:underline;
+  @apply text-theme-highlight hover:underline;
 }
 
 .nav-link {
@@ -129,18 +158,4 @@ body {
 
 .table tbody td:first-child {
   @apply pl-6 text-left;
-}
-
-.react-select {
-  @apply border border-gray-300 rounded focus:border-blue-600 focus:ring-2 focus:ring-blue-600 hover:border-blue-600 hover:ring-1 hover:ring-blue-600 hover:border-opacity-50;
-}
-
-.react-select > div {
-  border: none;
-}
-
-.react-select input,
-.react-select input:focus,
-.react-select input:hover {
-  box-shadow: none;
 }

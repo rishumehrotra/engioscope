@@ -102,7 +102,11 @@ export const Stat: React.FC<StatProps> = ({
       <h3 className="font-semibold mb-3 flex items-center">
         {title}
         {tooltip === undefined ? null : (
-          <span className="text-gray-400" data-tip={tooltip} data-html>
+          <span
+            className="text-theme-icon hover:text-theme-icon-active"
+            data-tip={tooltip}
+            data-html
+          >
             <Info className="inline-block ml-1.5 w-4 h-4" />
           </span>
         )}
@@ -176,7 +180,9 @@ export const SummaryCard: React.FC<{
 }> = ({ children, className }) => {
   return (
     <div
-      className={`rounded border border-gray-200 bg-white p-6 ${className || ''}`}
+      className={`rounded border border-theme-seperator bg-theme-page-content p-6 ${
+        className || ''
+      }`}
       style={{ boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' }}
     >
       {children}

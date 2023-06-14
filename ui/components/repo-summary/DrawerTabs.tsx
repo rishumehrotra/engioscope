@@ -28,9 +28,9 @@ const DrawerTabs: React.FC<DrawerTabsProps> = ({
       selectedIndex={selectedTabIndex}
       onSelect={setSelectedTabIndex}
       className="mt-4"
-      selectedTabClassName="border-b-[3px] border-blue-600 text-blue-600 font-semibold"
+      selectedTabClassName="border-b-[3px] border-theme-input-highlight text-theme-highlight font-semibold"
     >
-      <TabList className="grid grid-flow-col border-b border-gray-300">
+      <TabList className="grid grid-flow-col border-b border-theme-seperator">
         {tabs.map(tab => (
           <Tab key={`tab-${tab.key}`} className="text-center p-2 cursor-pointer">
             {tab.title}
