@@ -122,8 +122,7 @@ const Drawer: React.FC<DrawerProps> = ({
       >
         <h1 className="font-semibold text-xl">{heading}</h1>
         <div>
-          {/* eslint-disable-next-line no-constant-condition */}
-          {downloadUrl && false ? (
+          {downloadUrl ? (
             <a
               href={downloadUrl}
               download

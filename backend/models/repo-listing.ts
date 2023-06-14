@@ -545,6 +545,111 @@ export const getNonYamlPipelines = async ({
   ]).exec();
 };
 
+export const getYAMLPipelinesForDownload = async ({
+  queryContext,
+  searchTerms,
+  groupsIncluded,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+
+  const repos = await RepositoryModel.aggregate<{
+    name: string;
+    pipelines: {
+      name: string;
+      url: string;
+      lastRun: Date;
+      runCount: number;
+      yaml: boolean;
+    }[];
+  }>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: activeRepos.map(prop('id')) },
+      },
+    },
+    {
+      $lookup: {
+        from: 'builddefinitions',
+        let: {
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$repositoryId', '$$repositoryId'] },
+            },
+          },
+          {
+            $lookup: {
+              from: 'builds',
+              let: {
+                repositoryId: '$repositoryId',
+                definitionId: '$id',
+              },
+              pipeline: [
+                {
+                  $match: {
+                    collectionName,
+                    project,
+                    $expr: {
+                      $and: [
+                        { $eq: ['$repository.id', '$$repositoryId'] },
+                        { $eq: ['$definition.id', '$$definitionId'] },
+                        { $gt: ['$finishTime', startDate] },
+                        { $lt: ['$finishTime', endDate] },
+                      ],
+                    },
+                  },
+                },
+                { $count: 'buildCount' },
+                { $project: { buildCount: 1 } },
+              ],
+              as: 'builds',
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              name: 1,
+              url: 1,
+              lastRun: '$latestBuild.startTime',
+              runCount: { $first: '$builds.buildCount' },
+              yaml: { $eq: ['$process.processType', 1] },
+            },
+          },
+        ],
+        as: 'pipelines',
+      },
+    },
+    { $match: { $expr: { $gt: [{ $size: '$pipelines' }, 0] } } },
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        // repositoryId: '$id',
+        pipelines: 1,
+      },
+    },
+    { $sort: { total: -1 } },
+  ]).exec();
+
+  return repos.flatMap(repo =>
+    repo.pipelines.map(pipeline => ({
+      ...pipeline,
+      runCount: pipeline.runCount || 0,
+      url: pipeline.url
+        .replace('/_apis/build/Definitions/', '/_build?definitionId=')
+        .replace(/\?revision=.*/, ''),
+      repoName: repo.name,
+    }))
+  );
+};
+
 export const getRepoListingWithPipelineCount = async ({
   queryContext,
   searchTerms,

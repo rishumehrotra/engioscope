@@ -1,6 +1,9 @@
 import type { Request, Response, Router } from 'express';
 import type { z } from 'zod';
-import { filteredReposInputParser } from '../models/repo-listing.js';
+import {
+  filteredReposInputParser,
+  getYAMLPipelinesForDownload,
+} from '../models/repo-listing.js';
 import { createXLSX } from './create-xlsx.js';
 
 export type RequestWithFilter = Request<
@@ -41,21 +44,30 @@ const sendBufferAsXls = (res: Response, buffer: Buffer, fileName: string) => {
 
 type FilterArgs = z.infer<typeof filteredReposInputParser>;
 const drawerDownloads = {
-  'yaml-pipelines': (args: FilterArgs) => {
-    console.log(args);
+  'yaml-pipelines': async (args: FilterArgs) => {
+    const lines = await getYAMLPipelinesForDownload(args);
     return createXLSX({
-      data: [
-        { str: 'Hello', i: 0 },
-        { str: 'World', i: 1 },
-      ],
+      data: lines,
       columns: [
         {
-          title: 'Index',
-          value: x => x.i,
+          title: 'Pipeline name',
+          value: x => x.name,
         },
         {
-          title: 'Label here',
-          value: x => x.str,
+          title: 'Url',
+          value: x => x.url,
+        },
+        {
+          title: 'Repo name',
+          value: x => x.repoName,
+        },
+        {
+          title: 'Runs in the last 90 days',
+          value: x => x.runCount,
+        },
+        {
+          title: 'Last run date',
+          value: x => x.lastRun,
         },
       ],
     });
@@ -68,9 +80,9 @@ export default (router: Router) => {
   Object.entries(drawerDownloads).forEach(([slug, handler]) => {
     router.get(
       `/api/:collectionName/:project/repos/${slug}`,
-      (req: RequestWithFilter, res) => {
+      async (req: RequestWithFilter, res) => {
         const args = parseSummaryInput(req);
-        const buffer = handler(args);
+        const buffer = await handler(args);
         return sendBufferAsXls(res, buffer, slug);
       }
     );
