@@ -12,7 +12,7 @@ import { getReleaseEnvironments } from '../models/release-definitions.js';
 import { trpcExpressHandler } from './router/index.js';
 import type { RequestWithFilter } from './repo-api-endpoints.js';
 import repoApiEndpoints, { parseSummaryInput } from './repo-api-endpoints.js';
-import { sendSummaryAsEventStream } from '../models/repo-listing.js';
+import { getSummaryAsChunks } from '../models/repo-listing.js';
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
@@ -81,11 +81,22 @@ export default (config: ParsedConfig) => {
 
   router.get(
     `/api/:collectionName/:project/repos/summary`,
-    (req: RequestWithFilter, res) => {
-      const args = parseSummaryInput(req);
-      return sendSummaryAsEventStream(args, res, res.flush);
+    async (req: RequestWithFilter, res) => {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+      });
+
+      await getSummaryAsChunks(parseSummaryInput(req), x => {
+        res.write(`data: ${JSON.stringify(x)}\n\n`);
+        res.flush();
+      });
+
+      res.end();
     }
   );
+
   repoApiEndpoints(router);
 
   router.get('/api/*', async (req, res) => {

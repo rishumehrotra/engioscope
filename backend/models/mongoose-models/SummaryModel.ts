@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose';
-import type { getSummary } from '../repo-listing.js';
+import type { SummaryStats } from '../repo-listing.js';
 import type { summary } from '../release-listing.js';
 
 export type Summary = {
@@ -8,7 +8,7 @@ export type Summary = {
   duration: '30 days' | '90 days' | '180 days';
   startDate: Date;
   endDate: Date;
-} & Awaited<ReturnType<typeof getSummary>> &
+} & SummaryStats &
   Awaited<ReturnType<typeof summary>>;
 
 const summarySchema = new Schema<Summary>(
