@@ -1,30 +1,15 @@
 import { isDate } from 'node:util/types';
 import xlsx from 'xlsx';
 
-type Link = {
-  type: 'link';
-  text: string;
-  url: string;
-};
-
-type FormattableTypes = Link;
-
 type CreateXLSXArg<T> = {
   data: T[];
   columns: {
     title: string;
-    value: (x: T) => string | number | Date | FormattableTypes;
+    value: (x: T) => string | number | Date | URL;
   }[];
 };
 
-export const formatters = {
-  link: (text: string, url: string): Link => ({ type: 'link', text, url }),
-};
-
-const isLink = (x: unknown): x is Link => {
-  if (typeof x !== 'object' || !x || !('type' in x)) return false;
-  return x.type === 'link';
-};
+const isURL = (x: unknown): x is URL => typeof x === 'object' && x instanceof URL;
 
 const colNameFromIndex = (index: number) => String.fromCodePoint(index + 65);
 
@@ -39,7 +24,7 @@ export const createXLSX = <T>({ data, columns }: CreateXLSXArg<T>) => {
     [],
     ...transformedRows.map(row => {
       return row.map(col => {
-        if (isLink(col)) return col.text;
+        if (isURL(col)) return '[LINK]';
         return col;
       });
     }),
@@ -47,10 +32,10 @@ export const createXLSX = <T>({ data, columns }: CreateXLSXArg<T>) => {
 
   transformedRows.forEach((row, rowIndex) => {
     return row.forEach((col, colIndex) => {
-      if (!isLink(col)) return;
+      if (!isURL(col)) return;
       const cellName = `${colNameFromIndex(colIndex)}${rowIndex + 2}`;
       worksheet[cellName].l = {
-        Target: col.url,
+        Target: col.toString(),
       };
     });
   });
@@ -60,7 +45,7 @@ export const createXLSX = <T>({ data, columns }: CreateXLSXArg<T>) => {
       row.forEach((cell, cellIndex) => {
         acc[cellIndex] = Math.max(
           acc[cellIndex],
-          isDate(cell) ? 12 : (cell?.toString() || '').length
+          isDate(cell) ? 12 : isURL(cell) ? 8 : (cell?.toString() || '').length
         );
       });
       return acc;

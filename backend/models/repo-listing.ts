@@ -619,7 +619,7 @@ export const getYAMLPipelinesForDownload = async ({
               url: 1,
               lastRun: '$latestBuild.startTime',
               runCount: { $first: '$builds.buildCount' },
-              yaml: { $eq: ['$process.processType', 1] },
+              yaml: { $eq: ['$process.processType', 2] },
             },
           },
         ],

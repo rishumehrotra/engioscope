@@ -50,16 +50,20 @@ const drawerDownloads = {
       data: lines,
       columns: [
         {
+          title: 'URL',
+          value: x => new URL(x.url),
+        },
+        {
           title: 'Pipeline name',
           value: x => x.name,
         },
         {
-          title: 'Url',
-          value: x => x.url,
-        },
-        {
           title: 'Repo name',
           value: x => x.repoName,
+        },
+        {
+          title: 'Pipeline type',
+          value: x => (x.yaml ? 'YAML' : 'UI'),
         },
         {
           title: 'Runs in the last 90 days',
