@@ -464,6 +464,7 @@ export const getDevsCommittedToRepo = async (
         project,
         repositoryId,
         'author.date': inDateRange(startDate, endDate),
+        'author.email': { $exists: true },
       },
     },
     {
@@ -488,6 +489,49 @@ export const getDevsCommittedToRepo = async (
         repositoryId: '$_id',
         totalDevs: 1,
         topDevs: { $slice: ['$devs', 5] },
+      },
+    },
+  ]);
+};
+
+export const getRepoDailyActivities = async (
+  queryContext: QueryContext,
+  repositoryId: string
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return CommitModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId,
+        'author.date': inDateRange(startDate, endDate),
+        'author.email': { $exists: true },
+      },
+    },
+    {
+      $addFields: {
+        authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
+      },
+    },
+    { $sort: { authorDate: 1 } },
+    {
+      $group: {
+        _id: '$authorDate',
+        repositoryId: { $first: '$repositoryId' },
+        totalCommits: { $sum: 1 },
+      },
+    },
+    {
+      $group: {
+        _id: '$repositoryId',
+        dailyCommits: {
+          $push: {
+            authorDate: '$_id',
+            totalCommits: '$totalCommits',
+          },
+        },
       },
     },
   ]);
