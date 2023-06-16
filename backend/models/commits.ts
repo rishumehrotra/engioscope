@@ -450,3 +450,45 @@ export const getFilteredDevCount = async ({
 
   return filteredDevs[0]?.total || 0;
 };
+
+export const getDevsCommittedToRepo = async (
+  queryContext: QueryContext,
+  repositoryId: string
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return CommitModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId,
+        'author.date': inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $group: {
+        _id: { $toLower: '$author.email' },
+        authorImageUrl: { $first: '$author.imageUrl' },
+        repositoryId: { $first: '$repositoryId' },
+        totalCommits: { $sum: 1 },
+      },
+    },
+    { $sort: { totalCommits: -1 } },
+    {
+      $group: {
+        _id: '$repositoryId',
+        totalDevs: { $sum: 1 },
+        devs: { $push: '$$ROOT' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$_id',
+        totalDevs: 1,
+        topDevs: { $slice: ['$devs', 5] },
+      },
+    },
+  ]);
+};
