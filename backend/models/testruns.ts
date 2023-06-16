@@ -749,3 +749,140 @@ export const getReposSortedByTests = async (
 
   return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
 };
+
+export const getDailyTestsForRepositoryId = async (
+  queryContext: QueryContext,
+  repositoryId: string
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return RepositoryModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': repositoryId,
+        'defaultBranch': { $exists: true },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        collectionName: '$collectionName',
+        project: '$project.name',
+        repositoryId: '$id',
+        repositoryName: '$name',
+        defaultBranch: '$defaultBranch',
+      },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: {
+          repositoryId: '$repositoryId',
+          defaultBranch: '$defaultBranch',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$sourceBranch', '$$defaultBranch'] },
+                  {
+                    $or: [
+                      { $eq: ['$result', 'failed'] },
+                      { $eq: ['$result', 'succeeded'] },
+                    ],
+                  },
+                ],
+              },
+              finishTime: inDateRange(startDate, endDate),
+            },
+          },
+          {
+            $sort: { finishTime: -1 },
+          },
+          {
+            $project: {
+              _id: 0,
+              buildId: '$id',
+              sourceBranch: '$sourceBranch',
+              definitionId: '$definition.id',
+              definitionName: '$definition.name',
+              result: '$result',
+              finishTime: '$finishTime',
+            },
+          },
+        ],
+        as: 'build',
+      },
+    },
+    {
+      $unwind: {
+        path: '$build',
+      },
+    },
+    {
+      $lookup: {
+        from: 'testruns',
+        let: {
+          buildId: '$build.buildId',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              'project.name': project,
+              '$expr': {
+                $eq: ['$buildConfiguration.id', '$$buildId'],
+              },
+            },
+          },
+        ],
+        as: 'tests',
+      },
+    },
+    {
+      $unwind: {
+        path: '$tests',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $group: {
+        _id: {
+          testDate: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$tests.completedDate',
+            },
+          },
+        },
+        repositoryId: { $first: '$repositoryId' },
+        totalTests: { $sum: '$tests.totalTests' },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        repositoryId: { $first: '$repositoryId' },
+        dailyTests: {
+          $push: {
+            date: '$_id.testDate',
+            totalTests: '$totalTests',
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: 1,
+        dailyTests: 1,
+      },
+    },
+  ]);
+};
