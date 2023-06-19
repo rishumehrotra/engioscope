@@ -12,6 +12,8 @@ export const oneFortnightInMs = 15 * oneDayInMs;
 export const oneMonthInMs = 30 * oneDayInMs;
 export const oneYearInMs = 365 * oneDayInMs;
 
+export const unique = <T>(xs: T[]) => [...new Set(xs)];
+
 export const exists = <T>(x: T | undefined | null): x is T =>
   x !== null && x !== undefined;
 

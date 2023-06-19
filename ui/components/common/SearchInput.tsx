@@ -3,12 +3,18 @@ import React from 'react';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import { useTabs } from '../../hooks/use-tabs.js';
 import { Search } from './Icons.js';
+import SearchInput2 from './SearchInput2.jsx';
 
 const SearchInput: React.FC = () => {
   const [selectedTab] = useTabs();
   const [search, setSearchTerm] = useQueryParam('search', asString);
+  const [enableSearch] = useQueryParam('search-v2', asString);
 
   if (!selectedTab) return null;
+
+  if (selectedTab === 'repos' && enableSearch === 'true') {
+    return <SearchInput2 />;
+  }
 
   return (
     <div
