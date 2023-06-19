@@ -1093,3 +1093,181 @@ export const getReposSortedByCodeQuality = async (
 
   return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
 };
+
+type ReposWithSonarSetup = {
+  repositoryId: string;
+  repositoryName: string;
+  collectionName: string;
+  project: string;
+  sonarProjects: {
+    id: Types.ObjectId;
+    qualityGateDetails: string;
+  }[];
+};
+
+type ReposWithoutSonarSetup = Omit<ReposWithSonarSetup, 'sonarProjects'>;
+
+export const getReposWithoutSonarSetup = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  return SonarProjectsForRepoModel.aggregate<ReposWithoutSonarSetup>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repositoryId': { $in: repositoryIds },
+        'sonarProjectIds.0': { $exists: false },
+      },
+    },
+    {
+      $lookup: {
+        from: 'repositories',
+        let: { repositoryId: '$repositoryId' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              'project.name': project,
+              '$expr': { $eq: ['$id', '$$repositoryId'] },
+            },
+          },
+        ],
+        as: 'result',
+      },
+    },
+    { $addFields: { repositoryName: { $arrayElemAt: ['$result.name', 0] } } },
+    { $project: { _id: 0, result: 0 } },
+  ]);
+};
+
+export const getReposWithSonarSetup = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const repos = await SonarProjectsForRepoModel.aggregate<ReposWithSonarSetup>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repositoryId': { $in: repositoryIds },
+        'sonarProjectIds.0': { $exists: true },
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonarmeasures',
+        let: {
+          collectionName,
+          project,
+          sonarProjectId: '$sonarProjectIds',
+        },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
+          { $sort: { fetchDate: -1 } },
+          { $limit: 1 },
+        ],
+        as: 'sonarMeasures',
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarMeasures',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $addFields: {
+        sonarMeasures: {
+          $filter: {
+            input: '$sonarMeasures.measures',
+            cond: { $eq: ['$$this.metric', 'quality_gate_details'] },
+          },
+        },
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarMeasures',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    { $addFields: { status: '$sonarMeasures.value.level' } },
+    {
+      $group: {
+        _id: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+        },
+        sonarProjects: {
+          $push: {
+            id: '$sonarProjectIds',
+            qualityGateDetails: '$sonarMeasures.value',
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        result: 1,
+        collectionName: '$_id.collectionName',
+        project: '$_id.project',
+        repositoryId: '$_id.repositoryId',
+        sonarProjects: 1,
+      },
+    },
+    {
+      $lookup: {
+        from: 'repositories',
+        let: { repositoryId: '$repositoryId' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              'project.name': project,
+              '$expr': { $eq: ['$id', '$$repositoryId'] },
+            },
+          },
+        ],
+        as: 'result',
+      },
+    },
+    { $addFields: { repositoryName: { $arrayElemAt: ['$result.name', 0] } } },
+    { $project: { _id: 0, result: 0 } },
+  ]);
+
+  // eslint-disable-next-line no-useless-assign/no-useless-assign
+  const reposWithSonarQualityGate = repos.map(repo => {
+    if (!repo.sonarProjects || repo.sonarProjects.length === 0) {
+      return {
+        repositoryId: repo.repositoryId,
+        repositoryName: repo.repositoryName,
+        status: null,
+      };
+    }
+
+    return {
+      repositoryId: repo.repositoryId,
+      repositoryName: repo.repositoryName,
+      status: repo.sonarProjects.map(sonarProject => {
+        const status = JSON.parse(sonarProject.qualityGateDetails)?.level;
+
+        return status ? parseQualityGateStatus(status) : 'Unknown';
+      }),
+    };
+  });
+
+  return reposWithSonarQualityGate;
+};
