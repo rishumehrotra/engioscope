@@ -60,7 +60,6 @@ const useCreateDownloadUrl = () => {
 
 const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
   const sseUrl = useCreateUrlWithFilter('repos/summary');
-  const [allowYamlDownload] = useQueryParam('xls', asString);
   const drawerDownloadUrl = useCreateDownloadUrl();
 
   const summaries = useSse<SummaryStats>(sseUrl);
@@ -327,10 +326,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                   open: 'drawer',
                   heading: 'Pipeline details',
                   enabledIf: (summaries?.pipelines?.totalCount || 0) > 0,
-                  downloadUrl:
-                    allowYamlDownload === 'true'
-                      ? drawerDownloadUrl('yaml-pipelines')
-                      : undefined,
+                  downloadUrl: drawerDownloadUrl('yaml-pipelines'),
                   body: (
                     <YAMLPipelinesDrawer
                       totalPipelines={summaries?.pipelines?.totalCount || 0}
