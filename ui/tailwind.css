@@ -19,6 +19,7 @@
     --color-bg-secondary: 249, 250, 251;
     --color-bg-hover: 249, 250, 251;
     --color-bg-backdrop: 31, 41, 55;
+    --color-bg-tag: 229, 231, 235;
     --color-bg-success: 52, 199, 89;
     --color-bg-danger: 199, 52, 52;
 
@@ -50,7 +51,8 @@
   [select],
   textarea,
   select,
-  .react-select {
+  .react-select,
+  .tagged-input {
     @apply border border-theme-input rounded
       focus:border-theme-input-highlight focus:ring-1 focus:ring-theme-input-highlight
       hover:border-theme-input-highlight hover:ring-0 hover:ring-theme-input-highlight;
@@ -62,7 +64,8 @@
   }
 }
 
-.react-select:focus-within {
+.react-select:focus-within,
+.tagged-input:focus-within {
   @apply border-theme-input-highlight ring-1 ring-theme-input-highlight;
 }
 
@@ -72,8 +75,12 @@
 
 .react-select input,
 .react-select input:focus,
-.react-select input:hover {
+.react-select input:hover,
+.tagged-input input,
+.tagged-input input:focus,
+.tagged-input input:hover {
   box-shadow: none;
+  border: none;
 }
 
 body {

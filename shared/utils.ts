@@ -40,3 +40,13 @@ export const mapObj =
     Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, xform(value)]));
 
 export const merge = <T>(obj1: T, obj2: T) => ({ ...obj1, ...obj2 });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const debounce = <F extends (...x: any[]) => any>(fn: F, ms = 250) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  return (...args: Parameters<F>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), ms);
+  };
+};

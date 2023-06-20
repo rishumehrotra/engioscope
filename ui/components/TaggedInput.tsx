@@ -1,5 +1,7 @@
 import { init, trim } from 'rambda';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import { X } from 'react-feather';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { unique } from '../../shared/utils.js';
 
 type TagProps = {
@@ -9,9 +11,11 @@ type TagProps = {
 
 const Tag = ({ tag, onDelete }: TagProps) => {
   return (
-    <div className="whitespace-nowrap">
-      {tag}
-      <button onClick={onDelete}>x</button>
+    <div className="whitespace-nowrap inline-flex items-center bg-theme-tag py-1 px-2 gap-1">
+      <span>{tag}</span>
+      <button onClick={onDelete}>
+        <X size={16} />
+      </button>
     </div>
   );
 };
@@ -25,17 +29,31 @@ type TaggedInputProps = {
   tagCharCodes?: number[];
   onChange: (x: TagState) => void;
   value: TagState;
+  placeholder?: string;
 };
 
-const TaggedInput = ({ tagCharCodes = [13], onChange, value }: TaggedInputProps) => {
-  const [textboxValue, setTextboxValue] = useState('');
+const TaggedInput = ({
+  tagCharCodes = [13, 188], // Enter, comma
+  onChange,
+  value,
+  placeholder,
+}: TaggedInputProps) => {
+  // const [textboxValue, setTextboxValue] = useState(value.incomplete);
   const [isBackspaceReleased, setIsBackspaceReleased] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useHotkeys(
+    '/',
+    () => {
+      inputRef.current?.focus();
+    },
+    { preventDefault: true }
+  );
 
   const onFieldChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       e.preventDefault();
-      setTextboxValue(e.target.value);
-      onChange({ tags: value.tags, incomplete: e.target.value });
+      // setTextboxValue(e.target.value);
+      onChange({ tags: value.tags, incomplete: e.currentTarget.value });
     },
     [onChange, value.tags]
   );
@@ -44,18 +62,17 @@ const TaggedInput = ({ tagCharCodes = [13], onChange, value }: TaggedInputProps)
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (tagCharCodes.includes(e.keyCode)) {
         e.preventDefault();
-        onChange({
-          tags: unique([...value.tags.map(trim), e.currentTarget.value.trim()]).filter(
-            x => x.length > 0
-          ),
-          incomplete: '',
-        });
-        setTextboxValue('');
+        if (e.currentTarget.value.trim() !== '') {
+          onChange({
+            tags: unique([...value.tags.map(trim), e.currentTarget.value.trim()]),
+            incomplete: '',
+          });
+        }
       }
 
       if (
         e.key === 'Backspace' &&
-        !textboxValue.length &&
+        !e.currentTarget.value.length &&
         value.tags.length &&
         isBackspaceReleased
       ) {
@@ -69,14 +86,7 @@ const TaggedInput = ({ tagCharCodes = [13], onChange, value }: TaggedInputProps)
 
       setIsBackspaceReleased(false);
     },
-    [
-      isBackspaceReleased,
-      onChange,
-      tagCharCodes,
-      textboxValue.length,
-      value.incomplete,
-      value.tags,
-    ]
+    [isBackspaceReleased, onChange, tagCharCodes, value.incomplete, value.tags]
   );
 
   const deleteTag = (tag: string) => {
@@ -89,16 +99,25 @@ const TaggedInput = ({ tagCharCodes = [13], onChange, value }: TaggedInputProps)
   const onKeyUp = useCallback(() => setIsBackspaceReleased(true), []);
 
   return (
-    <div className="inline-flex">
+    <div className="tagged-input inline-flex items-center gap-1 pl-1">
       {value.tags.map(tag => (
-        <Tag tag={tag} key={tag} onDelete={() => deleteTag(tag)} />
+        <Tag
+          tag={tag}
+          key={tag}
+          onDelete={() => {
+            deleteTag(tag);
+            inputRef.current?.focus();
+          }}
+        />
       ))}
       <input
         type="text"
+        ref={inputRef}
         onChange={onFieldChange}
         onKeyUp={onKeyUp}
         onKeyDown={onFieldKeyDown}
-        value={textboxValue}
+        value={value.incomplete}
+        placeholder={value.tags.length === 0 ? placeholder : ''}
       />
     </div>
   );

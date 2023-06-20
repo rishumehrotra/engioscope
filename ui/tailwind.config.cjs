@@ -32,6 +32,7 @@ module.exports = {
           'page': withOpacity('--color-bg-page'),
           'page-content': withOpacity('--color-bg-page-content'),
           'backdrop': withOpacity('--color-bg-backdrop'),
+          'tag': withOpacity('--color-bg-tag'),
           'success': withOpacity('--color-bg-success'),
           'danger': withOpacity('--color-bg-danger'),
         },

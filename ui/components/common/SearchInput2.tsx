@@ -1,23 +1,13 @@
 import React, { useCallback, useMemo } from 'react';
-import { equals, init, last } from 'rambda';
-import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
+import { init, last } from 'rambda';
+import { asStringArray, useDebouncedQueryParam } from '../../hooks/use-query-param.js';
 import { useTabs } from '../../hooks/use-tabs.js';
 import type { TagState } from '../TaggedInput.jsx';
 import TaggedInput from '../TaggedInput.jsx';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const debounce = <F extends (...x: any[]) => any>(fn: F, ms = 250) => {
-  let timeoutId: ReturnType<typeof setTimeout>;
-
-  return (...args: Parameters<F>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), ms);
-  };
-};
-
 const SearchInput2: React.FC = () => {
   const [selectedTab] = useTabs();
-  const [search, setSearchTerm] = useQueryParam('search', asStringArray);
+  const [search, setSearchTerm] = useDebouncedQueryParam('search', asStringArray);
 
   const taggedInputValue: TagState = useMemo(() => {
     return {
@@ -26,30 +16,28 @@ const SearchInput2: React.FC = () => {
     };
   }, [search]);
 
-  const debouncedSetSearchTerm = useMemo(() => debounce(setSearchTerm), [setSearchTerm]);
-
   const onChange = useCallback(
     (tagState: TagState) => {
-      const searches = [...tagState.tags, tagState.incomplete];
-
-      if (!equals(init(search || []), tagState.tags)) {
-        setSearchTerm(searches);
+      if (tagState.tags.length === 0 && tagState.incomplete === '') {
+        // eslint-disable-next-line unicorn/no-useless-undefined
+        setSearchTerm(undefined);
         return;
       }
 
-      if (searches.length) {
-        debouncedSetSearchTerm(searches);
-      } else {
-        // eslint-disable-next-line unicorn/no-useless-undefined
-        setSearchTerm(undefined);
-      }
+      setSearchTerm([...tagState.tags, tagState.incomplete]);
     },
-    [debouncedSetSearchTerm, search, setSearchTerm]
+    [setSearchTerm]
   );
 
   if (!selectedTab) return null;
 
-  return <TaggedInput onChange={onChange} value={taggedInputValue} />;
+  return (
+    <TaggedInput
+      onChange={onChange}
+      value={taggedInputValue}
+      placeholder="Search repositories"
+    />
+  );
 };
 
 export default SearchInput2;
