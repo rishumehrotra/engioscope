@@ -38,3 +38,13 @@ export const mapObj =
     Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, xform(value)]));
 
 export const merge = <T>(obj1: T, obj2: T) => ({ ...obj1, ...obj2 });
+
+export const combinedQualityGate = (qualityGateStatus: string[]) => {
+  if (qualityGateStatus.length === 0) return 'unknown';
+  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
+  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
+
+  return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
+    .map(toPercentage)
+    .getOr('-')} pass`;
+};

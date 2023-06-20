@@ -15,7 +15,7 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { divide, exists, oneWeekInMs } from '../../shared/utils.js';
+import { combinedQualityGate, divide, exists, oneWeekInMs } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -23,6 +23,7 @@ import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getLanguageColor } from '../language-colors.js';
+import { getActiveRepos, type filteredReposInputParser } from './active-repos.js';
 
 export const lastAlertHistoryFetchDate = async (options: {
   collectionName: string;
@@ -1097,11 +1098,12 @@ export const getReposSortedByCodeQuality = async (
 type ReposWithSonarSetup = {
   repositoryId: string;
   repositoryName: string;
-  collectionName: string;
-  project: string;
   sonarProjects: {
     id: Types.ObjectId;
     qualityGateDetails: string;
+    name: string;
+    key: string;
+    connectionId: Types.ObjectId;
   }[];
 };
 
@@ -1149,103 +1151,133 @@ export const getReposWithSonarSetup = async (
 ) => {
   const { collectionName, project } = fromContext(queryContext);
 
-  const repos = await SonarProjectsForRepoModel.aggregate<ReposWithSonarSetup>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'repositoryId': { $in: repositoryIds },
-        'sonarProjectIds.0': { $exists: true },
-      },
-    },
-    {
-      $unwind: {
-        path: '$sonarProjectIds',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    {
-      $lookup: {
-        from: 'sonarmeasures',
-        let: {
+  const [repos, connections] = await Promise.all([
+    SonarProjectsForRepoModel.aggregate<ReposWithSonarSetup>([
+      {
+        $match: {
           collectionName,
           project,
-          sonarProjectId: '$sonarProjectIds',
+          'sonarProjectIds.0': { $exists: true },
+          'repositoryId': { $in: repositoryIds },
         },
-        pipeline: [
-          { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
-          { $sort: { fetchDate: -1 } },
-          { $limit: 1 },
-        ],
-        as: 'sonarMeasures',
       },
-    },
-    {
-      $unwind: {
-        path: '$sonarMeasures',
-        preserveNullAndEmptyArrays: false,
+      {
+        $unwind: {
+          path: '$sonarProjectIds',
+          preserveNullAndEmptyArrays: false,
+        },
       },
-    },
-    {
-      $addFields: {
-        sonarMeasures: {
-          $filter: {
-            input: '$sonarMeasures.measures',
-            cond: { $eq: ['$$this.metric', 'quality_gate_details'] },
+      {
+        $lookup: {
+          from: 'sonarprojects',
+          let: {
+            collectionName,
+            project,
+            sonarProjectId: '$sonarProjectIds',
           },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
+            { $sort: { fetchDate: -1 } },
+            { $limit: 1 },
+            { $project: { name: 1, key: 1, connectionId: 1 } },
+          ],
+          as: 'sonarProjectName',
         },
       },
-    },
-    {
-      $unwind: {
-        path: '$sonarMeasures',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    { $addFields: { status: '$sonarMeasures.value.level' } },
-    {
-      $group: {
-        _id: {
-          collectionName: '$collectionName',
-          project: '$project',
-          repositoryId: '$repositoryId',
+      {
+        $addFields: {
+          sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] },
+          sonarConnectionId: { $arrayElemAt: ['$sonarProjectName.connectionId', 0] },
+          sonarProjectKey: { $arrayElemAt: ['$sonarProjectName.key', 0] },
         },
-        sonarProjects: {
-          $push: {
-            id: '$sonarProjectIds',
-            qualityGateDetails: '$sonarMeasures.value',
+      },
+      {
+        $lookup: {
+          from: 'sonarmeasures',
+          let: {
+            collectionName,
+            project,
+            sonarProjectId: '$sonarProjectIds',
           },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
+            { $sort: { fetchDate: -1 } },
+            { $limit: 1 },
+          ],
+          as: 'sonarMeasures',
         },
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        result: 1,
-        collectionName: '$_id.collectionName',
-        project: '$_id.project',
-        repositoryId: '$_id.repositoryId',
-        sonarProjects: 1,
+      {
+        $unwind: {
+          path: '$sonarMeasures',
+          preserveNullAndEmptyArrays: false,
+        },
       },
-    },
-    {
-      $lookup: {
-        from: 'repositories',
-        let: { repositoryId: '$repositoryId' },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              'project.name': project,
-              '$expr': { $eq: ['$id', '$$repositoryId'] },
+      {
+        $addFields: {
+          sonarMeasures: {
+            $filter: {
+              input: '$sonarMeasures.measures',
+              cond: { $eq: ['$$this.metric', 'quality_gate_details'] },
             },
           },
-        ],
-        as: 'result',
+        },
       },
-    },
-    { $addFields: { repositoryName: { $arrayElemAt: ['$result.name', 0] } } },
-    { $project: { _id: 0, result: 0 } },
+      {
+        $unwind: {
+          path: '$sonarMeasures',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      { $addFields: { status: '$sonarMeasures.value.level' } },
+      {
+        $group: {
+          _id: {
+            collectionName: '$collectionName',
+            project: '$project',
+            repositoryId: '$repositoryId',
+          },
+          sonarProjects: {
+            $push: {
+              id: '$sonarProjectIds',
+              qualityGateDetails: '$sonarMeasures.value',
+              name: '$sonarProjectName',
+              key: '$sonarProjectKey',
+              connectionId: '$sonarConnectionId',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          result: 1,
+          collectionName: '$_id.collectionName',
+          project: '$_id.project',
+          repositoryId: '$_id.repositoryId',
+          sonarProjects: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: 'repositories',
+          let: { repositoryId: '$repositoryId' },
+          pipeline: [
+            {
+              $match: {
+                collectionName,
+                'project.name': project,
+                '$expr': { $eq: ['$id', '$$repositoryId'] },
+              },
+            },
+          ],
+          as: 'result',
+        },
+      },
+      { $addFields: { repositoryName: { $arrayElemAt: ['$result.name', 0] } } },
+      { $project: { _id: 0, result: 0 } },
+    ]),
+    getConnections('sonar'),
   ]);
 
   // eslint-disable-next-line no-useless-assign/no-useless-assign
@@ -1258,16 +1290,51 @@ export const getReposWithSonarSetup = async (
       };
     }
 
+    const projects = repo.sonarProjects.map(sonarProject => {
+      const status = JSON.parse(sonarProject.qualityGateDetails)?.level;
+
+      const connectionUrl = connections.find(
+        connection => connection._id.toString() === sonarProject.connectionId.toString()
+      )?.url;
+
+      return {
+        id: sonarProject.id,
+        name: sonarProject.name,
+        status: status ? parseQualityGateStatus(status) : 'Unknown',
+        url: connectionUrl ? `${connectionUrl}/dashboard?id=${sonarProject.key}` : null,
+      };
+    });
+
     return {
       repositoryId: repo.repositoryId,
       repositoryName: repo.repositoryName,
-      status: repo.sonarProjects.map(sonarProject => {
-        const status = JSON.parse(sonarProject.qualityGateDetails)?.level;
-
-        return status ? parseQualityGateStatus(status) : 'Unknown';
-      }),
+      sonarProjects: projects,
+      status: combinedQualityGate(
+        projects.map(project => (project ? project.status : 'Unknown'))
+      ),
     };
   });
 
   return reposWithSonarQualityGate;
+};
+
+export const getSonarRepos = async ({
+  queryContext,
+  searchTerms,
+  groupsIncluded,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+
+  const [sonarRepos, nonSonarRepos] = await Promise.all([
+    getReposWithSonarSetup(
+      queryContext,
+      activeRepos.map(repo => repo.id)
+    ),
+    getReposWithoutSonarSetup(
+      queryContext,
+      activeRepos.map(repo => repo.id)
+    ),
+  ]);
+
+  return { sonarRepos, nonSonarRepos };
 };

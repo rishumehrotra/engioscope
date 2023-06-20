@@ -2,7 +2,7 @@ import { it, expect } from 'vitest';
 import { createRepo } from '../../test-helpers/create-repo.js';
 import { createBuild } from '../../test-helpers/create-build.js';
 import { needsDB } from '../../test-helpers/mongo-memory-server.js';
-import { getActiveRepos } from '../repo-listing.js';
+import { getActiveRepos } from '../active-repos.js';
 import { createCommit } from '../../test-helpers/create-commit.js';
 
 needsDB();

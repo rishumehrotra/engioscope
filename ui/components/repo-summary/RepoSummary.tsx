@@ -2,7 +2,7 @@ import { last, multiply } from 'rambda';
 import React, { lazy, useCallback, useMemo } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
-import useQueryParam, { asString } from '../../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../../hooks/use-query-param.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
@@ -16,6 +16,8 @@ import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
+
+const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
 
 type RepoSummaryProps = {
   queryPeriodDays: number;
@@ -61,8 +63,8 @@ const useCreateDownloadUrl = () => {
 const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
-
   const summaries = useSse<SummaryStats>(sseUrl);
+  const [showSonarDrawer] = useQueryParam('sonar-drawer', asBoolean);
 
   return (
     <>
@@ -102,6 +104,13 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                     )
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Repositories',
+                enabledIf:
+                  showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
+                body: <SonarReposDrawer />,
+              }}
             />
           </div>
           <div>
@@ -139,6 +148,13 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                     )
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Repositories',
+                enabledIf:
+                  showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
+                body: <SonarReposDrawer />,
+              }}
             />
           </div>
           <div>
@@ -168,6 +184,13 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
               graphColor={decreaseIsBetter(
                 summaries.weeklySonarProjectsCount?.map(s => s.failedProjects) || []
               )}
+              onClick={{
+                open: 'drawer',
+                heading: 'Repositories',
+                enabledIf:
+                  showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
+                body: <SonarReposDrawer />,
+              }}
             />
           </div>
         </SummaryCard>
