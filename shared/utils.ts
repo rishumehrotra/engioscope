@@ -50,3 +50,12 @@ export const debounce = <F extends (...x: any[]) => any>(fn: F, ms = 250) => {
     timeoutId = setTimeout(() => fn(...args), ms);
   };
 };
+export const combinedQualityGate = (qualityGateStatus: string[]) => {
+  if (qualityGateStatus.length === 0) return 'unknown';
+  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
+  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
+
+  return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
+    .map(toPercentage)
+    .getOr('-')} pass`;
+};
