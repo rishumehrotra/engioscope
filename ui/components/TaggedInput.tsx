@@ -30,6 +30,7 @@ type TaggedInputProps = {
   onChange: (x: TagState) => void;
   value: TagState;
   placeholder?: string;
+  inputClassName?: string;
 };
 
 const TaggedInput = ({
@@ -37,6 +38,7 @@ const TaggedInput = ({
   onChange,
   value,
   placeholder,
+  inputClassName,
 }: TaggedInputProps) => {
   // const [textboxValue, setTextboxValue] = useState(value.incomplete);
   const [isBackspaceReleased, setIsBackspaceReleased] = useState(false);
@@ -118,6 +120,7 @@ const TaggedInput = ({
         onKeyDown={onFieldKeyDown}
         value={value.incomplete}
         placeholder={value.tags.length === 0 ? placeholder : ''}
+        className={inputClassName}
       />
     </div>
   );
