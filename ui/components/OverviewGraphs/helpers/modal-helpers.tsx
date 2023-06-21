@@ -1,7 +1,7 @@
 import { prop } from 'rambda';
 import type { ReactNode } from 'react';
 import React, { useMemo, useCallback, useState } from 'react';
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tooltip';
 import { asc, byDate } from 'sort-lib';
 import type { UIWorkItem, UIWorkItemType } from '../../../../shared/types.js';
 import { divide } from '../../../../shared/utils.js';
@@ -70,8 +70,8 @@ export const WorkItemLinkForModal: React.FC<WorkItemLinkForModalProps> = ({
     className="text-blue-800 hover:underline inline-flex items-start"
     target="_blank"
     rel="noreferrer"
-    data-html
-    data-tip={tooltip}
+    data-tooltip-id="react-tooltip"
+    data-tooltip-html={tooltip}
   >
     <img
       className="inline-block mr-2 mt-1"
@@ -265,11 +265,9 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
         className="text-blue-800 hover:underline inline-flex items-start"
         target="_blank"
         rel="noreferrer"
-        data-for={domId}
-        data-tip
+        data-tooltip-id={domId}
         onMouseOver={onHover}
         onFocus={onHover}
-        // {...tooltipProps}
       >
         <img
           className="inline-block mr-2 mt-1"
@@ -279,8 +277,8 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
         />
         <span>{`${id}: ${title}`}</span>
       </a>
-      <ReactTooltip id={domId} place="bottom">
-        <div className="w-72 pt-2">
+      <Tooltip id={domId} place="bottom" style={{ borderRadius: '0.375rem' }}>
+        <div className="w-72 pt-2 z-40">
           <img
             src={matchingWit?.icon || ''}
             alt={`Icon fro ${matchingWit?.name[1] || workItemType}`}
@@ -361,7 +359,7 @@ const WorkItemLinkForModalv2: React.FC<WorkItemLinkForModalv2Props> = ({
             </div>
           )}
         </div>
-      </ReactTooltip>
+      </Tooltip>
     </>
   );
 };

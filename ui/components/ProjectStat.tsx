@@ -56,8 +56,8 @@ const ProjectStat: React.FC<ProjectStatProps> = ({ topStats, childStats, onClick
           ? topStats.map(({ title, value, tooltip }) => (
               <div
                 key={`${title}-${value}`}
-                data-tip={tooltip}
-                data-html
+                data-tooltip-id="react-tooltip"
+                data-tooltip-html={tooltip}
                 className={`mx-2 flex flex-col justify-end ${childStats ? 'mr-4' : ''}`}
               >
                 <h3 className="text-xs font-medium">{title}</h3>
@@ -76,8 +76,8 @@ const ProjectStat: React.FC<ProjectStatProps> = ({ topStats, childStats, onClick
         {childStats
           ? childStats.map(({ title, value, tooltip }) => (
               <div
-                data-tip={tooltip}
-                data-html
+                data-tooltip-id="react-tooltip"
+                data-tooltip-html={tooltip}
                 key={`${title}-${value}`}
                 className="mx-2 flex flex-col h-full justify-end"
               >

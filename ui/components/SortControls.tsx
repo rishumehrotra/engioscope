@@ -51,7 +51,10 @@ const SortControls: React.FC<SortControlsProps> = ({
           className="text-base font-medium text-gray-500 flex items-center justify-end
          cursor-pointer ml-1 hover:bg-white hover:shadow p-1 rounded border border-transparent hover:border-gray-400"
           onClick={toggleSortDirection}
-          data-tip={`Sort ${currentSortDirection === 'asc' ? 'descending' : 'ascending'}`}
+          data-tooltip-id="react-tooltip"
+          data-tooltip-content={`Sort ${
+            currentSortDirection === 'asc' ? 'descending' : 'ascending'
+          }`}
         >
           {currentSortDirection === 'asc' ? <Ascending /> : <Descending />}
         </button>

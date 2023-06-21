@@ -1,5 +1,5 @@
 import React, { Fragment, useCallback, useState } from 'react';
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
 import { relativeTime, num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.jsx';
@@ -44,8 +44,9 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
     return (
       <span
         className="uppercase text-xs px-1 border-red-300 bg-red-100 rounded-sm text-red-500 border"
-        data-tip="None of the builds used the central build template"
-        data-place="bottom"
+        data-tooltip-id="react-tooltip"
+        data-tooltip-content="None of the builds used the central build template"
+        data-tooltip-place="bottom"
       >
         No
       </span>
@@ -61,12 +62,11 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
         }`}
         onMouseOver={() => setHasHovered(true)}
         onFocus={() => setHasHovered(true)}
-        data-tip
-        data-for={domId}
+        data-tooltip-id={domId}
       >
         Yes
       </span>
-      <ReactTooltip id={domId} place="bottom">
+      <Tooltip id={domId} place="bottom" style={{ borderRadius: '0.375rem' }}>
         <div className="w-72 pt-2 text-left whitespace-normal">
           <div className="mb-2 leading-snug">
             {centralTemplateRuns >= totalRuns ? (
@@ -118,7 +118,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
             </>
           ) : null}
         </div>
-      </ReactTooltip>
+      </Tooltip>
     </>
   );
 };
@@ -193,7 +193,8 @@ const Builds: React.FC<{
                             href={pipeline.url}
                             target="_blank"
                             rel="noreferrer"
-                            data-tip={pipeline.definitionName}
+                            data-tooltip-id="react-tooltip"
+                            data-tooltip-content={pipeline.definitionName}
                             className="link-text"
                           >
                             <span className="truncate w-96 block">
@@ -202,14 +203,16 @@ const Builds: React.FC<{
                                 <span
                                   className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
                                   rounded-sm text-red-700 border font-semibold no-underline`}
-                                  data-tip="This pipeline is configured using the UI instead of a YAML file"
+                                  data-tooltip-id="react-tooltip"
+                                  data-tooltip-content="This pipeline is configured using the UI instead of a YAML file"
                                 >
                                   UI
                                 </span>
                               ) : null}
                               {pipeline.type === 'recent' ? (
                                 <span
-                                  data-tip={`${num(
+                                  data-tooltip-id="react-tooltip"
+                                  data-tooltip-content={`${num(
                                     pipeline.prCount
                                   )} builds triggered by pull requests`}
                                 >
@@ -240,10 +243,10 @@ const Builds: React.FC<{
                         {...(pipeline.type === 'old'
                           ? {}
                           : {
-                              'data-tip': `${num(
+                              'data-tooltip-id': 'react-tooltip',
+                              'data-tooltip-html': `${num(
                                 pipeline.totalSuccessfulBuilds
                               )} successful builds`,
-                              'data-html': true,
                             })}
                       >
                         {pipeline.type === 'old'
@@ -287,7 +290,8 @@ const Builds: React.FC<{
                               </span>
                               <div
                                 className="text-gray-400 text-xs ml-4 mr-2"
-                                data-tip={`${shortDate(
+                                data-tooltip-id="react-tooltip"
+                                data-tooltip-content={`${shortDate(
                                   new Date(pipeline.lastBuildTimestamp)
                                 )}, ${new Date(
                                   pipeline.lastBuildTimestamp

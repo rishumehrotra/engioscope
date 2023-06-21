@@ -145,8 +145,10 @@ const CollectionsBuildsSummary: React.FC<{
                     .getOr('-')}
                 </td>
                 <td
-                  data-html
-                  data-tip={`${num(project.centralTemplatePipeline.central)} out of ${num(
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-html={`${num(
+                    project.centralTemplatePipeline.central
+                  )} out of ${num(
                     project.pipelines.totalCount
                   )} build pipelines use the central template on the master branch<br>
                         ${num(project.centralTemplateUsage.templateUsers)} out of ${num(

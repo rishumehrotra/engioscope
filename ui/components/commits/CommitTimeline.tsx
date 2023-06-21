@@ -40,7 +40,8 @@ const CommitTimeline: React.FC<CommitTimelineProps> = ({
             y={svgHeight - barHeight}
             width={barWidth}
             height={barHeight}
-            data-tip={`${commitsForThisDay || 0} commit${
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content={`${commitsForThisDay || 0} commit${
               commitsForThisDay === 1 ? '' : 's'
             } on ${shortDate(date)}`}
           />

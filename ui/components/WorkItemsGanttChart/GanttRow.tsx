@@ -65,8 +65,8 @@ const RevisionBar: React.FC<RevisionBarProps> = memo(
           height={barHeight}
           fill={color}
           key={revision.date}
-          data-tip={revisionTooltip(revision, nextRevision)}
-          data-html
+          data-tooltip-id="react-tooltip"
+          data-tooltip-html={revisionTooltip(revision, nextRevision)}
         />
         {width > 25 ? (
           <foreignObject
@@ -202,8 +202,11 @@ export const GanttRow: React.FC<GanttRowProps> = memo(
                   style={{ width: `${textWidth}px` }}
                   target="_blank"
                   rel="noreferrer"
-                  data-tip={rowItemTooltip(row.workItem, workItemType(row.workItem))}
-                  data-html
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-html={rowItemTooltip(
+                    row.workItem,
+                    workItemType(row.workItem)
+                  )}
                 >
                   <img
                     src={workItemType(row.workItem).icon}

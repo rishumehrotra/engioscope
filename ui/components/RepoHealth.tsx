@@ -297,9 +297,9 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
         <p className="pl-5">
           <span
             className="bg-amber-300 text-xs inline-block py-1 px-2 uppercase rounded-md"
-            data-tip={`This repository doesn't count towards stats,<br />
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={`This repository doesn't count towards stats,<br />
             as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}
-            data-html
           >
             Inactive
           </span>

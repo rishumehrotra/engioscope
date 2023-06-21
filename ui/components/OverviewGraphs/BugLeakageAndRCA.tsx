@@ -183,8 +183,8 @@ const BugLeakageGraphBars: React.FC<BugLeakageGraphBarsProps> = ({
                     ),
                   })
                 }
-                data-tip={barTooltip(rca, wis)}
-                data-html
+                data-tooltip-id="react-tooltip"
+                data-tooltip-html={barTooltip(rca, wis)}
               >
                 <div className="flex items-center justify-end">
                   <span className="truncate">{rca}</span>

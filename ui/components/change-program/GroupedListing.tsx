@@ -84,8 +84,8 @@ const Task: React.FC<TaskProps> = ({
       key={task.id}
       className="bg-gray-50 hover:bg-gray-100"
       ref={ref}
-      data-tip={taskTooltip(task)}
-      data-html
+      data-tooltip-id="react-tooltip"
+      data-tooltip-html={taskTooltip(task)}
     >
       <td
         className={`text-lg sticky z-10 left-0 ${
@@ -203,11 +203,11 @@ const ActivitySubGroup: React.FC<ActivitySubgroupProps> = ({
                 : ''
             }`}
             {...mouseEvents(index)}
-            data-tip={rollupTooltip(
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={rollupTooltip(
               subgroup.tasks.filter(t => t.weekIndex === index).map(t => t.task),
               weeks[index]
             )}
-            data-html
           >
             <span
               className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold ${styleForState(
@@ -296,14 +296,14 @@ const ActivityGroupItem: React.FC<ActivityGroupItemProps> = ({
                 : ''
             }`}
             {...mouseEvents(index)}
-            data-tip={rollupTooltip(
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={rollupTooltip(
               group.subgroups
                 .flatMap(s => s.tasks)
                 .filter(t => t.weekIndex === index)
                 .map(t => t.task),
               weeks[index]
             )}
-            data-html
           >
             <span
               className={`px-2 py-1 rounded-lg text-sm border-2 font-semibold border-transparent ${styleForState(

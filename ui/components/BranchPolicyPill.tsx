@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tooltip';
 import { trpc } from '../helpers/trpc.js';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 
@@ -78,35 +78,38 @@ const BranchPolicyPill: React.FC<{
         }`}
         onMouseOver={() => setHasHovered(true)}
         onFocus={() => setHasHovered(true)}
-        data-tip
-        data-for={domId}
+        data-tooltip-id={domId}
       >
         Policies
       </span>
-      <ReactTooltip id={domId} place="bottom">
-        <div className="w-72 pt-2 text-left whitespace-normal">
-          <div className="mb-2 leading-snug">
-            <strong>Branch policies</strong>
+      <Tooltip
+        id={domId}
+        place="bottom"
+        className="w-72 text-left whitespace-normal"
+        style={{ borderRadius: '0.375rem' }}
+      >
+        <div className="leading-snug text-sm mb-1">
+          <strong>Branch policies</strong>
+
+          <ul className="mt-2">
             {Object.entries(policyNames).map(([p, displayName]) => {
               const policyName = p as PolicyNames;
 
               return (
-                <div key={policyName}>
-                  <ul className="w-72">
-                    <span
-                      className={`rounded inline-block w-2 h-2 mr-1 ${policyClassName(
-                        policyName
-                      )}`}
-                    />
-                    {displayName}
-                    {isOptional(policyName) ? ' (optional)' : null}
-                  </ul>
-                </div>
+                <li key={policyName} className="w-72">
+                  <span
+                    className={`rounded inline-block w-2 h-2 mr-2 ${policyClassName(
+                      policyName
+                    )}`}
+                  />
+                  {displayName}
+                  {isOptional(policyName) ? ' (optional)' : null}
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
-      </ReactTooltip>
+      </Tooltip>
     </>
   );
 };

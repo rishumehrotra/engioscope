@@ -101,7 +101,11 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ heading, table 
             <thead>
               <tr>
                 {tableData.columns.map((col, index) => (
-                  <th data-tip={col?.tooltip} key={col?.label || 'heading'}>
+                  <th
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content={col?.tooltip}
+                    key={col?.label || 'heading'}
+                  >
                     {col?.label && (
                       <button onClick={onColumnClick(index)}>
                         {col.label}
@@ -732,7 +736,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
               value: divide(codeQuality.configured, repos).getOr(0),
               content: (
                 <div
-                  data-tip={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}
                 >
                   {repos
                     ? reposMetric(
@@ -749,7 +754,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
               value: divide(codeQuality.pass, codeQuality.sonarProjects).getOr(0),
               content: (
                 <div
-                  data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
                 >
                   {codeQuality.sonarProjects ? (
                     <LabelWithSparkline
@@ -770,7 +776,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
               value: divide(codeQuality.warn, codeQuality.sonarProjects).getOr(0),
               content: (
                 <div
-                  data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
                 >
                   {codeQuality.sonarProjects ? (
                     <LabelWithSparkline
@@ -791,7 +798,8 @@ const CodeQualityMetrics: React.FC<{ groups: SummaryMetrics['groups'] }> = ({
               value: divide(codeQuality.fail, codeQuality.sonarProjects).getOr(0),
               content: (
                 <div
-                  data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
                 >
                   {codeQuality.sonarProjects ? (
                     <LabelWithSparkline

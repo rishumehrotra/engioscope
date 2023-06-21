@@ -81,7 +81,8 @@ const BuildInsights: React.FC<{
                     {task.continueOnError ? (
                       <span
                         className="bg-orange-500 rounded-full w-2 h-2 inline-block ml-2"
-                        data-tip="This task is configured to continue on error"
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-content="This task is configured to continue on error"
                       />
                     ) : null}
                   </td>

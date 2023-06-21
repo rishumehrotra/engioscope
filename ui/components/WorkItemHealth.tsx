@@ -105,8 +105,8 @@ const WorkItem: React.FC<WorkItemProps> = ({
             className="font-bold text-lg truncate max-w-full inline-block link-text"
             target="_blank"
             rel="noreferrer"
-            data-tip={titleTooltip(workItem, workItemType(workItem))}
-            data-html
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={titleTooltip(workItem, workItemType(workItem))}
           >
             <img
               className="inline-block -mt-1 mr-1"

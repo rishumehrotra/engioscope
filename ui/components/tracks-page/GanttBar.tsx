@@ -14,8 +14,8 @@ export const GanttBar: React.FC<GanttBarProps> = ({
   className,
 }) => (
   <ul
-    data-tip={tooltip}
-    data-html
+    data-tooltip-id="react-tooltip"
+    data-tooltip-html={tooltip}
     className={`flex gap-0.5 text-xs font-semibold ${className || ''}`}
     style={{
       flex: `0 0 ${maxTime}px`,

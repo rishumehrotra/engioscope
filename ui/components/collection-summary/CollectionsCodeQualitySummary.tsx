@@ -113,7 +113,8 @@ const CollectionsCodeQualitySummary: React.FC<{
 
                 <td
                   className="bg-slate-100"
-                  data-tip={`${project.reposWithSonarQube} of ${pluralise(
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${project.reposWithSonarQube} of ${pluralise(
                     project.totalActiveRepos,
                     'repo has',
                     'repos have'
@@ -131,7 +132,10 @@ const CollectionsCodeQualitySummary: React.FC<{
                 </td>
                 <td
                   className="bg-slate-100"
-                  data-tip={`${project.sonarProjects.passedProjects} of ${pluralise(
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${
+                    project.sonarProjects.passedProjects
+                  } of ${pluralise(
                     project.sonarProjects.totalProjects,
                     'sonar project has',
                     'sonar projects have'
@@ -152,7 +156,10 @@ const CollectionsCodeQualitySummary: React.FC<{
                 </td>
                 <td
                   className="bg-slate-100"
-                  data-tip={`${project.sonarProjects.failedProjects} of ${pluralise(
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${
+                    project.sonarProjects.failedProjects
+                  } of ${pluralise(
                     project.sonarProjects.totalProjects,
                     'sonar project has',
                     'sonar projects have'
@@ -173,12 +180,14 @@ const CollectionsCodeQualitySummary: React.FC<{
                 </td>
 
                 <td
-                  data-tip={`${num(project.branchPolicy.conforms)} out of ${pluralise(
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-html={`${num(
+                    project.branchPolicy.conforms
+                  )} out of ${pluralise(
                     project.branchPolicy.total,
                     'artifact is',
                     'artifacts are'
                   )} from branches that conform<br />to the branch policy.`}
-                  data-html
                 >
                   {divide(project.branchPolicy.conforms, project.branchPolicy.total)
                     .map(toPercentage)

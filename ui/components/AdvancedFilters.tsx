@@ -142,7 +142,8 @@ const AdvancedFilters: React.FC = () => {
         className={`h-full flex items-center hover:bg-white hover:shadow p-1 rounded
         border border-transparent hover:border-gray-400 cursor-pointer
         ${isOpen ? 'bg-white shadow' : ''}`}
-        data-tip="Advanced filters"
+        data-tooltip-id="react-tooltip"
+        data-tooltip-content="Advanced filters"
       >
         <Filters className="text-gray-500 border-gray-800" />
       </button>

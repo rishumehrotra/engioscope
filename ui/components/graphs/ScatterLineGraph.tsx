@@ -124,8 +124,8 @@ const Bar = <T extends {}>({
               r={bubbleSize}
               fill={fillColorWithJitter}
               stroke="0"
-              data-html
-              data-tip={tooltip(item, label, yPoint)}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-html={tooltip(item, label, yPoint)}
             />
           </a>
         );
@@ -138,7 +138,8 @@ const Bar = <T extends {}>({
           y2={yCoord(averageValueOfItems)}
           stroke="rgba(255,0,0,0.6)"
           strokeWidth={5}
-          data-tip={`Average ${label}: ${prettyMS(averageValueOfItems)} of ${
+          data-tooltip-id="react-tooltip"
+          data-tooltip-content={`Average ${label}: ${prettyMS(averageValueOfItems)} of ${
             items.length
           } items`}
         />
@@ -151,7 +152,10 @@ const Bar = <T extends {}>({
           y2={yCoord(medianValue)}
           stroke="rgba(0,0,255,0.6)"
           strokeWidth={5}
-          data-tip={`Median ${label}: ${prettyMS(medianValue)} of ${items.length} items`}
+          data-tooltip-id="react-tooltip"
+          data-tooltip-content={`Median ${label}: ${prettyMS(medianValue)} of ${
+            items.length
+          } items`}
         />
       ) : null}
     </g>

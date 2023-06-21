@@ -76,8 +76,12 @@ const ExtendedLabelWithSparkline = <T extends {}>({
   return (
     <span
       className="grid"
-      data-tip={tooltip(tooltipLabel, valueToLabel(thisMonthValue), previousMonthStats)}
-      data-html
+      data-tooltip-id="react-tooltip"
+      data-tooltip-html={tooltip(
+        tooltipLabel,
+        valueToLabel(thisMonthValue),
+        previousMonthStats
+      )}
     >
       <span className="inline-flex items-end gap-x-0.5">
         {valueToLabel(thisMonthValue)}

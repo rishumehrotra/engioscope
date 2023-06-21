@@ -90,43 +90,50 @@ const FlowMetrics: React.FC<{
             <th className="w-1/12" />
             <th
               className="text-xs font-semibold py-3 w-1/12"
-              data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`Number of new work items added in the last ${queryPeriodDays} days`}
             >
               New
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip={`Number of work items completed in the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`Number of work items completed in the last ${queryPeriodDays} days`}
             >
               Velocity
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
             >
               Cycle time
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average time taken to take a work item to production after development is complete"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Average time taken to take a work item to production after development is complete"
             >
               CLT
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Fraction of overall time that work items spend in work centers on average"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Fraction of overall time that work items spend in work centers on average"
             >
               Flow efficiency
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip={`WIP items over the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`WIP items over the last ${queryPeriodDays} days`}
             >
               WIP trend
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average age of work items in progress"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Average age of work items in progress"
             >
               WIP age
             </th>
@@ -250,43 +257,50 @@ const QualityMetrics: React.FC<{
             <th className="w-1/12" />
             <th
               className="text-xs font-semibold py-3 w-1/12"
-              data-tip={`Number of bugs opened in the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`Number of bugs opened in the last ${queryPeriodDays} days`}
             >
               New
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip={`Number of bugs closed in the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`Number of bugs closed in the last ${queryPeriodDays} days`}
             >
               Fixed
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average time taken to close a bug"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Average time taken to close a bug"
             >
               Cycle time
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average time taken to close a bug once development is complete"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Average time taken to close a bug once development is complete"
             >
               CLT
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Fraction of overall time that work items spend in work centers on average"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Fraction of overall time that work items spend in work centers on average"
             >
               Flow efficiency
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip={`WIP items over the last ${queryPeriodDays} days`}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={`WIP items over the last ${queryPeriodDays} days`}
             >
               WIP trend
             </th>
             <th
               className="text-xs font-semibold w-1/12"
-              data-tip="Average age of work-in-progress bugs"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Average age of work-in-progress bugs"
             >
               WIP age
             </th>
@@ -436,7 +450,8 @@ const HealthMetrics: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             <div
               className="text-xs font-semibold mb-2"
-              data-tip="Number of unit / components tests running in build pipelines"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content="Number of unit / components tests running in build pipelines"
             >
               Tests
               <div className="font-semibold text-xl">
@@ -451,7 +466,8 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold mb-2"
-                data-tip="Percentage of code covered by tests"
+                data-tooltip-id="react-tooltip"
+                data-tooltip-content="Percentage of code covered by tests"
               >
                 Coverage
                 <div className="text-lg">
@@ -468,7 +484,8 @@ const HealthMetrics: React.FC<{
               <Fragment key={stage.name}>
                 <div
                   className="text-xs font-semibold"
-                  data-tip={`Percentage of pipelines having ${stage.name}`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`Percentage of pipelines having ${stage.name}`}
                 >
                   {`Pipelines having ${stage.name}`}
                   <div className="font-semibold text-xl">
@@ -481,7 +498,8 @@ const HealthMetrics: React.FC<{
                 </div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip={`Percentage of pipelines using ${stage.name}`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`Percentage of pipelines using ${stage.name}`}
                 >
                   {`Pipelines using ${stage.name}`}
                   <div className="font-semibold text-xl">
@@ -503,13 +521,15 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Percentage of repos with Sonar configured"
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content="Percentage of repos with Sonar configured"
                 >
                   Sonar enabled
                 </div>
                 <div
                   className="font-semibold text-xl mb-2"
-                  data-tip={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content={`${codeQuality.configured} of ${repos} repos have SonarQube configured`}
                 >
                   {repos ? (
                     <>
@@ -530,13 +550,15 @@ const HealthMetrics: React.FC<{
                 <div>
                   <div
                     className="text-xs font-semibold"
-                    data-tip="Percentage of pipelines with sonar configured that pass quality checks"
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content="Percentage of pipelines with sonar configured that pass quality checks"
                   >
                     Ok
                   </div>
                   <div
                     className="font-semibold text-md"
-                    data-tip={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content={`${codeQuality.pass} of ${codeQuality.sonarProjects} sonar projects have 'pass' quality gate`}
                   >
                     {codeQuality.sonarProjects ? (
                       <LabelWithSparkline
@@ -555,13 +577,15 @@ const HealthMetrics: React.FC<{
                 <div>
                   <div
                     className="text-xs font-semibold"
-                    data-tip="Percentage of pipelines with sonar configured that have a warning for quality checks"
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content="Percentage of pipelines with sonar configured that have a warning for quality checks"
                   >
                     Warn
                   </div>
                   <div
                     className="font-semibold text-md"
-                    data-tip={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content={`${codeQuality.warn} of ${codeQuality.sonarProjects} sonar projects have 'warn' quality gate`}
                   >
                     {codeQuality.sonarProjects ? (
                       <LabelWithSparkline
@@ -580,13 +604,15 @@ const HealthMetrics: React.FC<{
                 <div>
                   <div
                     className="text-xs font-semibold"
-                    data-tip="Percentage of pipelines with sonar configured that fail quality checks"
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content="Percentage of pipelines with sonar configured that fail quality checks"
                   >
                     Fail
                   </div>
                   <div
                     className="font-semibold text-md"
-                    data-tip={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content={`${codeQuality.fail} of ${codeQuality.sonarProjects} sonar projects have 'fail' quality gate`}
                   >
                     {codeQuality.sonarProjects ? (
                       <LabelWithSparkline
@@ -608,7 +634,8 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Percentage of pipelines conforming to branch policies"
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content="Percentage of pipelines conforming to branch policies"
                 >
                   Branch policy met
                 </div>
@@ -627,7 +654,8 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Percentage of healthy branches"
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content="Percentage of healthy branches"
                 >
                   Healthy branches
                 </div>
@@ -648,7 +676,8 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip={`Number of CI builds run in the last ${queryPeriodDays} days`}
+                data-tooltip-id="react-tooltip"
+                data-tooltip-content={`Number of CI builds run in the last ${queryPeriodDays} days`}
               >
                 Runs
                 <div className="font-semibold text-xl mb-2">
@@ -664,7 +693,8 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Percentage of successful builds"
+                data-tooltip-id="react-tooltip"
+                data-tooltip-content="Percentage of successful builds"
               >
                 Success
               </div>
@@ -684,7 +714,8 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Number of pipelines configured using a YAML file"
+                data-tooltip-id="react-tooltip"
+                data-tooltip-content="Number of pipelines configured using a YAML file"
               >
                 YAML pipelines
               </div>
@@ -699,7 +730,8 @@ const HealthMetrics: React.FC<{
             <div>
               <div
                 className="text-xs font-semibold"
-                data-tip="Number of build runs that used the central template"
+                data-tooltip-id="react-tooltip"
+                data-tooltip-content="Number of build runs that used the central template"
               >
                 Uses central template
               </div>
@@ -720,7 +752,8 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Percentage of releases where all the artifacts were from the master branch"
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content="Percentage of releases where all the artifacts were from the master branch"
                 >
                   Master-only releases
                 </div>
@@ -746,7 +779,8 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Number of release pipelines that have a starting artifact"
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content="Number of release pipelines that have a starting artifact"
                 >
                   Starts with artifact
                 </div>
@@ -761,7 +795,8 @@ const HealthMetrics: React.FC<{
               <div>
                 <div
                   className="text-xs font-semibold"
-                  data-tip="Number of repos that have associated release pipelines"
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-content="Number of repos that have associated release pipelines"
                 >
                   Repos with release pipelines
                 </div>

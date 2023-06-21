@@ -151,7 +151,8 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
             </button>
           </th>
           <th
-            data-tip={`Number of new work items added in the last ${queryPeriodDays} days`}
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content={`Number of new work items added in the last ${queryPeriodDays} days`}
           >
             <button {...buttonProps('byNew')}>
               <span>New</span>
@@ -159,7 +160,8 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
             </button>
           </th>
           <th
-            data-tip={`Number of work items completed in the last ${queryPeriodDays} days`}
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content={`Number of work items completed in the last ${queryPeriodDays} days`}
           >
             <button {...buttonProps('byVelocity')}>
               <span>Velocity</span>
@@ -167,32 +169,45 @@ const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> =
             </button>
           </th>
           <th
-            data-tip={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content={`Average time taken to complete a work item over the last ${queryPeriodDays} days`}
           >
             <button {...buttonProps('byCycleTime')}>
               <span>Cycle time</span>
               {sortIcon('byCycleTime')}
             </button>
           </th>
-          <th data-tip="Average time taken to take a work item to production after development is complete">
+          <th
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content="Average time taken to take a work item to production after development is complete"
+          >
             <button {...buttonProps('byChangeLeadTime')}>
               <span>CLT</span>
               {sortIcon('byChangeLeadTime')}
             </button>
           </th>
-          <th data-tip="Fraction of overall time that work items spend in work centers on average">
+          <th
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content="Fraction of overall time that work items spend in work centers on average"
+          >
             <button {...buttonProps('byFlowEfficiency')}>
               <span>Flow efficiency</span>
               {sortIcon('byFlowEfficiency')}
             </button>
           </th>
-          <th data-tip={`WIP items over the last ${queryPeriodDays} days`}>
+          <th
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content={`WIP items over the last ${queryPeriodDays} days`}
+          >
             <button {...buttonProps('byWipCount')}>
               <span>WIP</span>
               {sortIcon('byWipCount')}
             </button>
           </th>
-          <th data-tip="Average age of work items in progress">
+          <th
+            data-tooltip-id="react-tooltip"
+            data-tooltip-content="Average age of work items in progress"
+          >
             <button {...buttonProps('byWipAge')}>
               <span>WIP age</span>
               {sortIcon('byWipAge')}

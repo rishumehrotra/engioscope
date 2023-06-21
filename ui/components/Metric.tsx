@@ -22,8 +22,8 @@ const Metric: React.FC<MetricProps> = ({
     ${position === 'first' ? 'rounded-l-lg' : ''}
     ${position === 'last' ? 'rounded-r-lg border-r-0' : ''}
     `}
-    data-tip={tooltip || ''}
-    data-html
+    data-tooltip-id="react-tooltip"
+    data-tooltip-html={tooltip || ''}
   >
     <div className="text-2xl font-semibold">
       {typeof value === 'number' ? num(value) : value}

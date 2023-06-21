@@ -214,7 +214,11 @@ const FlowMetricsInner: React.FC<FlowMetricsInnerProps> = ({ tracks }) => {
       <thead>
         <tr>
           {table.columns.map((col, index) => (
-            <th key={col?.label || 'Name'} data-tip={col?.tooltip}>
+            <th
+              key={col?.label || 'Name'}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-content={col?.tooltip}
+            >
               {col?.label && (
                 <button onClick={onColumnClick(index)}>
                   {col.label}

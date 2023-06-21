@@ -1,26 +1,22 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './tailwind.output.css';
 import './index.css';
 import ReactModal from 'react-modal';
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tooltip';
 import * as serviceWorker from './serviceWorker.js';
 import App from './App.js';
 
 ReactModal.setAppElement('#root');
 
 const Index: React.FC = () => {
-  useEffect(() => {
-    const observer = new MutationObserver(mutations => {
-      if (mutations.every(m => m.addedNodes.length === 0)) return;
-      ReactTooltip.rebuild();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }, []);
-
   return (
     <>
-      <ReactTooltip />
+      <Tooltip
+        id="react-tooltip"
+        className="z-50 text-base"
+        style={{ borderRadius: '0.375rem', fontSize: '0.875rem', lineHeight: '1.25rem' }}
+      />
       <React.StrictMode>
         <App />
       </React.StrictMode>

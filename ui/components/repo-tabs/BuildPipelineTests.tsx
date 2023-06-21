@@ -60,7 +60,8 @@ const BuildPipelineTests: React.FC<{
                             href={pipeline.url}
                             target="_blank"
                             rel="noreferrer"
-                            data-tip={pipeline.name}
+                            data-tooltip-id="react-tooltip"
+                            data-tooltip-content={pipeline.name}
                             className={
                               pipeline.latestTest?.hasTests
                                 ? 'link-text truncate w-full'
@@ -83,7 +84,8 @@ const BuildPipelineTests: React.FC<{
                         href={pipeline.url}
                         target="_blank"
                         rel="noreferrer"
-                        data-tip={pipeline.name}
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-content={pipeline.name}
                         className="link-text truncate w-full opacity-60"
                       >
                         {pipeline.name}

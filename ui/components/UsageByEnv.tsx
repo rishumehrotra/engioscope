@@ -38,7 +38,8 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({
             className="font-semibold text-sm flex items-center justify-end"
             {...(doesDeploysCountSeemInconsistent(allEnvs, index)
               ? {
-                  'data-tip': `
+                  'data-tooltip-id': 'react-tooltip',
+                  'data-tooltip-html': `
                   <b>${env} </b>
                   has more deployments
                   (<b>${total}</b>)
@@ -47,7 +48,6 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({
                   deployments
                   (<b>${allEnvs[index - 1][1].successful}</b>)
               `,
-                  'data-html': 'true',
                 }
               : {})}
           >
@@ -58,8 +58,8 @@ const UsageByEnv: React.FC<UsageByEnvProps> = ({
           </div>
           <div
             className="relative w-full col-span-3"
-            data-tip={envRowTooltip(env, successful, total, pipelineCount)}
-            data-html
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={envRowTooltip(env, successful, total, pipelineCount)}
           >
             <div
               className="absolute top-0 left-0 h-full bg-lime-200 rounded-r-md border border-lime-300 z-10"

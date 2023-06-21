@@ -12,7 +12,11 @@ export const SummaryHeading: React.FC<{
   tooltip?: string;
 }> = ({ children, tooltip }) => {
   return (
-    <h3 data-tip={tooltip} className="font-semibold mb-3">
+    <h3
+      data-tooltip-id="react-tooltip"
+      data-tooltip-content={tooltip}
+      className="font-semibold mb-3"
+    >
       {children}
     </h3>
   );
@@ -104,8 +108,8 @@ export const Stat: React.FC<StatProps> = ({
         {tooltip === undefined ? null : (
           <span
             className="text-theme-icon hover:text-theme-icon-active"
-            data-tip={tooltip}
-            data-html
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={tooltip || undefined}
           >
             <Info className="inline-block ml-1.5 w-4 h-4" />
           </span>
