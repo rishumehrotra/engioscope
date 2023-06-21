@@ -105,7 +105,6 @@ const sonarReposTableProps = (): Omit<DrawerTableProps<SonarRepoItem>, 'data'> =
               <span className="text-green-600">{x.status}</span>
             </div>
           ),
-        // sorter: byString(x => (x.status ? x.status.toLocaleLowerCase() : '')),
         sorter: byNum(x => x.statusWeight ?? -1),
       },
     ],
