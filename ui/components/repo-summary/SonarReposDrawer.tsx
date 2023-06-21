@@ -16,6 +16,8 @@ type SonarProjectListProps = {
   sonarProjects: SonarProjectItems;
 };
 
+type ProjectStatus = 'all' | 'pass' | 'fail' | 'other';
+
 const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) => {
   return (
     <DrawerTable
@@ -122,6 +124,9 @@ const SonarReposDrawer: React.FC = () => {
     searchTerms: filters.searchTerms,
     groupsIncluded: filters.groupsIncluded,
   });
+
+  const [statusType, setStatusType] = React.useState<ProjectStatus>('all');
+
   return (
     <DrawerTabs
       tabs={[
@@ -146,18 +151,56 @@ const SonarReposDrawer: React.FC = () => {
           key: 'sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
-            const repoList = repos.data?.sonarRepos;
+            const repoList = repos.data?.sonarRepos.filter(x => {
+              if (statusType === 'all') return true;
+              if (statusType === 'pass') {
+                return x.status ? x.status.includes('pass') : false;
+              }
+              if (statusType === 'fail') return x.status === 'fail';
+              if (statusType === 'other') {
+                return x.status
+                  ? !x.status.includes('pass') && !x.status.includes('fail')
+                  : false;
+              }
+              return true;
+            });
 
-            if (repoList?.length === 0) {
-              return (
-                <SadEmpty
-                  heading="No repositories found"
-                  body="There are currently no repositories with SonarQube"
-                />
-              );
-            }
-
-            return <DrawerTable data={repoList} {...sonarReposTableProps()} />;
+            return (
+              <>
+                <div className="m-4">
+                  <label htmlFor="status">Show : </label>
+                  <select
+                    name="status"
+                    id="status"
+                    className="border-transparent focus:border-transparent focus:ring-0"
+                    value={statusType}
+                    onChange={e => setStatusType(e.target.value as ProjectStatus)}
+                  >
+                    <option value="all" className="">
+                      All Sonar Projects
+                    </option>
+                    <option value="pass" className="">
+                      Pass
+                    </option>
+                    <option value="fail" className="">
+                      Fail
+                    </option>
+                    <option value="other" className="">
+                      Others
+                    </option>
+                  </select>
+                </div>
+                {repoList?.length === 0 ? (
+                  <SadEmpty
+                    heading="No repositories found"
+                    body="There are currently no repositories with SonarQube"
+                  />
+                ) : (
+                  <DrawerTable data={repoList} {...sonarReposTableProps()} />
+                )}
+                ;
+              </>
+            );
           },
         },
       ]}
