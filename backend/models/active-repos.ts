@@ -9,6 +9,12 @@ import { unique } from '../utils.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
 
+export const filteredReposInputParser = z.object({
+  queryContext: queryContextInputParser,
+  searchTerms: z.union([z.array(z.string()), z.undefined()]),
+  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
+});
+
 const getGroupRepositoryNames = (
   collectionName: string,
   project: string,
@@ -24,11 +30,11 @@ const isExactSearchString = (searchTerm: string) => {
   return searchTerm.startsWith('"') && searchTerm.endsWith('"');
 };
 
-export const searchAndFilterReposBy = async (
-  queryContext: QueryContext,
-  searchTerms: string[] | undefined,
-  groupsIncluded: string[] | undefined
-) => {
+export const searchAndFilterReposBy = async ({
+  queryContext,
+  searchTerms,
+  groupsIncluded,
+}: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
@@ -68,7 +74,11 @@ export const getActiveRepos = async (
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const repos = await searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded);
+  const repos = await searchAndFilterReposBy({
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+  });
 
   const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
     BuildModel.aggregate<{ id: string }>([
@@ -111,9 +121,3 @@ export const getActiveRepos = async (
     .filter(r => activeRepoIds.includes(r.id))
     .map(r => ({ id: r.id, name: r.name }));
 };
-
-export const filteredReposInputParser = z.object({
-  queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-});
