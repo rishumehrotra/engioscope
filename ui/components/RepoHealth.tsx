@@ -22,7 +22,7 @@ import { TopLevelTab } from './repo-tabs/Tabs.jsx';
 import { useSortParams } from '../hooks/sort-hooks.js';
 import branches from './repo-tabs/branches/index.jsx';
 import type { RouterClient } from '../helpers/trpc.js';
-import { divide, toPercentage } from '../../shared/utils.js';
+import { combinedQualityGate, divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { Branches } from './common/Icons.jsx';
 import BranchPolicyPill from './BranchPolicyPill.jsx';
@@ -135,16 +135,6 @@ const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
       </div>
     </div>
   );
-};
-
-const combinedQualityGate = (qualityGateStatus: string[]) => {
-  if (qualityGateStatus.length === 0) return 'unknown';
-  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
-  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
-
-  return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
-    .map(toPercentage)
-    .getOr('-')} pass`;
 };
 
 type RepoHealthProps = {

@@ -1,8 +1,5 @@
 import { z } from 'zod';
 import { prop, propEq, intersection, length } from 'rambda';
-import { configForProject } from '../config.js';
-import { BuildModel } from './mongoose-models/BuildModel.js';
-import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import {
   getHealthyBranchesSummary,
@@ -28,8 +25,6 @@ import {
   releaseBranchesForRepo,
 } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
-import { CommitModel } from './mongoose-models/CommitModel.js';
-import { unique } from '../utils.js';
 import {
   getCoveragesByWeek,
   getDefinitionsWithTestsAndCoverages,
@@ -48,112 +43,15 @@ import {
   updatedWeeklyReposWithSonarQubeCount,
 } from './sonar.js';
 import type { QueryContext } from './utils.js';
-import { fromContext, queryContextInputParser } from './utils.js';
+import { fromContext } from './utils.js';
 import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
 import { pipelineCountForRepo } from './releases.js';
 import { getActivePipelineIds } from './build-definitions.js';
-
-const getGroupRepositoryNames = (
-  collectionName: string,
-  project: string,
-  filterGroups: string[]
-) => {
-  const groups = configForProject(collectionName, project)?.groupRepos?.groups;
-  if (!groups) return [];
-
-  return filterGroups.flatMap(group => groups[group] || []);
-};
-const isExactSearchString = (searchTerm: string) => {
-  return searchTerm.startsWith('"') && searchTerm.endsWith('"');
-};
-
-export const searchAndFilterReposBy = async (
-  queryContext: QueryContext,
-  searchTerms: string[] | undefined,
-  groupsIncluded: string[] | undefined
-) => {
-  const { collectionName, project } = fromContext(queryContext);
-
-  const groupRepositoryNames = groupsIncluded
-    ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
-    : [];
-
-  return RepositoryModel.find(
-    {
-      collectionName,
-      'project.name': project,
-      ...(groupRepositoryNames.length || (searchTerms && searchTerms.length > 0)
-        ? {
-            $and: [
-              groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
-              searchTerms && searchTerms.length > 0
-                ? {
-                    $or: searchTerms.map(term => {
-                      if (isExactSearchString(term)) {
-                        return { name: term.replaceAll('"', '') };
-                      }
-                      return { name: { $regex: new RegExp(term, 'i') } };
-                    }),
-                  }
-                : {},
-            ],
-          }
-        : {}),
-    },
-    { id: 1, name: 1 }
-  ).lean();
-};
-
-export const getActiveRepos = async (
-  queryContext: QueryContext,
-  searchTerms: string[] | undefined,
-  groupsIncluded: string[] | undefined
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  const repos = await searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded);
-
-  const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
-    BuildModel.aggregate<{ id: string }>([
-      {
-        $match: {
-          collectionName,
-          project,
-          'repository.id': { $in: repos.map(r => r.id) },
-          'finishTime': inDateRange(startDate, endDate),
-        },
-      },
-      {
-        $group: {
-          _id: '$repository.id',
-          name: { $first: '$repository.name' },
-          buildsCount: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          id: '$_id',
-        },
-      },
-    ]),
-    CommitModel.distinct('repositoryId', {
-      collectionName,
-      project,
-      'author.date': inDateRange(startDate, endDate),
-      'repositoryId': { $in: repos.map(r => r.id) },
-    }),
-  ]);
-
-  const activeRepoIds = unique([
-    ...repoIdsFromBuilds.map(r => r.id),
-    ...(repoIdsFromCommits as string[]),
-  ]);
-
-  return repos
-    .filter(r => activeRepoIds.includes(r.id))
-    .map(r => ({ id: r.id, name: r.name }));
-};
+import {
+  filteredReposInputParser,
+  getActiveRepos,
+  searchAndFilterReposBy,
+} from './active-repos.js';
 
 export const getYamlPipelinesCountSummary = async (
   queryContext: QueryContext,
@@ -327,18 +225,13 @@ export const getCentralTemplatePipeline = async (
   };
 };
 
-export const filteredReposInputParser = z.object({
-  queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
-});
-
 export const getFilteredReposCount = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
 }: z.infer<typeof filteredReposInputParser>) => {
-  return (await searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded)).length;
+  return (await searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded }))
+    .length;
 };
 
 export type SummaryStats = {
@@ -444,7 +337,7 @@ export const getSummaryAsChunks = async (
     getCoveragesByWeek(queryContext, activeRepoIds).then(
       sendChunk('weeklyCoverageSummary')
     ),
-    searchAndFilterReposBy(queryContext, searchTerms, groupsIncluded).then(x =>
+    searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded }).then(x =>
       sendChunk('totalRepos')(x.length)
     ),
     getSonarProjectsCount(collectionName, project, activeRepoIds).then(
@@ -794,11 +687,11 @@ export const getFilteredAndSortedReposWithStats = async ({
   sortDirection = 'desc',
   cursor,
 }: z.infer<typeof repoFiltersAndSorterInputParser>) => {
-  const filteredRepos = await searchAndFilterReposBy(
+  const filteredRepos = await searchAndFilterReposBy({
     queryContext,
     searchTerms,
-    groupsIncluded
-  );
+    groupsIncluded,
+  });
 
   const repositoryIds = filteredRepos.map(prop('id'));
   const sortedRepos = await sorters[sortBy](

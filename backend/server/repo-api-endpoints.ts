@@ -1,10 +1,8 @@
 import type { Request, Response, Router } from 'express';
 import type { z } from 'zod';
-import {
-  filteredReposInputParser,
-  getYAMLPipelinesForDownload,
-} from '../models/repo-listing.js';
+import { getYAMLPipelinesForDownload } from '../models/repo-listing.js';
 import { createXLSX } from './create-xlsx.js';
+import { filteredReposInputParser } from '../models/active-repos.js';
 
 export type RequestWithFilter = Request<
   {

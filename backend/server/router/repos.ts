@@ -6,13 +6,13 @@ import {
 
 import {
   getSummary,
-  filteredReposInputParser,
   getNonYamlPipelines,
   repoFiltersAndSorterInputParser,
   getFilteredAndSortedReposWithStats,
   getFilteredReposCount,
   getRepoListingWithPipelineCount,
 } from '../../models/repo-listing.js';
+import { filteredReposInputParser } from '../../models/active-repos.js';
 
 export default t.router({
   getBranchPolicies: t.procedure
