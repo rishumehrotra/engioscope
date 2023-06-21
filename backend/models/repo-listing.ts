@@ -431,7 +431,7 @@ export const getNonYamlPipelines = async ({
         _id: 0,
         repositoryId: '$id',
         name: 1,
-        total: { $size: '$buildsDefinitions' },
+        total: { $size: '$buildsDefinitions ' },
       },
     },
     { $sort: { total: -1 } },

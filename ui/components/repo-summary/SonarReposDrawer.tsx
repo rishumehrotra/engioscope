@@ -1,5 +1,5 @@
 import React from 'react';
-import { byString } from 'sort-lib';
+import { byString, byNum } from 'sort-lib';
 import DrawerTabs from './DrawerTabs.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
@@ -105,7 +105,8 @@ const sonarReposTableProps = (): Omit<DrawerTableProps<SonarRepoItem>, 'data'> =
               <span className="text-green-600">{x.status}</span>
             </div>
           ),
-        sorter: byString(x => (x.status ? x.status.toLocaleLowerCase() : '')),
+        // sorter: byString(x => (x.status ? x.status.toLocaleLowerCase() : '')),
+        sorter: byNum(x => x.statusWeight ?? -1),
       },
     ],
     ChildComponent: ({ item }) =>

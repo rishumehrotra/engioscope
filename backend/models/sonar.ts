@@ -1,6 +1,6 @@
 import type { Types } from 'mongoose';
 import { z } from 'zod';
-import { multiply, range } from 'rambda';
+import { range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
 import { createIntervals, normalizeBranchName, unique } from '../utils.js';
 import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
@@ -15,7 +15,12 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { combinedQualityGate, divide, exists, oneWeekInMs } from '../../shared/utils.js';
+import {
+  combinedQualityGate,
+  exists,
+  oneWeekInMs,
+  weightedQualityGate,
+} from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -1045,15 +1050,6 @@ export const getSonarQualityGateStatusForRepoId = async (
     .filter(exists);
 };
 
-const weightedQualityGate = (qualityGateStatus: string[]) => {
-  if (qualityGateStatus.length === 0) return -1;
-  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
-  if (qualityGatesPassed.length === qualityGateStatus.length) return 100;
-  return divide(qualityGatesPassed.length, qualityGateStatus.length)
-    .map(multiply(100))
-    .getOr(0);
-};
-
 export const getReposSortedByCodeQuality = async (
   queryContext: QueryContext,
   repositoryIds: string[],
@@ -1310,6 +1306,9 @@ export const getReposWithSonarSetup = async (
       repositoryName: repo.repositoryName,
       sonarProjects: projects,
       status: combinedQualityGate(
+        projects.map(project => (project ? project.status : 'Unknown'))
+      ),
+      statusWeight: weightedQualityGate(
         projects.map(project => (project ? project.status : 'Unknown'))
       ),
     };

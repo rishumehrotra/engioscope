@@ -1,4 +1,4 @@
-import { add } from 'rambda';
+import { add, multiply } from 'rambda';
 import { maybe } from './maybe.js';
 
 export type NonEmptyArray<T> = [T, ...T[]];
@@ -58,4 +58,13 @@ export const combinedQualityGate = (qualityGateStatus: string[]) => {
   return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
     .map(toPercentage)
     .getOr('-')} pass`;
+};
+
+export const weightedQualityGate = (qualityGateStatus: string[]) => {
+  if (qualityGateStatus.length === 0) return -1;
+  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
+  if (qualityGatesPassed.length === qualityGateStatus.length) return 100;
+  return divide(qualityGatesPassed.length, qualityGateStatus.length)
+    .map(multiply(100))
+    .getOr(0);
 };
