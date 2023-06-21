@@ -137,16 +137,6 @@ const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
   );
 };
 
-// const combinedQualityGate = (qualityGateStatus: string[]) => {
-//   if (qualityGateStatus.length === 0) return 'unknown';
-//   if (qualityGateStatus.length === 1) return qualityGateStatus[0];
-//   const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
-
-//   return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
-//     .map(toPercentage)
-//     .getOr('-')} pass`;
-// };
-
 type RepoHealthProps = {
   item: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number];
   isFirst?: boolean;
