@@ -118,7 +118,9 @@ const sonarReposTableProps = (): Omit<DrawerTableProps<SonarRepoItem>, 'data'> =
   };
 };
 
-const SonarReposDrawer: React.FC = () => {
+const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
+  projectsType,
+}) => {
   const filters = useRepoFilters();
 
   const repos = trpc.sonar.getSonarRepos.useQuery({
@@ -127,7 +129,9 @@ const SonarReposDrawer: React.FC = () => {
     groupsIncluded: filters.groupsIncluded,
   });
 
-  const [statusType, setStatusType] = React.useState<ProjectStatus>('all');
+  const [statusType, setStatusType] = React.useState<ProjectStatus>(
+    projectsType ?? 'all'
+  );
 
   return (
     <DrawerTabs
@@ -167,38 +171,60 @@ const SonarReposDrawer: React.FC = () => {
               return true;
             });
 
+            const reposWithFilteredProjects = repoList?.map(x => {
+              if (!x.sonarProjects) return x;
+
+              return {
+                ...x,
+                sonarProjects: x.sonarProjects?.filter(y => {
+                  if (statusType === 'all') return true;
+                  if (statusType === 'pass') return y.status === 'pass';
+                  if (statusType === 'fail') return y.status === 'fail';
+                  if (statusType === 'other') {
+                    return y.status !== 'pass' && y.status !== 'fail';
+                  }
+                  return true;
+                }),
+              };
+            });
+
             return (
               <>
-                <div className="m-4">
-                  <label htmlFor="status">Show : </label>
+                <div className="mx-2">
+                  <label htmlFor="status" className="text-sm">
+                    Show
+                  </label>
                   <select
                     name="status"
                     id="status"
-                    className="border-transparent focus:border-transparent focus:ring-0"
+                    className="appearance-none border-transparent focus:border-transparent focus:ring-0 text-blue-600 text-sm font-medium p-1 pr-8 m-2"
                     value={statusType}
                     onChange={e => setStatusType(e.target.value as ProjectStatus)}
                   >
-                    <option value="all" className="">
+                    <option value="all" className="text-slate-950">
                       All Sonar Projects
                     </option>
-                    <option value="pass" className="">
+                    <option value="pass" className="text-slate-950">
                       Pass
                     </option>
-                    <option value="fail" className="">
+                    <option value="fail" className="text-slate-950">
                       Fail
                     </option>
-                    <option value="other" className="">
+                    <option value="other" className="text-slate-950">
                       Others
                     </option>
                   </select>
                 </div>
-                {!repoList || repoList?.length === 0 ? (
+                {!reposWithFilteredProjects || reposWithFilteredProjects?.length === 0 ? (
                   <SadEmpty
                     heading="No repositories found"
                     body="There are currently no repositories with SonarQube"
                   />
                 ) : (
-                  <DrawerTable data={repoList} {...sonarReposTableProps()} />
+                  <DrawerTable
+                    data={reposWithFilteredProjects}
+                    {...sonarReposTableProps()}
+                  />
                 )}
                 ;
               </>

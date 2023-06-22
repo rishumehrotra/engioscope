@@ -109,7 +109,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 heading: 'Repositories',
                 enabledIf:
                   showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
-                body: <SonarReposDrawer />,
+                body: <SonarReposDrawer projectsType="all" />,
               }}
             />
           </div>
@@ -153,7 +153,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 heading: 'Repositories',
                 enabledIf:
                   showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
-                body: <SonarReposDrawer />,
+                body: <SonarReposDrawer projectsType="pass" />,
               }}
             />
           </div>
@@ -189,7 +189,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 heading: 'Repositories',
                 enabledIf:
                   showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
-                body: <SonarReposDrawer />,
+                body: <SonarReposDrawer projectsType="fail" />,
               }}
             />
           </div>
