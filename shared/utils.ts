@@ -68,3 +68,7 @@ export const weightedQualityGate = (qualityGateStatus: string[]) => {
     .map(multiply(100))
     .getOr(0);
 };
+
+export const shouldNeverReachHere = (x: never) => {
+  throw new Error(`Should never reach here: ${x}`);
+};

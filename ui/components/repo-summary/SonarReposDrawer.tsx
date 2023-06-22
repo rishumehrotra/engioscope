@@ -7,6 +7,7 @@ import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
+import { shouldNeverReachHere } from '../../../shared/utils.js';
 
 type NonSonarRepoItem = RouterClient['sonar']['getSonarRepos']['nonSonarRepos'][number];
 type SonarRepoItem = RouterClient['sonar']['getSonarRepos']['sonarRepos'][number];
@@ -166,7 +167,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                   ? !x.status.includes('pass') && !x.status.includes('fail')
                   : false;
               }
-              return true;
+              return shouldNeverReachHere(statusType);
             });
 
             const reposWithFilteredProjects = repoList?.map(x => {
@@ -181,7 +182,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                   if (statusType === 'other') {
                     return y.status !== 'pass' && y.status !== 'fail';
                   }
-                  return true;
+                  return shouldNeverReachHere(statusType);
                 }),
               };
             });
@@ -195,22 +196,14 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                   <select
                     name="status"
                     id="status"
-                    className="appearance-none border-transparent focus:border-transparent focus:ring-0 text-blue-600 text-sm font-medium p-1 pr-8 m-2"
+                    className="appearance-none border-transparent focus:border-transparent focus:ring-0 text-theme-highlight text-sm font-medium p-1 pr-8 m-2"
                     value={statusType}
                     onChange={e => setStatusType(e.target.value as ProjectStatus)}
                   >
-                    <option value="all" className="text-slate-950">
-                      All Sonar Projects
-                    </option>
-                    <option value="pass" className="text-slate-950">
-                      Pass
-                    </option>
-                    <option value="fail" className="text-slate-950">
-                      Fail
-                    </option>
-                    <option value="other" className="text-slate-950">
-                      Others
-                    </option>
+                    <option value="all">All Sonar Projects</option>
+                    <option value="pass">Pass</option>
+                    <option value="fail">Fail</option>
+                    <option value="other">Others</option>
                   </select>
                 </div>
                 {reposWithFilteredProjects?.length === 0 ? (
