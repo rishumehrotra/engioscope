@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { byString, byNum } from 'sort-lib';
+import { prop } from 'rambda';
 import DrawerTabs from './DrawerTabs.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
@@ -7,7 +8,9 @@ import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
-import { shouldNeverReachHere } from '../../../shared/utils.js';
+import { shouldNeverReachHere, weightedQualityGate } from '../../../shared/utils.js';
+import InlineSelect from '../common/InlineSelect.jsx';
+import { combinedQualityGate } from '../../helpers/utils.js';
 
 type NonSonarRepoItem = RouterClient['sonar']['getSonarRepos']['nonSonarRepos'][number];
 type SonarRepoItem = RouterClient['sonar']['getSonarRepos']['sonarRepos'][number];
@@ -61,60 +64,70 @@ const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) =>
   );
 };
 
-const nonSonarReposTableProps = (): Omit<DrawerTableProps<NonSonarRepoItem>, 'data'> => {
-  return {
-    rowKey: x => x.repositoryId,
-    columns: [
-      {
-        title: 'Repositories',
-        key: 'repos',
-        value: x => x.repositoryName,
-        sorter: byString(x => x.repositoryName.toLocaleLowerCase()),
-      },
-    ],
-  };
+const nonSonarReposTableProps: Omit<DrawerTableProps<NonSonarRepoItem>, 'data'> = {
+  rowKey: x => x.repositoryId,
+  columns: [
+    {
+      title: 'Repositories',
+      key: 'repos',
+      value: x => x.repositoryName,
+      sorter: byString(x => x.repositoryName.toLocaleLowerCase()),
+    },
+  ],
 };
 
-const sonarReposTableProps = (): Omit<DrawerTableProps<SonarRepoItem>, 'data'> => {
-  return {
-    rowKey: x => x.repositoryId,
-    columns: [
-      {
-        title: 'Repositories',
-        key: 'repos',
-        value: x => x.repositoryName,
-        sorter: byString(x => x.repositoryName.toLocaleLowerCase()),
-      },
-      {
-        title: 'Code quality',
-        key: 'code-quality',
-        value: x =>
-          x.status === 'pass' ? (
+const capitalizeFirstLetter = (string: string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
+const sonarReposTableProps: Omit<
+  DrawerTableProps<SonarRepoItem & { status: string; sortWeight: number }>,
+  'data'
+> = {
+  rowKey: x => x.repositoryId,
+  columns: [
+    {
+      title: 'Repositories',
+      key: 'repos',
+      value: x => x.repositoryName,
+      sorter: byString(x => x.repositoryName.toLocaleLowerCase()),
+    },
+    {
+      title: 'Code quality',
+      key: 'code-quality',
+      value: x => {
+        if (x.status.includes('pass')) {
+          return (
             <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
-              <span className="text-theme-success">Pass</span>
+              <span className="text-theme-success">
+                {capitalizeFirstLetter(x.status)}
+              </span>
             </div>
-          ) : x.status === 'fail' ? (
+          );
+        }
+
+        if (x.status.includes('fail')) {
+          return (
             <div className="inline-block bg-theme-danger rounded-sm px-2 py-0.5 text-sm">
               <span className="text-theme-danger">Fail</span>
             </div>
-          ) : x.status === null ? (
-            <div className="inline-block bg-theme-secondary rounded-sm px-2 py-0.5 text-sm">
-              <span className="text-theme-helptext">Unknown</span>
-            </div>
-          ) : (
-            <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
-              <span className="text-theme-success">{x.status}</span>
-            </div>
-          ),
-        sorter: byNum(x => x.statusWeight ?? -1),
+          );
+        }
+
+        return (
+          <div className="inline-block bg-theme-secondary rounded-sm px-2 py-0.5 text-sm">
+            <span className="text-theme-helptext">Unknown</span>
+          </div>
+        );
       },
-    ],
-    ChildComponent: ({ item }) =>
-      item.sonarProjects && item.sonarProjects.length > 0 ? (
-        <SonarProjectList sonarProjects={item.sonarProjects} />
-      ) : null,
-    defaultSortColumnIndex: 1,
-  };
+      sorter: byNum(x => x.sortWeight),
+    },
+  ],
+  ChildComponent: ({ item }) =>
+    item.sonarProjects && item.sonarProjects.length > 0 ? (
+      <SonarProjectList sonarProjects={item.sonarProjects} />
+    ) : null,
+  defaultSortColumnIndex: 1,
 };
 
 const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
@@ -128,9 +141,44 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
     groupsIncluded: filters.groupsIncluded,
   });
 
+  const hasOthers = useMemo(() => {
+    return repos.data?.sonarRepos.some(r =>
+      r.sonarProjects.some(p => p.status !== 'pass' && p.status !== 'fail')
+    );
+  }, [repos.data?.sonarRepos]);
+
   const [statusType, setStatusType] = React.useState<ProjectStatus>(
     projectsType ?? 'all'
   );
+
+  const emptyMessage = useMemo(() => {
+    if (statusType === 'all') {
+      // This can't happen, as we ensure that this drawer is enabled only when we have
+      // at least some active repos
+      return null;
+    }
+    if (statusType === 'pass') {
+      return (
+        <SadEmpty
+          heading="No repositories found"
+          body="There are currently no repositories passing SonarQube quality gates"
+        />
+      );
+    }
+    if (statusType === 'fail') {
+      return (
+        <HappyEmpty
+          heading="No repositories found"
+          body="There are currently no repositories failing SonarQube quality gates"
+        />
+      );
+    }
+    if (statusType === 'other') {
+      // This can't happen as we only show this option if we know its non-empty
+      return null;
+    }
+    return shouldNeverReachHere(statusType);
+  }, [statusType]);
 
   return (
     <DrawerTabs
@@ -148,7 +196,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
               );
             }
 
-            return <DrawerTable data={repoList} {...nonSonarReposTableProps()} />;
+            return <DrawerTable data={repoList} {...nonSonarReposTableProps} />;
           },
         },
         {
@@ -156,68 +204,63 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
           key: 'sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
-            const repoList = repos.data?.sonarRepos.filter(x => {
-              if (statusType === 'all') return true;
-              if (statusType === 'pass') {
-                return x.status ? x.status.includes('pass') : false;
-              }
-              if (statusType === 'fail') return x.status === 'fail';
-              if (statusType === 'other') {
-                return x.status
-                  ? !x.status.includes('pass') && !x.status.includes('fail')
-                  : false;
-              }
-              return shouldNeverReachHere(statusType);
-            });
-
-            const reposWithFilteredProjects = repoList?.map(x => {
-              if (!x.sonarProjects) return x;
-
-              return {
-                ...x,
-                sonarProjects: x.sonarProjects?.filter(y => {
-                  if (statusType === 'all') return true;
-                  if (statusType === 'pass') return y.status === 'pass';
-                  if (statusType === 'fail') return y.status === 'fail';
-                  if (statusType === 'other') {
-                    return y.status !== 'pass' && y.status !== 'fail';
-                  }
-                  return shouldNeverReachHere(statusType);
-                }),
-              };
-            });
+            const repoList =
+              statusType === 'all'
+                ? repos.data?.sonarRepos
+                : repos.data?.sonarRepos.filter(x => {
+                    if (statusType === 'pass') {
+                      return x.sonarProjects.some(p => p.status === 'pass');
+                    }
+                    if (statusType === 'fail') {
+                      return x.sonarProjects.some(p => p.status === 'fail');
+                    }
+                    if (statusType === 'other') {
+                      return x.sonarProjects.some(
+                        p => !(p.status === 'pass' || p.status === 'fail')
+                      );
+                    }
+                    return shouldNeverReachHere(statusType);
+                  });
 
             return (
               <>
-                <div className="mx-2">
+                <div className="mx-4">
                   <label htmlFor="status" className="text-sm">
                     Show
                   </label>
-                  <select
-                    name="status"
+                  <InlineSelect
                     id="status"
-                    className="appearance-none border-transparent focus:border-transparent focus:ring-0 text-theme-highlight text-sm font-medium p-1 pr-8 m-2"
                     value={statusType}
-                    onChange={e => setStatusType(e.target.value as ProjectStatus)}
-                  >
-                    <option value="all">All Sonar Projects</option>
-                    <option value="pass">Pass</option>
-                    <option value="fail">Fail</option>
-                    <option value="other">Others</option>
-                  </select>
-                </div>
-                {reposWithFilteredProjects?.length === 0 ? (
-                  <SadEmpty
-                    heading="No repositories found"
-                    body="There are currently no repositories with SonarQube"
+                    options={[
+                      { label: 'All SonarQube projects', value: 'all' },
+                      { label: 'Pass', value: 'pass' },
+                      { label: 'Fail', value: 'fail' },
+                      ...(hasOthers ? [{ label: 'Others', value: 'other' }] : []),
+                    ]}
+                    onChange={e => setStatusType(e as ProjectStatus)}
                   />
+                </div>
+                {repoList?.length === 0 ? (
+                  emptyMessage
                 ) : (
                   <DrawerTable
-                    data={reposWithFilteredProjects}
-                    {...sonarReposTableProps()}
+                    data={repoList?.map(r => ({
+                      ...r,
+                      status: combinedQualityGate(r.sonarProjects.map(prop('status'))),
+                      sonarProjects: r.sonarProjects.filter(p => {
+                        if (statusType === 'all') return true;
+                        if (statusType === 'pass') return p.status === 'pass';
+                        if (statusType === 'fail') return p.status === 'fail';
+                        if (statusType === 'other') {
+                          return p.status !== 'pass' && p.status !== 'fail';
+                        }
+                        return shouldNeverReachHere(statusType);
+                      }),
+                      sortWeight: weightedQualityGate(r.sonarProjects.map(p => p.status)),
+                    }))}
+                    {...sonarReposTableProps}
                   />
                 )}
-                ;
               </>
             );
           },

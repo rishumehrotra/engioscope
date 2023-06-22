@@ -15,12 +15,7 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import {
-  combinedQualityGate,
-  exists,
-  oneWeekInMs,
-  weightedQualityGate,
-} from '../../shared/utils.js';
+import { exists, oneWeekInMs, weightedQualityGate } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -1276,17 +1271,10 @@ export const getReposWithSonarSetup = async (
     getConnections('sonar'),
   ]);
 
-  // eslint-disable-next-line no-useless-assign/no-useless-assign
-  const reposWithSonarQualityGate = repos.map(repo => {
-    if (!repo.sonarProjects || repo.sonarProjects.length === 0) {
-      return {
-        repositoryId: repo.repositoryId,
-        repositoryName: repo.repositoryName,
-        status: null,
-      };
-    }
-
-    const projects = repo.sonarProjects.map(sonarProject => {
+  return repos.map(repo => ({
+    repositoryId: repo.repositoryId,
+    repositoryName: repo.repositoryName,
+    sonarProjects: repo.sonarProjects.map(sonarProject => {
       const status = JSON.parse(sonarProject.qualityGateDetails)?.level;
 
       const connectionUrl = connections.find(
@@ -1296,25 +1284,11 @@ export const getReposWithSonarSetup = async (
       return {
         id: sonarProject.id,
         name: sonarProject.name,
-        status: status ? parseQualityGateStatus(status) : 'Unknown',
+        status: parseQualityGateStatus(status),
         url: connectionUrl ? `${connectionUrl}/dashboard?id=${sonarProject.key}` : null,
       };
-    });
-
-    return {
-      repositoryId: repo.repositoryId,
-      repositoryName: repo.repositoryName,
-      sonarProjects: projects,
-      status: combinedQualityGate(
-        projects.map(project => (project ? project.status : 'Unknown'))
-      ),
-      statusWeight: weightedQualityGate(
-        projects.map(project => (project ? project.status : 'Unknown'))
-      ),
-    };
-  });
-
-  return reposWithSonarQualityGate;
+    }),
+  }));
 };
 
 export const getSonarRepos = async ({

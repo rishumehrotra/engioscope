@@ -1,5 +1,6 @@
 import { add, multiply } from 'rambda';
 import { maybe } from './maybe.js';
+import type { QualityGateStatus } from './types.js';
 
 export type NonEmptyArray<T> = [T, ...T[]];
 
@@ -50,17 +51,8 @@ export const debounce = <F extends (...x: any[]) => any>(fn: F, ms = 250) => {
     timeoutId = setTimeout(() => fn(...args), ms);
   };
 };
-export const combinedQualityGate = (qualityGateStatus: string[]) => {
-  if (qualityGateStatus.length === 0) return 'unknown';
-  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
-  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
 
-  return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
-    .map(toPercentage)
-    .getOr('-')} pass`;
-};
-
-export const weightedQualityGate = (qualityGateStatus: string[]) => {
+export const weightedQualityGate = (qualityGateStatus: QualityGateStatus[]) => {
   if (qualityGateStatus.length === 0) return -1;
   const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
   if (qualityGatesPassed.length === qualityGateStatus.length) return 100;

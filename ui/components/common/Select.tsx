@@ -8,7 +8,7 @@ type Option = {
 
 type SelectProps = {
   className?: string;
-  onChange: (event: string) => void;
+  onChange: (value: string) => void;
   options: Option[];
   value: string;
 };

@@ -1,11 +1,14 @@
 import prettyMilliseconds from 'pretty-ms';
 import {
+  divide,
   oneDayInMs,
   oneHourInMs,
   oneMinuteInMs,
   oneSecondInMs,
   oneWeekInMs,
+  toPercentage,
 } from '../../shared/utils.js';
+import type { QualityGateStatus } from '../../shared/types.js';
 
 export const oneYear = 1000 * 60 * 60 * 24 * 365;
 
@@ -173,4 +176,14 @@ export const timelineProp = (commits: CommitsTimelineProp) => {
   });
 
   return dateCommits;
+};
+
+export const combinedQualityGate = (qualityGateStatus: QualityGateStatus[]) => {
+  if (qualityGateStatus.length === 0) return 'unknown';
+  if (qualityGateStatus.length === 1) return qualityGateStatus[0];
+  const qualityGatesPassed = qualityGateStatus.filter(status => status !== 'fail');
+
+  return `${divide(qualityGatesPassed.length, qualityGateStatus.length)
+    .map(toPercentage)
+    .getOr('-')} pass`;
 };

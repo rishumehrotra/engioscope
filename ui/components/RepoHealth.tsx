@@ -10,7 +10,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { byNum, desc } from 'sort-lib';
 import { not } from 'rambda';
 import useResizeObserver from '@react-hook/resize-observer';
-import { num, pluralise } from '../helpers/utils.js';
+import { combinedQualityGate, num, pluralise } from '../helpers/utils.js';
 import Flair from './common/Flair.jsx';
 import builds from './repo-tabs/builds.jsx';
 import commits from './repo-tabs/commits.jsx';
@@ -22,7 +22,7 @@ import { TopLevelTab } from './repo-tabs/Tabs.jsx';
 import { useSortParams } from '../hooks/sort-hooks.js';
 import branches from './repo-tabs/branches/index.jsx';
 import type { RouterClient } from '../helpers/trpc.js';
-import { combinedQualityGate, divide, toPercentage } from '../../shared/utils.js';
+import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { Branches } from './common/Icons.jsx';
 import BranchPolicyPill from './BranchPolicyPill.jsx';
@@ -162,11 +162,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
         item.repositoryId,
         item.repoDetails.defaultBranch || 'master',
         combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
-        // repoTabStats.data
-        //   ? combinedQualityGate(
-        //       repoTabStats.data?.sonarQualityGateStatuses[0]?.status || []
-        //     )
-        //   : null
       ),
     ],
     [
