@@ -25,7 +25,6 @@ type RepoSummaryProps = {
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
 const useCreateUrlWithFilter = (slug: string) => {
-  const [search] = useQueryParam('search', asString);
   const [selectedGroupLabels] = useQueryParam('group', asString);
   const filters = useRepoFilters();
   const queryContext = useQueryContext();
@@ -34,14 +33,13 @@ const useCreateUrlWithFilter = (slug: string) => {
     return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
       startDate: filters.queryContext[2].toISOString(),
       endDate: filters.queryContext[3].toISOString(),
-      ...(search ? { search: filters.searchTerms?.join(',') } : {}),
+      ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
       ...(selectedGroupLabels ? { groupsIncluded: selectedGroupLabels } : {}),
     }).toString()}`;
   }, [
     filters.queryContext,
     filters.searchTerms,
     queryContext,
-    search,
     selectedGroupLabels,
     slug,
   ]);

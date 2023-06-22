@@ -27,7 +27,7 @@ export const parseSummaryInput = (req: RequestWithFilter) => {
       req.query.startDate && new Date(req.query.startDate),
       req.query.endDate && new Date(req.query.endDate),
     ],
-    searchTerms: req.query.search ? [req.query.search] : undefined,
+    searchTerms: req.query.search ? req.query.search.split(',') : undefined,
     groupsIncluded: req.query.groupsIncluded?.split(','),
   });
 };
