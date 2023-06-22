@@ -16,6 +16,8 @@ type SonarProjectListProps = {
   sonarProjects: SonarProjectItems;
 };
 
+type ProjectStatus = 'all' | 'pass' | 'fail' | 'other';
+
 const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) => {
   return (
     <DrawerTable
@@ -114,7 +116,9 @@ const sonarReposTableProps = (): Omit<DrawerTableProps<SonarRepoItem>, 'data'> =
   };
 };
 
-const SonarReposDrawer: React.FC = () => {
+const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
+  projectsType,
+}) => {
   const filters = useRepoFilters();
 
   const repos = trpc.sonar.getSonarRepos.useQuery({
@@ -122,6 +126,11 @@ const SonarReposDrawer: React.FC = () => {
     searchTerms: filters.searchTerms,
     groupsIncluded: filters.groupsIncluded,
   });
+
+  const [statusType, setStatusType] = React.useState<ProjectStatus>(
+    projectsType ?? 'all'
+  );
+
   return (
     <DrawerTabs
       tabs={[
@@ -146,18 +155,78 @@ const SonarReposDrawer: React.FC = () => {
           key: 'sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
-            const repoList = repos.data?.sonarRepos;
+            const repoList = repos.data?.sonarRepos.filter(x => {
+              if (statusType === 'all') return true;
+              if (statusType === 'pass') {
+                return x.status ? x.status.includes('pass') : false;
+              }
+              if (statusType === 'fail') return x.status === 'fail';
+              if (statusType === 'other') {
+                return x.status
+                  ? !x.status.includes('pass') && !x.status.includes('fail')
+                  : false;
+              }
+              return true;
+            });
 
-            if (repoList?.length === 0) {
-              return (
-                <SadEmpty
-                  heading="No repositories found"
-                  body="There are currently no repositories with SonarQube"
-                />
-              );
-            }
+            const reposWithFilteredProjects = repoList?.map(x => {
+              if (!x.sonarProjects) return x;
 
-            return <DrawerTable data={repoList} {...sonarReposTableProps()} />;
+              return {
+                ...x,
+                sonarProjects: x.sonarProjects?.filter(y => {
+                  if (statusType === 'all') return true;
+                  if (statusType === 'pass') return y.status === 'pass';
+                  if (statusType === 'fail') return y.status === 'fail';
+                  if (statusType === 'other') {
+                    return y.status !== 'pass' && y.status !== 'fail';
+                  }
+                  return true;
+                }),
+              };
+            });
+
+            return (
+              <>
+                <div className="mx-2">
+                  <label htmlFor="status" className="text-sm">
+                    Show
+                  </label>
+                  <select
+                    name="status"
+                    id="status"
+                    className="appearance-none border-transparent focus:border-transparent focus:ring-0 text-blue-600 text-sm font-medium p-1 pr-8 m-2"
+                    value={statusType}
+                    onChange={e => setStatusType(e.target.value as ProjectStatus)}
+                  >
+                    <option value="all" className="text-slate-950">
+                      All Sonar Projects
+                    </option>
+                    <option value="pass" className="text-slate-950">
+                      Pass
+                    </option>
+                    <option value="fail" className="text-slate-950">
+                      Fail
+                    </option>
+                    <option value="other" className="text-slate-950">
+                      Others
+                    </option>
+                  </select>
+                </div>
+                {reposWithFilteredProjects?.length === 0 ? (
+                  <SadEmpty
+                    heading="No repositories found"
+                    body="There are currently no repositories with SonarQube"
+                  />
+                ) : (
+                  <DrawerTable
+                    data={reposWithFilteredProjects}
+                    {...sonarReposTableProps()}
+                  />
+                )}
+                ;
+              </>
+            );
           },
         },
       ]}

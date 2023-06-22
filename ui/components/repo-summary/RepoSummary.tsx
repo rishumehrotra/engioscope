@@ -108,7 +108,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                 heading: 'SonarQube',
                 enabledIf:
                   showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
-                body: <SonarReposDrawer />,
+                body: <SonarReposDrawer projectsType="all" />,
               }}
             />
           </div>
