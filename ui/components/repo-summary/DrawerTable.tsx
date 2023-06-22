@@ -47,7 +47,7 @@ const DrawerTable = <T,>({
             isChild ? 'border-y border-theme-seperator' : ''
           }`}
         >
-          <th className="w-12"> </th>
+          <th className={ChildComponent || isChild ? 'w-12' : 'w-5'}> </th>
           {columns.map((col, colIndex) => {
             return (
               <th

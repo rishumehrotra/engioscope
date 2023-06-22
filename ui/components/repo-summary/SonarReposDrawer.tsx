@@ -24,7 +24,7 @@ const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) =>
       isChild
       columns={[
         {
-          title: 'Sonar Projects',
+          title: 'SonarQube projects',
           key: 'sonar-projects',
 
           // eslint-disable-next-line react/no-unstable-nested-components
@@ -44,13 +44,11 @@ const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) =>
           // eslint-disable-next-line react/no-unstable-nested-components
           value: x =>
             x.status === 'pass' ? (
-              <span className="text-green-500">Pass</span>
+              <span className="text-theme-success">Pass</span>
             ) : x.status === 'fail' ? (
-              <span className="text-red-500">Fail</span>
-            ) : x.status === null ? (
-              <span className="text-gray-500">Unknown</span>
+              <span className="text-theme-danger">Fail</span>
             ) : (
-              <span className="text-green-500">Pass</span>
+              <span className="text-theme-helptext">Unknown</span>
             ),
           sorter: byString(x => (x.status ? x.status.toLocaleLowerCase() : '')),
         },
@@ -85,24 +83,24 @@ const sonarReposTableProps = (): Omit<DrawerTableProps<SonarRepoItem>, 'data'> =
         sorter: byString(x => x.repositoryName.toLocaleLowerCase()),
       },
       {
-        title: 'Code Quality',
+        title: 'Code quality',
         key: 'code-quality',
         value: x =>
           x.status === 'pass' ? (
-            <div className="inline-block bg-green-300 rounded-sm px-2 py-1 text-sm">
-              <span className="text-green-600">Pass</span>
+            <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
+              <span className="text-theme-success">Pass</span>
             </div>
           ) : x.status === 'fail' ? (
-            <div className="inline-block bg-red-300 rounded-sm px-2 py-1 text-sm">
-              <span className="text-red-600">Fail</span>
+            <div className="inline-block bg-theme-danger rounded-sm px-2 py-0.5 text-sm">
+              <span className="text-theme-danger">Fail</span>
             </div>
           ) : x.status === null ? (
-            <div className="inline-block bg-gray-300 rounded-sm px-2 py-1 text-sm">
-              <span className="text-gray-600">Unknown</span>
+            <div className="inline-block bg-theme-secondary rounded-sm px-2 py-0.5 text-sm">
+              <span className="text-theme-helptext">Unknown</span>
             </div>
           ) : (
-            <div className="inline-block bg-green-300 rounded-sm px-2 py-1 text-sm">
-              <span className="text-green-600">{x.status}</span>
+            <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
+              <span className="text-theme-success">{x.status}</span>
             </div>
           ),
         sorter: byNum(x => x.statusWeight ?? -1),
@@ -134,7 +132,7 @@ const SonarReposDrawer: React.FC = () => {
           BodyComponent: () => {
             const repoList = repos.data?.nonSonarRepos;
 
-            if (!repoList || repoList?.length === 0) {
+            if (repoList?.length === 0) {
               return (
                 <HappyEmpty body="Looks like all repositories are using SonarQube" />
               );
@@ -150,7 +148,7 @@ const SonarReposDrawer: React.FC = () => {
           BodyComponent: () => {
             const repoList = repos.data?.sonarRepos;
 
-            if (!repoList || repoList?.length === 0) {
+            if (repoList?.length === 0) {
               return (
                 <SadEmpty
                   heading="No repositories found"

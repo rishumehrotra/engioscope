@@ -16,7 +16,6 @@ import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
-
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
 
 type RepoSummaryProps = {
@@ -72,7 +71,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
           <div className="row-span-2 border-r border-theme-seperator pr-6">
             <Stat
-              title="Sonar"
+              title="SonarQube"
               tooltip={
                 isDefined(summaries.reposWithSonarQube) &&
                 isDefined(summaries.totalActiveRepos)
@@ -106,7 +105,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Repositories',
+                heading: 'SonarQube',
                 enabledIf:
                   showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
                 body: <SonarReposDrawer />,
@@ -148,13 +147,6 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                     )
                   : null
               }
-              onClick={{
-                open: 'drawer',
-                heading: 'Repositories',
-                enabledIf:
-                  showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
-                body: <SonarReposDrawer />,
-              }}
             />
           </div>
           <div>
@@ -184,13 +176,6 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
               graphColor={decreaseIsBetter(
                 summaries.weeklySonarProjectsCount?.map(s => s.failedProjects) || []
               )}
-              onClick={{
-                open: 'drawer',
-                heading: 'Repositories',
-                enabledIf:
-                  showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
-                body: <SonarReposDrawer />,
-              }}
             />
           </div>
         </SummaryCard>
