@@ -45,8 +45,8 @@ const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) =>
           sorter: byString(x => x.name.toLocaleLowerCase()),
         },
         {
-          title: 'Code Quality',
-          key: 'code-quality',
+          title: 'Quality gate',
+          key: 'quality-gate',
           // eslint-disable-next-line react/no-unstable-nested-components
           value: x =>
             x.status === 'pass' ? (
@@ -93,8 +93,8 @@ const sonarReposTableProps: Omit<
       sorter: byString(x => x.repositoryName.toLocaleLowerCase()),
     },
     {
-      title: 'Code quality',
-      key: 'code-quality',
+      title: 'Quality gate',
+      key: 'quality-gate',
       value: x => {
         if (x.status.includes('pass')) {
           return (
@@ -184,7 +184,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
     <DrawerTabs
       tabs={[
         {
-          title: `Not Using Sonar (${repos.data?.nonSonarRepos?.length || 0})`,
+          title: `Not using SonarQube (${repos.data?.nonSonarRepos?.length || 0})`,
           key: 'non-sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
@@ -200,7 +200,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
           },
         },
         {
-          title: `Using Sonar (${repos.data?.sonarRepos?.length || 0})`,
+          title: `Using SonarQube (${repos.data?.sonarRepos?.length || 0})`,
           key: 'sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
