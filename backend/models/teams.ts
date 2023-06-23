@@ -2,7 +2,23 @@ import mongoose from 'mongoose';
 import { TeamModel, type Team } from './mongoose-models/TeamModel.js';
 import { isExactSearchString } from './active-repos.js';
 
-export const createTeam = async (team: Team) => TeamModel.create(team).then(x => x._id);
+export const checkIfTeamNameExists = async (
+  teamName: string,
+  collectionName: string,
+  project: string
+) => TeamModel.findOne({ name: teamName, collectionName, project }).lean().exec();
+
+export const createTeam = async (team: Team) => {
+  const teamNameAlreadyExists = await checkIfTeamNameExists(
+    team.name,
+    team.collectionName,
+    team.project
+  );
+  if (teamNameAlreadyExists !== null) {
+    throw new Error(`Team name ${team.name} already exists`);
+  }
+  return TeamModel.create(team).then(x => x._id);
+};
 
 export const deleteTeam = async (teamId: string) =>
   TeamModel.deleteOne({ _id: teamId }).then(x => x.deletedCount);
