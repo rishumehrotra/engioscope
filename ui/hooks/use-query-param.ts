@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { debounce } from '../../shared/utils.js';
 
 export type TypeTranslator<T> = {
@@ -58,15 +58,22 @@ export const useDebouncedQueryParam = <T>(
   param: string,
   typeTranslator: TypeTranslator<T>
 ) => {
+  const location = useLocation();
   const [value, setValue] = useQueryParam<T>(param, typeTranslator);
   const [state, setState] = useState<T | undefined>(value);
 
   const debouncedSetQueryParam = useMemo(() => debounce(setValue), [setValue]);
 
+  useEffect(() => {
+    const search = new URLSearchParams(location.search).get('search');
+    setState((search as T) || undefined);
+    setValue((search as T) || undefined, true);
+  }, [location.search, setValue]);
+
   const setWithDebounce = useCallback(
-    (value: T | undefined) => {
+    (value: T | undefined, replace?: boolean) => {
       setState(value);
-      debouncedSetQueryParam(value);
+      debouncedSetQueryParam(value, replace);
     },
     [debouncedSetQueryParam]
   );

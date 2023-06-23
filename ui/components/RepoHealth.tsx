@@ -278,13 +278,15 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
             defaultBranch={item.repoDetails.defaultBranch}
             branches={item.releaseBranches}
           />
-          <Link to={pipelinesUrl} className="link-text">
-            {`Used in ${pluralise(
-              item.pipelineCounts ?? 0,
-              'release pipeline',
-              'release pipelines'
-            )}`}{' '}
-          </Link>
+          {item.pipelineCounts ? (
+            <Link to={pipelinesUrl} className="link-text">
+              {`Used in ${pluralise(
+                item.pipelineCounts ?? 0,
+                'release pipeline',
+                'release pipelines'
+              )}`}{' '}
+            </Link>
+          ) : null}
         </div>
       ) : null}
 

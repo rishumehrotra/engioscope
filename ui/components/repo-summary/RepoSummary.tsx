@@ -2,7 +2,7 @@ import { last, multiply } from 'rambda';
 import React, { lazy, useCallback, useMemo } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
-import useQueryParam, { asBoolean, asString } from '../../hooks/use-query-param.js';
+import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
@@ -61,7 +61,6 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const summaries = useSse<SummaryStats>(sseUrl);
-  const [showSonarDrawer] = useQueryParam('sonar-drawer', asBoolean);
 
   return (
     <>
@@ -104,8 +103,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
-                enabledIf:
-                  showSonarDrawer === true && (summaries?.totalActiveRepos || 0) > 0,
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 body: <SonarReposDrawer projectsType="all" />,
               }}
             />
@@ -178,64 +176,66 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
           </div>
         </SummaryCard>
 
-        <SummaryCard>
-          <Stat
-            title="Tests"
-            tooltip="Total number of tests across all matching repos."
-            value={
-              isDefined(summaries.weeklyTestsSummary)
-                ? num(last(summaries.weeklyTestsSummary)?.totalTests || 0)
-                : null
-            }
-            graphPosition="bottom"
-            graph={
-              isDefined(summaries.weeklyTestsSummary)
-                ? summaries.weeklyTestsSummary.map(t => t.totalTests)
-                : null
-            }
-            graphColor={
-              isDefined(summaries.weeklyTestsSummary)
-                ? increaseIsBetter(summaries.weeklyTestsSummary.map(t => t.totalTests))
-                : null
-            }
-          />
-        </SummaryCard>
-
-        <SummaryCard>
-          <Stat
-            title="Coverage"
-            value={
-              isDefined(summaries.weeklyCoverageSummary)
-                ? divide(
-                    last(summaries.weeklyCoverageSummary)?.coveredBranches || 0,
-                    last(summaries.weeklyCoverageSummary)?.totalBranches || 0
-                  )
-                    .map(toPercentage)
-                    .getOr('-')
-                : null
-            }
-            graphPosition="bottom"
-            graph={
-              isDefined(summaries.weeklyCoverageSummary)
-                ? summaries.weeklyCoverageSummary.map(week => {
-                    return divide(week.coveredBranches, week.totalBranches)
-                      .map(multiply(100))
-                      .getOr(0);
-                  })
-                : null
-            }
-            graphColor={
-              isDefined(summaries.weeklyCoverageSummary)
-                ? increaseIsBetter(
-                    summaries.weeklyCoverageSummary.map(week => {
-                      return divide(week.coveredBranches || 0, week.totalBranches || 0)
+        <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
+          <div className="row-span-2 border-r border-theme-seperator pr-6">
+            <Stat
+              title="Tests"
+              tooltip="Total number of tests across all matching repos."
+              value={
+                isDefined(summaries.weeklyTestsSummary)
+                  ? num(last(summaries.weeklyTestsSummary)?.totalTests || 0)
+                  : null
+              }
+              graphPosition="bottom"
+              graph={
+                isDefined(summaries.weeklyTestsSummary)
+                  ? summaries.weeklyTestsSummary.map(t => t.totalTests)
+                  : null
+              }
+              graphColor={
+                isDefined(summaries.weeklyTestsSummary)
+                  ? increaseIsBetter(summaries.weeklyTestsSummary.map(t => t.totalTests))
+                  : null
+              }
+            />
+          </div>
+          <div>
+            <Stat
+              title="Branch coverage"
+              tooltip="Coverage numbers are from only the repos that report coverage"
+              value={
+                isDefined(summaries.weeklyCoverageSummary)
+                  ? divide(
+                      last(summaries.weeklyCoverageSummary)?.coveredBranches || 0,
+                      last(summaries.weeklyCoverageSummary)?.totalBranches || 0
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : null
+              }
+              graphPosition="bottom"
+              graph={
+                isDefined(summaries.weeklyCoverageSummary)
+                  ? summaries.weeklyCoverageSummary.map(week => {
+                      return divide(week.coveredBranches, week.totalBranches)
                         .map(multiply(100))
                         .getOr(0);
                     })
-                  )
-                : null
-            }
-          />
+                  : null
+              }
+              graphColor={
+                isDefined(summaries.weeklyCoverageSummary)
+                  ? increaseIsBetter(
+                      summaries.weeklyCoverageSummary.map(week => {
+                        return divide(week.coveredBranches || 0, week.totalBranches || 0)
+                          .map(multiply(100))
+                          .getOr(0);
+                      })
+                    )
+                  : null
+              }
+            />
+          </div>
         </SummaryCard>
 
         <SummaryCard className="col-span-4">
@@ -520,4 +520,5 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
     </>
   );
 };
+
 export default StreamingRepoSummary;
