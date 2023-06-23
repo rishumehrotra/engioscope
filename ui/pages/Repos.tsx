@@ -15,6 +15,7 @@ import RepoHealth from '../components/RepoHealth.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 import StreamingRepoSummary from '../components/repo-summary/RepoSummary.jsx';
 import SortControls from '../components/SortControls.jsx';
+import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 
 const SummaryAndRepoGroups: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
@@ -59,6 +60,7 @@ const SummaryAndRepoGroups: React.FC = () => {
         )}
         <QueryPeriodSelector />
       </div>
+      <TeamsSelector />
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
       <StreamingRepoSummary queryPeriodDays={queryPeriodDays} />
     </>

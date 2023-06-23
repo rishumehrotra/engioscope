@@ -52,7 +52,8 @@
   textarea,
   select,
   .react-select,
-  .tagged-input {
+  .tagged-input,
+  .button {
     @apply border border-theme-input rounded
       focus:border-theme-input-highlight focus:ring-1 focus:ring-theme-input-highlight
       hover:border-theme-input-highlight hover:ring-0 hover:ring-theme-input-highlight;
@@ -65,7 +66,8 @@
 }
 
 .react-select:focus-within,
-.tagged-input:focus-within {
+.tagged-input:focus-within,
+.button:focus-within {
   @apply border-theme-input-highlight ring-1 ring-theme-input-highlight;
 }
 
