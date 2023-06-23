@@ -26,7 +26,7 @@ const getGroupRepositoryNames = (
   return filterGroups.flatMap(group => groups[group] || []);
 };
 
-const isExactSearchString = (searchTerm: string) => {
+export const isExactSearchString = (searchTerm: string) => {
   return searchTerm.startsWith('"') && searchTerm.endsWith('"');
 };
 
