@@ -1,50 +1,56 @@
-import mongoose from 'mongoose';
 import { TeamModel, type Team } from './mongoose-models/TeamModel.js';
-import { isExactSearchString } from './active-repos.js';
 
-export const checkIfTeamNameExists = async (
-  teamName: string,
+export const createTeam = async (team: Team) =>
+  TeamModel.create(team)
+    .then(x => x._id ?? null)
+    .catch(error => error);
+
+export const deleteTeam = async (
   collectionName: string,
-  project: string
-) => TeamModel.findOne({ name: teamName, collectionName, project }).lean().exec();
-
-export const createTeam = async (team: Team) => {
-  const teamNameAlreadyExists = await checkIfTeamNameExists(
-    team.name,
-    team.collectionName,
-    team.project
+  project: string,
+  teamName: string
+) =>
+  TeamModel.deleteOne({ collectionName, project, name: teamName }).then(
+    x => x.deletedCount
   );
-  if (teamNameAlreadyExists !== null) {
-    throw new Error(`Team name ${team.name} already exists`);
-  }
-  return TeamModel.create(team).then(x => x._id);
-};
-
-export const deleteTeam = async (teamId: string) =>
-  TeamModel.deleteOne({ _id: teamId }).then(x => x.deletedCount);
-export const updateTeam = async (team: Team, teamId: string) =>
-  TeamModel.updateOne({ _id: new mongoose.Types.ObjectId(teamId) }, team, {
+export const updateTeam = async (team: Team) => {
+  const { collectionName, project, name } = team;
+  return TeamModel.updateOne({ collectionName, project, name }, team, {
     upsert: true,
   }).then(x => x.upsertedId ?? null);
+};
 
-export const getTeams = (
+export const getTeamNames = (
   collectionName: string,
   project: string,
   searchTerms: string[]
 ) =>
-  TeamModel.find({
-    collectionName,
-    project,
-    ...(searchTerms && searchTerms.length > 0
-      ? {
-          $or: searchTerms.map(term => {
-            if (isExactSearchString(term)) {
-              return { name: term.replaceAll('"', '') };
-            }
-            return { name: { $regex: new RegExp(term, 'i') } };
-          }),
-        }
-      : {}),
-  })
+  TeamModel.find(
+    {
+      collectionName,
+      project,
+      ...(searchTerms?.length > 0
+        ? {
+            $or: searchTerms.map(term => {
+              return { name: term };
+            }),
+          }
+        : {}),
+    },
+    { _id: 0, name: 1 }
+  )
     .lean()
     .exec();
+export const getReposForTeamName = (
+  collectionName: string,
+  project: string,
+  name: string
+) =>
+  TeamModel.findOne(
+    {
+      collectionName,
+      project,
+      name,
+    },
+    { repoIds: 1 }
+  ).lean();
