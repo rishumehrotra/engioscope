@@ -45,7 +45,11 @@ const TeamsSelector = () => {
 
   return (
     <>
-      <Modal heading={modalContents.heading} {...modalProps}>
+      <Modal
+        heading={modalContents.heading}
+        {...modalProps}
+        className="max-h-[56rem] max-w-4xl my-36"
+      >
         <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
       </Modal>
       <div className="inline-flex items-stretch gap-3 mb-4">

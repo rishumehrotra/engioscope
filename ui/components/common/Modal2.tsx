@@ -8,14 +8,21 @@ type Modal2Props = {
   isOpen: boolean;
   heading?: ReactNode;
   children?: ReactNode;
+  className?: string;
 };
 
-const Modal2: React.FC<Modal2Props> = ({ isOpen, close, children, heading }) => (
+const Modal2: React.FC<Modal2Props> = ({
+  isOpen,
+  close,
+  children,
+  heading,
+  className,
+}) => (
   <ReactModal
     isOpen={isOpen}
     onRequestClose={close}
     overlayClassName="fixed z-20 top-0 left-0 right-0 bottom-0 bg-black bg-opacity-40"
-    className="relative z-30 top-0 left-0 right-0 bottom-0 max-h-full m-36 bg-white outline-none rounded-lg shadow-2xl"
+    className={`relative z-30 bg-white outline-none rounded-lg shadow-2xl m-auto grid grid-flow-row grid-rows-[max-content_1fr] ${className} max-h-full`}
     style={{
       content: {
         height: '70%',
@@ -31,7 +38,7 @@ const Modal2: React.FC<Modal2Props> = ({ isOpen, close, children, heading }) => 
         <X size={24} />
       </button>
     </header>
-    <div className="p-6">{children}</div>
+    {children}
   </ReactModal>
 );
 

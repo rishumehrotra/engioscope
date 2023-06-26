@@ -14,6 +14,7 @@ module.exports = {
       textColor: {
         theme: {
           'base': withOpacity('--color-text-base'),
+          'base-inverted': withOpacity('--color-bg-page-content'),
           'helptext': withOpacity('--color-text-helptext'),
           'helptext-emphasis': withOpacity('--color-text-helptext-emphasis'),
           'highlight': withOpacity('--color-text-highlight'),
@@ -33,6 +34,7 @@ module.exports = {
           'page-content': withOpacity('--color-bg-page-content'),
           'backdrop': withOpacity('--color-bg-backdrop'),
           'tag': withOpacity('--color-bg-tag'),
+          'highlight': withOpacity('--color-text-highlight'),
           'success': withOpacity('--color-bg-success'),
           'danger': withOpacity('--color-bg-danger'),
         },

@@ -85,6 +85,14 @@
   border: none;
 }
 
+.primary-button {
+  @apply bg-theme-highlight py-2 px-8 rounded-md text-theme-base-inverted;
+}
+
+.secondary-button {
+  @apply border border-theme-input py-2 px-8 rounded-md hover:border-theme-input-highlight focus:border-theme-input-highlight;
+}
+
 body {
   @apply bg-theme-page text-theme-base;
 }
