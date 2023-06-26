@@ -1,5 +1,7 @@
 import type { ObjectId } from 'mongoose';
 import { map } from 'rambda';
+import type { z } from 'zod';
+import type { collectionAndProjectInputParser } from './helpers.js';
 import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { normalizeBranchName } from '../utils.js';
@@ -9,7 +11,10 @@ import { fromContext } from './utils.js';
 export const getRepositories = (collectionName: string, project: string) =>
   RepositoryModel.find({ collectionName, 'project.name': project }).lean();
 
-export const getRepoIdAndName = async (collectionName: string, project: string) =>
+export const getRepoIdsAndNames = async ({
+  collectionName,
+  project,
+}: z.infer<typeof collectionAndProjectInputParser>) =>
   RepositoryModel.find(
     { collectionName, 'project.name': project },
     { _id: 0, id: 1, name: 1 }

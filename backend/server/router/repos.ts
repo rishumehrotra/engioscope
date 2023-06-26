@@ -13,6 +13,8 @@ import {
   getRepoListingWithPipelineCount,
 } from '../../models/repo-listing.js';
 import { filteredReposInputParser } from '../../models/active-repos.js';
+import { collectionAndProjectInputParser } from '../../models/helpers.js';
+import { getRepoIdsAndNames } from '../../models/repos.js';
 
 export default t.router({
   getBranchPolicies: t.procedure
@@ -38,4 +40,8 @@ export default t.router({
   getRepoListingWithPipelineCount: t.procedure
     .input(filteredReposInputParser)
     .query(passInputTo(getRepoListingWithPipelineCount)),
+
+  getRepoIdsAndNames: t.procedure
+    .input(collectionAndProjectInputParser)
+    .query(passInputTo(getRepoIdsAndNames)),
 });
