@@ -4,6 +4,7 @@ import { uniq } from 'rambda';
 import { Check, X } from 'react-feather';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
+import emptyList from './empty-list.svg';
 
 type TeamSelectorProps =
   | {
@@ -107,35 +108,55 @@ const TeamSelectorModal = (props: TeamSelectorProps) => {
             ))}
           </ul>
         </div>
-        <div className="flex flex-col border rounded-md border-theme-seperator mr-6 mb-4">
-          <div>
-            <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator px-2 py-3">
-              <div className="text-theme-icon">
-                <span className="font-semibold">{selectedRepos?.length}</span>{' '}
-                repositories added
-              </div>
+        <div
+          className={`flex flex-col border rounded-md border-theme-seperator mr-6 mb-4 ${
+            selectedRepos?.length === 0
+              ? 'place-items-center bg-theme-secondary pt-28'
+              : ''
+          }`}
+        >
+          {selectedRepos?.length === 0 ? (
+            <>
+              <img src={emptyList} alt="Add repositories" />
+              <br />
+              <span className="inline-block mx-24 text-center text-theme-helptext text-sm">
+                Select repositories on the left to create a team
+              </span>
+            </>
+          ) : (
+            <>
               <div>
-                <button
-                  className="link-text font-semibold"
-                  onClick={() => setSelectedRepoIds([])}
-                >
-                  Remove all
-                </button>
+                <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator px-2 py-3">
+                  <div className="text-theme-icon">
+                    <span className="font-semibold">{selectedRepos?.length}</span>{' '}
+                    repositories added
+                  </div>
+                  <div>
+                    <button
+                      className="link-text font-semibold"
+                      onClick={() => setSelectedRepoIds([])}
+                    >
+                      Remove all
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <ul className="overflow-auto flex-grow h-1 border-x-[1px] border-theme-seperator border-b-[1px] rounded-b-md">
-            {selectedRepos?.map(repo => (
-              <li className="border-b border-theme-seperator p-3 grid grid-cols-[1fr_30px] justify-between">
-                {repo.name}
-                <button
-                  onClick={() => setSelectedRepoIds(r => r.filter(x => x !== repo.id))}
-                >
-                  <X size={20} className="text-theme-danger" />
-                </button>
-              </li>
-            ))}
-          </ul>
+              <ul className="overflow-auto flex-grow h-1 border-x-[1px] border-theme-seperator border-b-[1px] rounded-b-md">
+                {selectedRepos?.map(repo => (
+                  <li className="border-b border-theme-seperator p-3 grid grid-cols-[1fr_30px] justify-between">
+                    {repo.name}
+                    <button
+                      onClick={() =>
+                        setSelectedRepoIds(r => r.filter(x => x !== repo.id))
+                      }
+                    >
+                      <X size={20} className="text-theme-danger" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </div>
       <div className="text-right px-6 pb-5">
