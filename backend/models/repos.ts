@@ -13,7 +13,7 @@ export const getRepoIdAndName = async (collectionName: string, project: string) 
   RepositoryModel.find(
     { collectionName, 'project.name': project },
     { _id: 0, id: 1, name: 1 }
-  ).lean();
+  ).lean() as Promise<{ id: string; name: string }[]>;
 
 export const getRepoCount = (collectionName: string, project: string) =>
   RepositoryModel.count({ collectionName, 'project.name': project })
