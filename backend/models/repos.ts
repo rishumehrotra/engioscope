@@ -9,10 +9,10 @@ import { fromContext } from './utils.js';
 export const getRepositories = (collectionName: string, project: string) =>
   RepositoryModel.find({ collectionName, 'project.name': project }).lean();
 
-export const getRepoIdAndName = (collectionName: string, project: string) =>
+export const getRepoIdAndName = async (collectionName: string, project: string) =>
   RepositoryModel.find(
     { collectionName, 'project.name': project },
-    { id: 1, name: 1 }
+    { _id: 0, id: 1, name: 1 }
   ).lean();
 
 export const getRepoCount = (collectionName: string, project: string) =>

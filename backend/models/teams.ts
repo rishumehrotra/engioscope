@@ -1,9 +1,7 @@
 import { TeamModel, type Team } from './mongoose-models/TeamModel.js';
 
 export const createTeam = async (team: Team) =>
-  TeamModel.create(team)
-    .then(x => x._id ?? null)
-    .catch(error => error);
+  TeamModel.create(team).then(x => x._id ?? null);
 
 export const deleteTeam = async (
   collectionName: string,
@@ -13,6 +11,7 @@ export const deleteTeam = async (
   TeamModel.deleteOne({ collectionName, project, name: teamName }).then(
     x => x.deletedCount
   );
+
 export const updateTeam = async (team: Team) => {
   const { collectionName, project, name } = team;
   return TeamModel.updateOne({ collectionName, project, name }, team, {
@@ -29,28 +28,72 @@ export const getTeamNames = (
     {
       collectionName,
       project,
-      ...(searchTerms?.length > 0
-        ? {
-            $or: searchTerms.map(term => {
-              return { name: term };
-            }),
-          }
-        : {}),
+      name: { $in: searchTerms },
     },
     { _id: 0, name: 1 }
-  )
-    .lean()
-    .exec();
+  ).then(x => x.map(y => y.name));
+
 export const getReposForTeamName = (
   collectionName: string,
   project: string,
   name: string
-) =>
-  TeamModel.findOne(
+) => {
+  return TeamModel.aggregate<{
+    teamName: string;
+    repos: { repoId: string; repoName: string }[];
+  }>([
     {
-      collectionName,
-      project,
-      name,
+      $match: {
+        collectionName,
+        project,
+        name,
+      },
     },
-    { repoIds: 1 }
-  ).lean();
+    {
+      $unwind: {
+        path: '$repoIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    { $addFields: { repoId: '$repoIds' } },
+    {
+      $lookup: {
+        from: 'repositories',
+        let: { repoId: '$repoId' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              'project.name': project,
+              '$expr': { $eq: ['$id', '$$repoId'] },
+            },
+          },
+          { $limit: 1 },
+          { $project: { _id: 0, repoName: '$name' } },
+        ],
+        as: 'repoInfo',
+      },
+    },
+    {
+      $unwind: {
+        path: '$repoInfo',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    { $addFields: { repoName: '$repoInfo.repoName' } },
+    { $project: { _id: 0, repoInfo: 0 } },
+    {
+      $group: {
+        _id: '$name',
+        teamName: { $first: '$name' },
+        repos: {
+          $push: {
+            repoId: '$repoId',
+            repoName: '$repoName',
+          },
+        },
+      },
+    },
+    { $project: { _id: 0 } },
+  ]);
+};
