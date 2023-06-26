@@ -44,7 +44,7 @@ export const getCommits = async () => {
             collection.name,
             project.name,
             repo.id,
-            commitIdAndDate?.commitId,
+            commitIdAndDate?.date,
             bulkSaveCommits(collection.name, project.name, repo.id)
           );
         } else {

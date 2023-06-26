@@ -640,7 +640,7 @@ export default (config: ParsedConfig) => {
       collectionName: string,
       projectName: string,
       repoId: string,
-      commitId: string | undefined,
+      commitDate: Date | undefined,
       chunkHandler: (x: GitCommitRef[]) => Promise<unknown>
     ) => {
       const pageSize = 1000;
@@ -651,9 +651,7 @@ export default (config: ParsedConfig) => {
           ...apiVersion,
           'searchCriteria.$top': String(pageSize),
           'searchCriteria.includeUserImageUrl': 'true',
-          ...(commitId
-            ? { 'searchCriteria.fromCommitId': commitId }
-            : { 'searchCriteria.fromDate': pastDate('1y').toISOString() }),
+          'searchCriteria.fromDate': (commitDate || pastDate('1y')).toISOString(),
           ...(pageIndex === 0
             ? {}
             : { 'searchCriteria.$skip': (pageIndex * pageSize).toString() }),

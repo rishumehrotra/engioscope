@@ -57,4 +57,14 @@ commitSchema.index({
   'author.date': 1,
 });
 
+commitSchema.index(
+  {
+    collectionName: 1,
+    project: 1,
+    repositoryId: 1,
+    commitId: 1,
+  },
+  { unique: true }
+);
+
 export const CommitModel = model<Commit>('Commit', commitSchema);
