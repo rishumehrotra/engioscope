@@ -241,7 +241,7 @@ const newWorkItemsForWorkItemType = ({
 export const newWorkItemsSummary = async (
   options: z.infer<typeof newWorkItemsSummaryInputParser>
 ) => {
-  const collConfig = configForCollection('JioMobilityAndEnterprise');
+  const collConfig = configForCollection(options.collectionName);
   if (!collConfig) return {};
 
   const { types } = collConfig.workitems;
