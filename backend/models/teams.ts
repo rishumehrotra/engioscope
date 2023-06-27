@@ -50,71 +50,6 @@ export const reposForTeamNameInputParser = z.object({
   name: z.string(),
 });
 
-export const getReposForTeamName = ({
-  collectionName,
-  project,
-  name,
-}: z.infer<typeof reposForTeamNameInputParser>) => {
-  return TeamModel.aggregate<{
-    teamName: string;
-    repos: { repoId: string; repoName: string }[];
-  }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        name,
-      },
-    },
-    {
-      $unwind: {
-        path: '$repoIds',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    { $addFields: { repoId: '$repoIds' } },
-    {
-      $lookup: {
-        from: 'repositories',
-        let: { repoId: '$repoId' },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              'project.name': project,
-              '$expr': { $eq: ['$id', '$$repoId'] },
-            },
-          },
-          { $limit: 1 },
-          { $project: { _id: 0, repoName: '$name' } },
-        ],
-        as: 'repoInfo',
-      },
-    },
-    {
-      $unwind: {
-        path: '$repoInfo',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    { $addFields: { repoName: '$repoInfo.repoName' } },
-    { $project: { _id: 0, repoInfo: 0 } },
-    {
-      $group: {
-        _id: '$name',
-        teamName: { $first: '$name' },
-        repos: {
-          $push: {
-            repoId: '$repoId',
-            repoName: '$repoName',
-          },
-        },
-      },
-    },
-    { $project: { _id: 0 } },
-  ]);
-};
-
 export const getRepoIdsForTeamNames = (
   collectionName: string,
   project: string,
@@ -145,4 +80,12 @@ export const getRepoIdsForTeamNames = (
     },
     { $project: { _id: 0 } },
   ]).then(x => x[0]?.repoIds ?? []);
+};
+
+export const getRepoIdsForTeamName = ({
+  collectionName,
+  project,
+  name,
+}: z.infer<typeof reposForTeamNameInputParser>) => {
+  return getRepoIdsForTeamNames(collectionName, project, [name]);
 };

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { byString } from 'sort-lib';
 import { uniq } from 'rambda';
 import { Check, X } from 'react-feather';
@@ -8,28 +8,23 @@ import { trpc } from '../../helpers/trpc.js';
 import emptyList from './empty-list.svg';
 import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
 
-type TeamSelectorProps = (
-  | {
-      type: 'create';
-    }
-  | {
-      type: 'edit';
-      teamName: string;
-    }
-  | {
-      type: 'duplicate';
-      fromTeamName: string;
-    }
-) & {
+type TeamSelectorProps = {
+  type: 'create' | 'edit' | 'duplicate';
   onSuccess: () => void;
   onCancel: () => void;
 };
 
-const TeamSelectorModal = ({ onCancel, onSuccess }: TeamSelectorProps) => {
+const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => {
   const cnp = useCollectionAndProject();
-  const [, setTeamNameInQueryParam] = useQueryParam('teams', asStringArray);
+  const utils = trpc.useContext();
+  const [teamNameInQueryParam, setTeamNameInQueryParam] = useQueryParam(
+    'teams',
+    asStringArray
+  );
   const allRepos = trpc.repos.getRepoIdsAndNames.useQuery(cnp);
   const createTeam = trpc.teams.createTeam.useMutation();
+  const updateTeam = trpc.teams.updateTeam.useMutation();
+
   const [search, setSearch] = useState('');
   const [selectedRepoIds, setSelectedRepoIds] = useState<string[]>([]);
   const [footerSaveError, setFooterSaveError] = useState<'no-empty' | 'unknown' | null>(
@@ -39,8 +34,27 @@ const TeamSelectorModal = ({ onCancel, onSuccess }: TeamSelectorProps) => {
     'no-empty' | 'duplicate' | null
   >(null);
   const [disableForm, setDisableForm] = useState(false);
-  const [teamName, setTeamName] = useState('');
+  const [teamName, setTeamName] = useState(
+    type === 'create'
+      ? ''
+      : type === 'edit'
+      ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        teamNameInQueryParam![0]
+      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        `${teamNameInQueryParam![0]} - copy`
+  );
   const teamNameInputRef = useRef<HTMLInputElement>(null);
+
+  const teamRepos = trpc.teams.getRepoIdsForTeamName.useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    { ...cnp, name: teamNameInQueryParam![0] },
+    { enabled: type === 'edit' && Boolean(teamNameInQueryParam?.[0]) }
+  );
+  useEffect(() => {
+    if (teamRepos.data) {
+      setSelectedRepoIds(teamRepos.data);
+    }
+  }, [teamRepos.data]);
 
   const filteredReposWithUsed = useMemo(() => {
     const preFiltered =
@@ -63,22 +77,33 @@ const TeamSelectorModal = ({ onCancel, onSuccess }: TeamSelectorProps) => {
     event => {
       event.preventDefault();
 
-      setTextboxValidationError(null);
-      setFooterSaveError(null);
-
       if (teamName.trim() === '') {
         setTextboxValidationError('no-empty');
         teamNameInputRef.current?.focus();
         return;
       }
 
+      setTextboxValidationError(null);
+      setFooterSaveError(null);
       setDisableForm(true);
 
-      createTeam
-        .mutateAsync({ ...cnp, name: teamName, repoIds: selectedRepoIds })
-        .then(() => {
+      const action =
+        type === 'edit'
+          ? updateTeam.mutateAsync({
+              ...cnp,
+              name: teamNameInputRef.current?.value.trim() || '',
+              repoIds: selectedRepoIds,
+            })
+          : createTeam.mutateAsync({ ...cnp, name: teamName, repoIds: selectedRepoIds });
+
+      action
+        .then(async () => {
           setTeamNameInQueryParam([teamName]);
           onSuccess();
+          return Promise.all([
+            utils.teams.getRepoIdsForTeamName.invalidate({ ...cnp, name: teamName }),
+            utils.teams.getTeamNames.invalidate({ ...cnp }),
+          ]);
         })
         .catch(error => {
           if (
@@ -97,7 +122,18 @@ const TeamSelectorModal = ({ onCancel, onSuccess }: TeamSelectorProps) => {
           setDisableForm(false);
         });
     },
-    [cnp, createTeam, onSuccess, selectedRepoIds, setTeamNameInQueryParam, teamName]
+    [
+      cnp,
+      createTeam,
+      onSuccess,
+      selectedRepoIds,
+      setTeamNameInQueryParam,
+      teamName,
+      type,
+      updateTeam,
+      utils.teams.getRepoIdsForTeamName,
+      utils.teams.getTeamNames,
+    ]
   );
 
   return (

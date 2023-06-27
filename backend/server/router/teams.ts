@@ -5,7 +5,7 @@ import {
   createUpdateTeamInputParser,
   deleteTeam,
   deleteTeamInputParser,
-  getReposForTeamName,
+  getRepoIdsForTeamName,
   getTeamNames,
   reposForTeamNameInputParser,
   updateTeam,
@@ -43,7 +43,7 @@ export default t.router({
     .input(collectionAndProjectInputParser)
     .query(passInputTo(getTeamNames)),
 
-  getReposForTeamName: t.procedure
+  getRepoIdsForTeamName: t.procedure
     .input(reposForTeamNameInputParser)
-    .query(passInputTo(getReposForTeamName)),
+    .query(passInputTo(getRepoIdsForTeamName)),
 });

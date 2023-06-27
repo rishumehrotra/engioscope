@@ -47,15 +47,23 @@ const TeamsSelector = () => {
   const onMenuItemClick = useCallback(
     (option: 'create' | 'edit' | 'duplicate' | 'delete') => {
       setDropdownOpen(false);
-      if (option === 'create' || option === 'edit' || option === 'duplicate') {
+      if (option === 'create' || option === 'duplicate') {
         setModalContents({
           heading: 'Create a new team',
-          body: <TeamSelectorModal type="create" {...modalHandlers} />,
+          body: <TeamSelectorModal type={option} {...modalHandlers} />,
+        });
+        openModal();
+      }
+
+      if (option === 'edit' && teamsQueryParam?.[0]) {
+        setModalContents({
+          heading: 'Edit team',
+          body: <TeamSelectorModal type="edit" {...modalHandlers} />,
         });
         openModal();
       }
     },
-    [modalHandlers, openModal, setDropdownOpen]
+    [modalHandlers, openModal, setDropdownOpen, teamsQueryParam]
   );
 
   const setTeamNames: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
@@ -109,7 +117,7 @@ const TeamsSelector = () => {
               <Plus size={20} />
               <span>Create a new team</span>
             </a>
-            {teamsQueryParam ? (
+            {teamsQueryParam?.[0] ? (
               <>
                 <a
                   {...itemProps[1]}
@@ -117,7 +125,7 @@ const TeamsSelector = () => {
                   className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
                 >
                   <Edit3 size={20} />
-                  <span>Edit team</span>
+                  <span>Edit {teamsQueryParam[0]}</span>
                 </a>
                 <a
                   {...itemProps[2]}
@@ -125,7 +133,7 @@ const TeamsSelector = () => {
                   className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
                 >
                   <Copy size={20} />
-                  <span>Duplicate team</span>
+                  <span>Duplicate {teamsQueryParam[0]}</span>
                 </a>
                 <a
                   {...itemProps[3]}
@@ -133,7 +141,7 @@ const TeamsSelector = () => {
                   className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-danger hover:text-theme-danger focus-visible:bg-theme-danger focus-visible:text-theme-danger"
                 >
                   <Trash2 size={20} />
-                  <span>Delete team</span>
+                  <span>Delete {teamsQueryParam[0]}</span>
                 </a>
               </>
             ) : null}
