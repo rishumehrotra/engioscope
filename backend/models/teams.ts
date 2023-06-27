@@ -114,3 +114,35 @@ export const getReposForTeamName = ({
     { $project: { _id: 0 } },
   ]);
 };
+
+export const getRepoIdsForTeamNames = (
+  collectionName: string,
+  project: string,
+  teamNames: string[]
+) => {
+  return TeamModel.aggregate<{
+    repoIds: string[];
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        name: { $in: teamNames },
+      },
+    },
+    {
+      $unwind: {
+        path: '$repoIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    { $addFields: { repoId: '$repoIds' } },
+    {
+      $group: {
+        _id: null,
+        repoIds: { $addToSet: '$repoId' },
+      },
+    },
+    { $project: { _id: 0 } },
+  ]).then(x => x[0]?.repoIds ?? []);
+};

@@ -8,6 +8,7 @@ import { CommitModel } from './mongoose-models/CommitModel.js';
 import { unique } from '../utils.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
+import { getRepoIdsForTeamNames } from './teams.js';
 
 export const filteredReposInputParser = z.object({
   queryContext: queryContextInputParser,
@@ -35,21 +36,27 @@ export const searchAndFilterReposBy = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
 
   const groupRepositoryNames = groupsIncluded
     ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
     : [];
-
+  const teamRepoIds = teams
+    ? await getRepoIdsForTeamNames(collectionName, project, teams)
+    : [];
   return RepositoryModel.find(
     {
       collectionName,
       'project.name': project,
-      ...(groupRepositoryNames.length || (searchTerms && searchTerms.length > 0)
+      ...(groupRepositoryNames.length ||
+      teamRepoIds.length ||
+      (searchTerms && searchTerms.length > 0)
         ? {
             $and: [
               groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
+              teamRepoIds.length ? { id: { $in: teamRepoIds } } : {},
               searchTerms && searchTerms.length > 0
                 ? {
                     $or: searchTerms.map(term => {
