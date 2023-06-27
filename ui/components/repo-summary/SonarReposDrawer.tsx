@@ -161,9 +161,12 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
 
   const emptyMessage = useMemo(() => {
     if (statusType === 'all') {
-      // This can't happen, as we ensure that this drawer is enabled only when we have
-      // at least some active repos
-      return null;
+      return (
+        <SadEmpty
+          heading="No repositories found"
+          body="There are currently no repositories set up on SonarQube"
+        />
+      );
     }
     if (statusType === 'pass') {
       return (
@@ -241,6 +244,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                     }
                     return shouldNeverReachHere(statusType);
                   });
+
             return (
               <>
                 <div className="mx-4">
