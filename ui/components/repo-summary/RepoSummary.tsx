@@ -61,7 +61,6 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const summaries = useSse<SummaryStats>(sseUrl);
-  const [enableSonarDrawer] = useQueryParam('sonar-drawer', asString);
 
   return (
     <>
@@ -104,8 +103,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
-                enabledIf:
-                  enableSonarDrawer === 'true' && (summaries?.totalActiveRepos || 0) > 0,
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 body: <SonarReposDrawer projectsType="all" />,
               }}
             />
