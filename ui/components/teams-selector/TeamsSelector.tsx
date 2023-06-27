@@ -112,36 +112,48 @@ const TeamsSelector = () => {
             <a
               {...itemProps[0]}
               onClick={() => onMenuItemClick('create')}
-              className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
+              className="grid grid-cols-[min-content_1fr] justify-start items-center gap-x-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
             >
               <Plus size={20} />
               <span>Create a new team</span>
+              <span className="col-start-2 text-theme-icon text-sm">
+                Create a list of repositories for easy reference
+              </span>
             </a>
             {teamsQueryParam?.[0] ? (
               <>
                 <a
                   {...itemProps[1]}
                   onClick={() => onMenuItemClick('edit')}
-                  className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
+                  className="grid grid-cols-[min-content_1fr] justify-start items-center gap-x-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
                 >
                   <Edit3 size={20} />
                   <span>Edit {teamsQueryParam[0]}</span>
+                  <span className="col-start-2 text-theme-icon text-sm">
+                    Edit the list of repositories in {teamsQueryParam[0]}
+                  </span>
                 </a>
                 <a
                   {...itemProps[2]}
                   onClick={() => onMenuItemClick('duplicate')}
-                  className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
+                  className="grid grid-cols-[min-content_1fr] justify-start items-center gap-x-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-secondary focus-visible:bg-theme-secondary"
                 >
                   <Copy size={20} />
                   <span>Duplicate {teamsQueryParam[0]}</span>
+                  <span className="col-start-2 text-theme-icon text-sm">
+                    Create a copy of ${teamsQueryParam[0]} for your customisation
+                  </span>
                 </a>
                 <a
                   {...itemProps[3]}
                   onClick={() => onMenuItemClick('delete')}
-                  className="flex items-center gap-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-danger hover:text-theme-danger focus-visible:bg-theme-danger focus-visible:text-theme-danger"
+                  className="grid grid-cols-[min-content_1fr] justify-start items-center gap-x-2 px-3 py-2 pr-8 cursor-pointer hover:bg-theme-danger hover:text-theme-danger focus-visible:bg-theme-danger focus-visible:text-theme-danger group"
                 >
                   <Trash2 size={20} />
                   <span>Delete {teamsQueryParam[0]}</span>
+                  <span className="col-start-2 text-theme-icon group-hover:text-theme-danger group-focus-visible:text-theme-danger text-sm">
+                    Permanently delete {teamsQueryParam[0]}
+                  </span>
                 </a>
               </>
             ) : null}
