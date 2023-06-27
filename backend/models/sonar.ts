@@ -300,12 +300,9 @@ export const getSonarProjectsForRepoIds = async (
         repoId
       );
 
-      if (!sonarProjectIds) {
-        return null;
-      }
       return { repoId, sonarProjectIds };
     })
-  ).then(x => x.filter(exists));
+  );
 
   const sonarProjectsById = await sonarProjectsForIds(
     sonarProjectIdsForRepoIds.flatMap(p => p.sonarProjectIds)
