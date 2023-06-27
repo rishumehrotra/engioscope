@@ -759,15 +759,99 @@ export const getReposWithSonarQube = async (
   project: string,
   repositoryIds: string[]
 ) => {
-  // Previously SonarAlertHistoryModel was being used to find the repos with SonarQube
-  // but it was not giving the correct result as the collection didn't more than 1 year old data
-  const ReposWithSonarQube = await SonarQualityGateUsedModel.distinct('repositoryId', {
-    collectionName,
-    project,
-    repositoryId: { $in: repositoryIds },
+  return SonarProjectsForRepoModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repositoryId': { $in: repositoryIds },
+        'sonarProjectIds.0': { $exists: true },
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonarprojects',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
+          { $sort: { fetchDate: -1 } },
+          { $limit: 1 },
+          { $project: { name: 1 } },
+        ],
+        as: 'sonarProjectName',
+      },
+    },
+    { $addFields: { sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] } } },
+    {
+      $lookup: {
+        from: 'sonarmeasures',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
+          { $sort: { fetchDate: -1 } },
+          { $limit: 1 },
+        ],
+        as: 'sonarMeasures',
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarMeasures',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $addFields: {
+        sonarMeasures: {
+          $filter: {
+            input: '$sonarMeasures.measures',
+            cond: { $eq: ['$$this.metric', 'quality_gate_details'] },
+          },
+        },
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarMeasures',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $group: {
+        _id: {
+          collectionName: '$collectionName',
+          project: '$project',
+          repositoryId: '$repositoryId',
+        },
+        sonarProjects: {
+          $push: {
+            id: '$sonarProjectIds',
+            qualityGateDetails: '$sonarMeasures.value',
+            name: '$sonarProjectName',
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        result: 1,
+        collectionName: '$_id.collectionName',
+        project: '$_id.project',
+        repositoryId: '$_id.repositoryId',
+        sonarProjects: 1,
+      },
+    },
+    { $count: 'count' },
+  ]).then(result => {
+    return result[0].count ?? 0;
   });
-
-  return ReposWithSonarQube.length;
 };
 
 export const getReposWithSonarQubeBeforeStartDate = (
@@ -1090,12 +1174,14 @@ type ReposWithSonarSetup = {
   repositoryId: string;
   repositoryName: string;
   sonarProjects: {
+    hasSonarMeasures: boolean;
     id: Types.ObjectId;
     qualityGateDetails: string;
     name: string;
     key: string;
     connectionId: Types.ObjectId;
   }[];
+  projectsWithSonarMeasures: number;
 };
 
 type ReposWithoutSonarSetup = Omit<ReposWithSonarSetup, 'sonarProjects'>;
@@ -1161,16 +1247,18 @@ export const getReposWithSonarSetup = async (
       {
         $lookup: {
           from: 'sonarprojects',
-          let: {
-            collectionName,
-            project,
-            sonarProjectId: '$sonarProjectIds',
-          },
+          let: { sonarProjectId: '$sonarProjectIds' },
           pipeline: [
             { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
             { $sort: { fetchDate: -1 } },
             { $limit: 1 },
-            { $project: { name: 1, key: 1, connectionId: 1 } },
+            {
+              $project: {
+                name: 1,
+                key: 1,
+                connectionId: 1,
+              },
+            },
           ],
           as: 'sonarProjectName',
         },
@@ -1185,11 +1273,7 @@ export const getReposWithSonarSetup = async (
       {
         $lookup: {
           from: 'sonarmeasures',
-          let: {
-            collectionName,
-            project,
-            sonarProjectId: '$sonarProjectIds',
-          },
+          let: { sonarProjectId: '$sonarProjectIds' },
           pipeline: [
             { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
             { $sort: { fetchDate: -1 } },
@@ -1201,7 +1285,7 @@ export const getReposWithSonarSetup = async (
       {
         $unwind: {
           path: '$sonarMeasures',
-          preserveNullAndEmptyArrays: false,
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
@@ -1209,7 +1293,7 @@ export const getReposWithSonarSetup = async (
           sonarMeasures: {
             $filter: {
               input: '$sonarMeasures.measures',
-              cond: { $eq: ['$$this.metric', 'quality_gate_details'] },
+              cond: { $eq: ['$$this.metric', 'alert_status'] },
             },
           },
         },
@@ -1217,10 +1301,20 @@ export const getReposWithSonarSetup = async (
       {
         $unwind: {
           path: '$sonarMeasures',
-          preserveNullAndEmptyArrays: false,
+          preserveNullAndEmptyArrays: true,
         },
       },
-      { $addFields: { status: '$sonarMeasures.value.level' } },
+      {
+        $addFields: {
+          hasSonarMeasures: {
+            $cond: {
+              if: { $ifNull: ['$sonarMeasures.value', false] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
       {
         $group: {
           _id: {
@@ -1235,7 +1329,11 @@ export const getReposWithSonarSetup = async (
               name: '$sonarProjectName',
               key: '$sonarProjectKey',
               connectionId: '$sonarConnectionId',
+              hasSonarMeasures: '$hasSonarMeasures',
             },
+          },
+          projectsWithSonarMeasures: {
+            $sum: { $cond: [{ $eq: ['$hasSonarMeasures', true] }, 1, 0] },
           },
         },
       },
@@ -1247,6 +1345,7 @@ export const getReposWithSonarSetup = async (
           project: '$_id.project',
           repositoryId: '$_id.repositoryId',
           sonarProjects: 1,
+          projectsWithSonarMeasures: 1,
         },
       },
       {
@@ -1274,9 +1373,8 @@ export const getReposWithSonarSetup = async (
   return repos.map(repo => ({
     repositoryId: repo.repositoryId,
     repositoryName: repo.repositoryName,
+    projectsWithSonarMeasures: repo.projectsWithSonarMeasures,
     sonarProjects: repo.sonarProjects.map(sonarProject => {
-      const status = JSON.parse(sonarProject.qualityGateDetails)?.level;
-
       const connectionUrl = connections.find(
         connection => connection._id.toString() === sonarProject.connectionId.toString()
       )?.url;
@@ -1284,7 +1382,8 @@ export const getReposWithSonarSetup = async (
       return {
         id: sonarProject.id,
         name: sonarProject.name,
-        status: parseQualityGateStatus(status),
+        status: parseQualityGateStatus(sonarProject.qualityGateDetails),
+        hasSonarMeasures: sonarProject.hasSonarMeasures,
         url: connectionUrl ? `${connectionUrl}/dashboard?id=${sonarProject.key}` : null,
       };
     }),

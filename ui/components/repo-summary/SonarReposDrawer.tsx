@@ -96,7 +96,8 @@ const sonarReposTableProps: Omit<
       title: 'Quality gate',
       key: 'quality-gate',
       value: x => {
-        if (x.status.includes('pass')) {
+        // if (x.status.includes('pass')) {
+        if (x.sortWeight > 0) {
           return (
             <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
               <span className="text-theme-success">
@@ -106,10 +107,13 @@ const sonarReposTableProps: Omit<
           );
         }
 
-        if (x.status.includes('fail')) {
+        // if (x.status.includes('fail')) {
+        if (x.sortWeight === 0) {
           return (
             <div className="inline-block bg-theme-danger rounded-sm px-2 py-0.5 text-sm">
-              <span className="text-theme-danger">Fail</span>
+              <span className="text-theme-danger">
+                {x.sonarProjects.length > 1 ? capitalizeFirstLetter(x.status) : `Fail`}
+              </span>
             </div>
           );
         }
@@ -120,7 +124,11 @@ const sonarReposTableProps: Omit<
           </div>
         );
       },
-      sorter: byNum(x => x.sortWeight),
+      sorter: byNum(x =>
+        x.sortWeight === 100 && x.sonarProjects.length > 1
+          ? x.sortWeight + 100 + x.sonarProjects.length
+          : x.sortWeight
+      ),
     },
   ],
   ChildComponent: ({ item }) =>
@@ -184,11 +192,17 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
     <DrawerTabs
       tabs={[
         {
-          title: `Not using SonarQube (${repos.data?.nonSonarRepos?.length || 0})`,
+          title: `Not using SonarQube (${
+            (repos.data?.nonSonarRepos?.length || 0) +
+            (repos.data?.sonarRepos?.filter(r => r.projectsWithSonarMeasures === 0)
+              ?.length || 0)
+          })`,
           key: 'non-sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
-            const repoList = repos.data?.nonSonarRepos;
+            const repoList = repos.data?.nonSonarRepos.concat(
+              repos.data?.sonarRepos.filter(r => r.projectsWithSonarMeasures === 0) ?? []
+            );
 
             if (repoList?.length === 0) {
               return (
@@ -200,14 +214,20 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
           },
         },
         {
-          title: `Using SonarQube (${repos.data?.sonarRepos?.length || 0})`,
+          title: `Using SonarQube (${
+            repos.data?.sonarRepos.filter(r => r.projectsWithSonarMeasures > 0)?.length ||
+            0
+          })`,
           key: 'sonar',
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
+            const sonarMeasuresRepos =
+              repos.data?.sonarRepos.filter(r => r.projectsWithSonarMeasures > 0) ?? [];
+
             const repoList =
               statusType === 'all'
-                ? repos.data?.sonarRepos
-                : repos.data?.sonarRepos.filter(x => {
+                ? sonarMeasuresRepos
+                : sonarMeasuresRepos.filter(x => {
                     if (statusType === 'pass') {
                       return x.sonarProjects.some(p => p.status === 'pass');
                     }
@@ -221,7 +241,6 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                     }
                     return shouldNeverReachHere(statusType);
                   });
-
             return (
               <>
                 <div className="mx-4">
