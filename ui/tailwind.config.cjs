@@ -45,12 +45,14 @@ module.exports = {
           seperator: withOpacity('--color-border-separator'),
           input: withOpacity('--color-input-border'),
           'input-highlight': withOpacity('--color-input-highlight'),
+          'danger': withOpacity('--color-text-danger'),
         },
       },
 
       ringColor: {
         theme: {
           'input-highlight': withOpacity('--color-input-highlight'),
+          'danger': withOpacity('--color-text-danger'),
         }
       }
     },

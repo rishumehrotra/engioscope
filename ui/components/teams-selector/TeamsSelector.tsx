@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import type { ReactNode } from 'react';
-import React, { Suspense, useCallback, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import useDropdownMenu from 'react-accessible-dropdown-menu-hook';
 import { Copy, Edit3, Plus, Sliders, Trash2 } from 'react-feather';
 import useQueryParam, { asBoolean, asStringArray } from '../../hooks/use-query-param.js';
@@ -24,7 +24,7 @@ const TeamsSelector = () => {
     isOpen,
     setIsOpen: setDropdownOpen,
   } = useDropdownMenu(teamsQueryParam ? 4 : 1);
-  const [Modal, modalProps, open] = useModal2();
+  const [Modal, modalProps, openModal, , closeModal] = useModal2();
   const [modalContents, setModalContents] = useState<{
     heading: string;
     body: ReactNode;
@@ -33,18 +33,29 @@ const TeamsSelector = () => {
     body: '',
   });
 
+  const modalHandlers = useMemo(
+    () => ({
+      onSuccess: () => {
+        closeModal();
+        return teamNames.refetch();
+      },
+      onCancel: closeModal,
+    }),
+    [closeModal, teamNames]
+  );
+
   const onMenuItemClick = useCallback(
     (option: 'create' | 'edit' | 'duplicate' | 'delete') => {
       setDropdownOpen(false);
       if (option === 'create' || option === 'edit' || option === 'duplicate') {
         setModalContents({
           heading: 'Create a new team',
-          body: <TeamSelectorModal type="create" />,
+          body: <TeamSelectorModal type="create" {...modalHandlers} />,
         });
-        open();
+        openModal();
       }
     },
-    [open, setDropdownOpen]
+    [modalHandlers, openModal, setDropdownOpen]
   );
 
   const setTeamNames: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
@@ -67,17 +78,10 @@ const TeamsSelector = () => {
         <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
       </Modal>
       <div className="inline-flex items-stretch gap-3 mb-4">
-        <select onChange={setTeamNames}>
-          <option value="All teams" selected={!teamsQueryParam}>
-            All teams
-          </option>
+        <select value={teamsQueryParam?.[0] || 'All teams'} onChange={setTeamNames}>
+          <option value="All teams">All teams</option>
           {teamNames.data?.map(name => (
-            <option
-              value={name}
-              selected={teamsQueryParam
-                ?.map(t => t.toLowerCase())
-                .includes(name.toLowerCase())}
-            >
+            <option key={name} value={name}>
               {name}
             </option>
           ))}
