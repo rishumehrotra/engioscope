@@ -1,43 +1,60 @@
-import { TeamModel, type Team } from './mongoose-models/TeamModel.js';
+import { z } from 'zod';
+import { TeamModel } from './mongoose-models/TeamModel.js';
+import type { collectionAndProjectInputParser } from './helpers.js';
+import { collectionAndProjectInputs } from './helpers.js';
 
-export const createTeam = async (team: Team) =>
+export const createUpdateTeamInputParser = z.object({
+  ...collectionAndProjectInputs,
+  name: z.string(),
+  repoIds: z.array(z.string()),
+});
+
+export const createTeam = async (team: z.infer<typeof createUpdateTeamInputParser>) =>
   TeamModel.create(team).then(x => x._id ?? null);
 
-export const deleteTeam = async (
-  collectionName: string,
-  project: string,
-  teamName: string
-) =>
+export const deleteTeamInputParser = z.object({
+  ...collectionAndProjectInputs,
+  teamName: z.string(),
+});
+
+export const deleteTeam = async ({
+  collectionName,
+  project,
+  teamName,
+}: z.infer<typeof deleteTeamInputParser>) =>
   TeamModel.deleteOne({ collectionName, project, name: teamName }).then(
     x => x.deletedCount
   );
 
-export const updateTeam = async (team: Team) => {
+export const updateTeam = async (team: z.infer<typeof createUpdateTeamInputParser>) => {
   const { collectionName, project, name } = team;
   return TeamModel.updateOne({ collectionName, project, name }, team, {
     upsert: true,
   }).then(x => x.upsertedId ?? null);
 };
 
-export const getTeamNames = (
-  collectionName: string,
-  project: string,
-  searchTerms: string[]
-) =>
+export const getTeamNames = ({
+  collectionName,
+  project,
+}: z.infer<typeof collectionAndProjectInputParser>) =>
   TeamModel.find(
     {
       collectionName,
       project,
-      name: { $in: searchTerms },
     },
     { _id: 0, name: 1 }
   ).then(x => x.map(y => y.name));
 
-export const getReposForTeamName = (
-  collectionName: string,
-  project: string,
-  name: string
-) => {
+export const reposForTeamNameInputParser = z.object({
+  ...collectionAndProjectInputs,
+  name: z.string(),
+});
+
+export const getReposForTeamName = ({
+  collectionName,
+  project,
+  name,
+}: z.infer<typeof reposForTeamNameInputParser>) => {
   return TeamModel.aggregate<{
     teamName: string;
     repos: { repoId: string; repoName: string }[];

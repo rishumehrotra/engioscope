@@ -143,6 +143,7 @@ export const matchingSonarProjectsForRepo = async (
     repo.defaultBranch,
     latestBuildReportsForRepoAndBranch(collectionName, project)
   );
+
   return sonarProjectsFromBuildReports || attemptMatchByRepoName(repo.name);
 };
 

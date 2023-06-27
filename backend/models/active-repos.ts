@@ -13,6 +13,7 @@ export const filteredReposInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerms: z.union([z.array(z.string()), z.undefined()]),
   groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
+  teams: z.union([z.array(z.string()), z.undefined()]),
 });
 
 const getGroupRepositoryNames = (

@@ -11,11 +11,13 @@ export default (): RepoFilters => {
   const [sort] = useQueryParam('sort', asString);
   const [pageSize] = useQueryParam('pageSize', asNumber);
   const [pageNumber] = useQueryParam('pageSize', asNumber);
+  const [teams] = useQueryParam('teams', asStringArray);
 
   return {
     queryContext,
     searchTerms: search?.map(trim).filter(x => x.length > 0),
     groupsIncluded: selectedGroupLabels,
+    teams,
     pageSize: pageSize || 10,
     pageNumber: pageNumber || 0,
     sortBy: sortBy ? (sortBy.replace(' ', '-').toLowerCase() as SortKey) : 'builds',
