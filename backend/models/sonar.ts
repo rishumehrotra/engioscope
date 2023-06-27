@@ -759,7 +759,7 @@ export const getReposWithSonarQube = async (
   project: string,
   repositoryIds: string[]
 ) => {
-  return SonarProjectsForRepoModel.aggregate([
+  return SonarProjectsForRepoModel.aggregate<{ count: number }>([
     {
       $match: {
         collectionName,
@@ -774,20 +774,6 @@ export const getReposWithSonarQube = async (
         preserveNullAndEmptyArrays: false,
       },
     },
-    {
-      $lookup: {
-        from: 'sonarprojects',
-        let: { sonarProjectId: '$sonarProjectIds' },
-        pipeline: [
-          { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
-          { $sort: { fetchDate: -1 } },
-          { $limit: 1 },
-          { $project: { name: 1 } },
-        ],
-        as: 'sonarProjectName',
-      },
-    },
-    { $addFields: { sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] } } },
     {
       $lookup: {
         from: 'sonarmeasures',
@@ -811,7 +797,7 @@ export const getReposWithSonarQube = async (
         sonarMeasures: {
           $filter: {
             input: '$sonarMeasures.measures',
-            cond: { $eq: ['$$this.metric', 'quality_gate_details'] },
+            cond: { $eq: ['$$this.metric', 'alert_status'] },
           },
         },
       },
@@ -836,16 +822,6 @@ export const getReposWithSonarQube = async (
             name: '$sonarProjectName',
           },
         },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        result: 1,
-        collectionName: '$_id.collectionName',
-        project: '$_id.project',
-        repositoryId: '$_id.repositoryId',
-        sonarProjects: 1,
       },
     },
     { $count: 'count' },
