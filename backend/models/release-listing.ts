@@ -521,7 +521,7 @@ export const getReposConformingToBranchPolicies = async (
   ]);
 
   const first = head(result);
-  if (!first) return;
+  if (!first) return null;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _id, ...rest } = first;
   return rest;

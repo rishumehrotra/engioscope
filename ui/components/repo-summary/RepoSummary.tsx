@@ -263,7 +263,7 @@ const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) =
                       )
                         .map(toPercentage)
                         .getOr('-')
-                    : null
+                    : '-'
                 }
               />
             </div>

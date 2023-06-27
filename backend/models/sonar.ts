@@ -827,7 +827,7 @@ export const getReposWithSonarQube = async (
     },
     { $count: 'count' },
   ]).then(result => {
-    return result[0].count ?? 0;
+    return result[0]?.count ?? 0;
   });
 };
 
