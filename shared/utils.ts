@@ -64,3 +64,7 @@ export const weightedQualityGate = (qualityGateStatus: QualityGateStatus[]) => {
 export const shouldNeverReachHere = (x: never) => {
   throw new Error(`Should never reach here: ${x}`);
 };
+
+export const capitalizeFirstLetter = (string: string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};

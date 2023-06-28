@@ -5,7 +5,7 @@ type CreateXLSXArg<T> = {
   data: T[];
   columns: {
     title: string;
-    value: (x: T) => string | number | Date | URL;
+    value: (x: T) => string | number | Date | URL | null;
   }[];
 };
 
@@ -16,7 +16,8 @@ const colNameFromIndex = (index: number) => String.fromCodePoint(index + 65);
 export const createXLSX = <T>({ data, columns }: CreateXLSXArg<T>) => {
   const transformedRows = data.map(row => {
     return columns.map(col => {
-      return col.value(row);
+      const value = col.value(row);
+      return value === null ? '-' : value;
     });
   });
 

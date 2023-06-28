@@ -99,8 +99,8 @@ const drawerDownloads = {
           value: x => x.status,
         },
         {
-          title: 'URL',
-          value: x => (x.url ? new URL(x.url) : 'N/A'),
+          title: 'Sonar project URL',
+          value: x => (x.sonarProjectUrl ? new URL(x.sonarProjectUrl) : null),
         },
       ],
     });

@@ -8,7 +8,11 @@ import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
-import { shouldNeverReachHere, weightedQualityGate } from '../../../shared/utils.js';
+import {
+  capitalizeFirstLetter,
+  shouldNeverReachHere,
+  weightedQualityGate,
+} from '../../../shared/utils.js';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { combinedQualityGate } from '../../helpers/utils.js';
 
@@ -76,10 +80,6 @@ const nonSonarReposTableProps: Omit<DrawerTableProps<NonSonarRepoItem>, 'data'> 
   ],
 };
 
-const capitalizeFirstLetter = (string: string) => {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-};
-
 const sonarReposTableProps: Omit<
   DrawerTableProps<SonarRepoItem & { status: string; sortWeight: number }>,
   'data'
@@ -96,7 +96,6 @@ const sonarReposTableProps: Omit<
       title: 'Quality gate',
       key: 'quality-gate',
       value: x => {
-        // if (x.status.includes('pass')) {
         if (x.sortWeight > 0) {
           return (
             <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
@@ -107,7 +106,6 @@ const sonarReposTableProps: Omit<
           );
         }
 
-        // if (x.status.includes('fail')) {
         if (x.sortWeight === 0) {
           return (
             <div className="inline-block bg-theme-danger-dim rounded-sm px-2 py-0.5 text-sm">

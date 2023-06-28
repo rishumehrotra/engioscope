@@ -15,7 +15,12 @@ import {
 } from './mongoose-models/sonar-models.js';
 import type { Measure, SonarQualityGateDetails } from '../scraper/types-sonar';
 import type { QualityGateStatus } from '../../shared/types';
-import { exists, oneWeekInMs, weightedQualityGate } from '../../shared/utils.js';
+import {
+  capitalizeFirstLetter,
+  exists,
+  oneWeekInMs,
+  weightedQualityGate,
+} from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
@@ -1417,7 +1422,7 @@ export const getSonarProjectsForDownload = async ({
       hasSonarMeasures: boolean;
       repositoryName: string;
       repositoryUrl: string;
-      status: 'UNKNOWN' | 'OK' | 'WARN' | 'ERROR';
+      status: 'unknown' | 'OK' | 'WARN' | 'ERROR';
     }>([
       {
         $match: {
@@ -1524,7 +1529,7 @@ export const getSonarProjectsForDownload = async ({
         $addFields: {
           repositoryName: { $arrayElemAt: ['$result.name', 0] },
           repositoryUrl: { $arrayElemAt: ['$result.url', 0] },
-          status: { $cond: ['$hasSonarMeasures', '$sonarMeasures.value', 'UNKNOWN'] },
+          status: { $cond: ['$hasSonarMeasures', '$sonarMeasures.value', 'unknown'] },
         },
       },
       {
@@ -1541,9 +1546,9 @@ export const getSonarProjectsForDownload = async ({
       repositoryId: string;
       repositoryName: string;
       repositoryUrl: string;
-      status: 'N/A';
-      sonarProjectName: 'N/A';
-      url: 'N/A';
+      status: null;
+      sonarProjectName: null;
+      sonarProjectUrl: null;
     }>([
       {
         $match: {
@@ -1575,8 +1580,8 @@ export const getSonarProjectsForDownload = async ({
         $addFields: {
           repositoryName: { $arrayElemAt: ['$result.name', 0] },
           repositoryUrl: { $arrayElemAt: ['$result.url', 0] },
-          status: 'N/A',
-          sonarProjectName: 'N/A',
+          status: null,
+          sonarProjectName: null,
         },
       },
       {
@@ -1596,9 +1601,11 @@ export const getSonarProjectsForDownload = async ({
     )?.url;
     return {
       ...repo,
-      url: connectionUrl ? `${connectionUrl}/dashboard?id=${repo.sonarProjectKey}` : null,
+      status: capitalizeFirstLetter(parseQualityGateStatus(repo.status)),
+      sonarProjectUrl: connectionUrl
+        ? `${connectionUrl}/dashboard?id=${repo.sonarProjectKey}`
+        : null,
     };
   });
-
   return [...sonarReposWithUrl, ...nonSonarRepos];
 };
