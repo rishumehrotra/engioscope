@@ -1577,7 +1577,6 @@ export const getSonarProjectsForDownload = async ({
           repositoryUrl: { $arrayElemAt: ['$result.url', 0] },
           status: 'N/A',
           sonarProjectName: 'N/A',
-          url: 'N/A',
         },
       },
       {

@@ -84,7 +84,7 @@ const drawerDownloads = {
       columns: [
         {
           title: 'Repo URL',
-          value: x => x.repositoryUrl,
+          value: x => new URL(x.repositoryUrl),
         },
         {
           title: 'Repo name',
