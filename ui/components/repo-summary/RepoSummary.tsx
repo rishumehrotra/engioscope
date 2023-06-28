@@ -104,6 +104,7 @@ const StreamingRepoSummary: React.FC = () => {
                 open: 'drawer',
                 heading: 'SonarQube',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('sonar-projects'),
                 body: <SonarReposDrawer projectsType="all" />,
               }}
             />

@@ -1390,3 +1390,211 @@ export const getSonarRepos = async ({
 
   return { sonarRepos, nonSonarRepos };
 };
+
+export const getSonarProjectsForDownload = async ({
+  queryContext,
+  searchTerms,
+  groupsIncluded,
+  teams,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const { collectionName, project } = fromContext(queryContext);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
+
+  const [sonarRepos, nonSonarRepos, connections] = await Promise.all([
+    SonarProjectsForRepoModel.aggregate<{
+      collectionName: string;
+      project: string;
+      repositoryId: string;
+      sonarProjectIds: Types.ObjectId;
+      sonarProjectName: string;
+      sonarConnectionId: Types.ObjectId;
+      sonarProjectKey: string;
+      hasSonarMeasures: boolean;
+      repositoryName: string;
+      status: 'UNKNOWN' | 'OK' | 'WARN' | 'ERROR';
+    }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          'repositoryId': { $in: activeRepos.map(repo => repo.id) },
+          'sonarProjectIds.0': { $exists: true },
+        },
+      },
+      {
+        $unwind: {
+          path: '$sonarProjectIds',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $lookup: {
+          from: 'sonarprojects',
+          let: { sonarProjectId: '$sonarProjectIds' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
+            { $sort: { fetchDate: -1 } },
+            { $limit: 1 },
+            {
+              $project: {
+                name: 1,
+                key: 1,
+                connectionId: 1,
+              },
+            },
+          ],
+          as: 'sonarProjectName',
+        },
+      },
+      {
+        $addFields: {
+          sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] },
+          sonarConnectionId: { $arrayElemAt: ['$sonarProjectName.connectionId', 0] },
+          sonarProjectKey: { $arrayElemAt: ['$sonarProjectName.key', 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: 'sonarmeasures',
+          let: { sonarProjectId: '$sonarProjectIds' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
+            { $sort: { fetchDate: -1 } },
+            { $limit: 1 },
+          ],
+          as: 'sonarMeasures',
+        },
+      },
+      {
+        $unwind: {
+          path: '$sonarMeasures',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          sonarMeasures: {
+            $filter: {
+              input: '$sonarMeasures.measures',
+              cond: { $eq: ['$$this.metric', 'alert_status'] },
+            },
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: '$sonarMeasures',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          hasSonarMeasures: {
+            $cond: {
+              if: { $ifNull: ['$sonarMeasures.value', false] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'repositories',
+          let: { repositoryId: '$repositoryId' },
+          pipeline: [
+            {
+              $match: {
+                collectionName,
+                'project.name': project,
+                '$expr': { $eq: ['$id', '$$repositoryId'] },
+              },
+            },
+          ],
+          as: 'result',
+        },
+      },
+      {
+        $addFields: {
+          repositoryName: { $arrayElemAt: ['$result.name', 0] },
+          status: { $cond: ['$hasSonarMeasures', '$sonarMeasures.value', 'UNKNOWN'] },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          result: 0,
+          sonarMeasures: 0,
+        },
+      },
+    ]),
+    SonarProjectsForRepoModel.aggregate<{
+      collectionName: string;
+      project: string;
+      repositoryId: string;
+      repositoryName: string;
+      status: 'N/A';
+      sonarProjectName: 'N/A';
+      url: 'N/A';
+    }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          'repositoryId': { $in: activeRepos.map(repo => repo.id) },
+          'sonarProjectIds.0': {
+            $exists: false,
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'repositories',
+          let: { repositoryId: '$repositoryId' },
+          pipeline: [
+            {
+              $match: {
+                collectionName,
+                'project.name': project,
+                '$expr': { $eq: ['$id', '$$repositoryId'] },
+              },
+            },
+          ],
+          as: 'result',
+        },
+      },
+      {
+        $addFields: {
+          repositoryName: { $arrayElemAt: ['$result.name', 0] },
+          status: 'N/A',
+          sonarProjectName: 'N/A',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          result: 0,
+          sonarProjectIds: 0,
+        },
+      },
+    ]),
+    getConnections('sonar'),
+  ]);
+
+  const sonarReposWithUrl = sonarRepos.map(repo => {
+    const connectionUrl = connections.find(
+      connection => connection._id.toString() === repo.sonarConnectionId.toString()
+    )?.url;
+    return {
+      ...repo,
+      url: connectionUrl ? `${connectionUrl}/dashboard?id=${repo.sonarProjectKey}` : null,
+    };
+  });
+
+  return [...sonarReposWithUrl, ...nonSonarRepos];
+};

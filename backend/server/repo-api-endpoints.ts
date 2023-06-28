@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import { getYAMLPipelinesForDownload } from '../models/repo-listing.js';
 import { createXLSX } from './create-xlsx.js';
 import { filteredReposInputParser } from '../models/active-repos.js';
+import { getSonarProjectsForDownload } from '../models/sonar.js';
 
 export type RequestWithFilter = Request<
   {
@@ -72,6 +73,30 @@ const drawerDownloads = {
         {
           title: 'Last run date',
           value: x => x.lastRun,
+        },
+      ],
+    });
+  },
+  'sonar-projects': async (args: FilterArgs) => {
+    const lines = await getSonarProjectsForDownload(args);
+    return createXLSX({
+      data: lines,
+      columns: [
+        {
+          title: 'URL',
+          value: x => (x.url ? new URL(x.url) : 'N/A'),
+        },
+        {
+          title: 'Sonar Project Name',
+          value: x => x.sonarProjectName,
+        },
+        {
+          title: 'Code Quality Status',
+          value: x => x.status,
+        },
+        {
+          title: 'Repository Name',
+          value: x => x.repositoryName,
         },
       ],
     });
