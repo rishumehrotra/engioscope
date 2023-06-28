@@ -3,13 +3,13 @@ import { TeamModel } from './mongoose-models/TeamModel.js';
 import type { collectionAndProjectInputParser } from './helpers.js';
 import { collectionAndProjectInputs } from './helpers.js';
 
-export const createUpdateTeamInputParser = z.object({
+export const createTeamInputParser = z.object({
   ...collectionAndProjectInputs,
   name: z.string(),
   repoIds: z.array(z.string()),
 });
 
-export const createTeam = async (team: z.infer<typeof createUpdateTeamInputParser>) =>
+export const createTeam = async (team: z.infer<typeof createTeamInputParser>) =>
   TeamModel.create(team).then(x => x._id ?? null);
 
 export const deleteTeamInputParser = z.object({
@@ -26,11 +26,26 @@ export const deleteTeam = async ({
     x => x.deletedCount
   );
 
-export const updateTeam = async (team: z.infer<typeof createUpdateTeamInputParser>) => {
-  const { collectionName, project, name } = team;
-  return TeamModel.updateOne({ collectionName, project, name }, team, {
-    upsert: true,
-  }).then(x => x.upsertedId ?? null);
+export const updateTeamInputParser = z.object({
+  ...collectionAndProjectInputs,
+  oldName: z.string(),
+  newName: z.string(),
+  repoIds: z.array(z.string()),
+});
+
+export const updateTeam = async (team: z.infer<typeof updateTeamInputParser>) => {
+  const { collectionName, project, oldName, newName, repoIds } = team;
+
+  return TeamModel.updateOne(
+    { collectionName, project, name: oldName },
+    {
+      collectionName,
+      project,
+      name: newName,
+      repoIds,
+    },
+    { upsert: true }
+  ).then(x => x.upsertedId ?? null);
 };
 
 export const getTeamNames = ({

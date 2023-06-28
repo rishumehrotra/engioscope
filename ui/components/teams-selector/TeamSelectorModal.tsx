@@ -76,7 +76,8 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   const teamRepos = trpc.teams.getRepoIdsForTeamName.useQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
     { ...cnp, name: teamNameInQueryParam?.[0]! },
-    { enabled: type === 'edit' && Boolean(teamNameInQueryParam?.[0]) }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    { enabled: type === 'edit' && Boolean(teamNameInQueryParam![0]) }
   );
   useEffect(() => {
     if (teamRepos.data) {
@@ -108,6 +109,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
       if (teamName.trim() === '') {
         setTextboxValidationError('no-empty');
         teamNameInputRef.current?.focus();
+        teamNameInputRef.current?.select();
         return;
       }
 
@@ -119,7 +121,9 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         type === 'edit'
           ? updateTeam.mutateAsync({
               ...cnp,
-              name: teamNameInputRef.current?.value.trim() || '',
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              oldName: teamNameInQueryParam![0],
+              newName: teamNameInputRef.current?.value.trim() || '',
               repoIds: selectedRepoIds,
             })
           : createTeam.mutateAsync({ ...cnp, name: teamName, repoIds: selectedRepoIds });
@@ -138,6 +142,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
             setTextboxValidationError('duplicate');
             setTimeout(() => {
               teamNameInputRef.current?.focus();
+              teamNameInputRef.current?.select();
             }, 4);
             return;
           }
@@ -155,10 +160,16 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
       selectedRepoIds,
       setTeamNameInQueryParam,
       teamName,
+      teamNameInQueryParam,
       type,
       updateTeam,
     ]
   );
+
+  useEffect(() => {
+    teamNameInputRef.current?.focus();
+    teamNameInputRef.current?.select();
+  }, []);
 
   return (
     <form
@@ -176,8 +187,6 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
             setTextboxValidationError(null);
           }}
           ref={teamNameInputRef}
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
           disabled={disableForm}
         />
         {textboxValidationError && (
@@ -198,7 +207,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
             disabled={disableForm}
           />
 
-          <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator py-2 px-3">
+          <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x border-theme-seperator py-2 px-3">
             <div className="text-theme-icon">
               Showing{' '}
               <span className="font-semibold">
@@ -223,8 +232,8 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
           </div>
         </div>
 
-        <div className="border-theme-seperator border-b-[1px] rounded-b-md overflow-auto">
-          <ul className="max-h-[16vh] border-x-[1px]">
+        <div className="border-theme-seperator border-b border-x rounded-b-md overflow-auto">
+          <ul className="max-h-[16vh]">
             {filteredReposWithUsed?.map(repo => (
               <li key={repo.id} className="border-b border-theme-seperator">
                 <button

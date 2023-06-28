@@ -1,4 +1,4 @@
-import { memoizeForUI, passInputTo, t } from './trpc.js';
+import { passInputTo, t } from './trpc.js';
 import {
   branchPoliciesInputParser,
   getBranchPolicies,
@@ -31,7 +31,7 @@ export default t.router({
 
   getFilteredAndSortedReposWithStats: t.procedure
     .input(repoFiltersAndSorterInputParser)
-    .query(passInputTo(memoizeForUI(getFilteredAndSortedReposWithStats))),
+    .query(passInputTo(getFilteredAndSortedReposWithStats)),
 
   getFilteredReposCount: t.procedure
     .input(filteredReposInputParser)

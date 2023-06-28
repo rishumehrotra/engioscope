@@ -2,18 +2,19 @@ import { TRPCError } from '@trpc/server';
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
 import {
   createTeam,
-  createUpdateTeamInputParser,
+  createTeamInputParser,
   deleteTeam,
   deleteTeamInputParser,
   getRepoIdsForTeamName,
   getTeamNames,
   reposForTeamNameInputParser,
   updateTeam,
+  updateTeamInputParser,
 } from '../../models/teams.js';
 import { passInputTo, t } from './trpc.js';
 
 export default t.router({
-  createTeam: t.procedure.input(createUpdateTeamInputParser).mutation(
+  createTeam: t.procedure.input(createTeamInputParser).mutation(
     passInputTo(async input => {
       try {
         return await createTeam(input);
@@ -35,9 +36,7 @@ export default t.router({
 
   deleteTeam: t.procedure.input(deleteTeamInputParser).mutation(passInputTo(deleteTeam)),
 
-  updateTeam: t.procedure
-    .input(createUpdateTeamInputParser)
-    .mutation(passInputTo(updateTeam)),
+  updateTeam: t.procedure.input(updateTeamInputParser).mutation(passInputTo(updateTeam)),
 
   getTeamNames: t.procedure
     .input(collectionAndProjectInputParser)
