@@ -7,6 +7,7 @@ import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import emptyList from './empty-list.svg';
 import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
+import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 
 type TeamSelectorProps = {
   type: 'create' | 'edit' | 'duplicate';
@@ -14,9 +15,34 @@ type TeamSelectorProps = {
   onCancel: () => void;
 };
 
+const useClearCache = (teamName?: string) => {
+  const utils = trpc.useContext();
+  const cnp = useCollectionAndProject();
+  const filters = useRepoFilters();
+
+  return useCallback(() => {
+    if (!teamName) return;
+    return Promise.all([
+      utils.teams.getRepoIdsForTeamName.invalidate({ ...cnp, name: teamName }),
+      utils.teams.getTeamNames.invalidate({ ...cnp }),
+      utils.repos.getFilteredAndSortedReposWithStats.invalidate(filters),
+      utils.repos.getRepoListingWithPipelineCount.invalidate(filters),
+      utils.sonar.getSonarRepos.invalidate(filters),
+    ]);
+  }, [
+    cnp,
+    filters,
+    teamName,
+    utils.repos.getFilteredAndSortedReposWithStats,
+    utils.repos.getRepoListingWithPipelineCount,
+    utils.sonar.getSonarRepos,
+    utils.teams.getRepoIdsForTeamName,
+    utils.teams.getTeamNames,
+  ]);
+};
+
 const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => {
   const cnp = useCollectionAndProject();
-  const utils = trpc.useContext();
   const [teamNameInQueryParam, setTeamNameInQueryParam] = useQueryParam(
     'teams',
     asStringArray
@@ -43,6 +69,8 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
       : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         `${teamNameInQueryParam![0]} - copy`
   );
+
+  const clearCache = useClearCache(teamNameInQueryParam?.[0]);
   const teamNameInputRef = useRef<HTMLInputElement>(null);
 
   const teamRepos = trpc.teams.getRepoIdsForTeamName.useQuery(
@@ -100,10 +128,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         .then(async () => {
           setTeamNameInQueryParam([teamName]);
           onSuccess();
-          return Promise.all([
-            utils.teams.getRepoIdsForTeamName.invalidate({ ...cnp, name: teamName }),
-            utils.teams.getTeamNames.invalidate({ ...cnp }),
-          ]);
+          return clearCache();
         })
         .catch(error => {
           if (
@@ -123,6 +148,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         });
     },
     [
+      clearCache,
       cnp,
       createTeam,
       onSuccess,
@@ -131,8 +157,6 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
       teamName,
       type,
       updateTeam,
-      utils.teams.getRepoIdsForTeamName,
-      utils.teams.getTeamNames,
     ]
   );
 
@@ -256,7 +280,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
                 </div>
               </div>
             </div>
-            <ul className="border-x-[1px] max-h-[16vh] border-theme-seperator border-b-[1px] rounded-b-md">
+            <ul className="border-x-[1px] max-h-[16vh]">
               {selectedRepos?.map(repo => (
                 <li
                   key={repo.id}
