@@ -83,20 +83,24 @@ const drawerDownloads = {
       data: lines,
       columns: [
         {
-          title: 'URL',
-          value: x => (x.url ? new URL(x.url) : 'N/A'),
+          title: 'Repo URL',
+          value: x => x.repositoryUrl,
         },
         {
-          title: 'Sonar Project Name',
+          title: 'Repo name',
+          value: x => x.repositoryName,
+        },
+        {
+          title: 'Sonar project name',
           value: x => x.sonarProjectName,
         },
         {
-          title: 'Code Quality Status',
+          title: 'Code quality status',
           value: x => x.status,
         },
         {
-          title: 'Repository Name',
-          value: x => x.repositoryName,
+          title: 'URL',
+          value: x => (x.url ? new URL(x.url) : 'N/A'),
         },
       ],
     });

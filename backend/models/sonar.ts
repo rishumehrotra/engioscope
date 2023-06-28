@@ -1416,6 +1416,7 @@ export const getSonarProjectsForDownload = async ({
       sonarProjectKey: string;
       hasSonarMeasures: boolean;
       repositoryName: string;
+      repositoryUrl: string;
       status: 'UNKNOWN' | 'OK' | 'WARN' | 'ERROR';
     }>([
       {
@@ -1522,6 +1523,7 @@ export const getSonarProjectsForDownload = async ({
       {
         $addFields: {
           repositoryName: { $arrayElemAt: ['$result.name', 0] },
+          repositoryUrl: { $arrayElemAt: ['$result.url', 0] },
           status: { $cond: ['$hasSonarMeasures', '$sonarMeasures.value', 'UNKNOWN'] },
         },
       },
@@ -1538,6 +1540,7 @@ export const getSonarProjectsForDownload = async ({
       project: string;
       repositoryId: string;
       repositoryName: string;
+      repositoryUrl: string;
       status: 'N/A';
       sonarProjectName: 'N/A';
       url: 'N/A';
@@ -1571,8 +1574,10 @@ export const getSonarProjectsForDownload = async ({
       {
         $addFields: {
           repositoryName: { $arrayElemAt: ['$result.name', 0] },
+          repositoryUrl: { $arrayElemAt: ['$result.url', 0] },
           status: 'N/A',
           sonarProjectName: 'N/A',
+          url: 'N/A',
         },
       },
       {
