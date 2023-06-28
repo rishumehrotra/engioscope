@@ -110,7 +110,7 @@ const sonarReposTableProps: Omit<
         // if (x.status.includes('fail')) {
         if (x.sortWeight === 0) {
           return (
-            <div className="inline-block bg-theme-danger rounded-sm px-2 py-0.5 text-sm">
+            <div className="inline-block bg-theme-danger-dim rounded-sm px-2 py-0.5 text-sm">
               <span className="text-theme-danger">
                 {x.sonarProjects.length > 1 ? capitalizeFirstLetter(x.status) : `Fail`}
               </span>

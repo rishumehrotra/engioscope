@@ -117,6 +117,10 @@
   .secondary-button {
     @apply border border-theme-input py-2 px-8 rounded-md hover:border-theme-input-highlight focus:border-theme-input-highlight;
   }
+
+  .danger-button {
+    @apply bg-theme-danger py-2 px-8 rounded-md text-theme-base-inverted;
+  }
 }
 
 body {

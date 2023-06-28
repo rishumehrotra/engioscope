@@ -36,7 +36,8 @@ module.exports = {
           'tag': withOpacity('--color-bg-tag'),
           'highlight': withOpacity('--color-text-highlight'),
           'success': withOpacity('--color-bg-success'),
-          'danger': withOpacity('--color-bg-danger'),
+          'danger': withOpacity('--color-text-danger'),
+          'danger-dim': withOpacity('--color-bg-danger'),
         },
       },
 
