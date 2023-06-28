@@ -14,13 +14,10 @@ import {
 } from '../SummaryCard.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
+import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
-
-type RepoSummaryProps = {
-  queryPeriodDays: number;
-};
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
@@ -35,10 +32,12 @@ const useCreateUrlWithFilter = (slug: string) => {
       endDate: filters.queryContext[3].toISOString(),
       ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
       ...(selectedGroupLabels ? { groupsIncluded: selectedGroupLabels } : {}),
+      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
     }).toString()}`;
   }, [
     filters.queryContext,
     filters.searchTerms,
+    filters.teams,
     queryContext,
     selectedGroupLabels,
     slug,
@@ -57,7 +56,8 @@ const useCreateDownloadUrl = () => {
   );
 };
 
-const StreamingRepoSummary: React.FC<RepoSummaryProps> = ({ queryPeriodDays }) => {
+const StreamingRepoSummary: React.FC = () => {
+  const [queryPeriodDays] = useQueryPeriodDays();
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const summaries = useSse<SummaryStats>(sseUrl);

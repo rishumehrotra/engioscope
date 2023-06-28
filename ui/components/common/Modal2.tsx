@@ -22,7 +22,7 @@ const Modal2: React.FC<Modal2Props> = ({
     isOpen={isOpen}
     onRequestClose={close}
     overlayClassName="fixed z-20 top-0 left-0 right-0 bottom-0 bg-black bg-opacity-40"
-    className={`relative z-30 bg-white outline-none rounded-lg shadow-2xl m-auto grid grid-flow-row grid-rows-[max-content_1fr] ${className} max-h-full`}
+    className={`relative z-30 bg-white outline-none rounded-lg shadow-2xl m-auto grid grid-flow-row grid-rows-[max-content_1fr] ${className}`}
     style={{
       content: {
         height: '70%',

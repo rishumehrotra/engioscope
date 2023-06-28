@@ -16,6 +16,7 @@ export type RequestWithFilter = Request<
     endDate: string;
     search: string | undefined;
     groupsIncluded: string | undefined;
+    teams: string | undefined;
   }
 >;
 
@@ -29,6 +30,7 @@ export const parseSummaryInput = (req: RequestWithFilter) => {
     ],
     searchTerms: req.query.search ? req.query.search.split(',') : undefined,
     groupsIncluded: req.query.groupsIncluded?.split(','),
+    teams: req.query.teams?.split(','),
   });
 };
 

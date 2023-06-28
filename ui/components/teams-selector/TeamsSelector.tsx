@@ -12,6 +12,10 @@ import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 
 const TeamSelectorModal = React.lazy(() => import('./TeamSelectorModal.jsx'));
 
+const DeleteModal = () => {
+  return <div>Hello world</div>;
+};
+
 const TeamsSelector = () => {
   const [isEnabled] = useQueryParam('enable-teams', asBoolean);
   const cnp = useCollectionAndProject();
@@ -28,6 +32,7 @@ const TeamsSelector = () => {
   const [modalContents, setModalContents] = useState<{
     heading: string;
     body: ReactNode;
+    modalClassName?: string;
   }>({
     heading: '',
     body: '',
@@ -62,6 +67,15 @@ const TeamsSelector = () => {
         });
         openModal();
       }
+
+      if (option === 'delete' && teamsQueryParam?.[0]) {
+        setModalContents({
+          heading: `Delete ${teamsQueryParam[0]}`,
+          body: <DeleteModal />,
+          modalClassName: 'max-h-content mt-[10%]',
+        });
+        openModal();
+      }
     },
     [modalHandlers, openModal, setDropdownOpen, teamsQueryParam]
   );
@@ -81,7 +95,7 @@ const TeamsSelector = () => {
       <Modal
         heading={modalContents.heading}
         {...modalProps}
-        className="max-h-[56rem] max-w-4xl my-36"
+        className={modalContents.modalClassName ?? 'max-h-[56rem] max-w-4xl my-36'}
       >
         <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
       </Modal>

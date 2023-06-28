@@ -7,7 +7,6 @@ import Loading from '../components/Loading.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
 import useQueryParam, { asStringArray } from '../hooks/use-query-param.js';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
@@ -18,7 +17,6 @@ import SortControls from '../components/SortControls.jsx';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 
 const SummaryAndRepoGroups: React.FC = () => {
-  const [queryPeriodDays] = useQueryPeriodDays();
   const projectAnalysis = useFetchForProject(repoMetrics);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
@@ -31,6 +29,7 @@ const SummaryAndRepoGroups: React.FC = () => {
     queryContext: filters.queryContext,
     searchTerms: filters.searchTerms,
     groupsIncluded: filters.groupsIncluded,
+    teams: filters.teams,
   });
 
   const aggregatedDevs = useMemo(() => {
@@ -62,7 +61,7 @@ const SummaryAndRepoGroups: React.FC = () => {
       </div>
       <TeamsSelector />
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
-      <StreamingRepoSummary queryPeriodDays={queryPeriodDays} />
+      <StreamingRepoSummary />
     </>
   );
 };
