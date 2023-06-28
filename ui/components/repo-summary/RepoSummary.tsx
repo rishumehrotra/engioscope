@@ -181,7 +181,18 @@ const StreamingRepoSummary: React.FC = () => {
           <div className="row-span-2 border-r border-theme-seperator pr-6">
             <Stat
               title="Tests"
-              tooltip="Total number of tests across all matching repos."
+              tooltip={
+                isDefined(summaries.testsCoverageCountSummary) &&
+                isDefined(summaries.totalActiveRepos)
+                  ? `Total number of tests from the ${num(
+                      summaries.testsCoverageCountSummary.reposWithTests
+                    )} out of ${pluralise(
+                      summaries.totalActiveRepos,
+                      'repo is',
+                      'repos are'
+                    )} reporting test runs`
+                  : null
+              }
               value={
                 isDefined(summaries.weeklyTestsSummary)
                   ? num(last(summaries.weeklyTestsSummary)?.totalTests || 0)
@@ -203,7 +214,18 @@ const StreamingRepoSummary: React.FC = () => {
           <div>
             <Stat
               title="Branch coverage"
-              tooltip="Coverage numbers are from only the repos that report coverage"
+              tooltip={
+                isDefined(summaries.testsCoverageCountSummary) &&
+                isDefined(summaries.totalActiveRepos)
+                  ? `Coverage numbers are from only the ${num(
+                      summaries.testsCoverageCountSummary.reposWithCoverage
+                    )} out of ${pluralise(
+                      summaries.totalActiveRepos,
+                      'repo is',
+                      'repos are'
+                    )} reporting coverage.`
+                  : null
+              }
               value={
                 isDefined(summaries.weeklyCoverageSummary)
                   ? divide(
@@ -465,17 +487,17 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Pipelines running tests"
               tooltip={
-                isDefined(summaries.defSummary)
-                  ? `${num(summaries.defSummary.defsWithTests)} of ${num(
-                      summaries.defSummary.totalDefs
+                isDefined(summaries.testsCoverageCountSummary)
+                  ? `${num(summaries.testsCoverageCountSummary.defsWithTests)} of ${num(
+                      summaries.testsCoverageCountSummary.totalDefs
                     )} pipelines report test results`
                   : null
               }
               value={
-                isDefined(summaries.defSummary)
+                isDefined(summaries.testsCoverageCountSummary)
                   ? divide(
-                      summaries.defSummary.defsWithTests,
-                      summaries.defSummary.totalDefs
+                      summaries.testsCoverageCountSummary.defsWithTests,
+                      summaries.testsCoverageCountSummary.totalDefs
                     )
                       .map(toPercentage)
                       .getOr('-')
@@ -487,17 +509,19 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Reporting coverage"
               tooltip={
-                isDefined(summaries.defSummary)
-                  ? `${num(summaries.defSummary.defsWithCoverage)} of ${num(
-                      summaries.defSummary.totalDefs
+                isDefined(summaries.testsCoverageCountSummary)
+                  ? `${num(
+                      summaries.testsCoverageCountSummary.defsWithCoverage
+                    )} of ${num(
+                      summaries.testsCoverageCountSummary.totalDefs
                     )} pipelines report branch coverage`
                   : null
               }
               value={
-                isDefined(summaries.defSummary)
+                isDefined(summaries.testsCoverageCountSummary)
                   ? divide(
-                      summaries.defSummary.defsWithCoverage,
-                      summaries.defSummary.totalDefs
+                      summaries.testsCoverageCountSummary.defsWithCoverage,
+                      summaries.testsCoverageCountSummary.totalDefs
                     )
                       .map(toPercentage)
                       .getOr('-')

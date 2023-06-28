@@ -217,7 +217,7 @@ export const getTestRunsAndCoverageForRepo = async ({
   );
 };
 
-export const getDefinitionsWithTestsAndCoverages = async (
+export const getTestsAndCoveragesCount = async (
   queryContext: QueryContext,
   repoIds?: string[]
 ) => {
@@ -298,7 +298,7 @@ export const getDefinitionsWithTestsAndCoverages = async (
       repositoryId: { $in: repoIds },
     }).count(),
 
-    RepositoryModel.aggregate<{ count: number }>([
+    RepositoryModel.aggregate<{ count: number; reposCount: number }>([
       ...getMainBranchBuildIdsStage,
       {
         $lookup: {
@@ -326,6 +326,7 @@ export const getDefinitionsWithTestsAndCoverages = async (
       },
       {
         $project: {
+          repositoryId: '$repositoryId',
           definitionId: '$build.definitionId',
           hasTests: { $gt: [{ $size: '$tests' }, 0] },
         },
@@ -334,21 +335,20 @@ export const getDefinitionsWithTestsAndCoverages = async (
       {
         $group: {
           _id: null,
-          defsWithTests: {
-            $addToSet: '$definitionId',
-          },
+          defsWithTests: { $addToSet: '$definitionId' },
+          reposWithTests: { $addToSet: '$repositoryId' },
         },
       },
       {
         $project: {
           _id: 0,
           count: { $size: '$defsWithTests' },
-          defsWithTests: 1,
+          reposCount: { $size: '$reposWithTests' },
         },
       },
     ]),
 
-    RepositoryModel.aggregate<{ count: number }>([
+    RepositoryModel.aggregate<{ count: number; reposCount: number }>([
       ...getMainBranchBuildIdsStage,
       {
         $lookup: {
@@ -375,6 +375,7 @@ export const getDefinitionsWithTestsAndCoverages = async (
       },
       {
         $project: {
+          repositoryId: '$repositoryId',
           definitionId: '$build.definitionId',
           hasCoverage: { $gt: [{ $size: '$coverage' }, 0] },
         },
@@ -383,15 +384,15 @@ export const getDefinitionsWithTestsAndCoverages = async (
       {
         $group: {
           _id: null,
-          defsWithCoverage: {
-            $addToSet: '$definitionId',
-          },
+          defsWithCoverage: { $addToSet: '$definitionId' },
+          reposWithCoverage: { $addToSet: '$repositoryId' },
         },
       },
       {
         $project: {
           _id: 0,
           count: { $size: '$defsWithCoverage' },
+          reposCount: { $size: '$reposWithCoverage' },
         },
       },
     ]),
@@ -401,6 +402,8 @@ export const getDefinitionsWithTestsAndCoverages = async (
     totalDefs,
     defsWithTests: defsWithTests[0]?.count || 0,
     defsWithCoverage: defsWithCoverage[0]?.count || 0,
+    reposWithTests: defsWithTests[0]?.reposCount || 0,
+    reposWithCoverage: defsWithCoverage[0]?.reposCount || 0,
   };
 };
 

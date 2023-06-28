@@ -27,7 +27,7 @@ import {
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import {
   getCoveragesByWeek,
-  getDefinitionsWithTestsAndCoverages,
+  getTestsAndCoveragesCount,
   getReposSortedByTests,
   getTestsByWeek,
   getTotalTestsForRepositoryIds,
@@ -250,7 +250,7 @@ export type SummaryStats = {
     Awaited<ReturnType<typeof getCentralTemplatePipeline>>,
     'idsWithMainBranchBuilds'
   >;
-  defSummary: Awaited<ReturnType<typeof getDefinitionsWithTestsAndCoverages>>;
+  testsCoverageCountSummary: Awaited<ReturnType<typeof getTestsAndCoveragesCount>>;
   weeklyTestsSummary: Awaited<ReturnType<typeof getTestsByWeek>>;
   weeklyCoverageSummary: Awaited<ReturnType<typeof getCoveragesByWeek>>;
   sonarProjects: Awaited<ReturnType<typeof getSonarProjectsCount>>;
@@ -342,8 +342,8 @@ export const getSummaryAsChunks = async (
         return rest;
       })
       .then(sendChunk('centralTemplatePipeline')),
-    getDefinitionsWithTestsAndCoverages(queryContext, activeRepoIds).then(
-      sendChunk('defSummary')
+    getTestsAndCoveragesCount(queryContext, activeRepoIds).then(
+      sendChunk('testsCoverageCountSummary')
     ),
     getTestsByWeek(queryContext, activeRepoIds).then(sendChunk('weeklyTestsSummary')),
     getCoveragesByWeek(queryContext, activeRepoIds).then(
