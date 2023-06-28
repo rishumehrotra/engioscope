@@ -137,6 +137,7 @@ const YAMLPipelinesDrawer: React.FC<{
       queryContext: filters.queryContext,
       searchTerms: filters.searchTerms,
       groupsIncluded: filters.groupsIncluded,
+      teams: filters.teams,
     });
 
   return (

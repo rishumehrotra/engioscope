@@ -229,9 +229,11 @@ export const getFilteredReposCount = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
 }: z.infer<typeof filteredReposInputParser>) => {
-  return (await searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded }))
-    .length;
+  return (
+    await searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded, teams })
+  ).length;
 };
 
 export type SummaryStats = {
@@ -266,7 +268,12 @@ export type SummaryStats = {
 };
 
 export const getSummaryAsChunks = async (
-  { queryContext, searchTerms, groupsIncluded }: z.infer<typeof filteredReposInputParser>,
+  {
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams,
+  }: z.infer<typeof filteredReposInputParser>,
   onChunk: (x: Partial<SummaryStats>) => void
 ) => {
   const sendChunk =
@@ -277,7 +284,12 @@ export const getSummaryAsChunks = async (
 
   const { collectionName, project } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
 
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
@@ -337,7 +349,7 @@ export const getSummaryAsChunks = async (
     getCoveragesByWeek(queryContext, activeRepoIds).then(
       sendChunk('weeklyCoverageSummary')
     ),
-    searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded }).then(x =>
+    searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded, teams }).then(x =>
       sendChunk('totalRepos')(x.length)
     ),
     getSonarProjectsCount(collectionName, project, activeRepoIds).then(
@@ -386,9 +398,15 @@ export const getNonYamlPipelines = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
-  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
 
   return RepositoryModel.aggregate<{
     repositoryId: string;
@@ -442,9 +460,15 @@ export const getYAMLPipelinesForDownload = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
 
   const repos = await RepositoryModel.aggregate<{
     name: string;
@@ -547,9 +571,15 @@ export const getRepoListingWithPipelineCount = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
-  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
 
   type RepoListingWithPipelineCount = {
     name: string;
@@ -683,6 +713,7 @@ export const getFilteredAndSortedReposWithStats = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
   sortBy = 'builds',
   sortDirection = 'desc',
   cursor,
@@ -691,6 +722,7 @@ export const getFilteredAndSortedReposWithStats = async ({
     queryContext,
     searchTerms,
     groupsIncluded,
+    teams,
   });
 
   const repositoryIds = filteredRepos.map(prop('id'));

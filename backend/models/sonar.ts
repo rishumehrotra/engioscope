@@ -1368,8 +1368,14 @@ export const getSonarRepos = async ({
   queryContext,
   searchTerms,
   groupsIncluded,
+  teams,
 }: z.infer<typeof filteredReposInputParser>) => {
-  const activeRepos = await getActiveRepos(queryContext, searchTerms, groupsIncluded);
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
 
   const [sonarRepos, nonSonarRepos] = await Promise.all([
     getReposWithSonarSetup(

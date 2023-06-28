@@ -147,6 +147,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
     queryContext: filters.queryContext,
     searchTerms: filters.searchTerms,
     groupsIncluded: filters.groupsIncluded,
+    teams: filters.teams,
   });
 
   const hasOthers = useMemo(() => {

@@ -46,6 +46,7 @@ export const searchAndFilterReposBy = async ({
   const teamRepoIds = teams
     ? await getRepoIdsForTeamNames(collectionName, project, teams)
     : [];
+
   return RepositoryModel.find(
     {
       collectionName,
@@ -78,7 +79,8 @@ export const searchAndFilterReposBy = async ({
 export const getActiveRepos = async (
   queryContext: QueryContext,
   searchTerms: string[] | undefined,
-  groupsIncluded: string[] | undefined
+  groupsIncluded: string[] | undefined,
+  teams: string[] | undefined
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
@@ -86,6 +88,7 @@ export const getActiveRepos = async (
     queryContext,
     searchTerms,
     groupsIncluded,
+    teams,
   });
 
   const [repoIdsFromBuilds, repoIdsFromCommits] = await Promise.all([
