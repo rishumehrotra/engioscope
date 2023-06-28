@@ -46,8 +46,8 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   const teamNameInputRef = useRef<HTMLInputElement>(null);
 
   const teamRepos = trpc.teams.getRepoIdsForTeamName.useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { ...cnp, name: teamNameInQueryParam![0] },
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+    { ...cnp, name: teamNameInQueryParam?.[0]! },
     { enabled: type === 'edit' && Boolean(teamNameInQueryParam?.[0]) }
   );
   useEffect(() => {
@@ -139,9 +139,9 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   return (
     <form
       onSubmit={onSave}
-      className="grid grid-flow-row grid-rows-[min-content_1fr_min-content] h-full"
+      className="grid grid-cols-2 grid-rows-[min-content_1fr_min-content] h-full"
     >
-      <div className="p-5 px-6">
+      <div className="p-5 px-6 col-span-2">
         <input
           type="text"
           placeholder="Enter your team name"
@@ -164,43 +164,43 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
           </p>
         )}
       </div>
-      <div className="grid grid-flow-col grid-cols-2 h-auto">
-        <div className="flex flex-col p-6 pt-0 pb-4">
-          <div>
-            <input
-              type="search"
-              placeholder="Search repositories..."
-              className="inline-block w-full rounded-b-none border-theme-seperator"
-              onChange={e => setSearch(e.target.value)}
-              disabled={disableForm}
-            />
+      <div className="p-6 pt-0 pb-4 grid grid-rows-[min-content_1fr]">
+        <div>
+          <input
+            type="search"
+            placeholder="Search repositories..."
+            className="inline-block w-full rounded-b-none border-theme-seperator"
+            onChange={e => setSearch(e.target.value)}
+            disabled={disableForm}
+          />
 
-            <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator py-2 px-3">
-              <div className="text-theme-icon">
-                Showing{' '}
-                <span className="font-semibold">
-                  {filteredReposWithUsed?.length || '...'}
-                </span>{' '}
-                repositories
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedRepoIds(rs =>
-                      uniq([...rs, ...(filteredReposWithUsed || []).map(r => r.id)])
-                    )
-                  }
-                  className="link-text font-semibold"
-                  disabled={disableForm}
-                >
-                  Add all
-                </button>
-              </div>
+          <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator py-2 px-3">
+            <div className="text-theme-icon">
+              Showing{' '}
+              <span className="font-semibold">
+                {filteredReposWithUsed?.length || '...'}
+              </span>{' '}
+              repositories
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedRepoIds(rs =>
+                    uniq([...rs, ...(filteredReposWithUsed || []).map(r => r.id)])
+                  )
+                }
+                className="link-text font-semibold"
+                disabled={disableForm}
+              >
+                Add all
+              </button>
             </div>
           </div>
+        </div>
 
-          <ul className="overflow-auto flex-grow h-1 border-x-[1px] border-theme-seperator border-b-[1px] rounded-b-md">
+        <div className="border-theme-seperator border-b-[1px] rounded-b-md overflow-auto">
+          <ul className="max-h-[16vh] border-x-[1px]">
             {filteredReposWithUsed?.map(repo => (
               <li key={repo.id} className="border-b border-theme-seperator">
                 <button
@@ -222,65 +222,61 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
             ))}
           </ul>
         </div>
-        <div
-          className={`flex flex-col border rounded-md border-theme-seperator mr-6 mb-4 ${
-            selectedRepos?.length === 0
-              ? 'place-items-center bg-theme-secondary pt-28'
-              : ''
-          }`}
-        >
-          {selectedRepos?.length === 0 ? (
-            <>
-              <img src={emptyList} alt="Add repositories" />
-              <br />
-              <span className="inline-block mx-24 text-center text-theme-helptext text-sm">
-                Select repositories on the left to create a team
-              </span>
-            </>
-          ) : (
-            <>
-              <div>
-                <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator px-2 py-3">
-                  <div className="text-theme-icon">
-                    <span className="font-semibold">{selectedRepos?.length}</span>{' '}
-                    repositories added
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      className="link-text font-semibold"
-                      onClick={() => setSelectedRepoIds([])}
-                      disabled={disableForm}
-                    >
-                      Remove all
-                    </button>
-                  </div>
+      </div>
+      <div
+        className={`border rounded-md border-theme-seperator mr-6 mb-4 overflow-auto ${
+          selectedRepos?.length === 0 ? 'grid place-items-center bg-theme-secondary' : ''
+        }`}
+      >
+        {selectedRepos?.length === 0 ? (
+          <div className="m-auto">
+            <img src={emptyList} alt="Add repositories" className="m-auto" />
+            <br />
+            <span className="inline-block mx-24 text-center text-theme-helptext text-sm">
+              Select repositories on the left to create a team
+            </span>
+          </div>
+        ) : (
+          <>
+            <div>
+              <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator px-2 py-3">
+                <div className="text-theme-icon">
+                  <span className="font-semibold">{selectedRepos?.length}</span>{' '}
+                  repositories added
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    className="link-text font-semibold"
+                    onClick={() => setSelectedRepoIds([])}
+                    disabled={disableForm}
+                  >
+                    Remove all
+                  </button>
                 </div>
               </div>
-              <ul className="overflow-auto flex-grow h-1 border-x-[1px] border-theme-seperator border-b-[1px] rounded-b-md">
-                {selectedRepos?.map(repo => (
-                  <li
-                    key={repo.id}
-                    className="border-b border-theme-seperator p-3 grid grid-cols-[1fr_30px] justify-between"
+            </div>
+            <ul className="border-x-[1px] max-h-[16vh] border-theme-seperator border-b-[1px] rounded-b-md">
+              {selectedRepos?.map(repo => (
+                <li
+                  key={repo.id}
+                  className="border-b border-theme-seperator p-3 grid grid-cols-[1fr_30px] justify-between"
+                >
+                  {repo.name}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRepoIds(r => r.filter(x => x !== repo.id))}
+                    disabled={disableForm}
                   >
-                    {repo.name}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedRepoIds(r => r.filter(x => x !== repo.id))
-                      }
-                      disabled={disableForm}
-                    >
-                      <X size={20} className="text-theme-danger" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+                    <X size={20} className="text-theme-danger" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
-      <div className="grid grid-cols-[1fr_min-content] justify-between items-center pb-5">
+      <div className="col-span-2 grid grid-cols-[1fr_min-content] justify-between items-center pb-5">
         <div className="ml-6 text-theme-danger text-sm">
           {footerSaveError === 'unknown' &&
             'Woops! Something went wrong. Please try again later.'}

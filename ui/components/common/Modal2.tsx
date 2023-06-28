@@ -21,24 +21,21 @@ const Modal2: React.FC<Modal2Props> = ({
   <ReactModal
     isOpen={isOpen}
     onRequestClose={close}
-    overlayClassName="fixed z-20 top-0 left-0 right-0 bottom-0 bg-black bg-opacity-40"
-    className={`relative z-30 bg-white outline-none rounded-lg shadow-2xl m-auto grid grid-flow-row grid-rows-[max-content_1fr] ${className}`}
-    style={{
-      content: {
-        height: '70%',
-      },
-    }}
+    overlayClassName="fixed z-20 top-0 left-0 right-0 bottom-0 bg-black bg-opacity-40 flex place-items-center justify-items-center"
+    className={`relative z-30 bg-white outline-none rounded-lg shadow-2xl m-auto ${className}`}
     bodyOpenClassName="overflow-hidden"
     preventScroll
   >
-    <header className="grid grid-flow-col grid-cols-[1fr_30px] pl-6 pr-3 py-4 items-center border-b border-theme-seperator">
-      <h1 className="text-xl font-medium">{heading}</h1>
+    <div className="grid grid-flow-row grid-rows-[max-content_1fr] h-full">
+      <header className="grid grid-flow-col grid-cols-[1fr_30px] pl-6 pr-3 py-4 items-center border-b border-theme-seperator">
+        <h1 className="text-xl font-medium">{heading}</h1>
 
-      <button onClick={close} className="text-theme-icon">
-        <X size={24} />
-      </button>
-    </header>
-    {children}
+        <button onClick={close} className="text-theme-icon">
+          <X size={24} />
+        </button>
+      </header>
+      {children}
+    </div>
   </ReactModal>
 );
 

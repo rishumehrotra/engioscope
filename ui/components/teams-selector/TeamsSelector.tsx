@@ -95,7 +95,9 @@ const TeamsSelector = () => {
       <Modal
         heading={modalContents.heading}
         {...modalProps}
-        className={modalContents.modalClassName ?? 'max-h-[56rem] max-w-4xl my-36'}
+        className={
+          modalContents.modalClassName ?? 'w-11/12 max-w-4xl h-full max-h-[70vh]'
+        }
       >
         <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
       </Modal>
