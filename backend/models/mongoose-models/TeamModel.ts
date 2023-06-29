@@ -7,12 +7,15 @@ export type Team = {
   repoIds: string[];
 };
 
-const teamSchema = new Schema<Team>({
-  collectionName: { type: String, required: true },
-  project: { type: String, required: true },
-  name: { type: String, required: true },
-  repoIds: [{ type: String, required: true }],
-});
+const teamSchema = new Schema<Team>(
+  {
+    collectionName: { type: String, required: true },
+    project: { type: String, required: true },
+    name: { type: String, required: true },
+    repoIds: [{ type: String, required: true }],
+  },
+  { timestamps: true }
+);
 
 teamSchema.index(
   {
