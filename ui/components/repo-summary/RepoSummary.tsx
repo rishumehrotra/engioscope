@@ -187,8 +187,8 @@ const StreamingRepoSummary: React.FC = () => {
                       summaries.defSummary.reposWithTests
                     )} out of ${pluralise(
                       summaries.totalActiveRepos,
-                      'repo is',
-                      'repos are'
+                      'repo',
+                      'repos'
                     )} reporting test runs`
                   : null
               }
@@ -219,8 +219,8 @@ const StreamingRepoSummary: React.FC = () => {
                       summaries.defSummary.reposWithCoverage
                     )} out of ${pluralise(
                       summaries.totalActiveRepos,
-                      'repo is',
-                      'repos are'
+                      'repo',
+                      'repos'
                     )} reporting coverage.`
                   : null
               }
