@@ -56,10 +56,14 @@ const summarySchema = new Schema<Summary>(
       total: { type: Number },
       central: { type: Number },
     },
-    testsCoverageCountSummary: {
+    defSummary: {
       totalDefs: { type: Number },
       defsWithTests: { type: Number },
       defsWithCoverage: { type: Number },
+    },
+    repoSummary: {
+      reposWithTests: { type: Number },
+      reposWithCoverage: { type: Number },
     },
     weeklyTestsSummary: [
       {

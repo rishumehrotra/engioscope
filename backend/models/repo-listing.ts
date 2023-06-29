@@ -27,10 +27,10 @@ import {
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import {
   getCoveragesByWeek,
-  getTestsAndCoveragesCount,
   getReposSortedByTests,
   getTestsByWeek,
   getTotalTestsForRepositoryIds,
+  getTestsAndCoveragesCount,
 } from './testruns.js';
 import { getActivePipelineBuilds, getTotalBuildsForRepositoryIds } from './builds.js';
 import { getTotalCommitsForRepositoryIds } from './commits.js';
@@ -250,7 +250,15 @@ export type SummaryStats = {
     Awaited<ReturnType<typeof getCentralTemplatePipeline>>,
     'idsWithMainBranchBuilds'
   >;
-  testsCoverageCountSummary: Awaited<ReturnType<typeof getTestsAndCoveragesCount>>;
+  defSummary: {
+    totalDefs: number;
+    defsWithTests: number;
+    defsWithCoverage: number;
+  };
+  repoSummary: {
+    reposWithTests: number;
+    reposWithCoverage: number;
+  };
   weeklyTestsSummary: Awaited<ReturnType<typeof getTestsByWeek>>;
   weeklyCoverageSummary: Awaited<ReturnType<typeof getCoveragesByWeek>>;
   sonarProjects: Awaited<ReturnType<typeof getSonarProjectsCount>>;
@@ -318,6 +326,22 @@ export const getSummaryAsChunks = async (
     ).length;
   });
 
+  const testsAndCoveragesCountPromise = getTestsAndCoveragesCount(
+    queryContext,
+    activeRepoIds
+  );
+
+  const defsCountSummary = testsAndCoveragesCountPromise.then(x => ({
+    totalDefs: x.totalDefs,
+    defsWithTests: x.defsWithTests,
+    defsWithCoverage: x.defsWithCoverage,
+  }));
+
+  const reposCountSummary = testsAndCoveragesCountPromise.then(x => ({
+    reposWithTests: x.reposWithTests,
+    reposWithCoverage: x.reposWithCoverage,
+  }));
+
   await Promise.all([
     getSuccessfulBuildsBy(queryContext, activeRepoIds).then(
       sendChunk('successfulBuilds')
@@ -342,9 +366,8 @@ export const getSummaryAsChunks = async (
         return rest;
       })
       .then(sendChunk('centralTemplatePipeline')),
-    getTestsAndCoveragesCount(queryContext, activeRepoIds).then(
-      sendChunk('testsCoverageCountSummary')
-    ),
+    defsCountSummary.then(sendChunk('defSummary')),
+    reposCountSummary.then(sendChunk('repoSummary')),
     getTestsByWeek(queryContext, activeRepoIds).then(sendChunk('weeklyTestsSummary')),
     getCoveragesByWeek(queryContext, activeRepoIds).then(
       sendChunk('weeklyCoverageSummary')

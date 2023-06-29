@@ -182,10 +182,9 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Tests"
               tooltip={
-                isDefined(summaries.testsCoverageCountSummary) &&
-                isDefined(summaries.totalActiveRepos)
+                isDefined(summaries.repoSummary) && isDefined(summaries.totalActiveRepos)
                   ? `Total number of tests from the ${num(
-                      summaries.testsCoverageCountSummary.reposWithTests
+                      summaries.repoSummary.reposWithTests
                     )} out of ${pluralise(
                       summaries.totalActiveRepos,
                       'repo is',
@@ -215,10 +214,9 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Branch coverage"
               tooltip={
-                isDefined(summaries.testsCoverageCountSummary) &&
-                isDefined(summaries.totalActiveRepos)
+                isDefined(summaries.repoSummary) && isDefined(summaries.totalActiveRepos)
                   ? `Coverage numbers are from only the ${num(
-                      summaries.testsCoverageCountSummary.reposWithCoverage
+                      summaries.repoSummary.reposWithCoverage
                     )} out of ${pluralise(
                       summaries.totalActiveRepos,
                       'repo is',
@@ -487,17 +485,17 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Pipelines running tests"
               tooltip={
-                isDefined(summaries.testsCoverageCountSummary)
-                  ? `${num(summaries.testsCoverageCountSummary.defsWithTests)} of ${num(
-                      summaries.testsCoverageCountSummary.totalDefs
+                isDefined(summaries.defSummary)
+                  ? `${num(summaries.defSummary.defsWithTests)} of ${num(
+                      summaries.defSummary.totalDefs
                     )} pipelines report test results`
                   : null
               }
               value={
-                isDefined(summaries.testsCoverageCountSummary)
+                isDefined(summaries.defSummary)
                   ? divide(
-                      summaries.testsCoverageCountSummary.defsWithTests,
-                      summaries.testsCoverageCountSummary.totalDefs
+                      summaries.defSummary.defsWithTests,
+                      summaries.defSummary.totalDefs
                     )
                       .map(toPercentage)
                       .getOr('-')
@@ -509,19 +507,17 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Reporting coverage"
               tooltip={
-                isDefined(summaries.testsCoverageCountSummary)
-                  ? `${num(
-                      summaries.testsCoverageCountSummary.defsWithCoverage
-                    )} of ${num(
-                      summaries.testsCoverageCountSummary.totalDefs
+                isDefined(summaries.defSummary)
+                  ? `${num(summaries.defSummary.defsWithCoverage)} of ${num(
+                      summaries.defSummary.totalDefs
                     )} pipelines report branch coverage`
                   : null
               }
               value={
-                isDefined(summaries.testsCoverageCountSummary)
+                isDefined(summaries.defSummary)
                   ? divide(
-                      summaries.testsCoverageCountSummary.defsWithCoverage,
-                      summaries.testsCoverageCountSummary.totalDefs
+                      summaries.defSummary.defsWithCoverage,
+                      summaries.defSummary.totalDefs
                     )
                       .map(toPercentage)
                       .getOr('-')
