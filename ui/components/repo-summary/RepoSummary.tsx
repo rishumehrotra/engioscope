@@ -182,9 +182,9 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Tests"
               tooltip={
-                isDefined(summaries.repoSummary) && isDefined(summaries.totalActiveRepos)
+                isDefined(summaries.defSummary) && isDefined(summaries.totalActiveRepos)
                   ? `Total number of tests from the ${num(
-                      summaries.repoSummary.reposWithTests
+                      summaries.defSummary.reposWithTests
                     )} out of ${pluralise(
                       summaries.totalActiveRepos,
                       'repo is',
@@ -214,9 +214,9 @@ const StreamingRepoSummary: React.FC = () => {
             <Stat
               title="Branch coverage"
               tooltip={
-                isDefined(summaries.repoSummary) && isDefined(summaries.totalActiveRepos)
+                isDefined(summaries.defSummary) && isDefined(summaries.totalActiveRepos)
                   ? `Coverage numbers are from only the ${num(
-                      summaries.repoSummary.reposWithCoverage
+                      summaries.defSummary.reposWithCoverage
                     )} out of ${pluralise(
                       summaries.totalActiveRepos,
                       'repo is',

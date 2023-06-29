@@ -60,8 +60,6 @@ const summarySchema = new Schema<Summary>(
       totalDefs: { type: Number },
       defsWithTests: { type: Number },
       defsWithCoverage: { type: Number },
-    },
-    repoSummary: {
       reposWithTests: { type: Number },
       reposWithCoverage: { type: Number },
     },

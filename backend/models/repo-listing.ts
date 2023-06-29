@@ -250,15 +250,7 @@ export type SummaryStats = {
     Awaited<ReturnType<typeof getCentralTemplatePipeline>>,
     'idsWithMainBranchBuilds'
   >;
-  defSummary: {
-    totalDefs: number;
-    defsWithTests: number;
-    defsWithCoverage: number;
-  };
-  repoSummary: {
-    reposWithTests: number;
-    reposWithCoverage: number;
-  };
+  defSummary: Awaited<ReturnType<typeof getTestsAndCoveragesCount>>;
   weeklyTestsSummary: Awaited<ReturnType<typeof getTestsByWeek>>;
   weeklyCoverageSummary: Awaited<ReturnType<typeof getCoveragesByWeek>>;
   sonarProjects: Awaited<ReturnType<typeof getSonarProjectsCount>>;
@@ -326,22 +318,6 @@ export const getSummaryAsChunks = async (
     ).length;
   });
 
-  const testsAndCoveragesCountPromise = getTestsAndCoveragesCount(
-    queryContext,
-    activeRepoIds
-  );
-
-  const defsCountSummary = testsAndCoveragesCountPromise.then(x => ({
-    totalDefs: x.totalDefs,
-    defsWithTests: x.defsWithTests,
-    defsWithCoverage: x.defsWithCoverage,
-  }));
-
-  const reposCountSummary = testsAndCoveragesCountPromise.then(x => ({
-    reposWithTests: x.reposWithTests,
-    reposWithCoverage: x.reposWithCoverage,
-  }));
-
   await Promise.all([
     getSuccessfulBuildsBy(queryContext, activeRepoIds).then(
       sendChunk('successfulBuilds')
@@ -366,8 +342,7 @@ export const getSummaryAsChunks = async (
         return rest;
       })
       .then(sendChunk('centralTemplatePipeline')),
-    defsCountSummary.then(sendChunk('defSummary')),
-    reposCountSummary.then(sendChunk('repoSummary')),
+    getTestsAndCoveragesCount(queryContext, activeRepoIds).then(sendChunk('defSummary')),
     getTestsByWeek(queryContext, activeRepoIds).then(sendChunk('weeklyTestsSummary')),
     getCoveragesByWeek(queryContext, activeRepoIds).then(
       sendChunk('weeklyCoverageSummary')
