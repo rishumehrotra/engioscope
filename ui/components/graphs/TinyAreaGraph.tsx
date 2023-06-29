@@ -36,6 +36,7 @@ export const pathRenderer: Renderer =
     return (
       <>
         <path
+          className="transition-all duration-200"
           d={data
             .map(
               (item, itemIndex) =>

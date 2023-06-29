@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Routes, Route, useParams, useLocation } from 'react-router-dom';
 import { last } from 'rambda';
+import { useHotkeys } from 'react-hotkeys-hook';
 import NavBar from '../components/common/NavBar.js';
 import Repos from './Repos.js';
 import WorkItems from './WorkItems.js';
@@ -16,6 +17,7 @@ import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
 import BuildTimelines from './BuildTimelines.jsx';
 import { num } from '../helpers/utils.js';
+import { asString, useDebouncedQueryParam } from '../hooks/use-query-param.js';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) =>
   count ? (
@@ -72,6 +74,15 @@ const Project: React.FC = () => {
   const setHeaderDetails = useSetHeaderDetails();
 
   const { navItems, selectedTab } = useNavItems();
+  const [search, setSearchTerm] = useDebouncedQueryParam('search', asString);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useHotkeys(
+    '/',
+    () => {
+      inputRef.current?.focus();
+    },
+    { preventDefault: true }
+  );
 
   useEffect(() => {
     projectSummary &&
@@ -120,11 +131,17 @@ const Project: React.FC = () => {
         navItems={navItems}
         selectedTab={selectedTab}
         right={
-          <div className="flex">
-            <div className="flex mr-4">
-              <SearchInput />
-              <AdvancedFilters />
-            </div>
+          <div className="flex mr-2">
+            {selectedTab && (
+              <SearchInput
+                value={search || ''}
+                onChange={e => setSearchTerm(e.target.value)}
+                ref={inputRef}
+                placeholder="Search"
+                className="w-96 text-sm"
+              />
+            )}
+            <AdvancedFilters />
           </div>
         }
       />

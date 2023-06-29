@@ -160,7 +160,11 @@ const TeamsSelector = () => {
         <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
       </Modal>
       <div className="inline-flex items-stretch gap-3 mb-4">
-        <select value={teamsQueryParam?.[0] || 'All teams'} onChange={setTeamNames}>
+        <select
+          value={teamsQueryParam?.[0] || 'All teams'}
+          onChange={setTeamNames}
+          className="w-72"
+        >
           <option value="All teams">All teams</option>
           {teamNames.data?.map(name => (
             <option key={name} value={name}>

@@ -8,6 +8,7 @@ import { trpc } from '../../helpers/trpc.js';
 import emptyList from './empty-list.svg';
 import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
+import SearchInput from '../common/SearchInput.jsx';
 
 type TeamSelectorProps = {
   type: 'create' | 'edit' | 'duplicate';
@@ -72,6 +73,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
 
   const clearCache = useClearCache(teamNameInQueryParam?.[0]);
   const teamNameInputRef = useRef<HTMLInputElement>(null);
+  const searchReposRef = useRef<HTMLInputElement>(null);
 
   const teamRepos = trpc.teams.getRepoIdsForTeamName.useQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
@@ -110,6 +112,12 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         setTextboxValidationError('no-empty');
         teamNameInputRef.current?.focus();
         teamNameInputRef.current?.select();
+        return;
+      }
+
+      if (selectedRepoIds.length === 0) {
+        setFooterSaveError('no-empty');
+        searchReposRef.current?.focus();
         return;
       }
 
@@ -199,12 +207,13 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
       </div>
       <div className="p-6 pt-0 pb-4 grid grid-rows-[min-content_1fr]">
         <div>
-          <input
-            type="search"
+          <SearchInput
             placeholder="Search repositories..."
-            className="inline-block w-full rounded-b-none border-theme-seperator"
-            onChange={e => setSearch(e.target.value)}
+            ref={searchReposRef}
             disabled={disableForm}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="rounded-b-none border-theme-seperator"
           />
 
           <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x border-theme-seperator py-2 px-3">
@@ -238,7 +247,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
               <li key={repo.id} className="border-b border-theme-seperator">
                 <button
                   type="button"
-                  className="p-3 w-full text-left grid grid-cols-[1fr_30px] justify-between"
+                  className="p-3 w-full text-left grid grid-cols-[1fr_30px] justify-between hover:bg-theme-hover"
                   onClick={() => setSelectedRepoIds(rs => uniq([...rs, repo.id]))}
                   disabled={disableForm}
                 >
@@ -272,7 +281,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         ) : (
           <>
             <div>
-              <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x-[1px] border-theme-seperator px-2 py-3">
+              <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-theme-seperator px-2 py-3">
                 <div className="text-theme-icon">
                   <span className="font-semibold">{selectedRepos?.length}</span>{' '}
                   repositories added
@@ -280,7 +289,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
                 <div>
                   <button
                     type="button"
-                    className="link-text font-semibold"
+                    className="link-text font-semibold mr-1"
                     onClick={() => setSelectedRepoIds([])}
                     disabled={disableForm}
                   >
@@ -289,7 +298,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
                 </div>
               </div>
             </div>
-            <ul className="border-x-[1px] max-h-[16vh]">
+            <ul className="h-1">
               {selectedRepos?.map(repo => (
                 <li
                   key={repo.id}
