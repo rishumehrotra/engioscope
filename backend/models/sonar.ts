@@ -436,40 +436,6 @@ export const getSonarProjectsCount = async (
   project: string,
   repositoryIds: string[]
 ) => {
-  // const sonarProjects = await SonarAlertHistoryModel.aggregate<{
-  //   totalProjects: number;
-  //   passedProjects: number;
-  //   projectsWithWarning: number;
-  //   failedProjects: number;
-  // }>([
-  //   {
-  //     $match: {
-  //       collectionName,
-  //       project,
-  //       repositoryId: { $in: repositoryIds },
-  //     },
-  //   },
-  //   { $sort: { date: -1 } },
-  //   {
-  //     $group: {
-  //       _id: '$sonarProjectId',
-  //       latest: { $first: '$$ROOT' },
-  //     },
-  //   },
-  //   {
-  //     $group: {
-  //       _id: null,
-  //       totalProjects: { $sum: 1 },
-  //       passedProjects: { $sum: { $cond: [{ $eq: ['$latest.value', 'OK'] }, 1, 0] } },
-  //       projectsWithWarning: {
-  //         $sum: { $cond: [{ $eq: ['$latest.value', 'WARN'] }, 1, 0] },
-  //       },
-  //       failedProjects: { $sum: { $cond: [{ $eq: ['$latest.value', 'ERROR'] }, 1, 0] } },
-  //     },
-  //   },
-  //   { $project: { _id: 0 } },
-  // ]);
-
   const sonarProjects = await SonarProjectsForRepoModel.aggregate<{
     totalProjects: number;
     passedProjects: number;
@@ -571,7 +537,6 @@ const getSonarProjectIdsBeforeStartDate = async (
             $match: {
               collectionName,
               project,
-              repositoryId: { $in: repositoryIds },
               $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
               date: { $lt: startDate },
             },
@@ -710,7 +675,6 @@ const getWeeklySonarProjectIds = async (
             $match: {
               collectionName,
               project,
-              repositoryId: { $in: repositoryIds },
               $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
               date: inDateRange(startDate, endDate),
             },
@@ -1045,7 +1009,6 @@ export const getWeeklyReposWithSonarQubeSummary = (
             $match: {
               collectionName,
               project,
-              repositoryId: { $in: repositoryIds },
               $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
               date: inDateRange(startDate, endDate),
             },
