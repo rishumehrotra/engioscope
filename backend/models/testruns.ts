@@ -390,19 +390,26 @@ export const getReposListingForTestsDrawer = async (
     {
       repositoryId: string;
       definitions: DefItem[];
+      totalTests: number;
     }[]
   >((acc, curr) => {
-    const { repositoryId } = curr;
+    const { repositoryId, latestTest } = curr;
+
+    if (!repositoryId) {
+      return acc;
+    }
     const repo = acc.find(x => x.repositoryId === repositoryId);
     if (repo) {
       repo.definitions.push(curr);
-    }
-    if (repositoryId) {
+      repo.totalTests += latestTest?.hasTests ? latestTest.totalTests : 0;
+    } else {
       acc.push({
         repositoryId,
         definitions: [curr],
+        totalTests: latestTest?.hasTests ? latestTest.totalTests : 0,
       });
     }
+
     return acc;
   }, []);
 };
