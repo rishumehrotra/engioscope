@@ -894,11 +894,56 @@ export const getReposWithSonarQubeBeforeStartDate = (
   repositoryIds: string[],
   startDate: Date
 ) => {
-  return SonarAlertHistoryModel.distinct('repositoryId', {
-    collectionName,
-    project,
-    repositoryId: { $in: repositoryIds },
-    date: { $lt: startDate },
+  return SonarProjectsForRepoModel.aggregate<{ repositoryIds: string[] }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonaralerthistories',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
+              date: { $lt: startDate },
+            },
+          },
+          { $sort: { date: -1 } },
+          { $limit: 1 },
+        ],
+        as: 'preStartDateAlerts',
+      },
+    },
+    {
+      $unwind: {
+        path: '$preStartDateAlerts',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        repositoryIds: { $addToSet: '$repositoryId' },
+      },
+    },
+    {
+      $project: { _id: 0 },
+    },
+  ]).then(result => {
+    return result[0]?.repositoryIds ?? [];
   });
 };
 
@@ -908,7 +953,7 @@ export const getWeeklyReposWithSonarQubeSummary = (
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  return SonarAlertHistoryModel.aggregate<{
+  return SonarProjectsForRepoModel.aggregate<{
     weekIndex: number;
     repos: string[];
   }>([
@@ -917,13 +962,43 @@ export const getWeeklyReposWithSonarQubeSummary = (
         collectionName,
         project,
         repositoryId: { $in: repositoryIds },
-        date: inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonaralerthistories',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              repositoryId: { $in: repositoryIds },
+              $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
+              date: inDateRange(startDate, endDate),
+            },
+          },
+          { $sort: { date: -1 } },
+        ],
+        as: 'alerts',
+      },
+    },
+    {
+      $unwind: {
+        path: '$alerts',
+        preserveNullAndEmptyArrays: false,
       },
     },
     {
       $addFields: {
         weekIndex: {
-          $trunc: { $divide: [{ $subtract: ['$date', startDate] }, oneWeekInMs] },
+          $trunc: { $divide: [{ $subtract: ['$alerts.date', startDate] }, oneWeekInMs] },
         },
       },
     },
