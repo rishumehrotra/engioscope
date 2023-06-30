@@ -436,7 +436,41 @@ export const getSonarProjectsCount = async (
   project: string,
   repositoryIds: string[]
 ) => {
-  const sonarProjects = await SonarAlertHistoryModel.aggregate<{
+  // const sonarProjects = await SonarAlertHistoryModel.aggregate<{
+  //   totalProjects: number;
+  //   passedProjects: number;
+  //   projectsWithWarning: number;
+  //   failedProjects: number;
+  // }>([
+  //   {
+  //     $match: {
+  //       collectionName,
+  //       project,
+  //       repositoryId: { $in: repositoryIds },
+  //     },
+  //   },
+  //   { $sort: { date: -1 } },
+  //   {
+  //     $group: {
+  //       _id: '$sonarProjectId',
+  //       latest: { $first: '$$ROOT' },
+  //     },
+  //   },
+  //   {
+  //     $group: {
+  //       _id: null,
+  //       totalProjects: { $sum: 1 },
+  //       passedProjects: { $sum: { $cond: [{ $eq: ['$latest.value', 'OK'] }, 1, 0] } },
+  //       projectsWithWarning: {
+  //         $sum: { $cond: [{ $eq: ['$latest.value', 'WARN'] }, 1, 0] },
+  //       },
+  //       failedProjects: { $sum: { $cond: [{ $eq: ['$latest.value', 'ERROR'] }, 1, 0] } },
+  //     },
+  //   },
+  //   { $project: { _id: 0 } },
+  // ]);
+
+  const sonarProjects = await SonarProjectsForRepoModel.aggregate<{
     totalProjects: number;
     passedProjects: number;
     projectsWithWarning: number;
@@ -449,11 +483,34 @@ export const getSonarProjectsCount = async (
         repositoryId: { $in: repositoryIds },
       },
     },
-    { $sort: { date: -1 } },
     {
-      $group: {
-        _id: '$sonarProjectId',
-        latest: { $first: '$$ROOT' },
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonaralerthistories',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
+            },
+          },
+          { $sort: { date: -1 } },
+          { $limit: 1 },
+        ],
+        as: 'latest',
+      },
+    },
+    {
+      $unwind: {
+        path: '$latest',
+        preserveNullAndEmptyArrays: false,
       },
     },
     {
