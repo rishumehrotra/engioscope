@@ -543,7 +543,7 @@ const getSonarProjectIdsBeforeStartDate = async (
   repositoryIds: string[],
   startDate: Date
 ) => {
-  const sonarProjectIdsBeforeStartDate = await SonarAlertHistoryModel.aggregate<{
+  const sonarProjectIdsBeforeStartDate = await SonarProjectsForRepoModel.aggregate<{
     allProjectIds: string[];
     okProjectIds: string[];
     warnProjectIds: string[];
@@ -554,28 +554,64 @@ const getSonarProjectIdsBeforeStartDate = async (
         collectionName,
         project,
         repositoryId: { $in: repositoryIds },
-        date: { $lt: startDate },
       },
     },
-    { $sort: { date: -1 } },
+    {
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonaralerthistories',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              repositoryId: { $in: repositoryIds },
+              $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
+              date: { $lt: startDate },
+            },
+          },
+          { $sort: { date: -1 } },
+        ],
+        as: 'alerts',
+      },
+    },
+    {
+      $unwind: {
+        path: '$alerts',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $sort: { date: -1 },
+    },
     {
       $group: {
         _id: {
           repositoryId: '$repositoryId',
-          sonarProjectId: '$sonarProjectId',
+          sonarProjectId: '$sonarProjectIds',
         },
-        sonarProjectId: { $first: '$sonarProjectId' },
+        sonarProjectId: { $first: '$sonarProjectIds' },
         latest: { $first: '$$ROOT' },
       },
     },
     {
       $group: {
         _id: null,
-        allProjectIds: { $addToSet: { $toString: '$sonarProjectId' } },
+        allProjectIds: {
+          $addToSet: {
+            $toString: '$sonarProjectId',
+          },
+        },
         failedProjectIds: {
           $addToSet: {
             $cond: {
-              if: { $eq: ['$latest.value', 'ERROR'] },
+              if: { $eq: ['$latest.alerts.value', 'ERROR'] },
               then: { $toString: '$sonarProjectId' },
               else: null,
             },
@@ -584,7 +620,7 @@ const getSonarProjectIdsBeforeStartDate = async (
         okProjectIds: {
           $addToSet: {
             $cond: {
-              if: { $eq: ['$latest.value', 'OK'] },
+              if: { $eq: ['$latest.alerts.value', 'OK'] },
               then: { $toString: '$sonarProjectId' },
               else: null,
             },
@@ -593,7 +629,7 @@ const getSonarProjectIdsBeforeStartDate = async (
         warnProjectIds: {
           $addToSet: {
             $cond: {
-              if: { $eq: ['$latest.value', 'WARN'] },
+              if: { $eq: ['$latest.alerts.value', 'WARN'] },
               then: { $toString: '$sonarProjectId' },
               else: null,
             },
@@ -645,7 +681,7 @@ const getWeeklySonarProjectIds = async (
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  return SonarAlertHistoryModel.aggregate<{
+  return SonarProjectsForRepoModel.aggregate<{
     weekIndex: number;
     allProjectIds: string[];
     okProjectIds: string[];
@@ -657,13 +693,43 @@ const getWeeklySonarProjectIds = async (
         collectionName,
         project,
         repositoryId: { $in: repositoryIds },
-        date: inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $unwind: {
+        path: '$sonarProjectIds',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'sonaralerthistories',
+        let: { sonarProjectId: '$sonarProjectIds' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              repositoryId: { $in: repositoryIds },
+              $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] },
+              date: inDateRange(startDate, endDate),
+            },
+          },
+          { $sort: { date: -1 } },
+        ],
+        as: 'alerts',
+      },
+    },
+    {
+      $unwind: {
+        path: '$alerts',
+        preserveNullAndEmptyArrays: false,
       },
     },
     {
       $addFields: {
         weekIndex: {
-          $trunc: { $divide: [{ $subtract: ['$date', startDate] }, oneWeekInMs] },
+          $trunc: { $divide: [{ $subtract: ['$alerts.date', startDate] }, oneWeekInMs] },
         },
       },
     },
@@ -673,9 +739,9 @@ const getWeeklySonarProjectIds = async (
         _id: {
           repositoryId: '$repositoryId',
           weekIndex: '$weekIndex',
-          sonarProjectId: '$sonarProjectId',
+          sonarProjectId: '$sonarProjectIds',
         },
-        sonarProjectId: { $first: '$sonarProjectId' },
+        sonarProjectId: { $first: '$sonarProjectIds' },
         weekIndex: { $first: '$weekIndex' },
         latest: { $first: '$$ROOT' },
       },
@@ -688,7 +754,7 @@ const getWeeklySonarProjectIds = async (
         failedProjectIds: {
           $addToSet: {
             $cond: {
-              if: { $eq: ['$latest.value', 'ERROR'] },
+              if: { $eq: ['$latest.alerts.value', 'ERROR'] },
               then: { $toString: '$sonarProjectId' },
               else: null,
             },
@@ -697,7 +763,7 @@ const getWeeklySonarProjectIds = async (
         okProjectIds: {
           $addToSet: {
             $cond: {
-              if: { $eq: ['$latest.value', 'OK'] },
+              if: { $eq: ['$latest.alerts.value', 'OK'] },
               then: { $toString: '$sonarProjectId' },
               else: null,
             },
@@ -706,7 +772,7 @@ const getWeeklySonarProjectIds = async (
         warnProjectIds: {
           $addToSet: {
             $cond: {
-              if: { $eq: ['$latest.value', 'WARN'] },
+              if: { $eq: ['$latest.alerts.value', 'WARN'] },
               then: { $toString: '$sonarProjectId' },
               else: null,
             },
