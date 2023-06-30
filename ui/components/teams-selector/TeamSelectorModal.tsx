@@ -82,16 +82,18 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
     { enabled: type === 'edit' && Boolean(teamNameInQueryParam![0]) }
   );
   useEffect(() => {
-    if (teamRepos.data) {
+    if (teamRepos.data && type === 'edit') {
       setSelectedRepoIds(teamRepos.data);
     }
-  }, [teamRepos.data]);
+  }, [teamRepos.data, type]);
 
   const filteredReposWithUsed = useMemo(() => {
     const preFiltered =
       search.trim() === ''
         ? allRepos.data
-        : allRepos.data?.filter(r => r.name.toLowerCase().includes(search.trim()));
+        : allRepos.data?.filter(r =>
+            r.name.toLowerCase().includes(search.trim().toLowerCase())
+          );
 
     return preFiltered
       ?.map(r => ({ ...r, isSelected: selectedRepoIds.includes(r.id) }))
