@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { byString } from 'sort-lib';
-import { uniq } from 'rambda';
-import { Check, X } from 'react-feather';
+import { X } from 'react-feather';
 import { TRPCClientError } from '@trpc/client';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import emptyList from './empty-list.svg';
 import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
 import useRepoFilters from '../../hooks/use-repo-filters.jsx';
-import SearchInput from '../common/SearchInput.jsx';
+import RepoPicker from './RepoPicker.jsx';
 
 type TeamSelectorProps = {
   type: 'create' | 'edit' | 'duplicate';
@@ -52,7 +51,6 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   const createTeam = trpc.teams.createTeam.useMutation();
   const updateTeam = trpc.teams.updateTeam.useMutation();
 
-  const [search, setSearch] = useState('');
   const [selectedRepoIds, setSelectedRepoIds] = useState<string[]>([]);
   const [footerSaveError, setFooterSaveError] = useState<'no-empty' | 'unknown' | null>(
     null
@@ -86,19 +84,6 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
       setSelectedRepoIds(teamRepos.data);
     }
   }, [teamRepos.data, type]);
-
-  const filteredReposWithUsed = useMemo(() => {
-    const preFiltered =
-      search.trim() === ''
-        ? allRepos.data
-        : allRepos.data?.filter(r =>
-            r.name.toLowerCase().includes(search.trim().toLowerCase())
-          );
-
-    return preFiltered
-      ?.map(r => ({ ...r, isSelected: selectedRepoIds.includes(r.id) }))
-      .sort(byString(r => r.name.toLowerCase()));
-  }, [allRepos.data, search, selectedRepoIds]);
 
   const selectedRepos = useMemo(() => {
     return allRepos.data
@@ -207,66 +192,13 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
           </p>
         )}
       </div>
-      <div className="p-6 pt-0 pb-4 grid grid-rows-[min-content_1fr]">
-        <div>
-          <SearchInput
-            placeholder="Search repositories..."
-            ref={searchReposRef}
-            disabled={disableForm}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="rounded-b-none border-theme-seperator"
-          />
-
-          <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x border-theme-seperator py-2 px-3">
-            <div className="text-theme-icon">
-              Showing{' '}
-              <span className="font-semibold">
-                {filteredReposWithUsed?.length || '...'}
-              </span>{' '}
-              repositories
-            </div>
-            <div>
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedRepoIds(rs =>
-                    uniq([...rs, ...(filteredReposWithUsed || []).map(r => r.id)])
-                  )
-                }
-                className="link-text font-semibold"
-                disabled={disableForm}
-              >
-                Add all
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-theme-seperator border-b border-x rounded-b-md overflow-auto">
-          <ul className="max-h-[16vh]">
-            {filteredReposWithUsed?.map(repo => (
-              <li key={repo.id} className="border-b border-theme-seperator">
-                <button
-                  type="button"
-                  className="p-3 w-full text-left grid grid-cols-[1fr_30px] justify-between hover:bg-theme-hover"
-                  onClick={() => setSelectedRepoIds(rs => uniq([...rs, repo.id]))}
-                  disabled={disableForm}
-                >
-                  <span className="max-w-full inline-block truncate">{repo.name}</span>
-                  <span>
-                    {repo.isSelected ? (
-                      <Check size={20} className="text-theme-success" />
-                    ) : (
-                      ''
-                    )}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <RepoPicker
+        disabled={disableForm}
+        ref={searchReposRef}
+        allRepos={allRepos.data}
+        selectedRepoIds={selectedRepoIds}
+        setSelectedRepoIds={setSelectedRepoIds}
+      />
       <div
         className={`border rounded-md border-theme-seperator mr-6 mb-4 overflow-auto ${
           selectedRepos?.length === 0 ? 'grid place-items-center bg-theme-secondary' : ''
