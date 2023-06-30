@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
-import type { BranchCoverage } from './tests-coverages.js';
+import type { BranchCoverage, CoverageByWeek } from './tests-coverages.js';
 import {
   getTestsForBuildIds,
   getCoverageForBuildIDs,
@@ -15,10 +15,13 @@ import {
   getOneOldCoverageForBuildDefID,
   getOneOldTestForBuildDefID,
   getTestsForRepo,
+  getTestsForRepos,
+  getCoveragesForRepos,
 } from './tests-coverages.js';
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
 import { createIntervals, getLatest } from '../utils.js';
+import { getActiveRepos } from './active-repos.js';
 
 export const TestRunsForRepositoryInputParser = z.object({
   queryContext: queryContextInputParser,
@@ -57,7 +60,7 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
   unsortedDataByWeek: T[] | undefined,
   startDate: Date,
   endDate: Date,
-  getOneOlderTestRun: () => Promise<T | null>,
+  getOneOlderTestRun: () => Promise<T | null> | null,
   emptyValue: Omit<T, 'weekIndex'>
 ) => {
   const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
@@ -122,6 +125,46 @@ export const combineTestsAndCoverageForRepo = async (
     ).lean(),
     getTestsForRepo(queryContext, repositoryId),
     getCoveragesForRepo(queryContext, repositoryId),
+  ]);
+
+  // Mapping the build definitions/pipelines with no testruns
+  const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
+    definition => {
+      const tests = definitionTestRuns.find(def => def.definitionId === definition.id);
+      return { ...definition, ...tests } || definition;
+    }
+  );
+
+  return (buildDefsWithTests as BuildDefWithTests[]).map(definition => {
+    const coverage = branchCoverage.find(def => def.definitionId === definition.id);
+    return (
+      coverage ? { ...definition, coverageByWeek: coverage.coverageByWeek } : definition
+    ) as BuildDefWithTestsAndCoverage;
+  });
+};
+
+export const combineTestsAndCoverageForRepos = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const [definitionList, definitionTestRuns, branchCoverage] = await Promise.all([
+    BuildDefinitionModel.find(
+      {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+      },
+      {
+        _id: 0,
+        id: 1,
+        name: 1,
+        url: 1,
+      }
+    ).lean(),
+    getTestsForRepos(queryContext, repositoryIds),
+    getCoveragesForRepos(queryContext, repositoryIds),
   ]);
 
   // Mapping the build definitions/pipelines with no testruns
@@ -215,6 +258,153 @@ export const getTestRunsAndCoverageForRepo = async ({
   return definitionTestsAndCoverage.sort(
     desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)))
   );
+};
+
+export const TestRunsForRepositoriesInputParser = z.object({
+  queryContext: queryContextInputParser,
+  repositoryIds: z.string().array(),
+});
+
+export const getReposListingForTestsDrawer = async (
+  queryContext: QueryContext,
+  searchTerms: string[] | undefined,
+  groupsIncluded: string[] | undefined,
+  teams: string[] | undefined
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const activeRepos = await getActiveRepos(
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams
+  );
+  const repositoryIds = activeRepos.map(repo => repo.id);
+  const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepos(
+    queryContext,
+    repositoryIds
+  );
+  const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
+    return getOneOldTestForBuildDefID(
+      collectionName,
+      project,
+      repositoryId,
+      defId,
+      startDate
+    );
+  };
+
+  const getOneOlderCoverageForDef = (defId: number, repositoryId: string) => () => {
+    return getOneOldCoverageForBuildDefID(
+      collectionName,
+      project,
+      repositoryId,
+      defId,
+      startDate
+    );
+  };
+
+  const definitionTestsAndCoverage = await Promise.all(
+    testRunsAndCoverageForRepo.map(async def => {
+      const tests = await makeContinuous(
+        def.tests,
+        startDate,
+        endDate,
+        def.repositoryId
+          ? getOneOlderTestRunForDef(def.id, def.repositoryId)
+          : () => null,
+        { hasTests: false }
+      );
+
+      const coverageData = await makeContinuous(
+        def.coverageByWeek || undefined,
+        startDate,
+        endDate,
+        def.repositoryId
+          ? getOneOlderCoverageForDef(def.id, def.repositoryId)
+          : () => null,
+        {
+          buildId: 0,
+          definitionId: 0,
+          hasCoverage: false,
+        }
+      );
+
+      const latestTest = tests ? getLatest(def.tests || []) : null;
+      const latestCoverage = coverageData ? getLatest(def.coverageByWeek || []) : null;
+
+      const url = latestTest?.hasTests
+        ? `${def.url.split('_apis')[0]}_build/results?buildId=${
+            latestTest.buildId
+          }&view=ms.vss-test-web.build-test-results-tab`
+        : `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`;
+
+      return {
+        ...def,
+        url,
+        tests,
+        coverageByWeek: coverageData,
+        latestTest,
+        latestCoverage,
+      };
+    })
+  );
+
+  definitionTestsAndCoverage.sort(
+    desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)))
+  );
+
+  type DefItem = {
+    url: string;
+    tests:
+      | (
+          | ({
+              weekIndex: number;
+            } & {
+              hasTests: false;
+            })
+          | ({
+              weekIndex: number;
+            } & {
+              hasTests: true;
+              buildId: number;
+              totalTests: number;
+              startedDate: Date;
+              completedDate: Date;
+              passedTests: number;
+            })
+        )[]
+      | null;
+    coverageByWeek: CoverageByWeek[] | null;
+    latestTest: TestsForWeek | null;
+    latestCoverage: CoverageByWeek | null;
+    id: number;
+    name: string;
+    definitionId?: number | undefined;
+    buildId?: number | undefined;
+    latest?: TestsForWeek | undefined;
+    repositoryId?: string | undefined;
+  };
+
+  return definitionTestsAndCoverage.reduce<
+    {
+      repositoryId: string;
+      definitions: DefItem[];
+    }[]
+  >((acc, curr) => {
+    const { repositoryId } = curr;
+    const repo = acc.find(x => x.repositoryId === repositoryId);
+    if (repo) {
+      repo.definitions.push(curr);
+    }
+    if (repositoryId) {
+      acc.push({
+        repositoryId,
+        definitions: [curr],
+      });
+    }
+    return acc;
+  }, []);
 };
 
 export const getTestsAndCoveragesCount = async (

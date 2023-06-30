@@ -212,6 +212,32 @@ export const getTestsForRepo = async (
   ]).exec();
 };
 
+export const getTestsForRepos = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return RepositoryModel.aggregate<TestsForDef>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getTestsForBuildIds(collectionName, project),
+    {
+      $group: {
+        _id: '$definitionId',
+        definitionId: { $first: '$definitionId' },
+        repositoryId: { $first: '$repositoryId' },
+        tests: { $push: '$$ROOT' },
+      },
+    },
+  ]).exec();
+};
+
 export const getOneOldTestForBuildDefID = async (
   collectionName: string,
   project: string,
@@ -322,6 +348,40 @@ export const getCoveragesForRepo = (queryContext: QueryContext, repositoryId: st
       collectionName,
       project,
       [repositoryId],
+      startDate,
+      queryForFinishTimeInRange(startDate, endDate)
+    ),
+    ...getCoverageForBuildIDs(collectionName, project),
+    {
+      $group: {
+        _id: '$definitionId',
+        definitionId: { $first: '$definitionId' },
+        repositoryId: { $first: '$repositoryId' },
+        coverage: { $push: '$$ROOT' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        definitionId: 1,
+        repositoryId: 1,
+        coverageByWeek: '$coverage',
+      },
+    },
+  ]).exec();
+};
+
+export const getCoveragesForRepos = (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return RepositoryModel.aggregate<BranchCoverage>([
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repositoryIds,
       startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
