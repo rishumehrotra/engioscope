@@ -1,11 +1,11 @@
 import { passInputTo, t } from './trpc.js';
 import {
   getTestRunsAndCoverageForRepo,
-  TestRunsForRepositoryInputParser,
+  testRunsForRepositoryInputParser,
 } from '../../models/testruns.js';
 
 export default t.router({
   getTestRunsAndCoverageForRepo: t.procedure
-    .input(TestRunsForRepositoryInputParser)
+    .input(testRunsForRepositoryInputParser)
     .query(passInputTo(getTestRunsAndCoverageForRepo)),
 });

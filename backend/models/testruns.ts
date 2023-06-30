@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
-import type { BranchCoverage, CoverageByWeek } from './tests-coverages.js';
+import type { BranchCoverage } from './tests-coverages.js';
 import {
   getTestsForBuildIds,
   getCoverageForBuildIDs,
@@ -23,7 +23,7 @@ import { queryContextInputParser, fromContext } from './utils.js';
 import { createIntervals, getLatest } from '../utils.js';
 import { getActiveRepos } from './active-repos.js';
 
-export const TestRunsForRepositoryInputParser = z.object({
+export const testRunsForRepositoryInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryId: z.string(),
 });
@@ -60,7 +60,7 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
   unsortedDataByWeek: T[] | undefined,
   startDate: Date,
   endDate: Date,
-  getOneOlderTestRun: () => Promise<T | null> | null,
+  getOneOlderTestRun: () => Promise<T | null>,
   emptyValue: Omit<T, 'weekIndex'>
 ) => {
   const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
@@ -186,7 +186,7 @@ export const combineTestsAndCoverageForRepos = async (
 export const getTestRunsAndCoverageForRepo = async ({
   queryContext,
   repositoryId,
-}: z.infer<typeof TestRunsForRepositoryInputParser>) => {
+}: z.infer<typeof testRunsForRepositoryInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepo(
@@ -260,11 +260,6 @@ export const getTestRunsAndCoverageForRepo = async ({
   );
 };
 
-export const TestRunsForRepositoriesInputParser = z.object({
-  queryContext: queryContextInputParser,
-  repositoryIds: z.string().array(),
-});
-
 export const getReposListingForTestsDrawer = async (
   queryContext: QueryContext,
   searchTerms: string[] | undefined,
@@ -279,7 +274,7 @@ export const getReposListingForTestsDrawer = async (
     groupsIncluded,
     teams
   );
-  const repositoryIds = activeRepos.map(repo => repo.id);
+  const repositoryIds = activeRepos.map(prop('id'));
   const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepos(
     queryContext,
     repositoryIds
@@ -304,100 +299,65 @@ export const getReposListingForTestsDrawer = async (
     );
   };
 
-  const definitionTestsAndCoverage = await Promise.all(
-    testRunsAndCoverageForRepo.map(async def => {
-      const tests = await makeContinuous(
-        def.tests,
-        startDate,
-        endDate,
-        def.repositoryId
-          ? getOneOlderTestRunForDef(def.id, def.repositoryId)
-          : () => null,
-        { hasTests: false }
-      );
+  const definitionTestsAndCoverage = (
+    await Promise.all(
+      testRunsAndCoverageForRepo.map(async def => {
+        const tests = await makeContinuous(
+          def.tests,
+          startDate,
+          endDate,
+          def.repositoryId
+            ? getOneOlderTestRunForDef(def.id, def.repositoryId)
+            : () => Promise.resolve(null),
+          { hasTests: false }
+        );
 
-      const coverageData = await makeContinuous(
-        def.coverageByWeek || undefined,
-        startDate,
-        endDate,
-        def.repositoryId
-          ? getOneOlderCoverageForDef(def.id, def.repositoryId)
-          : () => null,
-        {
-          buildId: 0,
-          definitionId: 0,
-          hasCoverage: false,
-        }
-      );
+        const coverageData = await makeContinuous(
+          def.coverageByWeek || undefined,
+          startDate,
+          endDate,
+          def.repositoryId
+            ? getOneOlderCoverageForDef(def.id, def.repositoryId)
+            : () => Promise.resolve(null),
+          {
+            buildId: 0,
+            definitionId: 0,
+            hasCoverage: false,
+          }
+        );
 
-      const latestTest = tests ? getLatest(def.tests || []) : null;
-      const latestCoverage = coverageData ? getLatest(def.coverageByWeek || []) : null;
+        const latestTest = tests ? getLatest(def.tests || []) : null;
+        const latestCoverage = coverageData ? getLatest(def.coverageByWeek || []) : null;
 
-      const url = latestTest?.hasTests
-        ? `${def.url.split('_apis')[0]}_build/results?buildId=${
-            latestTest.buildId
-          }&view=ms.vss-test-web.build-test-results-tab`
-        : `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`;
+        const url = latestTest?.hasTests
+          ? `${def.url.split('_apis')[0]}_build/results?buildId=${
+              latestTest.buildId
+            }&view=ms.vss-test-web.build-test-results-tab`
+          : `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`;
 
-      return {
-        ...def,
-        url,
-        tests,
-        coverageByWeek: coverageData,
-        latestTest,
-        latestCoverage,
-      };
-    })
-  );
-
-  definitionTestsAndCoverage.sort(
-    desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)))
-  );
-
-  type DefItem = {
-    url: string;
-    tests:
-      | (
-          | ({
-              weekIndex: number;
-            } & {
-              hasTests: false;
-            })
-          | ({
-              weekIndex: number;
-            } & {
-              hasTests: true;
-              buildId: number;
-              totalTests: number;
-              startedDate: Date;
-              completedDate: Date;
-              passedTests: number;
-            })
-        )[]
-      | null;
-    coverageByWeek: CoverageByWeek[] | null;
-    latestTest: TestsForWeek | null;
-    latestCoverage: CoverageByWeek | null;
-    id: number;
-    name: string;
-    definitionId?: number | undefined;
-    buildId?: number | undefined;
-    latest?: TestsForWeek | undefined;
-    repositoryId?: string | undefined;
-  };
+        return {
+          ...def,
+          url,
+          tests,
+          coverageByWeek: coverageData,
+          latestTest,
+          latestCoverage,
+        };
+      })
+    )
+  ).sort(desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0))));
 
   return definitionTestsAndCoverage.reduce<
     {
       repositoryId: string;
-      definitions: DefItem[];
+      definitions: typeof definitionTestsAndCoverage;
       totalTests: number;
     }[]
   >((acc, curr) => {
     const { repositoryId, latestTest } = curr;
 
-    if (!repositoryId) {
-      return acc;
-    }
+    if (!repositoryId) return acc;
+
     const repo = acc.find(x => x.repositoryId === repositoryId);
     if (repo) {
       repo.definitions.push(curr);
