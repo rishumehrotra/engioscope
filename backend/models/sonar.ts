@@ -64,10 +64,7 @@ export const attemptMatchFromBuildReports = async (
     sonarUrls.includes(s.url.toLowerCase())
   );
 
-  if (!sonarServers.length) {
-    console.log('Unable to find sonar URL', sonarUrls);
-    return null;
-  }
+  if (!sonarServers.length) return null;
 
   const matchingSonarProjects = await SonarProjectModel.find({
     $or: sonarServers.map(s => {

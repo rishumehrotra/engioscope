@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import useDropdownMenu from 'react-accessible-dropdown-menu-hook';
 import { Copy, Edit3, Plus, Sliders, Trash2 } from 'react-feather';
-import useQueryParam, { asBoolean, asStringArray } from '../../hooks/use-query-param.js';
+import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
 import { useModal2 } from '../common/Modal2.jsx';
 import Loading from '../Loading.jsx';
 import { trpc } from '../../helpers/trpc.js';
@@ -75,7 +75,6 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ onSuccess, onCancel }) => {
 };
 
 const TeamsSelector = () => {
-  const [isEnabled] = useQueryParam('enable-teams', asBoolean);
   const cnp = useCollectionAndProject();
   const teamNames = trpc.teams.getTeamNames.useQuery(cnp);
   const [teamsQueryParam, setTeamsQueryParam] = useQueryParam('teams', asStringArray);
@@ -146,8 +145,6 @@ const TeamsSelector = () => {
     [setTeamsQueryParam]
   );
 
-  if (!isEnabled) return null;
-
   return (
     <>
       <Modal
@@ -159,7 +156,7 @@ const TeamsSelector = () => {
       >
         <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
       </Modal>
-      <div className="inline-flex items-stretch gap-3 mb-4">
+      <div className="inline-flex items-stretch gap-3">
         <select
           value={teamsQueryParam?.[0] || 'All teams'}
           onChange={setTeamNames}

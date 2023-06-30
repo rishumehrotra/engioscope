@@ -1,21 +1,24 @@
-import React from 'react';
+import type { ReactNode } from 'react';
+import React, { useMemo } from 'react';
+import { Search, Users } from 'react-feather';
 import usePageName from '../hooks/use-page-name.js';
 import useQueryParam, {
   asBoolean,
   asNumber,
   asString,
+  asStringArray,
 } from '../hooks/use-query-param.js';
 import type { Tab } from '../types.js';
 import { Close } from './common/Icons.js';
 
-const FilterTag: React.FC<{ label: string; onClose: () => void }> = ({
+const FilterTag: React.FC<{ label: ReactNode; onClose: () => void }> = ({
   label,
   onClose,
 }) => (
-  <span className="ml-1 py-1 pl-3 pr-2 border border-gray-300 rounded-full flex bg-white text-sm">
-    <span>{label}</span>
+  <span className="ml-1 py-1 pl-3 pr-2 rounded-md bg-theme-tag flex items-center gap-2">
+    <span className="flex items-center gap-2">{label}</span>
     <button onClick={onClose}>
-      <Close className="ml-1" />
+      <Close />
     </button>
   </span>
 );
@@ -27,6 +30,7 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
   const pageName = usePageName();
 
   const [search, setSearch] = useQueryParam('search', asString);
+  const [teams, setTeams] = useQueryParam('teams', asStringArray);
 
   const [commitsGreaterThanZero, setCommitsGreaterThanZero] = useQueryParam(
     'commitsGreaterThanZero',
@@ -69,6 +73,7 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
 
   const isFilterApplied =
     search ||
+    teams ||
     commitsGreaterThanZero ||
     buildsGreaterThanZero ||
     withFailingLastBuilds ||
@@ -79,82 +84,145 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
     stageNameExists ||
     stageNameExistsNotUsed ||
     nonPolicyConforming;
-  if (!isFilterApplied) return <div />;
+
+  const filtersToRender: {
+    renderIf: boolean;
+    key: string;
+    label: ReactNode;
+    clearUsing: (x: undefined, y: boolean) => void;
+  }[] = useMemo(
+    () =>
+      [
+        {
+          renderIf: Boolean(search),
+          label: (
+            <>
+              <Search size={20} />
+              <span className="font-semibold">{search}</span>
+            </>
+          ),
+          key: 'search',
+          clearUsing: setSearch,
+        },
+        {
+          renderIf: Boolean(teams),
+          label: (
+            <>
+              <Users size={20} />
+              <span className="font-semibold">{teams?.join(',')}</span>
+            </>
+          ),
+          key: 'teams',
+          clearUsing: setTeams,
+        },
+        {
+          renderIf: Boolean(commitsGreaterThanZero),
+          label: 'Has commits',
+          key: 'Has commits',
+          clearUsing: setCommitsGreaterThanZero,
+        },
+        {
+          renderIf: Boolean(buildsGreaterThanZero),
+          label: 'Has builds',
+          key: 'Has builds',
+          clearUsing: setBuildsGreaterThanZero,
+        },
+        {
+          renderIf: Boolean(withFailingLastBuilds),
+          label: 'Has failing builds',
+          key: 'Has failing builds',
+          clearUsing: setWithFailingLastBuilds,
+        },
+        {
+          renderIf: Boolean(techDebtGreaterThan),
+          label: `Tech debt > ${techDebtGreaterThan}`,
+          key: `Tech debt > ${techDebtGreaterThan}`,
+          clearUsing: setTechDebtGreaterThan,
+        },
+        {
+          renderIf: Boolean(selectedGroupLabels),
+          label: `Group: ${selectedGroupLabels}`,
+          key: `Group: ${selectedGroupLabels}`,
+          clearUsing: setSelectedGroupLabels,
+        },
+        {
+          renderIf: Boolean(nonMasterReleases),
+          label: 'Non-master releases',
+          key: 'Non-master releases',
+          clearUsing: setNonMasterReleases,
+        },
+        {
+          renderIf: Boolean(notStartsWithArtifact),
+          label: 'No starting artifact',
+          key: 'No starting artifact',
+          clearUsing: setNotStartsWithArtifact,
+        },
+        {
+          renderIf: Boolean(stageNameExists),
+          label: `Has stage: ${stageNameExists}`,
+          key: `Has stage: ${stageNameExists}`,
+          clearUsing: setStageNameExists,
+        },
+        {
+          renderIf: Boolean(stageNameExistsNotUsed),
+          label: `Unused stage: ${stageNameExistsNotUsed}`,
+          key: `Unused stage: ${stageNameExistsNotUsed}`,
+          clearUsing: setStageNameExistsNotUsed,
+        },
+        {
+          renderIf: Boolean(nonPolicyConforming),
+          label: "Doesn't conform to branch policies",
+          key: "Doesn't conform to branch policies",
+          clearUsing: setNonPolicyConforming,
+        },
+      ].filter(x => x.renderIf),
+    [
+      buildsGreaterThanZero,
+      commitsGreaterThanZero,
+      nonMasterReleases,
+      nonPolicyConforming,
+      notStartsWithArtifact,
+      search,
+      selectedGroupLabels,
+      setBuildsGreaterThanZero,
+      setCommitsGreaterThanZero,
+      setNonMasterReleases,
+      setNonPolicyConforming,
+      setNotStartsWithArtifact,
+      setSearch,
+      setSelectedGroupLabels,
+      setStageNameExists,
+      setStageNameExistsNotUsed,
+      setTeams,
+      setTechDebtGreaterThan,
+      setWithFailingLastBuilds,
+      stageNameExists,
+      stageNameExistsNotUsed,
+      teams,
+      techDebtGreaterThan,
+      withFailingLastBuilds,
+    ]
+  );
 
   return (
-    <div className="w-auto flex flex-wrap items-center text-gray-800 mb-2">
-      {`Showing ${count ?? '...'} ${pageName(
-        type,
-        count ?? 3
-      ).toLowerCase()} with filters applied: `}
-      {search ? (
-        <FilterTag
-          label={`Search: ${search}`}
-          onClose={() => setSearch(undefined, true)}
-        />
-      ) : null}
-      {commitsGreaterThanZero ? (
-        <FilterTag
-          label="Has commits"
-          onClose={() => setCommitsGreaterThanZero(undefined, true)}
-        />
-      ) : null}
-      {buildsGreaterThanZero ? (
-        <FilterTag
-          label="Has builds"
-          onClose={() => setBuildsGreaterThanZero(undefined, true)}
-        />
-      ) : null}
-      {withFailingLastBuilds ? (
-        <FilterTag
-          label="Has failing builds"
-          onClose={() => setWithFailingLastBuilds(undefined, true)}
-        />
-      ) : null}
-      {techDebtGreaterThan ? (
-        <FilterTag
-          label={`Tech debt > ${techDebtGreaterThan}`}
-          onClose={() => setTechDebtGreaterThan(undefined, true)}
-        />
-      ) : null}
-      {selectedGroupLabels ? (
-        <FilterTag
-          label={`Group: ${selectedGroupLabels}`}
-          onClose={() => setSelectedGroupLabels(undefined, true)}
-        />
-      ) : null}
-
-      {nonMasterReleases ? (
-        <FilterTag
-          label="Non-master releases"
-          onClose={() => setNonMasterReleases(undefined, true)}
-        />
-      ) : null}
-      {notStartsWithArtifact ? (
-        <FilterTag
-          label="No starting artifact"
-          onClose={() => setNotStartsWithArtifact(undefined, true)}
-        />
-      ) : null}
-      {stageNameExists ? (
-        <FilterTag
-          label={`Has stage: ${stageNameExists}`}
-          onClose={() => setStageNameExists(undefined, true)}
-        />
-      ) : null}
-      {stageNameExistsNotUsed ? (
-        <FilterTag
-          label={`Unused stage: ${stageNameExistsNotUsed}`}
-          onClose={() => setStageNameExistsNotUsed(undefined, true)}
-        />
-      ) : null}
-      {nonPolicyConforming ? (
-        <FilterTag
-          label="Doesn't conform to branch policies"
-          onClose={() => setNonPolicyConforming(undefined, true)}
-        />
-      ) : null}
-    </div>
+    <>
+      {isFilterApplied && (
+        <div className="w-auto flex flex-wrap gap-2 items-center text-gray-800 mt-6 mb-6">
+          <span>Filters applied</span>
+          {filtersToRender.map(f => (
+            <FilterTag
+              key={f.key}
+              label={f.label}
+              onClose={() => f.clearUsing(undefined, true)}
+            />
+          ))}
+        </div>
+      )}
+      <div className="mb-6">
+        Showing <strong>{count ?? '...'}</strong>{' '}
+        {pageName(type, count ?? 3).toLowerCase()}
+      </div>
+    </>
   );
 };
 

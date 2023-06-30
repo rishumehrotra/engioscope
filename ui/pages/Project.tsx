@@ -138,7 +138,7 @@ const Project: React.FC = () => {
                 onChange={e => setSearchTerm(e.target.value)}
                 ref={inputRef}
                 placeholder="Search"
-                className="w-96 text-sm"
+                className="w-52 text-sm"
               />
             )}
             <AdvancedFilters />

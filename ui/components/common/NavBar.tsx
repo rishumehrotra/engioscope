@@ -64,7 +64,7 @@ const NavBar: React.FC<NavBarProps<string>> = ({ navItems, selectedTab, right })
   }, [onResize]);
 
   return (
-    <div className="grid grid-flow-col grid-cols-[1fr_14rem] gap-8 justify-between items-center mb-8 rounded-lg p-4 bg-white shadow">
+    <div className="grid grid-flow-col grid-cols-[1fr_min-content] gap-8 justify-between items-center mb-6 rounded-lg p-4 bg-white shadow">
       <div className="relative">
         <ul className="overflow-hidden max-h-10 mr-24" ref={menuContainerRef}>
           {navItems.map(({ key, label, linkTo }) => (

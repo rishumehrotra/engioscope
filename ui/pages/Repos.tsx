@@ -6,7 +6,7 @@ import useFetchForProject from '../hooks/use-fetch-for-project.js';
 import Loading from '../components/Loading.js';
 import { aggregateDevs } from '../helpers/aggregate-devs.js';
 import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDropdown.js';
-import useQueryParam, { asStringArray } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asStringArray } from '../hooks/use-query-param.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.jsx';
@@ -17,6 +17,7 @@ import SortControls from '../components/SortControls.jsx';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 
 const SummaryAndRepoGroups: React.FC = () => {
+  const [isTeamsEnabled] = useQueryParam('enable-teams', asBoolean);
   const projectAnalysis = useFetchForProject(repoMetrics);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
     'group',
@@ -42,7 +43,9 @@ const SummaryAndRepoGroups: React.FC = () => {
   return (
     <>
       <div className="flex items-end mb-6 justify-between mx-1">
-        {projectAnalysis.groups?.groups ? (
+        {isTeamsEnabled ? (
+          <TeamsSelector />
+        ) : projectAnalysis.groups?.groups ? (
           <MultiSelectDropdownWithLabel
             label={projectAnalysis.groups.label}
             options={Object.keys(projectAnalysis.groups.groups).map(groupName => ({
@@ -59,7 +62,6 @@ const SummaryAndRepoGroups: React.FC = () => {
         )}
         <QueryPeriodSelector />
       </div>
-      <TeamsSelector />
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
       <StreamingRepoSummary />
     </>
