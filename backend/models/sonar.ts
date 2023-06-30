@@ -2,8 +2,8 @@ import type { Types } from 'mongoose';
 import { z } from 'zod';
 import { range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
-import { createIntervals, normalizeBranchName, unique } from '../utils.js';
-import { latestBuildReportsForRepoAndBranch } from './build-reports.js';
+import { createIntervals, unique } from '../utils.js';
+import { latestBuildReportsForRepo } from './build-reports.js';
 import { getConnections } from './connections.js';
 import type { SonarMeasures, SonarProject } from './mongoose-models/sonar-models.js';
 import {
@@ -47,15 +47,9 @@ export const lastAlertHistoryFetchDate = async (options: {
 
 export const attemptMatchFromBuildReports = async (
   repoName: string,
-  defaultBranch: string | undefined,
-  parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
+  parseReports: ReturnType<typeof latestBuildReportsForRepo>
 ) => {
-  if (!defaultBranch) return null;
-
-  const buildReports = await parseReports(
-    repoName,
-    defaultBranch ? normalizeBranchName(defaultBranch) : 'master'
-  );
+  const buildReports = await parseReports(repoName);
 
   if (!buildReports.length) return null;
 
@@ -140,15 +134,14 @@ export const matchingSonarProjectsForRepo = async (
       'project.name': project,
       'id': repoId,
     },
-    { defaultBranch: 1, name: 1 }
+    { name: 1 }
   ).lean();
 
   if (!repo) return [];
 
   const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
     repo.name,
-    repo.defaultBranch,
-    latestBuildReportsForRepoAndBranch(collectionName, project)
+    latestBuildReportsForRepo(collectionName, project)
   );
 
   return sonarProjectsFromBuildReports || attemptMatchByRepoName(repo.name);

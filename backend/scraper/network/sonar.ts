@@ -7,8 +7,8 @@ import fetchWithDiskCache from './fetch-with-disk-cache.js';
 import createPaginatedGetter from './create-paginated-getter.js';
 import type { Measure, SonarAnalysisByRepo, SonarQualityGate } from '../types-sonar.js';
 import type { ParsedConfig, SonarConfig } from '../parse-config.js';
-import { normalizeBranchName, pastDate, unique } from '../../utils.js';
-import { latestBuildReportsForRepoAndBranch } from '../../models/build-reports.js';
+import { pastDate, unique } from '../../utils.js';
+import { latestBuildReportsForRepo } from '../../models/build-reports.js';
 
 export type SonarProject = SonarConfig & {
   organization: string;
@@ -255,14 +255,11 @@ const attemptMatchFromBuildReports = async (
   repoName: string,
   defaultBranch: string | undefined,
   sonarProjects: SonarProject[],
-  parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
+  parseReports: ReturnType<typeof latestBuildReportsForRepo>
 ) => {
   if (!defaultBranch) return null;
 
-  const buildReports = await parseReports(
-    repoName,
-    defaultBranch ? normalizeBranchName(defaultBranch) : 'master'
-  );
+  const buildReports = await parseReports(repoName);
   const projectKeys = unique(buildReports.map(({ sonarProjectKey }) => sonarProjectKey));
   const matchingSonarProjects = sonarProjects.filter(({ key }) =>
     projectKeys.includes(key)
@@ -279,7 +276,7 @@ const getMatchingSonarProjects = async (
   repoName: string,
   defaultBranch: string | undefined,
   sonarProjects: SonarProject[],
-  parseReports: ReturnType<typeof latestBuildReportsForRepoAndBranch>
+  parseReports: ReturnType<typeof latestBuildReportsForRepo>
 ) => {
   const sonarProjectsFromBuildReports = await attemptMatchFromBuildReports(
     repoName,
@@ -338,7 +335,7 @@ export default (config: ParsedConfig) => {
         repoName,
         defaultBranch,
         await sonarProjects,
-        latestBuildReportsForRepoAndBranch(collectionName, projectName)
+        latestBuildReportsForRepo(collectionName, projectName)
       );
 
       if (!matchingSonarProjects) return null;

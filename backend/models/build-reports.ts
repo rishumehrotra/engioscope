@@ -127,15 +127,14 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
     { upsert: true }
   );
 
-export const latestBuildReportsForRepoAndBranch =
-  (collectionName: string, project: string) => (repo: string, branchName: string) =>
+export const latestBuildReportsForRepo =
+  (collectionName: string, project: string) => (repo: string) =>
     AzureBuildReportModel.aggregate<AzureBuildReport>([
       {
         $match: {
           collectionName,
           project,
           repo,
-          branchName,
         },
       },
       {
