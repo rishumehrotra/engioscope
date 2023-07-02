@@ -375,12 +375,13 @@ const StreamingRepoSummary: React.FC = () => {
                   isDefined(summaries.activePipelineWithCentralTemplateCount) &&
                   isDefined(summaries.activePipelineCentralTemplateBuilds) &&
                   isDefined(summaries.activePipelineBuilds)
-                    ? `${num(summaries.centralTemplatePipeline.central)} out of ${num(
+                    ? // ${num(summaries.activePipelineWithCentralTemplateCount)} out of ${num(
+                      //   summaries.activePipelinesCount
+                      // )}<br>
+
+                      `${num(summaries.centralTemplatePipeline.central)} out of ${num(
                         summaries.pipelines.totalCount
                       )} build pipelines use the central template on the master branch<br>
-            ${num(summaries.activePipelineWithCentralTemplateCount)} out of ${num(
-                        summaries.activePipelinesCount
-                      )}<br>
                   ${num(summaries.centralTemplateUsage.templateUsers)} out of ${num(
                         summaries.totalBuilds.count
                       )} build runs used the central template<br>

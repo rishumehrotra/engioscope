@@ -231,9 +231,12 @@ export const getFilteredReposCount = async ({
   groupsIncluded,
   teams,
 }: z.infer<typeof filteredReposInputParser>) => {
-  return (
-    await searchAndFilterReposBy({ queryContext, searchTerms, groupsIncluded, teams })
-  ).length;
+  return searchAndFilterReposBy({
+    queryContext,
+    searchTerms,
+    groupsIncluded,
+    teams,
+  }).then(length);
 };
 
 export type SummaryStats = {

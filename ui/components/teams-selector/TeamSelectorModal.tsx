@@ -27,6 +27,7 @@ const useClearCache = (teamName?: string) => {
       utils.teams.getTeamNames.invalidate({ ...cnp }),
       utils.repos.getFilteredAndSortedReposWithStats.invalidate(filters),
       utils.repos.getRepoListingWithPipelineCount.invalidate(filters),
+      utils.repos.getFilteredReposCount.invalidate(),
       utils.sonar.getSonarRepos.invalidate(filters),
     ]);
   }, [
@@ -34,6 +35,7 @@ const useClearCache = (teamName?: string) => {
     filters,
     teamName,
     utils.repos.getFilteredAndSortedReposWithStats,
+    utils.repos.getFilteredReposCount,
     utils.repos.getRepoListingWithPipelineCount,
     utils.sonar.getSonarRepos,
     utils.teams.getRepoIdsForTeamName,

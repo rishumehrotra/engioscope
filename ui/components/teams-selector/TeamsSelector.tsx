@@ -122,7 +122,7 @@ const TeamsSelector = () => {
       if (option === 'edit' && teamsQueryParam?.[0]) {
         setModalContents({
           heading: 'Edit team',
-          subheading: 'Create a list of repositories for easy reference',
+          subheading: 'Update your list of repositories',
           body: <TeamSelectorModal type="edit" {...modalHandlers} />,
         });
         openModal();

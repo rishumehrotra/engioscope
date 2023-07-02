@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject } from 'react';
+import type { Dispatch, KeyboardEventHandler, MutableRefObject } from 'react';
 import React, { forwardRef, useCallback, useMemo, useState } from 'react';
 import { byString } from 'sort-lib';
 import { uniq } from 'rambda';
@@ -55,6 +55,15 @@ const RepoPicker = forwardRef<HTMLInputElement, RepoPickerProps>(
       (searchReposRef as MutableRefObject<HTMLInputElement> | null)?.current?.focus();
     });
 
+    const onSearchInputKeyDown: KeyboardEventHandler<HTMLInputElement> = useCallback(
+      e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      },
+      []
+    );
+
     return (
       <div
         className={twMerge(
@@ -70,6 +79,7 @@ const RepoPicker = forwardRef<HTMLInputElement, RepoPickerProps>(
               disabled={disabled}
               value={search}
               onChange={e => setSearch(e.target.value)}
+              onKeyDown={onSearchInputKeyDown}
               className="border-theme-seperator"
             />
           </div>
