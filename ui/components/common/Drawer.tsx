@@ -1,14 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode, ReactEventHandler, MouseEventHandler } from 'react';
 import { Close, Download } from './Icons.jsx';
-
-const usePrevious = <T,>(value: T) => {
-  const ref = useRef<T>(value);
-  useEffect(() => {
-    ref.current = value;
-  }, [value]);
-  return ref.current;
-};
+import { usePrevious } from '../../hooks/use-previous.jsx';
 
 type DrawerProps = {
   isOpen: boolean;

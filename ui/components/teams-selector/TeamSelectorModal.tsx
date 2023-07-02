@@ -169,7 +169,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   return (
     <form
       onSubmit={onSave}
-      className="grid grid-cols-[300px_1fr] grid-rows-[min-content_1fr_min-content] h-full"
+      className="grid grid-cols-[300px_1fr] grid-rows-[min-content_1fr_min-content]"
     >
       <RepoPicker
         disabled={disableForm}
