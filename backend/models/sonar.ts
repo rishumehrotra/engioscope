@@ -1760,6 +1760,7 @@ export const getSonarProjectsForDownload = async ({
     )?.url;
     return {
       ...repo,
+      repositoryUrl: repo.repositoryUrl.replace('/_apis/git/repositories/', '/_git/'),
       status: capitalizeFirstLetter(parseQualityGateStatus(repo.status)),
       sonarProjectUrl: connectionUrl
         ? `${connectionUrl}/dashboard?id=${repo.sonarProjectKey}`

@@ -53,6 +53,11 @@ import {
   searchAndFilterReposBy,
 } from './active-repos.js';
 
+const pipelineUrlForUI = (url: string) =>
+  url
+    .replace('/_apis/build/Definitions/', '/_build?definitionId=')
+    .replace(/\?revision=.*/, '');
+
 export const getYamlPipelinesCountSummary = async (
   queryContext: QueryContext,
   repoIds?: string[]
@@ -560,9 +565,7 @@ export const getYAMLPipelinesForDownload = async ({
     repo.pipelines.map(pipeline => ({
       ...pipeline,
       runCount: pipeline.runCount || 0,
-      url: pipeline.url
-        .replace('/_apis/build/Definitions/', '/_build?definitionId=')
-        .replace(/\?revision=.*/, ''),
+      url: pipelineUrlForUI(pipeline.url),
       repoName: repo.name,
     }))
   );
