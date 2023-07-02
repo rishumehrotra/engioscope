@@ -76,11 +76,15 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   const teamRepos = trpc.teams.getRepoIdsForTeamName.useQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
     { ...cnp, name: teamNameInQueryParam?.[0]! },
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { enabled: type === 'edit' && Boolean(teamNameInQueryParam![0]) }
+    {
+      enabled:
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        (type === 'edit' || type === 'duplicate') && Boolean(teamNameInQueryParam![0]),
+    }
   );
+
   useEffect(() => {
-    if (teamRepos.data && type === 'edit') {
+    if (teamRepos.data && (type === 'edit' || type === 'duplicate')) {
       setSelectedRepoIds(teamRepos.data);
     }
   }, [teamRepos.data, type]);
@@ -271,7 +275,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
             Cancel
           </button>
           <button type="submit" disabled={disableForm} className="primary-button">
-            Save
+            {type === 'edit' ? 'Save changes' : 'Create a new team'}
           </button>
         </div>
       </div>

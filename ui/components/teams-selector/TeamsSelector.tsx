@@ -5,7 +5,7 @@ import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import useDropdownMenu from 'react-accessible-dropdown-menu-hook';
 import { Copy, Edit3, Plus, Sliders, Trash2 } from 'react-feather';
 import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
-import { useModal2 } from '../common/Modal2.jsx';
+import { useModal } from '../common/Modal2.jsx';
 import Loading from '../Loading.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
@@ -82,12 +82,13 @@ const TeamsSelector = () => {
   const {
     buttonProps,
     itemProps,
-    isOpen,
+    isOpen: isDropdownOpen,
     setIsOpen: setDropdownOpen,
   } = useDropdownMenu(teamsQueryParam ? 4 : 1);
-  const [Modal, modalProps, openModal, , closeModal] = useModal2();
+  const [Modal, modalProps, openModal, isOpen, closeModal] = useModal();
   const [modalContents, setModalContents] = useState<{
     heading: string;
+    subheading?: string;
     body: ReactNode;
     modalClassName?: string;
   }>({
@@ -112,6 +113,7 @@ const TeamsSelector = () => {
       if (option === 'create' || option === 'duplicate') {
         setModalContents({
           heading: 'Create a new team',
+          subheading: 'Create a list of repositories for easy reference',
           body: <TeamSelectorModal type={option} {...modalHandlers} />,
         });
         openModal();
@@ -120,6 +122,7 @@ const TeamsSelector = () => {
       if (option === 'edit' && teamsQueryParam?.[0]) {
         setModalContents({
           heading: 'Edit team',
+          subheading: 'Create a list of repositories for easy reference',
           body: <TeamSelectorModal type="edit" {...modalHandlers} />,
         });
         openModal();
@@ -129,7 +132,7 @@ const TeamsSelector = () => {
         setModalContents({
           heading: `Delete ${teamsQueryParam[0]}`,
           body: <DeleteModal {...modalHandlers} />,
-          modalClassName: 'w-[500px] max-w-[80%]',
+          modalClassName: 'w-[500px] max-w-[80%] h-min',
         });
         openModal();
       }
@@ -149,12 +152,13 @@ const TeamsSelector = () => {
     <>
       <Modal
         heading={modalContents.heading}
+        subheading={modalContents.subheading}
         {...modalProps}
         className={
           modalContents.modalClassName ?? 'w-11/12 max-w-4xl h-full max-h-[70vh]'
         }
       >
-        <Suspense fallback={<Loading />}>{modalContents.body}</Suspense>
+        <Suspense fallback={<Loading />}>{isOpen ? modalContents.body : null}</Suspense>
       </Modal>
       <div className="inline-flex items-stretch gap-3">
         <select
@@ -173,14 +177,14 @@ const TeamsSelector = () => {
           <button
             {...buttonProps}
             className={`button bg-theme-page-content inline-block h-full px-2.5 hover:text-theme-highlight ${
-              isOpen ? 'text-theme-highlight' : 'text-theme-icon'
+              isDropdownOpen ? 'text-theme-highlight' : 'text-theme-icon'
             }`}
           >
             <Sliders size={20} />
           </button>
           <div
             className={`${
-              isOpen ? 'visible' : 'invisible'
+              isDropdownOpen ? 'visible' : 'invisible'
             } absolute w-max bg-theme-page-content shadow-lg mt-1`}
             role="menu"
           >

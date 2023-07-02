@@ -1,15 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode, ReactEventHandler, MouseEventHandler } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { Close, Download } from './Icons.jsx';
-import { usePrevious } from '../../hooks/use-previous.jsx';
+import type { DialogProps } from '../../hooks/dialog-hooks.jsx';
+import { createDialogHook, useDialogWithBackdrop } from '../../hooks/dialog-hooks.jsx';
 
-type DrawerProps = {
-  isOpen: boolean;
-  close: () => void;
+type DrawerProps = DialogProps & {
   heading?: ReactNode;
   children?: ReactNode;
   downloadUrl?: string;
-  onClosed: () => void;
 };
 
 const Drawer: React.FC<DrawerProps> = ({
@@ -20,92 +19,31 @@ const Drawer: React.FC<DrawerProps> = ({
   downloadUrl,
   onClosed,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const [animationState, setAnimationState] = useState<'open' | 'closing' | 'closed'>(
-    'closed'
-  );
-  const previousOpenState = usePrevious(isOpen);
-
-  const startClose = useCallback(() => {
-    setAnimationState('closing');
-    dialogRef.current?.classList.add('backdrop:opacity-0');
-    dialogRef.current?.classList.remove('backdrop:opacity-25');
-
-    dialogRef.current?.classList.add('translate-x-full');
-    dialogRef.current?.classList.add('translate-x-0');
-
-    const onTransitionEnd = () => {
-      dialogRef.current?.close();
-      dialogRef.current?.classList.add('hidden');
-      const bodyScroll = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      window.scrollTo(0, Number.parseInt(bodyScroll || '0', 10) * -1);
-      setAnimationState('closed');
-      onClosed();
-      dialogRef.current?.removeEventListener('transitionend', onTransitionEnd);
-    };
-
-    dialogRef.current?.addEventListener('transitionend', onTransitionEnd, { once: true });
-  }, [onClosed]);
-
-  useEffect(() => {
-    const mustClose = animationState === 'open' && !isOpen;
-    if (mustClose) {
-      startClose();
-    }
-  }, [animationState, isOpen, previousOpenState, startClose]);
-
-  useEffect(() => {
-    const mustOpen = animationState === 'closed' && isOpen;
-    if (mustOpen) {
-      dialogRef.current?.showModal();
-      dialogRef.current?.classList.add('backdrop:opacity-25');
-      dialogRef.current?.classList.remove('backdrop:opacity-0');
-
-      dialogRef.current?.classList.remove('hidden');
+  const [dialogProps, dialogClassName] = useDialogWithBackdrop({
+    isOpen,
+    onClosed,
+    onOpenStart: dialog => {
       setTimeout(() => {
-        dialogRef.current?.classList.remove('translate-x-full');
-        dialogRef.current?.classList.remove('translate-x-0');
+        dialog.classList.remove('translate-x-full');
+        dialog.classList.remove('translate-x-0');
       }, 0);
-
-      const bodyScroll = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${bodyScroll}px`;
-      setAnimationState('open');
-    }
-  }, [animationState, isOpen, previousOpenState]);
-
-  const onClick = useCallback<MouseEventHandler<HTMLDialogElement>>(
-    evt => {
-      if (evt.target === dialogRef.current) {
-        startClose();
-      }
     },
-    [startClose]
-  );
-
-  const onCancel = useCallback<ReactEventHandler<HTMLDialogElement>>(
-    evt => {
-      evt.preventDefault();
-      startClose();
+    onCloseStart: dialog => {
+      dialog.classList.add('translate-x-full');
+      dialog.classList.add('translate-x-0');
     },
-    [startClose]
-  );
+  });
 
   return (
-    /* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */
     <dialog
-      ref={dialogRef}
-      className={[
-        'backdrop:bg-theme-backdrop backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200',
+      {...dialogProps}
+      className={twMerge(
+        dialogClassName,
         'w-[700px] max-w-[80%] h-screen max-h-screen m-0',
-        'translate-x-full duration-200 p-0 hidden',
-        'grid grid-flow-row grid-rows-[auto_1fr]',
-      ].join(' ')}
+        'translate-x-full duration-200 p-0',
+        'grid grid-flow-row grid-rows-[auto_1fr]'
+      )}
       style={{ inset: 'unset', top: 0, right: 0 }}
-      onClick={onClick}
-      onCancel={onCancel}
     >
       <div
         className={[
@@ -135,24 +73,4 @@ const Drawer: React.FC<DrawerProps> = ({
   );
 };
 
-export const useDrawer = () => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const open = useCallback(() => {
-    setIsOpen(true);
-  }, [setIsOpen]);
-  const close = useCallback(() => {
-    setIsOpen(false);
-  }, [setIsOpen]);
-
-  const drawerProps = useMemo(
-    () => ({
-      close,
-      isOpen,
-      onClosed: close,
-    }),
-    [close, isOpen]
-  );
-
-  return [Drawer, drawerProps, open] as const;
-};
+export const useDrawer = createDialogHook(Drawer);
