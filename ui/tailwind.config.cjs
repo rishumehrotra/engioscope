@@ -44,6 +44,7 @@ module.exports = {
       borderColor: {
         theme: {
           seperator: withOpacity('--color-border-separator'),
+          'seperator-light': withOpacity('--color-border-separator-light'),
           input: withOpacity('--color-input-border'),
           'input-highlight': withOpacity('--color-input-highlight'),
           'danger': withOpacity('--color-text-danger'),

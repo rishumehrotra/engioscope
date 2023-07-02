@@ -169,9 +169,17 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
   return (
     <form
       onSubmit={onSave}
-      className="grid grid-cols-2 grid-rows-[min-content_1fr_min-content] h-full"
+      className="grid grid-cols-[300px_1fr] grid-rows-[min-content_1fr_min-content] h-full"
     >
-      <div className="p-5 px-6 col-span-2">
+      <RepoPicker
+        disabled={disableForm}
+        ref={searchReposRef}
+        allRepos={allRepos.data}
+        selectedRepoIds={selectedRepoIds}
+        setSelectedRepoIds={setSelectedRepoIds}
+        className="row-span-2 border-r border-b border-theme-seperator"
+      />
+      <div className="pt-5 px-6">
         <input
           type="text"
           placeholder="Enter your team name"
@@ -191,68 +199,63 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
               'A team with this name already exists, pick a different team name'}
           </p>
         )}
+
+        {(selectedRepos?.length || 0) > 0 && (
+          <div>
+            <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm py-3">
+              <div className="text-theme-icon">
+                <span className="font-semibold">{selectedRepos?.length}</span>{' '}
+                repositories added
+              </div>
+              <div>
+                <button
+                  type="button"
+                  className="link-text font-semibold mr-1"
+                  onClick={() => setSelectedRepoIds([])}
+                  disabled={disableForm}
+                >
+                  Remove all
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <RepoPicker
-        disabled={disableForm}
-        ref={searchReposRef}
-        allRepos={allRepos.data}
-        selectedRepoIds={selectedRepoIds}
-        setSelectedRepoIds={setSelectedRepoIds}
-      />
       <div
-        className={`border rounded-md border-theme-seperator mr-6 mb-4 overflow-auto ${
-          selectedRepos?.length === 0 ? 'grid place-items-center bg-theme-secondary' : ''
+        className={`mr-2 overflow-auto border-b border-theme-seperator ${
+          selectedRepos?.length === 0 ? 'grid place-items-center' : ''
         }`}
       >
         {selectedRepos?.length === 0 ? (
           <div className="m-auto">
             <img src={emptyList} alt="Add repositories" className="m-auto" />
-            <br />
+            <div className="text-center font-medium mt-6 mb-1">No repositories added</div>
             <span className="inline-block mx-24 text-center text-theme-helptext text-sm">
               Select repositories on the left to create a team
             </span>
           </div>
         ) : (
-          <>
-            <div>
-              <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-theme-seperator px-2 py-3">
-                <div className="text-theme-icon">
-                  <span className="font-semibold">{selectedRepos?.length}</span>{' '}
-                  repositories added
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    className="link-text font-semibold mr-1"
-                    onClick={() => setSelectedRepoIds([])}
-                    disabled={disableForm}
-                  >
-                    Remove all
-                  </button>
-                </div>
-              </div>
-            </div>
-            <ul className="h-1">
-              {selectedRepos?.map(repo => (
-                <li
-                  key={repo.id}
-                  className="border-b border-theme-seperator p-3 grid grid-cols-[1fr_30px] justify-between"
+          <ul className="h-1 -mr-2">
+            {selectedRepos?.map(repo => (
+              <li
+                key={repo.id}
+                className="pl-6 py-3 grid grid-cols-[1fr_min-content] justify-between border-b border-theme-seperator-light"
+              >
+                {repo.name}
+                <button
+                  type="button"
+                  onClick={() => setSelectedRepoIds(r => r.filter(x => x !== repo.id))}
+                  disabled={disableForm}
+                  className="pr-6 inline-block"
                 >
-                  {repo.name}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRepoIds(r => r.filter(x => x !== repo.id))}
-                    disabled={disableForm}
-                  >
-                    <X size={20} className="text-theme-danger" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
+                  <X size={20} className="text-theme-danger" />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-      <div className="col-span-2 grid grid-cols-[1fr_min-content] justify-between items-center pb-5">
+      <div className="col-span-2 grid grid-cols-[1fr_min-content] justify-between items-center pb-5 pt-4">
         <div className="ml-6 text-theme-danger text-sm">
           {footerSaveError === 'unknown' &&
             'Woops! Something went wrong. Please try again later.'}

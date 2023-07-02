@@ -1,9 +1,12 @@
-import type { Dispatch } from 'react';
+import type { Dispatch, MutableRefObject } from 'react';
 import React, { forwardRef, useCallback, useMemo, useState } from 'react';
 import { byString } from 'sort-lib';
 import { uniq } from 'rambda';
 import { Check } from 'react-feather';
+import { twMerge } from 'tailwind-merge';
+import { useHotkeys } from 'react-hotkeys-hook';
 import SearchInput from '../common/SearchInput.jsx';
+import noSearchResults from './no-search-results.svg';
 
 type RepoPickerProps = {
   disabled: boolean;
@@ -15,10 +18,14 @@ type RepoPickerProps = {
     | undefined;
   selectedRepoIds: string[];
   setSelectedRepoIds: Dispatch<React.SetStateAction<string[]>>;
+  className?: string;
 };
 
 const RepoPicker = forwardRef<HTMLInputElement, RepoPickerProps>(
-  ({ disabled, allRepos, selectedRepoIds, setSelectedRepoIds }, searchReposRef) => {
+  (
+    { disabled, allRepos, selectedRepoIds, setSelectedRepoIds, className },
+    searchReposRef
+  ) => {
     const [search, setSearch] = useState('');
 
     const filteredReposWithUsed = useMemo(() => {
@@ -43,23 +50,35 @@ const RepoPicker = forwardRef<HTMLInputElement, RepoPickerProps>(
       [setSelectedRepoIds]
     );
 
-    return (
-      <div className="p-6 pt-0 pb-4 grid grid-rows-[min-content_1fr]">
-        <div>
-          <SearchInput
-            placeholder="Search repositories..."
-            ref={searchReposRef}
-            disabled={disabled}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="rounded-b-none border-theme-seperator"
-          />
+    useHotkeys('/', e => {
+      e.stopPropagation();
+      (searchReposRef as MutableRefObject<HTMLInputElement> | null)?.current?.focus();
+    });
 
-          <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm border-x border-theme-seperator py-2 px-3">
+    return (
+      <div
+        className={twMerge(
+          'bg-theme-secondary grid grid-rows-[min-content_1fr]',
+          className
+        )}
+      >
+        <div>
+          <div className="mt-4 mb-1 mx-6">
+            <SearchInput
+              placeholder="Search repositories"
+              ref={searchReposRef}
+              disabled={disabled}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="border-theme-seperator"
+            />
+          </div>
+
+          <div className="grid grid-flow-col grid-col-2 justify-between items-center text-sm py-2 px-6">
             <div className="text-theme-icon">
               Showing{' '}
               <span className="font-semibold">
-                {filteredReposWithUsed?.length || '...'}
+                {filteredReposWithUsed?.length ?? '...'}
               </span>{' '}
               repositories
             </div>
@@ -80,28 +99,55 @@ const RepoPicker = forwardRef<HTMLInputElement, RepoPickerProps>(
           </div>
         </div>
 
-        <div className="border-theme-seperator border-b border-x rounded-b-md overflow-auto">
-          <ul className="max-h-[16vh]">
-            {filteredReposWithUsed?.map(repo => (
-              <li key={repo.id} className="border-b border-theme-seperator">
-                <button
-                  type="button"
-                  className="p-3 w-full text-left grid grid-cols-[1fr_30px] justify-between hover:bg-theme-hover"
-                  onClick={onRepoSelect(repo.id)}
-                  disabled={disabled}
-                >
-                  <span className="max-w-full inline-block truncate">{repo.name}</span>
-                  <span>
-                    {repo.isSelected ? (
-                      <Check size={20} className="text-theme-success" />
-                    ) : (
-                      ''
-                    )}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+        <div className="overflow-auto">
+          {filteredReposWithUsed?.length === 0 ? (
+            <div className="items-center justify-center h-full grid place-content-center">
+              <img
+                src={noSearchResults}
+                alt="No matches"
+                className="inline-block m-auto"
+              />
+              <div className="font-medium m-auto -mt-5 mb-2">No results</div>
+              <p className="m-auto text-center px-10 text-sm text-theme-helptext">
+                Sorry, there are no repositories for this search
+              </p>
+            </div>
+          ) : (
+            <ul
+              className="max-h-[16vh]"
+              aria-multiselectable="true"
+              role="listbox"
+              tabIndex={0}
+            >
+              {filteredReposWithUsed?.map(repo => (
+                <li key={repo.id} className="border-b border-theme-seperator-light">
+                  <button
+                    type="button"
+                    className="pl-6 pr-3 py-3 w-full text-left grid grid-cols-[1fr_30px] justify-between"
+                    onClick={onRepoSelect(repo.id)}
+                    disabled={disabled}
+                    role="option"
+                    aria-selected={repo.isSelected}
+                  >
+                    <span
+                      data-tooltip-id="react-tooltip"
+                      data-tooltip-content={repo.name}
+                      className="max-w-full inline-block truncate pr-2"
+                    >
+                      {repo.name}
+                    </span>
+                    <span>
+                      {repo.isSelected ? (
+                        <Check size={20} className="text-theme-success" />
+                      ) : (
+                        ''
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     );
