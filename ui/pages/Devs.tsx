@@ -4,7 +4,7 @@ import Loading from '../components/Loading.js';
 import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import Developer from '../components/Dev.jsx';
 import { trpc } from '../helpers/trpc.js';
-import useDevFilters from '../hooks/use-dev-filters.jsx';
+import useDevFilters from '../hooks/use-dev-filters.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import AlertMessage from '../components/common/AlertMessage.jsx';
 import SortControls from '../components/SortControls.jsx';

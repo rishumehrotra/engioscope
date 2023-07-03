@@ -18,7 +18,7 @@ import RefreshIfUpdated from './components/RefreshIfUpdated.js';
 import Tracks from './pages/Tracks.jsx';
 import { trpc } from './helpers/trpc';
 import { oneMinuteInMs } from '../shared/utils.js';
-import { DateRangeProvider } from './hooks/date-range-hooks.jsx';
+import { DateRangeProvider } from './hooks/date-range-hooks.js';
 import Status from './pages/Status.jsx';
 import Collections from './pages/Collections.jsx';
 

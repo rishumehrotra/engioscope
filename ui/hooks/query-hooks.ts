@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import useQueryPeriodDays from './use-query-period-days.js';
-import { useDateRange } from './date-range-hooks.jsx';
+import { useDateRange } from './date-range-hooks.js';
 import type { QueryContext } from '../../backend/models/utils.js';
 
 export const useCollectionAndProject = () => {
