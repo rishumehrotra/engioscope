@@ -531,7 +531,7 @@ const StreamingRepoSummary: React.FC = () => {
       {isDefined(summaries.totalRepos) &&
       isDefined(summaries.totalActiveRepos) &&
       summaries.totalRepos - summaries.totalActiveRepos !== 0 ? (
-        <p className="mt-5 text-theme-helptext">
+        <p className="mt-5 text-theme-helptext ml-1">
           {'Excluded '}
           <b className="text-theme-helptext-emphasis">
             {summaries.totalRepos - summaries.totalActiveRepos}

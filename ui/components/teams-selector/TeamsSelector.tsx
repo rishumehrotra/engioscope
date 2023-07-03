@@ -185,7 +185,7 @@ const TeamsSelector = () => {
           <div
             className={`${
               isDropdownOpen ? 'visible' : 'invisible'
-            } absolute w-max bg-theme-page-content shadow-lg mt-1`}
+            } absolute w-max bg-theme-page-content shadow-lg mt-1 z-10`}
             role="menu"
           >
             <a
@@ -220,7 +220,7 @@ const TeamsSelector = () => {
                   <Copy size={20} />
                   <span>Duplicate {teamsQueryParam[0]}</span>
                   <span className="col-start-2 text-theme-icon text-sm">
-                    Create a copy of ${teamsQueryParam[0]} for your customisation
+                    Create a copy of {teamsQueryParam[0]} for your customisation
                   </span>
                 </a>
                 <a

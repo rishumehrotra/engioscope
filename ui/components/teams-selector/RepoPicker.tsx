@@ -93,18 +93,20 @@ const RepoPicker = forwardRef<HTMLInputElement, RepoPickerProps>(
               repositories
             </div>
             <div>
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedRepoIds(rs =>
-                    uniq([...rs, ...(filteredReposWithUsed || []).map(r => r.id)])
-                  )
-                }
-                className="link-text font-semibold"
-                disabled={disabled}
-              >
-                Add all
-              </button>
+              {filteredReposWithUsed?.length === 0 ? null : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedRepoIds(rs =>
+                      uniq([...rs, ...(filteredReposWithUsed || []).map(r => r.id)])
+                    )
+                  }
+                  className="link-text font-semibold"
+                  disabled={disabled}
+                >
+                  Add all
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -57,9 +57,7 @@ const SummaryAndRepoGroups: React.FC = () => {
               setSelectedGroupLabels(x.length === 0 ? undefined : x);
             }}
           />
-        ) : (
-          <div />
-        )}
+        ) : null}
         <QueryPeriodSelector />
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />

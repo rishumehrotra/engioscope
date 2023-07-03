@@ -185,7 +185,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         setSelectedRepoIds={setSelectedRepoIds}
         className="row-span-2 border-r border-b border-theme-seperator"
       />
-      <div className="pt-5 px-6">
+      <div className="pt-4 px-6">
         <input
           type="text"
           placeholder="Enter your team name"
@@ -200,7 +200,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         />
         {textboxValidationError && (
           <p className="text-theme-danger text-sm pt-1">
-            {textboxValidationError === 'no-empty' && 'Tean name cannot be empty'}
+            {textboxValidationError === 'no-empty' && 'Team name cannot be empty'}
             {textboxValidationError === 'duplicate' &&
               'A team with this name already exists, pick a different team name'}
           </p>

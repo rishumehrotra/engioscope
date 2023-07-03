@@ -34,6 +34,8 @@ const Drawer: React.FC<DrawerProps> = ({
     },
   });
 
+  if (!isOpen) return null;
+
   return (
     <dialog
       {...dialogProps}
