@@ -21,6 +21,7 @@ import {
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
 import { createIntervals, getLatest } from '../utils.js';
+import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos } from './active-repos.js';
 
 export const testRunsForRepositoryInputParser = z.object({
@@ -48,6 +49,7 @@ export type TestsForDef = {
   tests: TestsForWeek[];
   latest?: TestsForWeek;
   repositoryId: string;
+  repositoryName: string;
 };
 
 export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
@@ -260,12 +262,12 @@ export const getTestRunsAndCoverageForRepo = async ({
   );
 };
 
-export const getReposListingForTestsDrawer = async (
-  queryContext: QueryContext,
-  searchTerms: string[] | undefined,
-  groupsIncluded: string[] | undefined,
-  teams: string[] | undefined
-) => {
+export const getReposListingForTestsDrawer = async ({
+  queryContext,
+  searchTerms,
+  groupsIncluded,
+  teams,
+}: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   const activeRepos = await getActiveRepos(
@@ -350,13 +352,14 @@ export const getReposListingForTestsDrawer = async (
   return definitionTestsAndCoverage.reduce<
     {
       repositoryId: string;
+      repositoryName: string;
       definitions: typeof definitionTestsAndCoverage;
       totalTests: number;
     }[]
   >((acc, curr) => {
-    const { repositoryId, latestTest } = curr;
+    const { repositoryId, latestTest, repositoryName } = curr;
 
-    if (!repositoryId) return acc;
+    if (!repositoryId || !repositoryName) return acc;
 
     const repo = acc.find(x => x.repositoryId === repositoryId);
     if (repo) {
@@ -365,6 +368,7 @@ export const getReposListingForTestsDrawer = async (
     } else {
       acc.push({
         repositoryId,
+        repositoryName,
         definitions: [curr],
         totalTests: latestTest?.hasTests ? latestTest.totalTests : 0,
       });
