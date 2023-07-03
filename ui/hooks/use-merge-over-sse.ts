@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default <T>(url: string) => {
+const makeSSECall = (url: string, handleChunk: (e: MessageEvent) => void) => {
+  const sse = new EventSource(url, { withCredentials: true });
+  sse.addEventListener('message', handleChunk);
+  sse.addEventListener('error', sse.close);
+  return sse;
+};
+
+export default <T>(url: string, key: string) => {
   const [data, setData] = useState<Partial<T>>({});
   const ref = useRef<EventSource>();
 
@@ -11,15 +18,9 @@ export default <T>(url: string) => {
     }
 
     if (!ref.current) {
-      const sse = new EventSource(url, { withCredentials: true });
-      sse.addEventListener('message', e => {
+      ref.current = makeSSECall(url, e => {
         setData(d => ({ ...d, ...(JSON.parse(e.data) as Partial<T>) }));
       });
-      sse.addEventListener('error', () => {
-        sse.close();
-      });
-
-      ref.current = sse;
     }
 
     return () => {
@@ -28,7 +29,7 @@ export default <T>(url: string) => {
         ref.current = undefined;
       }
     };
-  }, [url]);
+  }, [url, key]);
 
   return data;
 };

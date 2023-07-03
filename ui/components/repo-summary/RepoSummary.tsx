@@ -1,5 +1,5 @@
 import { last, multiply } from 'rambda';
-import React, { lazy, useCallback, useMemo } from 'react';
+import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
@@ -56,11 +56,28 @@ const useCreateDownloadUrl = () => {
   );
 };
 
+const useUpdateSummary = () => {
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    const updateKey = () => {
+      setKey(x => x + 1);
+    };
+    document.body.addEventListener('teams:updated', updateKey);
+    return () => {
+      document.body.removeEventListener('teams:updated', updateKey);
+    };
+  });
+
+  return key.toString();
+};
+
 const StreamingRepoSummary: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
-  const summaries = useSse<SummaryStats>(sseUrl);
+  const key = useUpdateSummary();
+  const summaries = useSse<SummaryStats>(sseUrl, key);
 
   return (
     <>
