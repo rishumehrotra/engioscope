@@ -12,7 +12,7 @@ import { useProjectDetails } from '../hooks/project-details-hooks.js';
 import usePageName from '../hooks/use-page-name.js';
 import Overview from './Overview.js';
 import { useSetHeaderDetails } from '../hooks/header-hooks.js';
-import ReleasePipelines2 from './ReleasePipelines.jsx';
+import ReleasePipelines from './ReleasePipelines.jsx';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
 import BuildTimelines from './BuildTimelines.jsx';
@@ -148,7 +148,7 @@ const Project: React.FC = () => {
 
       <Routes>
         <Route path="repos" element={<Repos />} />
-        <Route path="release-pipelines" element={<ReleasePipelines2 />} />
+        <Route path="release-pipelines" element={<ReleasePipelines />} />
         <Route path="devs" element={<Devs />} />
         <Route path="build-timelines" element={<BuildTimelines />} />
         <Route path="workitems" element={<WorkItems />} />

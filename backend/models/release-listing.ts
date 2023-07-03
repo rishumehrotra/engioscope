@@ -13,6 +13,7 @@ import {
 import { ReleaseModel } from './mongoose-models/ReleaseEnvironment.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
+import { getRepoIdsForTeamNames } from './teams.js';
 
 export const pipelineFiltersInput = {
   queryContext: queryContextInputParser,
@@ -23,6 +24,7 @@ export const pipelineFiltersInput = {
   stageNameUsed: z.string().optional(),
   notConfirmingToBranchPolicies: z.boolean().optional(),
   repoGroups: z.array(z.string()).optional(),
+  teams: z.array(z.string()).optional(),
 };
 
 export const pipelineFiltersInputParser = z.object(pipelineFiltersInput);
@@ -33,25 +35,32 @@ const filterNotStartingWithBuildArtifact = (notStartingWithBuildArtifact?: boole
   return { 'artifacts.0': { $exists: false } };
 };
 
-const filterRepos = (
+const filterRepos = async (
   collectionName: string,
   project: string,
-  repoGroups: string[] | undefined
+  repoGroups: string[] | undefined,
+  teams: string[] | undefined
 ) => {
-  if (!repoGroups) {
-    return {};
-  }
-  if (Object.keys(repoGroups).length === 0) {
-    return {};
-  }
-
-  const repos = Object.entries(
-    configForProject(collectionName, project)?.groupRepos?.groups || {}
-  )
-    .filter(([key]) => repoGroups.includes(key))
-    .flatMap(([, repos]) => repos);
-
-  return { 'artifacts.definition.repositoryName': { $in: repos } };
+  return {
+    ...(!repoGroups || repoGroups.length === 0
+      ? {}
+      : {
+          'artifacts.definition.repositoryName': {
+            $in: Object.entries(
+              configForProject(collectionName, project)?.groupRepos?.groups || {}
+            )
+              .filter(([key]) => repoGroups.includes(key))
+              .flatMap(([, repos]) => repos),
+          },
+        }),
+    ...(!teams || teams.length === 0
+      ? {}
+      : {
+          'artifacts.definition.repositoryId': {
+            $in: await getRepoIdsForTeamNames(collectionName, project, teams),
+          },
+        }),
+  };
 };
 
 const addExactRepoSearch = (searchTerm?: string) => {
@@ -223,6 +232,7 @@ const createFilter = async (
     stageNameContaining,
     stageNameUsed,
     repoGroups,
+    teams,
   } = options;
 
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
@@ -245,7 +255,7 @@ const createFilter = async (
         modifiedOn: inDateRange(startDate, endDate),
         releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
         ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
-        ...filterRepos(collectionName, project, repoGroups),
+        ...(await filterRepos(collectionName, project, repoGroups, teams)),
       },
     },
     ...addExactRepoSearch(searchTerm),
