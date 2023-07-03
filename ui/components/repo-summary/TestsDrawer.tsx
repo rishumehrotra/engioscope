@@ -5,7 +5,7 @@ import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
-import useRepoFilters from '../../hooks/use-repo-filters.jsx';
+import useRepoFilters from '../../hooks/use-repo-filters.js';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
 import { divide, shouldNeverReachHere, toPercentage } from '../../../shared/utils.js';
 import InlineSelect from '../common/InlineSelect.jsx';

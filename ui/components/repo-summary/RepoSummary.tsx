@@ -1,5 +1,5 @@
 import { last, multiply } from 'rambda';
-import React, { lazy, useCallback, useMemo } from 'react';
+import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
 import useQueryParam, { asBoolean, asString } from '../../hooks/use-query-param.js';
@@ -12,7 +12,7 @@ import {
   decreaseIsBetter,
   increaseIsBetter,
 } from '../SummaryCard.jsx';
-import useRepoFilters from '../../hooks/use-repo-filters.jsx';
+import useRepoFilters from '../../hooks/use-repo-filters.js';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
@@ -58,12 +58,30 @@ const useCreateDownloadUrl = () => {
   );
 };
 
+const useUpdateSummary = () => {
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    const updateKey = () => {
+      setKey(x => x + 1);
+    };
+    document.body.addEventListener('teams:updated', updateKey);
+    return () => {
+      document.body.removeEventListener('teams:updated', updateKey);
+    };
+  });
+
+  return key.toString();
+};
+
 const StreamingRepoSummary: React.FC = () => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
-  const summaries = useSse<SummaryStats>(sseUrl);
+  const key = useUpdateSummary();
+  const summaries = useSse<SummaryStats>(sseUrl, key);
   const [showTestsDrawer] = useQueryParam('tests-drawer', asBoolean);
+
   return (
     <>
       <div className="grid grid-cols-4 gap-6">
@@ -541,7 +559,7 @@ const StreamingRepoSummary: React.FC = () => {
       {isDefined(summaries.totalRepos) &&
       isDefined(summaries.totalActiveRepos) &&
       summaries.totalRepos - summaries.totalActiveRepos !== 0 ? (
-        <p className="mt-5 text-theme-helptext">
+        <p className="mt-5 text-theme-helptext ml-1">
           {'Excluded '}
           <b className="text-theme-helptext-emphasis">
             {summaries.totalRepos - summaries.totalActiveRepos}

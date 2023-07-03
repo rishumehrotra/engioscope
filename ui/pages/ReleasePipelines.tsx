@@ -7,10 +7,12 @@ import ReleasePipelineSummary from '../components/ReleasePipelineSummary.jsx';
 import { trpc } from '../helpers/trpc.js';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
 import { useRemoveSort } from '../hooks/sort-hooks.js';
-import useQueryParam, { asStringArray } from '../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asStringArray } from '../hooks/use-query-param.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
+import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 
-const ReleasePipelines2: React.FC = () => {
+const ReleasePipelines: React.FC = () => {
+  const [isTeamsEnabled] = useQueryParam('enable-teams', asBoolean);
   const cnp = useCollectionAndProject();
   const projectSummary = trpc.projects.summary.useQuery(cnp);
   const [selectedGroupLabels, setSelectedGroupLabels] = useQueryParam(
@@ -26,7 +28,11 @@ const ReleasePipelines2: React.FC = () => {
 
   return (
     <>
-      {projectSummary.data?.groups?.groups.length ? (
+      {isTeamsEnabled ? (
+        <div className="mb-6 ml-1">
+          <TeamsSelector />
+        </div>
+      ) : projectSummary.data?.groups?.groups.length ? (
         <div className="mb-6">
           <MultiSelectDropdownWithLabel
             label={projectSummary.data.groups.label}
@@ -51,4 +57,4 @@ const ReleasePipelines2: React.FC = () => {
   );
 };
 
-export default ReleasePipelines2;
+export default ReleasePipelines;

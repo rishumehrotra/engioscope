@@ -207,7 +207,7 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
   return (
     <>
       {isFilterApplied && (
-        <div className="w-auto flex flex-wrap gap-2 items-center text-gray-800 mt-6 mb-6">
+        <div className="w-auto flex flex-wrap gap-2 items-center text-gray-800 mt-6 mb-6 ml-1">
           <span>Filters applied</span>
           {filtersToRender.map(f => (
             <FilterTag
@@ -218,7 +218,7 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
           ))}
         </div>
       )}
-      <div className="mb-6">
+      <div className="mb-6 ml-1">
         Showing <strong>{count ?? '...'}</strong>{' '}
         {pageName(type, count ?? 3).toLowerCase()}
       </div>

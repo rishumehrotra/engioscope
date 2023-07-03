@@ -21,21 +21,25 @@ export const useDialog = ({
     'closed'
   );
   const previousOpenState = usePrevious(isOpen);
+  const [mountDialog, setMountDialog] = useState(false);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
     if (!(animationState === 'closed' && isOpen)) return;
 
-    dialog.showModal();
+    setMountDialog(true);
+    const handle = setTimeout(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
 
-    onOpenStart(dialog);
+      dialog.showModal();
 
-    const bodyScroll = window.scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${bodyScroll}px`;
-    setAnimationState('open');
+      onOpenStart(dialog);
+
+      document.body.style.overflow = 'hidden';
+      setAnimationState('open');
+    }, 0);
+
+    return () => clearTimeout(handle);
   }, [animationState, isOpen, onOpenStart, previousOpenState]);
 
   const startClose = useCallback(() => {
@@ -49,14 +53,12 @@ export const useDialog = ({
       const dialog = dialogRef.current;
       if (!dialog) return;
 
-      dialog.close();
-      const bodyScroll = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      window.scrollTo(0, Number.parseInt(bodyScroll || '0', 10) * -1);
+      document.body.style.overflow = 'auto';
       setAnimationState('closed');
+      dialog.close();
       onClosed();
       dialog.removeEventListener('transitionend', onTransitionEnd);
+      setMountDialog(false);
     };
 
     dialogRef.current.addEventListener('transitionend', onTransitionEnd, { once: true });
@@ -87,17 +89,21 @@ export const useDialog = ({
   );
 
   return {
-    ref: dialogRef,
-    onClick,
-    onCancel,
-  } as HTMLAttributes<HTMLDialogElement>;
+    dialogProps: {
+      ref: dialogRef,
+      onClick,
+      onCancel,
+    } as HTMLAttributes<HTMLDialogElement>,
+    mountDialog,
+  };
 };
 
 export const useDialogWithBackdrop = (options: DialogHookOptions) => {
-  const backdropStyles =
+  const dialogClassName =
     'backdrop:bg-theme-backdrop backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-200';
-  return [
-    useDialog({
+
+  return {
+    ...useDialog({
       ...options,
       onOpenStart: dialog => {
         dialog.classList.add('backdrop:opacity-25');
@@ -110,8 +116,8 @@ export const useDialogWithBackdrop = (options: DialogHookOptions) => {
         options.onCloseStart(dialog);
       },
     }),
-    backdropStyles,
-  ] as const;
+    dialogClassName,
+  };
 };
 
 export type DialogProps = {

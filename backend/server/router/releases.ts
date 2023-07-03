@@ -12,9 +12,7 @@ import {
 import { memoizeForUI, passInputTo, t } from './trpc.js';
 
 export default t.router({
-  summary: t.procedure
-    .input(pipelineFiltersInputParser)
-    .query(passInputTo(memoizeForUI(summary))),
+  summary: t.procedure.input(pipelineFiltersInputParser).query(passInputTo(summary)),
 
   usageByEnvironment: t.procedure
     .input(pipelineFiltersInputParser)
@@ -26,7 +24,7 @@ export default t.router({
 
   paginatedReleases: t.procedure
     .input(paginatedReleaseIdsInputParser)
-    .query(passInputTo(memoizeForUI(paginatedReleaseIds))),
+    .query(passInputTo(paginatedReleaseIds)),
 
   releasePipelineStages: t.procedure
     .input(releasePipelineDetailsInputParser)

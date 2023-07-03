@@ -11,6 +11,7 @@ type ReleaseFilters = {
   stageNameUsed?: string;
   notConfirmingToBranchPolicies?: boolean;
   repoGroups?: string[];
+  teams?: string[];
 };
 
 export default (): ReleaseFilters => {
@@ -22,6 +23,7 @@ export default (): ReleaseFilters => {
   const [stageNameExistsNotUsed] = useQueryParam('stageNameExistsNotUsed', asString);
   const [nonPolicyConforming] = useQueryParam('nonPolicyConforming', asBoolean);
   const [selectedGroupLabels] = useQueryParam('group', asStringArray);
+  const [teams] = useQueryParam('teams', asStringArray);
 
   return {
     queryContext,
@@ -32,5 +34,6 @@ export default (): ReleaseFilters => {
     stageNameUsed: stageNameExistsNotUsed,
     notConfirmingToBranchPolicies: nonPolicyConforming,
     repoGroups: selectedGroupLabels,
+    teams,
   };
 };

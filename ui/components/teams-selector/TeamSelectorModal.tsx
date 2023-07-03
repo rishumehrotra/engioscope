@@ -6,7 +6,6 @@ import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import emptyList from './empty-list.svg';
 import useQueryParam, { asStringArray } from '../../hooks/use-query-param.js';
-import useRepoFilters from '../../hooks/use-repo-filters.jsx';
 import RepoPicker from './RepoPicker.jsx';
 
 type TeamSelectorProps = {
@@ -17,23 +16,24 @@ type TeamSelectorProps = {
 
 const useClearCache = (teamName?: string) => {
   const utils = trpc.useContext();
-  const cnp = useCollectionAndProject();
-  const filters = useRepoFilters();
 
   return useCallback(() => {
     if (!teamName) return;
+    document.body.dispatchEvent(new CustomEvent('teams:updated'));
     return Promise.all([
-      utils.teams.getRepoIdsForTeamName.invalidate({ ...cnp, name: teamName }),
-      utils.teams.getTeamNames.invalidate({ ...cnp }),
-      utils.repos.getFilteredAndSortedReposWithStats.invalidate(filters),
-      utils.repos.getRepoListingWithPipelineCount.invalidate(filters),
+      utils.teams.getRepoIdsForTeamName.invalidate(),
+      utils.teams.getTeamNames.invalidate(),
+      utils.repos.getFilteredAndSortedReposWithStats.invalidate(),
+      utils.repos.getRepoListingWithPipelineCount.invalidate(),
       utils.repos.getFilteredReposCount.invalidate(),
-      utils.sonar.getSonarRepos.invalidate(filters),
+      utils.sonar.getSonarRepos.invalidate(),
+      utils.releases.paginatedReleases.invalidate(),
+      utils.releases.filteredReleaseCount.invalidate(),
     ]);
   }, [
-    cnp,
-    filters,
     teamName,
+    utils.releases.filteredReleaseCount,
+    utils.releases.paginatedReleases,
     utils.repos.getFilteredAndSortedReposWithStats,
     utils.repos.getFilteredReposCount,
     utils.repos.getRepoListingWithPipelineCount,
@@ -185,7 +185,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         setSelectedRepoIds={setSelectedRepoIds}
         className="row-span-2 border-r border-b border-theme-seperator"
       />
-      <div className="pt-5 px-6">
+      <div className="pt-4 px-6">
         <input
           type="text"
           placeholder="Enter your team name"
@@ -200,7 +200,7 @@ const TeamSelectorModal = ({ type, onSuccess, onCancel }: TeamSelectorProps) => 
         />
         {textboxValidationError && (
           <p className="text-theme-danger text-sm pt-1">
-            {textboxValidationError === 'no-empty' && 'Tean name cannot be empty'}
+            {textboxValidationError === 'no-empty' && 'Team name cannot be empty'}
             {textboxValidationError === 'duplicate' &&
               'A team with this name already exists, pick a different team name'}
           </p>

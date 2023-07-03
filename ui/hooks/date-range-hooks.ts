@@ -1,4 +1,4 @@
-import createContextState from '../helpers/create-context-state.js';
+import createContextState from '../helpers/create-context-state.jsx';
 import useQueryParam, { asBoolean, asString } from './use-query-param.js';
 
 const [DateRangeProvider, usePageLoadTime] = createContextState<Date>(new Date());

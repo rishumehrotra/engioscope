@@ -37,7 +37,7 @@ const SortControls: React.FC<SortControlsProps> = ({
   }, [currentSortDirection, defaultSortDirection, setSortDirection]);
 
   return (
-    <div className="my-6 flex flex-row gap-2 items-center">
+    <div className="my-6 ml-1 flex flex-row gap-2 items-center">
       <h4 className="text-theme-helptext">Sort by</h4>
 
       <div className="flex items-center">

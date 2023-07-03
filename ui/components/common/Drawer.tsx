@@ -19,7 +19,7 @@ const Drawer: React.FC<DrawerProps> = ({
   downloadUrl,
   onClosed,
 }) => {
-  const [dialogProps, dialogClassName] = useDialogWithBackdrop({
+  const { dialogProps, mountDialog, dialogClassName } = useDialogWithBackdrop({
     isOpen,
     onClosed,
     onOpenStart: dialog => {
@@ -33,6 +33,8 @@ const Drawer: React.FC<DrawerProps> = ({
       dialog.classList.add('translate-x-0');
     },
   });
+
+  if (!mountDialog) return null;
 
   return (
     <dialog

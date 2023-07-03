@@ -7,7 +7,7 @@ import type { Tab } from './Tabs.jsx';
 import TabContents from './TabContents.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
-import { useProjectDetails } from '../../hooks/project-details-hooks.jsx';
+import { useProjectDetails } from '../../hooks/project-details-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import Loading from '../Loading.jsx';
 import { useQueryContext } from '../../hooks/query-hooks.js';

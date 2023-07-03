@@ -9,7 +9,7 @@ import { MultiSelectDropdownWithLabel } from '../components/common/MultiSelectDr
 import useQueryParam, { asBoolean, asStringArray } from '../hooks/use-query-param.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
-import useRepoFilters from '../hooks/use-repo-filters.jsx';
+import useRepoFilters from '../hooks/use-repo-filters.js';
 import RepoHealth from '../components/RepoHealth.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 import StreamingRepoSummary from '../components/repo-summary/RepoSummary.jsx';
@@ -57,9 +57,7 @@ const SummaryAndRepoGroups: React.FC = () => {
               setSelectedGroupLabels(x.length === 0 ? undefined : x);
             }}
           />
-        ) : (
-          <div />
-        )}
+        ) : null}
         <QueryPeriodSelector />
       </div>
       <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />

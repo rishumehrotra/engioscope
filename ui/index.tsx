@@ -11,16 +11,14 @@ ReactModal.setAppElement('#root');
 
 const Index: React.FC = () => {
   return (
-    <>
+    <React.StrictMode>
       <Tooltip
         id="react-tooltip"
         className="z-50 text-base"
         style={{ borderRadius: '0.375rem', fontSize: '0.875rem', lineHeight: '1.25rem' }}
       />
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    </>
+      <App />
+    </React.StrictMode>
   );
 };
 
