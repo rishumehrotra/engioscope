@@ -2,7 +2,7 @@ import { last, multiply } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
-import useQueryParam, { asString } from '../../hooks/use-query-param.js';
+import useQueryParam, { asBoolean, asString } from '../../hooks/use-query-param.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
@@ -18,6 +18,8 @@ import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
+
+const TestsDrawer = lazy(() => import('./TestsDrawer.jsx'));
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
@@ -78,6 +80,7 @@ const StreamingRepoSummary: React.FC = () => {
   const drawerDownloadUrl = useCreateDownloadUrl();
   const key = useUpdateSummary();
   const summaries = useSse<SummaryStats>(sseUrl, key);
+  const [showTestsDrawer] = useQueryParam('tests-drawer', asBoolean);
 
   return (
     <>
@@ -225,6 +228,14 @@ const StreamingRepoSummary: React.FC = () => {
                   ? increaseIsBetter(summaries.weeklyTestsSummary.map(t => t.totalTests))
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Tests & Coverage details',
+                enabledIf:
+                  (summaries?.totalActiveRepos || 0) > 0 && showTestsDrawer === true,
+                // downloadUrl: drawerDownloadUrl('repos-with-tests-coverage'),
+                body: <TestsDrawer pipelineType="all" />,
+              }}
             />
           </div>
           <div>
