@@ -7,7 +7,7 @@ import { trpc } from '../../helpers/trpc.js';
 import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import { shortDate } from '../../helpers/utils.js';
-import useRepoFilters from '../../hooks/use-repo-filters.jsx';
+import useRepoFilters from '../../hooks/use-repo-filters.js';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
 
 type RepoItem = RouterClient['repos']['getRepoListingWithPipelineCount'][number];

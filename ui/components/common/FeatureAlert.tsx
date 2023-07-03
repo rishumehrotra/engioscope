@@ -35,17 +35,15 @@ export const FeatureAlert = ({
       }}
       place="bottom-start"
     >
-      <div className="bg-theme-page-content text-theme-base">
-        <div className="p-4 w-96">
-          <h3 className="text-theme-base text-xl font-medium">{heading}</h3>
-          <div className="text-theme-helptext py-3 text-base">{body}</div>
-          <button
-            className="primary-button inline-block w-full font-medium"
-            onClick={dismiss}
-          >
-            {ctaLabel}
-          </button>
-        </div>
+      <div className="bg-theme-page-content text-theme-base p-4 w-96">
+        <h3 className="text-theme-base text-xl font-medium">{heading}</h3>
+        <div className="text-theme-helptext py-3 text-base">{body}</div>
+        <button
+          className="primary-button inline-block w-full font-medium"
+          onClick={dismiss}
+        >
+          {ctaLabel}
+        </button>
       </div>
     </Tooltip>
   );
@@ -65,7 +63,10 @@ export const useFeatureAlert = (key: string) => {
     setShownFeatureAlerts([...(shownFeatureAlerts || []), key]);
   }, [key, setShownFeatureAlerts, shownFeatureAlerts]);
 
-  const anchorProps = useMemo(() => ({ 'data-tooltip-id': 'feature-alert' }), []);
+  const anchorProps = useMemo(
+    () => (showFeatureAlert ? { 'data-tooltip-id': 'feature-alert' } : {}),
+    [showFeatureAlert]
+  );
   const featureAlertProps = useMemo(
     () => ({ show: showFeatureAlert, dismiss: setFeatureAlertSeen }),
     [setFeatureAlertSeen, showFeatureAlert]
