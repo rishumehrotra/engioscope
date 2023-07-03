@@ -9,6 +9,7 @@ import { useModal } from '../common/Modal2.jsx';
 import Loading from '../Loading.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import { FeatureAlert, useFeatureAlert } from '../common/FeatureAlert.jsx';
 
 const TeamSelectorModal = React.lazy(() => import('./TeamSelectorModal.jsx'));
 
@@ -148,6 +149,8 @@ const TeamsSelector = () => {
     [setTeamsQueryParam]
   );
 
+  const { anchorProps, featureAlertProps } = useFeatureAlert('teams');
+
   return (
     <>
       <Modal
@@ -175,13 +178,23 @@ const TeamsSelector = () => {
         </select>
         <div className="relative inline-block">
           <button
+            {...anchorProps}
             {...buttonProps}
             className={`button bg-theme-page-content inline-block h-full px-2.5 hover:text-theme-highlight ${
-              isDropdownOpen ? 'text-theme-highlight' : 'text-theme-icon'
+              isDropdownOpen
+                ? 'text-theme-highlight'
+                : featureAlertProps.show
+                ? 'ring-theme-input-highlight ring-1 text-theme-highlight'
+                : 'text-theme-icon'
             }`}
           >
             <Sliders size={20} />
           </button>
+          <FeatureAlert
+            {...featureAlertProps}
+            heading="New feature: Teams!"
+            body="Create a list of repositories that your team manages. Quickly filter down to just the repositories you care about."
+          />
           <div
             className={`${
               isDropdownOpen ? 'visible' : 'invisible'
