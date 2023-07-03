@@ -21,7 +21,7 @@ const Modal: React.FC<ModalProps> = ({
   className,
   onClosed,
 }) => {
-  const [dialogProps, dialogClassName] = useDialogWithBackdrop({
+  const { dialogProps, mountDialog, dialogClassName } = useDialogWithBackdrop({
     isOpen,
     onClosed,
     onOpenStart: dialog => {
@@ -36,7 +36,7 @@ const Modal: React.FC<ModalProps> = ({
     },
   });
 
-  if (!isOpen) return null;
+  if (!mountDialog) return null;
 
   return (
     <dialog
