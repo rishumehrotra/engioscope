@@ -34,6 +34,7 @@ export const htmlReportToObj = (htmlContent: string) => {
     buildId: read('BUILD_BUILDID')!,
     buildDefinitionId: read('SYSTEM_DEFINITIONID')!,
     buildReason: read('BUILD_REASON')! as AzureBuildReport['buildReason'],
+    agentName: read('AGENT_NAME'),
     buildScript: buildScript ? decode(buildScript) : undefined,
     centralTemplate: Object.keys(centralTemplate).length ? centralTemplate : undefined,
   };

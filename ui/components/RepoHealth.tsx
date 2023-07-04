@@ -148,7 +148,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
 
   const tabs = useMemo(
     () => [
-      builds(item.repositoryId, item.repoDetails.name, item.builds),
+      builds(item.repositoryId, item.builds),
       branches(
         item.repoDetails.defaultBranch || 'master',
         item.repositoryId,
@@ -166,7 +166,6 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
     ],
     [
       item.repositoryId,
-      item.repoDetails.name,
       item.repoDetails.defaultBranch,
       item.repoDetails.url,
       item.builds,

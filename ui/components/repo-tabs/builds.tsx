@@ -30,10 +30,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   const domId = `bdi-${buildDefinitionId}`;
   const [hasHovered, setHasHovered] = useState(false);
   const centralTemplateOptions = trpc.builds.centralTemplateOptions.useQuery(
-    {
-      ...cnp,
-      buildDefinitionId,
-    },
+    { ...cnp, buildDefinitionId },
     { enabled: hasHovered }
   );
 
@@ -362,11 +359,7 @@ const Builds: React.FC<{
   );
 };
 
-export default (
-  repositoryId: string,
-  repositoryName: string,
-  buildsCount?: number
-): Tab => {
+export default (repositoryId: string, buildsCount?: number): Tab => {
   return {
     title: 'Builds',
     count: buildsCount ?? 0,

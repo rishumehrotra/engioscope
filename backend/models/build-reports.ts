@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import yaml from 'yaml';
 import { z } from 'zod';
 import { configForProject, getConfig } from '../config.js';
-
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
@@ -36,6 +35,7 @@ export type AzureBuildReport = {
   templateRepo: string | undefined;
   sonarHost: string | undefined;
   sonarProjectKey: string | undefined;
+  agentName: string | undefined;
   centralTemplate: boolean | Record<string, string> | undefined; // boolean is for backwards compatibility
 };
 
@@ -55,6 +55,7 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>(
     templateRepo: String,
     sonarHost: String,
     sonarProjectKey: String,
+    agentName: String,
     centralTemplate: Schema.Types.Mixed,
   },
   {
@@ -110,6 +111,7 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
         buildDefinitionId: report.buildDefinitionId,
         buildReason: report.buildReason,
         buildScript: report.buildScript,
+        agentName: report.agentName,
         ...(report.buildScript
           ? {
               templateRepo: templateRepo(report.buildScript),
