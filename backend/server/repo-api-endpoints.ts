@@ -110,14 +110,6 @@ const drawerDownloads = {
       data: lines,
       columns: [
         {
-          title: 'Pipeline Link',
-          value: x => new URL(x.pipelineUrl),
-        },
-        {
-          title: 'Pipeline Name',
-          value: x => x.pipelineName,
-        },
-        {
           title: 'Repo URL',
           value: x => (x.repositoryUrl ? new URL(x.repositoryUrl) : null),
         },
@@ -125,7 +117,14 @@ const drawerDownloads = {
           title: 'Repo Name',
           value: x => x.repositoryName ?? null,
         },
-
+        {
+          title: 'Pipeline Link',
+          value: x => new URL(x.pipelineUrl),
+        },
+        {
+          title: 'Pipeline Name',
+          value: x => x.pipelineName,
+        },
         {
           title: 'Total tests',
           value: x => x.totalTests,
@@ -140,7 +139,7 @@ const drawerDownloads = {
         },
         {
           title: 'Coverage %',
-          value: x => x.totalCoverage,
+          value: x => Number(x.totalCoverage.toFixed(0)),
         },
       ],
     });

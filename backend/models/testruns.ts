@@ -1,5 +1,5 @@
 import type { PipelineStage } from 'mongoose';
-import { last, prop, range } from 'rambda';
+import { last, multiply, prop, range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
 import { z } from 'zod';
 import { inDateRange } from './helpers.js';
@@ -23,7 +23,7 @@ import { queryContextInputParser, fromContext } from './utils.js';
 import { createIntervals, getLatest } from '../utils.js';
 import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos } from './active-repos.js';
-import { divide, toPercentage } from '../../shared/utils.js';
+import { divide } from '../../shared/utils.js';
 import { getDefinitionListWithRepoInfo } from './build-definitions.js';
 
 export const testRunsForRepositoryInputParser = z.object({
@@ -394,9 +394,9 @@ export const getTestsAndCoveragePipelinesForDownload = async ({
             x.latestCoverage.coverage?.coveredBranches || 0,
             x.latestCoverage.coverage?.totalBranches || 0
           )
-            .map(toPercentage)
-            .getOr('_')
-        : '-',
+            .map(multiply(100))
+            .getOr(0)
+        : 0,
       failedTests: x.latestTest?.hasTests
         ? x.latestTest.totalTests - x.latestTest.passedTests
         : 0,
