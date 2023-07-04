@@ -6,7 +6,7 @@ import { trpc } from '../../helpers/trpc.js';
 import type { DrawerTableProps } from './DrawerTable.jsx';
 import DrawerTable from './DrawerTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
-import { HappyEmpty, SadEmpty } from './Empty.jsx';
+import { SadEmpty } from './Empty.jsx';
 import { divide, shouldNeverReachHere, toPercentage } from '../../../shared/utils.js';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
@@ -201,7 +201,7 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
     }
     if (statusType === 'withCoverage') {
       return (
-        <HappyEmpty
+        <SadEmpty
           heading="No repositories found"
           body="There are currently no repositories reporting coverage"
         />
@@ -214,6 +214,21 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
   if (repoList?.length === 0) {
     return emptyMessage;
   }
+
+  const filteredPipelinesRepoList = repoList?.filter(repo => {
+    if (statusType === 'all') {
+      return true;
+    }
+    if (statusType === 'withTests') {
+      return repo.totalTests > 0;
+    }
+    if (statusType === 'withCoverage') {
+      const { definitions } = repo;
+      return definitions?.some(d => d.latestCoverage?.hasCoverage) ?? false;
+    }
+    return shouldNeverReachHere(statusType);
+  });
+
   return (
     <>
       <InlineSelect
@@ -226,7 +241,7 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         ]}
         onChange={e => setStatusType(e as PipelineTypes)}
       />
-      <DrawerTable data={repoList} {...testsAndCoverageRepoItemProps} />
+      <DrawerTable data={filteredPipelinesRepoList} {...testsAndCoverageRepoItemProps} />
     </>
   );
 };
