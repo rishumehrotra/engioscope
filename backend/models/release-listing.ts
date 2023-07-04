@@ -23,7 +23,6 @@ export const pipelineFiltersInput = {
   stageNameContaining: z.string().optional(),
   stageNameUsed: z.string().optional(),
   notConfirmingToBranchPolicies: z.boolean().optional(),
-  repoGroups: z.array(z.string()).optional(),
   teams: z.array(z.string()).optional(),
 };
 
@@ -38,29 +37,15 @@ const filterNotStartingWithBuildArtifact = (notStartingWithBuildArtifact?: boole
 const filterRepos = async (
   collectionName: string,
   project: string,
-  repoGroups: string[] | undefined,
   teams: string[] | undefined
 ) => {
-  return {
-    ...(!repoGroups || repoGroups.length === 0
-      ? {}
-      : {
-          'artifacts.definition.repositoryName': {
-            $in: Object.entries(
-              configForProject(collectionName, project)?.groupRepos?.groups || {}
-            )
-              .filter(([key]) => repoGroups.includes(key))
-              .flatMap(([, repos]) => repos),
-          },
-        }),
-    ...(!teams || teams.length === 0
-      ? {}
-      : {
-          'artifacts.definition.repositoryId': {
-            $in: await getRepoIdsForTeamNames(collectionName, project, teams),
-          },
-        }),
-  };
+  return !teams || teams.length === 0
+    ? {}
+    : {
+        'artifacts.definition.repositoryId': {
+          $in: await getRepoIdsForTeamNames(collectionName, project, teams),
+        },
+      };
 };
 
 const addExactRepoSearch = (searchTerm?: string) => {
@@ -231,7 +216,6 @@ const createFilter = async (
     notStartingWithBuildArtifact,
     stageNameContaining,
     stageNameUsed,
-    repoGroups,
     teams,
   } = options;
 
@@ -255,7 +239,7 @@ const createFilter = async (
         modifiedOn: inDateRange(startDate, endDate),
         releaseDefinitionId: { $in: releaseDefns.map(prop('id')) },
         ...filterNotStartingWithBuildArtifact(notStartingWithBuildArtifact),
-        ...(await filterRepos(collectionName, project, repoGroups, teams)),
+        ...(await filterRepos(collectionName, project, teams)),
       },
     },
     ...addExactRepoSearch(searchTerm),

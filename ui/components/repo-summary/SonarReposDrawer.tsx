@@ -144,7 +144,6 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
   const repos = trpc.sonar.getSonarRepos.useQuery({
     queryContext: filters.queryContext,
     searchTerms: filters.searchTerms,
-    groupsIncluded: filters.groupsIncluded,
     teams: filters.teams,
   });
 

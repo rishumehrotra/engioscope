@@ -2,7 +2,7 @@ import { last, multiply } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
-import useQueryParam, { asBoolean, asString } from '../../hooks/use-query-param.js';
+import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
@@ -18,13 +18,11 @@ import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
-
 const TestsDrawer = lazy(() => import('./TestsDrawer.jsx'));
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
 const useCreateUrlWithFilter = (slug: string) => {
-  const [selectedGroupLabels] = useQueryParam('group', asString);
   const filters = useRepoFilters();
   const queryContext = useQueryContext();
 
@@ -33,17 +31,9 @@ const useCreateUrlWithFilter = (slug: string) => {
       startDate: filters.queryContext[2].toISOString(),
       endDate: filters.queryContext[3].toISOString(),
       ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
-      ...(selectedGroupLabels ? { groupsIncluded: selectedGroupLabels } : {}),
       ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
     }).toString()}`;
-  }, [
-    filters.queryContext,
-    filters.searchTerms,
-    filters.teams,
-    queryContext,
-    selectedGroupLabels,
-    slug,
-  ]);
+  }, [filters.queryContext, filters.searchTerms, filters.teams, queryContext, slug]);
 };
 
 const useCreateDownloadUrl = () => {

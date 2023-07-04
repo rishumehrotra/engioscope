@@ -265,17 +265,11 @@ export const getTestRunsAndCoverageForRepo = async ({
 export const getReposListingForTestsDrawer = async ({
   queryContext,
   searchTerms,
-  groupsIncluded,
   teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(
-    queryContext,
-    searchTerms,
-    groupsIncluded,
-    teams
-  );
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
   const repositoryIds = activeRepos.map(prop('id'));
   const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepos(
     queryContext,

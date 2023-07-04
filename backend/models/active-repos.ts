@@ -1,6 +1,4 @@
 import { z } from 'zod';
-
-import { configForProject } from '../config.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -13,20 +11,8 @@ import { getRepoIdsForTeamNames } from './teams.js';
 export const filteredReposInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  groupsIncluded: z.union([z.array(z.string()), z.undefined()]),
   teams: z.union([z.array(z.string()), z.undefined()]),
 });
-
-const getGroupRepositoryNames = (
-  collectionName: string,
-  project: string,
-  filterGroups: string[]
-) => {
-  const groups = configForProject(collectionName, project)?.groupRepos?.groups;
-  if (!groups) return [];
-
-  return filterGroups.flatMap(group => groups[group] || []);
-};
 
 const isExactSearchString = (searchTerm: string) => {
   return searchTerm.startsWith('"') && searchTerm.endsWith('"');
@@ -35,14 +21,10 @@ const isExactSearchString = (searchTerm: string) => {
 export const searchAndFilterReposBy = async ({
   queryContext,
   searchTerms,
-  groupsIncluded,
   teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
 
-  const groupRepositoryNames = groupsIncluded
-    ? getGroupRepositoryNames(collectionName, project, groupsIncluded)
-    : [];
   const teamRepoIds = teams
     ? await getRepoIdsForTeamNames(collectionName, project, teams)
     : [];
@@ -51,12 +33,9 @@ export const searchAndFilterReposBy = async ({
     {
       collectionName,
       'project.name': project,
-      ...(groupRepositoryNames.length ||
-      teamRepoIds.length ||
-      (searchTerms && searchTerms.length > 0)
+      ...(teamRepoIds.length || (searchTerms && searchTerms.length > 0)
         ? {
             $and: [
-              groupRepositoryNames.length ? { name: { $in: groupRepositoryNames } } : {},
               teamRepoIds.length ? { id: { $in: teamRepoIds } } : {},
               searchTerms && searchTerms.length > 0
                 ? {
@@ -79,7 +58,6 @@ export const searchAndFilterReposBy = async ({
 export const getActiveRepos = async (
   queryContext: QueryContext,
   searchTerms: string[] | undefined,
-  groupsIncluded: string[] | undefined,
   teams: string[] | undefined
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
@@ -87,7 +65,6 @@ export const getActiveRepos = async (
   const repos = await searchAndFilterReposBy({
     queryContext,
     searchTerms,
-    groupsIncluded,
     teams,
   });
 

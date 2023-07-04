@@ -9,12 +9,10 @@ needsDB();
 
 it('should not return active repositories when there are no repository', async () => {
   const searchTerm = undefined;
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     searchTerm,
-    groupsIncluded,
     teams
   );
   expect(activeRepos.length).toBe(0);
@@ -23,12 +21,10 @@ it('should not return active repositories when there are no repository', async (
 it('should not return active repositories when there are no builds or commits in given duration', async () => {
   await createRepo('foo', 'bar', 'repo-1');
   const searchTerm = undefined;
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     searchTerm,
-    groupsIncluded,
     teams
   );
 
@@ -39,12 +35,10 @@ it('should return active repository when there is a build in given duration', as
   await createRepo('foo', 'bar', 'repo-1');
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
   const searchTerm = undefined;
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     searchTerm,
-    groupsIncluded,
     teams
   );
 
@@ -55,12 +49,10 @@ it('should return active repository when there is a commit in given duration', a
   await createRepo('foo', 'bar', 'repo-1');
   await createCommit('foo', 'bar', 'repo-1', '123');
   const searchTerm = undefined;
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     searchTerm,
-    groupsIncluded,
     teams
   );
 
@@ -72,12 +64,10 @@ it('should return unique active repository when there are both commits and build
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
   await createCommit('foo', 'bar', 'repo-1', '123');
   const searchTerm = undefined;
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     searchTerm,
-    groupsIncluded,
     teams
   );
 
@@ -89,12 +79,10 @@ it('should return active repository for matching search terms and having builds 
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
   await createCommit('foo', 'bar', 'repo-1', '123');
   const searchTerm = 'repo-1';
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     [searchTerm],
-    groupsIncluded,
     teams
   );
 
@@ -106,12 +94,10 @@ it('should not return active repository if not matching search terms', async () 
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-25'));
   await createCommit('foo', 'bar', 'repo-1', '123');
   const searchTerm = 'repo-2';
-  const groupsIncluded = undefined;
   const teams = undefined;
   const activeRepos = await getActiveRepos(
     ['foo', 'bar', new Date('2022-03-25'), new Date('2022-06-25')],
     [searchTerm],
-    groupsIncluded,
     teams
   );
 

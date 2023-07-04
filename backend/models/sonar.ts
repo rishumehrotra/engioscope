@@ -1531,15 +1531,9 @@ export const getReposWithSonarSetup = async (
 export const getSonarRepos = async ({
   queryContext,
   searchTerms,
-  groupsIncluded,
   teams,
 }: z.infer<typeof filteredReposInputParser>) => {
-  const activeRepos = await getActiveRepos(
-    queryContext,
-    searchTerms,
-    groupsIncluded,
-    teams
-  );
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
 
   const [sonarRepos, nonSonarRepos] = await Promise.all([
     getReposWithSonarSetup(
@@ -1558,16 +1552,10 @@ export const getSonarRepos = async ({
 export const getSonarProjectsForDownload = async ({
   queryContext,
   searchTerms,
-  groupsIncluded,
   teams,
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
-  const activeRepos = await getActiveRepos(
-    queryContext,
-    searchTerms,
-    groupsIncluded,
-    teams
-  );
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
 
   const [sonarRepos, nonSonarRepos, connections] = await Promise.all([
     SonarProjectsForRepoModel.aggregate<{

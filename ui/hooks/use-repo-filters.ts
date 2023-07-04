@@ -6,7 +6,6 @@ import { useQueryContext } from './query-hooks.js';
 export default (): RepoFilters => {
   const queryContext = useQueryContext();
   const [search] = useQueryParam('search', asStringArray);
-  const [selectedGroupLabels] = useQueryParam('group', asStringArray);
   const [sortBy] = useQueryParam('sortBy', asString);
   const [sort] = useQueryParam('sort', asString);
   const [pageSize] = useQueryParam('pageSize', asNumber);
@@ -16,7 +15,6 @@ export default (): RepoFilters => {
   return {
     queryContext,
     searchTerms: search?.map(trim).filter(x => x.length > 0),
-    groupsIncluded: selectedGroupLabels,
     teams,
     pageSize: pageSize || 10,
     pageNumber: pageNumber || 0,

@@ -22,12 +22,6 @@ const summary = async ({
     repos,
     buildPipelines,
     releasePipelines,
-    groups: projectConfig?.groupRepos
-      ? {
-          label: projectConfig.groupRepos.label,
-          groups: Object.keys(projectConfig.groupRepos.groups),
-        }
-      : undefined,
     workItemLabel: projectConfig?.workitems.label,
   };
 };

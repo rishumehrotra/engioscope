@@ -175,7 +175,6 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
   const repos = trpc.tests.getReposListingForTestsDrawer.useQuery({
     queryContext: filters.queryContext,
     searchTerms: filters.searchTerms,
-    groupsIncluded: filters.groupsIncluded,
     teams: filters.teams,
   });
 

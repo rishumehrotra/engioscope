@@ -67,7 +67,7 @@ const Header: React.FC = () => {
         <div className="flex align-baseline justify-between">
           <div>
             <h1 className="text-5xl font-bold text-gray-200 pr-2">
-              {headerDetails.title}
+              {headerDetails.title || '\u00A0'}
             </h1>
             {headerDetails.subtitle || (
               <div className="invisible text-lg font-bold mt-2">Dummy</div>
