@@ -1,5 +1,7 @@
 import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import type { BuildDef } from './testruns.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 
@@ -35,3 +37,55 @@ export const getPipelineIds =
 
 export const getActivePipelineIds = getPipelineIds('active');
 export const getNonActivePipelineIds = getPipelineIds('nonActive');
+
+export const getDefinitionListWithRepoInfo = (
+  collectionName: string,
+  project: string,
+  repoIds: string[]
+) => {
+  return RepositoryModel.aggregate<BuildDef>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: repoIds },
+      },
+    },
+    {
+      $lookup: {
+        from: 'builddefinitions',
+        let: {
+          collectionName: '$collectionName',
+          project: '$project.name',
+          repositoryId: '$id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$repositoryId', '$$repositoryId'] },
+            },
+          },
+        ],
+        as: 'pipeline',
+      },
+    },
+    {
+      $unwind: {
+        path: '$pipeline',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $project: {
+        id: '$pipeline.id',
+        name: '$pipeline.name',
+        url: '$pipeline.url',
+        repositoryName: '$name',
+        repositoryId: '$id',
+        repositoryUrl: '$url',
+      },
+    },
+  ]).exec();
+};

@@ -223,7 +223,7 @@ const StreamingRepoSummary: React.FC = () => {
                 heading: 'Tests & Coverage details',
                 enabledIf:
                   (summaries?.totalActiveRepos || 0) > 0 && showTestsDrawer === true,
-                // downloadUrl: drawerDownloadUrl('repos-with-tests-coverage'),
+                downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
                 body: <TestsDrawer pipelineType="all" />,
               }}
             />

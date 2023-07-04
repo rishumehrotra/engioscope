@@ -23,13 +23,23 @@ import { queryContextInputParser, fromContext } from './utils.js';
 import { createIntervals, getLatest } from '../utils.js';
 import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos } from './active-repos.js';
+import { divide, toPercentage } from '../../shared/utils.js';
+import { getDefinitionListWithRepoInfo } from './build-definitions.js';
 
 export const testRunsForRepositoryInputParser = z.object({
   queryContext: queryContextInputParser,
   repositoryId: z.string(),
 });
 
-export type BuildDef = { id: number; name: string; url: string };
+export type BuildDef = {
+  id: number;
+  name: string;
+  url: string;
+  repositoryId: string;
+  repositoryName: string;
+  repositoryUrl: string;
+};
+
 export type TestsForWeek = {
   weekIndex: number;
 } & (
@@ -50,6 +60,7 @@ export type TestsForDef = {
   latest?: TestsForWeek;
   repositoryId: string;
   repositoryName: string;
+  repositoryUrl: string;
 };
 
 export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
@@ -112,19 +123,7 @@ export const combineTestsAndCoverageForRepo = async (
   const { collectionName, project } = fromContext(queryContext);
 
   const [definitionList, definitionTestRuns, branchCoverage] = await Promise.all([
-    BuildDefinitionModel.find(
-      {
-        collectionName,
-        project,
-        repositoryId,
-      },
-      {
-        _id: 0,
-        id: 1,
-        name: 1,
-        url: 1,
-      }
-    ).lean(),
+    getDefinitionListWithRepoInfo(collectionName, project, [repositoryId]),
     getTestsForRepo(queryContext, repositoryId),
     getCoveragesForRepo(queryContext, repositoryId),
   ]);
@@ -152,19 +151,7 @@ export const combineTestsAndCoverageForRepos = async (
   const { collectionName, project } = fromContext(queryContext);
 
   const [definitionList, definitionTestRuns, branchCoverage] = await Promise.all([
-    BuildDefinitionModel.find(
-      {
-        collectionName,
-        project,
-        repositoryId: { $in: repositoryIds },
-      },
-      {
-        _id: 0,
-        id: 1,
-        name: 1,
-        url: 1,
-      }
-    ).lean(),
+    getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
     getTestsForRepos(queryContext, repositoryIds),
     getCoveragesForRepos(queryContext, repositoryIds),
   ]);
@@ -262,11 +249,11 @@ export const getTestRunsAndCoverageForRepo = async ({
   );
 };
 
-export const getReposListingForTestsDrawer = async ({
-  queryContext,
-  searchTerms,
-  teams,
-}: z.infer<typeof filteredReposInputParser>) => {
+export const getTestsAndCoverageForRepos = async (
+  queryContext: QueryContext,
+  searchTerms?: string[],
+  teams?: string[]
+) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
@@ -295,7 +282,7 @@ export const getReposListingForTestsDrawer = async ({
     );
   };
 
-  const definitionTestsAndCoverage = (
+  return (
     await Promise.all(
       testRunsAndCoverageForRepo.map(async def => {
         const tests = await makeContinuous(
@@ -342,12 +329,24 @@ export const getReposListingForTestsDrawer = async ({
       })
     )
   ).sort(desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0))));
+};
 
-  return definitionTestsAndCoverage.reduce<
+export const getReposListingForTestsDrawer = async ({
+  queryContext,
+  searchTerms,
+  teams,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const testsAndCoverageForRepos = await getTestsAndCoverageForRepos(
+    queryContext,
+    searchTerms,
+    teams
+  );
+
+  return testsAndCoverageForRepos.reduce<
     {
       repositoryId: string;
       repositoryName: string;
-      definitions: typeof definitionTestsAndCoverage;
+      definitions: typeof testsAndCoverageForRepos;
       totalTests: number;
     }[]
   >((acc, curr) => {
@@ -370,6 +369,40 @@ export const getReposListingForTestsDrawer = async ({
 
     return acc;
   }, []);
+};
+
+export const getTestsAndCoveragePipelinesForDownload = async ({
+  queryContext,
+  searchTerms,
+  teams,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const pipelineTestsAndCoverage = await getTestsAndCoverageForRepos(
+    queryContext,
+    searchTerms,
+    teams
+  );
+
+  return pipelineTestsAndCoverage.map(x => {
+    return {
+      pipelineUrl: x.url,
+      pipelineName: x.name,
+      repositoryName: x.repositoryName,
+      repositoryUrl: x.repositoryUrl,
+      totalTests: x.latestTest?.hasTests ? x.latestTest.totalTests : 0,
+      totalCoverage: x.latestCoverage?.hasCoverage
+        ? divide(
+            x.latestCoverage.coverage?.coveredBranches || 0,
+            x.latestCoverage.coverage?.totalBranches || 0
+          )
+            .map(toPercentage)
+            .getOr('_')
+        : '-',
+      failedTests: x.latestTest?.hasTests
+        ? x.latestTest.totalTests - x.latestTest.passedTests
+        : 0,
+      passedTests: x.latestTest?.hasTests ? x.latestTest.passedTests : 0,
+    };
+  });
 };
 
 export const getTestsAndCoveragesCount = async (

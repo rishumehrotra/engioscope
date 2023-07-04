@@ -22,6 +22,7 @@ export type BranchCoverage = {
   definitionId: number;
   repositoryId: string;
   repositoryName: string;
+  repositoryUrl: string;
   coverageByWeek: CoverageByWeek[];
 };
 
@@ -58,6 +59,7 @@ export const getMainBranchBuildIds = (
         project: '$project.name',
         repositoryId: '$id',
         repositoryName: '$name',
+        repositoryUrl: '$url',
         defaultBranch: '$defaultBranch',
       },
     },
@@ -122,6 +124,7 @@ export const getMainBranchBuildIds = (
         project: { $first: '$project' },
         repositoryId: { $first: '$repositoryId' },
         repositoryName: { $first: '$repositoryName' },
+        repositoryUrl: { $first: '$repositoryUrl' },
         build: { $first: '$build' },
       },
     },
@@ -177,6 +180,7 @@ export const getTestsForBuildIds = (
       weekIndex: '$_id.weekIndex',
       repositoryId: '$repositoryId',
       repositoryName: '$repositoryName',
+      repositoryUrl: '$repositoryUrl',
       hasTests: { $gt: [{ $size: '$tests' }, 0] },
       totalTests: { $sum: '$tests.totalTests' },
       startedDate: { $min: '$tests.startedDate' },
@@ -235,6 +239,7 @@ export const getTestsForRepos = async (
         definitionId: { $first: '$definitionId' },
         repositoryId: { $first: '$repositoryId' },
         repositoryName: { $first: '$repositoryName' },
+        repositoryUrl: { $first: '$repositoryUrl' },
         tests: { $push: '$$ROOT' },
       },
     },
@@ -396,6 +401,7 @@ export const getCoveragesForRepos = (
         definitionId: { $first: '$definitionId' },
         repositoryId: { $first: '$repositoryId' },
         repositoryName: { $first: '$repositoryName' },
+        repositoryUrl: { $first: '$repositoryUrl' },
         coverage: { $push: '$$ROOT' },
       },
     },
@@ -405,6 +411,7 @@ export const getCoveragesForRepos = (
         definitionId: 1,
         repositoryId: 1,
         repositoryName: 1,
+        repositoryUrl: 1,
         coverageByWeek: '$coverage',
       },
     },

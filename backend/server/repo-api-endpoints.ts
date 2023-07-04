@@ -4,6 +4,7 @@ import { getYAMLPipelinesForDownload } from '../models/repo-listing.js';
 import { createXLSX } from './create-xlsx.js';
 import { filteredReposInputParser } from '../models/active-repos.js';
 import { getSonarProjectsForDownload } from '../models/sonar.js';
+import { getTestsAndCoveragePipelinesForDownload } from '../models/testruns.js';
 
 export type RequestWithFilter = Request<
   {
@@ -99,6 +100,47 @@ const drawerDownloads = {
         {
           title: 'Sonar project URL',
           value: x => (x.sonarProjectUrl ? new URL(x.sonarProjectUrl) : null),
+        },
+      ],
+    });
+  },
+  'tests-coverage-pipelines': async (args: FilterArgs) => {
+    const lines = await getTestsAndCoveragePipelinesForDownload(args);
+    return createXLSX({
+      data: lines,
+      columns: [
+        {
+          title: 'Pipeline Link',
+          value: x => new URL(x.pipelineUrl),
+        },
+        {
+          title: 'Pipeline Name',
+          value: x => x.pipelineName,
+        },
+        {
+          title: 'Repo URL',
+          value: x => (x.repositoryUrl ? new URL(x.repositoryUrl) : null),
+        },
+        {
+          title: 'Repo Name',
+          value: x => x.repositoryName ?? null,
+        },
+
+        {
+          title: 'Total tests',
+          value: x => x.totalTests,
+        },
+        {
+          title: 'Passed tests',
+          value: x => x.passedTests,
+        },
+        {
+          title: 'Failed tests',
+          value: x => x.failedTests,
+        },
+        {
+          title: 'Coverage %',
+          value: x => x.totalCoverage,
         },
       ],
     });
