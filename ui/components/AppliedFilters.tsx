@@ -218,10 +218,12 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
           ))}
         </div>
       )}
-      <div className="mb-6 ml-1">
-        Showing <strong>{count ?? '...'}</strong>{' '}
-        {pageName(type, count ?? 3).toLowerCase()}
-      </div>
+      {count !== 0 && (
+        <div className="mb-6 ml-1">
+          Showing <strong>{count ?? '...'}</strong>{' '}
+          {pageName(type, count ?? 3).toLowerCase()}
+        </div>
+      )}
     </>
   );
 };

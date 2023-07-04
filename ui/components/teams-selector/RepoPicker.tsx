@@ -6,7 +6,7 @@ import { Check } from 'react-feather';
 import { twMerge } from 'tailwind-merge';
 import { useHotkeys } from 'react-hotkeys-hook';
 import SearchInput from '../common/SearchInput.jsx';
-import noSearchResults from './no-search-results.svg';
+import noSearchResults from '../../images/no-search-results.svg';
 
 type RepoPickerProps = {
   disabled: boolean;
