@@ -1,6 +1,4 @@
 import type {
-  ProjectReleasePipelineAnalysis,
-  ProjectRepoAnalysis,
   ProjectWorkItemAnalysis,
   UIWorkItemRevision,
   ProjectOverviewAnalysis,
@@ -11,18 +9,6 @@ import type {
 } from '../shared/types.js';
 
 const json = (res: Response) => res.json();
-
-export const repoMetrics = (
-  collection: string,
-  project: string
-): Promise<ProjectRepoAnalysis> =>
-  fetch(`/api/${collection}/${project}/repos.json`).then(json);
-
-export const pipelineMetrics = (
-  collection: string,
-  project: string
-): Promise<ProjectReleasePipelineAnalysis> =>
-  fetch(`/api/${collection}/${project}/releases.json`).then(json);
 
 export const workItemMetrics = (
   collection: string,
