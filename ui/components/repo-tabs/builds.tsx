@@ -7,10 +7,9 @@ import type { Tab } from './Tabs.jsx';
 import TabContents from './TabContents.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
-import { useProjectDetails } from '../../hooks/project-details-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import Loading from '../Loading.jsx';
-import { useQueryContext } from '../../hooks/query-hooks.js';
+import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { PullRequest } from '../common/Icons.jsx';
 
@@ -27,14 +26,12 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   totalRuns,
   buildDefinitionId,
 }) => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const projectDetails = useProjectDetails()!;
+  const cnp = useCollectionAndProject();
   const domId = `bdi-${buildDefinitionId}`;
   const [hasHovered, setHasHovered] = useState(false);
   const centralTemplateOptions = trpc.builds.centralTemplateOptions.useQuery(
     {
-      collectionName: projectDetails.name[0],
-      project: projectDetails.name[1],
+      ...cnp,
       buildDefinitionId,
     },
     { enabled: hasHovered }
