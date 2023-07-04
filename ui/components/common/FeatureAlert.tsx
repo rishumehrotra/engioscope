@@ -32,6 +32,7 @@ export const FeatureAlert = ({
         boxShadow:
           'var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 25px 50px -12px rgb(0 0 0 / 0.25)',
         padding: 0,
+        zIndex: 10,
       }}
       place="bottom-start"
     >
