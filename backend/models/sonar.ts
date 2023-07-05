@@ -1,4 +1,4 @@
-import type { Types } from 'mongoose';
+import type { Types, PipelineStage } from 'mongoose';
 import { z } from 'zod';
 import { range } from 'rambda';
 import { byNum, desc } from 'sort-lib';
@@ -842,20 +842,28 @@ export const updateWeeklySonarProjectCount = async (
   return weeklyUpdatedStats.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
+const matchSonarProjectsForReposDocs = (
+  collectionName: string,
+  project: string,
+  repositoryIds: string[],
+  havingSonarProjects: boolean
+): PipelineStage[] => [
+  {
+    $match: {
+      collectionName,
+      project,
+      'repositoryId': { $in: repositoryIds },
+      'sonarProjectIds.0': { $exists: havingSonarProjects },
+    },
+  },
+];
 export const getReposWithSonarQube = async (
   collectionName: string,
   project: string,
   repositoryIds: string[]
 ) => {
   return SonarProjectsForRepoModel.aggregate<{ count: number }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'repositoryId': { $in: repositoryIds },
-        'sonarProjectIds.0': { $exists: true },
-      },
-    },
+    ...matchSonarProjectsForReposDocs(collectionName, project, repositoryIds, true),
     {
       $unwind: {
         path: '$sonarProjectIds',
@@ -1308,6 +1316,109 @@ export const getReposSortedByCodeQuality = async (
   return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
 };
 
+const repositoryLookupForSonarDrawer = (
+  collectionName: string,
+  project: string
+): PipelineStage[] => [
+  {
+    $lookup: {
+      from: 'repositories',
+      let: { repositoryId: '$repositoryId' },
+      pipeline: [
+        {
+          $match: {
+            collectionName,
+            'project.name': project,
+            '$expr': { $eq: ['$id', '$$repositoryId'] },
+          },
+        },
+      ],
+      as: 'result',
+    },
+  },
+];
+
+const lookUpCodeQualityStatusForSonarProjects: PipelineStage[] = [
+  // Assuming we have already matched documents from sonar repositories
+  {
+    $unwind: {
+      path: '$sonarProjectIds',
+      preserveNullAndEmptyArrays: false,
+    },
+  },
+  {
+    $lookup: {
+      from: 'sonarprojects',
+      let: { sonarProjectId: '$sonarProjectIds' },
+      pipeline: [
+        { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
+        { $sort: { fetchDate: -1 } },
+        { $limit: 1 },
+        {
+          $project: {
+            name: 1,
+            key: 1,
+            connectionId: 1,
+          },
+        },
+      ],
+      as: 'sonarProjectName',
+    },
+  },
+  {
+    $addFields: {
+      sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] },
+      sonarConnectionId: { $arrayElemAt: ['$sonarProjectName.connectionId', 0] },
+      sonarProjectKey: { $arrayElemAt: ['$sonarProjectName.key', 0] },
+    },
+  },
+  {
+    $lookup: {
+      from: 'sonarmeasures',
+      let: { sonarProjectId: '$sonarProjectIds' },
+      pipeline: [
+        { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
+        { $sort: { fetchDate: -1 } },
+        { $limit: 1 },
+      ],
+      as: 'sonarMeasures',
+    },
+  },
+  {
+    $unwind: {
+      path: '$sonarMeasures',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $addFields: {
+      sonarMeasures: {
+        $filter: {
+          input: '$sonarMeasures.measures',
+          cond: { $eq: ['$$this.metric', 'alert_status'] },
+        },
+      },
+    },
+  },
+  {
+    $unwind: {
+      path: '$sonarMeasures',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $addFields: {
+      hasSonarMeasures: {
+        $cond: {
+          if: { $ifNull: ['$sonarMeasures.value', false] },
+          then: true,
+          else: false,
+        },
+      },
+    },
+  },
+];
+
 type ReposWithSonarSetup = {
   repositoryId: string;
   repositoryName: string;
@@ -1329,32 +1440,9 @@ export const getReposWithoutSonarSetup = async (
   repositoryIds: string[]
 ) => {
   const { collectionName, project } = fromContext(queryContext);
-
   return SonarProjectsForRepoModel.aggregate<ReposWithoutSonarSetup>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'repositoryId': { $in: repositoryIds },
-        'sonarProjectIds.0': { $exists: false },
-      },
-    },
-    {
-      $lookup: {
-        from: 'repositories',
-        let: { repositoryId: '$repositoryId' },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              'project.name': project,
-              '$expr': { $eq: ['$id', '$$repositoryId'] },
-            },
-          },
-        ],
-        as: 'result',
-      },
-    },
+    ...matchSonarProjectsForReposDocs(collectionName, project, repositoryIds, false),
+    ...repositoryLookupForSonarDrawer(collectionName, project),
     { $addFields: { repositoryName: { $arrayElemAt: ['$result.name', 0] } } },
     { $project: { _id: 0, result: 0 } },
   ]);
@@ -1368,91 +1456,8 @@ export const getReposWithSonarSetup = async (
 
   const [repos, connections] = await Promise.all([
     SonarProjectsForRepoModel.aggregate<ReposWithSonarSetup>([
-      {
-        $match: {
-          collectionName,
-          project,
-          'sonarProjectIds.0': { $exists: true },
-          'repositoryId': { $in: repositoryIds },
-        },
-      },
-      {
-        $unwind: {
-          path: '$sonarProjectIds',
-          preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $lookup: {
-          from: 'sonarprojects',
-          let: { sonarProjectId: '$sonarProjectIds' },
-          pipeline: [
-            { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
-            { $sort: { fetchDate: -1 } },
-            { $limit: 1 },
-            {
-              $project: {
-                name: 1,
-                key: 1,
-                connectionId: 1,
-              },
-            },
-          ],
-          as: 'sonarProjectName',
-        },
-      },
-      {
-        $addFields: {
-          sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] },
-          sonarConnectionId: { $arrayElemAt: ['$sonarProjectName.connectionId', 0] },
-          sonarProjectKey: { $arrayElemAt: ['$sonarProjectName.key', 0] },
-        },
-      },
-      {
-        $lookup: {
-          from: 'sonarmeasures',
-          let: { sonarProjectId: '$sonarProjectIds' },
-          pipeline: [
-            { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
-            { $sort: { fetchDate: -1 } },
-            { $limit: 1 },
-          ],
-          as: 'sonarMeasures',
-        },
-      },
-      {
-        $unwind: {
-          path: '$sonarMeasures',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          sonarMeasures: {
-            $filter: {
-              input: '$sonarMeasures.measures',
-              cond: { $eq: ['$$this.metric', 'alert_status'] },
-            },
-          },
-        },
-      },
-      {
-        $unwind: {
-          path: '$sonarMeasures',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          hasSonarMeasures: {
-            $cond: {
-              if: { $ifNull: ['$sonarMeasures.value', false] },
-              then: true,
-              else: false,
-            },
-          },
-        },
-      },
+      ...matchSonarProjectsForReposDocs(collectionName, project, repositoryIds, true),
+      ...lookUpCodeQualityStatusForSonarProjects,
       {
         $group: {
           _id: {
@@ -1486,22 +1491,7 @@ export const getReposWithSonarSetup = async (
           projectsWithSonarMeasures: 1,
         },
       },
-      {
-        $lookup: {
-          from: 'repositories',
-          let: { repositoryId: '$repositoryId' },
-          pipeline: [
-            {
-              $match: {
-                collectionName,
-                'project.name': project,
-                '$expr': { $eq: ['$id', '$$repositoryId'] },
-              },
-            },
-          ],
-          as: 'result',
-        },
-      },
+      ...repositoryLookupForSonarDrawer(collectionName, project),
       { $addFields: { repositoryName: { $arrayElemAt: ['$result.name', 0] } } },
       { $project: { _id: 0, result: 0 } },
     ]),
@@ -1556,7 +1546,7 @@ export const getSonarProjectsForDownload = async ({
 }: z.infer<typeof filteredReposInputParser>) => {
   const { collectionName, project } = fromContext(queryContext);
   const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
-
+  const repositoryIds = activeRepos.map(repo => repo.id);
   const [sonarRepos, nonSonarRepos, connections] = await Promise.all([
     SonarProjectsForRepoModel.aggregate<{
       collectionName: string;
@@ -1571,107 +1561,9 @@ export const getSonarProjectsForDownload = async ({
       repositoryUrl: string;
       status: 'unknown' | 'OK' | 'WARN' | 'ERROR';
     }>([
-      {
-        $match: {
-          collectionName,
-          project,
-          'repositoryId': { $in: activeRepos.map(repo => repo.id) },
-          'sonarProjectIds.0': { $exists: true },
-        },
-      },
-      {
-        $unwind: {
-          path: '$sonarProjectIds',
-          preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $lookup: {
-          from: 'sonarprojects',
-          let: { sonarProjectId: '$sonarProjectIds' },
-          pipeline: [
-            { $match: { $expr: { $eq: ['$_id', '$$sonarProjectId'] } } },
-            { $sort: { fetchDate: -1 } },
-            { $limit: 1 },
-            {
-              $project: {
-                name: 1,
-                key: 1,
-                connectionId: 1,
-              },
-            },
-          ],
-          as: 'sonarProjectName',
-        },
-      },
-      {
-        $addFields: {
-          sonarProjectName: { $arrayElemAt: ['$sonarProjectName.name', 0] },
-          sonarConnectionId: { $arrayElemAt: ['$sonarProjectName.connectionId', 0] },
-          sonarProjectKey: { $arrayElemAt: ['$sonarProjectName.key', 0] },
-        },
-      },
-      {
-        $lookup: {
-          from: 'sonarmeasures',
-          let: { sonarProjectId: '$sonarProjectIds' },
-          pipeline: [
-            { $match: { $expr: { $eq: ['$sonarProjectId', '$$sonarProjectId'] } } },
-            { $sort: { fetchDate: -1 } },
-            { $limit: 1 },
-          ],
-          as: 'sonarMeasures',
-        },
-      },
-      {
-        $unwind: {
-          path: '$sonarMeasures',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          sonarMeasures: {
-            $filter: {
-              input: '$sonarMeasures.measures',
-              cond: { $eq: ['$$this.metric', 'alert_status'] },
-            },
-          },
-        },
-      },
-      {
-        $unwind: {
-          path: '$sonarMeasures',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          hasSonarMeasures: {
-            $cond: {
-              if: { $ifNull: ['$sonarMeasures.value', false] },
-              then: true,
-              else: false,
-            },
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: 'repositories',
-          let: { repositoryId: '$repositoryId' },
-          pipeline: [
-            {
-              $match: {
-                collectionName,
-                'project.name': project,
-                '$expr': { $eq: ['$id', '$$repositoryId'] },
-              },
-            },
-          ],
-          as: 'result',
-        },
-      },
+      ...matchSonarProjectsForReposDocs(collectionName, project, repositoryIds, true),
+      ...lookUpCodeQualityStatusForSonarProjects,
+      ...repositoryLookupForSonarDrawer(collectionName, project),
       {
         $addFields: {
           repositoryName: { $arrayElemAt: ['$result.name', 0] },
@@ -1697,32 +1589,8 @@ export const getSonarProjectsForDownload = async ({
       sonarProjectName: null;
       sonarProjectUrl: null;
     }>([
-      {
-        $match: {
-          collectionName,
-          project,
-          'repositoryId': { $in: activeRepos.map(repo => repo.id) },
-          'sonarProjectIds.0': {
-            $exists: false,
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: 'repositories',
-          let: { repositoryId: '$repositoryId' },
-          pipeline: [
-            {
-              $match: {
-                collectionName,
-                'project.name': project,
-                '$expr': { $eq: ['$id', '$$repositoryId'] },
-              },
-            },
-          ],
-          as: 'result',
-        },
-      },
+      ...matchSonarProjectsForReposDocs(collectionName, project, repositoryIds, false),
+      ...repositoryLookupForSonarDrawer(collectionName, project),
       {
         $addFields: {
           repositoryName: { $arrayElemAt: ['$result.name', 0] },
