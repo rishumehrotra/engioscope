@@ -4,8 +4,8 @@ import DrawerTabs from './DrawerTabs.jsx';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import type { DrawerTableProps } from './DrawerTable.jsx';
-import DrawerTable from './DrawerTable.jsx';
+import type { SortableTableProps } from '../common/SortableTable.jsx';
+import SortableTable from '../common/SortableTable.jsx';
 import { shortDate } from '../../helpers/utils.js';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
@@ -26,7 +26,8 @@ const PipelinesList: React.FC<PipelineListProps> = ({ item, pipelineType }) => {
   });
 
   return (
-    <DrawerTable
+    <SortableTable
+      variant="drawer"
       data={pipelines.data}
       rowKey={x => x.definitionId}
       isChild
@@ -86,7 +87,7 @@ const PipelinesList: React.FC<PipelineListProps> = ({ item, pipelineType }) => {
 
 const reposTableProps = (
   pipelineType?: 'yaml' | 'non-yaml'
-): Omit<DrawerTableProps<RepoItem>, 'data'> => {
+): Omit<SortableTableProps<RepoItem>, 'data'> => {
   const pipelineCount: (x: RepoItem) => number =
     pipelineType === 'yaml'
       ? x => x.yaml
@@ -96,6 +97,7 @@ const reposTableProps = (
 
   return {
     rowKey: x => x.repositoryId,
+    variant: 'drawer',
     columns: [
       {
         title: 'Repositories',
@@ -157,7 +159,7 @@ const YAMLPipelinesDrawer: React.FC<{
               );
             }
 
-            return <DrawerTable data={repos} {...reposTableProps('non-yaml')} />;
+            return <SortableTable data={repos} {...reposTableProps('non-yaml')} />;
           },
         },
         {
@@ -178,7 +180,7 @@ const YAMLPipelinesDrawer: React.FC<{
               );
             }
 
-            return <DrawerTable data={repos} {...reposTableProps('yaml')} />;
+            return <SortableTable data={repos} {...reposTableProps('yaml')} />;
           },
         },
         {
@@ -187,7 +189,7 @@ const YAMLPipelinesDrawer: React.FC<{
           // eslint-disable-next-line react/no-unstable-nested-components
           BodyComponent: () => {
             return (
-              <DrawerTable
+              <SortableTable
                 data={repoListingWithPipelineCount?.data}
                 {...reposTableProps()}
               />

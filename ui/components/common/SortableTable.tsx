@@ -2,31 +2,33 @@ import type { MouseEvent, MouseEventHandler, ReactNode } from 'react';
 import React, { useMemo, Fragment, useState } from 'react';
 import { asc, desc } from 'sort-lib';
 import { ChevronRight } from 'react-feather';
-import AnimateHeight from '../common/AnimateHeight.jsx';
-import { ArrowDown2 } from '../common/Icons.jsx';
+import AnimateHeight from './AnimateHeight.jsx';
+import { ArrowDown2 } from './Icons.jsx';
 
-export type DrawerTableProps<T> = {
+export type SortableTableProps<T> = {
   data: T[] | undefined;
   columns: {
     title: string;
     key: string;
     value: (x: T) => string | number | ReactNode;
-    sorter: (x: T, y: T) => number;
+    sorter?: (x: T, y: T) => number;
   }[];
   ChildComponent?: React.FC<{ item: T }>;
   rowKey: (x: T) => string;
   isChild?: boolean;
   defaultSortColumnIndex?: number;
+  variant: 'default' | 'drawer';
 };
 
-const DrawerTable = <T,>({
+const SortableTable = <T,>({
   data,
   columns,
   rowKey,
   ChildComponent,
   isChild = false,
   defaultSortColumnIndex = 0,
-}: DrawerTableProps<T>) => {
+  variant,
+}: SortableTableProps<T>) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [collapsingRows, setCollapsingRows] = useState<string[]>([]);
   const [sortColumnIndex, setSortColumnIndex] = useState<number>(defaultSortColumnIndex);
@@ -36,11 +38,20 @@ const DrawerTable = <T,>({
 
   const sortedData = useMemo(() => {
     const { sorter } = columns[sortColumnIndex];
+    if (!sorter) return;
     return data?.sort((sortDirection === 'asc' ? asc : desc)(sorter));
   }, [columns, data, sortColumnIndex, sortDirection]);
 
   return (
-    <table className={`w-full ${isChild ? 'bg-theme-secondary' : ''}`}>
+    <table
+      className={`w-full ${
+        isChild
+          ? 'bg-theme-secondary'
+          : variant === 'default'
+          ? 'bg-theme-page-content'
+          : ''
+      }`}
+    >
       <thead>
         <tr
           className={`bg-theme-col-header text-xs text-theme-helptext ${
@@ -59,8 +70,9 @@ const DrawerTable = <T,>({
                 <button
                   className={`${isChild ? '' : 'uppercase'} ${
                     colIndex === 0 ? 'pr-6' : 'pl-6'
-                  } py-2`}
+                  } py-2 ${col.sorter ? '' : 'cursor-default'}`}
                   onClick={() => {
+                    if (!col.sorter) return;
                     if (sortColumnIndex === colIndex) {
                       return setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'));
                     }
@@ -142,6 +154,8 @@ const DrawerTable = <T,>({
                       } py-3 ${
                         (colIndex === 0 && !expandedRows.includes(rk)) || isChild
                           ? ''
+                          : variant === 'default'
+                          ? ''
                           : 'font-semibold'
                       }`}
                     >
@@ -173,4 +187,4 @@ const DrawerTable = <T,>({
   );
 };
 
-export default DrawerTable;
+export default SortableTable;

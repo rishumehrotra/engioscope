@@ -4,8 +4,8 @@ import { prop } from 'rambda';
 import DrawerTabs from './DrawerTabs.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import type { DrawerTableProps } from './DrawerTable.jsx';
-import DrawerTable from './DrawerTable.jsx';
+import type { SortableTableProps } from '../common/SortableTable.jsx';
+import SortableTable from '../common/SortableTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
 import { HappyEmpty, SadEmpty } from './Empty.jsx';
 import {
@@ -28,7 +28,8 @@ type ProjectStatus = 'all' | 'pass' | 'fail' | 'other';
 
 const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) => {
   return (
-    <DrawerTable
+    <SortableTable
+      variant="drawer"
       data={sonarProjects}
       rowKey={x => x.id.toString()}
       isChild
@@ -68,7 +69,8 @@ const SonarProjectList: React.FC<SonarProjectListProps> = ({ sonarProjects }) =>
   );
 };
 
-const nonSonarReposTableProps: Omit<DrawerTableProps<NonSonarRepoItem>, 'data'> = {
+const nonSonarReposTableProps: Omit<SortableTableProps<NonSonarRepoItem>, 'data'> = {
+  variant: 'drawer',
   rowKey: x => x.repositoryId,
   columns: [
     {
@@ -81,9 +83,10 @@ const nonSonarReposTableProps: Omit<DrawerTableProps<NonSonarRepoItem>, 'data'> 
 };
 
 const sonarReposTableProps: Omit<
-  DrawerTableProps<SonarRepoItem & { status: string; sortWeight: number }>,
+  SortableTableProps<SonarRepoItem & { status: string; sortWeight: number }>,
   'data'
 > = {
+  variant: 'drawer',
   rowKey: x => x.repositoryId,
   columns: [
     {
@@ -211,7 +214,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
               );
             }
 
-            return <DrawerTable data={repoList} {...nonSonarReposTableProps} />;
+            return <SortableTable data={repoList} {...nonSonarReposTableProps} />;
           },
         },
         {
@@ -264,7 +267,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                 {repoList?.length === 0 ? (
                   emptyMessage
                 ) : (
-                  <DrawerTable
+                  <SortableTable
                     data={repoList?.map(r => ({
                       ...r,
                       status: combinedQualityGate(r.sonarProjects.map(prop('status'))),

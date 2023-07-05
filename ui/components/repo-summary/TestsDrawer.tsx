@@ -3,8 +3,8 @@ import { byString, byNum, asc } from 'sort-lib';
 import { multiply, prop } from 'rambda';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import type { DrawerTableProps } from './DrawerTable.jsx';
-import DrawerTable from './DrawerTable.jsx';
+import type { SortableTableProps } from '../common/SortableTable.jsx';
+import SortableTable from '../common/SortableTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
 import { SadEmpty } from './Empty.jsx';
 import { divide, shouldNeverReachHere, toPercentage } from '../../../shared/utils.js';
@@ -69,7 +69,8 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
   definitions,
 }) => {
   return (
-    <DrawerTable
+    <SortableTable
+      variant="drawer"
       data={definitions}
       rowKey={x => x.id.toString()}
       isChild
@@ -142,9 +143,10 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
 };
 
 const testsAndCoverageRepoItemProps: Omit<
-  DrawerTableProps<TestsAndCoverageRepoItem>,
+  SortableTableProps<TestsAndCoverageRepoItem>,
   'data'
 > = {
+  variant: 'drawer',
   rowKey: x => x.repositoryId,
   columns: [
     {
@@ -260,7 +262,10 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         ]}
         onChange={e => setStatusType(e as PipelineTypes)}
       />
-      <DrawerTable data={filteredPipelinesRepoList} {...testsAndCoverageRepoItemProps} />
+      <SortableTable
+        data={filteredPipelinesRepoList}
+        {...testsAndCoverageRepoItemProps}
+      />
     </>
   );
 };
