@@ -913,23 +913,26 @@ export const getReposSortedByTests = async (
   pageNumber: number
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const testrunsForAllDefs = await RepositoryModel.aggregate<TestsForDef>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      queryForFinishTimeInRange(startDate, endDate)
-    ),
-    ...getTestsForBuildIds(collectionName, project),
-    {
-      $group: {
-        _id: '$definitionId',
-        repositoryId: { $first: '$repositoryId' },
-        definitionId: { $first: '$definitionId' },
-        tests: { $push: '$$ROOT' },
+  const [testrunsForAllDefs, definitionList] = await Promise.all([
+    RepositoryModel.aggregate<TestsForDef>([
+      ...getMainBranchBuildIds(
+        collectionName,
+        project,
+        repositoryIds,
+        startDate,
+        queryForFinishTimeInRange(startDate, endDate)
+      ),
+      ...getTestsForBuildIds(collectionName, project),
+      {
+        $group: {
+          _id: '$definitionId',
+          repositoryId: { $first: '$repositoryId' },
+          definitionId: { $first: '$definitionId' },
+          tests: { $push: '$$ROOT' },
+        },
       },
-    },
+    ]),
+    getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
   ]);
 
   const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
@@ -942,13 +945,20 @@ export const getReposSortedByTests = async (
     );
   };
 
+  const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
+    definition => {
+      const tests = testrunsForAllDefs.find(def => def.definitionId === definition.id);
+      return { ...definition, ...tests } || definition;
+    }
+  );
+
   const latestDefinitionTests = await Promise.all(
-    testrunsForAllDefs.map(async def => {
+    buildDefsWithTests.map(async def => {
       const tests = await makeContinuous(
         def.tests,
         startDate,
         endDate,
-        getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
+        getOneOlderTestRunForDef(def.id, def.repositoryId),
         { hasTests: false }
       );
       return {
