@@ -37,19 +37,20 @@ const InlineSelect = ({
     dummySelect.append(dummyOption);
 
     // Append it, take measurements, remove it
-    selectRef.current.parentNode?.append(dummySelect);
+    document.body.append(dummySelect);
     const { width } = dummySelect.getBoundingClientRect();
     dummySelect.remove();
 
     // Set the select width to the width of the dummy select
-    selectRef.current.style.width = `${width - 18}px`;
+    selectRef.current.style.width = `${width - 25}px`;
   }, [className]);
 
   const onSelection = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
+      setWidth();
       return onChange(e.target.value);
     },
-    [onChange]
+    [onChange, setWidth]
   );
 
   useEffect(() => {
