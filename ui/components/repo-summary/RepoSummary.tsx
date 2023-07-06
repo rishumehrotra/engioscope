@@ -2,7 +2,6 @@ import { last, multiply } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { num, pluralise } from '../../helpers/utils.js';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
@@ -70,7 +69,6 @@ const StreamingRepoSummary: React.FC = () => {
   const drawerDownloadUrl = useCreateDownloadUrl();
   const key = useUpdateSummary();
   const summaries = useSse<SummaryStats>(sseUrl, key);
-  const [showTestsDrawer] = useQueryParam('tests-drawer', asBoolean);
 
   return (
     <>
@@ -221,8 +219,7 @@ const StreamingRepoSummary: React.FC = () => {
               onClick={{
                 open: 'drawer',
                 heading: 'Tests & Coverage details',
-                enabledIf:
-                  (summaries?.totalActiveRepos || 0) > 0 && showTestsDrawer === true,
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
                 body: <TestsDrawer pipelineType="all" />,
               }}
@@ -520,6 +517,13 @@ const StreamingRepoSummary: React.FC = () => {
                       .getOr('-')
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Tests & Coverage details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
+                body: <TestsDrawer pipelineType="withTests" />,
+              }}
             />
           </div>
           <div>
@@ -542,6 +546,13 @@ const StreamingRepoSummary: React.FC = () => {
                       .getOr('-')
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Tests & Coverage details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
+                body: <TestsDrawer pipelineType="withCoverage" />,
+              }}
             />
           </div>
         </SummaryCard>

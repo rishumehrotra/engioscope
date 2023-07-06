@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { last, multiply, prop, range } from 'rambda';
-import { byNum, desc } from 'sort-lib';
+import { asc, byNum, desc } from 'sort-lib';
 import { z } from 'zod';
 import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
@@ -64,6 +64,8 @@ export type TestsForDef = {
 };
 
 export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
+
+export type BuildDefWithCoverage = BuildDef & Partial<BranchCoverage>;
 
 export type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<TestsForDef> &
@@ -224,8 +226,8 @@ export const getTestRunsAndCoverageForRepo = async ({
         }
       );
 
-      const latestTest = tests ? getLatest(def.tests || []) : null;
-      const latestCoverage = coverageData ? getLatest(def.coverageByWeek || []) : null;
+      const latestTest = tests ? getLatest(tests || []) : null;
+      const latestCoverage = coverageData ? getLatest(coverageData || []) : null;
 
       const url = latestTest?.hasTests
         ? `${def.url.split('_apis')[0]}_build/results?buildId=${
@@ -236,8 +238,10 @@ export const getTestRunsAndCoverageForRepo = async ({
       return {
         ...def,
         url,
-        tests,
-        coverageByWeek: coverageData,
+        tests: tests ? tests.sort(asc(byNum(prop('weekIndex')))) : tests,
+        coverageByWeek: coverageData
+          ? coverageData.sort(asc(byNum(prop('weekIndex'))))
+          : coverageData,
         latestTest,
         latestCoverage,
       };
@@ -309,8 +313,8 @@ export const getTestsAndCoverageForRepos = async (
           }
         );
 
-        const latestTest = tests ? getLatest(def.tests || []) : null;
-        const latestCoverage = coverageData ? getLatest(def.coverageByWeek || []) : null;
+        const latestTest = tests ? getLatest(tests || []) : null;
+        const latestCoverage = coverageData ? getLatest(coverageData || []) : null;
 
         const url = latestTest?.hasTests
           ? `${def.url.split('_apis')[0]}_build/results?buildId=${
@@ -321,8 +325,10 @@ export const getTestsAndCoverageForRepos = async (
         return {
           ...def,
           url,
-          tests,
-          coverageByWeek: coverageData,
+          tests: tests ? tests.sort(asc(byNum(prop('weekIndex')))) : tests,
+          coverageByWeek: coverageData
+            ? coverageData.sort(asc(byNum(prop('weekIndex'))))
+            : coverageData,
           latestTest,
           latestCoverage,
         };
@@ -600,24 +606,34 @@ export const getTestsByWeek = async (
   repositoryIds: string[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const testrunsForAllDefs = await RepositoryModel.aggregate<TestsForDef>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      queryForFinishTimeInRange(startDate, endDate)
-    ),
-    ...getTestsForBuildIds(collectionName, project),
-    {
-      $group: {
-        _id: '$definitionId',
-        repositoryId: { $first: '$repositoryId' },
-        definitionId: { $first: '$definitionId' },
-        tests: { $push: '$$ROOT' },
+  const [testrunsForAllDefs, definitionList] = await Promise.all([
+    RepositoryModel.aggregate<TestsForDef>([
+      ...getMainBranchBuildIds(
+        collectionName,
+        project,
+        repositoryIds,
+        startDate,
+        queryForFinishTimeInRange(startDate, endDate)
+      ),
+      ...getTestsForBuildIds(collectionName, project),
+      {
+        $group: {
+          _id: '$definitionId',
+          repositoryId: { $first: '$repositoryId' },
+          definitionId: { $first: '$definitionId' },
+          tests: { $push: '$$ROOT' },
+        },
       },
-    },
+    ]),
+    getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
   ]);
+
+  const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
+    definition => {
+      const tests = testrunsForAllDefs.find(def => def.definitionId === definition.id);
+      return { ...definition, ...tests } || definition;
+    }
+  );
 
   // TODO: Fixing n+1 Problem of fetching older testruns
   // def IDs where tests array do not have element with weekIndex 0
@@ -636,19 +652,19 @@ export const getTestsByWeek = async (
   };
 
   const weeklyDefinitionTests = await Promise.all(
-    testrunsForAllDefs.map(async def => {
+    buildDefsWithTests.map(async def => {
       const tests = await makeContinuous(
         def.tests,
         startDate,
         endDate,
-        getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
+        getOneOlderTestRunForDef(def.id, def.repositoryId),
         { hasTests: false }
       );
 
       return {
         ...def,
-        tests,
-        latestTest: tests ? getLatest(def.tests || []) : null,
+        tests: tests ? tests.sort(asc(byNum(prop('weekIndex')))) : tests,
+        latestTest: tests ? getLatest(tests || []) : null,
       };
     })
   );
@@ -687,32 +703,42 @@ export const getCoveragesByWeek = async (
   repositoryIds: string[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const coverageForAllDefs = await RepositoryModel.aggregate<BranchCoverage>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      queryForFinishTimeInRange(startDate, endDate)
-    ),
-    ...getCoverageForBuildIDs(collectionName, project),
-    {
-      $group: {
-        _id: '$definitionId',
-        definitionId: { $first: '$definitionId' },
-        repositoryId: { $first: '$repositoryId' },
-        coverage: { $push: '$$ROOT' },
+  const [coverageForAllDefs, definitionList] = await Promise.all([
+    RepositoryModel.aggregate<BranchCoverage>([
+      ...getMainBranchBuildIds(
+        collectionName,
+        project,
+        repositoryIds,
+        startDate,
+        queryForFinishTimeInRange(startDate, endDate)
+      ),
+      ...getCoverageForBuildIDs(collectionName, project),
+      {
+        $group: {
+          _id: '$definitionId',
+          definitionId: { $first: '$definitionId' },
+          repositoryId: { $first: '$repositoryId' },
+          coverage: { $push: '$$ROOT' },
+        },
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        definitionId: 1,
-        repositoryId: 1,
-        coverageByWeek: '$coverage',
+      {
+        $project: {
+          _id: 0,
+          definitionId: 1,
+          repositoryId: 1,
+          coverageByWeek: '$coverage',
+        },
       },
-    },
+    ]),
+    getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
   ]);
+
+  const buildDefsWithCoverage: BuildDefWithCoverage[] = (
+    definitionList as BuildDef[]
+  ).map(definition => {
+    const tests = coverageForAllDefs.find(def => def.definitionId === definition.id);
+    return { ...definition, ...tests } || definition;
+  });
 
   // TODO: Fixing n+1 Problem of fetching older coverage
   // def IDs where coverageByWeek array do not have element with weekIndex 0
@@ -731,12 +757,12 @@ export const getCoveragesByWeek = async (
   };
 
   const weeklyDefinitionCoverage = await Promise.all(
-    coverageForAllDefs.map(async def => {
+    buildDefsWithCoverage.map(async def => {
       const coverageData = await makeContinuous(
         def.coverageByWeek || undefined,
         startDate,
         endDate,
-        getOneOlderCoverageForDef(def.definitionId, def.repositoryId),
+        getOneOlderCoverageForDef(def.id, def.repositoryId),
         {
           buildId: 0,
           definitionId: 0,
@@ -786,32 +812,48 @@ export const getTotalTestsForRepositoryIds = async (
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  const testsFromDefsOfRepoIds = await RepositoryModel.aggregate<TestsForDef>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      repositoryIds,
-      startDate,
-      queryForFinishTimeInRange(startDate, endDate)
-    ),
-    ...getTestsForBuildIds(collectionName, project),
-    {
-      $group: {
-        _id: '$definitionId',
-        id: { $first: '$definitionId' },
-        repositoryId: { $first: '$repositoryId' },
-        tests: { $push: '$$ROOT' },
+  const [testsFromDefsOfRepoIds, definitionList] = await Promise.all([
+    RepositoryModel.aggregate<TestsForDef>([
+      ...getMainBranchBuildIds(
+        collectionName,
+        project,
+        repositoryIds,
+        startDate,
+        queryForFinishTimeInRange(startDate, endDate)
+      ),
+      ...getTestsForBuildIds(collectionName, project),
+      {
+        $group: {
+          _id: '$definitionId',
+          id: { $first: '$definitionId' },
+          repositoryId: { $first: '$repositoryId' },
+          repositoryName: { $first: '$repositoryName' },
+          repositoryUrl: { $first: '$repositoryUrl' },
+          tests: { $push: '$$ROOT' },
+        },
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        id: 1,
-        repositoryId: 1,
-        tests: 1,
+      {
+        $project: {
+          _id: 0,
+          id: 1,
+          repositoryId: 1,
+          repositoryName: 1,
+          repositoryUrl: 1,
+          tests: 1,
+        },
       },
-    },
+    ]),
+    getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
   ]);
+
+  const buildDefsWithTests: BuildDefWithTests[] = (definitionList as BuildDef[]).map(
+    definition => {
+      const tests = testsFromDefsOfRepoIds.find(
+        def => def.definitionId === definition.id
+      );
+      return { ...definition, ...tests } || definition;
+    }
+  );
 
   const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
     return getOneOldTestForBuildDefID(
@@ -824,16 +866,16 @@ export const getTotalTestsForRepositoryIds = async (
   };
 
   const definitionTests = await Promise.all(
-    testsFromDefsOfRepoIds.map(async def => {
+    buildDefsWithTests.map(async def => {
       const tests = await makeContinuous(
         def.tests,
         startDate,
         endDate,
-        getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
+        getOneOlderTestRunForDef(def.id, def.repositoryId),
         { hasTests: false }
       );
 
-      const latestTest = tests ? getLatest(def.tests || []) : null;
+      const latestTest = tests ? getLatest(tests || []) : null;
 
       return {
         ...def,
@@ -909,10 +951,9 @@ export const getReposSortedByTests = async (
         getOneOlderTestRunForDef(def.definitionId, def.repositoryId),
         { hasTests: false }
       );
-
       return {
         ...def,
-        latestTest: tests ? getLatest(def.tests || []) : null,
+        latestTest: tests ? getLatest(tests || []) : null,
       };
     })
   );

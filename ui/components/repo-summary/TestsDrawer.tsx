@@ -1,17 +1,14 @@
 import React, { useMemo } from 'react';
-import { byString, byNum, asc } from 'sort-lib';
-import { multiply, prop } from 'rambda';
+import { byString, byNum } from 'sort-lib';
+import { multiply } from 'rambda';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import type { SortableTableProps } from '../common/SortableTable.jsx';
 import SortableTable from '../common/SortableTable.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
-import { SadEmpty } from './Empty.jsx';
+import { HappyEmpty, SadEmpty } from './Empty.jsx';
 import { divide, shouldNeverReachHere, toPercentage } from '../../../shared/utils.js';
 import InlineSelect from '../common/InlineSelect.jsx';
-import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
-import { increaseIsBetter } from '../summary-page/utils.jsx';
-import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.jsx';
 
 type TestsAndCoverageRepoItem =
   RouterClient['tests']['getReposListingForTestsDrawer'][number];
@@ -22,48 +19,12 @@ type TestsAndCoverageDefItem =
 type TestsAndCoverageDefListProps = {
   definitions: TestsAndCoverageDefItem[];
 };
-type PipelineTypes = 'all' | 'withTests' | 'withCoverage';
-
-const TestsGraph: React.FC<{ pipeline: TestsAndCoverageDefItem }> = ({ pipeline }) => {
-  return pipeline.tests?.length ? (
-    <LabelWithSparkline
-      label={
-        <a
-          href={pipeline.url}
-          target="_blank"
-          rel="noreferrer"
-          data-tooltip-id="react-tooltip"
-          data-tooltip-content={pipeline.name}
-          className={
-            pipeline.latestTest?.hasTests
-              ? 'link-text truncate w-full'
-              : 'link-text truncate w-full opacity-60'
-          }
-        >
-          {pipeline.latestTest?.hasTests ? pipeline.latestTest.totalTests : 0}
-        </a>
-      }
-      data={pipeline.tests
-        .sort(asc(byNum(prop('weekIndex'))))
-        .map(t => (t.hasTests ? t.totalTests : undefined))}
-      lineColor={increaseIsBetter(
-        pipeline.tests.map(t => (t.hasTests ? t.totalTests : 0))
-      )}
-      renderer={pathRendererSkippingUndefineds}
-    />
-  ) : (
-    <a
-      href={pipeline.url}
-      target="_blank"
-      rel="noreferrer"
-      data-tooltip-id="react-tooltip"
-      data-tooltip-content={pipeline.name}
-      className="link-text truncate w-full opacity-60"
-    >
-      {pipeline.latestTest?.hasTests ? pipeline.latestTest.totalTests : 0}
-    </a>
-  );
-};
+type PipelineTypes =
+  | 'all'
+  | 'withTests'
+  | 'withCoverage'
+  | 'withoutTests'
+  | 'withoutCoverage';
 
 const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
   definitions,
@@ -94,8 +55,7 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
           title: 'Total Tests',
           key: 'totalTests',
 
-          // eslint-disable-next-line react/no-unstable-nested-components
-          value: x => <TestsGraph pipeline={x} />,
+          value: x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0),
           sorter: byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)),
         },
         {
@@ -209,6 +169,22 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         />
       );
     }
+    if (statusType === 'withoutTests') {
+      return (
+        <HappyEmpty
+          heading="No repositories found"
+          body="There are currently no repositories which are not reporting tests"
+        />
+      );
+    }
+    if (statusType === 'withoutCoverage') {
+      return (
+        <HappyEmpty
+          heading="No repositories found"
+          body="There are currently no repositories which are not reporting coverage"
+        />
+      );
+    }
     return shouldNeverReachHere(statusType);
   }, [statusType]);
   const repoList = repos.data;
@@ -224,9 +200,19 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
     if (statusType === 'withTests') {
       return repo.totalTests > 0;
     }
+
+    if (statusType === 'withoutTests') {
+      return repo.totalTests === 0;
+    }
+
     if (statusType === 'withCoverage') {
       const { definitions } = repo;
       return definitions?.some(d => d.latestCoverage?.hasCoverage) ?? false;
+    }
+
+    if (statusType === 'withoutCoverage') {
+      const { definitions } = repo;
+      return definitions?.some(d => d.latestCoverage?.hasCoverage !== false) ?? false;
     }
     return shouldNeverReachHere(statusType);
   });
@@ -241,10 +227,24 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         definitions: repo.definitions?.filter(d => d.latestTest?.hasTests === true) ?? [],
       };
     }
+    if (statusType === 'withoutTests') {
+      return {
+        ...repo,
+        definitions:
+          repo.definitions?.filter(d => d.latestTest?.hasTests === false) ?? [],
+      };
+    }
     if (statusType === 'withCoverage') {
       return {
         ...repo,
         definitions: repo.definitions?.filter(d => d.latestCoverage?.hasCoverage) ?? [],
+      };
+    }
+    if (statusType === 'withoutCoverage') {
+      return {
+        ...repo,
+        definitions:
+          repo.definitions?.filter(d => d.latestCoverage?.hasCoverage === false) ?? [],
       };
     }
     return shouldNeverReachHere(statusType);
@@ -259,11 +259,14 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
           { label: 'All pipelines', value: 'all' },
           { label: 'Pipelines running tests', value: 'withTests' },
           { label: 'Pipelines reporting coverage', value: 'withCoverage' },
+          { label: 'Pipelines not running tests', value: 'withoutTests' },
+          { label: 'Pipelines not reporting coverage', value: 'withoutCoverage' },
         ]}
         onChange={e => setStatusType(e as PipelineTypes)}
       />
       <SortableTable
         data={filteredPipelinesRepoList}
+        // data={filteredPipelinesRepoList?.filter(x => x.definitions?.length > 0)}
         {...testsAndCoverageRepoItemProps}
       />
     </>
