@@ -1,7 +1,8 @@
-import React, { Fragment, useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { Tooltip } from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
 import { byNum, byString } from 'sort-lib';
+import { CheckCircle, GitPullRequest, XCircle } from 'react-feather';
 import { relativeTime, num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import type { Tab } from './Tabs.jsx';
@@ -10,12 +11,9 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import Loading from '../Loading.jsx';
 import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
-import { PullRequest } from '../common/Icons.jsx';
 import SortableTable from '../common/SortableTable.jsx';
-import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -41,7 +39,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   if (centralTemplateRuns === 0) {
     return (
       <span
-        className="uppercase text-xs px-1 border-red-300 bg-red-100 rounded-sm text-red-500 border"
+        className="text-sm px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger"
         data-tooltip-id="react-tooltip"
         data-tooltip-content="None of the builds used the central build template"
         data-tooltip-place="bottom"
@@ -53,10 +51,10 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   return (
     <>
       <span
-        className={`uppercase text-xs px-1 border rounded-sm font-semibold ${
+        className={`text-sm px-1.5 py-0.5 rounded-sm font-semibold ${
           centralTemplateRuns >= totalRuns
-            ? 'text-green-700 bg-green-100 border-green-700'
-            : 'text-amber-600 bg-amber-50 border-amber-600'
+            ? 'text-theme-success bg-theme-success'
+            : 'text-theme-warn bg-theme-warn'
         }`}
         onMouseOver={() => setHasHovered(true)}
         onFocus={() => setHasHovered(true)}
@@ -64,8 +62,23 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
       >
         Yes
       </span>
-      <Tooltip id={domId} place="bottom" style={{ borderRadius: '0.375rem' }}>
+      <Tooltip
+        id={domId}
+        place="bottom"
+        style={{ borderRadius: '0.375rem', zIndex: 10 }}
+        opacity={1}
+      >
         <div className="w-72 pt-2 text-left whitespace-normal">
+          <div className="bg-theme-page-content rounded-3xl mb-2">
+            <div
+              className="bg-theme-highlight rounded-3xl h-2"
+              style={{
+                width: divide(centralTemplateRuns, totalRuns)
+                  .map(toPercentage)
+                  .getOr('0%'),
+              }}
+            />
+          </div>
           <div className="mb-2 leading-snug">
             {centralTemplateRuns >= totalRuns ? (
               <strong>All</strong>
@@ -80,32 +93,30 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
               totalRuns === 1 ? 'run' : 'runs'
             } used the central build template.`}
           </div>
-          <div className="mb-2 leading-snug">
+          <div className="mb-2">
             {mainBranchCentralTemplateBuilds >= centralTemplateRuns ? (
               <strong>All</strong>
             ) : (
-              <>
-                <strong>
-                  {num(Math.min(mainBranchCentralTemplateBuilds, centralTemplateRuns))}
-                </strong>
-                {' out of the '}
-                <strong>{num(centralTemplateRuns)}</strong>
-              </>
+              <strong>
+                {num(Math.min(mainBranchCentralTemplateBuilds, centralTemplateRuns))}
+              </strong>
             )}
-            {` central template build ${
-              centralTemplateRuns === 1 ? 'run' : 'runs'
-            } were on main branch.`}
+            {` ${centralTemplateRuns === 1 ? 'run' : 'runs'} on the main branch.`}
           </div>
           {centralTemplateOptions.data ? (
             <>
               <strong>Template options:</strong>
               <ul>
                 {Object.entries(centralTemplateOptions.data).map(([key, value]) => (
-                  <li key={key} className="leading-normal">
-                    {`${key}: `}
+                  <li key={key} className="flex items-center gap-1">
+                    <span>{`${key}: `}</span>
                     {typeof value === 'boolean' ? (
-                      <span className={value ? 'text-green-500' : 'text-red-500'}>
-                        {value ? '✔' : '✖'}
+                      <span
+                        className={`${
+                          value ? 'text-theme-success' : 'text-theme-danger'
+                        } inline-block`}
+                      >
+                        {value ? <CheckCircle size={16} /> : <XCircle size={16} />}
                       </span>
                     ) : (
                       <strong>{value}</strong>
@@ -121,257 +132,15 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   );
 };
 
-const Builds: React.FC<{
-  repositoryId: string;
-}> = ({ repositoryId }) => {
-  const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const [queryPeriodDays] = useQueryPeriodDays();
-
-  const builds = trpc.builds.getBuildsOverviewForRepository.useQuery({
-    queryContext: useQueryContext(),
-    repositoryId,
-  });
-
-  const toggleExpanded = useCallback(
-    (url: string) => {
-      if (expandedRows.includes(url)) {
-        return setExpandedRows(e => e.filter(u => u !== url));
-      }
-      setExpandedRows(e => [...e, url]);
-    },
-    [expandedRows]
-  );
-
-  const isExpanded = useCallback(
-    (url: string) => expandedRows.includes(url),
-    [expandedRows]
-  );
-
-  return (
-    <TabContents gridCols={1}>
-      {builds.data ? (
-        builds.data.length ? (
-          <div className="overflow-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th> </th>
-                  <th>Central template</th>
-                  <th>Runs</th>
-                  <th>Success rate</th>
-                  <th className="text-center" style={{ paddingRight: 0 }}>
-                    Average duration
-                  </th>
-                  <th className="text-left">Current status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {builds.data.map(pipeline => (
-                  <Fragment key={pipeline.url}>
-                    <tr className={`${pipeline.type === 'old' ? 'opacity-60' : ''}`}>
-                      {/* Build Toggler */}
-                      <td>
-                        <div className="flex">
-                          <button
-                            title="Expand/collapse"
-                            type="button"
-                            onClick={() => toggleExpanded(pipeline.url)}
-                            className="mr-2"
-                          >
-                            <span
-                              className="list-item"
-                              style={{
-                                listStyleType: isExpanded(pipeline.url)
-                                  ? 'disclosure-open'
-                                  : 'disclosure-closed',
-                              }}
-                            />
-                          </button>
-                          <a
-                            href={pipeline.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            data-tooltip-id="react-tooltip"
-                            data-tooltip-content={pipeline.definitionName}
-                            className="link-text"
-                          >
-                            <span className="truncate w-96 block">
-                              {pipeline.definitionName}
-                              {pipeline.ui ? (
-                                <span
-                                  className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
-                                  rounded-sm text-red-700 border font-semibold no-underline`}
-                                  data-tooltip-id="react-tooltip"
-                                  data-tooltip-content="This pipeline is configured using the UI instead of a YAML file"
-                                >
-                                  UI
-                                </span>
-                              ) : null}
-                              {pipeline.type === 'recent' ? (
-                                <span
-                                  data-tooltip-id="react-tooltip"
-                                  data-tooltip-content={`${num(
-                                    pipeline.prCount
-                                  )} builds triggered by pull requests`}
-                                >
-                                  <PullRequest className="inline-block w-4 ml-2" />
-                                </span>
-                              ) : null}
-                            </span>
-                          </a>
-                        </div>
-                      </td>
-                      {/* Central Template Usage */}
-                      <td>
-                        <CentralTemplateUsage
-                          buildDefinitionId={String(pipeline.buildDefinitionId)}
-                          centralTemplateRuns={pipeline.centralTemplateCount}
-                          mainBranchCentralTemplateBuilds={
-                            pipeline.mainBranchCentralTemplateBuilds
-                          }
-                          totalRuns={pipeline.totalBuilds}
-                        />
-                      </td>
-                      {/* Total Count */}
-                      <td>
-                        {pipeline.type === 'old' ? '-' : num(pipeline?.totalBuilds)}
-                      </td>
-                      {/* Success Rate */}
-                      <td
-                        {...(pipeline.type === 'old'
-                          ? {}
-                          : {
-                              'data-tooltip-id': 'react-tooltip',
-                              'data-tooltip-html': `${num(
-                                pipeline.totalSuccessfulBuilds
-                              )} successful builds`,
-                            })}
-                      >
-                        {pipeline.type === 'old'
-                          ? '-'
-                          : divide(pipeline.totalSuccessfulBuilds, pipeline.totalBuilds)
-                              .map(toPercentage)
-                              .getOr('-')}
-                      </td>
-                      {/* Average Duration */}
-                      <td
-                        className="pr-4"
-                        style={{
-                          textAlign: 'right',
-                        }}
-                      >
-                        {pipeline.type === 'old' || pipeline.averageDuration === 0 ? (
-                          '-'
-                        ) : (
-                          <>
-                            <span>{prettyMilliseconds(pipeline.averageDuration)}</span>
-                            <div className="text-gray-400 text-sm">
-                              (
-                              {`${prettyMilliseconds(
-                                pipeline.minDuration
-                              )} - ${prettyMilliseconds(pipeline.maxDuration)}`}
-                              )
-                            </div>
-                          </>
-                        )}
-                      </td>
-                      {/* Current Status */}
-                      <td style={{ textAlign: 'left' }} className="pl-6">
-                        {pipeline.type === 'recent' &&
-                          pipeline.lastBuildStatus === 'succeeded' && (
-                            <>
-                              <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
-                                {' '}
-                              </span>
-                              <span className="capitalize">
-                                {pipeline.lastBuildStatus}
-                              </span>
-                              <div
-                                className="text-gray-400 text-xs ml-4 mr-2"
-                                data-tooltip-id="react-tooltip"
-                                data-tooltip-content={`${shortDate(
-                                  new Date(pipeline.lastBuildTimestamp)
-                                )}, ${new Date(
-                                  pipeline.lastBuildTimestamp
-                                ).getFullYear()}`}
-                              >
-                                {relativeTime(new Date(pipeline.lastBuildTimestamp))}
-                              </div>
-                            </>
-                          )}
-                        {pipeline.type === 'recent' &&
-                        (pipeline.lastBuildStatus === 'failed' ||
-                          pipeline.lastBuildStatus === 'canceled' ||
-                          pipeline.lastBuildStatus === 'partiallySucceeded') ? (
-                          <>
-                            <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
-                              {' '}
-                            </span>
-                            <span>
-                              {`Failing since ${shortDate(
-                                new Date(pipeline.failingSince.timestamp)
-                              )}`}
-                            </span>
-                          </>
-                        ) : undefined}
-                        {pipeline.type === 'old' ? (
-                          <>
-                            <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
-                              {' '}
-                            </span>
-                            <span>
-                              {`Last used ${
-                                pipeline.latestBuildTime
-                                  ? `${shortDate(
-                                      new Date(pipeline.latestBuildTime)
-                                    )}, ${new Date(
-                                      pipeline.latestBuildTime
-                                    ).getFullYear()}`
-                                  : 'unknown'
-                              }`}
-                            </span>
-                          </>
-                        ) : undefined}
-                      </td>
-                    </tr>
-                    {isExpanded(pipeline.url) ? (
-                      <tr>
-                        <td colSpan={7} style={{ padding: 0 }}>
-                          <BuildInsights
-                            buildDefinitionId={Number(pipeline.url.split('=')[1])}
-                          />
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-            <div className="w-full text-right text-sm italic text-gray-500 mt-4">
-              {`* Data shown is for the last ${queryPeriodDays} days`}
-            </div>
-          </div>
-        ) : (
-          <TabContents gridCols={1}>
-            <AlertMessage message="No builds for this repo in the last three months" />
-          </TabContents>
-        )
-      ) : (
-        <Loading />
-      )}
-    </TabContents>
-  );
-};
-
 const BuildInsightsWrapper = ({
   item,
 }: {
   item: RouterClient['builds']['getBuildsOverviewForRepository'][number];
 }) => {
-  return <BuildInsights buildDefinitionId={Number(item.url.split('=')[1])} />;
+  return <BuildInsights buildDefinitionId={Number(item.buildDefinitionId)} />;
 };
 
-const Builds2: React.FC<{
+const Builds: React.FC<{
   repositoryId: string;
 }> = ({ repositoryId }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
@@ -383,7 +152,11 @@ const Builds2: React.FC<{
 
   return (
     <TabContents gridCols={1}>
-      {builds.data?.length ? (
+      {builds.data?.length === 0 ? (
+        <TabContents gridCols={1}>
+          <AlertMessage message="No builds for this repo in the last three months" />
+        </TabContents>
+      ) : (
         <>
           <SortableTable
             variant="default"
@@ -394,38 +167,40 @@ const Builds2: React.FC<{
                 key: 'pipeline',
                 // eslint-disable-next-line react/no-unstable-nested-components
                 value: row => (
-                  <a
-                    href={row.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-tooltip-id="react-tooltip"
-                    data-tooltip-content={row.definitionName}
-                    className="link-text"
-                  >
-                    <span className="truncate w-96 block">
+                  <span className="inline-grid grid-flow-col items-center">
+                    <a
+                      href={row.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-tooltip-id="react-tooltip"
+                      data-tooltip-content={row.definitionName}
+                      className="link-text truncate max-w-xs inline-block"
+                    >
                       {row.definitionName}
-                      {row.ui ? (
-                        <span
-                          className={`inline-block ml-2 uppercase text-xs px-1 border-red-700 bg-red-100
-                        rounded-sm text-red-700 border font-semibold no-underline`}
-                          data-tooltip-id="react-tooltip"
-                          data-tooltip-content="This pipeline is configured using the UI instead of a YAML file"
-                        >
-                          UI
-                        </span>
-                      ) : null}
-                      {row.type === 'recent' ? (
-                        <span
-                          data-tooltip-id="react-tooltip"
-                          data-tooltip-content={`${num(
-                            row.prCount
-                          )} builds triggered by pull requests`}
-                        >
-                          <PullRequest className="inline-block w-4 ml-2" />
-                        </span>
-                      ) : null}
-                    </span>
-                  </a>
+                    </a>
+                    {row.ui ? (
+                      <span
+                        className="inline-block ml-2 uppercase text-xs px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger font-semibold"
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-content="This pipeline is configured using the UI instead of a YAML file"
+                      >
+                        UI
+                      </span>
+                    ) : null}
+                    {row.type === 'recent' ? (
+                      <span
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-content={`${num(
+                          row.prCount
+                        )} builds triggered by pull requests`}
+                      >
+                        <GitPullRequest
+                          size={20}
+                          className="inline-block ml-2 -mt-1 text-theme-icon"
+                        />
+                      </span>
+                    ) : null}
+                  </span>
                 ),
                 sorter: byString(x => x.definitionName.toLocaleLowerCase()),
               },
@@ -440,6 +215,9 @@ const Builds2: React.FC<{
                     mainBranchCentralTemplateBuilds={row.mainBranchCentralTemplateBuilds}
                     totalRuns={row.totalBuilds}
                   />
+                ),
+                sorter: byNum(x =>
+                  divide(x.centralTemplateCount, x.totalBuilds).getOr(0)
                 ),
               },
               {
@@ -484,16 +262,14 @@ const Builds2: React.FC<{
                   row.type === 'old' || row.averageDuration === 0 ? (
                     '-'
                   ) : (
-                    <>
-                      <span>{prettyMilliseconds(row.averageDuration)}</span>
-                      <div className="text-gray-400 text-sm">
-                        (
-                        {`${prettyMilliseconds(row.minDuration)} - ${prettyMilliseconds(
-                          row.maxDuration
-                        )}`}
-                        )
-                      </div>
-                    </>
+                    <span
+                      data-tooltip-id="react-tooltip"
+                      data-tooltip-content={`${prettyMilliseconds(
+                        row.minDuration
+                      )} - ${prettyMilliseconds(row.maxDuration)}`}
+                    >
+                      {prettyMilliseconds(row.averageDuration)}
+                    </span>
                   ),
                 sorter: byNum(row =>
                   row.type === 'old' || row.averageDuration === 0
@@ -513,16 +289,15 @@ const Builds2: React.FC<{
                           <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
                             {' '}
                           </span>
-                          <span className="capitalize">{pipeline.lastBuildStatus}</span>
-                          <div
-                            className="text-gray-400 text-xs ml-4 mr-2"
+                          <span className="capitalize">{pipeline.lastBuildStatus}</span>{' '}
+                          <span
                             data-tooltip-id="react-tooltip"
                             data-tooltip-content={`${shortDate(
                               new Date(pipeline.lastBuildTimestamp)
                             )}, ${new Date(pipeline.lastBuildTimestamp).getFullYear()}`}
                           >
                             {relativeTime(new Date(pipeline.lastBuildTimestamp))}
-                          </div>
+                          </span>
                         </>
                       )}
                     {pipeline.type === 'recent' &&
@@ -568,10 +343,6 @@ const Builds2: React.FC<{
             {`* Data shown is for the last ${queryPeriodDays} days`}
           </div>
         </>
-      ) : (
-        <TabContents gridCols={1}>
-          <AlertMessage message="No builds for this repo in the last three months" />
-        </TabContents>
       )}
     </TabContents>
   );
@@ -581,10 +352,6 @@ export default (repositoryId: string, buildsCount?: number): Tab => {
   return {
     title: 'Builds',
     count: buildsCount ?? 0,
-    Component: () => {
-      const [enableNewBuildsTab] = useQueryParam('builds-tab', asString);
-      if (enableNewBuildsTab) return <Builds2 repositoryId={repositoryId} />;
-      return <Builds repositoryId={repositoryId} />;
-    },
+    Component: () => <Builds repositoryId={repositoryId} />,
   };
 };

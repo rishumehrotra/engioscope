@@ -201,7 +201,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
 
   return (
     <div
-      className={`bg-white ease-in-out rounded-lg shadow relative ${
+      className={`bg-white ease-in-out rounded-lg shadow ${
         item.builds === 0 && item.commits === 0 ? 'opacity-60' : ''
       } border-l-4 p-6 mb-4 transition-colors duration-500 ${
         isExpanded ? 'border-gray-500' : ''

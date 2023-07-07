@@ -22,6 +22,7 @@ module.exports = {
           'icon-active': withOpacity('--color-text-icon-active'),
           'success': withOpacity('--color-text-success'),
           'danger': withOpacity('--color-text-danger'),
+          'warn': withOpacity('--color-text-warn'),
         },
       },
 
@@ -37,6 +38,7 @@ module.exports = {
           'highlight': withOpacity('--color-text-highlight'),
           'success': withOpacity('--color-bg-success'),
           'danger': withOpacity('--color-text-danger'),
+          'warn': withOpacity('--color-bg-warn'),
           'danger-dim': withOpacity('--color-bg-danger'),
         },
       },

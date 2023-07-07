@@ -151,7 +151,7 @@ const SortableTable = <T,>({
                       key={`${rk}-${col.key}`}
                       className={`${
                         colIndex === 0 ? 'text-left' : 'text-right pr-8 whitespace-nowrap'
-                      } py-3 ${
+                      } ${variant === 'default' ? 'py-4' : 'py-3'} ${
                         (colIndex === 0 && !expandedRows.includes(rk)) || isChild
                           ? ''
                           : variant === 'default'

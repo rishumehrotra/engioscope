@@ -218,7 +218,7 @@ const StreamingRepoSummary: React.FC = () => {
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Tests & Coverage details',
+                heading: 'Test & coverage details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
                 body: <TestsDrawer pipelineType="all" />,
@@ -519,7 +519,7 @@ const StreamingRepoSummary: React.FC = () => {
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Tests & Coverage details',
+                heading: 'Test & coverage details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
                 body: <TestsDrawer pipelineType="withTests" />,
@@ -548,7 +548,7 @@ const StreamingRepoSummary: React.FC = () => {
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Tests & Coverage details',
+                heading: 'Test & coverage details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
                 body: <TestsDrawer pipelineType="withCoverage" />,
