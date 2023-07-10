@@ -137,12 +137,7 @@ const BuildInsightsWrapper = ({
 }: {
   item: RouterClient['builds']['getBuildsOverviewForRepository'][number];
 }) => {
-  return (
-    <BuildInsights
-      buildDefinitionId={item.buildDefinitionId}
-      hasRuns={item.totalBuilds !== 0}
-    />
-  );
+  return <BuildInsights buildDefinitionId={item.buildDefinitionId} />;
 };
 
 const Builds: React.FC<{
@@ -169,6 +164,11 @@ const Builds: React.FC<{
           <SortableTable
             variant="default"
             data={builds.data}
+            rowKey={row => row.buildDefinitionId.toString()}
+            defaultSortColumnIndex={2}
+            ChildComponent={BuildInsightsWrapper}
+            hasChild={row => row.totalBuilds !== 0}
+            additionalRowClassName={row => (row.totalBuilds === 0 ? 'opacity-60' : '')}
             columns={[
               {
                 title: 'Pipeline',
@@ -343,9 +343,6 @@ const Builds: React.FC<{
                 ),
               },
             ]}
-            rowKey={row => row.buildDefinitionId.toString()}
-            defaultSortColumnIndex={2}
-            ChildComponent={BuildInsightsWrapper}
           />
           <div className="w-full text-right text-sm italic text-gray-500 mt-4">
             {`* Data shown is for the last ${queryPeriodDays} days`}

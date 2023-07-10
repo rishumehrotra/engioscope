@@ -2,6 +2,7 @@ import type { MouseEvent, MouseEventHandler, ReactNode } from 'react';
 import React, { useMemo, Fragment, useState } from 'react';
 import { asc, desc } from 'sort-lib';
 import { ChevronRight } from 'react-feather';
+import { twJoin, twMerge } from 'tailwind-merge';
 import AnimateHeight from './AnimateHeight.jsx';
 import { ArrowDown2 } from './Icons.jsx';
 
@@ -18,6 +19,8 @@ export type SortableTableProps<T> = {
   isChild?: boolean;
   defaultSortColumnIndex?: number;
   variant: 'default' | 'drawer';
+  hasChild?: (x: T) => boolean;
+  additionalRowClassName?: (x: T) => string;
 };
 
 const SortableTable = <T,>({
@@ -28,6 +31,8 @@ const SortableTable = <T,>({
   isChild = false,
   defaultSortColumnIndex = 0,
   variant,
+  hasChild = () => true,
+  additionalRowClassName,
 }: SortableTableProps<T>) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [collapsingRows, setCollapsingRows] = useState<string[]>([]);
@@ -54,9 +59,10 @@ const SortableTable = <T,>({
     >
       <thead>
         <tr
-          className={`bg-theme-col-header text-xs text-theme-helptext ${
-            isChild ? 'border-y border-theme-seperator' : ''
-          }`}
+          className={twJoin(
+            'bg-theme-col-header text-xs text-theme-helptext',
+            isChild && 'border-y border-theme-seperator'
+          )}
         >
           <th className={ChildComponent || isChild ? 'w-12' : 'w-5'}> </th>
           {columns.map((col, colIndex) => {
@@ -111,6 +117,7 @@ const SortableTable = <T,>({
             evt.stopPropagation();
 
             if (!ChildComponent) return;
+            if (!hasChild(row)) return;
             if (isRowExpanded) {
               setExpandedRows(rows => rows.filter(r => r !== rk));
               setCollapsingRows(rows => [...rows, rk]);
@@ -122,13 +129,18 @@ const SortableTable = <T,>({
           return (
             <Fragment key={rk}>
               <tr
-                className={`border-b border-theme-seperator ${
-                  ChildComponent ? 'cursor-pointer' : ''
-                } ${isChild ? 'text-sm' : ''} hover:bg-theme-hover`}
+                className={twMerge(
+                  'border-b border-theme-seperator',
+                  ChildComponent &&
+                    hasChild(row) &&
+                    'cursor-pointer hover:bg-theme-hover',
+                  isChild && 'text-sm',
+                  additionalRowClassName?.(row)
+                )}
                 onClick={toggleRow}
               >
                 <td>
-                  {ChildComponent ? (
+                  {ChildComponent && hasChild(row) ? (
                     <button
                       className="block w-full h-full text-center"
                       onClick={toggleRow}
