@@ -106,10 +106,16 @@ export const getPreStartDatePipelinesWithTests = async (
 
   const preStartDatePipelinesWithTests = await RepositoryModel.aggregate<{
     defsWithTests: number[];
+    defsWithoutTests: number[];
   }>([
-    ...getMainBranchBuildIds(collectionName, project, repoIds, startDate, {
-      finishTime: { $lt: startDate },
-    }).slice(0, -1),
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repoIds,
+      startDate,
+      { finishTime: { $lt: startDate } },
+      false
+    ),
     {
       $lookup: {
         from: 'testruns',
@@ -157,15 +163,21 @@ export const getPreStartDatePipelinesWithTests = async (
       },
     },
     {
-      $match: { hasTests: true },
-    },
-    {
       $group: {
         _id: null,
         defsWithTests: {
           $addToSet: {
             $cond: {
               if: { $eq: ['$hasTests', true] },
+              then: '$definitionId',
+              else: null,
+            },
+          },
+        },
+        defsWithoutTests: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$hasTests', false] },
               then: '$definitionId',
               else: null,
             },
@@ -182,6 +194,13 @@ export const getPreStartDatePipelinesWithTests = async (
             cond: { $ne: ['$$id', null] },
           },
         },
+        defsWithoutTests: {
+          $filter: {
+            input: '$defsWithoutTests',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
       },
     },
   ]);
@@ -189,6 +208,7 @@ export const getPreStartDatePipelinesWithTests = async (
   return (
     preStartDatePipelinesWithTests[0] || {
       defsWithTests: [],
+      defsWithoutTests: [],
     }
   );
 };
@@ -202,6 +222,7 @@ export const getQueryPeriodPipelinesWithTests = async (
   return RepositoryModel.aggregate<{
     weekIndex: number;
     defsWithTests: number[];
+    defsWithoutTests: number[];
   }>([
     ...getMainBranchBuildIds(
       collectionName,
@@ -223,6 +244,15 @@ export const getQueryPeriodPipelinesWithTests = async (
             },
           },
         },
+        defsWithoutTests: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$hasTests', false] },
+              then: '$definitionId',
+              else: null,
+            },
+          },
+        },
       },
     },
     {
@@ -231,6 +261,13 @@ export const getQueryPeriodPipelinesWithTests = async (
         defsWithTests: {
           $filter: {
             input: '$defsWithTests',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        defsWithoutTests: {
+          $filter: {
+            input: '$defsWithoutTests',
             as: 'id',
             cond: { $ne: ['$$id', null] },
           },
@@ -259,20 +296,32 @@ export const getWeeklyPipelinesWithTestsCount = async (
       queryPeriodPipelinesWithTests.find(day => day.weekIndex === weekIndex) || {
         weekIndex,
         defsWithTests: [],
+        defsWithoutTests: [],
       }
     );
   });
   const defsWithTestsSet = new Set(preStartDatePipelinesWithTests.defsWithTests || []);
 
+  const defsWithoutTestsSet = new Set(
+    preStartDatePipelinesWithTests.defsWithoutTests || []
+  );
+
   return missingDaysPipelinesCount
     .map(day => {
       day.defsWithTests.forEach(id => {
         defsWithTestsSet.add(id);
+        defsWithoutTestsSet.delete(id);
+      });
+
+      day.defsWithoutTests.forEach(id => {
+        defsWithoutTestsSet.add(id);
+        defsWithTestsSet.delete(id);
       });
 
       return {
         weekIndex: day.weekIndex,
         defsWithTests: defsWithTestsSet.size,
+        defsWithoutTests: defsWithoutTestsSet.size,
       };
     })
     .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
@@ -286,10 +335,16 @@ export const getPreStartDatePipelinesWithCoverage = async (
 
   const preStartDatePipelinesWithCoverage = await RepositoryModel.aggregate<{
     defsWithCoverage: number[];
+    defsWithoutCoverage: number[];
   }>([
-    ...getMainBranchBuildIds(collectionName, project, repoIds, startDate, {
-      finishTime: { $lt: startDate },
-    }).slice(0, -1),
+    ...getMainBranchBuildIds(
+      collectionName,
+      project,
+      repoIds,
+      startDate,
+      { finishTime: { $lt: startDate } },
+      false
+    ),
     {
       $lookup: {
         from: 'codecoverages',
@@ -349,7 +404,6 @@ export const getPreStartDatePipelinesWithCoverage = async (
         _id: 0,
       },
     },
-    { $match: { hasCoverage: true } },
     {
       $group: {
         _id: null,
@@ -362,13 +416,29 @@ export const getPreStartDatePipelinesWithCoverage = async (
             },
           },
         },
+        defsWithoutCoverage: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$hasCoverage', false] },
+              then: '$definitionId',
+              else: null,
+            },
+          },
+        },
       },
     },
     {
       $project: {
-        defsWithTests: {
+        defsWithCoverage: {
           $filter: {
             input: '$defsWithCoverage',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        defsWithoutCoverage: {
+          $filter: {
+            input: '$defsWithoutCoverage',
             as: 'id',
             cond: { $ne: ['$$id', null] },
           },
@@ -380,6 +450,7 @@ export const getPreStartDatePipelinesWithCoverage = async (
   return (
     preStartDatePipelinesWithCoverage[0] || {
       defsWithCoverage: [],
+      defsWithoutCoverage: [],
     }
   );
 };
@@ -393,6 +464,7 @@ export const getQueryPeriodPipelinesWithCoverage = async (
   return RepositoryModel.aggregate<{
     weekIndex: number;
     defsWithCoverage: number[];
+    defsWithoutCoverage: number[];
   }>([
     ...getMainBranchBuildIds(
       collectionName,
@@ -415,6 +487,15 @@ export const getQueryPeriodPipelinesWithCoverage = async (
             },
           },
         },
+        defsWithoutCoverage: {
+          $addToSet: {
+            $cond: {
+              if: { $eq: ['$hasCoverage', false] },
+              then: '$definitionId',
+              else: null,
+            },
+          },
+        },
       },
     },
     {
@@ -423,6 +504,13 @@ export const getQueryPeriodPipelinesWithCoverage = async (
         defsWithCoverage: {
           $filter: {
             input: '$defsWithCoverage',
+            as: 'id',
+            cond: { $ne: ['$$id', null] },
+          },
+        },
+        defsWithoutCoverage: {
+          $filter: {
+            input: '$defsWithoutCoverage',
             as: 'id',
             cond: { $ne: ['$$id', null] },
           },
@@ -451,6 +539,7 @@ export const getWeeklyPipelinesWithCoverageCount = async (
       queryPeriodPipelinesWithCoverage.find(week => week.weekIndex === weekIndex) || {
         weekIndex,
         defsWithCoverage: [],
+        defsWithoutCoverage: [],
       }
     );
   });
@@ -458,15 +547,26 @@ export const getWeeklyPipelinesWithCoverageCount = async (
     preStartDatePipelinesWithCoverage.defsWithCoverage || []
   );
 
+  const defsWithoutCoverageSet = new Set(
+    preStartDatePipelinesWithCoverage.defsWithoutCoverage || []
+  );
+
   return missingDaysPipelinesCount
     .map(week => {
       week.defsWithCoverage.forEach(id => {
         defsWithCoverageSet.add(id);
+        defsWithoutCoverageSet.delete(id);
+      });
+
+      week.defsWithoutCoverage.forEach(id => {
+        defsWithoutCoverageSet.add(id);
+        defsWithCoverageSet.delete(id);
       });
 
       return {
         weekIndex: week.weekIndex,
         defsWithCoverage: defsWithCoverageSet.size,
+        defsWithoutCoverage: defsWithoutCoverageSet.size,
       };
     })
     .slice(numberOfIntervals - Math.floor(numberOfDays / 7));

@@ -40,7 +40,8 @@ export const getMainBranchBuildIds = (
   project: string,
   repositoryIds: string[],
   startDate: Date,
-  additionalQuery: FilterQuery<unknown>
+  additionalQuery: FilterQuery<unknown>,
+  groupStage = true
 ): PipelineStage[] => {
   // Assume we're querying the repository collection
   return [
@@ -107,27 +108,31 @@ export const getMainBranchBuildIds = (
       },
     },
     { $unwind: { path: '$build' } },
-    {
-      $group: {
-        _id: {
-          definitionId: '$build.definitionId',
-          weekIndex: {
-            $trunc: {
-              $divide: [
-                { $subtract: ['$build.finishTime', new Date(startDate)] },
-                oneWeekInMs,
-              ],
+    ...(groupStage
+      ? [
+          {
+            $group: {
+              _id: {
+                definitionId: '$build.definitionId',
+                weekIndex: {
+                  $trunc: {
+                    $divide: [
+                      { $subtract: ['$build.finishTime', new Date(startDate)] },
+                      oneWeekInMs,
+                    ],
+                  },
+                },
+              },
+              collectionName: { $first: '$collectionName' },
+              project: { $first: '$project' },
+              repositoryId: { $first: '$repositoryId' },
+              repositoryName: { $first: '$repositoryName' },
+              repositoryUrl: { $first: '$repositoryUrl' },
+              build: { $first: '$build' },
             },
           },
-        },
-        collectionName: { $first: '$collectionName' },
-        project: { $first: '$project' },
-        repositoryId: { $first: '$repositoryId' },
-        repositoryName: { $first: '$repositoryName' },
-        repositoryUrl: { $first: '$repositoryUrl' },
-        build: { $first: '$build' },
-      },
-    },
+        ]
+      : []),
   ];
 };
 
