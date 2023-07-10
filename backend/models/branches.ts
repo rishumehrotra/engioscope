@@ -278,7 +278,14 @@ export const getBranches =
         },
       },
       { $limit: limit },
-      { $sort: { lastCommitDate: -1 } },
+      {
+        $sort:
+          category === 'healthy'
+            ? { lastCommitDate: -1 }
+            : category === 'abandoned'
+            ? { aheadCount: -1 }
+            : { lastCommitDate: 1 },
+      },
     ]);
 
     const withUrls = result.map(branch => {

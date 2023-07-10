@@ -1,13 +1,28 @@
 import React, { useMemo, useState } from 'react';
+import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
+import { CheckCircle, GitBranch } from 'react-feather';
+import { twJoin } from 'tailwind-merge';
 import type { RepoAnalysis } from '../../../../shared/types.js';
-import type { Tab } from '../Tabs.jsx';
+import type { Tab as TTab } from '../Tabs.jsx';
 import BranchStats from './BranchStats.jsx';
-import BranchTab from './BranchTab.jsx';
 import TabContents from '../TabContents.jsx';
-import AlertMessage from '../../common/AlertMessage.jsx';
-import { Branches as BranchesIcon } from '../../common/Icons.jsx';
 import { trpc } from '../../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
+import { HappyEmpty } from '../../repo-summary/Empty.jsx';
+import { divide, toPercentage } from '../../../../shared/utils.js';
+import { num } from '../../../helpers/utils.js';
+
+const NotShowingBranches: React.FC<{ limit?: number; count?: number }> = ({
+  limit,
+  count,
+}) => {
+  if (!limit || !count) return null;
+  return count - limit > 0 ? (
+    <p className="text-left text-sm italic text-gray-500 mt-2">
+      {`* ${num(count - limit)} branches not shown`}
+    </p>
+  ) : null;
+};
 
 const Branches: React.FC<{
   defaultBranch: RepoAnalysis['defaultBranch'];
@@ -26,12 +41,8 @@ const Branches: React.FC<{
   const tabs = useMemo(
     () => [
       {
-        label: (
-          <>
-            <span className="w-2 h-2 bg-green-500 inline-block mr-1.5 rounded-full" />
-            Healthy
-          </>
-        ),
+        label: 'Healthy branches',
+        indicatorClassName: 'bg-theme-success',
         key: 'healthy',
         count: branchTotalCount.data?.totalHealthy,
         // eslint-disable-next-line react/no-unstable-nested-components
@@ -45,44 +56,59 @@ const Branches: React.FC<{
 
           return (
             <>
-              <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
-                A branch is considered to be healthy if <strong>all</strong> of the
-                following conditions are met.
-                <ul className="list-disc px-4">
-                  <li>It has a commit in the last 15 days.</li>
-                  <li>
-                    It is ahead of the <code>{defaultBranch}</code> branch by no more than
-                    10 commits.
-                  </li>
-                  <li>
-                    It is behind the <code>{defaultBranch}</code> branch by no more than
-                    10 commits.
-                  </li>
-                </ul>
-                <div className="mt-1">
-                  The <code>{defaultBranch}</code> branch is always considered to be
-                  healthy.
+              <div className="grid grid-cols-[1fr_20rem] gap-4">
+                <div className="border rounded-md border-theme-seperator bg-theme-page-content overflow-hidden">
+                  <BranchStats
+                    branches={healthyBranchesList.data?.branches}
+                    count={branchTotalCount.data?.totalHealthy}
+                    branchType="healthy"
+                  />
+                </div>
+                <div className="bg-theme-page-content border border-theme-seperator p-6 text-sm rounded-md">
+                  <h3 className="font-medium text-base mb-6">
+                    What is a healthy branch?
+                  </h3>
+                  <p>
+                    A branch is considered to be healthy if all of the following
+                    conditions are met.
+                  </p>
+                  <ul className="mt-4">
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      It has a commit in the last 15 days.
+                    </li>
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        It is ahead of the <code>{defaultBranch}</code> branch by no more
+                        than 10 commits.
+                      </div>
+                    </li>
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        It is behind the <code>{defaultBranch}</code> branch by no more
+                        than 10 commits.
+                      </div>
+                    </li>
+                  </ul>
+                  <div className="mt-1">
+                    The <code>{defaultBranch}</code> branch is always considered to be
+                    healthy.
+                  </div>
                 </div>
               </div>
-              {healthyBranchesList.data && (
-                <BranchStats
-                  branches={healthyBranchesList.data.branches}
-                  count={branchTotalCount.data?.totalHealthy}
-                  limit={healthyBranchesList.data.limit}
-                  branchType="healthy"
-                />
-              )}
+              <NotShowingBranches
+                count={branchTotalCount.data?.totalHealthy}
+                limit={healthyBranchesList.data?.limit}
+              />
             </>
           );
         },
       },
       {
-        label: (
-          <>
-            <span className="w-2 h-2 bg-gray-500 inline-block mr-1.5 rounded-full" />
-            Delete candidates
-          </>
-        ),
+        label: 'Delete candidates',
+        indicatorClassName: 'bg-theme-tag',
         key: 'delete-candidates',
         count: branchTotalCount.data?.totalDelete,
         // eslint-disable-next-line react/no-unstable-nested-components
@@ -97,36 +123,48 @@ const Branches: React.FC<{
 
           return (
             <>
-              <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
-                A branch is considered to be a delete candidate if <strong>all</strong> of
-                the following conditions are met.
-                <ul className="list-disc px-4">
-                  <li>It is not already marked as a healthy branch.</li>
-                  <li>
-                    All its commits are already merged into <code>{defaultBranch}</code>.
-                  </li>
-                </ul>
+              <div className="grid grid-cols-[1fr_20rem] gap-4">
+                <div className="border rounded-md border-theme-seperator bg-theme-page-content overflow-hidden">
+                  <BranchStats
+                    branches={deleteCandidateBranchesList.data?.branches}
+                    count={branchTotalCount.data?.totalDelete}
+                    branchType="delete"
+                  />
+                </div>
+                <div className="bg-theme-page-content border border-theme-seperator p-6 text-sm rounded-md">
+                  <h3 className="font-medium text-base mb-6">
+                    What is a delete candidate?
+                  </h3>
+                  <p>
+                    A branch is considered to be a delete candidate if all of the
+                    following conditions are met.
+                  </p>
+                  <ul className="mt-4">
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        All its commits are already merged into{' '}
+                        <code>{defaultBranch}</code>.
+                      </div>
+                    </li>
+                  </ul>
+                  <div className="mt-1">
+                    These branches can be deleted without any consequence.
+                  </div>
+                </div>
               </div>
-              {deleteCandidateBranchesList.data && (
-                <BranchStats
-                  branches={deleteCandidateBranchesList.data.branches}
-                  count={branchTotalCount.data?.totalDelete}
-                  limit={deleteCandidateBranchesList.data.limit}
-                  branchType="delete"
-                />
-              )}
+              <NotShowingBranches
+                count={branchTotalCount.data?.totalDelete}
+                limit={deleteCandidateBranchesList.data?.limit}
+              />
             </>
           );
         },
       },
       {
-        label: (
-          <>
-            <span className="w-2 h-2 bg-amber-500 inline-block mr-1.5 rounded-full" />
-            Abandoned branches
-          </>
-        ),
+        label: 'Abandoned branches',
         key: 'abandoned-branches',
+        indicatorClassName: 'bg-theme-warn',
         count: branchTotalCount.data?.totalAbandoned,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
@@ -139,38 +177,51 @@ const Branches: React.FC<{
 
           return (
             <>
-              <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
-                A branch is considered to be abandoned if <strong>all</strong> of the
-                following conditions are met.
-                <ul className="list-disc px-4">
-                  <li>It is not already marked as a healthy branch.</li>
-                  <li>
-                    It is ahead of the <code>{defaultBranch}</code> by at least one
-                    commit.
-                  </li>
-                  <li>There have been no commits to the branch in the last 15 days.</li>
-                </ul>
+              <div className="grid grid-cols-[1fr_20rem] gap-4">
+                <div className="border rounded-md border-theme-seperator bg-theme-page-content overflow-hidden">
+                  <BranchStats
+                    branches={abandonedBranchesList.data?.branches}
+                    count={branchTotalCount.data?.totalAbandoned}
+                    branchType="abandoned"
+                  />
+                </div>
+                <div className="bg-theme-page-content border border-theme-seperator p-6 text-sm rounded-md">
+                  <h3 className="font-medium text-base mb-6">
+                    What is an abandoned branch?
+                  </h3>
+                  <p>
+                    A branch is considered to be abandoned if all of the following
+                    conditions are met.
+                  </p>
+                  <ul className="mt-4">
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        It is ahead of the <code>{defaultBranch}</code> by at least one
+                        commit.
+                      </div>
+                    </li>
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        There have been no commits to the branch in the last 15 days.
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              {abandonedBranchesList.data && (
-                <BranchStats
-                  branches={abandonedBranchesList.data.branches}
-                  count={branchTotalCount.data?.totalAbandoned}
-                  limit={abandonedBranchesList.data.limit}
-                  branchType="abandoned"
-                />
-              )}
+              <NotShowingBranches
+                count={branchTotalCount.data?.totalAbandoned}
+                limit={abandonedBranchesList.data?.limit}
+              />
             </>
           );
         },
       },
       {
-        label: (
-          <>
-            <span className="w-2 h-2 bg-red-500 inline-block mr-1.5 rounded-full" />
-            Unhealthy
-          </>
-        ),
+        label: 'Unhealthy branches',
         key: 'Unhealthy',
+        indicatorClassName: 'bg-theme-danger-dim',
         count: branchTotalCount.data?.totalUnhealthy,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {
@@ -183,21 +234,45 @@ const Branches: React.FC<{
 
           return (
             <>
-              <div className="bg-gray-50 border-slate-300 border mt-3 px-4 py-2 text-sm rounded-md">
-                If a branch isn't marked as 'healthy', a 'delete candidate', or
-                'abandoned', it's considered to be unhealthy. These branches are out of
-                sync with <code>{defaultBranch}</code> and have't seen any commits in a
-                while.
-              </div>
+              <div className="grid grid-cols-[1fr_20rem] gap-4">
+                <div className="border rounded-md border-theme-seperator bg-theme-page-content overflow-hidden">
+                  <BranchStats
+                    branches={unhealthyBranchesList.data?.branches}
+                    count={branchTotalCount.data?.totalUnhealthy}
+                    branchType="unhealthy"
+                  />
+                </div>
 
-              {unhealthyBranchesList.data && (
-                <BranchStats
-                  branches={unhealthyBranchesList.data.branches}
-                  count={branchTotalCount.data?.totalUnhealthy}
-                  limit={unhealthyBranchesList.data.limit}
-                  branchType="unhealthy"
-                />
-              )}
+                <div className="bg-theme-page-content border border-theme-seperator p-6 text-sm rounded-md">
+                  <h3 className="font-medium text-base mb-6">
+                    What is an unhealthy branch?
+                  </h3>
+                  <p>
+                    A branch is considered unhealthy if any of the following conditions
+                    are met
+                  </p>
+                  <ul className="mt-4">
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        It is behind the <code>{defaultBranch}</code> branch by 10 or more
+                        commits.
+                      </div>
+                    </li>
+                    <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
+                      <CheckCircle className="block text-theme-success" size={22} />
+                      <div>
+                        It is ahead of the <code>{defaultBranch}</code> branch by 10 or
+                        more commits.
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <NotShowingBranches
+                count={branchTotalCount.data?.totalUnhealthy}
+                limit={unhealthyBranchesList.data?.limit}
+              />
             </>
           );
         },
@@ -206,42 +281,63 @@ const Branches: React.FC<{
     [branchTotalCount.data, cnp, defaultBranch, repoUrl, repositoryId]
   );
 
-  const SelectedTabComponent = tabs[selectedTab].Component;
-
   return (
     <TabContents gridCols={1}>
       {branchesCount > 0 ? (
-        <>
-          <div className="grid justify-between grid-cols-2">
-            <div>
-              {tabs.map((tab, index) => (
-                <BranchTab
-                  key={tab.key}
-                  isSelected={index === selectedTab}
-                  onToggleSelect={() => {
-                    setSelectedTab(index);
-                  }}
-                  count={tab.count}
-                  label={tab.label}
-                />
-              ))}
-            </div>
-            <div className="justify-self-end self-end">
-              <a
-                className="link-text text-sm inline-flex items-center"
-                href={`${repoUrl}/branches?_a=all`}
-                target="_blank"
-                rel="noopener noreferrer"
+        <Tabs
+          className="grid grid-cols-[1fr_20rem] gap-4 justify-between"
+          onSelect={setSelectedTab}
+          defaultIndex={0}
+        >
+          <TabList className="flex gap-4">
+            {tabs.map((tab, index) => (
+              <Tab
+                key={tab.key}
+                className={twJoin(
+                  'py-3 px-4 border rounded-lg cursor-pointer',
+                  selectedTab === index
+                    ? 'border-theme-input-highlight bg-theme-page-content'
+                    : 'border-theme-seperator hover:bg-theme-page'
+                )}
               >
-                <BranchesIcon className="inline-block w-4 h-4 mr-1" />
-                Manage branches
-              </a>
-            </div>
+                <h3 className="mb-1">{tab.label}</h3>
+                <div className="flex gap-2 items-center font-medium text-sm">
+                  <span className="font-medium text-xl">{tab.count}</span>
+                  <span>
+                    <span className={twJoin('inline-block px-1', tab.indicatorClassName)}>
+                      {divide(tab.count || 0, branchesCount)
+                        .map(toPercentage)
+                        .getOr(0)}
+                    </span>
+                  </span>
+                </div>
+              </Tab>
+            ))}
+          </TabList>
+          <div className="justify-self-end self-end">
+            <a
+              className="link-text text-sm inline-flex items-center font-medium"
+              href={`${repoUrl}/branches?_a=all`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <GitBranch className="inline-block w-4 h-4 mr-1" />
+              Manage branches
+            </a>
           </div>
-          <SelectedTabComponent />
-        </>
+          <div className="col-span-2">
+            {tabs.map(tab => (
+              <TabPanel key={tab.key}>
+                <tab.Component />
+              </TabPanel>
+            ))}
+          </div>
+        </Tabs>
       ) : (
-        <AlertMessage message="No branches in this repo" />
+        <HappyEmpty
+          heading="This repo is not initialised"
+          body="Go build something cool"
+        />
       )}
     </TabContents>
   );
@@ -252,14 +348,14 @@ export default (
   repositoryId: string,
   repoUrl: string,
   branchesCount?: number
-): Tab => {
+): TTab => {
   return {
     title: 'Branches',
     count: branchesCount ?? 0,
     Component: () => {
       return (
         <Branches
-          defaultBranch={defaultBranch}
+          defaultBranch={defaultBranch.replace('refs/heads/', '')}
           repositoryId={repositoryId}
           repoUrl={repoUrl}
           branchesCount={branchesCount || 0}

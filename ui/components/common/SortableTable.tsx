@@ -43,7 +43,7 @@ const SortableTable = <T,>({
 
   const sortedData = useMemo(() => {
     const { sorter } = columns[sortColumnIndex];
-    if (!sorter) return;
+    if (!sorter) return data;
     return data?.sort((sortDirection === 'asc' ? asc : desc)(sorter));
   }, [columns, data, sortColumnIndex, sortDirection]);
 
