@@ -35,7 +35,7 @@ const Card = <T extends object>({
       </div>
       {data?.length === 0 ? (
         <div className="text-center p-12">
-          <img src={noTasks} alt="No tasks" className="inline-block mb-4" />
+          <img src={noTasks} alt="No tasks" className="inline-block mb-4 max-w-[60%]" />
           <div className="w-56 m-auto text-sm">{emptyMessage}</div>
         </div>
       ) : (

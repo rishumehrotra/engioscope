@@ -304,7 +304,12 @@ const Branches: React.FC<{
                 <div className="flex gap-2 items-center font-medium text-sm">
                   <span className="font-medium text-xl">{tab.count}</span>
                   <span>
-                    <span className={twJoin('inline-block px-1', tab.indicatorClassName)}>
+                    <span
+                      className={twJoin(
+                        'inline-block px-1 rounded-md',
+                        tab.indicatorClassName
+                      )}
+                    >
                       {divide(tab.count || 0, branchesCount)
                         .map(toPercentage)
                         .getOr(0)}

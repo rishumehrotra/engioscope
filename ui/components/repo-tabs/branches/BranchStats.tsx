@@ -3,6 +3,7 @@ import type { BranchDetails, BranchTypes } from '../../../../shared/types.js';
 import { oneFortnightInMs } from '../../../../shared/utils.js';
 import { mediumDate, num } from '../../../helpers/utils.js';
 import SortableTable from '../../common/SortableTable.jsx';
+import { HappyEmpty } from '../../repo-summary/Empty.jsx';
 
 const BranchStats: React.FC<{
   branches?: BranchDetails;
@@ -10,7 +11,16 @@ const BranchStats: React.FC<{
   branchType: BranchTypes;
 }> = ({ branches, count, branchType }) => {
   if (count === 0) {
-    return <p className="text-gray-600 italic mt-4">No results found.</p>;
+    return (
+      <div>
+        <HappyEmpty
+          heading={`No ${
+            branchType === 'delete' ? 'delete candidate' : branchType
+          } branches`}
+          body="This looks good :)"
+        />
+      </div>
+    );
   }
 
   return (
