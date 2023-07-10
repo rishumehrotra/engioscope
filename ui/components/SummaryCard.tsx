@@ -101,8 +101,8 @@ export const Stat: React.FC<StatProps> = ({
     openDrawer();
   }, [onClick, openDrawer]);
 
-  const statMarkup = (
-    <>
+  const statHeading = useMemo(
+    () => (
       <h3 className="font-semibold mb-3 flex items-center">
         {title}
         {tooltip === undefined ? null : (
@@ -115,6 +115,12 @@ export const Stat: React.FC<StatProps> = ({
           </span>
         )}
       </h3>
+    ),
+    [title, tooltip]
+  );
+
+  const statValue = useMemo(
+    () => (
       <div
         className={`text-2xl font-bold transition-opacity ease-in-out duration-500 ${
           value === null ? 'opacity-0' : ''
@@ -127,7 +133,8 @@ export const Stat: React.FC<StatProps> = ({
           </button>
         ) : null}
       </div>
-    </>
+    ),
+    [onClick?.enabledIf, onClick?.open, onStatClick, value]
   );
 
   const graphMarkup = useMemo(() => {
@@ -156,25 +163,33 @@ export const Stat: React.FC<StatProps> = ({
     [Drawer, drawerDetails, drawerProps]
   );
 
-  if (!graphProps.graphPosition) return withOuter(statMarkup);
+  if (!graphProps.graphPosition) {
+    return withOuter(
+      <>
+        {statHeading}
+        {statValue}
+      </>
+    );
+  }
 
   if (graphProps.graphPosition === 'bottom') {
     return withOuter(
-      <div className="grid grid-rows-2 gap-6">
-        <div>{statMarkup}</div>
-        {graphMarkup}
+      <div className="grid grid-rows-2 gap-6 h-full">
+        <div>
+          {statHeading}
+          {statValue}
+        </div>
+        <div className="self-end">{graphMarkup}</div>
       </div>
     );
   }
 
   return withOuter(
-    <>
-      <Drawer {...drawerDetails} {...drawerProps} />
-      <div className="grid grid-cols-2">
-        <div>{statMarkup}</div>
-        <div className="grid items-end">{graphMarkup}</div>
-      </div>
-    </>
+    <div className="grid grid-cols-2">
+      <div className="col-span-2">{statHeading}</div>
+      {statValue}
+      <div className="grid items-end">{graphMarkup}</div>
+    </div>
   );
 };
 

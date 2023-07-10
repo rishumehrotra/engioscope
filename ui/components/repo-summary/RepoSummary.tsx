@@ -186,7 +186,7 @@ const StreamingRepoSummary: React.FC = () => {
         </SummaryCard>
 
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="row-span-2 border-r border-theme-seperator pr-6">
+          <div className="border-r border-theme-seperator pr-6">
             <Stat
               title="Tests"
               tooltip={
@@ -225,7 +225,7 @@ const StreamingRepoSummary: React.FC = () => {
               }}
             />
           </div>
-          <div>
+          <div className="h-full">
             <Stat
               title="Branch coverage"
               tooltip={
@@ -497,7 +497,7 @@ const StreamingRepoSummary: React.FC = () => {
           </div>
         </SummaryCard>
         <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="border-r border-theme-seperator">
+          <div className="border-r border-theme-seperator pr-6">
             <Stat
               title="Pipelines running tests"
               tooltip={
@@ -539,52 +539,48 @@ const StreamingRepoSummary: React.FC = () => {
               }}
             />
           </div>
-          <div>
-            <Stat
-              title="Reporting coverage"
-              tooltip={
-                isDefined(summaries.defSummary)
-                  ? `${num(summaries.defSummary.defsWithCoverage)} of ${num(
-                      summaries.defSummary.totalDefs
-                    )} pipelines report branch coverage`
-                  : null
-              }
-              value={
-                isDefined(summaries.defSummary)
-                  ? divide(
-                      summaries.defSummary.defsWithCoverage,
-                      summaries.defSummary.totalDefs
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-              graphPosition="right"
-              graph={
-                isDefined(summaries.weeklyPipelinesWithCoverageCount)
-                  ? summaries.weeklyPipelinesWithCoverageCount.map(
+          <Stat
+            title="Reporting coverage"
+            tooltip={
+              isDefined(summaries.defSummary)
+                ? `${num(summaries.defSummary.defsWithCoverage)} of ${num(
+                    summaries.defSummary.totalDefs
+                  )} pipelines report branch coverage`
+                : null
+            }
+            value={
+              isDefined(summaries.defSummary)
+                ? divide(
+                    summaries.defSummary.defsWithCoverage,
+                    summaries.defSummary.totalDefs
+                  )
+                    .map(toPercentage)
+                    .getOr('-')
+                : null
+            }
+            graphPosition="right"
+            graph={
+              isDefined(summaries.weeklyPipelinesWithCoverageCount)
+                ? summaries.weeklyPipelinesWithCoverageCount.map(w => w.defsWithCoverage)
+                : []
+            }
+            graphColor={
+              isDefined(summaries.weeklyPipelinesWithCoverageCount)
+                ? increaseIsBetter(
+                    summaries.weeklyPipelinesWithCoverageCount.map(
                       w => w.defsWithCoverage
                     )
-                  : []
-              }
-              graphColor={
-                isDefined(summaries.weeklyPipelinesWithCoverageCount)
-                  ? increaseIsBetter(
-                      summaries.weeklyPipelinesWithCoverageCount.map(
-                        w => w.defsWithCoverage
-                      )
-                    )
-                  : null
-              }
-              onClick={{
-                open: 'drawer',
-                heading: 'Test & coverage details',
-                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
-                downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
-                body: <TestsDrawer pipelineType="withCoverage" />,
-              }}
-            />
-          </div>
+                  )
+                : null
+            }
+            onClick={{
+              open: 'drawer',
+              heading: 'Test & coverage details',
+              enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+              downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
+              body: <TestsDrawer pipelineType="withCoverage" />,
+            }}
+          />
         </SummaryCard>
       </div>
       {isDefined(summaries.totalRepos) &&
