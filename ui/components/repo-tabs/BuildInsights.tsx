@@ -6,6 +6,7 @@ import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import { toPercentage } from '../../../shared/utils.js';
 import noTasks from './no-tasks.svg';
+import { SadEmpty } from '../repo-summary/Empty.jsx';
 
 type CardProps<T extends object> = {
   title: string;
@@ -70,13 +71,25 @@ const Card = <T extends object>({
 
 const BuildInsights: React.FC<{
   buildDefinitionId: number;
-}> = ({ buildDefinitionId }) => {
+  hasRuns: boolean;
+}> = ({ buildDefinitionId, hasRuns }) => {
   const cnp = useCollectionAndProject();
   const timelineStats = trpc.builds.timelineStats.useQuery({
     ...cnp,
     buildDefinitionId,
   });
   const [queryPeriodDays] = useQueryPeriodDays();
+
+  if (!hasRuns) {
+    return (
+      <div className="bg-theme-secondary pb-4">
+        <SadEmpty
+          heading="No builds"
+          body={`There were no builds in the last ${queryPeriodDays} days`}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-3 gap-5 p-5 bg-gray-100">

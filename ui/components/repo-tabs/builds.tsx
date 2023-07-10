@@ -4,7 +4,6 @@ import prettyMilliseconds from 'pretty-ms';
 import { byNum, byString } from 'sort-lib';
 import { CheckCircle, GitPullRequest, XCircle } from 'react-feather';
 import { relativeTime, num, shortDate } from '../../helpers/utils.js';
-import AlertMessage from '../common/AlertMessage.jsx';
 import type { Tab } from './Tabs.jsx';
 import TabContents from './TabContents.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
@@ -14,6 +13,7 @@ import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import SortableTable from '../common/SortableTable.jsx';
+import { SadEmpty } from '../repo-summary/Empty.jsx';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -137,7 +137,12 @@ const BuildInsightsWrapper = ({
 }: {
   item: RouterClient['builds']['getBuildsOverviewForRepository'][number];
 }) => {
-  return <BuildInsights buildDefinitionId={Number(item.buildDefinitionId)} />;
+  return (
+    <BuildInsights
+      buildDefinitionId={item.buildDefinitionId}
+      hasRuns={item.totalBuilds !== 0}
+    />
+  );
 };
 
 const Builds: React.FC<{
@@ -154,7 +159,10 @@ const Builds: React.FC<{
     <TabContents gridCols={1}>
       {builds.data?.length === 0 ? (
         <TabContents gridCols={1}>
-          <AlertMessage message="No builds for this repo in the last three months" />
+          <SadEmpty
+            heading="No build pipelines"
+            body="There are no build pipelines configured for this repository"
+          />
         </TabContents>
       ) : (
         <>

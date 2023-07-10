@@ -163,26 +163,32 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
   const emptyMessage = useMemo(() => {
     if (statusType === 'all') {
       return (
-        <SadEmpty
-          heading="No repositories found"
-          body="There are currently no repositories set up on SonarQube"
-        />
+        <div className="my-32">
+          <SadEmpty
+            heading="No repositories found"
+            body="There are currently no repositories set up on SonarQube"
+          />
+        </div>
       );
     }
     if (statusType === 'pass') {
       return (
-        <SadEmpty
-          heading="No repositories found"
-          body="There are currently no repositories passing SonarQube quality gates"
-        />
+        <div className="my-32">
+          <SadEmpty
+            heading="No repositories found"
+            body="There are currently no repositories passing SonarQube quality gates"
+          />
+        </div>
       );
     }
     if (statusType === 'fail') {
       return (
-        <HappyEmpty
-          heading="No repositories found"
-          body="There are currently no repositories failing SonarQube quality gates"
-        />
+        <div className="my-32">
+          <HappyEmpty
+            heading="No repositories found"
+            body="There are currently no repositories failing SonarQube quality gates"
+          />
+        </div>
       );
     }
     if (statusType === 'other') {

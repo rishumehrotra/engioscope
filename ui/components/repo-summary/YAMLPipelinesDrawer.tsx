@@ -155,7 +155,9 @@ const YAMLPipelinesDrawer: React.FC<{
 
             if (repos?.length === 0) {
               return (
-                <HappyEmpty body="Looks like all repositories are using YAML pipelines" />
+                <div className="my-32">
+                  <HappyEmpty body="Looks like all repositories are using YAML pipelines" />
+                </div>
               );
             }
 
@@ -173,10 +175,12 @@ const YAMLPipelinesDrawer: React.FC<{
 
             if (repos?.length === 0) {
               return (
-                <SadEmpty
-                  heading="No repositories found"
-                  body="There are currently no repositories using YAML pipelines"
-                />
+                <div className="my-32">
+                  <SadEmpty
+                    heading="No repositories found"
+                    body="There are currently no repositories using YAML pipelines"
+                  />
+                </div>
               );
             }
 

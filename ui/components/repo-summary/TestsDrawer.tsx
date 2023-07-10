@@ -147,42 +147,52 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
   const emptyMessage = useMemo(() => {
     if (statusType === 'all') {
       return (
-        <SadEmpty
-          heading="No repositories found"
-          body="There are currently no repositories having tests and reporting coverage"
-        />
+        <div className="my-32">
+          <SadEmpty
+            heading="No repositories found"
+            body="There are currently no repositories having tests and reporting coverage"
+          />
+        </div>
       );
     }
     if (statusType === 'withTests') {
       return (
-        <SadEmpty
-          heading="No repositories found"
-          body="There are currently no repositories having tests"
-        />
+        <div className="my-32">
+          <SadEmpty
+            heading="No repositories found"
+            body="There are currently no repositories having tests"
+          />
+        </div>
       );
     }
     if (statusType === 'withCoverage') {
       return (
-        <SadEmpty
-          heading="No repositories found"
-          body="There are currently no repositories reporting coverage"
-        />
+        <div className="my-32">
+          <SadEmpty
+            heading="No repositories found"
+            body="There are currently no repositories reporting coverage"
+          />
+        </div>
       );
     }
     if (statusType === 'withoutTests') {
       return (
-        <HappyEmpty
-          heading="No repositories found"
-          body="There are currently no repositories which are not reporting tests"
-        />
+        <div className="my-32">
+          <HappyEmpty
+            heading="No repositories found"
+            body="There are currently no repositories which are not reporting tests"
+          />
+        </div>
       );
     }
     if (statusType === 'withoutCoverage') {
       return (
-        <HappyEmpty
-          heading="No repositories found"
-          body="There are currently no repositories which are not reporting coverage"
-        />
+        <div className="my-32">
+          <HappyEmpty
+            heading="No repositories found"
+            body="There are currently no repositories which are not reporting coverage"
+          />
+        </div>
       );
     }
     return shouldNeverReachHere(statusType);
