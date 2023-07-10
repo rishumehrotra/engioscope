@@ -46,7 +46,11 @@ import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
 import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
 import { pipelineCountForRepo } from './releases.js';
-import { getActivePipelineIds } from './build-definitions.js';
+import {
+  getWeeklyPipelinesWithTestsCount,
+  getActivePipelineIds,
+  getWeeklyPipelinesWithCoverageCount,
+} from './build-definitions.js';
 import {
   filteredReposInputParser,
   getActiveRepos,
@@ -249,6 +253,12 @@ export type SummaryStats = {
   reposWithSonarQube: number;
   centralTemplateUsage: Awaited<ReturnType<typeof getTotalCentralTemplateUsage>>;
   pipelines: Awaited<ReturnType<typeof getYamlPipelinesCountSummary>>;
+  weeklyPipelinesWithTestsCount: Awaited<
+    ReturnType<typeof getWeeklyPipelinesWithTestsCount>
+  >;
+  weeklyPipelinesWithCoverageCount: Awaited<
+    ReturnType<typeof getWeeklyPipelinesWithCoverageCount>
+  >;
   healthyBranches: Awaited<ReturnType<typeof getHealthyBranchesSummary>>;
   totalBuilds: Awaited<ReturnType<typeof getTotalBuildsBy>>;
   successfulBuilds: Awaited<ReturnType<typeof getSuccessfulBuildsBy>>;
@@ -324,6 +334,12 @@ export const getSummaryAsChunks = async (
     ),
     getYamlPipelinesCountSummary(queryContext, activeRepoIds).then(
       sendChunk('pipelines')
+    ),
+    getWeeklyPipelinesWithTestsCount(queryContext, activeRepoIds).then(
+      sendChunk('weeklyPipelinesWithTestsCount')
+    ),
+    getWeeklyPipelinesWithCoverageCount(queryContext, activeRepoIds).then(
+      sendChunk('weeklyPipelinesWithCoverageCount')
     ),
     getHealthyBranchesSummary(queryContext, activeRepoIds, defaultBranchIDs).then(
       sendChunk('healthyBranches')

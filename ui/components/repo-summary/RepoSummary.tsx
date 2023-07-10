@@ -517,6 +517,19 @@ const StreamingRepoSummary: React.FC = () => {
                       .getOr('-')
                   : null
               }
+              graphPosition="right"
+              graph={
+                isDefined(summaries.weeklyPipelinesWithTestsCount)
+                  ? summaries.weeklyPipelinesWithTestsCount.map(w => w.defsWithTests)
+                  : []
+              }
+              graphColor={
+                isDefined(summaries.weeklyPipelinesWithTestsCount)
+                  ? increaseIsBetter(
+                      summaries.weeklyPipelinesWithTestsCount.map(w => w.defsWithTests)
+                    )
+                  : null
+              }
               onClick={{
                 open: 'drawer',
                 heading: 'Test & coverage details',
@@ -544,6 +557,23 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                       .map(toPercentage)
                       .getOr('-')
+                  : null
+              }
+              graphPosition="right"
+              graph={
+                isDefined(summaries.weeklyPipelinesWithCoverageCount)
+                  ? summaries.weeklyPipelinesWithCoverageCount.map(
+                      w => w.defsWithCoverage
+                    )
+                  : []
+              }
+              graphColor={
+                isDefined(summaries.weeklyPipelinesWithCoverageCount)
+                  ? increaseIsBetter(
+                      summaries.weeklyPipelinesWithCoverageCount.map(
+                        w => w.defsWithCoverage
+                      )
+                    )
                   : null
               }
               onClick={{
