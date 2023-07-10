@@ -152,6 +152,13 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'SonarQube',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('sonar-projects'),
+                body: <SonarReposDrawer projectsType="pass" />,
+              }}
             />
           </div>
           <div>
@@ -181,6 +188,13 @@ const StreamingRepoSummary: React.FC = () => {
               graphColor={decreaseIsBetter(
                 summaries.weeklySonarProjectsCount?.map(s => s.failedProjects) || []
               )}
+              onClick={{
+                open: 'drawer',
+                heading: 'SonarQube',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('sonar-projects'),
+                body: <SonarReposDrawer projectsType="fail" />,
+              }}
             />
           </div>
         </SummaryCard>

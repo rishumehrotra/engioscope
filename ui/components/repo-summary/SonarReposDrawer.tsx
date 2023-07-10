@@ -200,6 +200,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
 
   return (
     <DrawerTabs
+      selectedTabIndex={projectsType === 'pass' || projectsType === 'fail' ? 1 : 0}
       tabs={[
         {
           title: `Not using SonarQube (${
