@@ -26,6 +26,7 @@ type BuildPipelineListProps = {
 type PipelineTypes =
   | 'all'
   | 'currentlySucceeding'
+  | 'currentlyFailing'
   | 'noBuildsInThreeMonths'
   | 'usingCentralTemplate'
   | 'notUsingCentralTemplate';
@@ -107,14 +108,14 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
                       </span>
                     </>
                   ) : undefined}
-                  {!x.hasBuilds && x.def.latestBuild.finishTime ? (
+                  {x.hasBuilds ? undefined : (
                     <>
                       <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
                         {' '}
                       </span>
                       <span>
                         {`Last used ${
-                          x.def.latestBuild.finishTime
+                          x.def.latestBuild?.finishTime
                             ? `${shortDate(
                                 new Date(x.def.latestBuild.finishTime)
                               )}, ${new Date(x.def.latestBuild.finishTime).getFullYear()}`
@@ -122,7 +123,7 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
                         }`}
                       </span>
                     </>
-                  ) : undefined}
+                  )}
                 </div>
               </div>
             );
@@ -264,6 +265,16 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         </div>
       );
     }
+    if (statusType === 'currentlyFailing') {
+      return (
+        <div className="my-32">
+          <HappyEmpty
+            heading="No repositories found"
+            body="There are currently no pipelines with a currently failing build"
+          />
+        </div>
+      );
+    }
     if (statusType === 'noBuildsInThreeMonths') {
       return (
         <div className="my-32">
@@ -302,6 +313,12 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
       );
     }
 
+    if (statusType === 'currentlyFailing') {
+      return repo.pipelines.some(p =>
+        p.hasBuilds ? p.builds?.lastBuildStatus !== 'succeeded' : false
+      );
+    }
+
     if (statusType === 'noBuildsInThreeMonths') {
       return repo.pipelines.some(p => !p.hasBuilds);
     }
@@ -336,6 +353,17 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
           ) ?? [],
       };
     }
+
+    if (statusType === 'currentlyFailing') {
+      return {
+        ...repo,
+        pipelines:
+          repo.pipelines?.filter(p =>
+            p.hasBuilds ? p.builds?.lastBuildStatus !== 'succeeded' : false
+          ) ?? [],
+      };
+    }
+
     if (statusType === 'noBuildsInThreeMonths') {
       return {
         ...repo,
@@ -372,10 +400,11 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         value={statusType}
         options={[
           { label: 'All pipelines', value: 'all' },
-          { label: 'Currently Succeeding', value: 'currentlySucceeding' },
-          { label: 'Not used in last 3 Months', value: 'noBuildsInThreeMonths' },
-          { label: 'Using central template', value: 'usingCentralTemplate' },
-          { label: 'Not using central template', value: 'notUsingCentralTemplate' },
+          { label: 'Currently succeeding', value: 'currentlySucceeding' },
+          { label: 'Currently failing', value: 'currentlyFailing' },
+          { label: 'Not used in last 3 months', value: 'noBuildsInThreeMonths' },
+          { label: 'Using the central template', value: 'usingCentralTemplate' },
+          { label: 'Not using the central template', value: 'notUsingCentralTemplate' },
         ]}
         onChange={e => setStatusType(e as PipelineTypes)}
       />

@@ -678,8 +678,8 @@ type PipelineItem = {
   hasDef: boolean;
   def: {
     id: number;
-    latestBuildId: number;
-    latestCompletedBuildId: number;
+    latestBuildId?: number;
+    latestCompletedBuildId?: number;
     name: string;
     process: {
       processType: number;
@@ -688,7 +688,7 @@ type PipelineItem = {
     repositoryId: string;
     type: 'build';
     url: string;
-    latestBuild: {
+    latestBuild?: {
       id: number;
       status: string;
       result: string;
@@ -696,7 +696,7 @@ type PipelineItem = {
       startTime: Date;
       finishTime: Date;
     };
-    latestCompletedBuild: {
+    latestCompletedBuild?: {
       id: number;
       status: string;
       result: string;
