@@ -11,8 +11,8 @@
     --color-text-icon-active: 3, 7, 18;
     --color-text-highlight: 37, 99, 235;
     --color-text-success: 22, 163, 74;
-    --color-text-danger: 239, 68, 68;
     --color-text-warn: 202, 138, 4;
+    --color-text-danger: 239, 68, 68;
 
     --color-bg-page: 249, 250, 251;
     --color-bg-page-content: 255, 255, 255;
@@ -22,8 +22,8 @@
     --color-bg-backdrop: 31, 41, 55;
     --color-bg-tag: 229, 231, 235;
     --color-bg-success: 187, 247, 208;
-    --color-bg-danger: 254, 226, 226;
     --color-bg-warn: 254, 251, 210;
+    --color-bg-danger: 254, 226, 226;
 
     --color-border-separator: 229, 231, 235;
     --color-border-separator-light: 243, 244, 246;

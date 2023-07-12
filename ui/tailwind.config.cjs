@@ -49,6 +49,8 @@ module.exports = {
           'seperator-light': withOpacity('--color-border-separator-light'),
           input: withOpacity('--color-input-border'),
           'input-highlight': withOpacity('--color-input-highlight'),
+          'success': withOpacity('--color-text-success'),
+          'warn': withOpacity('--color-text-warn'),
           'danger': withOpacity('--color-text-danger'),
         },
       },

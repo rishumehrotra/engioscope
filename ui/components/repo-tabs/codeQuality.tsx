@@ -1,6 +1,8 @@
 import React, { useState, Fragment } from 'react';
 import { pipe } from 'rambda';
-import type { RepoAnalysis, UICodeQuality2 } from '../../../shared/types.js';
+import { twJoin } from 'tailwind-merge';
+import { CheckCircle, ChevronRight, XCircle } from 'react-feather';
+import type { UICodeQuality2 } from '../../../shared/types.js';
 import { formatDebt, num, shortDate } from '../../helpers/utils.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import type { Tab } from './Tabs.jsx';
@@ -8,6 +10,8 @@ import TabContents from './TabContents.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import Loading from '../Loading.jsx';
+import { capitalizeFirstLetter } from '../../../shared/utils.js';
+import AnimateHeight from '../common/AnimateHeight.jsx';
 
 // https://docs.sonarqube.org/latest/user-guide/metric-definitions/
 
@@ -268,35 +272,18 @@ const securityRatingMeaning = {
   E: 'At least 1 blocker vulnerability',
 };
 
-const ratingClassName = (ratingValue: ReturnType<typeof rating>) => {
+const ratingType = (ratingValue: ReturnType<typeof rating>) => {
   switch (ratingValue) {
     case 'A': {
-      return 'text-white bg-green-700';
+      return 'success';
     }
     case 'B':
     case 'C': {
-      return 'text-white bg-yellow-600';
+      return 'warn';
     }
     case 'D':
     case 'E': {
-      return 'text-white bg-red-500';
-    }
-    default:
-  }
-};
-
-const gateClassName = (
-  gate: NonNullable<RepoAnalysis['codeQuality']>[number]['quality']['gate']
-) => {
-  switch (gate) {
-    case 'pass': {
-      return 'text-green-800 bg-green-200';
-    }
-    case 'fail': {
-      return 'text-red-800 bg-red-100';
-    }
-    case 'warn': {
-      return 'text-yellow-800 bg-yellow-100';
+      return 'danger';
     }
     default:
   }
@@ -305,101 +292,77 @@ const gateClassName = (
 type SubCardProps = {
   heading: string;
   rating?: string;
-  ratingClassName?: string;
   className?: string;
   children?: React.ReactNode;
+  ratingType?: ReturnType<typeof ratingType>;
 };
 
 const SubCard: React.FC<SubCardProps> = ({
   heading,
   rating,
-  ratingClassName,
   children,
   className,
-}) => (
-  <div className={`bg-gray-50 rounded-lg shadow-sm ${className || ''}`}>
-    <div className="flex justify-between py-4">
-      <h2 className="text-xl font-semibold px-4">{heading}</h2>
-      {rating !== undefined && (
-        <div
-          className={`text-center px-4 py-1 rounded-l-lg shadow-sm font-semibold
-            ${ratingClassName || 'bg-purple-600 text-lg text-white'}`}
-          style={{ minWidth: '3em' }}
-        >
-          {rating}
-        </div>
+  ratingType,
+}) => {
+  return (
+    <div
+      className={twJoin(
+        'bg-theme-page-content rounded-lg shadow-sm py-4 px-5 border border-theme-seperator',
+        ratingType === 'success' && 'border-l-4 border-l-theme-success',
+        ratingType === 'warn' && 'border-l-4 border-l-theme-warn',
+        ratingType === 'danger' && 'border-l-4 border-l-theme-danger',
+        className
       )}
+    >
+      <div className="flex justify-between">
+        <h2 className="text-sm font-semibold">{heading}</h2>
+        {rating !== undefined && (
+          <div
+            className={twJoin(
+              'font-semibold',
+              ratingType === 'success' && 'text-theme-success',
+              ratingType === 'warn' && 'text-theme-warn',
+              ratingType === 'danger' && 'text-theme-danger'
+            )}
+          >
+            {rating}
+          </div>
+        )}
+      </div>
+      {children}
     </div>
-    <div className="m-3">{children}</div>
-  </div>
-);
+  );
+};
 
 const SingleAnalysis: React.FC<{
   codeQuality: NonNullable<UICodeQuality2>[number];
-}> = ({ codeQuality }) => (
-  <>
-    <div className="grid grid-cols-3 gap-4">
-      <SubCard
-        heading="Quality gates"
-        rating={codeQuality.quality.gate.toUpperCase()}
-        ratingClassName={`${gateClassName(codeQuality.quality.gate)}`}
-        className="row-span-2"
-      >
-        <div className="-mt-7 mb-5 pl-1 text-xs text-gray-600">
-          {'Using '}
-          <strong className="font-semibold">
-            {codeQuality.qualityGateName === null
-              ? 'Unknown'
-              : codeQuality.qualityGateName}
-          </strong>
+  isChild?: boolean;
+}> = ({ codeQuality, isChild = false }) => (
+  <div className="grid grid-cols-[2fr_1fr] gap-4">
+    <div className={isChild ? 'p-4 border-r border-r-theme-seperator' : ''}>
+      <div className="grid grid-cols-[1fr_min-content] items-end mb-3.5">
+        <div>
+          <h3 className="font-medium">SonarQube analysis</h3>
+          <p className="text-theme-icon text-sm pt-1">
+            {codeQuality.lastAnalysisDate
+              ? `Last analysis was run on ${shortDate(
+                  new Date(codeQuality.lastAnalysisDate)
+                )}.`
+              : 'Analysis has never been run'}
+          </p>
         </div>
-        <table className="w-full">
-          <tbody>
-            {fieldDefinitions.qualityGate
-              .filter(({ key }) => codeQuality.quality[key] !== undefined)
-              .map(({ key, label, formatter }, index) => {
-                const match = codeQuality.quality[key];
-                if (!match) return null;
-
-                return (
-                  <tr key={key} className={index % 2 === 0 ? '' : 'bg-gray-100'}>
-                    <td className="p-1 align-top">
-                      {label}
-                      {match.op && (match.level || match.level === 0) && (
-                        <div className="text-gray-600 text-xs">
-                          {key === 'securityRating'
-                            ? `Should be ${
-                                match.op === 'gt' ? 'better than' : 'lower than'
-                              } ${formatter(match.level)}`
-                            : `Should be ${
-                                match.op === 'gt'
-                                  ? match.level === 0
-                                    ? ''
-                                    : 'less than'
-                                  : 'higher than'
-                              } ${formatter(match.level)}`}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-1 pr-3 font-semibold align-middle text-right">
-                      {formatter(match.value || 0)}
-                    </td>
-                    <td className="p-1 align-middle text-right">
-                      <div
-                        className={`py-1 text-xs rounded-md text-center ${gateClassName(
-                          match.status
-                        )}`}
-                      >
-                        {match.status.toUpperCase()}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </SubCard>
-      <div className="col-span-2 grid grid-cols-3 gap-4">
+        <div>
+          <a
+            className="link-text whitespace-nowrap font-medium"
+            href={codeQuality.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            See full details on SonarQube
+          </a>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-4">
         <SubCard
           heading="Maintainability"
           rating={
@@ -407,71 +370,69 @@ const SingleAnalysis: React.FC<{
               ? undefined
               : rating(codeQuality.maintainability.rating)
           }
-          ratingClassName={ratingClassName(rating(codeQuality.maintainability.rating))}
+          ratingType={ratingType(rating(codeQuality.maintainability.rating))}
         >
-          <table className="w-full">
-            <tbody>
-              {fieldDefinitions.maintainability
-                .filter(({ key }) => codeQuality.maintainability[key] !== undefined)
-                .map(({ key, label, formatter }) => {
-                  const match = codeQuality.maintainability[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+          <dl className="grid grid-cols-[1fr_min-content] gap-2 mt-6 mb-1">
+            {fieldDefinitions.maintainability
+              .filter(({ key }) => codeQuality.maintainability[key] !== undefined)
+              .map(({ key, label, formatter }) => {
+                const match = codeQuality.maintainability[key];
+                if (match === undefined) return null;
+                return (
+                  <Fragment key={key}>
+                    <dt>{label}</dt>
+                    <dd className="font-medium text-right whitespace-nowrap">
+                      {formatter(match)}
+                    </dd>
+                  </Fragment>
+                );
+              })}
+          </dl>
         </SubCard>
         <SubCard
           heading="Reliability"
           rating={rating(codeQuality.reliability.rating)}
-          ratingClassName={ratingClassName(rating(codeQuality.reliability.rating))}
+          ratingType={ratingType(rating(codeQuality.reliability.rating))}
         >
-          <table className="w-full">
-            <tbody>
-              {fieldDefinitions.reliability
-                .filter(({ key }) => codeQuality.reliability[key] !== undefined)
-                .map(({ key, label, formatter }) => {
-                  const match = codeQuality.reliability[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+          <dl className="grid grid-cols-[1fr_min-content] gap-2 mt-6 mb-1">
+            {fieldDefinitions.reliability
+              .filter(({ key }) => codeQuality.reliability[key] !== undefined)
+              .map(({ key, label, formatter }) => {
+                const match = codeQuality.reliability[key];
+                if (match === undefined) return null;
+                return (
+                  <Fragment key={key}>
+                    <dt>{label}</dt>
+                    <dd className="font-medium text-right whitespace-nowrap">
+                      {formatter(match)}
+                    </dd>
+                  </Fragment>
+                );
+              })}
+          </dl>
         </SubCard>
         <SubCard
           heading="Security"
           rating={rating(codeQuality.security.rating)}
-          ratingClassName={ratingClassName(rating(codeQuality.security.rating))}
+          ratingType={ratingType(rating(codeQuality.security.rating))}
         >
-          <table className="w-full">
-            <tbody>
-              {fieldDefinitions.security
-                .filter(({ key }) => codeQuality.security[key] !== undefined)
-                .map(({ key, label, formatter }) => {
-                  const match = codeQuality.security[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+          <dl className="grid grid-cols-[1fr_min-content] gap-2 mt-6 mb-1">
+            {fieldDefinitions.security
+              .filter(({ key }) => codeQuality.security[key] !== undefined)
+              .map(({ key, label, formatter }) => {
+                const match = codeQuality.security[key];
+                if (match === undefined) return null;
+                return (
+                  <Fragment key={key}>
+                    <dt>{label}</dt>
+                    <dd className="font-medium text-right whitespace-nowrap">
+                      {formatter(match)}
+                    </dd>
+                  </Fragment>
+                );
+              })}
+          </dl>
         </SubCard>
-      </div>
-      <div className="col-span-2 grid grid-cols-3 gap-4">
         <SubCard
           heading="Coverage"
           rating={
@@ -482,10 +443,12 @@ const SingleAnalysis: React.FC<{
         >
           {codeQuality.coverage.line === undefined &&
           codeQuality.coverage.branch === undefined ? (
-            <div className="text-gray-600 text-sm px-1">No coverage data available</div>
+            <div className="text-theme-helptext text-sm px-1">
+              No coverage data available
+            </div>
           ) : (
             <>
-              <table className="w-full">
+              <table className="w-full mt-6 mb-1">
                 <tbody>
                   {(
                     [
@@ -510,11 +473,11 @@ const SingleAnalysis: React.FC<{
                         <React.Fragment key={stat}>
                           <tr>
                             <td
-                              className={`px-1 pt-1 ${
+                              className={
                                 codeQuality.coverage[uncovered] === undefined
                                   ? 'pb-1'
                                   : ''
-                              }`}
+                              }
                             >
                               {label}
                             </td>
@@ -526,7 +489,10 @@ const SingleAnalysis: React.FC<{
                           </tr>
                           {codeQuality.coverage[uncovered] !== undefined && (
                             <tr>
-                              <td colSpan={2} className="px-1 pb-1 text-xs text-gray-600">
+                              <td
+                                colSpan={2}
+                                className="pb-1 text-xs text-theme-helptext"
+                              >
                                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                                 {`${num(codeQuality.coverage[uncovered]!)} ${
                                   codeQuality.coverage[toCover] === undefined
@@ -542,7 +508,7 @@ const SingleAnalysis: React.FC<{
                     })}
                 </tbody>
               </table>
-              <p className="text-xs text-gray-600 mt-6">
+              <p className="text-xs text-theme-helptext mt-6">
                 Note, SonarQube computes its own values for coverage.{' '}
                 <a
                   href="https://community.sonarsource.com/t/sonarqube-and-code-coverage/4725/1"
@@ -565,170 +531,235 @@ const SingleAnalysis: React.FC<{
               : percent(codeQuality.duplication.linesDensity)
           }
         >
-          <table className="w-full">
-            <tbody>
-              {fieldDefinitions.duplications
-                .filter(({ key }) => codeQuality.duplication[key] !== undefined)
-                .map(({ key, label, formatter }) => {
-                  const match = codeQuality.duplication[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td className="p-1 font-semibold text-right">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+          <dl className="grid grid-cols-[1fr_min-content] gap-2 mt-6 mb-1">
+            {fieldDefinitions.duplications
+              .filter(({ key }) => codeQuality.duplication[key] !== undefined)
+              .map(({ key, label, formatter }) => {
+                const match = codeQuality.duplication[key];
+                if (match === undefined) return null;
+                return (
+                  <Fragment key={key}>
+                    <dt>{label}</dt>
+                    <dd className="font-medium text-right whitespace-nowrap">
+                      {formatter(match)}
+                    </dd>
+                  </Fragment>
+                );
+              })}
+          </dl>
         </SubCard>
         <SubCard heading="Complexity">
           {fieldDefinitions.complexity.filter(
             ({ key }) => codeQuality.complexity[key] !== undefined
           ).length === 0 ? (
-            <div className="text-gray-600 text-sm px-1">No complexity data available</div>
+            <div className="text-theme-helptext text-sm px-1">
+              No complexity data available
+            </div>
           ) : (
-            <table className="w-full">
-              <tbody>
-                {fieldDefinitions.complexity.map(({ key, label, formatter }) => {
-                  const match = codeQuality.complexity[key];
-                  if (match === undefined) return null;
-                  return (
-                    <tr key={key}>
-                      <td className="p-1">{label}</td>
-                      <td className="text-right p-1 font-semibold">{formatter(match)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <dl className="grid grid-cols-[1fr_min-content] gap-2 mt-6 mb-1">
+              {fieldDefinitions.complexity.map(({ key, label, formatter }) => {
+                const match = codeQuality.complexity[key];
+                if (match === undefined) return null;
+                return (
+                  <Fragment key={key}>
+                    <dt className="p-1">{label}</dt>
+                    <dd className="font-medium text-right whitespace-nowrap">
+                      {formatter(match)}
+                    </dd>
+                  </Fragment>
+                );
+              })}
+            </dl>
           )}
         </SubCard>
       </div>
     </div>
-    <div className="flex justify-between text-sm italic mt-4">
-      <div className="text-gray-600">
-        {codeQuality.lastAnalysisDate
-          ? `Last analysis was run on ${shortDate(
-              new Date(codeQuality.lastAnalysisDate)
-            )}.`
-          : 'Analysis has never been run'}
+    <div
+      className={twJoin(
+        'bg-theme-page-content rounded-lg shadow-sm py-4',
+        isChild ? 'pr-5' : 'px-5 border border-theme-seperator'
+      )}
+    >
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="font-semibold">Quality gates</h2>
+          <div className="pt-2 text-xs text-gray-600">
+            {'Using '}
+            <strong className="font-medium">
+              {codeQuality.qualityGateName === null
+                ? 'Unknown'
+                : codeQuality.qualityGateName}
+            </strong>
+          </div>
+        </div>
+        <div
+          className={twJoin(
+            'px-2 rounded',
+            codeQuality.quality.gate === 'pass'
+              ? 'text-theme-success bg-theme-success'
+              : 'text-theme-danger bg-theme-danger-dim'
+          )}
+        >
+          {capitalizeFirstLetter(codeQuality.quality.gate)}
+        </div>
       </div>
-      <div className="items-end">
-        <a className="link-text" href={codeQuality.url} target="_blank" rel="noreferrer">
-          See full details on SonarQube
-        </a>
-      </div>
+      <table className="w-full mt-6">
+        <tbody>
+          {fieldDefinitions.qualityGate
+            .filter(({ key }) => codeQuality.quality[key] !== undefined)
+            .map(({ key, label, formatter }) => {
+              const match = codeQuality.quality[key];
+              if (!match) return null;
+
+              return (
+                <tr key={key}>
+                  <td className="align-top text-center w-8">
+                    <div
+                      className={twJoin(
+                        `py-1 text-xs rounded-md text-center`,
+                        match.status === 'pass'
+                          ? 'text-theme-success'
+                          : 'text-theme-danger'
+                      )}
+                    >
+                      {match.status === 'pass' ? (
+                        <CheckCircle size={20} />
+                      ) : (
+                        <XCircle size={20} />
+                      )}
+                    </div>
+                  </td>
+                  <td className="align-top pb-5">
+                    <div className="text-sm font-medium pb-1">{label}</div>
+                    {match.op && (match.level || match.level === 0) && (
+                      <div className="text-theme-helptext text-xs">
+                        {key === 'securityRating'
+                          ? `Should be ${
+                              match.op === 'gt' ? 'better than' : 'lower than'
+                            } ${formatter(match.level)}`
+                          : `Should be ${
+                              match.op === 'gt'
+                                ? match.level === 0
+                                  ? ''
+                                  : 'less than'
+                                : 'higher than'
+                            } ${formatter(match.level)}`}
+                      </div>
+                    )}
+                  </td>
+                  <td className="font-semibold align-top text-right">
+                    {formatter(match.value || 0)}
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
     </div>
-  </>
+  </div>
 );
 
 const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
   codeQuality,
 }) => {
   const [expandedRows, setExpandedRows] = useState<NonNullable<UICodeQuality2>>([]);
+  const [collapsingRows, setCollapsingRows] = useState<NonNullable<UICodeQuality2>>([]);
 
   return (
-    <table className="table-auto text-center divide-y divide-gray-200 w-full">
-      <thead>
-        <tr>
-          <th className="px-6 py-3 text-xs w-2/6 font-medium text-gray-800 uppercase tracking-wider">
-            {' '}
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-            Quality gate
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-            Maintainability
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-            Reliability
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-            Security
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-            Coverage
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-            Duplications
-          </th>
-        </tr>
-      </thead>
-      <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
-        {codeQuality.map(codeQualityItem => (
-          <Fragment key={codeQualityItem.name}>
-            <tr
-              className="group cursor-pointer"
-              onClick={() => {
-                if (expandedRows.includes(codeQualityItem)) {
-                  setExpandedRows(expandedRows.filter(item => item !== codeQualityItem));
-                } else {
-                  setExpandedRows([...expandedRows, codeQualityItem]);
-                }
+    <ul className="">
+      {codeQuality.map(codeQualityItem => (
+        <li
+          key={codeQualityItem.name}
+          className="rounded-lg border border-theme-seperator bg-theme-page-content mb-4 overflow-hidden"
+        >
+          <button
+            className="grid grid-cols-[min-content_1fr_5rem] gap-4 w-full text-left cursor-pointer p-4 hover:bg-theme-hover"
+            onClick={() => {
+              if (expandedRows.includes(codeQualityItem)) {
+                // setExpandedRows(expandedRows.filter(item => item !== codeQualityItem));
+                setCollapsingRows(rows => [...rows, codeQualityItem]);
+              } else {
+                setExpandedRows([...expandedRows, codeQualityItem]);
+              }
+            }}
+          >
+            <div
+              className={twJoin(
+                'pt-1 text-theme-icon transition-all duration-200',
+                expandedRows.includes(codeQualityItem)
+                  ? 'rotate-90 text-theme-icon-active'
+                  : ''
+              )}
+            >
+              <ChevronRight size={18} />
+            </div>
+            <div className="">
+              <h3 className="font-medium mb-1">{codeQualityItem.name}</h3>
+              <ul>
+                {(
+                  [
+                    {
+                      title: 'Maintainability',
+                      rating: rating(codeQualityItem.maintainability.rating),
+                    },
+                    {
+                      title: 'Reliability',
+                      rating: rating(codeQualityItem.reliability.rating),
+                    },
+                    {
+                      title: 'Security',
+                      rating: rating(codeQualityItem.security.rating),
+                    },
+                  ] as const
+                ).map(({ title, rating }) => (
+                  <li key={title} className="inline-block">
+                    <span className="inline-block">{title}</span>
+                    <span
+                      className={twJoin(
+                        'inline-block ml-2 mr-6 px-2 rounded text-sm',
+                        ratingType(rating) === 'success'
+                          ? 'text-theme-success bg-theme-success'
+                          : 'text-theme-danger bg-theme-danger-dim'
+                      )}
+                    >
+                      {rating}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div
+              className={twJoin(
+                'self-center text-xl font-medium grid grid-flow-col items-center',
+                codeQualityItem.quality.gate === 'pass'
+                  ? 'text-theme-success'
+                  : 'text-theme-danger'
+              )}
+            >
+              {codeQualityItem.quality.gate === 'pass' ? (
+                <CheckCircle className="inline-block" />
+              ) : (
+                <XCircle className="inline-block" />
+              )}
+              <span>{capitalizeFirstLetter(codeQualityItem.quality.gate)}</span>
+            </div>
+          </button>
+          {expandedRows.includes(codeQualityItem) && (
+            <AnimateHeight
+              collapse={collapsingRows.includes(codeQualityItem)}
+              onCollapsed={() => {
+                setExpandedRows(rows => rows.filter(x => x !== codeQualityItem));
+                setCollapsingRows(rows => rows.filter(x => x !== codeQualityItem));
               }}
             >
-              <td className="pl-6 py-4 whitespace-nowrap text-left text-blue-600 group-hover:underline">
-                <span className="truncate w-full block">{codeQualityItem.name}</span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
-                  ${gateClassName(codeQualityItem.quality.gate)}`}
-                >
-                  {codeQualityItem.quality.gate.toUpperCase()}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
-                  ${ratingClassName(rating(codeQualityItem.maintainability.rating))}`}
-                >
-                  {rating(codeQualityItem.maintainability.rating)}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
-                  ${ratingClassName(rating(codeQualityItem.reliability.rating))}`}
-                >
-                  {rating(codeQualityItem.reliability.rating)}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`text-center text-xs px-4 py-1 rounded-lg shadow-sm font-semibold
-                  ${ratingClassName(rating(codeQualityItem.security.rating))}`}
-                >
-                  {rating(codeQualityItem.security.rating)}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold">
-                  {codeQualityItem.coverage.byTests === undefined
-                    ? 'unknown'
-                    : percent(codeQualityItem.coverage.byTests)}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-center px-4 py-1 rounded-lg shadow-sm font-semibold">
-                  {codeQualityItem.duplication.linesDensity === undefined
-                    ? 'unknown'
-                    : percent(codeQualityItem.duplication.linesDensity)}
-                </span>
-              </td>
-            </tr>
-            {expandedRows.includes(codeQualityItem) && (
-              <tr>
-                <td colSpan={8} className="px-6 py-4 text-left bg-gray-100 ml-2">
-                  <SingleAnalysis codeQuality={codeQualityItem} />
-                </td>
-              </tr>
-            )}
-          </Fragment>
-        ))}
-      </tbody>
-    </table>
+              <div className="border-t border-theme-seperator">
+                <SingleAnalysis codeQuality={codeQualityItem} isChild />
+              </div>
+            </AnimateHeight>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 };
 export default (
