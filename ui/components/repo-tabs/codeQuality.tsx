@@ -1,7 +1,7 @@
 import React, { useState, Fragment } from 'react';
 import { pipe } from 'rambda';
 import { twJoin } from 'tailwind-merge';
-import { CheckCircle, ChevronRight, XCircle } from 'react-feather';
+import { ChevronRight, XCircle } from 'react-feather';
 import type { UICodeQuality2 } from '../../../shared/types.js';
 import { formatDebt, num, shortDate } from '../../helpers/utils.js';
 import type { Tab } from './Tabs.jsx';
@@ -12,6 +12,7 @@ import Loading from '../Loading.jsx';
 import { capitalizeFirstLetter } from '../../../shared/utils.js';
 import AnimateHeight from '../common/AnimateHeight.jsx';
 import emptyWhy from '../../images/empty-why.svg';
+import { TickCircle } from '../common/Icons.jsx';
 
 // https://docs.sonarqube.org/latest/user-guide/metric-definitions/
 
@@ -329,7 +330,7 @@ const SubCard: React.FC<SubCardProps> = ({
           </div>
         )}
       </div>
-      {children}
+      <div className="text-sm">{children}</div>
     </div>
   );
 };
@@ -576,8 +577,8 @@ const SingleAnalysis: React.FC<{
     </div>
     <div
       className={twJoin(
-        'bg-theme-page-content rounded-lg shadow-sm py-4',
-        isChild ? 'pr-5' : 'px-5 border border-theme-seperator'
+        'bg-theme-page-content rounded-lg py-4',
+        isChild ? 'pr-5 shadow-sm' : 'px-5 border border-theme-seperator'
       )}
     >
       <div className="flex justify-between items-center">
@@ -623,7 +624,7 @@ const SingleAnalysis: React.FC<{
                       )}
                     >
                       {match.status === 'pass' ? (
-                        <CheckCircle size={20} />
+                        <TickCircle size={20} />
                       ) : (
                         <XCircle size={20} />
                       )}
@@ -737,7 +738,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
               )}
             >
               {codeQualityItem.quality.gate === 'pass' ? (
-                <CheckCircle className="inline-block" />
+                <TickCircle className="inline-block" />
               ) : (
                 <XCircle className="inline-block" />
               )}

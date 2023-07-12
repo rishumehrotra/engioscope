@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Tooltip } from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
 import { byNum, byString } from 'sort-lib';
-import { CheckCircle, GitPullRequest, XCircle } from 'react-feather';
+import { GitPullRequest, XCircle } from 'react-feather';
 import { relativeTime, num, shortDate } from '../../helpers/utils.js';
 import type { Tab } from './Tabs.jsx';
 import TabContents from './TabContents.jsx';
@@ -18,6 +18,7 @@ import { RepositoryModel } from '../../../backend/models/mongoose-models/Reposit
 import type { QueryContext } from '../../../backend/models/utils.js';
 import { fromContext } from '../../../backend/models/utils.js';
 import { inDateRange } from '../../../backend/models/helpers.js';
+import { TickCircle } from '../common/Icons.jsx';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -120,7 +121,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
                           value ? 'text-theme-success' : 'text-theme-danger'
                         } inline-block`}
                       >
-                        {value ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                        {value ? <TickCircle size={16} /> : <XCircle size={16} />}
                       </span>
                     ) : (
                       <strong>{value}</strong>

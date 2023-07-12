@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
-import { CheckCircle, GitBranch } from 'react-feather';
+import { GitBranch } from 'react-feather';
 import { twJoin } from 'tailwind-merge';
 import type { RepoAnalysis } from '../../../../shared/types.js';
 import type { Tab as TTab } from '../Tabs.jsx';
@@ -11,6 +11,7 @@ import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
 import { HappyEmpty } from '../../repo-summary/Empty.jsx';
 import { divide, toPercentage } from '../../../../shared/utils.js';
 import { num } from '../../../helpers/utils.js';
+import { TickCircle } from '../../common/Icons.jsx';
 
 const NotShowingBranches: React.FC<{ limit?: number; count?: number }> = ({
   limit,
@@ -74,18 +75,18 @@ const Branches: React.FC<{
                   </p>
                   <ul className="mt-4">
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       It has a commit in the last 15 days.
                     </li>
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         It is ahead of the <code>{defaultBranch}</code> branch by no more
                         than 10 commits.
                       </div>
                     </li>
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         It is behind the <code>{defaultBranch}</code> branch by no more
                         than 10 commits.
@@ -141,7 +142,7 @@ const Branches: React.FC<{
                   </p>
                   <ul className="mt-4">
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         All its commits are already merged into{' '}
                         <code>{defaultBranch}</code>.
@@ -195,14 +196,14 @@ const Branches: React.FC<{
                   </p>
                   <ul className="mt-4">
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         It is ahead of the <code>{defaultBranch}</code> by at least one
                         commit.
                       </div>
                     </li>
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         There have been no commits to the branch in the last 15 days.
                       </div>
@@ -253,14 +254,14 @@ const Branches: React.FC<{
                   </p>
                   <ul className="mt-4">
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         It is behind the <code>{defaultBranch}</code> branch by 10 or more
                         commits.
                       </div>
                     </li>
                     <li className="grid grid-cols-[min-content_1fr] gap-2 items-start mb-3">
-                      <CheckCircle className="block text-theme-success" size={22} />
+                      <TickCircle className="block text-theme-success" size={22} />
                       <div>
                         It is ahead of the <code>{defaultBranch}</code> branch by 10 or
                         more commits.
