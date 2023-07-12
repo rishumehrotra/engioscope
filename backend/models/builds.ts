@@ -746,69 +746,6 @@ type PipelineItem = {
       }
   );
 
-// type PipelineItem = {
-//   hasDef: boolean;
-//   def: {
-//     id: number;
-//     latestBuildId: number;
-//     latestCompletedBuildId: number;
-//     name: string;
-//     process: {
-//       processType: number;
-//       yamlFileName: string;
-//     };
-//     repositoryId: string;
-//     type: 'build';
-//     url: string;
-//     latestBuild: {
-//       id: number;
-//       status: string;
-//       result: string;
-//       queueTime: Date;
-//       startTime: Date;
-//       finishTime: Date;
-//     };
-//     latestCompletedBuild: {
-//       id: number;
-//       status: string;
-//       result: string;
-//       queueTime: Date;
-//       startTime: Date;
-//       finishTime: Date;
-//     };
-//   };
-//   hasBuilds: boolean;
-//   builds?: {
-//     totalBuilds: number;
-//     totalSuccessfulBuilds: number;
-//     averageDuration: number;
-//     minDuration: number;
-//     maxDuration: number;
-//     buildDefinitionId: number;
-//     definitionName: string;
-//     url: string;
-//     lastBuildStatus: string;
-//     lastBuildTimestamp: Date;
-//     prCount: number;
-//     latestBuildResult: {
-//       result: string;
-//       timestamp: Date;
-//     };
-//     latestSuccessfulIndex: number;
-//     failingSince: {
-//       result: string;
-//       timestamp: Date;
-//     };
-//   };
-//   hasAzureBuildReports: boolean;
-//   azureBuildReports?: {
-//     templateUsers: number;
-//     mainBranchCentralTemplateBuilds: number;
-//     totalAzureBuilds: number;
-//     buildDefinitionId: string;
-//   };
-// };
-
 type BuildDrawerItem = {
   repositoryId: string;
   repositoryName: string;
