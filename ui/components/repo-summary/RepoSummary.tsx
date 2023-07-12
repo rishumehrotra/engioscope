@@ -19,6 +19,8 @@ const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
 const TestsDrawer = lazy(() => import('./TestsDrawer.jsx'));
 
+const BuildPipelinesDrawer = lazy(() => import('./BuildPipelinesDrawer.jsx'));
+
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
 const useCreateUrlWithFilter = (slug: string) => {
@@ -442,6 +444,12 @@ const StreamingRepoSummary: React.FC = () => {
               value={
                 isDefined(summaries.totalBuilds) ? num(summaries.totalBuilds.count) : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Test & coverage details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                body: <BuildPipelinesDrawer pipelineType="all" />,
+              }}
               graphPosition="right"
               graphColor={
                 isDefined(summaries.totalBuilds)
