@@ -11,6 +11,8 @@ import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js'
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
+import { getActiveRepos, type filteredReposInputParser } from './active-repos.js';
+import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 
 export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   const { project, ...rest } = build;
@@ -670,4 +672,473 @@ export const getActivePipelineBuilds = async (
   ]);
 
   return totalBuilds[0]?.totalBuilds ?? 0;
+};
+
+type PipelineItem = {
+  hasDef: boolean;
+  def: {
+    id: number;
+    latestBuildId: number;
+    latestCompletedBuildId: number;
+    name: string;
+    process: {
+      processType: number;
+      yamlFileName: string;
+    };
+    repositoryId: string;
+    type: 'build';
+    url: string;
+    latestBuild: {
+      id: number;
+      status: string;
+      result: string;
+      queueTime: Date;
+      startTime: Date;
+      finishTime: Date;
+    };
+    latestCompletedBuild: {
+      id: number;
+      status: string;
+      result: string;
+      queueTime: Date;
+      startTime: Date;
+      finishTime: Date;
+    };
+  };
+} & (
+  | { hasBuilds: false }
+  | {
+      hasBuilds: true;
+      builds: {
+        totalBuilds: number;
+        totalSuccessfulBuilds: number;
+        averageDuration: number;
+        minDuration: number;
+        maxDuration: number;
+        buildDefinitionId: number;
+        definitionName: string;
+        url: string;
+        lastBuildStatus: string;
+        lastBuildTimestamp: Date;
+        prCount: number;
+        latestBuildResult: {
+          result: string;
+          timestamp: Date;
+        };
+        latestSuccessfulIndex: number;
+        failingSince: {
+          result: string;
+          timestamp: Date;
+        };
+      };
+    }
+) &
+  (
+    | { hasAzureBuildReports: false }
+    | {
+        hasAzureBuildReports: true;
+        azureBuildReports: {
+          templateUsers: number;
+          mainBranchCentralTemplateBuilds: number;
+          totalAzureBuilds: number;
+          buildDefinitionId: string;
+        };
+      }
+  );
+
+// type PipelineItem = {
+//   hasDef: boolean;
+//   def: {
+//     id: number;
+//     latestBuildId: number;
+//     latestCompletedBuildId: number;
+//     name: string;
+//     process: {
+//       processType: number;
+//       yamlFileName: string;
+//     };
+//     repositoryId: string;
+//     type: 'build';
+//     url: string;
+//     latestBuild: {
+//       id: number;
+//       status: string;
+//       result: string;
+//       queueTime: Date;
+//       startTime: Date;
+//       finishTime: Date;
+//     };
+//     latestCompletedBuild: {
+//       id: number;
+//       status: string;
+//       result: string;
+//       queueTime: Date;
+//       startTime: Date;
+//       finishTime: Date;
+//     };
+//   };
+//   hasBuilds: boolean;
+//   builds?: {
+//     totalBuilds: number;
+//     totalSuccessfulBuilds: number;
+//     averageDuration: number;
+//     minDuration: number;
+//     maxDuration: number;
+//     buildDefinitionId: number;
+//     definitionName: string;
+//     url: string;
+//     lastBuildStatus: string;
+//     lastBuildTimestamp: Date;
+//     prCount: number;
+//     latestBuildResult: {
+//       result: string;
+//       timestamp: Date;
+//     };
+//     latestSuccessfulIndex: number;
+//     failingSince: {
+//       result: string;
+//       timestamp: Date;
+//     };
+//   };
+//   hasAzureBuildReports: boolean;
+//   azureBuildReports?: {
+//     templateUsers: number;
+//     mainBranchCentralTemplateBuilds: number;
+//     totalAzureBuilds: number;
+//     buildDefinitionId: string;
+//   };
+// };
+
+type BuildDrawerItem = {
+  repositoryId: string;
+  repositoryName: string;
+  repositoryUrl: string;
+  builds: number;
+  pipelines: PipelineItem[];
+};
+
+export const getBuildsDrawerListing = async ({
+  queryContext,
+  searchTerms,
+  teams,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
+
+  return RepositoryModel.aggregate<BuildDrawerItem>([
+    {
+      $match: {
+        collectionName,
+        'project.name': project,
+        'id': { $in: activeRepos.map(x => x.id) },
+      },
+    },
+    {
+      $lookup: {
+        from: 'builddefinitions',
+        let: { repositoryId: '$id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$repositoryId', '$$repositoryId'] },
+            },
+          },
+        ],
+        as: 'defs',
+      },
+    },
+    { $addFields: { hasDef: { $gt: [{ $size: '$defs' }, 0] } } },
+    {
+      $unwind: {
+        path: '$defs',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    { $addFields: { def: '$defs' } },
+    { $project: { defs: 0 } },
+    {
+      $lookup: {
+        from: 'azurebuildreports',
+        let: {
+          repositoryName: '$name',
+          definitionId: {
+            $toString: '$def.id',
+          },
+          defaultBranchName: {
+            $replaceAll: {
+              input: '$defaultBranch',
+              find: 'refs/heads/',
+              replacement: '',
+            },
+          },
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repo', '$$repositoryName'] },
+                  { $eq: ['$buildDefinitionId', '$$definitionId'] },
+                ],
+              },
+              createdAt: inDateRange(startDate, endDate),
+            },
+          },
+          {
+            $addFields: {
+              usesCentralTemplate: {
+                $or: [
+                  { $eq: ['$centralTemplate', true] },
+                  { $eq: [{ $type: '$centralTemplate' }, 'object'] },
+                  { $eq: ['$templateRepo', 'build-pipeline-templates'] },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: { buildDefinitionId: '$buildDefinitionId' },
+              templateUsers: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ['$usesCentralTemplate', true] },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
+              mainBranchCentralTemplateBuilds: {
+                $sum: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $eq: ['$usesCentralTemplate', true] },
+                        { $eq: ['$branchName', '$$defaultBranchName'] },
+                      ],
+                    },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
+              totalAzureBuilds: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              buildDefinitionId: '$_id.buildDefinitionId',
+              templateUsers: 1,
+              totalAzureBuilds: 1,
+              mainBranchCentralTemplateBuilds: 1,
+            },
+          },
+        ],
+        as: 'azureBuildReports',
+      },
+    },
+    {
+      $addFields: { hasAzureBuildReports: { $gt: [{ $size: '$azureBuildReports' }, 0] } },
+    },
+    {
+      $unwind: {
+        path: '$azureBuildReports',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: 'builds',
+        let: { repositoryId: '$id', definitionId: '$def.id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: {
+                $and: [
+                  { $eq: ['$repository.id', '$$repositoryId'] },
+                  { $eq: ['$definition.id', '$$definitionId'] },
+                ],
+              },
+              finishTime: inDateRange(startDate, endDate),
+            },
+          },
+          { $sort: { finishTime: -1 } },
+          {
+            $group: {
+              _id: {
+                project: '$project',
+                collectionName: '$collectionName',
+                repositoryId: '$repository.id',
+                definitionId: '$definition.id',
+              },
+              totalBuilds: { $sum: 1 },
+              totalSuccessfulBuilds: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ['$result', 'succeeded'] },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
+              averageDuration: {
+                $avg: {
+                  $dateDiff: {
+                    startDate: '$startTime',
+                    endDate: '$finishTime',
+                    unit: 'millisecond',
+                  },
+                },
+              },
+              minDuration: {
+                $min: {
+                  $cond: [
+                    {
+                      $gt: [
+                        {
+                          $dateDiff: {
+                            startDate: '$startTime',
+                            endDate: '$finishTime',
+                            unit: 'millisecond',
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                    {
+                      $dateDiff: {
+                        startDate: '$startTime',
+                        endDate: '$finishTime',
+                        unit: 'millisecond',
+                      },
+                    },
+                    0,
+                  ],
+                },
+              },
+              maxDuration: {
+                $max: {
+                  $dateDiff: {
+                    startDate: '$startTime',
+                    endDate: '$finishTime',
+                    unit: 'millisecond',
+                  },
+                },
+              },
+              buildDefinitionId: { $first: '$definition.id' },
+              definitionName: { $first: '$definition.name' },
+              url: { $first: '$definition.url' },
+              lastBuildStatus: { $first: '$result' },
+              lastBuildTimestamp: { $first: '$startTime' },
+              builds: { $push: { result: '$result', timestamp: '$startTime' } },
+              prCount: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ['$reason', 'pullRequest'] },
+                    then: 0,
+                    else: 1,
+                  },
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              totalBuilds: 1,
+              totalSuccessfulBuilds: 1,
+              averageDuration: 1,
+              minDuration: 1,
+              maxDuration: 1,
+              lastBuildStatus: 1,
+              lastBuildTimestamp: 1,
+              _id: 0,
+              url: 1,
+              buildDefinitionId: 1,
+              definitionName: 1,
+              builds: 1,
+              latestBuildResult: { $arrayElemAt: ['$builds', 0] },
+              latestSuccessfulIndex: {
+                $indexOfArray: ['$builds.result', 'succeeded', 0],
+              },
+              prCount: 1,
+            },
+          },
+          {
+            $addFields: {
+              failingSince: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $ne: ['$lastBuildStatus', 'succeeded'] },
+                      { $gt: ['$latestSuccessfulIndex', 0] },
+                    ],
+                  },
+                  then: {
+                    $arrayElemAt: [
+                      '$builds',
+                      { $subtract: ['$latestSuccessfulIndex', 1] },
+                    ],
+                  },
+                  else: {
+                    result: '$lastBuildStatus',
+                    timestamp: '$lastBuildTimestamp',
+                  },
+                },
+              },
+            },
+          },
+        ],
+        as: 'builds',
+      },
+    },
+    { $addFields: { hasBuilds: { $gt: [{ $size: '$builds' }, 0] } } },
+    {
+      $unwind: {
+        path: '$builds',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $group: {
+        _id: '$id',
+        repositoryId: { $first: '$id' },
+        repositoryName: { $first: '$name' },
+        repositoryUrl: { $first: '$url' },
+        defaultBranch: { $first: '$defaultBranch' },
+        collectionName: { $first: '$collectionName' },
+        project: { $first: '$project.name' },
+        builds: { $sum: '$builds.totalBuilds' },
+        pipelines: {
+          $push: {
+            hasDef: '$hasDef',
+            def: '$def',
+            hasAzureBuildReports: '$hasAzureBuildReports',
+            hasBuilds: '$hasBuilds',
+            builds: '$builds',
+            azureBuildReports: '$azureBuildReports',
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        'pipelines.def._id': 0,
+        'pipelines.def.createdAt': 0,
+        'pipelines.def.updatedAt': 0,
+        'pipelines.def.createdDate': 0,
+        'pipelines.def.revision': 0,
+        'pipelines.def.queueStatus': 0,
+        'pipelines.def.collectionName': 0,
+        'pipelines.def.project': 0,
+        'pipelines.def.uri': 0,
+        'pipelines.builds.builds': 0,
+      },
+    },
+  ]);
 };

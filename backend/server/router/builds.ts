@@ -10,6 +10,7 @@ import {
   centralTemplateOptionsInputParser,
 } from '../../models/build-reports.js';
 import {
+  getBuildsDrawerListing,
   getBuildsOverviewForRepository,
   getBuildsOverviewForRepositoryInputParser,
   getNonYamlPipeLineBuildStats,
@@ -17,6 +18,7 @@ import {
   NonYamlPipeLineBuildStatsInputParser,
   pipeLineBuildStatsInputParser,
 } from '../../models/builds.js';
+import { filteredReposInputParser } from '../../models/active-repos.js';
 
 export default t.router({
   timelineStats: t.procedure
@@ -42,4 +44,8 @@ export default t.router({
   getPipeLineBuildStatsForRepo: t.procedure
     .input(pipeLineBuildStatsInputParser)
     .query(passInputTo(getPipeLineBuildStatsForRepo)),
+
+  getBuildsDrawerListing: t.procedure
+    .input(filteredReposInputParser)
+    .query(passInputTo(getBuildsDrawerListing)),
 });

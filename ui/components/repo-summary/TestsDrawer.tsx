@@ -276,7 +276,6 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
       />
       <SortableTable
         data={filteredPipelinesRepoList}
-        // data={filteredPipelinesRepoList?.filter(x => x.definitions?.length > 0)}
         {...testsAndCoverageRepoItemProps}
       />
     </>
