@@ -160,15 +160,17 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
       tests(item.repositoryId, queryPeriodDays, item.tests),
       codeQuality(
         item.repositoryId,
+        item.repoDetails.name,
         item.repoDetails.defaultBranch || 'master',
         combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
       ),
     ],
     [
       item.repositoryId,
+      item.builds,
       item.repoDetails.defaultBranch,
       item.repoDetails.url,
-      item.builds,
+      item.repoDetails.name,
       item.branches,
       item.commits,
       item.pullRequests,
