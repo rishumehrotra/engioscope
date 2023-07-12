@@ -13,7 +13,7 @@ import { useQueryContext } from '../../hooks/query-hooks.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import SortableTable from '../common/SortableTable.jsx';
 import { SadEmpty } from '../repo-summary/Empty.jsx';
-import CentralTemplateUsageUI from '../repo-summary/CentralTemplateUsageUI.jsx';
+import CentralTemplateUsage from '../CentralTemplateUsage.jsx';
 
 const BuildInsightsWrapper = ({
   item,
@@ -100,7 +100,7 @@ const Builds: React.FC<{
                 key: 'central template',
                 // eslint-disable-next-line react/no-unstable-nested-components
                 value: row => (
-                  <CentralTemplateUsageUI
+                  <CentralTemplateUsage
                     buildDefinitionId={String(row.buildDefinitionId)}
                     centralTemplateRuns={row.centralTemplateCount}
                     mainBranchCentralTemplateBuilds={row.mainBranchCentralTemplateBuilds}

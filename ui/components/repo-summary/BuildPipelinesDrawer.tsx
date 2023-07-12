@@ -12,7 +12,7 @@ import { HappyEmpty, SadEmpty } from './Empty.jsx';
 import { divide, shouldNeverReachHere, toPercentage } from '../../../shared/utils.js';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { relativeTime, shortDate } from '../../helpers/utils.js';
-import CentralTemplateUsageUI from './CentralTemplateUsageUI.jsx';
+import CentralTemplateUsage from '../CentralTemplateUsage.jsx';
 
 type BuildRepoItem = RouterClient['builds']['getBuildsDrawerListing'][number];
 
@@ -135,7 +135,7 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
 
           // eslint-disable-next-line react/no-unstable-nested-components
           value: x => (
-            <CentralTemplateUsageUI
+            <CentralTemplateUsage
               buildDefinitionId={String(x.def.id)}
               centralTemplateRuns={
                 x.hasAzureBuildReports ? x.azureBuildReports.templateUsers : 0

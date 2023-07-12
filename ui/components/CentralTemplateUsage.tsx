@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Tooltip } from 'react-tooltip';
 import { XCircle } from 'react-feather';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
-import { trpc } from '../../helpers/trpc.js';
-import { divide, toPercentage } from '../../../shared/utils.js';
-import { num } from '../../helpers/utils.js';
-import { TickCircle } from '../common/Icons.jsx';
+import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { trpc } from '../helpers/trpc.js';
+import { divide, toPercentage } from '../../shared/utils.js';
+import { num } from '../helpers/utils.js';
+import { TickCircle } from './common/Icons.jsx';
 
 type CentralTemplateUsageProps = {
   centralTemplateRuns: number;
@@ -14,7 +14,7 @@ type CentralTemplateUsageProps = {
   buildDefinitionId: string;
 };
 
-const CentralTemplateUsageUI: React.FC<CentralTemplateUsageProps> = ({
+const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   centralTemplateRuns,
   mainBranchCentralTemplateBuilds,
   totalRuns,
@@ -124,4 +124,4 @@ const CentralTemplateUsageUI: React.FC<CentralTemplateUsageProps> = ({
   );
 };
 
-export default CentralTemplateUsageUI;
+export default CentralTemplateUsage;
