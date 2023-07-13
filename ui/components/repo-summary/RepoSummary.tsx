@@ -432,6 +432,12 @@ const StreamingRepoSummary: React.FC = () => {
                         .getOr('-')
                     : null
                 }
+                onClick={{
+                  open: 'drawer',
+                  heading: 'Builds details',
+                  enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                  body: <BuildPipelinesDrawer pipelineType="usingCentralTemplate" />,
+                }}
               />
             </div>
           </div>
@@ -446,7 +452,7 @@ const StreamingRepoSummary: React.FC = () => {
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Test & coverage details',
+                heading: 'Builds details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 body: <BuildPipelinesDrawer pipelineType="all" />,
               }}
@@ -480,6 +486,12 @@ const StreamingRepoSummary: React.FC = () => {
                       .getOr('-')
                   : null
               }
+              onClick={{
+                open: 'drawer',
+                heading: 'Builds details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                body: <BuildPipelinesDrawer pipelineType="currentlySucceeding" />,
+              }}
               graphPosition="right"
               graphColor={
                 isDefined(summaries.totalBuilds)
