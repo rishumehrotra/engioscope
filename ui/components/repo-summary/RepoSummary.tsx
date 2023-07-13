@@ -434,7 +434,7 @@ const StreamingRepoSummary: React.FC = () => {
                 }
                 onClick={{
                   open: 'drawer',
-                  heading: 'Builds details',
+                  heading: 'Build details',
                   enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                   body: <BuildPipelinesDrawer pipelineType="usingCentralTemplate" />,
                 }}
@@ -452,7 +452,7 @@ const StreamingRepoSummary: React.FC = () => {
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Builds details',
+                heading: 'Build details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 body: <BuildPipelinesDrawer pipelineType="all" />,
               }}
@@ -488,7 +488,7 @@ const StreamingRepoSummary: React.FC = () => {
               }
               onClick={{
                 open: 'drawer',
-                heading: 'Builds details',
+                heading: 'Build details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
                 body: <BuildPipelinesDrawer pipelineType="currentlySucceeding" />,
               }}

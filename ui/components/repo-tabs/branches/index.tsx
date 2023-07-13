@@ -43,7 +43,7 @@ const Branches: React.FC<{
     () => [
       {
         label: 'Healthy branches',
-        indicatorClassName: 'bg-theme-success',
+        indicatorClassName: 'bg-theme-success-dim',
         key: 'healthy',
         count: branchTotalCount.data?.totalHealthy,
         // eslint-disable-next-line react/no-unstable-nested-components

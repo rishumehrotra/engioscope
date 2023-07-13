@@ -597,7 +597,7 @@ const SingleAnalysis: React.FC<{
           className={twJoin(
             'px-2 rounded',
             codeQuality.quality.gate === 'pass'
-              ? 'text-theme-success bg-theme-success'
+              ? 'text-theme-success bg-theme-success-dim'
               : 'text-theme-danger bg-theme-danger-dim'
           )}
         >
@@ -719,7 +719,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
                       className={twJoin(
                         'inline-block ml-2 mr-6 px-2 rounded text-sm',
                         ratingType(rating) === 'success'
-                          ? 'text-theme-success bg-theme-success'
+                          ? 'text-theme-success bg-theme-success-dim'
                           : 'text-theme-danger bg-theme-danger-dim'
                       )}
                     >

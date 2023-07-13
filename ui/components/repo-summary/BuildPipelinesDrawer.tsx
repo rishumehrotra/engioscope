@@ -3,6 +3,7 @@ import { byString, byNum } from 'sort-lib';
 
 import { multiply } from 'rambda';
 import { GitPullRequest } from 'react-feather';
+import { Tooltip } from 'react-tooltip';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import type { SortableTableProps } from '../common/SortableTable.jsx';
@@ -38,6 +39,8 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
       data={pipelines}
       rowKey={x => x.def.id.toString()}
       isChild
+      defaultSortColumnIndex={2}
+      additionalRowClassName={row => (row.hasBuilds ? '' : 'opacity-60')}
       columns={[
         {
           title: 'Name',
@@ -51,9 +54,9 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
 
             return (
               <div>
-                <div>
+                <div className="flex">
                   <a
-                    className="link-text"
+                    className="link-text truncate"
                     href={x.def.url}
                     target="_blank"
                     rel="noreferrer"
@@ -62,13 +65,20 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
                   </a>
 
                   {x.def.process.processType === 1 && (
-                    <span className="inline-block ml-2 uppercase text-xs px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger font-semibold">
+                    <span
+                      data-tooltip-id="drawer-tooltip"
+                      data-tooltip-content="This pipeline is defined using the UI, and not a YAML file"
+                      className="inline-block ml-2 uppercase text-xs px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger font-semibold"
+                    >
                       UI
                     </span>
                   )}
 
                   {x.hasBuilds ? (
-                    <span>
+                    <span
+                      data-tooltip-id="drawer-tooltip"
+                      data-tooltip-content="This pipeline is triggered by pull requests"
+                    >
                       <GitPullRequest
                         size={20}
                         className="inline-block ml-2 -mt-1 text-theme-icon"
@@ -79,7 +89,7 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
                 <div>
                   {x.hasBuilds && x.builds.lastBuildStatus === 'succeeded' && (
                     <>
-                      <span className="bg-green-500 w-2 h-2 rounded-full inline-block mr-2">
+                      <span className="bg-theme-success w-2 h-2 rounded-full inline-block mr-2">
                         {' '}
                       </span>
                       <span className="capitalize">{x.builds.lastBuildStatus}</span>{' '}
@@ -98,7 +108,7 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
                     x.builds.lastBuildStatus === 'canceled' ||
                     x.builds.lastBuildStatus === 'partiallySucceeded') ? (
                     <>
-                      <span className="bg-red-500 w-2 h-2 rounded-full inline-block mr-2">
+                      <span className="bg-theme-danger w-2 h-2 rounded-full inline-block mr-2">
                         {' '}
                       </span>
                       <span>
@@ -110,7 +120,7 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
                   ) : undefined}
                   {x.hasBuilds ? undefined : (
                     <>
-                      <span className="bg-gray-500 w-2 h-2 rounded-full inline-block mr-2">
+                      <span className="bg-theme-neutral w-2 h-2 rounded-full inline-block mr-2">
                         {' '}
                       </span>
                       <span>
@@ -131,7 +141,7 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
           sorter: byString(x => x.def.name.toLocaleLowerCase()),
         },
         {
-          title: 'Central Template',
+          title: 'Central template',
           key: 'centralTemplate',
 
           // eslint-disable-next-line react/no-unstable-nested-components
@@ -192,7 +202,6 @@ const BuildPipelines: React.FC<BuildPipelineListProps> = ({ pipelines }) => {
           }),
         },
       ]}
-      defaultSortColumnIndex={2}
     />
   );
 };
@@ -407,6 +416,15 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
           { label: 'Not using the central template', value: 'notUsingCentralTemplate' },
         ]}
         onChange={e => setStatusType(e as PipelineTypes)}
+      />
+      <Tooltip
+        id="drawer-tooltip"
+        className="z-50 text-base"
+        style={{
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          lineHeight: '1.25rem',
+        }}
       />
       <SortableTable data={filteredPipelinesRepoList} {...buildRepoItemProps} />
     </>

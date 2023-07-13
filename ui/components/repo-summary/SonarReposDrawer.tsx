@@ -101,7 +101,7 @@ const sonarReposTableProps: Omit<
       value: x => {
         if (x.sortWeight > 0) {
           return (
-            <div className="inline-block bg-theme-success rounded-sm px-2 py-0.5 text-sm">
+            <div className="inline-block bg-theme-success-dim rounded-sm px-2 py-0.5 text-sm">
               <span className="text-theme-success">
                 {capitalizeFirstLetter(x.status)}
               </span>

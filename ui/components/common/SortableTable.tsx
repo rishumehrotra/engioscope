@@ -161,15 +161,18 @@ const SortableTable = <T,>({
                   return (
                     <td
                       key={`${rk}-${col.key}`}
-                      className={`${
-                        colIndex === 0 ? 'text-left' : 'text-right pr-8 whitespace-nowrap'
-                      } ${variant === 'default' ? 'py-4' : 'py-3'} ${
+                      className={twJoin(
+                        'align-top',
+                        colIndex === 0
+                          ? 'text-left'
+                          : 'text-right pr-8 whitespace-nowrap',
+                        variant === 'default' ? 'py-4' : 'py-3',
                         (colIndex === 0 && !expandedRows.includes(rk)) || isChild
                           ? ''
                           : variant === 'default'
                           ? ''
                           : 'font-semibold'
-                      }`}
+                      )}
                     >
                       {colValue}
                     </td>

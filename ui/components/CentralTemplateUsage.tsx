@@ -30,22 +30,34 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
 
   if (centralTemplateRuns === 0) {
     return (
-      <span
-        className="text-sm px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger"
-        data-tooltip-id="react-tooltip"
-        data-tooltip-content="None of the builds used the central build template"
-        data-tooltip-place="bottom"
-      >
-        No
-      </span>
+      <>
+        <span
+          className="px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger"
+          data-tooltip-id={domId}
+          data-tooltip-content="None of the builds used the central build template"
+          data-tooltip-place="bottom"
+        >
+          No
+        </span>
+        <Tooltip
+          id={domId}
+          place="bottom"
+          style={{
+            borderRadius: '0.375rem',
+            fontSize: '0.875rem',
+            lineHeight: '1.25rem',
+          }}
+          opacity={1}
+        />
+      </>
     );
   }
   return (
     <>
       <span
-        className={`text-sm px-1.5 py-0.5 rounded-sm font-semibold ${
+        className={`px-1.5 py-0.5 rounded-sm font-semibold ${
           centralTemplateRuns >= totalRuns
-            ? 'text-theme-success bg-theme-success'
+            ? 'text-theme-success bg-theme-success-dim'
             : 'text-theme-warn bg-theme-warn'
         }`}
         onMouseOver={() => setHasHovered(true)}
@@ -57,7 +69,11 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
       <Tooltip
         id={domId}
         place="bottom"
-        style={{ borderRadius: '0.375rem', zIndex: 10 }}
+        style={{
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          lineHeight: '1.25rem',
+        }}
         opacity={1}
       >
         <div className="w-72 pt-2 text-left whitespace-normal">
