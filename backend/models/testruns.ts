@@ -657,7 +657,7 @@ export const getTestsByWeek = async (
         def.tests,
         startDate,
         endDate,
-        getOneOlderTestRunForDef(def.definitionId!, def.repositoryId),
+        getOneOlderTestRunForDef(def.id, def.repositoryId),
         { hasTests: false }
       );
 
@@ -762,7 +762,7 @@ export const getCoveragesByWeek = async (
         def.coverageByWeek || undefined,
         startDate,
         endDate,
-        getOneOlderCoverageForDef(def.definitionId!, def.repositoryId),
+        getOneOlderCoverageForDef(def.id, def.repositoryId),
         {
           buildId: 0,
           definitionId: 0,
