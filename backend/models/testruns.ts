@@ -1,7 +1,6 @@
 import { last, multiply, prop, range } from 'rambda';
 import { asc, byNum, desc } from 'sort-lib';
 import { z } from 'zod';
-import { inDateRange } from './helpers.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { BranchCoverage } from './tests-coverages.js';
@@ -21,9 +20,9 @@ import { getActiveRepos } from './active-repos.js';
 import { divide } from '../../shared/utils.js';
 import { getDefinitionListWithRepoInfo } from './build-definitions.js';
 
-export const testRunsForRepositoryInputParser = z.object({
+export const testRunsForRepositoriesInputParser = z.object({
   queryContext: queryContextInputParser,
-  repositoryId: z.string(),
+  repositoryIds: z.array(z.string()),
 });
 
 export type BuildDef = {
@@ -118,22 +117,12 @@ const testsByRepositoryId = async (
   definitionList: BuildDef[],
   testsFromDefsOfRepoIds: TestsForDef[]
 ) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { startDate, endDate } = fromContext(queryContext);
 
   const buildDefsWithTests: BuildDefWithTests[] = definitionList.map(definition => {
     const tests = testsFromDefsOfRepoIds.find(def => def.definitionId === definition.id);
     return { ...definition, ...tests } || definition;
   });
-
-  const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
-    return getOneOldTestForBuildDefID(
-      collectionName,
-      project,
-      repositoryId,
-      defId,
-      startDate
-    );
-  };
 
   const definitionTests = await Promise.all(
     buildDefsWithTests.map(async def => {
@@ -141,16 +130,13 @@ const testsByRepositoryId = async (
         def.tests,
         startDate,
         endDate,
-        getOneOlderTestRunForDef(def.id, def.repositoryId),
+        () => getOneOldTestForBuildDefID(queryContext, def.repositoryId, def.id),
         { hasTests: false }
       );
 
       const latestTest = tests ? getLatest(tests || []) : null;
 
-      return {
-        ...def,
-        latestTest,
-      };
+      return { ...def, latestTest };
     })
   );
 
@@ -200,35 +186,16 @@ export const combineTestsAndCoverageForRepos = async (
   });
 };
 
-export const getTestsAndCoverageForRepoIds = async (
-  queryContext: QueryContext,
-  repositoryIds: string[]
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+export const getTestsAndCoverageForRepoIds = async ({
+  queryContext,
+  repositoryIds,
+}: z.infer<typeof testRunsForRepositoriesInputParser>) => {
+  const { startDate, endDate } = fromContext(queryContext);
 
   const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepos(
     queryContext,
     repositoryIds
   );
-  const getOneOlderTestRunForDef = (defId: number, repositoryId: string) => () => {
-    return getOneOldTestForBuildDefID(
-      collectionName,
-      project,
-      repositoryId,
-      defId,
-      startDate
-    );
-  };
-
-  const getOneOlderCoverageForDef = (defId: number, repositoryId: string) => () => {
-    return getOneOldCoverageForBuildDefID(
-      collectionName,
-      project,
-      repositoryId,
-      defId,
-      startDate
-    );
-  };
 
   return (
     await Promise.all(
@@ -237,7 +204,7 @@ export const getTestsAndCoverageForRepoIds = async (
           def.tests,
           startDate,
           endDate,
-          getOneOlderTestRunForDef(def.id, def.repositoryId),
+          () => getOneOldTestForBuildDefID(queryContext, def.repositoryId, def.id),
           { hasTests: false }
         );
 
@@ -245,7 +212,7 @@ export const getTestsAndCoverageForRepoIds = async (
           def.coverageByWeek || undefined,
           startDate,
           endDate,
-          getOneOlderCoverageForDef(def.id, def.repositoryId),
+          () => getOneOldCoverageForBuildDefID(queryContext, def.repositoryId, def.id),
           {
             buildId: 0,
             definitionId: 0,
@@ -283,14 +250,10 @@ export const getTestsAndCoverageForRepos = async (
   teams?: string[]
 ) => {
   const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
-  return getTestsAndCoverageForRepoIds(queryContext, activeRepos.map(prop('id')));
-};
-
-export const getTestRunsAndCoverageForRepo = async ({
-  queryContext,
-  repositoryId,
-}: z.infer<typeof testRunsForRepositoryInputParser>) => {
-  return getTestsAndCoverageForRepoIds(queryContext, [repositoryId]);
+  return getTestsAndCoverageForRepoIds({
+    queryContext,
+    repositoryIds: activeRepos.map(prop('id')),
+  });
 };
 
 export const getReposListingForTestsDrawer = async ({
@@ -507,9 +470,12 @@ export const getTestsAndCoverageByWeek = async (
   queryContext: QueryContext,
   repositoryIds: string[]
 ) => {
-  const result = await getTestsAndCoverageForRepoIds(queryContext, repositoryIds);
+  const testsAndCoverage = await getTestsAndCoverageForRepoIds({
+    queryContext,
+    repositoryIds,
+  });
 
-  const testsMapByWeekIndex = result.reduce((acc, r) => {
+  const testsMapByWeekIndex = testsAndCoverage.reduce((acc, r) => {
     return (
       r.tests?.reduce((acc, t) => {
         const forWeekIndex = acc.get(t.weekIndex) || {
@@ -533,7 +499,7 @@ export const getTestsAndCoverageByWeek = async (
     })
   );
 
-  const coveragesMapByWeekIndex = result.reduce((acc, r) => {
+  const coveragesMapByWeekIndex = testsAndCoverage.reduce((acc, r) => {
     return (
       r.coverageByWeek?.reduce((acc, c) => {
         const forWeekIndex = acc.get(c.weekIndex) || {
@@ -583,156 +549,10 @@ export const getReposSortedByTests = async (
   pageSize: number,
   pageNumber: number
 ) => {
-  const { collectionName, project } = fromContext(queryContext);
-  const [testrunsForAllDefs, definitionList] = await Promise.all([
-    getTestsForRepos(queryContext, repositoryIds),
-    getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
-  ]);
-
-  const allRepos = await testsByRepositoryId(
-    queryContext,
-    definitionList,
-    testrunsForAllDefs
-  ).then(x => x.sort(desc(byNum(repo => repo.totalTests))));
+  const allRepos = await getTotalTestsForRepositoryIds(queryContext, repositoryIds).then(
+    x => x.sort(desc(byNum(repo => repo.totalTests)))
+  );
 
   const sortedRepos = sortOrder === 'asc' ? allRepos.reverse() : allRepos;
-
   return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
-};
-
-export const getDailyTestsForRepositoryId = async (
-  queryContext: QueryContext,
-  repositoryId: string
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return RepositoryModel.aggregate([
-    {
-      $match: {
-        collectionName,
-        'project.name': project,
-        'id': repositoryId,
-        'defaultBranch': { $exists: true },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        collectionName: '$collectionName',
-        project: '$project.name',
-        repositoryId: '$id',
-        repositoryName: '$name',
-        defaultBranch: '$defaultBranch',
-      },
-    },
-    {
-      $lookup: {
-        from: 'builds',
-        let: {
-          repositoryId: '$repositoryId',
-          defaultBranch: '$defaultBranch',
-        },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              project,
-              $expr: {
-                $and: [
-                  { $eq: ['$repository.id', '$$repositoryId'] },
-                  { $eq: ['$sourceBranch', '$$defaultBranch'] },
-                  {
-                    $or: [
-                      { $eq: ['$result', 'failed'] },
-                      { $eq: ['$result', 'succeeded'] },
-                    ],
-                  },
-                ],
-              },
-              finishTime: inDateRange(startDate, endDate),
-            },
-          },
-          {
-            $sort: { finishTime: -1 },
-          },
-          {
-            $project: {
-              _id: 0,
-              buildId: '$id',
-              sourceBranch: '$sourceBranch',
-              definitionId: '$definition.id',
-              definitionName: '$definition.name',
-              result: '$result',
-              finishTime: '$finishTime',
-            },
-          },
-        ],
-        as: 'build',
-      },
-    },
-    {
-      $unwind: {
-        path: '$build',
-      },
-    },
-    {
-      $lookup: {
-        from: 'testruns',
-        let: {
-          buildId: '$build.buildId',
-        },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              'project.name': project,
-              '$expr': {
-                $eq: ['$buildConfiguration.id', '$$buildId'],
-              },
-            },
-          },
-        ],
-        as: 'tests',
-      },
-    },
-    {
-      $unwind: {
-        path: '$tests',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    {
-      $group: {
-        _id: {
-          testDate: {
-            $dateToString: {
-              format: '%Y-%m-%d',
-              date: '$tests.completedDate',
-            },
-          },
-        },
-        repositoryId: { $first: '$repositoryId' },
-        totalTests: { $sum: '$tests.totalTests' },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        repositoryId: { $first: '$repositoryId' },
-        dailyTests: {
-          $push: {
-            date: '$_id.testDate',
-            totalTests: '$totalTests',
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        repositoryId: 1,
-        dailyTests: 1,
-      },
-    },
-  ]);
 };

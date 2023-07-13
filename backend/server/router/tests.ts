@@ -1,15 +1,15 @@
 import { passInputTo, t } from './trpc.js';
 import {
   getReposListingForTestsDrawer,
-  getTestRunsAndCoverageForRepo,
-  testRunsForRepositoryInputParser,
+  getTestsAndCoverageForRepoIds,
+  testRunsForRepositoriesInputParser,
 } from '../../models/testruns.js';
 import { filteredReposInputParser } from '../../models/active-repos.js';
 
 export default t.router({
-  getTestRunsAndCoverageForRepo: t.procedure
-    .input(testRunsForRepositoryInputParser)
-    .query(passInputTo(getTestRunsAndCoverageForRepo)),
+  getTestsAndCoverageForRepoIds: t.procedure
+    .input(testRunsForRepositoriesInputParser)
+    .query(passInputTo(getTestsAndCoverageForRepoIds)),
 
   getReposListingForTestsDrawer: t.procedure
     .input(filteredReposInputParser)

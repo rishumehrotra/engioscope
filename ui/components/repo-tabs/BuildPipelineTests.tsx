@@ -16,9 +16,9 @@ const BuildPipelineTests: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
-  const tests = trpc.tests.getTestRunsAndCoverageForRepo.useQuery({
+  const tests = trpc.tests.getTestsAndCoverageForRepoIds.useQuery({
     queryContext: useQueryContext(),
-    repositoryId,
+    repositoryIds: [repositoryId],
   });
 
   if (!tests.data) return null;

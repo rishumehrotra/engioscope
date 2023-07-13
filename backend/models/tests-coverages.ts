@@ -253,12 +253,11 @@ export const getTestsForRepos = async (
 };
 
 export const getOneOldTestForBuildDefID = async (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repositoryId: string,
-  definitionId: number,
-  startDate: Date
+  definitionId: number
 ) => {
+  const { collectionName, project, startDate } = fromContext(queryContext);
   const result = await RepositoryModel.aggregate<TestsForWeek>([
     ...getMainBranchBuildIds(
       collectionName,
@@ -425,12 +424,11 @@ export const getCoveragesForRepos = (
 };
 
 export const getOneOldCoverageForBuildDefID = async (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repositoryId: string,
-  definitionId: number,
-  startDate: Date
+  definitionId: number
 ) => {
+  const { collectionName, project, startDate } = fromContext(queryContext);
   const result = await RepositoryModel.aggregate<CoverageByWeek>([
     ...getMainBranchBuildIds(
       collectionName,
