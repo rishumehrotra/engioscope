@@ -40,9 +40,7 @@ export const getTestRuns = () => {
         collection.name,
         project.name,
         (await getLastTestRunDate(collection.name, project.name)) || queryStart,
-        async runs => {
-          await bulkSaveTestRuns(collection.name)(runs);
-        }
+        bulkSaveTestRuns(collection.name)
       );
       await setLastTestRunDate(collection.name, project.name);
     })

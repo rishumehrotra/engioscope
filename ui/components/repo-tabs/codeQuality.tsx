@@ -578,7 +578,7 @@ const SingleAnalysis: React.FC<{
     <div
       className={twJoin(
         'bg-theme-page-content rounded-lg py-4',
-        isChild ? 'pr-5 shadow-sm' : 'px-5 border border-theme-seperator'
+        isChild ? 'pr-5' : 'px-5 border border-theme-seperator shadow-sm'
       )}
     >
       <div className="flex justify-between items-center">
