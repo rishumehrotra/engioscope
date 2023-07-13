@@ -4,7 +4,7 @@ import { createBuild } from '../../test-helpers/create-build.js';
 import { createRepo } from '../../test-helpers/create-repo.js';
 import { createTestRun, getTestruns } from '../../test-helpers/create-test-run.js';
 import { needsDB } from '../../test-helpers/mongo-memory-server.js';
-import { getTestsByWeek } from '../testruns.js';
+import { getTestsAndCoverageByWeek } from '../testruns.js';
 
 needsDB();
 
@@ -26,7 +26,7 @@ it('should give right no of weeks for query period', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-03-25'));
   await createTestRun('foo', 'bar', 122, 12_345);
 
-  const testsByWeek = await getTestsByWeek(
+  const { testsByWeek } = await getTestsAndCoverageByWeek(
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );
@@ -39,7 +39,7 @@ it('should not give test counts when there are no testruns', async () => {
   await createBuildDefinition('foo', 'bar', 12_345, 'repo-1');
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-03-25'));
 
-  const testsByWeek = await getTestsByWeek(
+  const { testsByWeek } = await getTestsAndCoverageByWeek(
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );
@@ -54,7 +54,7 @@ it('should give test counts when there are testruns', async () => {
   await createBuildDefinition('foo', 'bar', 12_345, 'repo-1');
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-01-02'));
   await createTestRun('foo', 'bar', 122, 12_345);
-  const testsByWeek = await getTestsByWeek(
+  const { testsByWeek } = await getTestsAndCoverageByWeek(
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );
@@ -70,7 +70,7 @@ it('should handle missing test run counts with no past data', async () => {
 
   await createTestRun('foo', 'bar', 122, 12_345);
 
-  const testsByWeek = await getTestsByWeek(
+  const { testsByWeek } = await getTestsAndCoverageByWeek(
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );
@@ -93,7 +93,7 @@ it('should handle missing test run counts with past data', async () => {
 
   await createTestRun('foo', 'bar', 121, 12_345, 15);
 
-  const testsByWeek = await getTestsByWeek(
+  const { testsByWeek } = await getTestsAndCoverageByWeek(
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );
@@ -113,7 +113,7 @@ it('should handle missing test run', async () => {
   await createBuild('foo', 'bar', 'repo-1', 123, 12_345, new Date('2022-03-20'));
   await createTestRun('foo', 'bar', 122, 12_345);
 
-  const testsByWeek = await getTestsByWeek(
+  const { testsByWeek } = await getTestsAndCoverageByWeek(
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );

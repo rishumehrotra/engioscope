@@ -26,9 +26,8 @@ import {
 } from './release-listing.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import {
-  getCoveragesByWeek,
+  getTestsAndCoverageByWeek,
   getReposSortedByTests,
-  getTestsByWeek,
   getTotalTestsForRepositoryIds,
   getTestsAndCoveragesCount,
 } from './testruns.js';
@@ -267,8 +266,12 @@ export type SummaryStats = {
     'idsWithMainBranchBuilds'
   >;
   defSummary: Awaited<ReturnType<typeof getTestsAndCoveragesCount>>;
-  weeklyTestsSummary: Awaited<ReturnType<typeof getTestsByWeek>>;
-  weeklyCoverageSummary: Awaited<ReturnType<typeof getCoveragesByWeek>>;
+  weeklyTestsSummary: Awaited<
+    ReturnType<typeof getTestsAndCoverageByWeek>
+  >['testsByWeek'];
+  weeklyCoverageSummary: Awaited<
+    ReturnType<typeof getTestsAndCoverageByWeek>
+  >['coveragesByWeek'];
   sonarProjects: Awaited<ReturnType<typeof getSonarProjectsCount>>;
   weeklySonarProjectsCount: Awaited<ReturnType<typeof updateWeeklySonarProjectCount>>;
   weeklyReposWithSonarQubeCount: Awaited<
@@ -355,9 +358,11 @@ export const getSummaryAsChunks = async (
       })
       .then(sendChunk('centralTemplatePipeline')),
     getTestsAndCoveragesCount(queryContext, activeRepoIds).then(sendChunk('defSummary')),
-    getTestsByWeek(queryContext, activeRepoIds).then(sendChunk('weeklyTestsSummary')),
-    getCoveragesByWeek(queryContext, activeRepoIds).then(
-      sendChunk('weeklyCoverageSummary')
+    getTestsAndCoverageByWeek(queryContext, activeRepoIds).then(
+      ({ testsByWeek, coveragesByWeek }) => {
+        sendChunk('weeklyTestsSummary')(testsByWeek);
+        sendChunk('weeklyCoverageSummary')(coveragesByWeek);
+      }
     ),
     searchAndFilterReposBy({ queryContext, searchTerms, teams }).then(x =>
       sendChunk('totalRepos')(x.length)

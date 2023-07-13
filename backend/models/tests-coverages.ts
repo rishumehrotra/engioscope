@@ -248,6 +248,7 @@ export const getTestsForRepos = async (
         tests: { $push: '$$ROOT' },
       },
     },
+    { $project: { _id: 0 } },
   ]).exec();
 };
 
