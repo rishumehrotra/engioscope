@@ -1,4 +1,4 @@
-import { last, multiply, prop, range } from 'rambda';
+import { last, multiply, prop, propEq, range, sort } from 'rambda';
 import { asc, byNum, desc } from 'sort-lib';
 import { z } from 'zod';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
@@ -14,7 +14,7 @@ import {
 } from './tests-coverages.js';
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
-import { createIntervals, getLatest } from '../utils.js';
+import { createIntervals } from '../utils.js';
 import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos } from './active-repos.js';
 import { divide } from '../../shared/utils.js';
@@ -47,6 +47,7 @@ export type TestsForWeek = {
       passedTests: number;
     }
 );
+
 export type TestsForDef = {
   definitionId: number;
   buildId: number;
@@ -57,51 +58,46 @@ export type TestsForDef = {
   repositoryUrl: string;
 };
 
-export type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
+type BuildDefWithTests = BuildDef & Partial<TestsForDef>;
 
-export type BuildDefWithCoverage = BuildDef & Partial<BranchCoverage>;
-
-export type BuildDefWithTestsAndCoverage = BuildDef &
+type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<TestsForDef> &
   Partial<BranchCoverage>;
 
-export const makeContinuous = async <T extends { weekIndex: number }>(
+const getLatest = <T extends { weekIndex: number }>(weeklyData: T[]) => {
+  return weeklyData.sort(desc(byNum(prop('weekIndex'))))[0];
+};
+
+const makeContinuous = async <T extends { weekIndex: number }>(
+  queryContext: QueryContext,
   unsortedDataByWeek: T[] | undefined,
-  startDate: Date,
-  endDate: Date,
-  getOneOlderTestRun: () => Promise<T | null>,
+  getOneOlderItem: (queryContext: QueryContext) => Promise<T | null>,
   emptyValue: Omit<T, 'weekIndex'>
 ) => {
+  const { startDate, endDate } = fromContext(queryContext);
   const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
   const sortedDataByWeek = unsortedDataByWeek
     ? [...unsortedDataByWeek].sort(byNum(prop('weekIndex')))
     : undefined;
 
   if (!sortedDataByWeek) {
-    const olderTest = await getOneOlderTestRun();
+    const olderTest = await getOneOlderItem(queryContext);
     if (!olderTest) return null;
 
     return range(0, numberOfIntervals)
-      .map(weekIndex => {
-        return { ...olderTest, weekIndex };
-      })
+      .map(weekIndex => ({ ...olderTest, weekIndex }))
       .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
   }
 
   return range(0, numberOfIntervals)
     .reduce<Promise<T[]>>(async (acc, weekIndex, index) => {
-      const matchingTest = sortedDataByWeek.find(t => t.weekIndex === weekIndex);
+      const matchingTest = sortedDataByWeek.find(propEq('weekIndex', weekIndex));
 
       if (matchingTest) return [...(await acc), matchingTest];
 
       if (index === 0) {
-        const olderTest = await getOneOlderTestRun();
-
-        if (!olderTest) {
-          return [{ ...emptyValue, weekIndex } as T];
-        }
-
-        return [{ ...olderTest, weekIndex }];
+        const olderTest = await getOneOlderItem(queryContext);
+        return [{ ...(olderTest || emptyValue), weekIndex } as T];
       }
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -109,40 +105,56 @@ export const makeContinuous = async <T extends { weekIndex: number }>(
       return [...(await acc), { ...lastItem, weekIndex }];
     }, Promise.resolve([]))
     .then(list => list.slice(numberOfIntervals - Math.floor(numberOfDays / 7)))
-    .then(x => x?.sort(byNum(prop('weekIndex'))));
+    .then(sort(byNum(prop('weekIndex'))));
+};
+
+const mergeBuildDefsAndTests = (
+  buildDefinitions: BuildDef[],
+  testsForBuildDefs: TestsForDef[]
+): BuildDefWithTests[] => {
+  return buildDefinitions.map(definition => ({
+    ...definition,
+    ...testsForBuildDefs.find(propEq('definitionId', definition.id)),
+  }));
+};
+
+const mergeBuildDefsAndCoverage = (
+  buildDefsWithTests: BuildDefWithTests[],
+  branchCoverage: BranchCoverage[]
+): BuildDefWithTestsAndCoverage[] => {
+  return buildDefsWithTests.map(definition => ({
+    ...definition,
+    coverageByWeek: branchCoverage.find(propEq('definitionId', definition.id))
+      ?.coverageByWeek,
+  }));
 };
 
 const testsByRepositoryId = async (
   queryContext: QueryContext,
-  definitionList: BuildDef[],
-  testsFromDefsOfRepoIds: TestsForDef[]
+  buildDefinitions: BuildDef[],
+  testsForBuildDefinitions: TestsForDef[]
 ) => {
-  const { startDate, endDate } = fromContext(queryContext);
-
-  const buildDefsWithTests: BuildDefWithTests[] = definitionList.map(definition => {
-    const tests = testsFromDefsOfRepoIds.find(def => def.definitionId === definition.id);
-    return { ...definition, ...tests } || definition;
-  });
+  const buildDefsWithTests = mergeBuildDefsAndTests(
+    buildDefinitions,
+    testsForBuildDefinitions
+  );
 
   const definitionTests = await Promise.all(
     buildDefsWithTests.map(async def => {
       const tests = await makeContinuous(
+        queryContext,
         def.tests,
-        startDate,
-        endDate,
-        () => getOneOldTestForBuildDefID(queryContext, def.repositoryId, def.id),
+        getOneOldTestForBuildDefID(def.repositoryId, def.id),
         { hasTests: false }
       );
 
-      const latestTest = tests ? getLatest(tests || []) : null;
-
-      return { ...def, latestTest };
+      return { ...def, latestTest: tests ? getLatest(tests) : null };
     })
   );
 
   return definitionTests.reduce<{ repositoryId: string; totalTests: number }[]>(
     (acc, curr) => {
-      const matchingRepo = acc.find(repo => repo.repositoryId === curr.repositoryId);
+      const matchingRepo = acc.find(propEq('repositoryId', curr.repositoryId));
 
       if (matchingRepo) {
         matchingRepo.totalTests += curr.latestTest?.hasTests
@@ -161,90 +173,76 @@ const testsByRepositoryId = async (
   );
 };
 
-export const combineTestsAndCoverageForRepos = async (
+const combineTestsAndCoverageForRepos = async (
   queryContext: QueryContext,
   repositoryIds: string[]
 ) => {
   const { collectionName, project } = fromContext(queryContext);
 
-  const [definitionList, definitionTestRuns, branchCoverage] = await Promise.all([
+  const [buildDefinitions, testsForBuildDefinitions, branchCoverage] = await Promise.all([
     getDefinitionListWithRepoInfo(collectionName, project, repositoryIds),
     getTestsForRepos(queryContext, repositoryIds),
     getCoveragesForRepos(queryContext, repositoryIds),
   ]);
 
-  const buildDefsWithTests: BuildDefWithTests[] = definitionList.map(definition => {
-    const tests = definitionTestRuns.find(def => def.definitionId === definition.id);
-    return { ...definition, ...tests } || definition;
-  });
-
-  return buildDefsWithTests.map(definition => {
-    const coverage = branchCoverage.find(def => def.definitionId === definition.id);
-    return (
-      coverage ? { ...definition, coverageByWeek: coverage.coverageByWeek } : definition
-    ) as BuildDefWithTestsAndCoverage;
-  });
+  return mergeBuildDefsAndCoverage(
+    mergeBuildDefsAndTests(buildDefinitions, testsForBuildDefinitions),
+    branchCoverage
+  );
 };
 
 export const getTestsAndCoverageForRepoIds = async ({
   queryContext,
   repositoryIds,
 }: z.infer<typeof testRunsForRepositoriesInputParser>) => {
-  const { startDate, endDate } = fromContext(queryContext);
-
   const testRunsAndCoverageForRepo = await combineTestsAndCoverageForRepos(
     queryContext,
     repositoryIds
   );
 
-  return (
-    await Promise.all(
-      testRunsAndCoverageForRepo.map(async def => {
-        const tests = await makeContinuous(
-          def.tests,
-          startDate,
-          endDate,
-          () => getOneOldTestForBuildDefID(queryContext, def.repositoryId, def.id),
-          { hasTests: false }
-        );
+  return Promise.all(
+    testRunsAndCoverageForRepo.map(async def => {
+      const tests = await makeContinuous(
+        queryContext,
+        def.tests,
+        getOneOldTestForBuildDefID(def.repositoryId, def.id),
+        { hasTests: false }
+      );
 
-        const coverageData = await makeContinuous(
-          def.coverageByWeek || undefined,
-          startDate,
-          endDate,
-          () => getOneOldCoverageForBuildDefID(queryContext, def.repositoryId, def.id),
-          {
-            buildId: 0,
-            definitionId: 0,
-            hasCoverage: false,
-          }
-        );
+      const coverageData = await makeContinuous(
+        queryContext,
+        def.coverageByWeek,
+        getOneOldCoverageForBuildDefID(def.repositoryId, def.id),
+        {
+          buildId: 0,
+          definitionId: 0,
+          hasCoverage: false,
+        }
+      );
 
-        const latestTest = tests ? getLatest(tests || []) : null;
-        const latestCoverage = coverageData ? getLatest(coverageData || []) : null;
+      const latestTest = tests ? getLatest(tests) : null;
 
-        const url = latestTest?.hasTests
-          ? `${def.url.split('_apis')[0]}_build/results?buildId=${
-              latestTest.buildId
-            }&view=ms.vss-test-web.build-test-results-tab`
-          : `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`;
+      const url = latestTest?.hasTests
+        ? `${def.url.split('_apis')[0]}_build/results?buildId=${
+            latestTest.buildId
+          }&view=ms.vss-test-web.build-test-results-tab`
+        : `${def.url.split('_apis')[0]}_build/definition?definitionId=${def.id}`;
 
-        return {
-          ...def,
-          url,
-          tests: tests ? tests.sort(asc(byNum(prop('weekIndex')))) : tests,
-          coverageByWeek: coverageData
-            ? coverageData.sort(asc(byNum(prop('weekIndex'))))
-            : coverageData,
-          latestTest,
-          latestCoverage,
-        };
-      })
-    )
-  ).sort(desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0))));
+      return {
+        ...def,
+        url,
+        tests: tests ? tests.sort(asc(byNum(prop('weekIndex')))) : tests,
+        coverageByWeek: coverageData
+          ? coverageData.sort(asc(byNum(prop('weekIndex'))))
+          : coverageData,
+        latestTest,
+        latestCoverage: coverageData ? getLatest(coverageData) : null,
+      };
+    })
+  ).then(sort(desc(byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)))));
 };
 
-export const getTestsAndCoverageForRepos = async (
+const getTestsAndCoverageForRepos = async (
   queryContext: QueryContext,
   searchTerms?: string[],
   teams?: string[]
@@ -279,7 +277,7 @@ export const getReposListingForTestsDrawer = async ({
 
     if (!repositoryId || !repositoryName) return acc;
 
-    const repo = acc.find(x => x.repositoryId === repositoryId);
+    const repo = acc.find(propEq('repositoryId', repositoryId));
     if (repo) {
       repo.definitions.push(curr);
       repo.totalTests += latestTest?.hasTests ? latestTest.totalTests : 0;
@@ -301,33 +299,31 @@ export const getTestsAndCoveragePipelinesForDownload = async ({
   searchTerms,
   teams,
 }: z.infer<typeof filteredReposInputParser>) => {
-  const pipelineTestsAndCoverage = await getTestsAndCoverageForRepos(
+  const testsAndCoverageForRepos = await getTestsAndCoverageForRepos(
     queryContext,
     searchTerms,
     teams
   );
 
-  return pipelineTestsAndCoverage.map(x => {
-    return {
-      pipelineUrl: x.url,
-      pipelineName: x.name,
-      repositoryName: x.repositoryName,
-      repositoryUrl: x.repositoryUrl,
-      totalTests: x.latestTest?.hasTests ? x.latestTest.totalTests : 0,
-      totalCoverage: x.latestCoverage?.hasCoverage
-        ? divide(
-            x.latestCoverage.coverage?.coveredBranches || 0,
-            x.latestCoverage.coverage?.totalBranches || 0
-          )
-            .map(multiply(100))
-            .getOr(0)
-        : 0,
-      failedTests: x.latestTest?.hasTests
-        ? x.latestTest.totalTests - x.latestTest.passedTests
-        : 0,
-      passedTests: x.latestTest?.hasTests ? x.latestTest.passedTests : 0,
-    };
-  });
+  return testsAndCoverageForRepos.map(x => ({
+    pipelineUrl: x.url,
+    pipelineName: x.name,
+    repositoryName: x.repositoryName,
+    repositoryUrl: x.repositoryUrl,
+    totalTests: x.latestTest?.hasTests ? x.latestTest.totalTests : 0,
+    totalCoverage: x.latestCoverage?.hasCoverage
+      ? divide(
+          x.latestCoverage.coverage?.coveredBranches || 0,
+          x.latestCoverage.coverage?.totalBranches || 0
+        )
+          .map(multiply(100))
+          .getOr(0)
+      : 0,
+    failedTests: x.latestTest?.hasTests
+      ? x.latestTest.totalTests - x.latestTest.passedTests
+      : 0,
+    passedTests: x.latestTest?.hasTests ? x.latestTest.passedTests : 0,
+  }));
 };
 
 export const getTestsAndCoveragesCount = async (
@@ -345,19 +341,15 @@ export const getTestsAndCoveragesCount = async (
 
     RepositoryModel.aggregate<{ count: number; reposCount: number }>([
       ...getMainBranchBuildIds(
-        collectionName,
-        project,
+        queryContext,
         repoIds,
-        startDate,
         queryForFinishTimeInRange(startDate, endDate),
         false
       ),
       {
         $lookup: {
           from: 'testruns',
-          let: {
-            buildId: '$build.buildId',
-          },
+          let: { buildId: '$build.buildId' },
           pipeline: [
             {
               $match: {
@@ -367,11 +359,7 @@ export const getTestsAndCoveragesCount = async (
                 'release': { $exists: false },
               },
             },
-            {
-              $project: {
-                _id: 1,
-              },
-            },
+            { $project: { _id: 1 } },
           ],
           as: 'tests',
         },
@@ -402,31 +390,24 @@ export const getTestsAndCoveragesCount = async (
 
     RepositoryModel.aggregate<{ count: number; reposCount: number }>([
       ...getMainBranchBuildIds(
-        collectionName,
-        project,
+        queryContext,
         repoIds,
-        startDate,
         queryForFinishTimeInRange(startDate, endDate),
         false
       ),
       {
         $lookup: {
           from: 'codecoverages',
-          let: {
-            buildId: '$build.buildId',
-          },
+          let: { buildId: '$build.buildId' },
           pipeline: [
             {
               $match: {
                 collectionName,
                 project,
-                '$expr': {
-                  $eq: ['$build.id', '$$buildId'],
-                },
+                '$expr': { $eq: ['$build.id', '$$buildId'] },
                 'coverageData.coverageStats.label': { $in: ['Branch', 'Branches'] },
               },
             },
-
             { $project: { _id: 1 } },
           ],
           as: 'coverage',
@@ -466,6 +447,30 @@ export const getTestsAndCoveragesCount = async (
   };
 };
 
+const mergeNestedForWeekIndex = <T, U extends { weekIndex: number }, V>(
+  list: T[],
+  innerList: (x: T) => U[] | undefined | null,
+  combiner: (x: V, y: U) => V,
+  emptyValue: V
+) => {
+  const byWeekIndex = list.reduce((acc, item) => {
+    const nestedList = innerList(item);
+
+    if (!nestedList) return acc;
+    return nestedList.reduce((acc, innerItem) => {
+      acc.set(
+        innerItem.weekIndex,
+        combiner(acc.get(innerItem.weekIndex) || emptyValue, innerItem)
+      );
+      return acc;
+    }, acc);
+  }, new Map<number, V>());
+
+  return [...byWeekIndex.entries()]
+    .map(([weekIndex, testCounts]) => ({ weekIndex, ...testCounts }))
+    .sort(asc(byNum(prop('weekIndex'))));
+};
+
 export const getTestsAndCoverageByWeek = async (
   queryContext: QueryContext,
   repositoryIds: string[]
@@ -475,54 +480,28 @@ export const getTestsAndCoverageByWeek = async (
     repositoryIds,
   });
 
-  const testsMapByWeekIndex = testsAndCoverage.reduce((acc, r) => {
-    return (
-      r.tests?.reduce((acc, t) => {
-        const forWeekIndex = acc.get(t.weekIndex) || {
-          passedTests: 0,
-          totalTests: 0,
-        };
-
-        forWeekIndex.passedTests += t.hasTests ? t.passedTests : 0;
-        forWeekIndex.totalTests += t.hasTests ? t.totalTests : 0;
-
-        acc.set(t.weekIndex, forWeekIndex);
-        return acc;
-      }, acc) || acc
-    );
-  }, new Map<number, { passedTests: number; totalTests: number }>());
-
-  const testsByWeek = [...testsMapByWeekIndex.entries()].map(
-    ([weekIndex, testCounts]) => ({
-      weekIndex,
-      ...testCounts,
-    })
+  const testsByWeek = mergeNestedForWeekIndex(
+    testsAndCoverage,
+    prop('tests'),
+    (prev, definition) => ({
+      passedTests: prev.passedTests + (definition.hasTests ? definition.passedTests : 0),
+      totalTests: prev.totalTests + (definition.hasTests ? definition.totalTests : 0),
+    }),
+    { passedTests: 0, totalTests: 0 }
   );
 
-  const coveragesMapByWeekIndex = testsAndCoverage.reduce((acc, r) => {
-    return (
-      r.coverageByWeek?.reduce((acc, c) => {
-        const forWeekIndex = acc.get(c.weekIndex) || {
-          coveredBranches: 0,
-          totalBranches: 0,
-        };
-
-        forWeekIndex.coveredBranches += c.hasCoverage
-          ? c.coverage?.coveredBranches || 0
-          : 0;
-        forWeekIndex.totalBranches += c.hasCoverage ? c.coverage?.totalBranches || 0 : 0;
-
-        acc.set(c.weekIndex, forWeekIndex);
-        return acc;
-      }, acc) || acc
-    );
-  }, new Map<number, { coveredBranches: number; totalBranches: number }>());
-
-  const coveragesByWeek = [...coveragesMapByWeekIndex.entries()].map(
-    ([weekIndex, coverageCounts]) => ({
-      weekIndex,
-      ...coverageCounts,
-    })
+  const coveragesByWeek = mergeNestedForWeekIndex(
+    testsAndCoverage,
+    prop('coverageByWeek'),
+    (prev, definition) => ({
+      coveredBranches:
+        prev.coveredBranches +
+        (definition.hasCoverage ? definition.coverage?.coveredBranches || 0 : 0),
+      totalBranches:
+        prev.totalBranches +
+        (definition.hasCoverage ? definition.coverage?.totalBranches || 0 : 0),
+    }),
+    { coveredBranches: 0, totalBranches: 0 }
   );
 
   return { testsByWeek, coveragesByWeek };
@@ -550,9 +529,7 @@ export const getReposSortedByTests = async (
   pageNumber: number
 ) => {
   const allRepos = await getTotalTestsForRepositoryIds(queryContext, repositoryIds).then(
-    x => x.sort(desc(byNum(repo => repo.totalTests)))
+    sort((sortOrder === 'asc' ? asc : desc)(byNum(repo => repo.totalTests)))
   );
-
-  const sortedRepos = sortOrder === 'asc' ? allRepos.reverse() : allRepos;
-  return sortedRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
+  return allRepos.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
 };

@@ -44,7 +44,6 @@ export const getPipelineIds =
   };
 
 export const getActivePipelineIds = getPipelineIds('active');
-export const getNonActivePipelineIds = getPipelineIds('nonActive');
 
 export const getDefinitionListWithRepoInfo = (
   collectionName: string,
@@ -98,7 +97,7 @@ export const getDefinitionListWithRepoInfo = (
   ]).exec();
 };
 
-export const getPreStartDatePipelinesWithTests = async (
+const getPreStartDatePipelinesWithTests = async (
   queryContext: QueryContext,
   repoIds: string[]
 ) => {
@@ -109,10 +108,8 @@ export const getPreStartDatePipelinesWithTests = async (
     defsWithoutTests: number[];
   }>([
     ...getMainBranchBuildIds(
-      collectionName,
-      project,
+      queryContext,
       repoIds,
-      startDate,
       { finishTime: { $lt: startDate } },
       false
     ),
@@ -140,9 +137,7 @@ export const getPreStartDatePipelinesWithTests = async (
               },
             },
           },
-          {
-            $addFields: { passedCount: { $sum: '$passed.count' } },
-          },
+          { $addFields: { passedCount: { $sum: '$passed.count' } } },
         ],
         as: 'tests',
       },
@@ -213,7 +208,7 @@ export const getPreStartDatePipelinesWithTests = async (
   );
 };
 
-export const getQueryPeriodPipelinesWithTests = async (
+const getQueryPeriodPipelinesWithTests = async (
   queryContext: QueryContext,
   repoIds: string[]
 ) => {
@@ -225,10 +220,8 @@ export const getQueryPeriodPipelinesWithTests = async (
     defsWithoutTests: number[];
   }>([
     ...getMainBranchBuildIds(
-      collectionName,
-      project,
+      queryContext,
       repoIds,
-      startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
     ...getTestsForBuildIds(collectionName, project),
@@ -327,7 +320,7 @@ export const getWeeklyPipelinesWithTestsCount = async (
     .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
-export const getPreStartDatePipelinesWithCoverage = async (
+const getPreStartDatePipelinesWithCoverage = async (
   queryContext: QueryContext,
   repoIds: string[]
 ) => {
@@ -338,10 +331,8 @@ export const getPreStartDatePipelinesWithCoverage = async (
     defsWithoutCoverage: number[];
   }>([
     ...getMainBranchBuildIds(
-      collectionName,
-      project,
+      queryContext,
       repoIds,
-      startDate,
       { finishTime: { $lt: startDate } },
       false
     ),
@@ -455,7 +446,7 @@ export const getPreStartDatePipelinesWithCoverage = async (
   );
 };
 
-export const getQueryPeriodPipelinesWithCoverage = async (
+const getQueryPeriodPipelinesWithCoverage = async (
   queryContext: QueryContext,
   repoIds: string[]
 ) => {
@@ -467,10 +458,8 @@ export const getQueryPeriodPipelinesWithCoverage = async (
     defsWithoutCoverage: number[];
   }>([
     ...getMainBranchBuildIds(
-      collectionName,
-      project,
+      queryContext,
       repoIds,
-      startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
     ...getCoverageForBuildIDs(collectionName, project),

@@ -36,13 +36,12 @@ export const queryForFinishTimeInRange = (startDate: Date, endDate: Date) => ({
 });
 
 export const getMainBranchBuildIds = (
-  collectionName: string,
-  project: string,
+  queryContext: QueryContext,
   repositoryIds: string[],
-  startDate: Date,
   additionalQuery: FilterQuery<unknown>,
   groupStage = true
 ): PipelineStage[] => {
+  const { collectionName, project, startDate } = fromContext(queryContext);
   // Assume we're querying the repository collection
   return [
     {
@@ -197,32 +196,6 @@ export const getTestsForBuildIds = (
   { $sort: { weekIndex: -1 } },
 ];
 
-export const getTestsForRepo = async (
-  queryContext: QueryContext,
-  repositoryId: string
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return RepositoryModel.aggregate<TestsForDef>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      [repositoryId],
-      startDate,
-      queryForFinishTimeInRange(startDate, endDate)
-    ),
-    ...getTestsForBuildIds(collectionName, project),
-    {
-      $group: {
-        _id: '$definitionId',
-        definitionId: { $first: '$definitionId' },
-        repositoryId: { $first: '$repositoryId' },
-        tests: { $push: '$$ROOT' },
-      },
-    },
-  ]).exec();
-};
-
 export const getTestsForRepos = async (
   queryContext: QueryContext,
   repositoryIds: string[]
@@ -231,10 +204,8 @@ export const getTestsForRepos = async (
 
   return RepositoryModel.aggregate<TestsForDef>([
     ...getMainBranchBuildIds(
-      collectionName,
-      project,
+      queryContext,
       repositoryIds,
-      startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
     ...getTestsForBuildIds(collectionName, project),
@@ -252,30 +223,21 @@ export const getTestsForRepos = async (
   ]).exec();
 };
 
-export const getOneOldTestForBuildDefID = async (
-  queryContext: QueryContext,
-  repositoryId: string,
-  definitionId: number
-) => {
-  const { collectionName, project, startDate } = fromContext(queryContext);
-  const result = await RepositoryModel.aggregate<TestsForWeek>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      [repositoryId],
-      startDate,
-      queryOlderForDefinitionId(definitionId, startDate)
-    ),
-    ...getTestsForBuildIds(collectionName, project),
-    {
-      $match: {
-        totalTests: { $gt: 0 },
-      },
-    },
-    { $limit: 1 },
-  ]);
-  return head(result) || null;
-};
+export const getOneOldTestForBuildDefID =
+  (repositoryId: string, definitionId: number) => async (queryContext: QueryContext) => {
+    const { collectionName, project, startDate } = fromContext(queryContext);
+    const result = await RepositoryModel.aggregate<TestsForWeek>([
+      ...getMainBranchBuildIds(
+        queryContext,
+        [repositoryId],
+        queryOlderForDefinitionId(definitionId, startDate)
+      ),
+      ...getTestsForBuildIds(collectionName, project),
+      { $match: { totalTests: { $gt: 0 } } },
+      { $limit: 1 },
+    ]);
+    return head(result) || null;
+  };
 
 export const getCoverageForBuildIDs = (
   collectionName: string,
@@ -354,37 +316,6 @@ export const getCoverageForBuildIDs = (
   { $sort: { weekIndex: -1 } },
 ];
 
-export const getCoveragesForRepo = (queryContext: QueryContext, repositoryId: string) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return RepositoryModel.aggregate<BranchCoverage>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      [repositoryId],
-      startDate,
-      queryForFinishTimeInRange(startDate, endDate)
-    ),
-    ...getCoverageForBuildIDs(collectionName, project),
-    {
-      $group: {
-        _id: '$definitionId',
-        definitionId: { $first: '$definitionId' },
-        repositoryId: { $first: '$repositoryId' },
-        coverage: { $push: '$$ROOT' },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        definitionId: 1,
-        repositoryId: 1,
-        coverageByWeek: '$coverage',
-      },
-    },
-  ]).exec();
-};
-
 export const getCoveragesForRepos = (
   queryContext: QueryContext,
   repositoryIds: string[]
@@ -393,10 +324,8 @@ export const getCoveragesForRepos = (
 
   return RepositoryModel.aggregate<BranchCoverage>([
     ...getMainBranchBuildIds(
-      collectionName,
-      project,
+      queryContext,
       repositoryIds,
-      startDate,
       queryForFinishTimeInRange(startDate, endDate)
     ),
     ...getCoverageForBuildIDs(collectionName, project),
@@ -423,23 +352,18 @@ export const getCoveragesForRepos = (
   ]).exec();
 };
 
-export const getOneOldCoverageForBuildDefID = async (
-  queryContext: QueryContext,
-  repositoryId: string,
-  definitionId: number
-) => {
-  const { collectionName, project, startDate } = fromContext(queryContext);
-  const result = await RepositoryModel.aggregate<CoverageByWeek>([
-    ...getMainBranchBuildIds(
-      collectionName,
-      project,
-      [repositoryId],
-      startDate,
-      queryOlderForDefinitionId(definitionId, startDate)
-    ),
-    ...getCoverageForBuildIDs(collectionName, project),
-    { $match: { hasCoverage: true } },
-    { $limit: 1 },
-  ]);
-  return head(result) || null;
-};
+export const getOneOldCoverageForBuildDefID =
+  (repositoryId: string, definitionId: number) => async (queryContext: QueryContext) => {
+    const { collectionName, project, startDate } = fromContext(queryContext);
+    const result = await RepositoryModel.aggregate<CoverageByWeek>([
+      ...getMainBranchBuildIds(
+        queryContext,
+        [repositoryId],
+        queryOlderForDefinitionId(definitionId, startDate)
+      ),
+      ...getCoverageForBuildIDs(collectionName, project),
+      { $match: { hasCoverage: true } },
+      { $limit: 1 },
+    ]);
+    return head(result) || null;
+  };
