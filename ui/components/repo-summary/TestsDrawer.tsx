@@ -55,7 +55,7 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
           title: 'Total Tests',
           key: 'totalTests',
 
-          value: x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0),
+          value: x => (x.latestTest?.hasTests ? x.latestTest.totalTests : '-'),
           sorter: byNum(x => (x.latestTest?.hasTests ? x.latestTest.totalTests : 0)),
         },
         {
@@ -65,7 +65,7 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
           value: x =>
             x.latestTest?.hasTests
               ? x.latestTest.totalTests - x.latestTest.passedTests
-              : 0,
+              : '-',
           sorter: byNum(x =>
             x.latestTest?.hasTests
               ? x.latestTest.totalTests - x.latestTest.passedTests
@@ -197,11 +197,8 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
     }
     return shouldNeverReachHere(statusType);
   }, [statusType]);
-  const repoList = repos.data;
 
-  if (repoList?.length === 0) {
-    return emptyMessage;
-  }
+  const repoList = repos.data;
 
   const filteredRepoList = repoList?.filter(repo => {
     if (statusType === 'all') {
@@ -212,17 +209,38 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
     }
 
     if (statusType === 'withoutTests') {
-      return repo.totalTests === 0;
+      // return repo.totalTests === 0;
+      const { definitions, totalTests } = repo;
+      return (
+        (totalTests === 0 ||
+          definitions?.some(
+            d =>
+              d.latestTest?.hasTests === false ||
+              d.latestTest === null ||
+              d.latestTest.totalTests === 0
+          )) ??
+        false
+      );
     }
 
     if (statusType === 'withCoverage') {
       const { definitions } = repo;
-      return definitions?.some(d => d.latestCoverage?.hasCoverage) ?? false;
+      return (
+        definitions?.some(
+          d =>
+            d.latestCoverage?.hasCoverage === true &&
+            d.latestCoverage?.coverage?.coveredBranches
+        ) ?? false
+      );
     }
 
     if (statusType === 'withoutCoverage') {
       const { definitions } = repo;
-      return definitions?.some(d => d.latestCoverage?.hasCoverage !== false) ?? false;
+      return (
+        definitions?.some(
+          d => d.latestCoverage?.hasCoverage === false || d.latestCoverage !== null
+        ) ?? false
+      );
     }
     return shouldNeverReachHere(statusType);
   });
@@ -234,27 +252,45 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
     if (statusType === 'withTests') {
       return {
         ...repo,
-        definitions: repo.definitions?.filter(d => d.latestTest?.hasTests === true) ?? [],
+        definitions:
+          repo.definitions?.filter(
+            d => d.latestTest?.hasTests === true && d.latestTest.totalTests > 0
+          ) ?? [],
       };
     }
     if (statusType === 'withoutTests') {
       return {
         ...repo,
         definitions:
-          repo.definitions?.filter(d => d.latestTest?.hasTests === false) ?? [],
+          repo.definitions?.filter(
+            d =>
+              d.latestTest?.hasTests === false ||
+              d.latestTest === null ||
+              d.latestTest.totalTests === 0
+          ) ?? [],
       };
     }
     if (statusType === 'withCoverage') {
       return {
         ...repo,
-        definitions: repo.definitions?.filter(d => d.latestCoverage?.hasCoverage) ?? [],
+        definitions:
+          repo.definitions?.filter(
+            d =>
+              d.latestCoverage?.hasCoverage &&
+              d.latestCoverage?.coverage?.coveredBranches &&
+              d.latestCoverage?.coverage?.coveredBranches > 0
+          ) ?? [],
       };
     }
     if (statusType === 'withoutCoverage') {
       return {
         ...repo,
         definitions:
-          repo.definitions?.filter(d => d.latestCoverage?.hasCoverage === false) ?? [],
+          repo.definitions?.filter(
+            d =>
+              d.latestCoverage?.hasCoverage === false ||
+              !d.latestCoverage?.coverage?.coveredBranches
+          ) ?? [],
       };
     }
     return shouldNeverReachHere(statusType);
@@ -274,10 +310,14 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         ]}
         onChange={e => setStatusType(e as PipelineTypes)}
       />
-      <SortableTable
-        data={filteredPipelinesRepoList}
-        {...testsAndCoverageRepoItemProps}
-      />
+      {filteredPipelinesRepoList?.length === 0 ? (
+        emptyMessage
+      ) : (
+        <SortableTable
+          data={filteredPipelinesRepoList}
+          {...testsAndCoverageRepoItemProps}
+        />
+      )}
     </>
   );
 };

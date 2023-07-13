@@ -426,7 +426,11 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
           lineHeight: '1.25rem',
         }}
       />
-      <SortableTable data={filteredPipelinesRepoList} {...buildRepoItemProps} />
+      {filteredPipelinesRepoList?.length === 0 ? (
+        emptyMessage
+      ) : (
+        <SortableTable data={filteredPipelinesRepoList} {...buildRepoItemProps} />
+      )}
     </>
   );
 };
