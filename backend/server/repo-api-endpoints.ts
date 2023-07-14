@@ -5,6 +5,8 @@ import { createXLSX } from './create-xlsx.js';
 import { filteredReposInputParser } from '../models/active-repos.js';
 import { getSonarProjectsForDownload } from '../models/sonar.js';
 import { getTestsAndCoveragePipelinesForDownload } from '../models/testruns.js';
+import { getBuildPipelineListForDownload } from '../models/builds.js';
+import { capitalizeFirstLetter } from '../../shared/utils.js';
 
 export type RequestWithFilter = Request<
   {
@@ -140,6 +142,71 @@ const drawerDownloads = {
         {
           title: 'Coverage %',
           value: x => Number(x.totalCoverage.toFixed(0)),
+        },
+      ],
+    });
+  },
+  'build-pipelines': async (args: FilterArgs) => {
+    const lines = await getBuildPipelineListForDownload(args);
+    return createXLSX({
+      data: lines,
+      columns: [
+        {
+          title: 'Repo URL',
+          value: x => (x.repositoryUrl ? new URL(x.repositoryUrl) : null),
+        },
+        {
+          title: 'Repo name',
+          value: x => x.repositoryName ?? null,
+        },
+        {
+          title: 'Pipeline link',
+          value: x => new URL(x.pipelineUrl),
+        },
+        {
+          title: 'Pipeline name',
+          value: x => x.pipelineName,
+        },
+        {
+          title: 'Pipeline type',
+          value: x => x.pipelineType,
+        },
+        {
+          title: 'Last run date',
+          value: x => x.lastUsed,
+        },
+        {
+          title: 'Latest build status',
+          value: x =>
+            x.latestBuildStatus === 'partiallySucceeded'
+              ? 'Partially Succeeded'
+              : x.latestBuildStatus
+              ? capitalizeFirstLetter(x.latestBuildStatus)
+              : null,
+        },
+        {
+          title: 'Runs in the last 90 days',
+          value: x => x.totalBuilds,
+        },
+        {
+          title: 'Successful Builds',
+          value: x => x.successfulBuilds,
+        },
+        {
+          title: 'Success rate',
+          value: x => x.successRate,
+        },
+        {
+          title: 'Average duration',
+          value: x => x.averageDuration,
+        },
+        {
+          title: 'Central template runs',
+          value: x => x.centralTemplateUsage,
+        },
+        {
+          title: 'Pull requests',
+          value: x => x.prsCount,
         },
       ],
     });

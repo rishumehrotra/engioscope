@@ -1,6 +1,6 @@
-import { pipe, replace } from 'rambda';
+import { multiply, pipe, replace } from 'rambda';
 import { z } from 'zod';
-import { exists } from '../../shared/utils.js';
+import { divide, exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
 import azure from '../scraper/network/azure.js';
 import type { Build as AzureBuild, BuildOverviewStats } from '../scraper/types-azure.js';
@@ -1078,4 +1078,57 @@ export const getBuildsDrawerListing = async ({
       },
     },
   ]);
+};
+
+export const getBuildPipelineListForDownload = async ({
+  queryContext,
+  searchTerms,
+  teams,
+}: z.infer<typeof filteredReposInputParser>) => {
+  const repos = await getBuildsDrawerListing({
+    queryContext,
+    searchTerms,
+    teams,
+  });
+
+  return repos.flatMap(repo => {
+    return repo.pipelines.map(pipeline => {
+      return {
+        repositoryUrl: repo.repositoryUrl,
+        repositoryName: repo.repositoryName,
+        pipelineUrl: pipeline.def.url,
+        pipelineName: pipeline.def.name,
+        pipelineType: pipeline.def.process.processType === 2 ? 'YAML' : 'Non YAML',
+        totalBuilds: pipeline.hasBuilds ? pipeline.builds.totalBuilds : null,
+        averageDuration:
+          pipeline.hasBuilds && pipeline.builds.averageDuration > 0
+            ? (pipeline.builds.averageDuration / 1000).toFixed(0)
+            : null,
+        successfulBuilds: pipeline.hasBuilds
+          ? pipeline.builds.totalSuccessfulBuilds
+          : null,
+        successRate: pipeline.hasBuilds
+          ? divide(
+              pipeline.builds.totalSuccessfulBuilds || 0,
+              pipeline.builds.totalBuilds || 0
+            )
+              .map(multiply(100))
+              .getOr(0)
+              .toFixed(0)
+          : null,
+        lastUsed: pipeline.hasBuilds
+          ? pipeline.builds.latestBuildResult.timestamp
+          : !pipeline.hasBuilds && pipeline.def.latestBuild
+          ? pipeline.def.latestBuild?.finishTime
+          : null,
+        latestBuildStatus: pipeline.hasBuilds
+          ? pipeline.builds.latestBuildResult.result
+          : null,
+        prsCount: pipeline.hasBuilds ? pipeline.builds.prCount : null,
+        centralTemplateUsage: pipeline.hasAzureBuildReports
+          ? pipeline.azureBuildReports.templateUsers
+          : null,
+      };
+    });
+  });
 };

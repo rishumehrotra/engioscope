@@ -436,6 +436,7 @@ const StreamingRepoSummary: React.FC = () => {
                   open: 'drawer',
                   heading: 'Build details',
                   enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                  downloadUrl: drawerDownloadUrl('build-pipelines'),
                   body: <BuildPipelinesDrawer pipelineType="usingCentralTemplate" />,
                 }}
               />
@@ -454,6 +455,7 @@ const StreamingRepoSummary: React.FC = () => {
                 open: 'drawer',
                 heading: 'Build details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('build-pipelines'),
                 body: <BuildPipelinesDrawer pipelineType="all" />,
               }}
               graphPosition="right"
@@ -490,6 +492,7 @@ const StreamingRepoSummary: React.FC = () => {
                 open: 'drawer',
                 heading: 'Build details',
                 enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('build-pipelines'),
                 body: <BuildPipelinesDrawer pipelineType="currentlySucceeding" />,
               }}
               graphPosition="right"
