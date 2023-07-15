@@ -128,7 +128,7 @@
     "@vitejs/plugin-legacy": "^4.0.0",
     "@vitejs/plugin-react": "^4.0.0",
     "core-js": "3.31.1",
-    "downshift": "^7.6.0",
+    "downshift": "^8.0.0",
     "eslint": "8.45.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-import-resolver-typescript": "3.5.5",
