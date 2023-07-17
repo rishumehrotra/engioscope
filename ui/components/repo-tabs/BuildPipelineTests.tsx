@@ -1,6 +1,6 @@
 import prettyMs from 'pretty-ms';
 import { compose, multiply, not, prop, subtract, sum } from 'rambda';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { asc, byNum, byString } from 'sort-lib';
 import { ChevronRight } from 'react-feather';
 import { twJoin } from 'tailwind-merge';
@@ -18,6 +18,30 @@ import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import AnimateHeight from '../common/AnimateHeight.jsx';
 import { increaseIsBetter as increaseIsBetter2 } from '../graphs/TinyAreaGraph.jsx';
 import { increaseIsBetter } from '../summary-page/utils.jsx';
+import InfoBox from '../InfoBox.jsx';
+
+const EmptyTests = () => (
+  <InfoBox>
+    Already running tests but it isn't showing up? Do one of the following:
+    <ul className="ml-6 mt-1">
+      <li className="list-disc">
+        Ensure that you're{' '}
+        <a
+          href="https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-test-results-v2?view=azure-pipelines&tabs=trx%2Ctrxattachments%2Cyaml"
+          target="_blank"
+          rel="noreferrer"
+          className="link-text"
+        >
+          publishing your test and coverage details to Azure
+        </a>
+        .
+      </li>
+      <li className="list-disc">
+        OR, use the central build template where this is already addressed.
+      </li>
+    </ul>
+  </InfoBox>
+);
 
 const BuildPipelineTests: React.FC<{
   repositoryId: string;
@@ -37,125 +61,137 @@ const BuildPipelineTests: React.FC<{
     []
   );
 
+  const pipelinesWithTests = useMemo(() => {
+    return tests.data?.filter(pipelineHasTests);
+  }, [pipelineHasTests, tests.data]);
+
+  const pipelinesWithoutTests = useMemo(() => {
+    return tests.data?.filter(compose(not, pipelineHasTests));
+  }, [pipelineHasTests, tests.data]);
+
   if (!tests.data) return null;
 
   return (
     <TabContents gridCols={1}>
       {enableNewTabs && (
         <>
-          {tests.data.some(pipelineHasTests) ? (
-            <SortableTable
-              data={tests.data.filter(pipelineHasTests)}
-              rowKey={row => String(row.id)}
-              variant="default"
-              defaultSortColumnIndex={1}
-              columns={[
-                {
-                  title: 'Build pipeline',
-                  key: 'build pipeline',
-                  // eslint-disable-next-line react/no-unstable-nested-components
-                  value: pipeline => (
-                    <a
-                      href={pipeline.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-tooltip-id="react-tooltip"
-                      data-tooltip-content={pipeline.name}
-                      className={
-                        pipeline.latestTest?.hasTests
-                          ? 'link-text truncate w-full'
-                          : 'link-text truncate w-full opacity-60'
-                      }
-                    >
-                      {pipeline.name}
-                    </a>
-                  ),
-                  sorter: byString(x => x.name),
-                },
-                {
-                  title: 'Total tests',
-                  key: 'tests',
-                  value: pipeline =>
-                    pipeline.latestTest?.hasTests
-                      ? num(pipeline.latestTest.totalTests)
-                      : '-',
-                  sorter: byNum(x =>
-                    x.latestTest?.hasTests ? x.latestTest.totalTests : 0
-                  ),
-                },
-                {
-                  title: '',
-                  key: 'tests graph',
-                  value: pipeline => ({
-                    type: 'graph',
-                    data:
-                      pipeline.tests
-                        ?.sort(asc(byNum(prop('weekIndex'))))
-                        .map(t => (t.hasTests ? t.totalTests : undefined)) || [],
-                    color: increaseIsBetter2(
-                      pipeline.tests
-                        ?.sort(asc(byNum(prop('weekIndex'))))
-                        .map(t => (t.hasTests ? t.totalTests : 0)) || []
+          {
+            <>
+              <SortableTable
+                data={pipelinesWithTests}
+                rowKey={row => String(row.id)}
+                variant="default"
+                defaultSortColumnIndex={1}
+                columns={[
+                  {
+                    title: 'Build pipeline',
+                    key: 'build pipeline',
+                    // eslint-disable-next-line react/no-unstable-nested-components
+                    value: pipeline => (
+                      <a
+                        href={pipeline.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-content={pipeline.name}
+                        className={
+                          pipeline.latestTest?.hasTests
+                            ? 'link-text truncate w-full'
+                            : 'link-text truncate w-full opacity-60'
+                        }
+                      >
+                        {pipeline.name}
+                      </a>
                     ),
-                  }),
-                },
-                {
-                  title: 'Failed',
-                  key: 'failed',
-                  value: pipeline =>
-                    pipeline.latestTest?.hasTests
-                      ? num(
-                          pipeline.latestTest.totalTests - pipeline.latestTest.passedTests
-                        )
-                      : '-',
-                  sorter: byNum(x =>
-                    x.latestTest?.hasTests
-                      ? x.latestTest.totalTests - x.latestTest.passedTests
-                      : 0
-                  ),
-                },
-                {
-                  title: 'Execution time',
-                  key: 'execution time',
-                  value: pipeline =>
-                    pipeline.latestTest?.hasTests
-                      ? prettyMs(
-                          pipeline.latestTest.completedDate.getTime() -
-                            pipeline.latestTest.startedDate.getTime()
-                        )
-                      : '_',
-                  sorter: byNum(pipeline =>
-                    pipeline.latestTest?.hasTests
-                      ? pipeline.latestTest.completedDate.getTime() -
-                        pipeline.latestTest.startedDate.getTime()
-                      : 0
-                  ),
-                },
-                {
-                  title: 'Branch coverage',
-                  key: 'branch coverage',
-                  value: pipeline =>
-                    pipeline.latestCoverage?.coverage
-                      ? divide(
-                          pipeline.latestCoverage.coverage.coveredBranches,
-                          pipeline.latestCoverage.coverage.totalBranches
-                        )
-                          .map(toPercentage)
-                          .getOr('-')
-                      : '-',
-                  sorter: byNum(pipeline =>
-                    pipeline.latestCoverage?.coverage
-                      ? divide(
-                          pipeline.latestCoverage.coverage.coveredBranches,
-                          pipeline.latestCoverage.coverage.totalBranches
-                        ).getOr(0)
-                      : 0
-                  ),
-                },
-              ]}
-            />
-          ) : null}
-          {tests.data.some(compose(not, pipelineHasTests)) && (
+                    sorter: byString(x => x.name),
+                  },
+                  {
+                    title: 'Total tests',
+                    key: 'tests',
+                    value: pipeline =>
+                      pipeline.latestTest?.hasTests
+                        ? num(pipeline.latestTest.totalTests)
+                        : '-',
+                    sorter: byNum(x =>
+                      x.latestTest?.hasTests ? x.latestTest.totalTests : 0
+                    ),
+                  },
+                  {
+                    title: '',
+                    key: 'tests graph',
+                    value: pipeline => ({
+                      type: 'graph',
+                      data:
+                        pipeline.tests
+                          ?.sort(asc(byNum(prop('weekIndex'))))
+                          .map(t => (t.hasTests ? t.totalTests : undefined)) || [],
+                      color: increaseIsBetter2(
+                        pipeline.tests
+                          ?.sort(asc(byNum(prop('weekIndex'))))
+                          .map(t => (t.hasTests ? t.totalTests : 0)) || []
+                      ),
+                    }),
+                  },
+                  {
+                    title: 'Failed',
+                    key: 'failed',
+                    value: pipeline =>
+                      pipeline.latestTest?.hasTests
+                        ? num(
+                            pipeline.latestTest.totalTests -
+                              pipeline.latestTest.passedTests
+                          )
+                        : '-',
+                    sorter: byNum(x =>
+                      x.latestTest?.hasTests
+                        ? x.latestTest.totalTests - x.latestTest.passedTests
+                        : 0
+                    ),
+                  },
+                  {
+                    title: 'Execution time',
+                    key: 'execution time',
+                    value: pipeline =>
+                      pipeline.latestTest?.hasTests
+                        ? prettyMs(
+                            pipeline.latestTest.completedDate.getTime() -
+                              pipeline.latestTest.startedDate.getTime()
+                          )
+                        : '_',
+                    sorter: byNum(pipeline =>
+                      pipeline.latestTest?.hasTests
+                        ? pipeline.latestTest.completedDate.getTime() -
+                          pipeline.latestTest.startedDate.getTime()
+                        : 0
+                    ),
+                  },
+                  {
+                    title: 'Branch coverage',
+                    key: 'branch coverage',
+                    value: pipeline =>
+                      pipeline.latestCoverage?.coverage
+                        ? divide(
+                            pipeline.latestCoverage.coverage.coveredBranches,
+                            pipeline.latestCoverage.coverage.totalBranches
+                          )
+                            .map(toPercentage)
+                            .getOr('-')
+                        : '-',
+                    sorter: byNum(pipeline =>
+                      pipeline.latestCoverage?.coverage
+                        ? divide(
+                            pipeline.latestCoverage.coverage.coveredBranches,
+                            pipeline.latestCoverage.coverage.totalBranches
+                          ).getOr(0)
+                        : 0
+                    ),
+                  },
+                ]}
+              />
+              {pipelinesWithTests?.length === 0 ? <EmptyTests /> : null}
+            </>
+          }
+          {pipelinesWithoutTests?.length ? (
             <div className="mt-2">
               <button
                 onClick={() =>
@@ -175,7 +211,7 @@ const BuildPipelineTests: React.FC<{
                 <div>
                   Pipelines not running tests
                   <span className="bg-theme-tag inline-block ml-2 px-2 py-0 rounded">
-                    {tests.data.filter(compose(not, pipelineHasTests)).length}
+                    {pipelinesWithoutTests.length}
                   </span>
                 </div>
               </button>
@@ -184,8 +220,14 @@ const BuildPipelineTests: React.FC<{
                   collapse={hiddenPipelinesState === 'collapsing'}
                   onCollapsed={() => setHiddenPipelinesState('collapsed')}
                 >
-                  <ul className="ml-8">
-                    {tests.data.filter(compose(not, pipelineHasTests)).map(pipeline => (
+                  {(pipelinesWithTests?.length || 0) > 0 && <EmptyTests />}
+                  <ul
+                    className={twJoin(
+                      'ml-8',
+                      (pipelinesWithTests?.length || 0) > 0 && 'mt-2'
+                    )}
+                  >
+                    {pipelinesWithoutTests.map(pipeline => (
                       <li key={pipeline.id} className="inline-block p-1">
                         <a
                           href={pipeline.url}
@@ -201,7 +243,7 @@ const BuildPipelineTests: React.FC<{
                 </AnimateHeight>
               )}
             </div>
-          )}
+          ) : null}
         </>
       )}
       {tests.data.length ? (

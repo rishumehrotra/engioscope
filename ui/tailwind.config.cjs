@@ -42,6 +42,7 @@ module.exports = {
           'danger-dim': withOpacity('--color-bg-danger'),
           'neutral': withOpacity('--color-text-icon'),
           'warn': withOpacity('--color-bg-warn'),
+          'info': withOpacity('--color-bg-info'),
         },
       },
 
