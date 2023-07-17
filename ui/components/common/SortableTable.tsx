@@ -5,13 +5,29 @@ import { ChevronRight } from 'react-feather';
 import { twJoin, twMerge } from 'tailwind-merge';
 import AnimateHeight from './AnimateHeight.jsx';
 import { ArrowDown2 } from './Icons.jsx';
+import TinyAreaGraph, {
+  graphConfig,
+  pathRenderer,
+  pathRendererSkippingUndefineds,
+  type Renderer,
+} from '../graphs/TinyAreaGraph.jsx';
+
+type GraphValue = {
+  type: 'graph';
+  data: (number | undefined)[];
+  color: {
+    line: string;
+    area: string;
+  };
+  renderer?: Renderer;
+};
 
 export type SortableTableProps<T> = {
   data: T[] | undefined;
   columns: {
     title: string;
     key: string;
-    value: (x: T) => string | number | ReactNode;
+    value: (x: T) => string | number | ReactNode | GraphValue;
     sorter?: (x: T, y: T) => number;
   }[];
   ChildComponent?: React.FC<{ item: T }>;
@@ -21,6 +37,15 @@ export type SortableTableProps<T> = {
   variant: 'default' | 'drawer';
   hasChild?: (x: T) => boolean;
   additionalRowClassName?: (x: T) => string;
+};
+
+const isGraph = (value: unknown): value is GraphValue => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'graph'
+  );
 };
 
 const SortableTable = <T,>({
@@ -157,6 +182,7 @@ const SortableTable = <T,>({
                 </td>
                 {columns.map((col, colIndex) => {
                   const colValue = col.value(row);
+                  const isGraphValue = isGraph(colValue);
 
                   return (
                     <td
@@ -166,7 +192,8 @@ const SortableTable = <T,>({
                         colIndex === 0
                           ? 'text-left'
                           : 'text-right pr-8 whitespace-nowrap',
-                        variant === 'default' ? 'py-4' : 'py-3',
+                        isGraphValue && variant === 'default' ? 'py-1' : 'py-0',
+                        !isGraphValue && variant === 'default' ? 'py-4' : 'py-3',
                         (colIndex === 0 && !expandedRows.includes(rk)) || isChild
                           ? ''
                           : variant === 'default'
@@ -174,7 +201,20 @@ const SortableTable = <T,>({
                           : 'font-semibold'
                       )}
                     >
-                      {colValue}
+                      {isGraphValue ? (
+                        <TinyAreaGraph
+                          data={colValue.data}
+                          color={colValue.color}
+                          renderer={
+                            colValue.data.includes(undefined)
+                              ? pathRendererSkippingUndefineds
+                              : pathRenderer
+                          }
+                          graphConfig={graphConfig.small}
+                        />
+                      ) : (
+                        colValue
+                      )}
                     </td>
                   );
                 })}

@@ -5,15 +5,11 @@ import { num, pluralise } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
-import {
-  Stat,
-  SummaryCard,
-  decreaseIsBetter,
-  increaseIsBetter,
-} from '../SummaryCard.jsx';
+import { Stat, SummaryCard } from '../SummaryCard.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
 import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
+import { decreaseIsBetter, increaseIsBetter } from '../graphs/TinyAreaGraph.jsx';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));

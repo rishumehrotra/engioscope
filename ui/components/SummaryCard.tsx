@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import React, { Suspense, useCallback, useState, useMemo } from 'react';
-import { head, last } from 'rambda';
 import { ExternalLink, Info } from './common/Icons.jsx';
 import type { Renderer } from './graphs/TinyAreaGraph.jsx';
 import TinyAreaGraph, { graphConfig, pathRenderer } from './graphs/TinyAreaGraph.jsx';
@@ -24,35 +23,6 @@ export const SummaryHeading: React.FC<{
 
 export const SummaryStat: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return <div className="text-2xl font-bold">{children}</div>;
-};
-
-const colors = {
-  good: {
-    line: 'rgba(var(--color-text-success), 1)',
-    area: 'rgba(var(--color-bg-success), 0.1)',
-  },
-  bad: {
-    line: 'rgba(var(--color-text-danger), 1)',
-    area: 'rgba(var(--color-bg-danger), 0.1)',
-  },
-  neutral: {
-    line: 'rgba(var(--color-text-helptext), 1)',
-    area: 'rgba(var(--color-text-helptext), 0.1)',
-  },
-};
-
-export const increaseIsBetter = (data: number[]) => {
-  const end = last(data) || 0;
-  const start = head(data) || 0;
-
-  return end - start > 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
-};
-
-export const decreaseIsBetter = (data: number[]) => {
-  const end = last(data) || 0;
-  const start = head(data) || 0;
-
-  return end - start < 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
 };
 
 export type StatProps = {

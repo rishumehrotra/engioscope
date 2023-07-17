@@ -10,13 +10,14 @@ import { trpc } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
-import { increaseIsBetter } from '../summary-page/utils.jsx';
 import TabContents from './TabContents.jsx';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.jsx';
 import SortableTable from '../common/SortableTable.jsx';
 import { num } from '../../helpers/utils.js';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
 import AnimateHeight from '../common/AnimateHeight.jsx';
+import { increaseIsBetter as increaseIsBetter2 } from '../graphs/TinyAreaGraph.jsx';
+import { increaseIsBetter } from '../summary-page/utils.jsx';
 
 const BuildPipelineTests: React.FC<{
   repositoryId: string;
@@ -81,6 +82,22 @@ const BuildPipelineTests: React.FC<{
                   sorter: byNum(x =>
                     x.latestTest?.hasTests ? x.latestTest.totalTests : 0
                   ),
+                },
+                {
+                  title: '',
+                  key: 'tests graph',
+                  value: pipeline => ({
+                    type: 'graph',
+                    data:
+                      pipeline.tests
+                        ?.sort(asc(byNum(prop('weekIndex'))))
+                        .map(t => (t.hasTests ? t.totalTests : undefined)) || [],
+                    color: increaseIsBetter2(
+                      pipeline.tests
+                        ?.sort(asc(byNum(prop('weekIndex'))))
+                        .map(t => (t.hasTests ? t.totalTests : 0)) || []
+                    ),
+                  }),
                 },
                 {
                   title: 'Failed',

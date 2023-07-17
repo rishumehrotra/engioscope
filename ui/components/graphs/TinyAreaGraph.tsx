@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import React, { useMemo } from 'react';
-import { last } from 'rambda';
+import { head, last } from 'rambda';
 import { exists } from '../../helpers/utils.js';
 
 type GraphConfig = {
@@ -21,8 +21,8 @@ export const graphConfig = {
     topPadding: 2,
   },
   small: {
-    width: 300,
-    height: 60,
+    width: 50,
+    height: 32,
     topPadding: 2,
   },
 } as const;
@@ -170,6 +170,35 @@ const computeLineGraphData = (
     config.height - (value / maxValue) * config.height + config.topPadding;
 
   return renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord });
+};
+
+const colors = {
+  good: {
+    line: 'rgba(var(--color-text-success), 1)',
+    area: 'rgba(var(--color-bg-success), 0.1)',
+  },
+  bad: {
+    line: 'rgba(var(--color-text-danger), 1)',
+    area: 'rgba(var(--color-bg-danger), 0.1)',
+  },
+  neutral: {
+    line: 'rgba(var(--color-text-helptext), 1)',
+    area: 'rgba(var(--color-text-helptext), 0.1)',
+  },
+};
+
+export const increaseIsBetter = (data: number[]) => {
+  const end = last(data) || 0;
+  const start = head(data) || 0;
+
+  return end - start > 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
+};
+
+export const decreaseIsBetter = (data: number[]) => {
+  const end = last(data) || 0;
+  const start = head(data) || 0;
+
+  return end - start < 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
 };
 
 type TinyAreaGraphProps = {
