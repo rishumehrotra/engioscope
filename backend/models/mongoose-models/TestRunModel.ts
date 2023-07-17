@@ -105,4 +105,13 @@ testSchema.index({
   'buildConfiguration.id': 1,
 });
 
+testSchema.index(
+  {
+    'collectionName': 1,
+    'project.name': 1,
+    'release.id': 1,
+  },
+  { sparse: true }
+);
+
 export const TestRunModel = model<TestRun>('TestRun', testSchema);

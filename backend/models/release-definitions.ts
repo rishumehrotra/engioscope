@@ -2,6 +2,8 @@ import { model, Schema } from 'mongoose';
 import pMemoize from 'p-memoize';
 import ExpiryMap from 'expiry-map';
 import { oneMinuteInMs } from '../../shared/utils.js';
+import type { QueryContext } from './utils.js';
+import { fromContext } from './utils.js';
 
 export type ReleaseCondition = {
   conditionType: 'artifact' | 'environmentState' | 'event' | 'undefined';
@@ -127,3 +129,124 @@ export const getMinimalReleaseDefinitions = pMemoize(getMinimalReleaseDefinition
   cacheKey: x => JSON.stringify(x),
   cache,
 });
+
+export const getTestsForReleaseDefinitionId = (
+  queryContext: QueryContext,
+  releaseDefinitionId: number
+) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  return ReleaseDefinitionModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        id: releaseDefinitionId,
+      },
+    },
+    {
+      $unwind: {
+        path: '$environments',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'releases',
+        let: {
+          releaseDefinitionId: '$id',
+          environmentId: '$environments.id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$releaseDefinitionId', '$$releaseDefinitionId'] },
+            },
+          },
+          {
+            $unwind: {
+              path: '$environments',
+              preserveNullAndEmptyArrays: false,
+            },
+          },
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$environments.definitionEnvironmentId', '$$environmentId'] },
+                  { $gt: [{ $size: '$environments.deploySteps' }, 0] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              id: 1,
+              environments: 1,
+              releaseDefinitionId: 1,
+              releaseDefinitionName: 1,
+              releaseDefinitionRevision: 1,
+            },
+          },
+        ],
+        as: 'environmentReleases',
+      },
+    },
+    {
+      $unwind: {
+        path: '$environmentReleases',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'testruns',
+        let: {
+          releaseId: '$environmentReleases.id',
+          environmentId: '$environmentReleases.environments.id',
+        },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              'project.name': project,
+              '$expr': {
+                $and: [
+                  { $eq: ['$release.id', '$$releaseId'] },
+                  { $eq: ['$release.environmentId', '$$environmentId'] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'tests',
+      },
+    },
+    { $addFields: { hasTests: { $gt: [{ $size: '$tests' }, 0] } } },
+    {
+      $unwind: {
+        path: '$tests',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $group: {
+        _id: '$environments.id',
+        releaseDefinitionId: { $first: '$id' },
+        environmentId: { $first: '$environments.id' },
+        releaseId: { $first: '$environmentReleases.id' },
+        tests: { $push: '$tests' },
+      },
+    },
+    {
+      $group: {
+        _id: '$releaseDefinitionId',
+        releaseDefinitionId: { $first: '$releaseDefinitionId' },
+        environments: { $push: '$$ROOT' },
+      },
+    },
+  ]);
+};
