@@ -1,30 +1,192 @@
 import prettyMs from 'pretty-ms';
-import { multiply, prop, subtract } from 'rambda';
-import React from 'react';
-import { asc, byNum } from 'sort-lib';
+import { compose, multiply, not, prop, subtract, sum } from 'rambda';
+import React, { useCallback, useState } from 'react';
+import { asc, byNum, byString } from 'sort-lib';
+import { ChevronRight } from 'react-feather';
+import { twJoin } from 'tailwind-merge';
 import { divide, toPercentage } from '../../../shared/utils.js';
+import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import AlertMessage from '../common/AlertMessage.jsx';
 import { LabelWithSparkline } from '../graphs/Sparkline.jsx';
 import { increaseIsBetter } from '../summary-page/utils.jsx';
 import TabContents from './TabContents.jsx';
 import { pathRendererSkippingUndefineds } from '../graphs/sparkline-renderers.jsx';
+import SortableTable from '../common/SortableTable.jsx';
+import { num } from '../../helpers/utils.js';
+import useQueryParam, { asString } from '../../hooks/use-query-param.js';
+import AnimateHeight from '../common/AnimateHeight.jsx';
 
 const BuildPipelineTests: React.FC<{
   repositoryId: string;
   queryPeriodDays: number;
 }> = ({ repositoryId, queryPeriodDays }) => {
+  const [enableNewTabs] = useQueryParam('test-tab', asString);
+  const [hiddenPipelinesState, setHiddenPipelinesState] = useState<
+    'collapsed' | 'open' | 'collapsing'
+  >('collapsed');
   const tests = trpc.tests.getTestsAndCoverageForRepoIds.useQuery({
     queryContext: useQueryContext(),
     repositoryIds: [repositoryId],
   });
+  const pipelineHasTests = useCallback(
+    (x: RouterClient['tests']['getTestsAndCoverageForRepoIds'][number]) =>
+      sum(x.tests?.map(y => (y.hasTests ? y.totalTests : 0)) || []) > 0,
+    []
+  );
 
   if (!tests.data) return null;
 
   return (
     <TabContents gridCols={1}>
+      {enableNewTabs && (
+        <>
+          {tests.data.some(pipelineHasTests) ? (
+            <SortableTable
+              data={tests.data.filter(pipelineHasTests)}
+              rowKey={row => String(row.id)}
+              variant="default"
+              defaultSortColumnIndex={1}
+              columns={[
+                {
+                  title: 'Build pipeline',
+                  key: 'build pipeline',
+                  // eslint-disable-next-line react/no-unstable-nested-components
+                  value: pipeline => (
+                    <a
+                      href={pipeline.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-tooltip-id="react-tooltip"
+                      data-tooltip-content={pipeline.name}
+                      className={
+                        pipeline.latestTest?.hasTests
+                          ? 'link-text truncate w-full'
+                          : 'link-text truncate w-full opacity-60'
+                      }
+                    >
+                      {pipeline.name}
+                    </a>
+                  ),
+                  sorter: byString(x => x.name),
+                },
+                {
+                  title: 'Total tests',
+                  key: 'tests',
+                  value: pipeline =>
+                    pipeline.latestTest?.hasTests
+                      ? num(pipeline.latestTest.totalTests)
+                      : '-',
+                  sorter: byNum(x =>
+                    x.latestTest?.hasTests ? x.latestTest.totalTests : 0
+                  ),
+                },
+                {
+                  title: 'Failed',
+                  key: 'failed',
+                  value: pipeline =>
+                    pipeline.latestTest?.hasTests
+                      ? num(
+                          pipeline.latestTest.totalTests - pipeline.latestTest.passedTests
+                        )
+                      : '-',
+                  sorter: byNum(x =>
+                    x.latestTest?.hasTests
+                      ? x.latestTest.totalTests - x.latestTest.passedTests
+                      : 0
+                  ),
+                },
+                {
+                  title: 'Execution time',
+                  key: 'execution time',
+                  value: pipeline =>
+                    pipeline.latestTest?.hasTests
+                      ? prettyMs(
+                          pipeline.latestTest.completedDate.getTime() -
+                            pipeline.latestTest.startedDate.getTime()
+                        )
+                      : '_',
+                  sorter: byNum(pipeline =>
+                    pipeline.latestTest?.hasTests
+                      ? pipeline.latestTest.completedDate.getTime() -
+                        pipeline.latestTest.startedDate.getTime()
+                      : 0
+                  ),
+                },
+                {
+                  title: 'Branch coverage',
+                  key: 'branch coverage',
+                  value: pipeline =>
+                    pipeline.latestCoverage?.coverage
+                      ? divide(
+                          pipeline.latestCoverage.coverage.coveredBranches,
+                          pipeline.latestCoverage.coverage.totalBranches
+                        )
+                          .map(toPercentage)
+                          .getOr('-')
+                      : '-',
+                  sorter: byNum(pipeline =>
+                    pipeline.latestCoverage?.coverage
+                      ? divide(
+                          pipeline.latestCoverage.coverage.coveredBranches,
+                          pipeline.latestCoverage.coverage.totalBranches
+                        ).getOr(0)
+                      : 0
+                  ),
+                },
+              ]}
+            />
+          ) : null}
+          {tests.data.some(compose(not, pipelineHasTests)) && (
+            <div className="mt-2">
+              <button
+                onClick={() =>
+                  setHiddenPipelinesState(x => (x === 'open' ? 'collapsing' : 'open'))
+                }
+                className="grid grid-cols-[min-content_1fr] items-center cursor-pointer mb-2"
+              >
+                <div
+                  className={twJoin(
+                    'text-theme-icon mx-2',
+                    'transition-all',
+                    hiddenPipelinesState === 'open' && 'rotate-90 text-theme-icon-active'
+                  )}
+                >
+                  <ChevronRight size={18} />
+                </div>
+                <div>
+                  Pipelines not running tests
+                  <span className="bg-theme-tag inline-block ml-2 px-2 py-0 rounded">
+                    {tests.data.filter(compose(not, pipelineHasTests)).length}
+                  </span>
+                </div>
+              </button>
+              {hiddenPipelinesState !== 'collapsed' && (
+                <AnimateHeight
+                  collapse={hiddenPipelinesState === 'collapsing'}
+                  onCollapsed={() => setHiddenPipelinesState('collapsed')}
+                >
+                  <ul className="ml-8">
+                    {tests.data.filter(compose(not, pipelineHasTests)).map(pipeline => (
+                      <li key={pipeline.id} className="inline-block p-1">
+                        <a
+                          href={pipeline.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-theme-tag px-2 py-0.5 inline-block rounded hover:text-theme-highlight"
+                        >
+                          {pipeline.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </AnimateHeight>
+              )}
+            </div>
+          )}
+        </>
+      )}
       {tests.data.length ? (
         <>
           <table className="table">

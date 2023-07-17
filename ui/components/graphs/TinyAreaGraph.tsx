@@ -3,11 +3,29 @@ import React, { useMemo } from 'react';
 import { last } from 'rambda';
 import { exists } from '../../helpers/utils.js';
 
-const graphConfig = {
-  width: 300,
-  height: 60,
-  topPadding: 2,
+type GraphConfig = {
+  width: number;
+  height: number;
+  topPadding: number;
 };
+
+export const graphConfig = {
+  large: {
+    width: 300,
+    height: 60,
+    topPadding: 2,
+  },
+  medium: {
+    width: 161,
+    height: 33,
+    topPadding: 2,
+  },
+  small: {
+    width: 300,
+    height: 60,
+    topPadding: 2,
+  },
+} as const;
 
 export type Renderer = {
   (x: {
@@ -140,7 +158,7 @@ export const pathRendererSkippingUndefineds: Renderer =
   };
 
 const computeLineGraphData = (
-  config: typeof graphConfig,
+  config: GraphConfig,
   data: (number | undefined)[],
   renderer: ReturnType<Renderer>
 ) => {
@@ -158,20 +176,24 @@ type TinyAreaGraphProps = {
   color: { line: string; area: string } | null;
   data: (number | undefined)[] | null;
   renderer: Renderer;
+  graphConfig: GraphConfig;
   className?: string;
-};
-
-const staticProperties = {
-  svgHeight: graphConfig.height + graphConfig.topPadding,
-  svgWidth: graphConfig.width,
 };
 
 const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
   renderer,
   data,
   color,
+  graphConfig,
   className,
 }) => {
+  const { svgHeight, svgWidth } = useMemo(() => {
+    return {
+      svgHeight: graphConfig.height + graphConfig.topPadding,
+      svgWidth: graphConfig.width,
+    };
+  }, [graphConfig.height, graphConfig.topPadding, graphConfig.width]);
+
   const lineGraph = useMemo(
     () =>
       data === null || color === null
@@ -181,14 +203,14 @@ const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
             data,
             renderer({ color, lineStrokeWidth: 1, strokeDasharray: '7,5' })
           ),
-    [color, data, renderer]
+    [color, data, graphConfig, renderer]
   );
 
   return (
     <svg
-      height={staticProperties.svgHeight}
-      width={staticProperties.svgWidth}
-      viewBox={`0 0 ${staticProperties.svgWidth} ${staticProperties.svgHeight}`}
+      height={svgHeight}
+      width={svgWidth}
+      viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       className={className}
     >
       {lineGraph}

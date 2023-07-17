@@ -3,7 +3,7 @@ import React, { Suspense, useCallback, useState, useMemo } from 'react';
 import { head, last } from 'rambda';
 import { ExternalLink, Info } from './common/Icons.jsx';
 import type { Renderer } from './graphs/TinyAreaGraph.jsx';
-import TinyAreaGraph, { pathRenderer } from './graphs/TinyAreaGraph.jsx';
+import TinyAreaGraph, { graphConfig, pathRenderer } from './graphs/TinyAreaGraph.jsx';
 import { useDrawer } from './common/Drawer.jsx';
 import Loading from './Loading.jsx';
 
@@ -139,13 +139,14 @@ export const Stat: React.FC<StatProps> = ({
 
   const graphMarkup = useMemo(() => {
     if (!graphProps.graphPosition) return null;
-    const { graph, graphColor, graphRenderer } = graphProps;
+    const { graph, graphColor, graphRenderer, graphPosition } = graphProps;
 
     return (
       <TinyAreaGraph
         data={graph}
         color={graphColor}
         renderer={graphRenderer || pathRenderer}
+        graphConfig={graphPosition === 'bottom' ? graphConfig.large : graphConfig.medium}
         className="w-full h-auto self-end block"
       />
     );
