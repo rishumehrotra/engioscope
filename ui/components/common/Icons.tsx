@@ -378,3 +378,25 @@ export const TickCircle: React.FC<{
     />
   </svg>
 );
+
+export const ReleasePipeline: React.FC<{
+  className?: string;
+  size?: number;
+  color?: string;
+}> = ({ className, size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" className={className} fill="none">
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      d="M10 16.75v-7.5M7 12.25l3-3 3 3"
+    />
+    <path
+      stroke={color}
+      strokeLinejoin="round"
+      strokeWidth="1.3"
+      d="M11.5 6.25h-3v-3h3zM17.5 6.25h-3v-3h3zM5.5 6.25h-3v-3h3z"
+    />
+  </svg>
+);
