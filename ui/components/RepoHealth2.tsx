@@ -8,12 +8,9 @@ import { Tooltip } from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
 import { combinedQualityGate, num, pluralise } from '../helpers/utils.js';
 import builds from './repo-tabs/builds.jsx';
-import commits from './repo-tabs/commits.jsx';
-import prs from './repo-tabs/prs.jsx';
 import tests from './repo-tabs/tests.jsx';
 import codeQuality from './repo-tabs/codeQuality.jsx';
 import type { Tab } from './repo-tabs/Tabs.jsx';
-import { TopLevelTab } from './repo-tabs/Tabs.jsx';
 import { useSortParams } from '../hooks/sort-hooks.js';
 import branches from './repo-tabs/branches/index.jsx';
 import { trpc, type RouterClient } from '../helpers/trpc.js';
@@ -263,7 +260,7 @@ type RepoHealthProps = {
 const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const location = useLocation();
-
+  const uiConfig = useUiConfig();
   const isFirst = index === 0;
   const isInactive = useMemo(
     () => item.builds === 0 && item.commits === 0,
@@ -279,15 +276,17 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         item.repoDetails.url || '',
         item.branches
       ),
-      commits(item.repositoryId, queryPeriodDays, item.commits),
-      prs(item.repositoryId, item.pullRequests),
       tests(item.repositoryId, queryPeriodDays, item.tests),
-      codeQuality(
-        item.repositoryId,
-        item.repoDetails.name,
-        item.repoDetails.defaultBranch || 'master',
-        combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
-      ),
+      ...(uiConfig.hasSonar
+        ? [
+            codeQuality(
+              item.repositoryId,
+              item.repoDetails.name,
+              item.repoDetails.defaultBranch || 'master',
+              combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
+            ),
+          ]
+        : []),
     ],
     [
       item.repositoryId,
@@ -296,11 +295,10 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
       item.repoDetails.url,
       item.repoDetails.name,
       item.branches,
-      item.commits,
-      item.pullRequests,
       item.tests,
       item.sonarQualityGateStatuses?.status,
       queryPeriodDays,
+      uiConfig.hasSonar,
     ]
   );
 
@@ -324,12 +322,12 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   return (
     <div
       className={twJoin(
-        'bg-theme-page-content rounded shadow-sm p-6 mb-4 border border-theme-seperator',
+        'bg-theme-page-content rounded shadow-sm mb-4 border border-theme-seperator overflow-hidden',
         'group',
         isInactive && 'opacity-60'
       )}
     >
-      <div className="grid grid-flow-col items-stretch">
+      <div className="grid grid-flow-col p-6 items-stretch">
         <div>
           <h2 className="inline-flex items-center gap-2 mb-2">
             <a
@@ -391,31 +389,49 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
               repositoryId={item.repositoryId}
             />
           </div>
+
+          {isInactive ? (
+            <div
+              className="text-theme-warn bg-theme-warn text-xs inline-block py-1 px-2 rounded-md"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-html={`This repository doesn't count towards stats,<br />
+          as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}
+            >
+              Inactive
+            </div>
+          ) : null}
         </div>
         <div>{/* Commits graph comes here */}</div>
       </div>
 
-      {item.builds === 0 && item.commits === 0 ? (
-        <div
-          className="text-theme-warn bg-theme-warn text-xs inline-block py-1 px-2 rounded-md"
-          data-tooltip-id="react-tooltip"
-          data-tooltip-html={`This repository doesn't count towards stats,<br />
-          as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}
-        >
-          Inactive
-        </div>
-      ) : null}
+      <div className="grid grid-cols-[max-content_max-content] justify-between border-t border-theme-seperator items-center">
+        <ul className="inline-grid grid-flow-col">
+          {tabs.map((tab, index) => {
+            const isSelected = selectedTab === tab;
 
-      <div className="mt-4 px-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
-        {tabs.map(tab => (
-          <TopLevelTab
-            key={tab.title}
-            count={tab.count}
-            label={tab.title}
-            isSelected={selectedTab === tab}
-            onToggleSelect={() => setSelectedTab(selectedTab === tab ? null : tab)}
-          />
-        ))}
+            return (
+              <li key={tab.title}>
+                <button
+                  className={twJoin(
+                    'inline-flex items-end gap-2 px-11 py-3 hover:bg-theme-hover',
+                    index === 0 ? 'border-r' : 'border-x',
+                    isSelected ? 'border-theme-seperator' : 'border-theme-page-content',
+                    isSelected ? 'bg-theme-hover' : ''
+                  )}
+                  onClick={() => setSelectedTab(selectedTab === tab ? null : tab)}
+                >
+                  <span className="text-2xl font-medium">
+                    {typeof tab.count === 'number' ? num(tab.count) : tab.count}
+                  </span>
+                  <span className="text-theme-helptext uppercase text-sm pb-0.5">
+                    {tab.title}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div>Developers</div>
       </div>
       <span role="region">{selectedTab ? <selectedTab.Component /> : null}</span>
     </div>
