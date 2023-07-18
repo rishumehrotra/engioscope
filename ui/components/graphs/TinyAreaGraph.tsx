@@ -172,7 +172,7 @@ const computeLineGraphData = (
   return renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord });
 };
 
-const colors = {
+export const areaGraphColors = {
   good: {
     line: 'rgba(var(--color-text-success), 1)',
     area: 'rgba(var(--color-bg-success), 0.1)',
@@ -191,14 +191,22 @@ export const increaseIsBetter = (data: number[]) => {
   const end = last(data) || 0;
   const start = head(data) || 0;
 
-  return end - start > 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
+  return end - start > 0
+    ? areaGraphColors.good
+    : end - start === 0
+    ? areaGraphColors.neutral
+    : areaGraphColors.bad;
 };
 
 export const decreaseIsBetter = (data: number[]) => {
   const end = last(data) || 0;
   const start = head(data) || 0;
 
-  return end - start < 0 ? colors.good : end - start === 0 ? colors.neutral : colors.bad;
+  return end - start < 0
+    ? areaGraphColors.good
+    : end - start === 0
+    ? areaGraphColors.neutral
+    : areaGraphColors.bad;
 };
 
 type TinyAreaGraphProps = {

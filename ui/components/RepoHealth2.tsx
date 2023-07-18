@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { byNum, desc } from 'sort-lib';
 import { compose, not, prop } from 'rambda';
 import { twJoin, twMerge } from 'tailwind-merge';
-import { Code, GitBranch, GitPullRequest } from 'react-feather';
+import { Calendar, Code, GitBranch, GitCommit, GitPullRequest } from 'react-feather';
 import { Tooltip } from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
 import { combinedQualityGate, num, pluralise } from '../helpers/utils.js';
@@ -20,6 +20,11 @@ import { ReleasePipeline } from './common/Icons.jsx';
 import useUiConfig from '../hooks/use-ui-config.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import { ProfilePic } from './common/ProfilePic.jsx';
+import TinyAreaGraph, {
+  areaGraphColors,
+  graphConfig,
+  pathRendererSkippingUndefineds,
+} from './graphs/TinyAreaGraph.jsx';
 
 type ReleaseBranchesProps = {
   repositoryId: string;
@@ -73,7 +78,7 @@ const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
           padding: '0',
         }}
         opacity={1}
-        className="shadow-md border border-theme-seperator max-w-md"
+        className="shadow-md border border-theme-seperator max-w-md z-10"
       >
         <div className="px-4 py-3">
           {branchesThatConform.length ? (
@@ -218,7 +223,7 @@ const PRs = ({ isInactive, prCount, repositoryId }: PRsProps) => {
           padding: '0',
         }}
         opacity={1}
-        className="shadow-md border border-theme-seperator max-w-md"
+        className="shadow-md border border-theme-seperator max-w-md z-10"
       >
         <div className="px-4 py-3">
           {prCount === 0 ? (
@@ -250,6 +255,106 @@ const PRs = ({ isInactive, prCount, repositoryId }: PRsProps) => {
         </div>
       </Tooltip>
     </>
+  );
+};
+
+type DeveloeprsProps = {
+  devs: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number]['devs'];
+  repositoryId: string;
+  repoName: string;
+};
+
+const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
+  const [
+    ,
+    // hoveredDevEmail
+    setHoveredDevEmail,
+  ] = useState<string | null>(null);
+  // Make TRPC call here
+
+  if (!devs?.count) return;
+
+  return (
+    <Link to={`../devs?search=repo:"${repoName}"`}>
+      <ol>
+        {devs.top.map(d => (
+          <Fragment key={d.email}>
+            <li
+              className="inline-block -ml-2"
+              data-tooltip-id={`${repositoryId}-${d.email}`}
+              onMouseOver={() => setHoveredDevEmail(d.email)}
+              onFocus={() => setHoveredDevEmail(d.email)}
+            >
+              <ProfilePic
+                src={d.imageUrl}
+                className={twJoin(
+                  'inline-block object-cover max-w-[32px] max-h-[32px]',
+                  'rounded-full bg-theme-tag border border-theme-page-content'
+                )}
+              />
+            </li>
+            <Tooltip
+              id={`${repositoryId}-${d.email}`}
+              place="top-start"
+              style={{
+                backgroundColor: 'rgba(var(--color-bg-page-content), 1)',
+                color: 'rgba(var(--color-text-base), 1)',
+                padding: '0',
+              }}
+              opacity={1}
+              className="shadow-md border border-theme-seperator max-w-md z-10"
+            >
+              <div className="p-4 grid grid-cols-[min-content_1fr] gap-2 items-start">
+                <div className="justify-self-center">
+                  <ProfilePic
+                    src={d.imageUrl}
+                    className={twJoin(
+                      'inline-block object-cover max-w-[32px] max-h-[32px]',
+                      'rounded-full bg-theme-tag border border-theme-page-content'
+                    )}
+                  />
+                </div>
+                <div>
+                  <h3 className="font-medium">{d.name}</h3>
+                  <div className="text-xs text-theme-helptext">
+                    ... commits in ... repositories
+                  </div>
+                </div>
+                <div className="justify-self-center text-theme-icon">
+                  <Calendar size={18} />
+                </div>
+                <div className="text-xs text-theme-helptext">Committed ... days ago</div>
+                <div className="justify-self-center text-theme-icon">
+                  <GitCommit size={18} />
+                </div>
+                <div className="text-xs">
+                  <div className="text-theme-helptext">
+                    ... commits to this repository
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-theme-success">+ x</span>
+                    <span className="text-theme-warn">~ y</span>
+                    <span className="text-theme-danger">- z</span>
+                  </div>
+                </div>
+              </div>
+            </Tooltip>
+          </Fragment>
+        ))}
+        {devs.count - devs.top.length > 0 ? (
+          <li
+            className={twJoin(
+              'inline-block -ml-2',
+              'rounded-full w-[32px] h-[32px] leading-8 text-center',
+              'text-xs text-theme-danger bg-theme-danger-dim font-medium',
+              'border border-theme-page-content'
+            )}
+          >
+            <span>{`+${devs.count - devs.top.length}`}</span>
+          </li>
+        ) : null}
+      </ol>
+    </Link>
   );
 };
 
@@ -402,8 +507,17 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
             </div>
           ) : null}
         </div>
-        <div>
-          {/* Commits graph comes here */}
+        <div className="text-right">
+          <TinyAreaGraph
+            data={
+              item.weeklyCommits?.sort(byNum(prop('weekIndex'))).map(prop('count')) ||
+              null
+            }
+            color={areaGraphColors.good}
+            renderer={pathRendererSkippingUndefineds}
+            graphConfig={graphConfig.medium}
+            className="mb-3 w-24"
+          />
           <div>
             <span className="text-theme-icon">Commits: </span>
             {item.commits}
@@ -448,29 +562,11 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
           })}
         </ul>
         <div className="px-6">
-          {item.committers?.devs.length ? (
-            <ol>
-              {item.committers.devs.map(d => (
-                <li key={d} className="inline-block -ml-2">
-                  <ProfilePic
-                    src={d}
-                    className="rounded-full inline-block object-cover max-w-[32px] max-h-[32px] bg-theme-tag"
-                  />
-                </li>
-              ))}
-              {item.committers.count - item.committers.devs.length > 0 ? (
-                <li
-                  className={twJoin(
-                    'inline-block -ml-2',
-                    'rounded-full w-[32px] h-[32px] leading-8 text-center',
-                    'text-xs text-theme-danger bg-theme-danger-dim font-medium'
-                  )}
-                >
-                  <span>{`+${item.committers.count - item.committers.devs.length}`}</span>
-                </li>
-              ) : null}
-            </ol>
-          ) : null}
+          <Developers
+            devs={item.devs}
+            repositoryId={item.repositoryId}
+            repoName={item.repoDetails.name}
+          />
         </div>
       </div>
       <span role="region">{selectedTab ? <selectedTab.Component /> : null}</span>

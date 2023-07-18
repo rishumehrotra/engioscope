@@ -7,6 +7,7 @@ import { getConfig } from '../config.js';
 import type { QueryContext } from './utils.js';
 import { queryContextInputParser, fromContext } from './utils.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import { oneWeekInMs } from '../../shared/utils.js';
 
 export const getLatestCommitIdAndDate = async (
   collectionName: string,
@@ -211,52 +212,6 @@ export const getTotalCommitsForRepositoryIds = (
         _id: 0,
         repositoryId: '$_id',
         count: 1,
-      },
-    },
-  ]).exec();
-};
-
-export const getTopCommittersForRepositoryIds = (
-  queryContext: QueryContext,
-  repositoryIds: string[]
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return CommitModel.aggregate<{
-    repositoryId: string;
-    devs: string[];
-    count: number;
-  }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'repositoryId': { $in: repositoryIds },
-        'author.date': inDateRange(startDate, endDate),
-      },
-    },
-    {
-      $group: {
-        _id: {
-          repoId: '$repositoryId',
-          imageUrl: '$author.imageUrl',
-        },
-        count: { $sum: 1 },
-      },
-    },
-    { $sort: { count: -1 } },
-    {
-      $group: {
-        _id: '$_id.repoId',
-        devs: { $push: '$_id.imageUrl' },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        repositoryId: '$_id',
-        devs: { $slice: ['$devs', 5] },
-        count: { $size: '$devs' },
       },
     },
   ]).exec();
@@ -497,85 +452,110 @@ export const getFilteredDevCount = async ({
   return filteredDevs[0]?.total || 0;
 };
 
-export const getDevsCommittedToRepo = async (
+export const getDevsCommittedToRepositoryIds = async (
   queryContext: QueryContext,
-  repositoryId: string
+  repositoryIds: string[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  return CommitModel.aggregate([
+  return CommitModel.aggregate<{
+    repositoryId: string;
+    count: number;
+    top: {
+      name: string;
+      email: string;
+      imageUrl: string;
+    }[];
+  }>([
     {
       $match: {
         collectionName,
         project,
-        repositoryId,
+        'repositoryId': { $in: repositoryIds },
         'author.date': inDateRange(startDate, endDate),
         'author.email': { $exists: true },
       },
     },
     {
       $group: {
-        _id: { $toLower: '$author.email' },
-        authorImageUrl: { $first: '$author.imageUrl' },
-        repositoryId: { $first: '$repositoryId' },
+        _id: { repositoryId: '$repositoryId', email: { $toLower: '$author.email' } },
+        name: { $first: '$author.name' },
+        imageUrl: { $first: '$author.imageUrl' },
         totalCommits: { $sum: 1 },
       },
     },
     { $sort: { totalCommits: -1 } },
     {
       $group: {
-        _id: '$repositoryId',
-        totalDevs: { $sum: 1 },
-        devs: { $push: '$$ROOT' },
+        _id: '$_id.repositoryId',
+        count: { $sum: 1 },
+        devs: {
+          $push: {
+            name: '$name',
+            email: '$_id.email',
+            imageUrl: '$imageUrl',
+          },
+        },
       },
     },
     {
       $project: {
         _id: 0,
         repositoryId: '$_id',
-        totalDevs: 1,
-        topDevs: { $slice: ['$devs', 5] },
+        count: 1,
+        top: { $slice: ['$devs', 5] },
       },
     },
   ]);
 };
 
-export const getRepoDailyActivities = async (
+export const getWeeklyCommitsForRepositoryIds = async (
   queryContext: QueryContext,
-  repositoryId: string
+  repositoryIds: string[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  return CommitModel.aggregate([
+  return CommitModel.aggregate<{
+    repositoryId: string;
+    commits: {
+      weekIndex: number;
+      count: number;
+    }[];
+  }>([
     {
       $match: {
         collectionName,
         project,
-        repositoryId,
+        'repositoryId': { $in: repositoryIds },
         'author.date': inDateRange(startDate, endDate),
         'author.email': { $exists: true },
-      },
-    },
-    {
-      $addFields: {
-        authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
       },
     },
     { $sort: { authorDate: 1 } },
     {
       $group: {
-        _id: '$authorDate',
-        repositoryId: { $first: '$repositoryId' },
+        _id: {
+          repositoryId: '$repositoryId',
+          weekIndex: {
+            $trunc: {
+              $divide: [
+                { $subtract: ['$author.date', new Date(startDate)] },
+                oneWeekInMs,
+              ],
+            },
+          },
+        },
         totalCommits: { $sum: 1 },
       },
     },
     {
       $group: {
-        _id: '$repositoryId',
-        dailyCommits: {
+        _id: '$_id.repositoryId',
+        repositoryId: { $first: '$_id.repositoryId' },
+        commits: {
           $push: {
-            authorDate: '$_id',
-            totalCommits: '$totalCommits',
+            weekIndex: '$_id.weekIndex',
+            count: '$totalCommits',
           },
         },
       },
