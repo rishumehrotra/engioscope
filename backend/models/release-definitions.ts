@@ -1,9 +1,11 @@
+import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
 import pMemoize from 'p-memoize';
 import ExpiryMap from 'expiry-map';
-import { oneMinuteInMs } from '../../shared/utils.js';
+import { oneMinuteInMs, oneWeekInMs } from '../../shared/utils.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
+import { inDateRange } from './helpers.js';
 
 export type ReleaseCondition = {
   conditionType: 'artifact' | 'environmentState' | 'event' | 'undefined';
@@ -130,13 +132,14 @@ export const getMinimalReleaseDefinitions = pMemoize(getMinimalReleaseDefinition
   cache,
 });
 
-export const getTestsForReleaseDefinitionId = (
+const getTestsForReleasePipelineEnvironments = (
   queryContext: QueryContext,
-  releaseDefinitionId: number
-) => {
-  const { collectionName, project } = fromContext(queryContext);
+  releaseDefinitionId: number,
+  environmentDefinitionId?: number
+): PipelineStage[] => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
-  return ReleaseDefinitionModel.aggregate([
+  return [
     {
       $match: {
         collectionName,
@@ -144,6 +147,21 @@ export const getTestsForReleaseDefinitionId = (
         id: releaseDefinitionId,
       },
     },
+    ...(environmentDefinitionId
+      ? [
+          {
+            $addFields: {
+              environments: {
+                $filter: {
+                  input: '$environments',
+                  as: 'stats',
+                  cond: { $eq: ['$$stats.id', 8622] },
+                },
+              },
+            },
+          },
+        ]
+      : []),
     {
       $unwind: {
         path: '$environments',
@@ -185,6 +203,7 @@ export const getTestsForReleaseDefinitionId = (
             $project: {
               _id: 0,
               id: 1,
+              environmentName: '$environments.name',
               environments: 1,
               releaseDefinitionId: 1,
               releaseDefinitionName: 1,
@@ -219,6 +238,9 @@ export const getTestsForReleaseDefinitionId = (
                   { $eq: ['$release.environmentId', '$$environmentId'] },
                 ],
               },
+              ...(environmentDefinitionId
+                ? { completedDate: { $lte: startDate } }
+                : { completedDate: inDateRange(startDate, endDate) }),
             },
           },
         ],
@@ -232,12 +254,50 @@ export const getTestsForReleaseDefinitionId = (
         preserveNullAndEmptyArrays: false,
       },
     },
+  ];
+};
+
+export const getTestsForReleaseDefinitionId = (
+  queryContext: QueryContext,
+  releaseDefinitionId: number
+) => {
+  const { startDate } = fromContext(queryContext);
+  return ReleaseDefinitionModel.aggregate([
+    ...getTestsForReleasePipelineEnvironments(queryContext, releaseDefinitionId),
+    {
+      $addFields: {
+        'tests.weekIndex': {
+          $trunc: {
+            $divide: [{ $subtract: ['$tests.completedDate', startDate] }, oneWeekInMs],
+          },
+        },
+      },
+    },
+    { $sort: { 'tests.completedDate': 1 } },
     {
       $group: {
-        _id: '$environments.id',
+        _id: {
+          weekIndex: '$tests.weekIndex',
+          environmentDefinitionId: '$environments.id',
+        },
         releaseDefinitionId: { $first: '$id' },
-        environmentId: { $first: '$environments.id' },
+        releaseDefinitionName: { $first: '$name' },
+        releaseDefinitionUrl: { $first: '$url' },
+        environmentDefinitionId: { $first: '$environments.id' },
+        environmentName: { $first: '$environments.name' },
         releaseId: { $first: '$environmentReleases.id' },
+        tests: { $last: '$tests' },
+      },
+    },
+    {
+      $group: {
+        _id: '$environmentDefinitionId',
+        releaseDefinitionId: { $first: '$releaseDefinitionId' },
+        releaseDefinitionName: { $first: '$releaseDefinitionName' },
+        releaseDefinitionUrl: { $first: '$releaseDefinitionUrl' },
+        environmentDefinitionId: { $first: '$environmentDefinitionId' },
+        environmentName: { $first: '$environmentName' },
+        releaseId: { $first: '$releaseId' },
         tests: { $push: '$tests' },
       },
     },
@@ -248,5 +308,26 @@ export const getTestsForReleaseDefinitionId = (
         environments: { $push: '$$ROOT' },
       },
     },
+  ]);
+};
+
+export const getOneOldTestForEnvironmentId = (
+  queryContext: QueryContext,
+  releaseDefinitionId: number
+) => {
+  const { startDate } = fromContext(queryContext);
+  return ReleaseDefinitionModel.aggregate([
+    ...getTestsForReleasePipelineEnvironments(queryContext, releaseDefinitionId),
+    {
+      $addFields: {
+        'tests.weekIndex': {
+          $trunc: {
+            $divide: [{ $subtract: ['$tests.completedDate', startDate] }, oneWeekInMs],
+          },
+        },
+      },
+    },
+    { $sort: { 'tests.completedDate': 1 } },
+    { $limit: 1 },
   ]);
 };
