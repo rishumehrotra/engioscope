@@ -404,19 +404,29 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         <div>{/* Commits graph comes here */}</div>
       </div>
 
-      <div className="grid grid-cols-[max-content_max-content] justify-between border-t border-theme-seperator items-center">
+      <div
+        className={twJoin(
+          'grid grid-cols-[max-content_max-content] justify-between items-center relative',
+          'border-t border-theme-seperator',
+          selectedTab !== null && 'after:content-["_"] after:absolute after:w-full',
+          selectedTab !== null && 'after:bottom-0 after:left-0',
+          selectedTab !== null && 'after:border-b after:border-b-theme-seperator'
+        )}
+      >
         <ul className="inline-grid grid-flow-col">
           {tabs.map((tab, index) => {
             const isSelected = selectedTab === tab;
 
             return (
-              <li key={tab.title}>
+              <li key={tab.title} className="z-[1]">
                 <button
                   className={twJoin(
-                    'inline-flex items-end gap-2 px-11 py-3 hover:bg-theme-hover',
+                    'inline-flex items-end gap-2 px-11 py-3 hover:bg-theme-hover border-b border-b-transparent',
                     index === 0 ? 'border-r' : 'border-x',
-                    isSelected ? 'border-theme-seperator' : 'border-theme-page-content',
-                    isSelected ? 'bg-theme-hover' : ''
+                    isSelected
+                      ? 'border-x-theme-seperator'
+                      : 'border-x-transparent hover:border-b-theme-seperator',
+                    isSelected && 'bg-theme-hover'
                   )}
                   onClick={() => setSelectedTab(selectedTab === tab ? null : tab)}
                 >
