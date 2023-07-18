@@ -155,7 +155,7 @@ const getTestsForReleasePipelineEnvironments = (
                 $filter: {
                   input: '$environments',
                   as: 'stats',
-                  cond: { $eq: ['$$stats.id', 8622] },
+                  cond: { $eq: ['$$stats.id', environmentDefinitionId] },
                 },
               },
             },
@@ -313,11 +313,16 @@ export const getTestsForReleaseDefinitionId = (
 
 export const getOneOldTestForEnvironmentId = (
   queryContext: QueryContext,
-  releaseDefinitionId: number
+  releaseDefinitionId: number,
+  environmentDefinitionId: number
 ) => {
   const { startDate } = fromContext(queryContext);
   return ReleaseDefinitionModel.aggregate([
-    ...getTestsForReleasePipelineEnvironments(queryContext, releaseDefinitionId),
+    ...getTestsForReleasePipelineEnvironments(
+      queryContext,
+      releaseDefinitionId,
+      environmentDefinitionId
+    ),
     {
       $addFields: {
         'tests.weekIndex': {
