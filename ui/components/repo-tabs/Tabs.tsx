@@ -1,16 +1,17 @@
+import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
 import { num } from '../../helpers/utils.js';
 
 export type Tab = {
   title: string;
-  count: number | string;
+  count: number | ReactNode;
   Component: React.FC;
 };
 
 type TopLevelTabProps = {
   isSelected: boolean;
   label: string;
-  count: string | number;
+  count: ReactNode;
   onToggleSelect: () => void;
 };
 
@@ -40,7 +41,11 @@ export const TopLevelTab: React.FC<TopLevelTabProps> = ({
           isSelected ? 'text-black' : 'text-gray-600'
         } `}
       >
-        {typeof count === 'number' ? num(count) : count}
+        {typeof count === 'number'
+          ? num(count)
+          : typeof count === 'string'
+          ? count.toLowerCase()
+          : count}
       </div>
       <div className="uppercase text-xs tracking-wider text-gray-600 mt-2">{label}</div>
     </button>

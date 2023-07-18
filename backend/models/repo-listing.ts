@@ -32,7 +32,10 @@ import {
   getTestsAndCoveragesCount,
 } from './testruns.js';
 import { getActivePipelineBuilds, getTotalBuildsForRepositoryIds } from './builds.js';
-import { getTotalCommitsForRepositoryIds } from './commits.js';
+import {
+  getTopCommittersForRepositoryIds,
+  getTotalCommitsForRepositoryIds,
+} from './commits.js';
 import {
   getReposSortedByCodeQuality,
   getReposWithSonarQube,
@@ -732,6 +735,7 @@ export const getFilteredAndSortedReposWithStats = async ({
     builds,
     branches,
     commits,
+    committers,
     tests,
     sonarQualityGateStatuses,
     pullRequests,
@@ -742,6 +746,7 @@ export const getFilteredAndSortedReposWithStats = async ({
     getTotalBuildsForRepositoryIds(queryContext, sortedRepoIds),
     getTotalBranchesForRepositoryIds(queryContext, sortedRepoIds),
     getTotalCommitsForRepositoryIds(queryContext, sortedRepoIds),
+    getTopCommittersForRepositoryIds(queryContext, sortedRepoIds),
     getTotalTestsForRepositoryIds(queryContext, sortedRepoIds),
     getSonarQualityGateStatusForRepoIds(queryContext, sortedRepoIds),
     getTotalPullRequestsForRepositoryIds(queryContext, sortedRepoIds),
@@ -757,6 +762,7 @@ export const getFilteredAndSortedReposWithStats = async ({
       repoDetails: repoDetails.find(repoDetail => repoDetail.id === repo.repositoryId)!,
       builds: builds.find(matchingRepo)?.count || 0,
       branches: branches.find(matchingRepo)?.total || 0,
+      committers: committers.find(matchingRepo),
       commits: commits.find(matchingRepo)?.count || 0,
       tests: tests.find(matchingRepo)?.totalTests || 0,
       sonarQualityGateStatuses: sonarQualityGateStatuses.find(matchingRepo),

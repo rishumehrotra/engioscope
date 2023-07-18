@@ -19,6 +19,7 @@ import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { ReleasePipeline } from './common/Icons.jsx';
 import useUiConfig from '../hooks/use-ui-config.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
+import { ProfilePic } from './common/ProfilePic.jsx';
 
 type ReleaseBranchesProps = {
   repositoryId: string;
@@ -327,7 +328,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         isInactive && 'opacity-60'
       )}
     >
-      <div className="grid grid-flow-col p-6 items-stretch">
+      <div className="grid grid-flow-col p-6 justify-between items-end">
         <div>
           <h2 className="inline-flex items-center gap-2 mb-2">
             <a
@@ -401,7 +402,13 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
             </div>
           ) : null}
         </div>
-        <div>{/* Commits graph comes here */}</div>
+        <div>
+          {/* Commits graph comes here */}
+          <div>
+            <span className="text-theme-icon">Commits: </span>
+            {item.commits}
+          </div>
+        </div>
       </div>
 
       <div
@@ -421,11 +428,10 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
               <li key={tab.title} className="z-[1]">
                 <button
                   className={twJoin(
-                    'inline-flex items-end gap-2 px-11 py-3 hover:bg-theme-hover border-b border-b-transparent',
+                    'inline-flex items-baseline gap-2 px-11 py-3 hover:bg-theme-hover border-b border-b-transparent',
                     index === 0 ? 'border-r' : 'border-x',
-                    isSelected
-                      ? 'border-x-theme-seperator'
-                      : 'border-x-transparent hover:border-b-theme-seperator',
+                    isSelected ? 'border-x-theme-seperator' : 'border-x-transparent',
+                    isExpanded && !isSelected && 'hover:border-b-theme-seperator',
                     isSelected && 'bg-theme-hover'
                   )}
                   onClick={() => setSelectedTab(selectedTab === tab ? null : tab)}
@@ -441,7 +447,31 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
             );
           })}
         </ul>
-        <div>Developers</div>
+        <div className="px-6">
+          {item.committers?.devs.length ? (
+            <ol>
+              {item.committers.devs.map(d => (
+                <li key={d} className="inline-block -ml-2">
+                  <ProfilePic
+                    src={d}
+                    className="rounded-full inline-block object-cover max-w-[32px] max-h-[32px] bg-theme-tag"
+                  />
+                </li>
+              ))}
+              {item.committers.count - item.committers.devs.length > 0 ? (
+                <li
+                  className={twJoin(
+                    'inline-block -ml-2',
+                    'rounded-full w-[32px] h-[32px] leading-8 text-center',
+                    'text-xs text-theme-danger bg-theme-danger-dim font-medium'
+                  )}
+                >
+                  <span>{`+${item.committers.count - item.committers.devs.length}`}</span>
+                </li>
+              ) : null}
+            </ol>
+          ) : null}
+        </div>
       </div>
       <span role="region">{selectedTab ? <selectedTab.Component /> : null}</span>
     </div>

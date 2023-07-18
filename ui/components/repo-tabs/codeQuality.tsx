@@ -1,7 +1,7 @@
 import React, { useState, Fragment } from 'react';
 import { pipe } from 'rambda';
 import { twJoin } from 'tailwind-merge';
-import { ChevronRight, XCircle } from 'react-feather';
+import { AlertTriangle, ChevronRight, XCircle } from 'react-feather';
 import type { UICodeQuality2 } from '../../../shared/types.js';
 import { formatDebt, num, shortDate } from '../../helpers/utils.js';
 import type { Tab } from './Tabs.jsx';
@@ -770,7 +770,12 @@ export default (
   sonarQualityGate: string | null
 ): Tab => ({
   title: 'Code quality',
-  count: sonarQualityGate || 'unknown',
+  count:
+    sonarQualityGate && sonarQualityGate !== 'unknown' ? (
+      capitalizeFirstLetter(sonarQualityGate)
+    ) : (
+      <AlertTriangle className="inline-block mb-0.5" size={24} />
+    ),
   Component: () => {
     const { collectionName, project } = useCollectionAndProject();
     const sonarMeasures = trpc.sonar.getRepoSonarMeasures.useQuery({

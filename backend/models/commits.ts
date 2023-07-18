@@ -216,6 +216,52 @@ export const getTotalCommitsForRepositoryIds = (
   ]).exec();
 };
 
+export const getTopCommittersForRepositoryIds = (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return CommitModel.aggregate<{
+    repositoryId: string;
+    devs: string[];
+    count: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'repositoryId': { $in: repositoryIds },
+        'author.date': inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $group: {
+        _id: {
+          repoId: '$repositoryId',
+          imageUrl: '$author.imageUrl',
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { count: -1 } },
+    {
+      $group: {
+        _id: '$_id.repoId',
+        devs: { $push: '$_id.imageUrl' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        repositoryId: '$_id',
+        devs: { $slice: ['$devs', 5] },
+        count: { $size: '$devs' },
+      },
+    },
+  ]).exec();
+};
+
 const devSortKeys = ['authorName', 'totalReposCommitted'] as const;
 
 export type DevSortKey = (typeof devSortKeys)[number];
