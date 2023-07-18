@@ -315,19 +315,19 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
                   />
                 </div>
                 <div>
-                  <h3 className="font-medium">{d.name}</h3>
-                  <div className="text-xs text-theme-helptext">
+                  <h3 className="font-semibold">{d.name}</h3>
+                  <div className="text-sm text-theme-helptext">
                     ... commits in ... repositories
                   </div>
                 </div>
                 <div className="justify-self-center text-theme-icon">
                   <Calendar size={18} />
                 </div>
-                <div className="text-xs text-theme-helptext">Committed ... days ago</div>
+                <div className="text-sm text-theme-helptext">Committed ... days ago</div>
                 <div className="justify-self-center text-theme-icon">
                   <GitCommit size={18} />
                 </div>
-                <div className="text-xs">
+                <div className="text-sm">
                   <div className="text-theme-helptext">
                     ... commits to this repository
                   </div>
@@ -516,7 +516,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
             color={areaGraphColors.good}
             renderer={pathRendererSkippingUndefineds}
             graphConfig={graphConfig.medium}
-            className="mb-3 w-24"
+            className="mb-3 w-24 inline-block"
           />
           <div>
             <span className="text-theme-icon">Commits: </span>

@@ -126,35 +126,57 @@ export const pathRendererSkippingUndefineds: Renderer =
         return [...acc, item];
       }, []);
 
-    return nodes.reduce<ReactNode[]>(
-      (acc, item, itemIndex) => {
-        if (itemIndex === 0) return acc;
-        if (item === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const prevItem = nodes[itemIndex - 1]!; // Prev item definitely exists
-          const nextItem = nodes[itemIndex + 1];
+    return [
+      ...nodes.reduce<ReactNode[]>(
+        (acc, item, itemIndex) => {
+          if (itemIndex === 0) return acc;
+          if (item === undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const prevItem = nodes[itemIndex - 1]!; // Prev item definitely exists
+            const nextItem = nodes[itemIndex + 1];
 
-          if (!nextItem) {
-            // trailing broken line
-            return [
-              ...acc,
-              brokenLine(prevItem, [xCoord(data.length - 1), prevItem[1]], itemIndex),
-            ];
+            if (!nextItem) {
+              // trailing broken line
+              return [
+                ...acc,
+                brokenLine(prevItem, [xCoord(data.length - 1), prevItem[1]], itemIndex),
+              ];
+            }
+
+            return [...acc, brokenLine(prevItem, nextItem, itemIndex)];
           }
 
-          return [...acc, brokenLine(prevItem, nextItem, itemIndex)];
-        }
+          const prevItem = nodes[itemIndex - 1];
+          if (prevItem === undefined) return acc;
+          return [...acc, continuousLine(prevItem, item, itemIndex)];
+        },
+        [
+          // start with an skip segment. Might be zero length.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          brokenLine([xCoord(0), nodes[0]![1]], nodes[0]!, -1),
+        ]
+      ),
+      <polygon
+        key="poly"
+        points={data
+          .reduce<[number, number][]>(
+            (acc, item, itemIndex) => {
+              acc.push([itemIndex, item ?? (itemIndex === 0 ? 0 : acc[itemIndex][1])]);
 
-        const prevItem = nodes[itemIndex - 1];
-        if (prevItem === undefined) return acc;
-        return [...acc, continuousLine(prevItem, item, itemIndex)];
-      },
-      [
-        // start with an skip segment. Might be zero length.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        brokenLine([xCoord(0), nodes[0]![1]], nodes[0]!, -1),
-      ]
-    );
+              if (itemIndex === data.length - 1) {
+                acc.push([itemIndex, 0]);
+              }
+              return acc;
+            },
+            [[0, 0]]
+          )
+          .map(item => {
+            return `${xCoord(item[0])},${yCoord(item[1])}`;
+          })
+          .join(' ')}
+        fill={color.area}
+      />,
+    ];
   };
 
 const computeLineGraphData = (
@@ -162,14 +184,13 @@ const computeLineGraphData = (
   data: (number | undefined)[],
   renderer: ReturnType<Renderer>
 ) => {
-  const dataWithoutUndefineds = data.filter(exists);
-  const maxValue = Math.max(...dataWithoutUndefineds);
-  const popoverSpacing = config.width / (data.length - 1);
-  const popoverXCoord = (index: number) => index * popoverSpacing;
-  const popoverYCoord = (value: number) =>
+  const maxValue = Math.max(...data.filter(exists));
+  const itemSpacing = config.width / (data.length - 1);
+  const xCoord = (index: number) => index * itemSpacing;
+  const yCoord = (value: number) =>
     config.height - (value / maxValue) * config.height + config.topPadding;
 
-  return renderer({ data, yCoord: popoverYCoord, xCoord: popoverXCoord });
+  return renderer({ data, yCoord, xCoord });
 };
 
 export const areaGraphColors = {
