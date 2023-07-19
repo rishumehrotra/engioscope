@@ -3,31 +3,33 @@ import React, { useMemo } from 'react';
 import { head, last } from 'rambda';
 import { exists } from '../../helpers/utils.js';
 
+const enableTooltip = false;
+
 type GraphConfig = {
   width: number;
   height: number;
-  topPadding: number;
   strokeDasharray: [visibleLength: number, gapLength: number];
+  lineWidth: number;
 };
 
 export const graphConfig = {
   large: {
     width: 300,
     height: 60,
-    topPadding: 2,
     strokeDasharray: [7, 5],
+    lineWidth: 1,
   },
   medium: {
     width: 161,
     height: 33,
-    topPadding: 2,
     strokeDasharray: [7, 5],
+    lineWidth: 1,
   },
   small: {
     width: 50,
     height: 32,
-    topPadding: 2,
     strokeDasharray: [7, 5],
+    lineWidth: 1,
   },
 } satisfies Record<string, GraphConfig>;
 
@@ -49,26 +51,23 @@ export const areaGraphColors = {
 export type Renderer = {
   (x: {
     color: { line: string; area: string };
-    lineStrokeWidth: number;
-    strokeDasharray?: string;
     dataPointTooltipLabel?: (x: number) => string;
   }): (x: {
     data: (number | undefined)[];
     yCoord: (value: number) => number;
     xCoord: (index: number) => number;
+    options: Omit<GraphConfig, 'width' | 'height'>;
   }) => ReactNode | ReactNode[];
 };
 
 export const pathRenderer: Renderer =
-  ({ color, lineStrokeWidth, dataPointTooltipLabel }) =>
-  ({ data: inputData, yCoord, xCoord }) => {
+  ({ color, dataPointTooltipLabel }) =>
+  ({ data: inputData, yCoord, xCoord, options }) => {
     if (inputData.includes(undefined)) {
       throw new Error("pathRenderer can't handle undefined values");
     }
 
     const data = inputData.filter(exists);
-
-    const enableTooltip = false;
 
     return (
       <>
@@ -82,7 +81,7 @@ export const pathRenderer: Renderer =
             .join(' ')}
           fill="none"
           stroke={color.line}
-          strokeWidth={lineStrokeWidth}
+          strokeWidth={options.lineWidth}
         />
         <polygon
           points={data
@@ -103,6 +102,8 @@ export const pathRenderer: Renderer =
         {dataPointTooltipLabel && enableTooltip
           ? data.map((item, itemIndex) => (
               <circle
+                // eslint-disable-next-line react/no-array-index-key
+                key={itemIndex}
                 cx={xCoord(itemIndex)}
                 cy={yCoord(item)}
                 r="8"
@@ -123,8 +124,8 @@ const mustSkip = (item: number | undefined | null): item is undefined | null =>
   item === undefined || item === null;
 
 export const pathRendererSkippingUndefineds: Renderer =
-  ({ color, lineStrokeWidth, strokeDasharray }) =>
-  ({ data, yCoord, xCoord }) => {
+  ({ color }) =>
+  ({ data, yCoord, xCoord, options }) => {
     type Point = [xCoord: number, yCoord: number];
 
     const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) =>
@@ -136,8 +137,8 @@ export const pathRendererSkippingUndefineds: Renderer =
           x2={p2[0]}
           y2={p2[1]}
           stroke={color.line}
-          strokeWidth={lineStrokeWidth}
-          strokeDasharray={continuous ? '' : strokeDasharray || '7,5'}
+          strokeWidth={options.lineWidth}
+          strokeDasharray={continuous ? '' : options.strokeDasharray.join(',')}
         />
       );
 
@@ -194,7 +195,10 @@ export const pathRendererSkippingUndefineds: Renderer =
         points={data
           .reduce<[number, number][]>(
             (acc, item, itemIndex) => {
-              acc.push([itemIndex, item ?? (itemIndex === 0 ? 0 : acc[itemIndex][1])]);
+              if (itemIndex === 0) {
+                acc.push([itemIndex, 0]);
+              }
+              acc.push([itemIndex, item ?? acc[itemIndex][1]]);
 
               if (itemIndex === data.length - 1) {
                 acc.push([itemIndex, 0]);
@@ -219,11 +223,23 @@ const computeLineGraphData = (
 ) => {
   const maxValue = Math.max(...data.filter(exists));
   const itemSpacing = config.width / (data.length - 1);
+
+  const paddingForLineWidth = Math.ceil(config.lineWidth / 2);
+  const topPadding = Math.max(paddingForLineWidth);
+
   const xCoord = (index: number) => index * itemSpacing;
   const yCoord = (value: number) =>
-    config.height - (value / maxValue) * config.height + config.topPadding;
+    config.height - (value / maxValue) * config.height + topPadding;
 
-  return renderer({ data, yCoord, xCoord });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { width, height, ...options } = config;
+
+  return renderer({
+    data,
+    yCoord,
+    xCoord,
+    options,
+  });
 };
 
 export const increaseIsBetter = (data: number[]) => {
@@ -267,10 +283,10 @@ const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
 }) => {
   const { svgHeight, svgWidth } = useMemo(() => {
     return {
-      svgHeight: graphConfig.height + graphConfig.topPadding,
+      svgHeight: graphConfig.height,
       svgWidth: graphConfig.width,
     };
-  }, [graphConfig.height, graphConfig.topPadding, graphConfig.width]);
+  }, [graphConfig.height, graphConfig.width]);
 
   const graphContents = useMemo(
     () =>
@@ -281,8 +297,6 @@ const TinyAreaGraph: React.FC<TinyAreaGraphProps> = ({
             data,
             renderer({
               color,
-              lineStrokeWidth: 1,
-              strokeDasharray: graphConfig.strokeDasharray.join(','),
               dataPointTooltipLabel,
             })
           ),
