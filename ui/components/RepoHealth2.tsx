@@ -300,7 +300,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
             </li>
             <Tooltip
               id={`${repositoryId}-${d.email}`}
-              place="bottom-start"
+              place="top-end"
               style={{
                 backgroundColor: 'rgba(var(--color-bg-page-content), 1)',
                 color: 'rgba(var(--color-text-base), 1)',
@@ -310,7 +310,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
               className="shadow-md border border-theme-seperator max-w-md z-10 min-w-[18rem]"
             >
               <div className="p-4 grid grid-cols-[min-content_1fr] gap-2 items-start">
-                <div className="justify-self-center">
+                <div className="place-self-center">
                   <ProfilePic
                     src={d.imageUrl}
                     className={twJoin(
@@ -326,7 +326,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
                     {devDetails.data?.totalReposCommitted ?? '...'} repositories
                   </div>
                 </div>
-                <div className="justify-self-center text-theme-icon">
+                <div className="place-self-center text-theme-icon">
                   <Calendar size={18} />
                 </div>
                 <div className="text-sm text-theme-helptext">
@@ -335,7 +335,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
                     ? relativeTime(devDetails.data.latestCommit)
                     : '...'}
                 </div>
-                <div className="justify-self-center text-theme-icon">
+                <div className="justify-self-center text-theme-icon pt-0.5">
                   <GitCommit size={18} />
                 </div>
                 <div className="text-sm min-h-[2.5rem]">
@@ -450,7 +450,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   return (
     <div
       className={twJoin(
-        'bg-theme-page-content rounded shadow-sm mb-4 border border-theme-seperator overflow-hidden',
+        'bg-theme-page-content rounded shadow-sm mb-4 border border-theme-seperator',
         'group',
         isInactive && 'opacity-60'
       )}
@@ -568,6 +568,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
                     index === 0 ? 'border-r' : 'border-x',
                     isSelected ? 'border-x-theme-seperator' : 'border-x-transparent',
                     isExpanded && !isSelected && 'hover:border-b-theme-seperator',
+                    index === 0 && !isSelected && 'rounded-bl',
                     isSelected && 'bg-theme-hover'
                   )}
                   onClick={() => setSelectedTab(selectedTab === tab ? null : tab)}

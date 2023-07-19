@@ -338,8 +338,8 @@ const SingleAnalysis: React.FC<{
   codeQuality: NonNullable<UICodeQuality2>[number];
   isChild?: boolean;
 }> = ({ codeQuality, isChild = false }) => (
-  <div className="grid grid-cols-[2fr_1fr] gap-4 p-4 bg-theme-hover">
-    <div className={isChild ? 'p-4 border-r border-r-theme-seperator' : ''}>
+  <div className={twJoin('grid grid-cols-[2fr_1fr] bg-theme-hover', !isChild && 'p-4')}>
+    <div className={isChild ? 'p-4 bg-theme-page-content' : 'pr-4'}>
       <div className="grid grid-cols-[1fr_min-content] items-end mb-3.5">
         <div>
           <h3 className="font-medium">SonarQube analysis</h3>
@@ -576,8 +576,10 @@ const SingleAnalysis: React.FC<{
     </div>
     <div
       className={twJoin(
-        'bg-theme-page-content rounded-lg py-4',
-        isChild ? 'pr-5' : 'px-5 border border-theme-seperator shadow-sm'
+        'bg-theme-page-content py-4 px-5',
+        isChild
+          ? 'border-l border-l-theme-seperator'
+          : 'rounded-lg border border-theme-seperator shadow-sm'
       )}
     >
       <div className="flex justify-between items-center">
