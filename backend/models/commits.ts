@@ -296,6 +296,64 @@ const devSortKeys = ['authorName', 'totalReposCommitted'] as const;
 
 export type DevSortKey = (typeof devSortKeys)[number];
 
+const getUniqueDevsCommittedToRepo = async (
+  queryContext: QueryContext,
+  repositoryName: string
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const repositoryId = await RepositoryModel.findOne<{ id: string }>(
+    {
+      collectionName,
+      'project.name': project,
+      'name': repositoryName,
+    },
+    {
+      _id: 0,
+      id: 1,
+    }
+  )
+    .exec()
+    .then(x => x?.id);
+
+  if (!repositoryId) {
+    return [];
+  }
+
+  return CommitModel.aggregate<{ authorEmail: string }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId,
+        'author.date': inDateRange(startDate, endDate),
+      },
+    },
+    { $addFields: { authorEmail: { $toLower: '$author.email' } } },
+    { $group: { _id: '$authorEmail' } },
+    { $project: { _id: 0, authorEmail: '$_id' } },
+  ])
+    .exec()
+    .then(x => x.map(x => x.authorEmail));
+};
+
+const repoSearchTermHelper = async (queryContext: QueryContext, searchTerm: string) => {
+  if (searchTerm === '') {
+    return { isRepoSearch: false, repoSearchTerm: undefined, devEmails: undefined };
+  }
+
+  const isRepoSearch = searchTerm?.includes('repo:');
+  const repoSearchTerm = isRepoSearch
+    ? searchTerm?.replaceAll('repo:', '').replaceAll('"', '')
+    : undefined;
+
+  const devEmails = repoSearchTerm
+    ? await getUniqueDevsCommittedToRepo(queryContext, repoSearchTerm)
+    : undefined;
+
+  return { isRepoSearch, repoSearchTerm, devEmails };
+};
+
 export const devListingInputParser = z.object({
   queryContext: queryContextInputParser,
   searchTerm: z.string().optional(),
@@ -352,6 +410,10 @@ export const getSortedDevListing = async ({
   const sortOrderNum = sortDirection === 'asc' ? 1 : -1;
   const pageSize = cursor?.pageSize || 20;
   const pageNumber = cursor?.pageNumber || 0;
+  const { isRepoSearch, devEmails } = await repoSearchTermHelper(
+    queryContext,
+    searchTerm || ''
+  );
 
   const sortStage: PipelineStage = {
     $sort: {
@@ -374,13 +436,16 @@ export const getSortedDevListing = async ({
           project,
           'author.date': inDateRange(startDate, endDate),
           'author.email': { $exists: true },
-          ...(searchTerm
+          ...(searchTerm && !isRepoSearch
             ? { 'author.name': { $regex: new RegExp(searchTerm, 'i') } }
             : {}),
         },
       },
       {
         $addFields: {
+          ...(searchTerm && isRepoSearch
+            ? { lowerAuthorEmail: { $toLower: '$author.email' } }
+            : {}),
           authorDate: {
             $dateToString: {
               format: '%Y-%m-%d',
@@ -389,6 +454,9 @@ export const getSortedDevListing = async ({
           },
         },
       },
+      ...(searchTerm && isRepoSearch && devEmails
+        ? [{ $match: { lowerAuthorEmail: { $in: devEmails } } }]
+        : []),
       {
         $group: {
           _id: {
@@ -504,6 +572,10 @@ export const getFilteredDevCount = async ({
   searchTerm,
 }: z.infer<typeof devFilterInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { isRepoSearch, devEmails } = await repoSearchTermHelper(
+    queryContext,
+    searchTerm || ''
+  );
 
   const filteredDevs = await CommitModel.aggregate([
     {
@@ -513,12 +585,23 @@ export const getFilteredDevCount = async ({
         'author.date': inDateRange(startDate, endDate),
         '$and': [
           { 'author.email': { $exists: true } },
-          ...(searchTerm
+          ...(searchTerm && !isRepoSearch
             ? [{ 'author.name': { $regex: new RegExp(searchTerm, 'i') } }]
             : []),
         ],
       },
     },
+    {
+      $addFields: {
+        ...(searchTerm && isRepoSearch
+          ? { lowerAuthorEmail: { $toLower: '$author.email' } }
+          : {}),
+      },
+    },
+    ...(searchTerm && isRepoSearch && devEmails
+      ? [{ $match: { lowerAuthorEmail: { $in: devEmails } } }]
+      : []),
+
     { $group: { _id: { authorEmail: { $toLower: '$author.email' } } } },
   ])
     .count('total')
