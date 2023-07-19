@@ -44,7 +44,7 @@ export const relativeTime = (date: Date): string => {
     }
   }
 
-  return shortDate(new Date(timestamp));
+  return `on ${shortDate(new Date(timestamp))}`;
 };
 
 export const formatDebt = (debtInMins: number) => {

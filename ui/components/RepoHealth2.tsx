@@ -6,7 +6,7 @@ import { twJoin, twMerge } from 'tailwind-merge';
 import { Calendar, Code, GitBranch, GitCommit, GitPullRequest } from 'react-feather';
 import { Tooltip } from 'react-tooltip';
 import prettyMilliseconds from 'pretty-ms';
-import { combinedQualityGate, num, pluralise } from '../helpers/utils.js';
+import { combinedQualityGate, num, pluralise, relativeTime } from '../helpers/utils.js';
 import builds from './repo-tabs/builds.jsx';
 import tests from './repo-tabs/tests.jsx';
 import codeQuality from './repo-tabs/codeQuality.jsx';
@@ -265,12 +265,17 @@ type DeveloeprsProps = {
 };
 
 const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
-  const [
-    ,
-    // hoveredDevEmail
-    setHoveredDevEmail,
-  ] = useState<string | null>(null);
-  // Make TRPC call here
+  const [hoveredDevEmail, setHoveredDevEmail] = useState<string | null>(null);
+  const queryContext = useQueryContext();
+  const devDetails = trpc.commits.getRepoCommitsDetailsForAuthorEmail.useQuery(
+    {
+      queryContext,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      authorEmail: hoveredDevEmail!,
+      repositoryId,
+    },
+    { enabled: hoveredDevEmail !== null }
+  );
 
   if (!devs?.count) return;
 
@@ -295,14 +300,14 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
             </li>
             <Tooltip
               id={`${repositoryId}-${d.email}`}
-              place="top-start"
+              place="bottom-start"
               style={{
                 backgroundColor: 'rgba(var(--color-bg-page-content), 1)',
                 color: 'rgba(var(--color-text-base), 1)',
                 padding: '0',
               }}
               opacity={1}
-              className="shadow-md border border-theme-seperator max-w-md z-10"
+              className="shadow-md border border-theme-seperator max-w-md z-10 min-w-[18rem]"
             >
               <div className="p-4 grid grid-cols-[min-content_1fr] gap-2 items-start">
                 <div className="justify-self-center">
@@ -317,24 +322,42 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
                 <div>
                   <h3 className="font-semibold">{d.name}</h3>
                   <div className="text-sm text-theme-helptext">
-                    ... commits in ... repositories
+                    {devDetails.data?.totalCommits ?? '...'} commits in{' '}
+                    {devDetails.data?.totalReposCommitted ?? '...'} repositories
                   </div>
                 </div>
                 <div className="justify-self-center text-theme-icon">
                   <Calendar size={18} />
                 </div>
-                <div className="text-sm text-theme-helptext">Committed ... days ago</div>
+                <div className="text-sm text-theme-helptext">
+                  Committed{' '}
+                  {devDetails.data?.latestCommit
+                    ? relativeTime(devDetails.data.latestCommit)
+                    : '...'}
+                </div>
                 <div className="justify-self-center text-theme-icon">
                   <GitCommit size={18} />
                 </div>
-                <div className="text-sm">
+                <div className="text-sm min-h-[2.5rem]">
                   <div className="text-theme-helptext">
-                    ... commits to this repository
+                    {devDetails.data?.repoCommits ?? '...'} commits to this repository
                   </div>
                   <div className="flex gap-2">
-                    <span className="text-theme-success">+ x</span>
-                    <span className="text-theme-warn">~ y</span>
-                    <span className="text-theme-danger">- z</span>
+                    {devDetails.data?.totalAdd ? (
+                      <span className="text-theme-success">
+                        + {devDetails.data.totalAdd}
+                      </span>
+                    ) : null}
+                    {devDetails.data?.totalEdit ? (
+                      <span className="text-theme-warn">
+                        ~ {devDetails.data?.totalEdit}
+                      </span>
+                    ) : null}
+                    {devDetails.data?.totalDelete ? (
+                      <span className="text-theme-danger">
+                        - {devDetails.data.totalDelete}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>

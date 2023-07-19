@@ -1,16 +1,18 @@
 import {
+  devCommitsDetailsInputParser,
   devFilterInputParser,
   devListingInputParser,
   getFilteredDevCount,
   getRepoCommitsDetails,
+  getRepoCommitsDetailsForAuthorEmail,
   getSortedDevListing,
-  RepoCommitsDetailsInputParser,
+  repoCommitsDetailsInputParser,
 } from '../../models/commits.js';
 import { passInputTo, t, memoizeForUI } from './trpc.js';
 
 export default t.router({
   getRepoCommitsDetails: t.procedure
-    .input(RepoCommitsDetailsInputParser)
+    .input(repoCommitsDetailsInputParser)
     .query(passInputTo(getRepoCommitsDetails)),
 
   getSortedDevListing: t.procedure
@@ -20,4 +22,8 @@ export default t.router({
   getFilteredDevCount: t.procedure
     .input(devFilterInputParser)
     .query(passInputTo(getFilteredDevCount)),
+
+  getRepoCommitsDetailsForAuthorEmail: t.procedure
+    .input(devCommitsDetailsInputParser)
+    .query(passInputTo(getRepoCommitsDetailsForAuthorEmail)),
 });

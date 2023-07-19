@@ -70,7 +70,7 @@ export const getCommits =
     });
   };
 
-export const RepoCommitsDetailsInputParser = z.object({
+export const repoCommitsDetailsInputParser = z.object({
   repositoryId: z.string(),
   queryContext: queryContextInputParser,
 });
@@ -95,7 +95,7 @@ export type CommitDetails = {
 export const getRepoCommitsDetails = ({
   queryContext,
   repositoryId,
-}: z.infer<typeof RepoCommitsDetailsInputParser>) => {
+}: z.infer<typeof repoCommitsDetailsInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   return CommitModel.aggregate<CommitDetails>([
@@ -187,8 +187,7 @@ export const getRepoCommitsDetails = ({
     { $sort: { repoCommits: -1 } },
   ]).exec();
 };
-export const DevCommitsDetailsInputParser = z.object({
-  ...RepoCommitsDetailsInputParser.shape,
+export const devCommitsDetailsInputParser = repoCommitsDetailsInputParser.extend({
   authorEmail: z.string(),
 });
 
@@ -197,18 +196,19 @@ export type AuthorCommitDetails = {
   totalEdit: number;
   totalDelete: number;
   repoCommits: number;
-  otherCommits: number;
+  totalCommits: number;
   authorName: string;
   authorImageUrl: string;
   authorEmail: string;
   totalReposCommitted: number;
+  latestCommit: Date;
 };
 
 export const getRepoCommitsDetailsForAuthorEmail = ({
   queryContext,
   repositoryId,
   authorEmail,
-}: z.infer<typeof DevCommitsDetailsInputParser>) => {
+}: z.infer<typeof devCommitsDetailsInputParser>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   return CommitModel.aggregate<AuthorCommitDetails>([
@@ -219,28 +219,16 @@ export const getRepoCommitsDetailsForAuthorEmail = ({
         'author.date': inDateRange(startDate, endDate),
       },
     },
-    {
-      $addFields: {
-        authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
-        authorEmail: { $toLower: '$author.email' },
-      },
-    },
-    {
-      $match: {
-        authorEmail,
-      },
-    },
+    { $addFields: { authorEmail: { $toLower: '$author.email' } } },
+    { $match: { authorEmail } },
+    { $sort: { 'author.date': -1 } },
     {
       $group: {
         _id: '$authorEmail',
         repoCommits: {
-          $sum: {
-            $cond: [{ $eq: ['$repositoryId', repositoryId] }, 1, 0],
-          },
+          $sum: { $cond: [{ $eq: ['$repositoryId', repositoryId] }, 1, 0] },
         },
-        otherCommits: {
-          $sum: { $cond: [{ $ne: ['$repositoryId', repositoryId] }, 1, 0] },
-        },
+        totalCommits: { $sum: 1 },
         totalAdd: {
           $sum: {
             $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.add', 0],
@@ -260,6 +248,7 @@ export const getRepoCommitsDetailsForAuthorEmail = ({
         authorName: { $first: '$author.name' },
         authorImageUrl: { $first: '$author.imageUrl' },
         authorEmail: { $first: '$authorEmail' },
+        latestCommit: { $first: '$author.date' },
       },
     },
     { $addFields: { totalReposCommitted: { $size: '$allRepos' } } },
@@ -269,7 +258,9 @@ export const getRepoCommitsDetailsForAuthorEmail = ({
         allRepos: 0,
       },
     },
-  ]).exec();
+  ])
+    .exec()
+    .then(x => x[0]);
 };
 
 export const getTotalCommitsForRepositoryIds = (
