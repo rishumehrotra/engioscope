@@ -10,6 +10,8 @@ type GraphConfig = {
   height: number;
   strokeDasharray: [visibleLength: number, gapLength: number];
   lineWidth: number;
+  hoverPointRadius: number;
+  hoverPointStroke: number;
 };
 
 export const graphConfig = {
@@ -18,18 +20,24 @@ export const graphConfig = {
     height: 60,
     strokeDasharray: [7, 5],
     lineWidth: 1,
+    hoverPointRadius: 8,
+    hoverPointStroke: 4,
   },
   medium: {
     width: 161,
     height: 33,
     strokeDasharray: [7, 5],
     lineWidth: 1,
+    hoverPointRadius: 8,
+    hoverPointStroke: 3,
   },
   small: {
     width: 50,
     height: 32,
     strokeDasharray: [7, 5],
     lineWidth: 1,
+    hoverPointRadius: 8,
+    hoverPointStroke: 3,
   },
 } satisfies Record<string, GraphConfig>;
 
@@ -106,11 +114,11 @@ export const pathRenderer: Renderer =
                 key={itemIndex}
                 cx={xCoord(itemIndex)}
                 cy={yCoord(item)}
-                r="8"
+                r={options.hoverPointRadius}
                 fill={color.line}
-                strokeWidth={3}
+                strokeWidth={options.hoverPointStroke}
                 stroke="#fff"
-                className="shadow opacity-0 hover:opacity-100"
+                className="opacity-0 hover:opacity-100 drop-shadow"
                 data-tooltip-id="react-tooltip"
                 data-tooltip-content={dataPointTooltipLabel(yCoord(item))}
               />
@@ -222,12 +230,24 @@ const computeLineGraphData = (
   renderer: ReturnType<Renderer>
 ) => {
   const maxValue = Math.max(...data.filter(exists));
-  const itemSpacing = config.width / (data.length - 1);
 
   const paddingForLineWidth = Math.ceil(config.lineWidth / 2);
-  const topPadding = Math.max(paddingForLineWidth);
+  const paddingForHoverPoint = enableTooltip
+    ? Math.ceil((config.hoverPointRadius + config.hoverPointStroke) / 2)
+    : 0;
+  const topPadding = Math.max(paddingForLineWidth, paddingForHoverPoint);
 
-  const xCoord = (index: number) => index * itemSpacing;
+  const leftPadding = enableTooltip
+    ? Math.ceil((config.hoverPointRadius + config.hoverPointStroke) / 2)
+    : 0;
+
+  const rightPadding = enableTooltip
+    ? Math.ceil((config.hoverPointRadius + config.hoverPointStroke) / 2)
+    : 0;
+
+  const itemYSpacing = (config.width - leftPadding - rightPadding) / (data.length - 1);
+
+  const xCoord = (index: number) => index * itemYSpacing + leftPadding;
   const yCoord = (value: number) =>
     config.height - (value / maxValue) * config.height + topPadding;
 
