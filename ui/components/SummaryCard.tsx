@@ -42,6 +42,7 @@ export type StatProps = {
       graphPosition: 'right' | 'bottom';
       graph: number[] | null;
       graphColor: { line: string; area: string } | null;
+      graphDataPointLabel: (x: number) => string;
       graphRenderer?: Renderer;
     }
 );
@@ -109,11 +110,13 @@ export const Stat: React.FC<StatProps> = ({
 
   const graphMarkup = useMemo(() => {
     if (!graphProps.graphPosition) return null;
-    const { graph, graphColor, graphRenderer, graphPosition } = graphProps;
+    const { graph, graphColor, graphRenderer, graphPosition, graphDataPointLabel } =
+      graphProps;
 
     return (
       <TinyAreaGraph
         data={graph}
+        dataPointTooltipLabel={graphDataPointLabel}
         color={graphColor}
         renderer={graphRenderer || pathRenderer}
         graphConfig={graphPosition === 'bottom' ? graphConfig.large : graphConfig.medium}

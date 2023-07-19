@@ -106,6 +106,7 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
+              graphDataPointLabel={String}
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
@@ -150,6 +151,7 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
+              graphDataPointLabel={String}
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
@@ -186,6 +188,7 @@ const StreamingRepoSummary: React.FC = () => {
               graphColor={decreaseIsBetter(
                 summaries.weeklySonarProjectsCount?.map(s => s.failedProjects) || []
               )}
+              graphDataPointLabel={String}
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
@@ -228,6 +231,7 @@ const StreamingRepoSummary: React.FC = () => {
                   ? increaseIsBetter(summaries.weeklyTestsSummary.map(t => t.totalTests))
                   : null
               }
+              graphDataPointLabel={String}
               onClick={{
                 open: 'drawer',
                 heading: 'Test & coverage details',
@@ -282,6 +286,7 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
+              graphDataPointLabel={String}
             />
           </div>
         </SummaryCard>
@@ -465,6 +470,7 @@ const StreamingRepoSummary: React.FC = () => {
                   ? summaries.totalBuilds.byWeek.map(week => week.count)
                   : null
               }
+              graphDataPointLabel={String}
             />
           </div>
           <div>
@@ -526,6 +532,7 @@ const StreamingRepoSummary: React.FC = () => {
                     })
                   : null
               }
+              graphDataPointLabel={String}
             />
           </div>
         </SummaryCard>
@@ -563,6 +570,7 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
+              graphDataPointLabel={String}
               onClick={{
                 open: 'drawer',
                 heading: 'Test & coverage details',
@@ -606,6 +614,7 @@ const StreamingRepoSummary: React.FC = () => {
                   )
                 : null
             }
+            graphDataPointLabel={String}
             onClick={{
               open: 'drawer',
               heading: 'Test & coverage details',
