@@ -187,6 +187,90 @@ export const getRepoCommitsDetails = ({
     { $sort: { repoCommits: -1 } },
   ]).exec();
 };
+export const DevCommitsDetailsInputParser = z.object({
+  ...RepoCommitsDetailsInputParser.shape,
+  authorEmail: z.string(),
+});
+
+export type AuthorCommitDetails = {
+  totalAdd: number;
+  totalEdit: number;
+  totalDelete: number;
+  repoCommits: number;
+  otherCommits: number;
+  authorName: string;
+  authorImageUrl: string;
+  authorEmail: string;
+  totalReposCommitted: number;
+};
+
+export const getRepoCommitsDetailsForAuthorEmail = ({
+  queryContext,
+  repositoryId,
+  authorEmail,
+}: z.infer<typeof DevCommitsDetailsInputParser>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return CommitModel.aggregate<AuthorCommitDetails>([
+    {
+      $match: {
+        collectionName,
+        project,
+        'author.date': inDateRange(startDate, endDate),
+      },
+    },
+    {
+      $addFields: {
+        authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
+        authorEmail: { $toLower: '$author.email' },
+      },
+    },
+    {
+      $match: {
+        authorEmail,
+      },
+    },
+    {
+      $group: {
+        _id: '$authorEmail',
+        repoCommits: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, 1, 0],
+          },
+        },
+        otherCommits: {
+          $sum: { $cond: [{ $ne: ['$repositoryId', repositoryId] }, 1, 0] },
+        },
+        totalAdd: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.add', 0],
+          },
+        },
+        totalEdit: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.edit', 0],
+          },
+        },
+        totalDelete: {
+          $sum: {
+            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.delete', 0],
+          },
+        },
+        allRepos: { $addToSet: '$repositoryId' },
+        authorName: { $first: '$author.name' },
+        authorImageUrl: { $first: '$author.imageUrl' },
+        authorEmail: { $first: '$authorEmail' },
+      },
+    },
+    { $addFields: { totalReposCommitted: { $size: '$allRepos' } } },
+    {
+      $project: {
+        _id: 0,
+        allRepos: 0,
+      },
+    },
+  ]).exec();
+};
 
 export const getTotalCommitsForRepositoryIds = (
   queryContext: QueryContext,
