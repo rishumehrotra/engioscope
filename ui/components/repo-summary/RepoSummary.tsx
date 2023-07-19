@@ -1,14 +1,13 @@
-import { last, multiply } from 'rambda';
+import { last, multiply, prop } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
-import { num, pluralise } from '../../helpers/utils.js';
+import { minPluralise, num } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
 import { Stat, SummaryCard } from '../SummaryCard.jsx';
 import useRepoFilters from '../../hooks/use-repo-filters.js';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { decreaseIsBetter, increaseIsBetter } from '../graphs/TinyAreaGraph.jsx';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
@@ -61,8 +60,9 @@ const useUpdateSummary = () => {
   return key.toString();
 };
 
+const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
+
 const StreamingRepoSummary: React.FC = () => {
-  const [queryPeriodDays] = useQueryPeriodDays();
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const key = useUpdateSummary();
@@ -78,12 +78,18 @@ const StreamingRepoSummary: React.FC = () => {
               tooltip={
                 isDefined(summaries.reposWithSonarQube) &&
                 isDefined(summaries.totalActiveRepos)
-                  ? `${summaries.reposWithSonarQube} of ${pluralise(
-                      summaries.totalActiveRepos,
-                      'repo has',
-                      'repos have'
-                    )} SonarQube configured`
-                  : null
+                  ? [
+                      bold(num(summaries.reposWithSonarQube)),
+                      'of',
+                      bold(num(summaries.totalActiveRepos)),
+                      minPluralise(
+                        summaries.totalActiveRepos,
+                        'repository has',
+                        'repositories have'
+                      ),
+                      'SonarQube configured',
+                    ].join(' ')
+                  : undefined
               }
               value={
                 isDefined(summaries.reposWithSonarQube) &&
@@ -94,11 +100,7 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphPosition="bottom"
-              graph={
-                isDefined(summaries.weeklyReposWithSonarQubeCount)
-                  ? summaries.weeklyReposWithSonarQubeCount.map(w => w.count)
-                  : []
-              }
+              graphData={summaries.weeklyReposWithSonarQubeCount}
               graphColor={
                 isDefined(summaries.weeklyReposWithSonarQubeCount)
                   ? increaseIsBetter(
@@ -106,7 +108,13 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
-              graphDataPointLabel={String}
+              graphItemToValue={prop('count')}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.count)),
+                  minPluralise(x.count, 'repopsitory', 'repositories'),
+                ].join(' ')
+              }
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
@@ -121,12 +129,19 @@ const StreamingRepoSummary: React.FC = () => {
               title="Ok"
               tooltip={
                 isDefined(summaries.sonarProjects)
-                  ? `${summaries.sonarProjects.passedProjects} of ${pluralise(
-                      summaries.sonarProjects.totalProjects,
-                      'sonar project has',
-                      'sonar projects have'
-                    )} 'pass' quality gate`
-                  : null
+                  ? [
+                      bold(num(summaries.sonarProjects.passedProjects)),
+                      'of',
+                      bold(num(summaries.sonarProjects.totalProjects)),
+                      'SonarQube',
+                      minPluralise(
+                        summaries.sonarProjects.totalProjects,
+                        'project has',
+                        'projects have'
+                      ),
+                      "'pass' quality gate",
+                    ].join(' ')
+                  : undefined
               }
               value={
                 isDefined(summaries.sonarProjects)
@@ -139,11 +154,8 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphPosition="right"
-              graph={
-                isDefined(summaries.weeklySonarProjectsCount)
-                  ? summaries.weeklySonarProjectsCount.map(s => s.passedProjects)
-                  : null
-              }
+              graphData={summaries.weeklySonarProjectsCount}
+              graphItemToValue={prop('passedProjects')}
               graphColor={
                 isDefined(summaries.weeklySonarProjectsCount)
                   ? increaseIsBetter(
@@ -151,7 +163,13 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
-              graphDataPointLabel={String}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.passedProjects)),
+                  'SonarQube',
+                  minPluralise(x.passedProjects, 'project', 'projects'),
+                ].join(' ')
+              }
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
@@ -166,12 +184,19 @@ const StreamingRepoSummary: React.FC = () => {
               title="Fail"
               tooltip={
                 isDefined(summaries.sonarProjects)
-                  ? `${summaries.sonarProjects.failedProjects} of ${pluralise(
-                      summaries.sonarProjects.totalProjects,
-                      'sonar project has',
-                      'sonar projects have'
-                    )} 'fail' quality gate`
-                  : null
+                  ? [
+                      bold(num(summaries.sonarProjects.failedProjects)),
+                      'of',
+                      bold(num(summaries.sonarProjects.totalProjects)),
+                      'SonarQube',
+                      minPluralise(
+                        summaries.sonarProjects.failedProjects,
+                        'project has',
+                        'projects have'
+                      ),
+                      "'fail' quality gate",
+                    ].join(' ')
+                  : undefined
               }
               value={
                 isDefined(summaries.sonarProjects)
@@ -184,11 +209,18 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphPosition="right"
-              graph={summaries.weeklySonarProjectsCount?.map(s => s.failedProjects) || []}
+              graphData={summaries.weeklySonarProjectsCount}
               graphColor={decreaseIsBetter(
                 summaries.weeklySonarProjectsCount?.map(s => s.failedProjects) || []
               )}
-              graphDataPointLabel={String}
+              graphItemToValue={prop('failedProjects')}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.failedProjects)),
+                  'SonarQube',
+                  minPluralise(x.failedProjects, 'project', 'projects'),
+                ].join(' ')
+              }
               onClick={{
                 open: 'drawer',
                 heading: 'SonarQube',
@@ -206,14 +238,19 @@ const StreamingRepoSummary: React.FC = () => {
               title="Tests"
               tooltip={
                 isDefined(summaries.defSummary) && isDefined(summaries.totalActiveRepos)
-                  ? `Total number of tests from the ${num(
-                      summaries.defSummary.reposWithTests
-                    )} out of ${pluralise(
-                      summaries.totalActiveRepos,
-                      'repo',
-                      'repos'
-                    )} reporting test runs`
-                  : null
+                  ? [
+                      'Total number of tests from the<br />',
+                      bold(num(summaries.defSummary.reposWithTests)),
+                      'out of',
+                      bold(num(summaries.totalActiveRepos)),
+                      minPluralise(
+                        summaries.totalActiveRepos,
+                        'repository',
+                        'repositories'
+                      ),
+                      'reporting test runs',
+                    ].join(' ')
+                  : undefined
               }
               value={
                 isDefined(summaries.weeklyTestsSummary)
@@ -221,17 +258,19 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphPosition="bottom"
-              graph={
-                isDefined(summaries.weeklyTestsSummary)
-                  ? summaries.weeklyTestsSummary.map(t => t.totalTests)
-                  : null
-              }
+              graphData={summaries.weeklyTestsSummary}
               graphColor={
                 isDefined(summaries.weeklyTestsSummary)
                   ? increaseIsBetter(summaries.weeklyTestsSummary.map(t => t.totalTests))
                   : null
               }
-              graphDataPointLabel={String}
+              graphItemToValue={prop('totalTests')}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.totalTests)),
+                  minPluralise(x.totalTests, 'test', 'tests'),
+                ].join(' ')
+              }
               onClick={{
                 open: 'drawer',
                 heading: 'Test & coverage details',
@@ -246,14 +285,19 @@ const StreamingRepoSummary: React.FC = () => {
               title="Branch coverage"
               tooltip={
                 isDefined(summaries.defSummary) && isDefined(summaries.totalActiveRepos)
-                  ? `Coverage numbers are from only the ${num(
-                      summaries.defSummary.reposWithCoverage
-                    )} out of ${pluralise(
-                      summaries.totalActiveRepos,
-                      'repo',
-                      'repos'
-                    )} reporting coverage.`
-                  : null
+                  ? [
+                      'Coverage numbers are from only the<br />',
+                      bold(num(summaries.defSummary.reposWithCoverage)),
+                      'out of',
+                      bold(num(summaries.totalActiveRepos)),
+                      minPluralise(
+                        summaries.totalActiveRepos,
+                        'repository',
+                        'repositories'
+                      ),
+                      'reporting coverage',
+                    ].join(' ')
+                  : undefined
               }
               value={
                 isDefined(summaries.weeklyCoverageSummary)
@@ -266,15 +310,7 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphPosition="bottom"
-              graph={
-                isDefined(summaries.weeklyCoverageSummary)
-                  ? summaries.weeklyCoverageSummary.map(week => {
-                      return divide(week.coveredBranches, week.totalBranches)
-                        .map(multiply(100))
-                        .getOr(0);
-                    })
-                  : null
-              }
+              graphData={summaries.weeklyCoverageSummary}
               graphColor={
                 isDefined(summaries.weeklyCoverageSummary)
                   ? increaseIsBetter(
@@ -286,7 +322,21 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
-              graphDataPointLabel={String}
+              graphItemToValue={x => {
+                return divide(x.coveredBranches, x.totalBranches)
+                  .map(multiply(100))
+                  .getOr(0);
+              }}
+              graphDataPointLabel={x =>
+                [
+                  bold(
+                    divide(x.coveredBranches, x.totalBranches)
+                      .map(toPercentage)
+                      .getOr('Unknown')
+                  ),
+                  'branch coverage',
+                ].join(' ')
+              }
             />
           </div>
         </SummaryCard>
@@ -298,13 +348,30 @@ const StreamingRepoSummary: React.FC = () => {
                 title="Branch policies"
                 tooltip={
                   summaries.branchPolicies
-                    ? `${num(summaries.branchPolicies.conformingBranches)} out of ${num(
-                        summaries.branchPolicies.totalBranches
-                      )} release branches conform to branch policies<br />
-                  ${num(summaries.branchPolicies.conformingRepos)} out of ${num(
-                        summaries.branchPolicies.repoCount
-                      )} repositories produced artifacts from branches<br />that conform to branch policies`
-                    : null
+                    ? [
+                        bold(num(summaries.branchPolicies.conformingBranches)),
+                        'out of',
+                        bold(num(summaries.branchPolicies.totalBranches)),
+                        minPluralise(
+                          summaries.branchPolicies.totalBranches,
+                          'release branch conforms',
+                          'release branches conform'
+                        ),
+                        'to branch policies',
+                        '<div class="mt-1">',
+                        bold(num(summaries.branchPolicies.conformingRepos)),
+                        'out of',
+                        bold(num(summaries.branchPolicies.repoCount)),
+                        minPluralise(
+                          summaries.branchPolicies.repoCount,
+                          'repository',
+                          'repositories'
+                        ),
+                        'produced artifacts from branches<br />',
+                        'that conform to branch policies',
+                        '</div>',
+                      ].join(' ')
+                    : undefined
                 }
                 value={
                   summaries.branchPolicies
@@ -323,10 +390,18 @@ const StreamingRepoSummary: React.FC = () => {
                 title="Healthy branches"
                 tooltip={
                   isDefined(summaries.healthyBranches)
-                    ? `${num(summaries.healthyBranches.healthy)} out of ${num(
-                        summaries.healthyBranches.total
-                      )} branches are healthy`
-                    : null
+                    ? [
+                        bold(num(summaries.healthyBranches.healthy)),
+                        'out of',
+                        bold(num(summaries.healthyBranches.total)),
+                        minPluralise(
+                          summaries.healthyBranches.total,
+                          'branch is',
+                          'branches are'
+                        ),
+                        'healthy',
+                      ].join(' ')
+                    : undefined
                 }
                 value={
                   isDefined(summaries.healthyBranches)
@@ -346,10 +421,18 @@ const StreamingRepoSummary: React.FC = () => {
                 tooltip={
                   isDefined(summaries.hasReleasesReposCount) &&
                   isDefined(summaries.totalActiveRepos)
-                    ? `${num(summaries.hasReleasesReposCount)} out of ${num(
-                        summaries.totalActiveRepos
-                      )} repos have made releases in the last ${queryPeriodDays} days`
-                    : null
+                    ? [
+                        bold(num(summaries.hasReleasesReposCount)),
+                        'out of',
+                        bold(num(summaries.totalActiveRepos)),
+                        minPluralise(
+                          summaries.totalActiveRepos,
+                          'repository has',
+                          'repositories have'
+                        ),
+                        'made releases',
+                      ].join(' ')
+                    : undefined
                 }
                 value={
                   isDefined(summaries.hasReleasesReposCount) &&
@@ -366,10 +449,18 @@ const StreamingRepoSummary: React.FC = () => {
                 title="YAML pipelines"
                 tooltip={
                   isDefined(summaries.pipelines)
-                    ? `${num(summaries.pipelines.yamlCount)} of ${num(
-                        summaries.pipelines.totalCount
-                      )} pipelines are set up using a YAML-based configuration`
-                    : null
+                    ? [
+                        bold(num(summaries.pipelines.yamlCount)),
+                        'of',
+                        bold(num(summaries.pipelines.totalCount)),
+                        minPluralise(
+                          summaries.pipelines.totalCount,
+                          'pipeline is',
+                          'pipelines are'
+                        ),
+                        'set up using a YAML-based configuration',
+                      ].join(' ')
+                    : undefined
                 }
                 value={
                   isDefined(summaries.pipelines)
@@ -407,19 +498,31 @@ const StreamingRepoSummary: React.FC = () => {
                   isDefined(summaries.activePipelineWithCentralTemplateCount) &&
                   isDefined(summaries.activePipelineCentralTemplateBuilds) &&
                   isDefined(summaries.activePipelineBuilds)
-                    ? // ${num(summaries.activePipelineWithCentralTemplateCount)} out of ${num(
-                      //   summaries.activePipelinesCount
-                      // )}<br>
-
-                      `${num(summaries.centralTemplatePipeline.central)} out of ${num(
-                        summaries.pipelines.totalCount
-                      )} build pipelines use the central template on the master branch<br>
-                  ${num(summaries.centralTemplateUsage.templateUsers)} out of ${num(
-                        summaries.totalBuilds.count
-                      )} build runs used the central template<br>
-            ${num(summaries.activePipelineCentralTemplateBuilds.count)} out of ${num(
-                        summaries.activePipelineBuilds
-                      )} build runs from active pipeline used the central template`
+                    ? [
+                        bold(num(summaries.centralTemplatePipeline.central)),
+                        'out of',
+                        bold(num(summaries.pipelines.totalCount)),
+                        minPluralise(
+                          summaries.centralTemplatePipeline.central,
+                          'build pipeline',
+                          'build pipelines'
+                        ),
+                        'use the central template on the master branch',
+                        '<div class="mt-1">',
+                        bold(num(summaries.centralTemplateUsage.templateUsers)),
+                        'out of',
+                        bold(num(summaries.totalBuilds.count)),
+                        minPluralise(
+                          summaries.centralTemplateUsage.templateUsers,
+                          'build run',
+                          'build runs'
+                        ),
+                        'used the central template',
+                        '</div>',
+                        // ${num(summaries.activePipelineWithCentralTemplateCount)} out of ${num(
+                        //   summaries.activePipelinesCount
+                        // )}<br>
+                      ].join(' ')
                     : undefined
                 }
                 value={
@@ -465,12 +568,9 @@ const StreamingRepoSummary: React.FC = () => {
                   ? increaseIsBetter(summaries.totalBuilds.byWeek.map(week => week.count))
                   : null
               }
-              graph={
-                isDefined(summaries.totalBuilds)
-                  ? summaries.totalBuilds.byWeek.map(week => week.count)
-                  : null
-              }
-              graphDataPointLabel={String}
+              graphData={summaries.totalBuilds?.byWeek}
+              graphDataPointLabel={x => `${bold(num(x.count))} builds`}
+              graphItemToValue={prop('count')}
             />
           </div>
           <div>
@@ -478,9 +578,17 @@ const StreamingRepoSummary: React.FC = () => {
               title="Success"
               tooltip={
                 isDefined(summaries.successfulBuilds) && isDefined(summaries.totalBuilds)
-                  ? `${num(summaries.successfulBuilds.count)} out of ${num(
-                      summaries.totalBuilds.count
-                    )} builds have succeeded`
+                  ? [
+                      bold(num(summaries.successfulBuilds.count)),
+                      'out of',
+                      bold(num(summaries.totalBuilds.count)),
+                      minPluralise(
+                        summaries.totalBuilds.count,
+                        'build has',
+                        'builds have'
+                      ),
+                      'succeeded',
+                    ].join(' ')
                   : undefined
               }
               value={
@@ -516,23 +624,32 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
-              graph={
-                isDefined(summaries.totalBuilds)
-                  ? summaries.totalBuilds.byWeek.map(build => {
-                      const successfulBuildsForWeek = isDefined(
-                        summaries.successfulBuilds
-                      )
-                        ? summaries.successfulBuilds.byWeek.find(
-                            s => s.weekIndex === build.weekIndex
-                          )
-                        : null;
-                      return divide(successfulBuildsForWeek?.count ?? 0, build.count)
-                        .map(multiply(100))
-                        .getOr(0);
-                    })
-                  : null
-              }
-              graphDataPointLabel={String}
+              graphData={summaries.totalBuilds?.byWeek}
+              graphItemToValue={build => {
+                const successfulBuildsForWeek = isDefined(summaries.successfulBuilds)
+                  ? summaries.successfulBuilds.byWeek.find(
+                      s => s.weekIndex === build.weekIndex
+                    )
+                  : undefined;
+                return divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                  .map(multiply(100))
+                  .getOr(0);
+              }}
+              graphDataPointLabel={build => {
+                const successfulBuildsForWeek = isDefined(summaries.successfulBuilds)
+                  ? summaries.successfulBuilds.byWeek.find(
+                      s => s.weekIndex === build.weekIndex
+                    )
+                  : undefined;
+                return [
+                  bold(
+                    divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                      .map(toPercentage)
+                      .getOr('Unknown')
+                  ),
+                  'success rate',
+                ].join(' ');
+              }}
             />
           </div>
         </SummaryCard>
@@ -542,10 +659,18 @@ const StreamingRepoSummary: React.FC = () => {
               title="Pipelines running tests"
               tooltip={
                 isDefined(summaries.defSummary)
-                  ? `${num(summaries.defSummary.defsWithTests)} of ${num(
-                      summaries.defSummary.totalDefs
-                    )} pipelines report test results`
-                  : null
+                  ? [
+                      bold(num(summaries.defSummary.defsWithTests)),
+                      'of',
+                      bold(num(summaries.defSummary.totalDefs)),
+                      minPluralise(
+                        summaries.defSummary.totalDefs,
+                        'pipeline reports',
+                        'pipelines report'
+                      ),
+                      'test results',
+                    ].join(' ')
+                  : undefined
               }
               value={
                 isDefined(summaries.defSummary)
@@ -558,11 +683,7 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphPosition="right"
-              graph={
-                isDefined(summaries.weeklyPipelinesWithTestsCount)
-                  ? summaries.weeklyPipelinesWithTestsCount.map(w => w.defsWithTests)
-                  : []
-              }
+              graphData={summaries.weeklyPipelinesWithTestsCount}
               graphColor={
                 isDefined(summaries.weeklyPipelinesWithTestsCount)
                   ? increaseIsBetter(
@@ -570,7 +691,14 @@ const StreamingRepoSummary: React.FC = () => {
                     )
                   : null
               }
-              graphDataPointLabel={String}
+              graphItemToValue={prop('defsWithTests')}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.defsWithTests)),
+                  minPluralise(x.defsWithTests, 'pipeline runs', 'pipelines run'),
+                  'tests',
+                ].join(' ')
+              }
               onClick={{
                 open: 'drawer',
                 heading: 'Test & coverage details',
@@ -584,10 +712,18 @@ const StreamingRepoSummary: React.FC = () => {
             title="Reporting coverage"
             tooltip={
               isDefined(summaries.defSummary)
-                ? `${num(summaries.defSummary.defsWithCoverage)} of ${num(
-                    summaries.defSummary.totalDefs
-                  )} pipelines report branch coverage`
-                : null
+                ? [
+                    bold(num(summaries.defSummary.defsWithCoverage)),
+                    'of',
+                    bold(num(summaries.defSummary.totalDefs)),
+                    minPluralise(
+                      summaries.defSummary.totalDefs,
+                      'pipeline reports',
+                      'pipelines report'
+                    ),
+                    'branch coverage',
+                  ].join(' ')
+                : undefined
             }
             value={
               isDefined(summaries.defSummary)
@@ -600,11 +736,7 @@ const StreamingRepoSummary: React.FC = () => {
                 : null
             }
             graphPosition="right"
-            graph={
-              isDefined(summaries.weeklyPipelinesWithCoverageCount)
-                ? summaries.weeklyPipelinesWithCoverageCount.map(w => w.defsWithCoverage)
-                : []
-            }
+            graphData={summaries.weeklyPipelinesWithCoverageCount}
             graphColor={
               isDefined(summaries.weeklyPipelinesWithCoverageCount)
                 ? increaseIsBetter(
@@ -614,7 +746,14 @@ const StreamingRepoSummary: React.FC = () => {
                   )
                 : null
             }
-            graphDataPointLabel={String}
+            graphItemToValue={prop('defsWithCoverage')}
+            graphDataPointLabel={x =>
+              [
+                bold(num(x.defsWithCoverage)),
+                minPluralise(x.defsWithCoverage, 'pipeline reports', 'pipelines report'),
+                'coverage',
+              ].join(' ')
+            }
             onClick={{
               open: 'drawer',
               heading: 'Test & coverage details',

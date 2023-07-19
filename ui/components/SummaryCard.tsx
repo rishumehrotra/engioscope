@@ -25,10 +25,11 @@ export const SummaryStat: React.FC<{ children?: React.ReactNode }> = ({ children
   return <div className="text-2xl font-bold">{children}</div>;
 };
 
-export type StatProps = {
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+export type StatProps<T extends unknown> = {
   title: string;
   value: string | null;
-  tooltip?: string | null;
+  tooltip?: string;
   onClick?: {
     open: 'drawer';
     heading: string;
@@ -40,20 +41,22 @@ export type StatProps = {
   | { graphPosition?: undefined }
   | {
       graphPosition: 'right' | 'bottom';
-      graph: number[] | null;
+      graphData: T[] | undefined;
+      graphItemToValue: (x: T) => number | undefined;
       graphColor: { line: string; area: string } | null;
-      graphDataPointLabel: (x: number) => string;
+      graphDataPointLabel: (x: T) => string;
       graphRenderer?: Renderer;
     }
 );
 
-export const Stat: React.FC<StatProps> = ({
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+export const Stat = <T extends unknown>({
   title,
   value,
   tooltip,
   onClick,
   ...graphProps
-}) => {
+}: StatProps<T>) => {
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [drawerDetails, setDrawerDetails] = useState<{
     heading: ReactNode;
@@ -110,13 +113,20 @@ export const Stat: React.FC<StatProps> = ({
 
   const graphMarkup = useMemo(() => {
     if (!graphProps.graphPosition) return null;
-    const { graph, graphColor, graphRenderer, graphPosition, graphDataPointLabel } =
-      graphProps;
+    const {
+      graphData,
+      graphColor,
+      graphRenderer,
+      graphPosition,
+      graphDataPointLabel,
+      graphItemToValue,
+    } = graphProps;
 
     return (
       <TinyAreaGraph
-        data={graph}
-        dataPointTooltipLabel={graphDataPointLabel}
+        data={graphData}
+        itemToValue={graphItemToValue}
+        itemTooltipLabel={graphDataPointLabel}
         color={graphColor}
         renderer={graphRenderer || pathRenderer}
         graphConfig={graphPosition === 'bottom' ? graphConfig.large : graphConfig.medium}

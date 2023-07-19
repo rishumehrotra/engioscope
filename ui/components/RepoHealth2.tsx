@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { byNum, desc } from 'sort-lib';
-import { compose, not, prop } from 'rambda';
+import { compose, identity, not, prop } from 'rambda';
 import { twJoin, twMerge } from 'tailwind-merge';
 import { Calendar, Code, GitBranch, GitCommit, GitPullRequest } from 'react-feather';
 import { Tooltip } from 'react-tooltip';
@@ -531,10 +531,8 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         </div>
         <div className="text-right">
           <TinyAreaGraph
-            data={
-              item.weeklyCommits?.sort(byNum(prop('weekIndex'))).map(prop('count')) ||
-              null
-            }
+            data={item.weeklyCommits?.sort(byNum(prop('weekIndex'))).map(prop('count'))}
+            itemToValue={identity}
             color={areaGraphColors.good}
             renderer={pathRendererSkippingUndefineds}
             graphConfig={graphConfig.medium}

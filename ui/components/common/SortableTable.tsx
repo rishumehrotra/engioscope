@@ -3,6 +3,7 @@ import React, { useMemo, Fragment, useState } from 'react';
 import { asc, desc } from 'sort-lib';
 import { ChevronRight } from 'react-feather';
 import { twJoin, twMerge } from 'tailwind-merge';
+import { identity } from 'rambda';
 import AnimateHeight from './AnimateHeight.jsx';
 import { ArrowDown2 } from './Icons.jsx';
 import TinyAreaGraph, {
@@ -207,6 +208,7 @@ const SortableTable = <T,>({
                       {isGraphValue ? (
                         <TinyAreaGraph
                           data={colValue.data}
+                          itemToValue={identity}
                           color={colValue.color}
                           renderer={
                             colValue.data.includes(undefined)

@@ -164,6 +164,10 @@ export const pluralise = (count: number, singular: string, plural: string) => {
     : `${num(count)} ${plural}`;
 };
 
+export const minPluralise = (count: number, singular: string, plural: string) => {
+  return pluralRules.select(count) === 'one' ? singular : plural;
+};
+
 type CommitsTimelineProp = {
   date: string;
   total: number;
