@@ -15,28 +15,26 @@ import { increaseIsBetter as increaseIsBetter2 } from '../graphs/TinyAreaGraph.j
 import InfoBox from '../InfoBox.jsx';
 
 const EmptyTests = () => (
-  <div className="bg-theme-page-content p-1">
-    <InfoBox className="m-4">
-      Already running tests but it isn't showing up? Do one of the following:
-      <ul className="ml-6 mt-1">
-        <li className="list-disc">
-          Ensure that you're{' '}
-          <a
-            href="https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-test-results-v2?view=azure-pipelines&tabs=trx%2Ctrxattachments%2Cyaml"
-            target="_blank"
-            rel="noreferrer"
-            className="link-text"
-          >
-            publishing your test and coverage details to Azure
-          </a>
-          .
-        </li>
-        <li className="list-disc">
-          OR, use the central build template where this is already addressed.
-        </li>
-      </ul>
-    </InfoBox>
-  </div>
+  <InfoBox>
+    Already running tests but it isn't showing up? Do one of the following:
+    <ul className="ml-6 mt-1">
+      <li className="list-disc">
+        Ensure that you're{' '}
+        <a
+          href="https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-test-results-v2?view=azure-pipelines&tabs=trx%2Ctrxattachments%2Cyaml"
+          target="_blank"
+          rel="noreferrer"
+          className="link-text"
+        >
+          publishing your test and coverage details to Azure
+        </a>
+        .
+      </li>
+      <li className="list-disc">
+        OR, use the central build template where this is already addressed.
+      </li>
+    </ul>
+  </InfoBox>
 );
 
 const BuildPipelineTests: React.FC<{
@@ -171,7 +169,11 @@ const BuildPipelineTests: React.FC<{
           },
         ]}
       />
-      {pipelinesWithTests?.length === 0 ? <EmptyTests /> : null}
+      {pipelinesWithTests?.length === 0 ? (
+        <div className="bg-theme-page-content p-4 border-b border-theme-seperator">
+          <EmptyTests />
+        </div>
+      ) : null}
       {pipelinesWithoutTests?.length ? (
         <div>
           <div
@@ -209,26 +211,27 @@ const BuildPipelineTests: React.FC<{
               collapse={hiddenPipelinesState === 'collapsing'}
               onCollapsed={() => setHiddenPipelinesState('collapsed')}
             >
-              {(pipelinesWithTests?.length || 0) > 0 && <EmptyTests />}
-              <ul
-                className={twJoin(
-                  'ml-8 pb-4 bg-theme-page-content',
-                  (pipelinesWithTests?.length || 0) > 0 ? 'pt-2' : 'pt-4'
+              <div className="bg-theme-page-content">
+                {(pipelinesWithTests?.length || 0) > 0 && (
+                  <div className="pt-4 pl-8 pr-4">
+                    <EmptyTests />
+                  </div>
                 )}
-              >
-                {pipelinesWithoutTests.map(pipeline => (
-                  <li key={pipeline.id} className="inline-block p-1">
-                    <a
-                      href={pipeline.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="bg-theme-tag px-2 py-0.5 inline-block rounded hover:text-theme-highlight"
-                    >
-                      {pipeline.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+                <ul className="ml-8 pb-2 bg-theme-page-content pt-2">
+                  {pipelinesWithoutTests.map(pipeline => (
+                    <li key={pipeline.id} className="inline-block p-1">
+                      <a
+                        href={pipeline.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-theme-tag px-2 py-0.5 inline-block rounded hover:text-theme-highlight"
+                      >
+                        {pipeline.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </AnimateHeight>
           )}
           <p className="py-2 px-4 text-xs italic text-theme-icon border-t border-theme-seperator">

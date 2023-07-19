@@ -306,7 +306,7 @@ const Branches: React.FC<{
               'py-3 px-4 border rounded-lg cursor-pointer',
               selectedTab === index
                 ? 'border-theme-input-highlight bg-theme-page-content'
-                : 'border-theme-seperator hover:bg-theme-page'
+                : 'border-theme-seperator hover:bg-theme-page-content'
             )}
           >
             <h3 className="mb-1">{tab.label}</h3>

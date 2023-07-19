@@ -32,7 +32,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
     return (
       <>
         <span
-          className="px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger"
+          className="px-1.5 py-0.5 bg-theme-danger-dim rounded-sm text-theme-danger font-medium"
           data-tooltip-id={domId}
           data-tooltip-content="None of the builds used the central build template"
           data-tooltip-place="bottom"
@@ -55,7 +55,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
   return (
     <>
       <span
-        className={`px-1.5 py-0.5 rounded-sm font-semibold ${
+        className={`px-1.5 py-0.5 rounded-sm font-medium ${
           centralTemplateRuns >= totalRuns
             ? 'text-theme-success bg-theme-success-dim'
             : 'text-theme-warn bg-theme-warn'
