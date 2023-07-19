@@ -405,7 +405,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         item.repoDetails.url || '',
         item.branches
       ),
-      tests(item.repositoryId, queryPeriodDays, item.tests),
+      tests(item.repositoryId, item.tests),
       ...(uiConfig.hasSonar
         ? [
             codeQuality(
@@ -426,7 +426,6 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
       item.branches,
       item.tests,
       item.sonarQualityGateStatuses?.status,
-      queryPeriodDays,
       uiConfig.hasSonar,
     ]
   );
@@ -592,7 +591,9 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
           />
         </div>
       </div>
-      <span role="region">{selectedTab ? <selectedTab.Component /> : null}</span>
+      <div role="region" className="bg-theme-hover">
+        {selectedTab ? <selectedTab.Component /> : null}
+      </div>
     </div>
   );
 };

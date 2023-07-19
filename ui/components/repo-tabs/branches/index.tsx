@@ -5,7 +5,6 @@ import { twJoin } from 'tailwind-merge';
 import type { RepoAnalysis } from '../../../../shared/types.js';
 import type { Tab as TTab } from '../Tabs.jsx';
 import BranchStats from './BranchStats.jsx';
-import TabContents from '../TabContents.jsx';
 import { trpc } from '../../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
 import { HappyEmpty } from '../../repo-summary/Empty.jsx';
@@ -282,70 +281,72 @@ const Branches: React.FC<{
     [branchTotalCount.data, cnp, defaultBranch, repoUrl, repositoryId]
   );
 
-  return (
-    <TabContents gridCols={1}>
-      {branchesCount > 0 ? (
-        <Tabs
-          className="grid grid-cols-[1fr_20rem] gap-4 justify-between"
-          onSelect={setSelectedTab}
-          defaultIndex={0}
-        >
-          <TabList className="flex gap-4">
-            {tabs.map((tab, index) => (
-              <Tab
-                key={tab.key}
-                className={twJoin(
-                  'py-3 px-4 border rounded-lg cursor-pointer',
-                  selectedTab === index
-                    ? 'border-theme-input-highlight bg-theme-page-content'
-                    : 'border-theme-seperator hover:bg-theme-page'
-                )}
-              >
-                <h3 className="mb-1">{tab.label}</h3>
-                <div className="flex gap-2 items-center font-medium text-sm">
-                  <span className="font-medium text-xl">{tab.count}</span>
-                  <span>
-                    <span
-                      className={twJoin(
-                        'inline-block px-1 rounded-md',
-                        tab.indicatorClassName
-                      )}
-                    >
-                      {divide(tab.count || 0, branchesCount)
-                        .map(toPercentage)
-                        .getOr(0)}
-                    </span>
-                  </span>
-                </div>
-              </Tab>
-            ))}
-          </TabList>
-          <div className="justify-self-end self-end">
-            <a
-              className="link-text text-sm inline-flex items-center font-medium"
-              href={`${repoUrl}/branches?_a=all`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <GitBranch className="inline-block w-4 h-4 mr-1" />
-              Manage branches
-            </a>
-          </div>
-          <div className="col-span-2">
-            {tabs.map(tab => (
-              <TabPanel key={tab.key}>
-                <tab.Component />
-              </TabPanel>
-            ))}
-          </div>
-        </Tabs>
-      ) : (
+  if (branchesCount === 0) {
+    return (
+      <div className="bg-theme-hover">
         <HappyEmpty
           heading="This repo is not initialised"
           body="Go build something cool"
         />
-      )}
-    </TabContents>
+      </div>
+    );
+  }
+
+  return (
+    <Tabs
+      className="grid grid-cols-[1fr_20rem] gap-4 justify-between p-6 bg-theme-hover"
+      onSelect={setSelectedTab}
+      defaultIndex={0}
+    >
+      <TabList className="flex gap-4">
+        {tabs.map((tab, index) => (
+          <Tab
+            key={tab.key}
+            className={twJoin(
+              'py-3 px-4 border rounded-lg cursor-pointer',
+              selectedTab === index
+                ? 'border-theme-input-highlight bg-theme-page-content'
+                : 'border-theme-seperator hover:bg-theme-page'
+            )}
+          >
+            <h3 className="mb-1">{tab.label}</h3>
+            <div className="flex gap-2 items-center font-medium text-sm">
+              <span className="font-medium text-xl">{tab.count}</span>
+              <span>
+                <span
+                  className={twJoin(
+                    'inline-block px-1 rounded-md',
+                    tab.indicatorClassName
+                  )}
+                >
+                  {divide(tab.count || 0, branchesCount)
+                    .map(toPercentage)
+                    .getOr(0)}
+                </span>
+              </span>
+            </div>
+          </Tab>
+        ))}
+      </TabList>
+      <div className="justify-self-end self-end">
+        <a
+          className="link-text text-sm inline-flex items-center font-medium"
+          href={`${repoUrl}/branches?_a=all`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <GitBranch className="inline-block w-4 h-4 mr-1" />
+          Manage branches
+        </a>
+      </div>
+      <div className="col-span-2">
+        {tabs.map(tab => (
+          <TabPanel key={tab.key}>
+            <tab.Component />
+          </TabPanel>
+        ))}
+      </div>
+    </Tabs>
   );
 };
 

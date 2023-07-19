@@ -13,7 +13,7 @@ export const HappyEmpty = ({ heading = 'Hooray!', body }: Props) => {
     <div className="text-center">
       <img src={happyImage} alt="Hooray!" className="m-auto" />
       <h3>{heading}</h3>
-      <p className="text-sm my-4 text-theme-helptext">{body}</p>
+      <p className="text-sm py-4 text-theme-helptext">{body}</p>
     </div>
   );
 };
@@ -23,7 +23,7 @@ export const SadEmpty = ({ heading = 'Nothing found', body }: Props) => {
     <div className="text-center">
       <img src={sadImage} alt="Nothing found" className="m-auto" />
       <h3>{heading}</h3>
-      <p className="text-sm my-4 text-theme-helptext">{body}</p>
+      <p className="text-sm py-4 text-theme-helptext">{body}</p>
     </div>
   );
 };

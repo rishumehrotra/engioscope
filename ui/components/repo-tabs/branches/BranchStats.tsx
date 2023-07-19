@@ -94,12 +94,6 @@ const BranchStats: React.FC<{
       ]}
     />
   );
-
-  // {count > limit ? (
-  //   <p className="text-left text-sm italic text-gray-500 mt-4">
-  //     {`* ${num(count - limit)} branches not shown`}
-  //   </p>
-  // ) : null}
 };
 
 export default BranchStats;

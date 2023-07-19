@@ -85,7 +85,10 @@ const SortableTable = <T,>({
       <thead>
         <tr
           className={twJoin(
-            'bg-theme-col-header text-xs text-theme-helptext',
+            variant === 'default'
+              ? 'bg-theme-hover border-b border-theme-seperator'
+              : 'bg-theme-col-header',
+            'text-xs text-theme-helptext',
             isChild && 'border-y border-theme-seperator'
           )}
         >

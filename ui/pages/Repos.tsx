@@ -10,14 +10,11 @@ import StreamingRepoSummary from '../components/repo-summary/RepoSummary.jsx';
 import SortControls from '../components/SortControls.jsx';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import noSearchResults from '../images/no-search-results.svg';
-import useQueryParam, { asString } from '../hooks/use-query-param.js';
 
-const RepoHealth = lazy(() => import('../components/RepoHealth.jsx'));
 const RepoHealth2 = lazy(() => import('../components/RepoHealth2.jsx'));
 
 const RepoListing: React.FC = () => {
   const filters = useRepoFilters();
-  const [showNewUI] = useQueryParam('repo-v2', asString);
   const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
   });
@@ -29,7 +26,7 @@ const RepoListing: React.FC = () => {
       <InfiniteScrollList2
         items={query.data.pages.flatMap(page => page.items) || []}
         itemKey={repo => repo.repoDetails.id}
-        itemComponent={showNewUI === 'true' ? RepoHealth2 : RepoHealth}
+        itemComponent={RepoHealth2}
         loadNextPage={query.fetchNextPage}
       />
     </Suspense>

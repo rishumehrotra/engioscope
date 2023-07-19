@@ -5,7 +5,6 @@ import { AlertTriangle, ChevronRight, XCircle } from 'react-feather';
 import type { UICodeQuality2 } from '../../../shared/types.js';
 import { formatDebt, num, shortDate } from '../../helpers/utils.js';
 import type { Tab } from './Tabs.jsx';
-import TabContents from './TabContents.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import Loading from '../Loading.jsx';
@@ -339,7 +338,7 @@ const SingleAnalysis: React.FC<{
   codeQuality: NonNullable<UICodeQuality2>[number];
   isChild?: boolean;
 }> = ({ codeQuality, isChild = false }) => (
-  <div className="grid grid-cols-[2fr_1fr] gap-4">
+  <div className="grid grid-cols-[2fr_1fr] gap-4 p-4 bg-theme-hover">
     <div className={isChild ? 'p-4 border-r border-r-theme-seperator' : ''}>
       <div className="grid grid-cols-[1fr_min-content] items-end mb-3.5">
         <div>
@@ -667,7 +666,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
   const [collapsingRows, setCollapsingRows] = useState<NonNullable<UICodeQuality2>>([]);
 
   return (
-    <ul className="">
+    <ul className="p-4 bg-theme-hover">
       {codeQuality.map(codeQualityItem => (
         <li
           key={codeQualityItem.name}
@@ -763,6 +762,7 @@ const AnalysisTable: React.FC<{ codeQuality: NonNullable<UICodeQuality2> }> = ({
     </ul>
   );
 };
+
 export default (
   repositoryId: string,
   repositoryName: string,
@@ -786,94 +786,82 @@ export default (
     });
 
     if (!sonarMeasures.data) {
-      return (
-        <TabContents gridCols={1}>
-          <Loading />
-        </TabContents>
-      );
+      return <Loading />;
+    }
+
+    if (sonarMeasures.data.length === 1) {
+      return <SingleAnalysis codeQuality={sonarMeasures.data[0]} />;
     }
 
     if (sonarMeasures.data.length > 0) {
-      return (
-        <TabContents gridCols={1}>
-          {sonarMeasures.data.length === 1 ? (
-            <SingleAnalysis codeQuality={sonarMeasures.data[0]} />
-          ) : (
-            <AnalysisTable codeQuality={sonarMeasures.data} />
-          )}
-        </TabContents>
-      );
+      return <AnalysisTable codeQuality={sonarMeasures.data} />;
     }
 
     return (
-      <TabContents gridCols={0}>
-        <div className="max-w-[36rem] m-auto p-8">
-          <img src={emptyWhy} alt="Couldn't find your project" className="block m-auto" />
-          <h3 className="mt-8 text-center">
-            Your project couldn't be found on SonarQube
-          </h3>
-          <p className="text-theme-helptext text-center text-sm mt-2">
-            Already have SonarQube configured, but it isn't showing up? Try the following:
-          </p>
-          <ol className="[counter-reset:options] list-none">
-            <li
-              className={twJoin(
-                '[counter-increment:options] before:content-[counter(options)]',
-                'before:border before:rounded-full before:border-theme-success',
-                'before:text-theme-success before:text-center before:text-xs before:font-medium',
-                'before:mr-4 before:w-6 before:py-0.5',
-                'before:inline-flex before:place-content-center mt-8'
-              )}
-            >
-              <h3 className="inline-block font-medium text-sm mb-1">
-                Update your SonarQube project name
-                <span className="inline-block pl-2 font-normal">(Recommended)</span>
-              </h3>
-              <p className="pl-10 text-sm text-theme-helptext">
-                Ensure that the sonar project is named <q>{repositoryName}</q>, so that we
-                can find it. If you are renaming an existing SonarQube project, remember
-                to also update your build pipeline to post to the correct location.
-              </p>
-            </li>
-            <li
-              className={twJoin(
-                '[counter-increment:options] before:content-[counter(options)]',
-                'before:border before:rounded-full before:border-theme-success',
-                'before:text-theme-success before:text-center before:text-xs before:font-medium',
-                'before:mr-4 before:w-6 before:py-0.5',
-                'before:inline-flex before:place-content-center mt-8'
-              )}
-            >
-              <h3 className="inline-block font-medium text-sm mb-1">
-                Central build template
-              </h3>
-              <p className="pl-10 text-sm text-theme-helptext">
-                Explore the option of using the central build template, which offers
-                various other benefits as well. You will be able to outsource your build
-                pipeline maintenance, while getting best practices baked in.
-              </p>
-            </li>
-            <li
-              className={twJoin(
-                '[counter-increment:options] before:content-[counter(options)]',
-                'before:border before:rounded-full before:border-theme-success',
-                'before:text-theme-success before:text-center before:text-xs before:font-medium',
-                'before:mr-4 before:w-6 before:py-0.5',
-                'before:inline-flex before:place-content-center mt-8'
-              )}
-            >
-              <h3 className="inline-block font-medium text-sm mb-1">
-                Tell us your SonarQube project name
-              </h3>
-              <p className="pl-10 text-sm text-theme-helptext">
-                Add a step at the end to your build pipeline that invokes a CLI tool to
-                explicitly post the SonarQube project details to us, so that we can create
-                a mapping.
-              </p>
-            </li>
-          </ol>
-        </div>
-      </TabContents>
+      <div className="max-w-[36rem] m-auto p-8">
+        <img src={emptyWhy} alt="Couldn't find your project" className="block m-auto" />
+        <h3 className="mt-8 text-center">Your project couldn't be found on SonarQube</h3>
+        <p className="text-theme-helptext text-center text-sm mt-2">
+          Already have SonarQube configured, but it isn't showing up? Try the following:
+        </p>
+        <ol className="[counter-reset:options] list-none">
+          <li
+            className={twJoin(
+              '[counter-increment:options] before:content-[counter(options)]',
+              'before:border before:rounded-full before:border-theme-success',
+              'before:text-theme-success before:text-center before:text-xs before:font-medium',
+              'before:mr-4 before:w-6 before:py-0.5',
+              'before:inline-flex before:place-content-center mt-8'
+            )}
+          >
+            <h3 className="inline-block font-medium text-sm mb-1">
+              Update your SonarQube project name
+              <span className="inline-block pl-2 font-normal">(Recommended)</span>
+            </h3>
+            <p className="pl-10 text-sm text-theme-helptext">
+              Ensure that the sonar project is named <q>{repositoryName}</q>, so that we
+              can find it. If you are renaming an existing SonarQube project, remember to
+              also update your build pipeline to post to the correct location.
+            </p>
+          </li>
+          <li
+            className={twJoin(
+              '[counter-increment:options] before:content-[counter(options)]',
+              'before:border before:rounded-full before:border-theme-success',
+              'before:text-theme-success before:text-center before:text-xs before:font-medium',
+              'before:mr-4 before:w-6 before:py-0.5',
+              'before:inline-flex before:place-content-center mt-8'
+            )}
+          >
+            <h3 className="inline-block font-medium text-sm mb-1">
+              Central build template
+            </h3>
+            <p className="pl-10 text-sm text-theme-helptext">
+              Explore the option of using the central build template, which offers various
+              other benefits as well. You will be able to outsource your build pipeline
+              maintenance, while getting best practices baked in.
+            </p>
+          </li>
+          <li
+            className={twJoin(
+              '[counter-increment:options] before:content-[counter(options)]',
+              'before:border before:rounded-full before:border-theme-success',
+              'before:text-theme-success before:text-center before:text-xs before:font-medium',
+              'before:mr-4 before:w-6 before:py-0.5',
+              'before:inline-flex before:place-content-center mt-8'
+            )}
+          >
+            <h3 className="inline-block font-medium text-sm mb-1">
+              Tell us your SonarQube project name
+            </h3>
+            <p className="pl-10 text-sm text-theme-helptext">
+              Add a step at the end to your build pipeline that invokes a CLI tool to
+              explicitly post the SonarQube project details to us, so that we can create a
+              mapping.
+            </p>
+          </li>
+        </ol>
+      </div>
     );
   },
 });

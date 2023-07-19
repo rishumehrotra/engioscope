@@ -157,7 +157,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
       ),
       commits(item.repositoryId, queryPeriodDays, item.commits),
       prs(item.repositoryId, item.pullRequests),
-      tests(item.repositoryId, queryPeriodDays, item.tests),
+      tests(item.repositoryId, item.tests),
       codeQuality(
         item.repositoryId,
         item.repoDetails.name,
