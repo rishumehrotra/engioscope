@@ -24,7 +24,7 @@ const SortControls: React.FC<SortControlsProps> = ({
 
   const onSortByChange = useCallback(
     (newSortBy: string) => {
-      return setSortBy(newSortBy === defaultSortBy ? undefined : newSortBy);
+      return setSortBy(newSortBy === defaultSortBy ? undefined : newSortBy, true);
     },
     [defaultSortBy, setSortBy]
   );
@@ -32,7 +32,8 @@ const SortControls: React.FC<SortControlsProps> = ({
     const newSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
 
     return setSortDirection(
-      newSortDirection === defaultSortDirection ? undefined : newSortDirection
+      newSortDirection === defaultSortDirection ? undefined : newSortDirection,
+      true
     );
   }, [currentSortDirection, defaultSortDirection, setSortDirection]);
 

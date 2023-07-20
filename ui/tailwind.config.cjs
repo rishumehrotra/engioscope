@@ -59,6 +59,18 @@ module.exports = {
         },
       },
 
+      fill: {
+        theme: {
+          success: withOpacity('--color-text-success')
+        }
+      },
+
+      stroke: {
+        theme: {
+          separator: withOpacity('--color-border-separator')
+        }
+      },
+
       ringColor: {
         theme: {
           'input-highlight': withOpacity('--color-input-highlight'),

@@ -9,6 +9,7 @@ import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { relativeTime, timelineProp } from '../helpers/utils.js';
 import SortableTable from './common/SortableTable.jsx';
 import type { RouterClient } from '../helpers/trpc.js';
+import AnimateHeight from './common/AnimateHeight.jsx';
 
 type DeveloperProps = {
   item: RouterClient['commits']['getSortedDevListing']['items'][number];
@@ -17,20 +18,24 @@ type DeveloperProps = {
 
 const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
-  const [isExpanded, setIsExpanded] = useState<boolean>(index === 0);
+  const [expandedState, setExpandedState] = useState<'open' | 'closing' | 'closed'>(
+    index === 0 ? 'open' : 'closed'
+  );
   const max =
     Math.max(...item.repos.flatMap(r => r.dailyCommits.map(prop('count')))) || 0;
 
   return (
     <div
       className={twJoin(
-        'bg-theme-page-content rounded-lg shadow-sm mb-4 overflow-hidden',
-        'border border-theme-seperator group'
+        'bg-theme-page-content rounded-lg mb-4',
+        'border border-theme-seperator group',
+        'hover:shadow-md transition-shadow duration-200',
+        expandedState === 'closed' ? 'shadow-sm' : 'shadow-md'
       )}
     >
       <button
         className="w-full text-left flex justify-between p-6"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => setExpandedState(x => (x === 'open' ? 'closing' : 'open'))}
       >
         <div className="grid grid-cols-[min-content_1fr] gap-x-4 gap-y-3 items-start">
           <div className="justify-self-center">
@@ -43,7 +48,14 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
             />
           </div>
           <div>
-            <h3 className="font-semibold">{item.authorName}</h3>
+            <h3
+              className={twJoin(
+                'font-semibold group-hover:text-theme-highlight',
+                expandedState !== 'closed' && 'text-theme-highlight'
+              )}
+            >
+              {item.authorName}
+            </h3>
             <div className="text-sm text-theme-helptext">
               {item.totalCommits ?? '...'} commits in {item.repos.length ?? '...'}{' '}
               repositories
@@ -79,108 +91,113 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
           </div>
         </div>
         <div className="self-end text-right pr-2">
-          <div className="w-[32rem]">
-            <CommitTimeline
-              timeline={timelineProp(
-                [
-                  ...item.repos.reduce((acc, repo) => {
-                    repo.dailyCommits.forEach(commit => {
-                      acc.set(commit.date, (acc.get(commit.date) || 0) + commit.count);
-                    });
-                    return acc;
-                  }, new Map<string, number>()),
-                ]
-                  .map(([date, total]) => ({ date, total }))
-                  .sort(byDate(x => new Date(x.date)))
-              )}
-              max={max}
-              queryPeriodDays={queryPeriodDays}
-            />
-          </div>
+          <CommitTimeline
+            timeline={timelineProp(
+              [
+                ...item.repos.reduce((acc, repo) => {
+                  repo.dailyCommits.forEach(commit => {
+                    acc.set(commit.date, (acc.get(commit.date) || 0) + commit.count);
+                  });
+                  return acc;
+                }, new Map<string, number>()),
+              ]
+                .map(([date, total]) => ({ date, total }))
+                .sort(byDate(x => new Date(x.date)))
+            )}
+            max={max}
+            queryPeriodDays={queryPeriodDays}
+          />
           <span className="text-theme-highlight inline-block mt-6">
-            {isExpanded ? 'Show less' : 'Show more'}
+            {expandedState === 'open' ? 'Show less' : 'Show more'}
           </span>
         </div>
       </button>
-      {isExpanded && (
-        <div className="border-t border-t-theme-seperator">
-          <SortableTable
-            data={item.repos}
-            rowKey={prop('name')}
-            variant="default"
-            defaultSortColumnIndex={1}
-            columns={[
-              {
-                title: 'Repository name',
-                key: 'repository name',
+      {expandedState !== 'closed' && (
+        <AnimateHeight
+          collapse={expandedState === 'closing'}
+          onCollapsed={() => setExpandedState('closed')}
+        >
+          <div className="border-t border-t-theme-seperator">
+            <SortableTable
+              data={item.repos}
+              rowKey={prop('name')}
+              variant="default"
+              defaultSortColumnIndex={1}
+              columns={[
+                {
+                  title: 'Repository name',
+                  key: 'repository name',
+                  // eslint-disable-next-line react/no-unstable-nested-components
+                  value: repository =>
+                    repository.url ? (
+                      <a
+                        href={repository.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-content={repository.name}
+                        className="link-text truncate w-full"
+                      >
+                        {repository.name}
+                      </a>
+                    ) : (
+                      repository.name
+                    ),
 
-                // eslint-disable-next-line react/no-unstable-nested-components
-                value: repository =>
-                  repository.url ? (
-                    <a
-                      href={repository.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-tooltip-id="react-tooltip"
-                      data-tooltip-content={repository.name}
-                      className="link-text truncate w-full"
-                    >
-                      {repository.name}
-                    </a>
-                  ) : (
-                    repository.name
-                  ),
-
-                sorter: byString(prop('name')),
-              },
-              {
-                title: 'Commits',
-                key: 'commits',
-                value: repository => repository.commitCount,
-                sorter: byNum(prop('commitCount')),
-              },
-              {
-                title: 'Changes',
-                key: 'changes',
-                // eslint-disable-next-line react/no-unstable-nested-components
-                value: repository => {
-                  return (
-                    <div className="text-sm min-h-[2.5rem] flex flex-row justify-end">
-                      <div className="flex gap-2">
-                        <span className="text-theme-success">
-                          + {repository.add || 0}
-                        </span>
-
-                        <span className="text-theme-warn">~ {repository.edit || 0}</span>
-
-                        <span className="text-theme-danger">
-                          - {repository.delete || 0}
-                        </span>
-                      </div>
-                    </div>
-                  );
+                  sorter: byString(prop('name')),
                 },
-              },
-              {
-                title: 'Date',
-                key: 'date',
-                // eslint-disable-next-line react/no-unstable-nested-components
-                value: repository => (
-                  <CommitTimeline
-                    timeline={timelineProp(
-                      repository.dailyCommits.map(c => ({
-                        date: c.date,
-                        total: c.count,
-                      }))
-                    )}
-                    max={max}
-                    queryPeriodDays={queryPeriodDays}
-                  />
-                ),
-              },
-            ]}
-          />
-        </div>
+                {
+                  title: 'Commits',
+                  key: 'commits',
+                  value: repository => repository.commitCount,
+                  sorter: byNum(prop('commitCount')),
+                },
+                {
+                  title: 'Changes',
+                  key: 'changes',
+                  // eslint-disable-next-line react/no-unstable-nested-components
+                  value: repository => {
+                    return (
+                      <div className="text-sm min-h-[2.5rem] flex flex-row justify-end">
+                        <div className="flex gap-2">
+                          <span className="text-theme-success">
+                            + {repository.add || 0}
+                          </span>
+
+                          <span className="text-theme-warn">
+                            ~ {repository.edit || 0}
+                          </span>
+
+                          <span className="text-theme-danger">
+                            - {repository.delete || 0}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  },
+                },
+                {
+                  title: 'Date',
+                  key: 'date',
+                  // eslint-disable-next-line react/no-unstable-nested-components
+                  value: repository => (
+                    <CommitTimeline
+                      timeline={timelineProp(
+                        repository.dailyCommits.map(c => ({
+                          date: c.date,
+                          total: c.count,
+                        }))
+                      )}
+                      max={max}
+                      queryPeriodDays={queryPeriodDays}
+                      className="inline-block"
+                    />
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </AnimateHeight>
       )}
     </div>
   );

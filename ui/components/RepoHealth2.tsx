@@ -446,9 +446,10 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   return (
     <div
       className={twJoin(
-        'bg-theme-page-content rounded shadow-sm mb-4 border border-theme-seperator',
-        'hover:shadow transition-shadow duration-200',
+        'bg-theme-page-content rounded mb-4 border border-theme-seperator',
+        'hover:shadow-md transition-shadow duration-200',
         'group',
+        isExpanded ? 'shadow-md' : 'shadow-sm',
         isInactive && 'opacity-60'
       )}
     >
