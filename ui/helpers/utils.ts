@@ -168,20 +168,6 @@ export const minPluralise = (count: number, singular: string, plural: string) =>
   return pluralRules.select(count) === 'one' ? singular : plural;
 };
 
-type CommitsTimelineProp = {
-  date: string;
-  total: number;
-}[];
-
-export const timelineProp = (commits: CommitsTimelineProp) => {
-  const dateCommits: Record<string, number> = {};
-  commits.forEach(commit => {
-    dateCommits[commit.date] = commit.total;
-  });
-
-  return dateCommits;
-};
-
 export const combinedQualityGate = (qualityGateStatus: QualityGateStatus[]) => {
   if (qualityGateStatus.length === 0) return 'unknown';
   if (qualityGateStatus.length === 1) return qualityGateStatus[0];

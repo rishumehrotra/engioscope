@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import AlertMessage from '../components/common/AlertMessage.js';
+import { prop } from 'rambda';
 import AppliedFilters from '../components/AppliedFilters.js';
 import Loading from '../components/Loading.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
@@ -11,27 +11,23 @@ import SortControls from '../components/SortControls.jsx';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import noSearchResults from '../images/no-search-results.svg';
 
-const RepoHealth2 = lazy(() => import('../components/RepoHealth2.jsx'));
+const RepoHealth = lazy(() => import('../components/RepoHealth.jsx'));
 
 const RepoListing: React.FC = () => {
   const filters = useRepoFilters();
   const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
-    getNextPageParam: lastPage => lastPage.nextCursor,
+    getNextPageParam: prop('nextCursor'),
   });
 
-  if (!query.data) return <Loading />;
-
-  return query.data.pages.flatMap(page => page.items).length ? (
+  return (
     <Suspense fallback={<Loading />}>
       <InfiniteScrollList2
-        items={query.data.pages.flatMap(page => page.items) || []}
+        items={query.data?.pages.flatMap(prop('items')) || []}
         itemKey={repo => repo.repoDetails.id}
-        itemComponent={RepoHealth2}
+        itemComponent={RepoHealth}
         loadNextPage={query.fetchNextPage}
       />
     </Suspense>
-  ) : (
-    <AlertMessage message="No repos found" />
   );
 };
 export default () => {

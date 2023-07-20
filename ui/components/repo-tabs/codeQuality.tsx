@@ -4,7 +4,7 @@ import { twJoin } from 'tailwind-merge';
 import { AlertTriangle, ChevronRight, XCircle } from 'react-feather';
 import type { UICodeQuality2 } from '../../../shared/types.js';
 import { formatDebt, num, shortDate } from '../../helpers/utils.js';
-import type { Tab } from './Tabs.jsx';
+import type { Tab } from './Tab.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 import Loading from '../Loading.jsx';

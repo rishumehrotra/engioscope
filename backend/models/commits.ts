@@ -70,11 +70,6 @@ export const getCommits =
     });
   };
 
-export const repoCommitsDetailsInputParser = z.object({
-  repositoryId: z.string(),
-  queryContext: queryContextInputParser,
-});
-
 export type CommitDetails = {
   _id: string;
   daily: {
@@ -92,102 +87,9 @@ export type CommitDetails = {
   allRepos: string[];
 };
 
-export const getRepoCommitsDetails = ({
-  queryContext,
-  repositoryId,
-}: z.infer<typeof repoCommitsDetailsInputParser>) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
-  return CommitModel.aggregate<CommitDetails>([
-    {
-      $match: {
-        collectionName,
-        project,
-        'author.date': inDateRange(startDate, endDate),
-      },
-    },
-    {
-      $addFields: {
-        authorDate: { $dateToString: { format: '%Y-%m-%d', date: '$author.date' } },
-        authorEmail: { $toLower: '$author.email' },
-      },
-    },
-    {
-      $group: {
-        _id: '$authorEmail',
-        repoCommits: {
-          $sum: {
-            $cond: [{ $eq: ['$repositoryId', repositoryId] }, 1, 0],
-          },
-        },
-        otherCommits: {
-          $sum: {
-            $cond: [{ $ne: ['$repositoryId', repositoryId] }, 1, 0],
-          },
-        },
-        totalAdd: {
-          $sum: {
-            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.add', 0],
-          },
-        },
-        totalEdit: {
-          $sum: {
-            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.edit', 0],
-          },
-        },
-        totalDelete: {
-          $sum: {
-            $cond: [{ $eq: ['$repositoryId', repositoryId] }, '$changeCounts.delete', 0],
-          },
-        },
-        allRepos: { $addToSet: '$repositoryId' },
-        commits: { $push: '$$ROOT' },
-      },
-    },
-    { $unwind: { path: '$commits' } },
-    { $match: { 'commits.repositoryId': repositoryId } },
-    {
-      $group: {
-        _id: {
-          authorEmail: '$_id',
-          authorDate: '$commits.authorDate',
-        },
-        dailyCommit: { $sum: 1 },
-        repoCommits: { $first: '$repoCommits' },
-        otherCommits: { $first: '$otherCommits' },
-        allRepos: { $first: '$allRepos' },
-        authorName: { $first: '$commits.author.name' },
-        authorImageUrl: { $first: '$commits.author.imageUrl' },
-        totalAdd: { $first: '$totalAdd' },
-        totalEdit: { $first: '$totalEdit' },
-        totalDelete: { $first: '$totalDelete' },
-      },
-    },
-    { $sort: { '_id.authorDate': 1 } },
-    {
-      $group: {
-        _id: '$_id.authorEmail',
-        daily: {
-          $push: {
-            date: '$_id.authorDate',
-            total: '$dailyCommit',
-          },
-        },
-        totalAdd: { $first: '$totalAdd' },
-        totalEdit: { $first: '$totalEdit' },
-        totalDelete: { $first: '$totalDelete' },
-        repoCommits: { $first: '$repoCommits' },
-        otherCommits: { $first: '$otherCommits' },
-        authorName: { $first: '$authorName' },
-        authorImageUrl: { $first: '$authorImageUrl' },
-        authorEmail: { $first: '$_id.authorEmail' },
-        allRepos: { $first: '$allRepos' },
-      },
-    },
-    { $sort: { repoCommits: -1 } },
-  ]).exec();
-};
-export const devCommitsDetailsInputParser = repoCommitsDetailsInputParser.extend({
+export const devCommitsDetailsInputParser = z.object({
+  repositoryId: z.string(),
+  queryContext: queryContextInputParser,
   authorEmail: z.string(),
 });
 

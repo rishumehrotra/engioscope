@@ -10,6 +10,7 @@ import useQueryParam, {
 } from '../hooks/use-query-param.js';
 import type { Tab } from '../types.js';
 import { Close } from './common/Icons.js';
+import { num } from '../helpers/utils.js';
 
 const FilterTag: React.FC<{ label: ReactNode; onClose: () => void }> = ({
   label,
@@ -220,7 +221,7 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
       )}
       {count !== 0 && (
         <div className="mb-6 ml-1">
-          Showing <strong>{count ?? '...'}</strong>{' '}
+          Showing <strong>{count === undefined ? '...' : num(count)}</strong>{' '}
           {pageName(type, count ?? 3).toLowerCase()}
         </div>
       )}

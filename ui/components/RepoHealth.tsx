@@ -1,31 +1,26 @@
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { byNum, desc } from 'sort-lib';
-import { not } from 'rambda';
-import useResizeObserver from '@react-hook/resize-observer';
-import { combinedQualityGate, num, pluralise } from '../helpers/utils.js';
-import Flair from './common/Flair.jsx';
+import { compose, identity, not, prop, range } from 'rambda';
+import { twJoin, twMerge } from 'tailwind-merge';
+import { Calendar, Code, GitBranch, GitCommit, GitPullRequest } from 'react-feather';
+import { Tooltip } from 'react-tooltip';
+import prettyMilliseconds from 'pretty-ms';
+import { combinedQualityGate, num, pluralise, relativeTime } from '../helpers/utils.js';
 import builds from './repo-tabs/builds.jsx';
-import commits from './repo-tabs/commits.jsx';
-import prs from './repo-tabs/prs.jsx';
 import tests from './repo-tabs/tests.jsx';
 import codeQuality from './repo-tabs/codeQuality.jsx';
-import type { Tab } from './repo-tabs/Tabs.jsx';
-import { TopLevelTab } from './repo-tabs/Tabs.jsx';
+import type { Tab } from './repo-tabs/Tab.jsx';
 import { useSortParams } from '../hooks/sort-hooks.js';
 import branches from './repo-tabs/branches/index.jsx';
-import type { RouterClient } from '../helpers/trpc.js';
+import { trpc, type RouterClient } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
-import { Branches } from './common/Icons.jsx';
-import BranchPolicyPill from './BranchPolicyPill.jsx';
+import { ReleasePipeline } from './common/Icons.jsx';
+import useUiConfig from '../hooks/use-ui-config.js';
+import { useQueryContext } from '../hooks/query-hooks.js';
+import { ProfilePic } from './common/ProfilePic.jsx';
+import TinyAreaGraph, { areaGraphColors, graphConfig } from './graphs/TinyAreaGraph.jsx';
 
 type ReleaseBranchesProps = {
   repositoryId: string;
@@ -41,110 +36,361 @@ const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
   repositoryId,
   defaultBranch,
 }) => {
-  const branchesToShow = useMemo(() => {
-    return [...branches].sort(desc(byNum(b => (b.name === defaultBranch ? 1 : 0))));
+  const conformanceRatio = useMemo(() => {
+    return divide(branches.filter(prop('conforms')).length, branches.length);
+  }, [branches]);
+
+  const branchesThatConform = useMemo(() => {
+    return branches
+      .filter(prop('conforms'))
+      .sort(desc(byNum(b => (b.name === defaultBranch ? 1 : 0))));
   }, [branches, defaultBranch]);
 
-  const [overflowBranchCount, setOverflowBranchCount] = useState<number | null>(null);
-  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
-  const containerRef = useRef<HTMLUListElement | null>(null);
-  const overflowButtonRef = useRef<HTMLDivElement | null>(null);
-
-  const toggleOverflow = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setIsOverflowOpen(not);
-  }, []);
-
-  const onResize = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const lis = [
-      ...(container?.querySelectorAll<HTMLLIElement>('li:not(.overflow-menu)') || []),
-    ];
-    const offsetTops = lis.map(e => e.offsetTop);
-    const offsetTopOfFirstElement = offsetTops[0];
-
-    if (offsetTops.every(e => e === offsetTopOfFirstElement)) {
-      setOverflowBranchCount(null);
-    } else {
-      setOverflowBranchCount(
-        branchesToShow.filter((_, i) => offsetTops[i] > offsetTopOfFirstElement).length +
-          1
-      );
-    }
-
-    const lastVisible = [...lis]
-      .reverse()
-      .find(li => li.offsetTop === offsetTopOfFirstElement);
-    if (!lastVisible) return; // stupid TS
-    if (!overflowButtonRef.current) return;
-
-    overflowButtonRef.current.style.left = `${
-      lastVisible.offsetLeft + lastVisible.offsetWidth
-    }px`;
-  }, [branchesToShow]);
-
-  useResizeObserver(containerRef, onResize);
-  useLayoutEffect(() => {
-    onResize();
-  }, [onResize]);
+  const branchesThatDontConform = useMemo(() => {
+    return branches
+      .filter(compose(not, prop('conforms')))
+      .sort(desc(byNum(b => (b.name === defaultBranch ? 1 : 0))));
+  }, [branches, defaultBranch]);
 
   if (!branches.length) return null;
 
   return (
-    <div className="relative cursor-default">
-      <ul
-        className={`flex flex-wrap mr-20 ${
-          isOverflowOpen ? '' : 'overflow-hidden max-h-8'
-        }`}
-        ref={containerRef}
+    <>
+      <div
+        className={twJoin(
+          'text-sm px-2 rounded-sm cursor-default',
+          conformanceRatio.getOr(0) === 1 ? 'bg-theme-success-dim' : 'bg-theme-danger-dim'
+        )}
+        data-tooltip-id={`${repositoryId}-conformance`}
       >
-        {branchesToShow.length ? (
-          <li className="mr-1 mb-1 pr-1 py-0 border-0 rounded-md bg-white flex items-center text-sm">
-            Release branches:
-          </li>
-        ) : null}
-        {branchesToShow.map(branch => (
-          <li
-            key={`gone-forward-${branch.name}`}
-            className="mr-1 mb-1 pl-2 pr-0 py-0 border-2 rounded-md bg-white flex items-center text-sm"
-          >
-            <Branches className="h-4 mr-1" />
-            {branch.name.replace('refs/heads/', '')}
-            <BranchPolicyPill
-              className="m-1"
-              repositoryId={repositoryId}
-              refName={branch.name}
-              conforms={branch.conforms}
-            />
-          </li>
-        ))}
-      </ul>
-      <div className="absolute top-0" ref={overflowButtonRef}>
-        {overflowBranchCount ? (
-          <div className="relative">
-            <button
-              className="mr-1 mb-1 px-2 py-1 border-2 rounded-md bg-white flex items-center text-sm text-gray-500 hover:text-gray-900 hover:border-gray-500"
-              onClick={toggleOverflow}
-            >
-              {isOverflowOpen ? '-' : '+'} {overflowBranchCount}
-            </button>
-          </div>
-        ) : null}
+        {conformanceRatio.map(toPercentage).getOr('-')}
       </div>
+      <Tooltip
+        id={`${repositoryId}-conformance`}
+        place="top-start"
+        style={{
+          backgroundColor: 'rgba(var(--color-bg-page-content), 1)',
+          color: 'rgba(var(--color-text-base), 1)',
+          padding: '0',
+        }}
+        opacity={1}
+        className="shadow-md border border-theme-seperator max-w-md z-10"
+      >
+        <div className="px-4 py-3">
+          {branchesThatConform.length ? (
+            <>
+              <h3 className="font-medium mb-2">
+                Release branches conforming to branch policies
+              </h3>
+              <ul>
+                {branchesThatConform.map(b => (
+                  <li
+                    className="inline-block bg-theme-success-dim px-2 rounded mb-2 mr-2 text-sm"
+                    key={b.name}
+                  >
+                    {b.name.replace('refs/heads/', '')}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {branchesThatDontConform.length ? (
+            <>
+              <h3
+                className={twJoin(
+                  'font-medium mb-2',
+                  branchesThatConform.length && 'mt-1'
+                )}
+              >
+                Release branches not conforming to branch policies
+              </h3>
+              <ul>
+                {branchesThatDontConform.map(b => (
+                  <li
+                    className="inline-block bg-theme-tag px-2 rounded mb-2 mr-2 text-sm"
+                    key={b.name}
+                  >
+                    {b.name.replace('refs/heads/', '')}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+      </Tooltip>
+    </>
+  );
+};
+
+type LanguagesProps = {
+  qualityGateStatus: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number]['sonarQualityGateStatuses'];
+  className?: string;
+};
+
+const Languages = ({ qualityGateStatus, className }: LanguagesProps) => {
+  const uiConfig = useUiConfig();
+
+  if (!uiConfig.hasSonar) return null;
+
+  return (
+    <div
+      className={twMerge('grid grid-cols-[min-content_1fr] items-start gap-2', className)}
+    >
+      <Code size={18} className="mt-1 text-theme-icon" />
+      {qualityGateStatus?.language ? (
+        qualityGateStatus.language.stats.length === 0 ? (
+          <span className="text-theme-helptext">
+            Couldn't get language details from SonarQube
+          </span>
+        ) : (
+          <ul className="flex gap-4">
+            {qualityGateStatus.language.stats.map(l => (
+              <li
+                key={l.lang}
+                data-tooltip-id="react-tooltip"
+                data-tooltip-content={`${num(l.loc)} lines of code`}
+                className="flex gap-2 items-center"
+              >
+                <span
+                  className="rounded-full w-3 h-3 inline-block"
+                  style={{ backgroundColor: l.color }}
+                />
+                <span>
+                  {l.lang}{' '}
+                  <span className="text-theme-helptext">
+                    {divide(
+                      l.loc,
+                      !qualityGateStatus || qualityGateStatus?.language === null
+                        ? 0
+                        : qualityGateStatus.language.ncloc || 0
+                    )
+                      .map(toPercentage)
+                      .getOr('-')}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
+        <span className="text-theme-helptext">
+          Configure SonarQube to get more details
+        </span>
+      )}
     </div>
+  );
+};
+
+type PRsProps = {
+  isInactive: boolean;
+  prCount: number;
+  repositoryId: string;
+};
+
+const PRs = ({ isInactive, prCount, repositoryId }: PRsProps) => {
+  const [isTooltipTriggered, setIsTooltipTriggered] = useState(false);
+  const pullRequest = trpc.pullRequests.getPullRequestsSummaryForRepo.useQuery(
+    {
+      queryContext: useQueryContext(),
+      repositoryId,
+    },
+    { enabled: prCount !== 0 && isTooltipTriggered }
+  );
+  const [queryPeriodDays] = useQueryPeriodDays();
+
+  if (isInactive) return null;
+  return (
+    <>
+      <GitPullRequest size={18} className="text-theme-icon" />
+      <span
+        onMouseOver={() => setIsTooltipTriggered(true)}
+        onFocus={() => setIsTooltipTriggered(true)}
+        data-tooltip-id={`${repositoryId}-pr`}
+        className="cursor-default"
+      >
+        {prCount}
+      </span>
+      <Tooltip
+        id={`${repositoryId}-pr`}
+        place="top-start"
+        style={{
+          backgroundColor: 'rgba(var(--color-bg-page-content), 1)',
+          color: 'rgba(var(--color-text-base), 1)',
+          padding: '0',
+        }}
+        opacity={1}
+        className="shadow-md border border-theme-seperator max-w-md z-10"
+      >
+        <div className="px-4 py-3">
+          {prCount === 0 ? (
+            `No pull requests raised in the last ${queryPeriodDays} days`
+          ) : (
+            <ul className="grid grid-cols-2 gap-4">
+              <li>
+                <h3 className="text-sm">Active</h3>
+                <div className="font-medium">{pullRequest.data?.active ?? '...'}</div>
+              </li>
+              <li>
+                <h3 className="text-sm">Abandoned</h3>
+                <div className="font-medium">{pullRequest.data?.abandoned ?? '...'}</div>
+              </li>
+              <li>
+                <h3 className="text-sm">Completed</h3>
+                <div className="font-medium">{pullRequest.data?.completed ?? '...'}</div>
+              </li>
+              <li>
+                <h3 className="text-sm">Time to approve</h3>
+                <div className="font-medium">
+                  {pullRequest.data?.avgTime
+                    ? prettyMilliseconds(pullRequest.data.avgTime, { unitCount: 2 })
+                    : '...'}
+                </div>
+              </li>
+            </ul>
+          )}
+        </div>
+      </Tooltip>
+    </>
+  );
+};
+
+type DeveloeprsProps = {
+  devs: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number]['devs'];
+  repositoryId: string;
+  repoName: string;
+};
+
+const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
+  const [hoveredDevEmail, setHoveredDevEmail] = useState<string | null>(null);
+  const queryContext = useQueryContext();
+  const devDetails = trpc.commits.getRepoCommitsDetailsForAuthorEmail.useQuery(
+    {
+      queryContext,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      authorEmail: hoveredDevEmail!,
+      repositoryId,
+    },
+    { enabled: hoveredDevEmail !== null }
+  );
+
+  if (!devs?.count) return;
+
+  return (
+    <Link to={`../devs?search=repo:"${repoName}"`}>
+      <ol>
+        {devs.top.map(d => (
+          <Fragment key={d.email}>
+            <li
+              className="inline-block -ml-2"
+              data-tooltip-id={`${repositoryId}-${d.email}`}
+              onMouseOver={() => setHoveredDevEmail(d.email)}
+              onFocus={() => setHoveredDevEmail(d.email)}
+            >
+              <ProfilePic
+                src={d.imageUrl}
+                className={twJoin(
+                  'inline-block object-cover max-w-[32px] max-h-[32px]',
+                  'rounded-full bg-theme-tag border border-theme-page-content'
+                )}
+              />
+            </li>
+            <Tooltip
+              id={`${repositoryId}-${d.email}`}
+              place="top-end"
+              style={{
+                backgroundColor: 'rgba(var(--color-bg-page-content), 1)',
+                color: 'rgba(var(--color-text-base), 1)',
+                padding: '0',
+              }}
+              opacity={1}
+              className="shadow-md border border-theme-seperator max-w-md z-10 min-w-[18rem]"
+            >
+              <div className="p-4 grid grid-cols-[min-content_1fr] gap-2 items-start">
+                <div className="place-self-center">
+                  <ProfilePic
+                    src={d.imageUrl}
+                    className={twJoin(
+                      'inline-block object-cover max-w-[32px] max-h-[32px]',
+                      'rounded-full bg-theme-tag border border-theme-page-content'
+                    )}
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{d.name}</h3>
+                  <div className="text-sm text-theme-helptext">
+                    {devDetails.data?.totalCommits ?? '...'} commits in{' '}
+                    {devDetails.data?.totalReposCommitted ?? '...'} repositories
+                  </div>
+                </div>
+                <div className="place-self-center text-theme-icon">
+                  <Calendar size={18} />
+                </div>
+                <div className="text-sm text-theme-helptext">
+                  Committed{' '}
+                  {devDetails.data?.latestCommit
+                    ? relativeTime(devDetails.data.latestCommit)
+                    : '...'}
+                </div>
+                <div className="justify-self-center text-theme-icon pt-0.5">
+                  <GitCommit size={18} />
+                </div>
+                <div className="text-sm min-h-[2.5rem]">
+                  <div className="text-theme-helptext">
+                    {devDetails.data?.repoCommits ?? '...'} commits to this repository
+                  </div>
+                  <div className="flex gap-2">
+                    {devDetails.data?.totalAdd ? (
+                      <span className="text-theme-success">
+                        + {devDetails.data.totalAdd}
+                      </span>
+                    ) : null}
+                    {devDetails.data?.totalEdit ? (
+                      <span className="text-theme-warn">
+                        ~ {devDetails.data?.totalEdit}
+                      </span>
+                    ) : null}
+                    {devDetails.data?.totalDelete ? (
+                      <span className="text-theme-danger">
+                        - {devDetails.data.totalDelete}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </Tooltip>
+          </Fragment>
+        ))}
+        {devs.count - devs.top.length > 0 ? (
+          <li
+            className={twJoin(
+              'inline-block -ml-2',
+              'rounded-full w-[32px] h-[32px] leading-8 text-center',
+              'text-xs text-theme-danger bg-theme-danger-dim font-medium',
+              'border border-theme-page-content'
+            )}
+          >
+            <span>{`+${devs.count - devs.top.length}`}</span>
+          </li>
+        ) : null}
+      </ol>
+    </Link>
   );
 };
 
 type RepoHealthProps = {
   item: RouterClient['repos']['getFilteredAndSortedReposWithStats']['items'][number];
-  isFirst?: boolean;
+  index: number;
 };
 
-const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
+const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const location = useLocation();
+  const uiConfig = useUiConfig();
+  const isFirst = index === 0;
+  const isInactive = useMemo(
+    () => item.builds === 0 && item.commits === 0,
+    [item.builds, item.commits]
+  );
 
   const tabs = useMemo(
     () => [
@@ -155,15 +401,17 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
         item.repoDetails.url || '',
         item.branches
       ),
-      commits(item.repositoryId, queryPeriodDays, item.commits),
-      prs(item.repositoryId, item.pullRequests),
       tests(item.repositoryId, item.tests),
-      codeQuality(
-        item.repositoryId,
-        item.repoDetails.name,
-        item.repoDetails.defaultBranch || 'master',
-        combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
-      ),
+      ...(uiConfig.hasSonar
+        ? [
+            codeQuality(
+              item.repositoryId,
+              item.repoDetails.name,
+              item.repoDetails.defaultBranch || 'master',
+              combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
+            ),
+          ]
+        : []),
     ],
     [
       item.repositoryId,
@@ -172,11 +420,9 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
       item.repoDetails.url,
       item.repoDetails.name,
       item.branches,
-      item.commits,
-      item.pullRequests,
       item.tests,
       item.sonarQualityGateStatuses?.status,
-      queryPeriodDays,
+      uiConfig.hasSonar,
     ]
   );
 
@@ -191,133 +437,163 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, isFirst }) => {
     return setSelectedTab(isFirst ? tabs[0] : null);
   }, [sortBy, tabs, isFirst]);
 
-  const onCardClick = useCallback(() => {
-    setSelectedTab(selectedTab ? null : tabs[0]);
-  }, [selectedTab, tabs]);
-
   const pipelinesUrl = location.pathname.replace(
     '/repos',
     `/release-pipelines?search=repo:"${item.repoDetails.name}"`
   );
-  const isExpanded = selectedTab !== null || isFirst || false;
+  const isExpanded = selectedTab !== null;
 
   return (
     <div
-      className={`bg-white ease-in-out rounded-lg shadow ${
-        item.builds === 0 && item.commits === 0 ? 'opacity-60' : ''
-      } border-l-4 p-6 mb-4 transition-colors duration-500 ${
-        isExpanded ? 'border-gray-500' : ''
-      }`}
+      className={twJoin(
+        'bg-theme-page-content rounded mb-4 border border-theme-seperator',
+        'hover:shadow-md transition-shadow duration-200',
+        'group',
+        isExpanded ? 'shadow-md' : 'shadow-sm',
+        isInactive && 'opacity-60'
+      )}
     >
-      <div className="grid grid-flow-row mt-2">
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
-        <div
-          className="w-full cursor-pointer"
-          role="button"
-          onClick={onCardClick}
-          tabIndex={0}
-        >
-          <div className="grid mx-6 grid-flow-col items-stretch">
-            <div>
-              <div>
-                <a
-                  href={item.repoDetails.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="link-text font-bold text-lg truncate max-w-full"
-                  onClick={event => event.stopPropagation()}
-                >
-                  {item.repoDetails.name}
-                </a>
-                {item.sonarQualityGateStatuses?.language ? (
-                  <span className="inline-block ml-4">
-                    {' '}
-                    {item.sonarQualityGateStatuses.language.stats.map(l => (
-                      <Flair
-                        key={l.lang}
-                        flairColor={l.color}
-                        title={`${num(l.loc)} lines of code`}
-                        label={`${divide(
-                          l.loc,
-                          !item.sonarQualityGateStatuses ||
-                            item.sonarQualityGateStatuses?.language === null
-                            ? 0
-                            : item.sonarQualityGateStatuses.language.ncloc || 0
-                        )
-                          .map(toPercentage)
-                          .getOr('-')} ${l.lang}`}
-                      />
-                    ))}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-            <div
-              className="text-gray-600 font-semibold text-right"
-              style={{ lineHeight: '27px' }}
+      <div className="grid grid-flow-col p-6 justify-between items-end">
+        <div>
+          <h2 className="inline-flex items-center gap-2 mb-2">
+            <a
+              href={item.repoDetails.url}
+              target="_blank"
+              rel="noreferrer"
+              className={twJoin(
+                'font-medium text-lg truncate max-w-full',
+                'group-hover:text-theme-highlight hover:underline',
+                isExpanded && 'text-theme-highlight'
+              )}
             >
-              <div
-                className="italic text-sm text-gray-400"
-                style={{ lineHeight: 'inherit' }}
+              {item.repoDetails.name}
+            </a>
+            <span className="inline-flex items-center gap-2 text-theme-icon">
+              {item.repoDetails.defaultBranch ? (
+                <>
+                  <GitBranch size={16} />
+                  {item.repoDetails.defaultBranch.replace('refs/heads/', '')}
+                </>
+              ) : (
+                'Not initialised'
+              )}
+            </span>
+          </h2>
+
+          <Languages qualityGateStatus={item.sonarQualityGateStatuses} className="mb-2" />
+
+          <div className="flex items-center gap-2">
+            <ReleasePipeline size={18} className="text-theme-icon" />
+            {item.pipelineCounts ? (
+              <Link
+                to={pipelinesUrl}
+                className={twJoin(
+                  'group-hover:text-theme-highlight hover:underline',
+                  isExpanded && 'text-theme-highlight'
+                )}
               >
-                Default branch{' '}
-                <code className="border-gray-300 border-2 rounded-md px-1 py-0 bg-gray-50">
-                  {item.repoDetails.defaultBranch
-                    ? item.repoDetails.defaultBranch.replace('refs/heads/', '')
-                    : null}
-                </code>
-              </div>
+                {`${pluralise(
+                  item.pipelineCounts,
+                  'release pipeline',
+                  'release pipelines'
+                )}`}{' '}
+              </Link>
+            ) : (
+              '0 release pipelines'
+            )}
+            {item.releaseBranches ? (
+              <ReleaseBranches
+                repositoryId={item.repoDetails.id}
+                defaultBranch={item.repoDetails.defaultBranch}
+                branches={item.releaseBranches}
+              />
+            ) : null}
+
+            <PRs
+              isInactive={isInactive}
+              prCount={item.pullRequests}
+              repositoryId={item.repositoryId}
+            />
+          </div>
+
+          {isInactive ? (
+            <div
+              className="text-theme-warn bg-theme-warn text-xs inline-block py-1 px-2 rounded-md"
+              data-tooltip-id="react-tooltip"
+              data-tooltip-html={`This repository doesn't count towards stats,<br />
+          as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}
+            >
+              Inactive
             </div>
+          ) : null}
+        </div>
+        <div className="text-right">
+          <TinyAreaGraph
+            data={range(0, Math.floor(queryPeriodDays / 7)).map(weekIndex => {
+              return item.weeklyCommits?.find(x => x.weekIndex === weekIndex)?.count || 0;
+            })}
+            itemToValue={identity}
+            color={areaGraphColors.good}
+            graphConfig={graphConfig.medium}
+            className="mb-3 w-24 inline-block"
+          />
+          <div>
+            <span className="text-theme-icon">Commits: </span>
+            {item.commits}
           </div>
         </div>
       </div>
 
-      {item.releaseBranches ? (
-        <div className="px-6 py-1">
-          <ReleaseBranches
-            repositoryId={item.repoDetails.id}
-            defaultBranch={item.repoDetails.defaultBranch}
-            branches={item.releaseBranches}
+      <div
+        className={twJoin(
+          'grid grid-cols-[max-content_max-content] justify-between items-center relative',
+          'border-t border-theme-seperator',
+          selectedTab !== null && 'after:content-["_"] after:absolute after:w-full',
+          selectedTab !== null && 'after:bottom-0 after:left-0',
+          selectedTab !== null && 'after:border-b after:border-b-theme-seperator'
+        )}
+      >
+        <ul className="inline-grid grid-flow-col">
+          {tabs.map((tab, index) => {
+            const isSelected = selectedTab === tab;
+
+            return (
+              <li key={tab.title} className="z-[1]">
+                <button
+                  className={twJoin(
+                    'inline-flex items-baseline gap-2 px-11 py-3 hover:bg-theme-hover border-b border-b-transparent',
+                    index === 0 ? 'border-r' : 'border-x',
+                    isSelected ? 'border-x-theme-seperator' : 'border-x-transparent',
+                    isExpanded && !isSelected && 'hover:border-b-theme-seperator',
+                    index === 0 && !isSelected && 'rounded-bl',
+                    isSelected && 'bg-theme-hover'
+                  )}
+                  onClick={() => setSelectedTab(selectedTab === tab ? null : tab)}
+                >
+                  <span className="text-2xl font-medium">
+                    {typeof tab.count === 'number' ? num(tab.count) : tab.count}
+                  </span>
+                  <span className="text-theme-helptext uppercase text-sm pb-0.5">
+                    {tab.title}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="px-6">
+          <Developers
+            devs={item.devs}
+            repositoryId={item.repositoryId}
+            repoName={item.repoDetails.name}
           />
-          {item.pipelineCounts ? (
-            <Link to={pipelinesUrl} className="link-text">
-              {`Used in ${pluralise(
-                item.pipelineCounts ?? 0,
-                'release pipeline',
-                'release pipelines'
-              )}`}{' '}
-            </Link>
-          ) : null}
         </div>
-      ) : null}
-
-      {item.builds === 0 && item.commits === 0 ? (
-        <p className="pl-5">
-          <span
-            className="bg-amber-300 text-xs inline-block py-1 px-2 uppercase rounded-md"
-            data-tooltip-id="react-tooltip"
-            data-tooltip-html={`This repository doesn't count towards stats,<br />
-            as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}
-          >
-            Inactive
-          </span>
-        </p>
-      ) : null}
-
-      <div className="mt-4 px-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
-        {tabs.map(tab => (
-          <TopLevelTab
-            key={tab.title}
-            count={tab.count}
-            label={tab.title}
-            isSelected={selectedTab === tab}
-            onToggleSelect={() => setSelectedTab(selectedTab === tab ? null : tab)}
-          />
-        ))}
       </div>
-      <span role="region">{selectedTab ? <selectedTab.Component /> : null}</span>
+      <div role="region" className="bg-theme-hover">
+        {selectedTab ? <selectedTab.Component /> : null}
+      </div>
     </div>
   );
 };
 
-export default RepoHealth;
+export default RepoHealth2;

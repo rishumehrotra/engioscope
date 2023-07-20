@@ -1,9 +1,22 @@
 import React from 'react';
-import type { UICommits } from '../../../shared/types.js';
 import { minPluralise, shortDate } from '../../helpers/utils.js';
 
+type CommitsTimelineItem = {
+  date: string;
+  total: number;
+};
+
+export const timelineProp = (commits: CommitsTimelineItem[]) => {
+  const dateCommits: Record<string, number> = {};
+  commits.forEach(commit => {
+    dateCommits[commit.date] = commit.total;
+  });
+
+  return dateCommits;
+};
+
 type CommitTimelineProps = {
-  timeline: UICommits['byDev'][number]['byDate'];
+  timeline: ReturnType<typeof timelineProp>;
   max: number;
   queryPeriodDays: number;
   className?: string;

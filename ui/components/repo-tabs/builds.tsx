@@ -3,7 +3,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { byNum, byString } from 'sort-lib';
 import { GitPullRequest } from 'react-feather';
 import { relativeTime, num, shortDate } from '../../helpers/utils.js';
-import type { Tab } from './Tabs.jsx';
+import type { Tab } from './Tab.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';

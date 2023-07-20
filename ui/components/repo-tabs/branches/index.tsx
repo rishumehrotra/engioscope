@@ -3,7 +3,7 @@ import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import { GitBranch } from 'react-feather';
 import { twJoin } from 'tailwind-merge';
 import type { RepoAnalysis } from '../../../../shared/types.js';
-import type { Tab as TTab } from '../Tabs.jsx';
+import type { Tab as TTab } from '../Tab.jsx';
 import BranchStats from './BranchStats.jsx';
 import { trpc } from '../../../helpers/trpc.js';
 import { useCollectionAndProject } from '../../../hooks/query-hooks.js';
