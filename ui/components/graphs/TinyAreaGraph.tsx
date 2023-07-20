@@ -239,6 +239,8 @@ const GroupPathSkippingUndefineds = <T extends unknown>({
       }, []);
   }, [data, itemToValue, xCoord, yCoord]);
 
+  if (!nodes.length) return;
+
   return [
     ...nodes.reduce<ReactNode[]>(
       (acc, item, itemIndex) => {
@@ -252,6 +254,7 @@ const GroupPathSkippingUndefineds = <T extends unknown>({
             // trailing broken line
             acc.push(
               <BrokenLine
+                key={acc.length}
                 p1={prevItem}
                 p2={[xCoord(data.length - 1), prevItem[1]]}
                 index={itemIndex}
@@ -260,20 +263,30 @@ const GroupPathSkippingUndefineds = <T extends unknown>({
             return acc;
           }
 
-          acc.push(<BrokenLine p1={prevItem} p2={nextItem} index={itemIndex} />);
+          acc.push(
+            <BrokenLine key={acc.length} p1={prevItem} p2={nextItem} index={itemIndex} />
+          );
           return acc;
         }
 
         const prevItem = nodes[itemIndex - 1];
         if (prevItem === undefined) return acc;
 
-        acc.push(<ContinuousLine p1={prevItem} p2={item} index={itemIndex} />);
+        acc.push(
+          <ContinuousLine key={acc.length} p1={prevItem} p2={item} index={itemIndex} />
+        );
         return acc;
       },
       [
         // start with an skip segment. Might be zero length.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        <BrokenLine p1={[xCoord(0), nodes[0]![1]]} p2={nodes[0]!} index={-1} />,
+        <BrokenLine
+          key="first"
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          p1={[xCoord(0), nodes[0]![1]]}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          p2={nodes[0]!}
+          index={-1}
+        />,
       ]
     ),
   ];

@@ -167,6 +167,28 @@ const BuildPipelineTests: React.FC<{
                 : 0
             ),
           },
+          {
+            title: '',
+            key: 'coverage graph',
+            value: pipeline => ({
+              type: 'graph',
+              data:
+                pipeline.coverageByWeek?.sort(asc(byNum(prop('weekIndex')))).map(t =>
+                  t.hasCoverage
+                    ? divide(
+                        t.coverage?.coveredBranches || 0,
+                        t.coverage?.totalBranches || 0
+                        // eslint-disable-next-line unicorn/no-useless-undefined
+                      ).getOr(undefined)
+                    : undefined
+                ) || [],
+              color: increaseIsBetter2(
+                pipeline.tests
+                  ?.sort(asc(byNum(prop('weekIndex'))))
+                  .map(t => (t.hasTests ? t.totalTests : 0)) || []
+              ),
+            }),
+          },
         ]}
       />
       {pipelinesWithTests?.length === 0 ? (
