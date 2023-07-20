@@ -150,7 +150,7 @@ const BuildPipelineTests: React.FC<{
             title: 'Branch coverage',
             key: 'branch coverage',
             value: pipeline =>
-              pipeline.latestCoverage?.coverage
+              pipeline.latestCoverage?.hasCoverage
                 ? divide(
                     pipeline.latestCoverage.coverage.coveredBranches,
                     pipeline.latestCoverage.coverage.totalBranches
@@ -159,7 +159,7 @@ const BuildPipelineTests: React.FC<{
                     .getOr('-')
                 : '-',
             sorter: byNum(pipeline =>
-              pipeline.latestCoverage?.coverage
+              pipeline.latestCoverage?.hasCoverage
                 ? divide(
                     pipeline.latestCoverage.coverage.coveredBranches,
                     pipeline.latestCoverage.coverage.totalBranches
@@ -176,8 +176,8 @@ const BuildPipelineTests: React.FC<{
                 pipeline.coverageByWeek?.sort(asc(byNum(prop('weekIndex')))).map(t =>
                   t.hasCoverage
                     ? divide(
-                        t.coverage?.coveredBranches || 0,
-                        t.coverage?.totalBranches || 0
+                        t.coverage.coveredBranches,
+                        t.coverage.totalBranches
                         // eslint-disable-next-line unicorn/no-useless-undefined
                       ).getOr(undefined)
                     : undefined

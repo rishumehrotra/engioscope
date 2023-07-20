@@ -78,8 +78,8 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
           value: x =>
             x.latestCoverage?.hasCoverage
               ? divide(
-                  x.latestCoverage.coverage?.coveredBranches || 0,
-                  x.latestCoverage.coverage?.totalBranches || 0
+                  x.latestCoverage.coverage.coveredBranches,
+                  x.latestCoverage.coverage.totalBranches
                 )
                   .map(toPercentage)
                   .getOr('_')
@@ -88,8 +88,8 @@ const TestsAndCoverageDefinitions: React.FC<TestsAndCoverageDefListProps> = ({
           sorter: byNum(x =>
             x.latestCoverage?.hasCoverage
               ? divide(
-                  x.latestCoverage.coverage?.coveredBranches || 0,
-                  x.latestCoverage.coverage?.totalBranches || 0
+                  x.latestCoverage.coverage.coveredBranches,
+                  x.latestCoverage.coverage.totalBranches
                 )
                   .map(multiply(100))
                   .getOr(0)
@@ -229,7 +229,7 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
         definitions?.some(
           d =>
             d.latestCoverage?.hasCoverage === true &&
-            d.latestCoverage?.coverage?.coveredBranches
+            d.latestCoverage?.coverage.coveredBranches
         ) ?? false
       );
     }
@@ -277,8 +277,7 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
           repo.definitions?.filter(
             d =>
               d.latestCoverage?.hasCoverage &&
-              d.latestCoverage?.coverage?.coveredBranches &&
-              d.latestCoverage?.coverage?.coveredBranches > 0
+              d.latestCoverage?.coverage.coveredBranches > 0
           ) ?? [],
       };
     }
@@ -286,11 +285,7 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
       return {
         ...repo,
         definitions:
-          repo.definitions?.filter(
-            d =>
-              d.latestCoverage?.hasCoverage === false ||
-              !d.latestCoverage?.coverage?.coveredBranches
-          ) ?? [],
+          repo.definitions?.filter(d => d.latestCoverage?.hasCoverage === false) ?? [],
       };
     }
     return shouldNeverReachHere(statusType);

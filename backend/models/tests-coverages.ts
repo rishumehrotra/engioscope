@@ -10,14 +10,19 @@ import { fromContext } from './utils.js';
 
 export type CoverageByWeek = {
   weekIndex: number;
-  hasCoverage: boolean;
-  definitionId: number;
-  buildId: number;
-  coverage?: {
-    totalBranches: number;
-    coveredBranches: number;
-  };
-};
+} & (
+  | { hasCoverage: false }
+  | {
+      hasCoverage: true;
+      definitionId: number;
+      buildId: number;
+      coverage: {
+        totalBranches: number;
+        coveredBranches: number;
+      };
+    }
+);
+
 export type BranchCoverage = {
   definitionId: number;
   repositoryId: string;

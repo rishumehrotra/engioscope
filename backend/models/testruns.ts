@@ -213,11 +213,7 @@ export const getTestsAndCoverageForRepoIds = async ({
         queryContext,
         def.coverageByWeek,
         getOneOldCoverageForBuildDefID(def.repositoryId, def.id),
-        {
-          buildId: 0,
-          definitionId: 0,
-          hasCoverage: false,
-        }
+        { hasCoverage: false }
       );
 
       const latestTest = tests ? getLatest(tests) : null;
@@ -313,8 +309,8 @@ export const getTestsAndCoveragePipelinesForDownload = async ({
     totalTests: x.latestTest?.hasTests ? x.latestTest.totalTests : 0,
     totalCoverage: x.latestCoverage?.hasCoverage
       ? divide(
-          x.latestCoverage.coverage?.coveredBranches || 0,
-          x.latestCoverage.coverage?.totalBranches || 0
+          x.latestCoverage.coverage.coveredBranches,
+          x.latestCoverage.coverage.totalBranches
         )
           .map(multiply(100))
           .getOr(0)
@@ -496,10 +492,10 @@ export const getTestsAndCoverageByWeek = async (
     (prev, definition) => ({
       coveredBranches:
         prev.coveredBranches +
-        (definition.hasCoverage ? definition.coverage?.coveredBranches || 0 : 0),
+        (definition.hasCoverage ? definition.coverage.coveredBranches : 0),
       totalBranches:
         prev.totalBranches +
-        (definition.hasCoverage ? definition.coverage?.totalBranches || 0 : 0),
+        (definition.hasCoverage ? definition.coverage.totalBranches : 0),
     }),
     { coveredBranches: 0, totalBranches: 0 }
   );
