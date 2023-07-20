@@ -292,12 +292,7 @@ export const getTotalCommitsForRepositoryIds = (
   ]).exec();
 };
 
-const devSortKeys = [
-  'authorName',
-  'totalReposCommitted',
-  'totalAdd',
-  'totalDelete',
-] as const;
+const devSortKeys = ['authorName', 'totalReposCommitted'] as const;
 
 export type DevSortKey = (typeof devSortKeys)[number];
 
@@ -377,41 +372,27 @@ export const devListingInputParser = z.object({
 export type DevListingFilters = z.infer<typeof devListingInputParser>;
 
 type DailyCommit = {
-  dailyCommitsCount: number;
-  dailyAdd: number;
-  dailyEdit: number;
-  dailyDelete: number;
-  authorDate: string;
+  count: number;
+  add: number;
+  edit: number;
+  delete: number;
+  date: string;
 };
 
 type AllCommits = {
-  repoName: string;
-  repoUrl: string;
-  repoDailyCommits: DailyCommit[];
-  repoCommitsCount: number;
+  name: string;
+  url: string;
+  dailyCommits: DailyCommit[];
+  commitCount: number;
   authorEmail: string;
   authorName: string;
   repositoryId: string;
-  repoAdd: number;
-  repoEdit: number;
-  repoDelete: number;
+  add: number;
+  edit: number;
+  delete: number;
   latestCommit: Date;
 };
 
-type DevListing = {
-  totalCommits: number;
-  totalAdd: number;
-  totalEdit: number;
-  totalDelete: number;
-  allCommits: AllCommits[];
-  authorEmail: string;
-  authorName: string;
-  authorImage: string;
-  lowerAuthorName: string;
-  lowerAuthorEmail: string;
-  latestCommit: Date;
-  totalReposCommitted: number;
-};
 export const getSortedDevListing = async ({
   queryContext,
   searchTerm,
@@ -442,7 +423,14 @@ export const getSortedDevListing = async ({
   const [repos, commits] = await Promise.all([
     RepositoryModel.find({ collectionName, 'project.name': project }).lean(),
 
-    CommitModel.aggregate<DevListing>([
+    CommitModel.aggregate<{
+      totalCommits: number;
+      repos: AllCommits[];
+      authorEmail: string;
+      authorName: string;
+      authorImage: string;
+      latestCommit: Date;
+    }>([
       {
         $match: {
           collectionName,
@@ -499,19 +487,19 @@ export const getSortedDevListing = async ({
             },
             repositoryId: '$repositoryId',
           },
-          repoDailyCommits: {
+          dailyCommits: {
             $push: {
-              dailyCommitsCount: '$dailyCommitsCount',
-              dailyAdd: '$dailyAdd',
-              dailyEdit: '$dailyEdit',
-              dailyDelete: '$dailyDelete',
-              authorDate: '$authorDate',
+              count: '$dailyCommitsCount',
+              add: '$dailyAdd',
+              edit: '$dailyEdit',
+              delete: '$dailyDelete',
+              date: '$authorDate',
             },
           },
-          repoAdd: { $sum: '$dailyAdd' },
-          repoEdit: { $sum: '$dailyEdit' },
-          repoDelete: { $sum: '$dailyDelete' },
-          repoCommitsCount: { $sum: '$dailyCommitsCount' },
+          add: { $sum: '$dailyAdd' },
+          edit: { $sum: '$dailyEdit' },
+          delete: { $sum: '$dailyDelete' },
+          commitCount: { $sum: '$dailyCommitsCount' },
           authorEmail: { $first: '$authorEmail' },
           repositoryId: { $first: '$repositoryId' },
           authorName: { $first: '$authorName' },
@@ -521,14 +509,9 @@ export const getSortedDevListing = async ({
       },
       {
         $group: {
-          _id: {
-            $toLower: '$authorEmail',
-          },
-          totalCommits: { $sum: '$repoCommitsCount' },
-          totalAdd: { $sum: '$repoAdd' },
-          totalEdit: { $sum: '$repoEdit' },
-          totalDelete: { $sum: '$repoDelete' },
-          allCommits: { $push: '$$ROOT' },
+          _id: { $toLower: '$authorEmail' },
+          totalCommits: { $sum: '$commitCount' },
+          repos: { $push: '$$ROOT' },
           authorEmail: { $first: '$authorEmail' },
           authorName: { $first: '$authorName' },
           authorImage: { $first: '$authorImage' },
@@ -539,11 +522,7 @@ export const getSortedDevListing = async ({
         $project: {
           _id: 0,
           totalCommits: 1,
-          totalAdd: 1,
-          totalEdit: 1,
-          totalDelete: 1,
-          totalReposCommitted: { $size: '$allCommits' },
-          allCommits: 1,
+          repos: 1,
           authorEmail: 1,
           authorName: 1,
           authorImage: 1,
@@ -555,23 +534,26 @@ export const getSortedDevListing = async ({
       sortStage,
       { $skip: pageSize * pageNumber },
       { $limit: pageSize },
+      {
+        $project: {
+          lowerAuthorName: 0,
+          lowerAuthorEmail: 0,
+        },
+      },
     ]).exec(),
   ]);
 
   const findRepo = (repoId: string) => repos.find(repo => repo.id === repoId);
   const devCommits = commits.map(commit => {
-    const allCommits = commit.allCommits.map(repo => {
+    const repos = commit.repos.map(repo => {
       return {
         ...repo,
-        repoName: findRepo(repo.repositoryId)?.name || '',
-        repoUrl: findRepo(repo.repositoryId)?.url,
+        name: findRepo(repo.repositoryId)?.name || '',
+        url: findRepo(repo.repositoryId)?.url,
       };
     });
 
-    return {
-      ...commit,
-      allCommits,
-    };
+    return { ...commit, repos };
   });
 
   return {

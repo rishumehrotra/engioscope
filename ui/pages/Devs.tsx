@@ -12,10 +12,7 @@ const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
   return (
     <>
       <AppliedFilters type="devs" count={devsCount} />
-      <SortControls
-        sortByList={['Name', 'Repos Committed', 'File additions', 'File deletions']}
-        defaultSortDirection="asc"
-      />
+      <SortControls sortByList={['Name', 'Repos Committed']} defaultSortDirection="asc" />
     </>
   );
 };
