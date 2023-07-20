@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
 import type { ReactNode } from 'react';
 import React, { useCallback, useMemo } from 'react';
 import { head, last } from 'rambda';
@@ -14,7 +15,6 @@ type GraphConfig = {
   hoverPointStroke: number;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 type GraphOptions<T extends unknown> = {
   data: T[] | undefined;
   itemToValue: (x: T) => number | undefined;
@@ -66,30 +66,30 @@ export const areaGraphColors = {
   },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
-type Renderer = <T extends unknown>(x: {
+type RendererProps<T extends unknown> = {
   data: T[];
   color: GraphOptions<number>['color'];
   itemToValue: (x: T) => number | undefined;
+  // eslint-disable-next-line react/no-unused-prop-types
   itemTooltipLabel?: (x: T) => string;
   yCoord: (value: number) => number;
   xCoord: (index: number) => number;
+  // eslint-disable-next-line react/no-unused-prop-types
   options: Omit<GraphConfig, 'width' | 'height'>;
+  // eslint-disable-next-line react/no-unused-prop-types
   dateForIndex: (index: number) => Date | undefined;
-}) => ReactNode | ReactNode[];
+};
 
-const hoverPointTooltipRenderer: Renderer = rendererArgs => {
-  const {
-    color,
-    itemTooltipLabel,
-    itemToValue,
-    data,
-    yCoord,
-    xCoord,
-    options,
-    dateForIndex,
-  } = rendererArgs;
-
+const HoverPoints = <T extends unknown>({
+  color,
+  itemTooltipLabel,
+  itemToValue,
+  data,
+  yCoord,
+  xCoord,
+  options,
+  dateForIndex,
+}: RendererProps<T>) => {
   if (!itemTooltipLabel) return null;
 
   return data.map((item, itemIndex) => {
@@ -118,86 +118,126 @@ const hoverPointTooltipRenderer: Renderer = rendererArgs => {
   });
 };
 
-const pathRenderer: Renderer = rendererArgs => {
-  const { color, itemToValue, data: inputData, yCoord, xCoord, options } = rendererArgs;
+const AreaUnder = <T extends unknown>({
+  color,
+  data,
+  itemToValue,
+  yCoord,
+  xCoord,
+}: RendererProps<T>) => {
+  const points = useMemo(() => {
+    const firstValidItem = data.map(itemToValue).find(x => x !== undefined) || 0;
 
-  // Casting to number[] is ok here, since this renderer is only chosen if there are no undefineds
-  const data = inputData.map(itemToValue) as number[];
+    return data
+      .reduce<[number, number][]>((acc, item, itemIndex) => {
+        if (itemIndex === 0) {
+          acc.push([itemIndex, 0]);
+        }
+
+        acc.push([
+          itemIndex,
+          itemToValue(item) ?? (itemIndex === 0 ? firstValidItem : acc[itemIndex][1]),
+        ]);
+
+        if (itemIndex === data.length - 1) {
+          acc.push([itemIndex, 0]);
+        }
+        return acc;
+      }, [])
+      .map(item => `${xCoord(item[0])},${yCoord(item[1])}`)
+      .join(' ');
+  }, [data, itemToValue, xCoord, yCoord]);
 
   return (
-    <>
-      <path
-        className="transition-all duration-200"
-        d={data
-          .map(
-            (item, itemIndex) =>
-              `${itemIndex === 0 ? 'M' : 'L'} ${xCoord(itemIndex)} ${yCoord(item)}`
-          )
-          .join(' ')}
-        fill="none"
-        stroke={(color || areaGraphColors.neutral).line}
-        strokeWidth={options.lineWidth}
-      />
-      <polygon
-        points={data
-          .map(
-            (item, itemIndex) =>
-              `${itemIndex === 0 ? `${xCoord(itemIndex)},${yCoord(0)} ` : ''}${xCoord(
-                itemIndex
-              )},${yCoord(item)} ${
-                itemIndex === data.length - 1 ? ` ${xCoord(itemIndex)},${yCoord(0)}` : ''
-              }`
-          )
-          .join(' ')}
-        fill={(color || areaGraphColors.neutral).area}
-      />
-      {hoverPointTooltipRenderer(rendererArgs)}
-    </>
+    <polygon key="poly" points={points} fill={(color || areaGraphColors.neutral).area} />
+  );
+};
+
+const GraphPath = <T extends unknown>({
+  color,
+  itemToValue,
+  data: inputData,
+  yCoord,
+  xCoord,
+  options,
+}: RendererProps<T>) => {
+  const pathPoints = useMemo(() => {
+    // Casting to number[] is ok here, since this renderer is only chosen if there are no undefineds
+    const data = inputData.map(itemToValue) as number[];
+    return data
+      .map(
+        (item, itemIndex) =>
+          `${itemIndex === 0 ? 'M' : 'L'} ${xCoord(itemIndex)} ${yCoord(item)}`
+      )
+      .join(' ');
+  }, [inputData, itemToValue, xCoord, yCoord]);
+
+  return (
+    <path
+      className="transition-all duration-200"
+      d={pathPoints}
+      fill="none"
+      stroke={(color || areaGraphColors.neutral).line}
+      strokeWidth={options.lineWidth}
+    />
   );
 };
 
 const mustSkip = (item: number | undefined | null): item is undefined | null =>
   item === undefined || item === null;
 
-const pathRendererSkippingUndefineds: Renderer = rendererArgs => {
+const GroupPathSkippingUndefineds = <T extends unknown>({
+  color,
+  data,
+  itemToValue,
+  yCoord,
+  xCoord,
+  options,
+}: RendererProps<T>) => {
   type Point = [xCoord: number, yCoord: number];
 
-  const { color, data, itemToValue, yCoord, xCoord, options } = rendererArgs;
+  const [BrokenLine, ContinuousLine] = useMemo(() => {
+    const createLineComponent =
+      (continuous: boolean) =>
+      ({ p1, p2, index }: { p1: Point; p2: Point; index: number }) =>
+        (
+          <line
+            key={index}
+            x1={p1[0]}
+            y1={p1[1]}
+            x2={p2[0]}
+            y2={p2[1]}
+            stroke={(color || areaGraphColors.neutral).line}
+            strokeWidth={options.lineWidth}
+            strokeDasharray={continuous ? '' : options.strokeDasharray.join(',')}
+          />
+        );
 
-  const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) =>
-    (
-      <line
-        key={index}
-        x1={p1[0]}
-        y1={p1[1]}
-        x2={p2[0]}
-        y2={p2[1]}
-        stroke={(color || areaGraphColors.neutral).line}
-        strokeWidth={options.lineWidth}
-        strokeDasharray={continuous ? '' : options.strokeDasharray.join(',')}
-      />
-    );
+    const BrokenLine = createLineComponent(false);
+    const ContinuousLine = createLineComponent(true);
 
-  const brokenLine = drawLine(false);
-  const continuousLine = drawLine(true);
+    return [BrokenLine, ContinuousLine] as const;
+  }, [color, options.lineWidth, options.strokeDasharray]);
 
-  const nodes = data
-    .map<Point | undefined>((item, itemIndex) =>
-      mustSkip(itemToValue(item))
-        ? undefined
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          [xCoord(itemIndex), yCoord(itemToValue(item)!)]
-    )
-    .reduce<(Point | undefined)[]>((acc, item) => {
-      if (acc.length === 0 && item === undefined) return [];
+  const nodes = useMemo(() => {
+    return data
+      .map<Point | undefined>((item, itemIndex) =>
+        mustSkip(itemToValue(item))
+          ? undefined
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            [xCoord(itemIndex), yCoord(itemToValue(item)!)]
+      )
+      .reduce<(Point | undefined)[]>((acc, item) => {
+        if (acc.length === 0 && item === undefined) return [];
 
-      if (item === undefined) {
-        if (last(acc) === undefined) return acc;
-        return [...acc, undefined];
-      }
+        if (item === undefined) {
+          if (last(acc) === undefined) return acc;
+          return [...acc, undefined];
+        }
 
-      return [...acc, item];
-    }, []);
+        return [...acc, item];
+      }, []);
+  }, [data, itemToValue, xCoord, yCoord]);
 
   return [
     ...nodes.reduce<ReactNode[]>(
@@ -210,100 +250,95 @@ const pathRendererSkippingUndefineds: Renderer = rendererArgs => {
 
           if (!nextItem) {
             // trailing broken line
-            return [
-              ...acc,
-              brokenLine(prevItem, [xCoord(data.length - 1), prevItem[1]], itemIndex),
-            ];
+            acc.push(
+              <BrokenLine
+                p1={prevItem}
+                p2={[xCoord(data.length - 1), prevItem[1]]}
+                index={itemIndex}
+              />
+            );
+            return acc;
           }
 
-          return [...acc, brokenLine(prevItem, nextItem, itemIndex)];
+          acc.push(<BrokenLine p1={prevItem} p2={nextItem} index={itemIndex} />);
+          return acc;
         }
 
         const prevItem = nodes[itemIndex - 1];
         if (prevItem === undefined) return acc;
-        return [...acc, continuousLine(prevItem, item, itemIndex)];
+
+        acc.push(<ContinuousLine p1={prevItem} p2={item} index={itemIndex} />);
+        return acc;
       },
       [
         // start with an skip segment. Might be zero length.
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        brokenLine([xCoord(0), nodes[0]![1]], nodes[0]!, -1),
+        <BrokenLine p1={[xCoord(0), nodes[0]![1]]} p2={nodes[0]!} index={-1} />,
       ]
     ),
-    <polygon
-      key="poly"
-      points={data
-        .reduce<[number, number][]>(
-          (acc, item, itemIndex) => {
-            if (itemIndex === 0) {
-              acc.push([itemIndex, 0]);
-            }
-            acc.push([itemIndex, itemToValue(item) ?? acc[itemIndex][1]]);
-
-            if (itemIndex === data.length - 1) {
-              acc.push([itemIndex, 0]);
-            }
-            return acc;
-          },
-          [[0, 0]]
-        )
-        .map(item => {
-          return `${xCoord(item[0])},${yCoord(item[1])}`;
-        })
-        .join(' ')}
-      fill={(color || areaGraphColors.neutral).area}
-    />,
-    hoverPointTooltipRenderer(rendererArgs),
   ];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
-const computeLineGraphData = <T extends unknown>({
+const LineGraph = <T extends unknown>({
   data,
   itemToValue,
   graphConfig,
   itemTooltipLabel,
   ...rest
 }: GraphOptions<T>) => {
+  const { Renderer, rendererProps } = useMemo(() => {
+    const values = data?.map(itemToValue);
+    const maxValue = Math.max(...(values || []).filter(exists));
+
+    const Renderer = values?.includes(undefined)
+      ? GroupPathSkippingUndefineds
+      : GraphPath;
+
+    const paddingForLineWidth = Math.ceil(graphConfig.lineWidth / 2);
+    const paddingForHoverPoint = Math.ceil(
+      (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+    );
+    const topPadding = Math.max(paddingForLineWidth, paddingForHoverPoint);
+
+    const leftPadding = Math.ceil(
+      (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+    );
+    const rightPadding = Math.ceil(
+      (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+    );
+    const itemYSpacing =
+      (graphConfig.width - leftPadding - rightPadding) / ((data || []).length - 1);
+
+    const xCoord = (index: number) => index * itemYSpacing + leftPadding;
+    const yCoord = (value: number) =>
+      graphConfig.height - (value / maxValue) * graphConfig.height + topPadding;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { width, height, ...options } = graphConfig;
+
+    return {
+      rendererProps: {
+        data: data || [],
+        itemToValue,
+        itemTooltipLabel,
+        yCoord,
+        xCoord,
+        options,
+        ...rest,
+      },
+      Renderer,
+    };
+  }, [data, graphConfig, itemToValue, itemTooltipLabel, rest]);
+
   if (!data) return null;
 
-  const values = data.map(itemToValue);
-  const maxValue = Math.max(...values.filter(exists));
-
-  const renderer = values.includes(undefined)
-    ? pathRendererSkippingUndefineds
-    : pathRenderer;
-
-  const paddingForLineWidth = Math.ceil(graphConfig.lineWidth / 2);
-  const paddingForHoverPoint = Math.ceil(
-    (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+  return (
+    <>
+      <AreaUnder {...rendererProps} />
+      <Renderer {...rendererProps} />
+      <HoverPoints {...rendererProps} />,
+    </>
   );
-  const topPadding = Math.max(paddingForLineWidth, paddingForHoverPoint);
-
-  const leftPadding = Math.ceil(
-    (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
-  );
-  const rightPadding = Math.ceil(
-    (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
-  );
-  const itemYSpacing =
-    (graphConfig.width - leftPadding - rightPadding) / (data.length - 1);
-
-  const xCoord = (index: number) => index * itemYSpacing + leftPadding;
-  const yCoord = (value: number) =>
-    graphConfig.height - (value / maxValue) * graphConfig.height + topPadding;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { width, height, ...options } = graphConfig;
-
-  return renderer({
-    data,
-    itemToValue,
-    itemTooltipLabel,
-    yCoord,
-    xCoord,
-    options,
-    ...rest,
-  });
 };
 
 export const increaseIsBetter = (data: number[]) => {
@@ -328,12 +363,10 @@ export const decreaseIsBetter = (data: number[]) => {
     : areaGraphColors.bad;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 type TinyAreaGraphProps<T extends unknown> = Omit<GraphOptions<T>, 'dateForIndex'> & {
   className?: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 const TinyAreaGraph = <T extends unknown>({
   className,
   ...props
@@ -355,11 +388,6 @@ const TinyAreaGraph = <T extends unknown>({
     return [props.graphConfig.height, props.graphConfig.width] as const;
   }, [props.graphConfig.height, props.graphConfig.width]);
 
-  const graphContents = useMemo(
-    () => computeLineGraphData({ ...props, dateForIndex }),
-    [dateForIndex, props]
-  );
-
   return (
     <svg
       height={svgHeight}
@@ -367,7 +395,7 @@ const TinyAreaGraph = <T extends unknown>({
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       className={className}
     >
-      {graphContents}
+      <LineGraph dateForIndex={dateForIndex} {...props} />
     </svg>
   );
 };
