@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { byString, asc } from 'sort-lib';
+import { byString, byNum } from 'sort-lib';
+import { twJoin } from 'tailwind-merge';
+import { Calendar, GitCommit } from 'react-feather';
 import CommitTimeline from './commits/CommitTimeline.jsx';
-import { DownChevron, UpChevron } from './common/Icons.jsx';
 import { ProfilePic } from './common/ProfilePic.jsx';
-import type { DevListing } from '../../backend/models/commits.js';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
-import Changes2 from './commits/Changes2.jsx';
-import { timelineProp } from '../helpers/utils.js';
+import { relativeTime, timelineProp } from '../helpers/utils.js';
+import SortableTable from './common/SortableTable.jsx';
+import type { RouterClient } from '../helpers/trpc.js';
 
 type DeveloperProps = {
-  item: DevListing;
+  item: RouterClient['commits']['getSortedDevListing']['items'][number];
   index: number;
 };
 
 const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
   const [queryPeriodDays] = useQueryPeriodDays();
   const [isExpanded, setIsExpanded] = useState<boolean>(index === 0);
-  const location = useLocation();
   const max =
     Math.max(
       ...item.allCommits.flatMap(obj =>
@@ -27,111 +26,163 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
 
   return (
     <div
-      className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out
-        rounded-lg shadow relative group"
+      // className="bg-white border-l-4 p-6 mb-4 transition-colors duration-500 ease-in-out
+      //   rounded-lg shadow relative group"
+      className="bg-theme-page-content rounded-lg shadow-sm mb-4 border border-theme-seperator overflow-hidden group"
       style={{ contain: 'content' }}
     >
       <button
         className="w-full text-left flex justify-between"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex gap-3">
-          <ProfilePic
-            src={item.authorImage}
-            alt={`${item.authorName}'s profile pic`}
-            width="48"
-            height="48"
-            className="rounded-full inline-block"
-          />
+        <div className="p-4 grid grid-cols-[min-content_1fr] gap-2 items-start">
+          <div className="justify-self-center">
+            <ProfilePic
+              src={item.authorImage}
+              className={twJoin(
+                'inline-block object-cover max-w-[48px] max-h-[48px]',
+                'rounded-full bg-theme-tag border border-theme-page-content'
+              )}
+            />
+          </div>
           <div>
-            <h3 className="font-bold text-md">{item.authorName}</h3>
-            <div className="text-base font-normal text-gray-600">
-              <span className="text-blue-gray text-sm my-2">
-                <span className="font-semibold text-base">{item.totalCommits}</span>
-                {` ${item.totalCommits === 1 ? 'commit' : 'commits'} in `}
-                <span className="font-semibold text-base">
-                  {item.totalReposCommitted}
+            <h3 className="font-semibold">{item.authorName}</h3>
+            <div className="text-sm text-theme-helptext">
+              {item.totalCommits ?? '...'} commits in {item.totalReposCommitted ?? '...'}{' '}
+              repositories
+            </div>
+          </div>
+          <div className="justify-self-center text-theme-icon">
+            <Calendar size={18} />
+          </div>
+          <div className="text-sm text-theme-helptext">
+            Committed {item.latestCommit ? relativeTime(item.latestCommit) : '...'}
+          </div>
+          <div className="justify-self-center text-theme-icon">
+            <GitCommit size={18} />
+          </div>
+          <div className="text-sm min-h-[2.5rem]">
+            <div className="flex gap-2">
+              {item.allCommits ? (
+                <span className="text-theme-success">
+                  + {item.allCommits.reduce((acc, commit) => acc + commit.repoAdd, 0)}
                 </span>
-                {` ${item.totalReposCommitted === 1 ? 'repo' : 'repos'}`}
-              </span>
+              ) : null}
+              {item.allCommits ? (
+                <span className="text-theme-warn">
+                  ~ {item.allCommits.reduce((acc, commit) => acc + commit.repoEdit, 0)}
+                </span>
+              ) : null}
+              {item.allCommits ? (
+                <span className="text-theme-danger">
+                  - {item.allCommits.reduce((acc, commit) => acc + commit.repoDelete, 0)}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
-        {isExpanded ? (
-          <span className="flex text-gray-500">
-            <span>Show less</span>
-            <UpChevron />
-          </span>
-        ) : (
-          <span className="flex text-gray-500">
-            <span className="invisible group-hover:visible">Show more</span>
-            <DownChevron />
-          </span>
-        )}
+        <div className="p-4 grid grid-row-[min-content_1fr] gap-2 items-start">
+          <div>
+            {/* <CommitTimeline             
+              timeline={
+                timelineProp()
+              }
+              max={max}
+              queryPeriodDays={queryPeriodDays}
+            /> */}
+          </div>
+          <div>
+            {isExpanded ? (
+              <span className="flex text-theme-highlight">
+                <span>Show less</span>
+              </span>
+            ) : (
+              <span className="flex text-theme-highlight">
+                <span>Show more</span>
+              </span>
+            )}
+          </div>
+        </div>
       </button>
       {isExpanded && (
-        <div className="bg-gray-100 px-8 py-8 mt-4 rounded-lg">
-          <table className="table-auto text-center divide-y divide-gray-200 w-full">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                  {' '}
-                </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                  Commits
-                </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                  Changes
-                </th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                  Timeline
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-base text-gray-600 bg-white divide-y divide-gray-200">
-              {item.allCommits.sort(asc(byString(r => r.repoName))).map(repo => (
-                <tr key={repo.repoName}>
-                  <td className="px-6 py-4 text-left w-5/12">
-                    <Link
-                      to={location.pathname.replace(
-                        '/devs',
-                        `/repos?search="${repo.repoName}"`
-                      )}
-                      className="link-text"
-                    >
-                      {repo.repoName}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap w-1/12">
-                    {repo.repoCommitsCount}
-                  </td>
-                  <td className="whitespace-nowrap">
-                    <Changes2
-                      add={repo.repoAdd}
-                      edit={repo.repoEdit}
-                      deleteCount={repo.repoDelete}
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap w-4/12">
-                    <CommitTimeline
-                      timeline={timelineProp(
-                        repo.repoDailyCommits.map(c => ({
-                          date: c.authorDate,
-                          total: c.dailyCommitsCount,
-                        }))
-                      )}
-                      max={max}
-                      queryPeriodDays={queryPeriodDays}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="w-full text-right text-sm italic text-gray-500 mt-4">
-            {`* Data shown is for the last ${queryPeriodDays} days, not including merge commits`}
-          </p>
-        </div>
+        <SortableTable
+          data={item.allCommits}
+          rowKey={row => String(row.repoName)}
+          variant="default"
+          defaultSortColumnIndex={1}
+          columns={[
+            {
+              title: 'Repository name',
+              key: 'repository name',
+
+              // eslint-disable-next-line react/no-unstable-nested-components
+              value: repository =>
+                repository.repoUrl ? (
+                  <a
+                    href={repository.repoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-tooltip-id="react-tooltip"
+                    data-tooltip-content={repository.repoName}
+                    className="link-text truncate w-full"
+                  >
+                    {repository.repoName}
+                  </a>
+                ) : (
+                  repository.repoName
+                ),
+
+              sorter: byString(x => x.repoName),
+            },
+            {
+              title: 'Commits',
+              key: 'commits',
+              value: repository => repository.repoCommitsCount,
+              sorter: byNum(x => x.repoCommitsCount),
+            },
+            {
+              title: 'Changes',
+              key: 'changes',
+              // eslint-disable-next-line react/no-unstable-nested-components
+              value: repository => {
+                return (
+                  <div className="text-sm min-h-[2.5rem] flex flex-row justify-end">
+                    <div className="flex gap-2">
+                      <span className="text-theme-success">
+                        + {repository.repoAdd || 0}
+                      </span>
+
+                      <span className="text-theme-warn">
+                        ~ {repository.repoEdit || 0}
+                      </span>
+
+                      <span className="text-theme-danger">
+                        - {repository.repoDelete || 0}
+                      </span>
+                    </div>
+                  </div>
+                );
+              },
+            },
+            {
+              title: 'Date',
+              key: 'date',
+              // eslint-disable-next-line react/no-unstable-nested-components
+              value: repository => (
+                <CommitTimeline
+                  timeline={timelineProp(
+                    repository.repoDailyCommits.map(c => ({
+                      date: c.authorDate,
+                      total: c.dailyCommitsCount,
+                    }))
+                  )}
+                  max={max}
+                  queryPeriodDays={queryPeriodDays}
+                />
+              ),
+            },
+          ]}
+        />
       )}
     </div>
   );

@@ -1,7 +1,6 @@
 import React from 'react';
 import AppliedFilters from '../components/AppliedFilters.js';
 import Loading from '../components/Loading.js';
-import useQueryParam, { asBoolean } from '../hooks/use-query-param.js';
 import Developer from '../components/Dev.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useDevFilters from '../hooks/use-dev-filters.js';
@@ -13,21 +12,21 @@ const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
   return (
     <>
       <AppliedFilters type="devs" count={devsCount} />
-      <SortControls sortByList={['Name', 'Repos Committed']} defaultSortDirection="asc" />
+      <SortControls
+        sortByList={['Name', 'Repos Committed', 'File additions', 'File deletions']}
+        defaultSortDirection="asc"
+      />
     </>
   );
 };
 
-const DevsNew: React.FC = () => {
-  const [showOldDevListing] = useQueryParam('dev-listing-v1', asBoolean);
-
+const Devs: React.FC = () => {
   const filters = useDevFilters();
   const query = trpc.commits.getSortedDevListing.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
-    enabled: !showOldDevListing,
   });
 
-  if (!showOldDevListing && !query.data) return <Loading />;
+  if (!query.data) return <Loading />;
 
   return (
     <ul>
@@ -58,7 +57,7 @@ export default () => {
   return (
     <>
       <FiltersAndSorters devsCount={filteredDevs?.data || 0} />
-      <DevsNew />
+      <Devs />
     </>
   );
 };

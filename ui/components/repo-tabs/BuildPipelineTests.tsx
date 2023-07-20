@@ -23,7 +23,7 @@ const EmptyTests = () => (
         <a
           href="https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-test-results-v2?view=azure-pipelines&tabs=trx%2Ctrxattachments%2Cyaml"
           target="_blank"
-          rel="noreferrer"
+          rel="noreferrer noopener"
           className="link-text"
         >
           publishing your test and coverage details to Azure

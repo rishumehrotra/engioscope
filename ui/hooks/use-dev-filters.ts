@@ -15,6 +15,10 @@ export default (): DevListingFilters => {
       ? ('authorName' as DevSortKey)
       : sortBy && sortBy === 'Repos Committed'
       ? ('totalReposCommitted' as DevSortKey)
+      : sortBy && sortBy === 'File additions'
+      ? ('totalAdd' as DevSortKey)
+      : sortBy && sortBy === 'File deletions'
+      ? ('totalDelete' as DevSortKey)
       : ('authorName' as DevSortKey);
 
   return {

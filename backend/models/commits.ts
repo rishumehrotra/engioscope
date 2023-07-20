@@ -292,7 +292,12 @@ export const getTotalCommitsForRepositoryIds = (
   ]).exec();
 };
 
-const devSortKeys = ['authorName', 'totalReposCommitted'] as const;
+const devSortKeys = [
+  'authorName',
+  'totalReposCommitted',
+  'totalAdd',
+  'totalDelete',
+] as const;
 
 export type DevSortKey = (typeof devSortKeys)[number];
 
@@ -381,6 +386,7 @@ type DailyCommit = {
 
 type AllCommits = {
   repoName: string;
+  repoUrl: string;
   repoDailyCommits: DailyCommit[];
   repoCommitsCount: number;
   authorEmail: string;
@@ -389,14 +395,21 @@ type AllCommits = {
   repoAdd: number;
   repoEdit: number;
   repoDelete: number;
+  latestCommit: Date;
 };
 
-export type DevListing = {
+type DevListing = {
   totalCommits: number;
+  totalAdd: number;
+  totalEdit: number;
+  totalDelete: number;
   allCommits: AllCommits[];
   authorEmail: string;
   authorName: string;
   authorImage: string;
+  lowerAuthorName: string;
+  lowerAuthorEmail: string;
+  latestCommit: Date;
   totalReposCommitted: number;
 };
 export const getSortedDevListing = async ({
@@ -475,6 +488,7 @@ export const getSortedDevListing = async ({
           authorDate: { $first: '$authorDate' },
           authorName: { $first: '$author.name' },
           authorImage: { $first: '$author.imageUrl' },
+          latestCommit: { $max: '$author.date' },
         },
       },
       {
@@ -502,6 +516,7 @@ export const getSortedDevListing = async ({
           repositoryId: { $first: '$repositoryId' },
           authorName: { $first: '$authorName' },
           authorImage: { $first: '$authorImage' },
+          latestCommit: { $max: '$latestCommit' },
         },
       },
       {
@@ -510,16 +525,23 @@ export const getSortedDevListing = async ({
             $toLower: '$authorEmail',
           },
           totalCommits: { $sum: '$repoCommitsCount' },
+          totalAdd: { $sum: '$repoAdd' },
+          totalEdit: { $sum: '$repoEdit' },
+          totalDelete: { $sum: '$repoDelete' },
           allCommits: { $push: '$$ROOT' },
           authorEmail: { $first: '$authorEmail' },
           authorName: { $first: '$authorName' },
           authorImage: { $first: '$authorImage' },
+          latestCommit: { $max: '$latestCommit' },
         },
       },
       {
         $project: {
           _id: 0,
           totalCommits: 1,
+          totalAdd: 1,
+          totalEdit: 1,
+          totalDelete: 1,
           totalReposCommitted: { $size: '$allCommits' },
           allCommits: 1,
           authorEmail: 1,
@@ -527,6 +549,7 @@ export const getSortedDevListing = async ({
           authorImage: 1,
           lowerAuthorName: { $toLower: '$authorName' },
           lowerAuthorEmail: { $toLower: '$authorEmail' },
+          latestCommit: 1,
         },
       },
       sortStage,
@@ -535,17 +558,13 @@ export const getSortedDevListing = async ({
     ]).exec(),
   ]);
 
-  const findRepoName = (repoId: string) => {
-    const repo = repos.find(repo => repo.id === repoId);
-
-    return repo ? repo.name : '';
-  };
-
+  const findRepo = (repoId: string) => repos.find(repo => repo.id === repoId);
   const devCommits = commits.map(commit => {
     const allCommits = commit.allCommits.map(repo => {
       return {
         ...repo,
-        repoName: findRepoName(repo.repositoryId),
+        repoName: findRepo(repo.repositoryId)?.name || '',
+        repoUrl: findRepo(repo.repositoryId)?.url,
       };
     });
 
