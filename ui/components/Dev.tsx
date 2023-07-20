@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { byString, byNum } from 'sort-lib';
+import { byString, byNum, byDate } from 'sort-lib';
 import { twJoin } from 'tailwind-merge';
 import { Calendar, GitCommit } from 'react-feather';
 import { prop } from 'rambda';
@@ -78,27 +78,28 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
             </div>
           </div>
         </div>
-        <div className="self-end">
-          <div>
-            {/* <CommitTimeline             
-              timeline={
-                timelineProp()
-              }
+        <div className="self-end text-right pr-2">
+          <div className="w-[32rem]">
+            <CommitTimeline
+              timeline={timelineProp(
+                [
+                  ...item.repos.reduce((acc, repo) => {
+                    repo.dailyCommits.forEach(commit => {
+                      acc.set(commit.date, (acc.get(commit.date) || 0) + commit.count);
+                    });
+                    return acc;
+                  }, new Map<string, number>()),
+                ]
+                  .map(([date, total]) => ({ date, total }))
+                  .sort(byDate(x => new Date(x.date)))
+              )}
               max={max}
               queryPeriodDays={queryPeriodDays}
-            /> */}
+            />
           </div>
-          <div>
-            {isExpanded ? (
-              <span className="flex text-theme-highlight">
-                <span>Show less</span>
-              </span>
-            ) : (
-              <span className="flex text-theme-highlight">
-                <span>Show more</span>
-              </span>
-            )}
-          </div>
+          <span className="text-theme-highlight inline-block mt-6">
+            {isExpanded ? 'Show less' : 'Show more'}
+          </span>
         </div>
       </button>
       {isExpanded && (
