@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { byNum, desc } from 'sort-lib';
-import { compose, identity, not, prop } from 'rambda';
+import { compose, not, prop } from 'rambda';
 import { twJoin, twMerge } from 'tailwind-merge';
 import { Calendar, Code, GitBranch, GitCommit, GitPullRequest } from 'react-feather';
 import { Tooltip } from 'react-tooltip';
@@ -20,11 +20,7 @@ import { ReleasePipeline } from './common/Icons.jsx';
 import useUiConfig from '../hooks/use-ui-config.js';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import { ProfilePic } from './common/ProfilePic.jsx';
-import TinyAreaGraph, {
-  areaGraphColors,
-  graphConfig,
-  pathRendererSkippingUndefineds,
-} from './graphs/TinyAreaGraph.jsx';
+import TinyAreaGraph, { areaGraphColors, graphConfig } from './graphs/TinyAreaGraph.jsx';
 
 type ReleaseBranchesProps = {
   repositoryId: string;
@@ -451,6 +447,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
     <div
       className={twJoin(
         'bg-theme-page-content rounded shadow-sm mb-4 border border-theme-seperator',
+        'hover:shadow transition-shadow duration-200',
         'group',
         isInactive && 'opacity-60'
       )}
@@ -531,10 +528,9 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         </div>
         <div className="text-right">
           <TinyAreaGraph
-            data={item.weeklyCommits?.sort(byNum(prop('weekIndex'))).map(prop('count'))}
-            itemToValue={identity}
+            data={item.weeklyCommits?.sort(byNum(prop('weekIndex')))}
+            itemToValue={prop('count')}
             color={areaGraphColors.good}
-            renderer={pathRendererSkippingUndefineds}
             graphConfig={graphConfig.medium}
             className="mb-3 w-24 inline-block"
           />

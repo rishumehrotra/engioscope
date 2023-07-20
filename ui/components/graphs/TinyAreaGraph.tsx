@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { head, last } from 'rambda';
-import { exists } from '../../helpers/utils.js';
-
-const enableTooltip = false;
+import { exists, shortDate } from '../../helpers/utils.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
+import { oneWeekInMs } from '../../../shared/utils.js';
 
 type GraphConfig = {
   width: number;
@@ -19,9 +19,9 @@ type GraphOptions<T extends unknown> = {
   data: T[] | undefined;
   itemToValue: (x: T) => number | undefined;
   itemTooltipLabel?: (item: T) => string;
+  dateForIndex: (x: number) => Date | undefined;
   color: { line: string; area: string } | null;
   graphConfig: GraphConfig;
-  renderer: Renderer;
 };
 
 export const graphConfig = {
@@ -38,8 +38,8 @@ export const graphConfig = {
     height: 33,
     strokeDasharray: [7, 5],
     lineWidth: 1,
-    hoverPointRadius: 8,
-    hoverPointStroke: 3,
+    hoverPointRadius: 6,
+    hoverPointStroke: 2,
   },
   small: {
     width: 50,
@@ -67,7 +67,7 @@ export const areaGraphColors = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
-export type Renderer = <T extends unknown>(x: {
+type Renderer = <T extends unknown>(x: {
   data: T[];
   color: GraphOptions<number>['color'];
   itemToValue: (x: T) => number | undefined;
@@ -75,22 +75,54 @@ export type Renderer = <T extends unknown>(x: {
   yCoord: (value: number) => number;
   xCoord: (index: number) => number;
   options: Omit<GraphConfig, 'width' | 'height'>;
+  dateForIndex: (index: number) => Date | undefined;
 }) => ReactNode | ReactNode[];
 
-export const pathRenderer: Renderer = ({
-  color,
-  itemTooltipLabel,
-  itemToValue,
-  data: inputData,
-  yCoord,
-  xCoord,
-  options,
-}) => {
-  if (inputData.map(itemToValue).includes(undefined)) {
-    throw new Error("pathRenderer can't handle undefined values");
-  }
+const hoverPointTooltipRenderer: Renderer = rendererArgs => {
+  const {
+    color,
+    itemTooltipLabel,
+    itemToValue,
+    data,
+    yCoord,
+    xCoord,
+    options,
+    dateForIndex,
+  } = rendererArgs;
 
-  const data = inputData.map(itemToValue).filter(exists);
+  if (!itemTooltipLabel) return null;
+
+  return data.map((item, itemIndex) => {
+    const value = itemToValue(item);
+    if (!value) return null;
+
+    return (
+      <circle
+        // eslint-disable-next-line react/no-array-index-key
+        key={itemIndex}
+        cx={xCoord(itemIndex)}
+        cy={yCoord(value)}
+        r={options.hoverPointRadius}
+        fill={(color || areaGraphColors.neutral).line}
+        strokeWidth={options.hoverPointStroke}
+        stroke="#fff"
+        className="opacity-0 hover:opacity-100 drop-shadow"
+        data-tooltip-id="react-tooltip"
+        data-tooltip-html={[
+          itemTooltipLabel(item),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          `<div className="mt-2">${shortDate(dateForIndex(itemIndex)!)}</div>`,
+        ].join(' ')}
+      />
+    );
+  });
+};
+
+const pathRenderer: Renderer = rendererArgs => {
+  const { color, itemToValue, data: inputData, yCoord, xCoord, options } = rendererArgs;
+
+  // Casting to number[] is ok here, since this renderer is only chosen if there are no undefineds
+  const data = inputData.map(itemToValue) as number[];
 
   return (
     <>
@@ -119,23 +151,7 @@ export const pathRenderer: Renderer = ({
           .join(' ')}
         fill={(color || areaGraphColors.neutral).area}
       />
-      {itemTooltipLabel && enableTooltip
-        ? data.map((item, itemIndex) => (
-            <circle
-              // eslint-disable-next-line react/no-array-index-key
-              key={itemIndex}
-              cx={xCoord(itemIndex)}
-              cy={yCoord(item)}
-              r={options.hoverPointRadius}
-              fill={(color || areaGraphColors.neutral).line}
-              strokeWidth={options.hoverPointStroke}
-              stroke="#fff"
-              className="opacity-0 hover:opacity-100 drop-shadow"
-              data-tooltip-id="react-tooltip"
-              data-tooltip-html={itemTooltipLabel(inputData[itemIndex])}
-            />
-          ))
-        : null}
+      {hoverPointTooltipRenderer(rendererArgs)}
     </>
   );
 };
@@ -143,15 +159,10 @@ export const pathRenderer: Renderer = ({
 const mustSkip = (item: number | undefined | null): item is undefined | null =>
   item === undefined || item === null;
 
-export const pathRendererSkippingUndefineds: Renderer = ({
-  color,
-  data,
-  itemToValue,
-  yCoord,
-  xCoord,
-  options,
-}) => {
+const pathRendererSkippingUndefineds: Renderer = rendererArgs => {
   type Point = [xCoord: number, yCoord: number];
+
+  const { color, data, itemToValue, yCoord, xCoord, options } = rendererArgs;
 
   const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) =>
     (
@@ -241,6 +252,7 @@ export const pathRendererSkippingUndefineds: Renderer = ({
         .join(' ')}
       fill={(color || areaGraphColors.neutral).area}
     />,
+    hoverPointTooltipRenderer(rendererArgs),
   ];
 };
 
@@ -249,7 +261,6 @@ const computeLineGraphData = <T extends unknown>({
   data,
   itemToValue,
   graphConfig,
-  renderer,
   itemTooltipLabel,
   ...rest
 }: GraphOptions<T>) => {
@@ -258,20 +269,22 @@ const computeLineGraphData = <T extends unknown>({
   const values = data.map(itemToValue);
   const maxValue = Math.max(...values.filter(exists));
 
+  const renderer = values.includes(undefined)
+    ? pathRendererSkippingUndefineds
+    : pathRenderer;
+
   const paddingForLineWidth = Math.ceil(graphConfig.lineWidth / 2);
-  const paddingForHoverPoint = enableTooltip
-    ? Math.ceil((graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2)
-    : 0;
+  const paddingForHoverPoint = Math.ceil(
+    (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+  );
   const topPadding = Math.max(paddingForLineWidth, paddingForHoverPoint);
 
-  const leftPadding = enableTooltip
-    ? Math.ceil((graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2)
-    : 0;
-
-  const rightPadding = enableTooltip
-    ? Math.ceil((graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2)
-    : 0;
-
+  const leftPadding = Math.ceil(
+    (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+  );
+  const rightPadding = Math.ceil(
+    (graphConfig.hoverPointRadius + graphConfig.hoverPointStroke) / 2
+  );
   const itemYSpacing =
     (graphConfig.width - leftPadding - rightPadding) / (data.length - 1);
 
@@ -316,7 +329,7 @@ export const decreaseIsBetter = (data: number[]) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
-type TinyAreaGraphProps<T extends unknown> = GraphOptions<T> & {
+type TinyAreaGraphProps<T extends unknown> = Omit<GraphOptions<T>, 'dateForIndex'> & {
   className?: string;
 };
 
@@ -325,14 +338,27 @@ const TinyAreaGraph = <T extends unknown>({
   className,
   ...props
 }: TinyAreaGraphProps<T>) => {
-  const { svgHeight, svgWidth } = useMemo(() => {
-    return {
-      svgHeight: props.graphConfig.height,
-      svgWidth: props.graphConfig.width,
-    };
+  const endDate = useQueryContext()[3];
+
+  const dateForIndex = useCallback(
+    (itemIndex: number) => {
+      if (!props.data) return;
+
+      const numberOfItems = props.data.length;
+      const weeksToDeduct = numberOfItems - itemIndex - 1;
+      return new Date(endDate.getTime() - weeksToDeduct * oneWeekInMs);
+    },
+    [endDate, props.data]
+  );
+
+  const [svgHeight, svgWidth] = useMemo(() => {
+    return [props.graphConfig.height, props.graphConfig.width] as const;
   }, [props.graphConfig.height, props.graphConfig.width]);
 
-  const graphContents = useMemo(() => computeLineGraphData(props), [props]);
+  const graphContents = useMemo(
+    () => computeLineGraphData({ ...props, dateForIndex }),
+    [dateForIndex, props]
+  );
 
   return (
     <svg

@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { Suspense, useCallback, useState, useMemo } from 'react';
 import { ExternalLink, Info } from './common/Icons.jsx';
-import type { Renderer } from './graphs/TinyAreaGraph.jsx';
-import TinyAreaGraph, { graphConfig, pathRenderer } from './graphs/TinyAreaGraph.jsx';
+import TinyAreaGraph, { graphConfig } from './graphs/TinyAreaGraph.jsx';
 import { useDrawer } from './common/Drawer.jsx';
 import Loading from './Loading.jsx';
 
@@ -45,7 +44,6 @@ export type StatProps<T extends unknown> = {
       graphItemToValue: (x: T) => number | undefined;
       graphColor: { line: string; area: string } | null;
       graphDataPointLabel: (x: T) => string;
-      graphRenderer?: Renderer;
     }
 );
 
@@ -116,7 +114,6 @@ export const Stat = <T extends unknown>({
     const {
       graphData,
       graphColor,
-      graphRenderer,
       graphPosition,
       graphDataPointLabel,
       graphItemToValue,
@@ -128,7 +125,6 @@ export const Stat = <T extends unknown>({
         itemToValue={graphItemToValue}
         itemTooltipLabel={graphDataPointLabel}
         color={graphColor}
-        renderer={graphRenderer || pathRenderer}
         graphConfig={graphPosition === 'bottom' ? graphConfig.large : graphConfig.medium}
         className="w-full h-auto self-end block"
       />

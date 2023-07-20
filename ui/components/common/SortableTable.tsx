@@ -6,12 +6,7 @@ import { twJoin, twMerge } from 'tailwind-merge';
 import { identity } from 'rambda';
 import AnimateHeight from './AnimateHeight.jsx';
 import { ArrowDown2 } from './Icons.jsx';
-import TinyAreaGraph, {
-  graphConfig,
-  pathRenderer,
-  pathRendererSkippingUndefineds,
-  type Renderer,
-} from '../graphs/TinyAreaGraph.jsx';
+import TinyAreaGraph, { graphConfig } from '../graphs/TinyAreaGraph.jsx';
 
 type GraphValue = {
   type: 'graph';
@@ -20,7 +15,6 @@ type GraphValue = {
     line: string;
     area: string;
   };
-  renderer?: Renderer;
 };
 
 export type SortableTableProps<T> = {
@@ -210,11 +204,6 @@ const SortableTable = <T,>({
                           data={colValue.data}
                           itemToValue={identity}
                           color={colValue.color}
-                          renderer={
-                            colValue.data.includes(undefined)
-                              ? pathRendererSkippingUndefineds
-                              : pathRenderer
-                          }
                           graphConfig={graphConfig.small}
                         />
                       ) : (
