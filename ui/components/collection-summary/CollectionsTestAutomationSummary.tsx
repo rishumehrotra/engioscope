@@ -16,15 +16,16 @@ type CollectionTestAutomatioinSummary =
 
 const sorters = {
   byName: byString<CollectionTestAutomatioinSummary>(prop('project')),
-  byTests: byNum<CollectionTestAutomatioinSummary>(
-    x => last(x.weeklyTestsSummary)?.totalTests || 0
-  ),
-  byCoverage: byNum<CollectionTestAutomatioinSummary>(x =>
-    divide(
-      last(x.weeklyCoverageSummary)?.coveredBranches || 0,
-      last(x.weeklyCoverageSummary)?.totalBranches || 0
-    ).getOr(0)
-  ),
+  byTests: byNum<CollectionTestAutomatioinSummary>(x => {
+    const lastWeek = last(x.weeklyTestsSummary);
+    if (!lastWeek?.hasTests) return 0;
+    return lastWeek.totalTests;
+  }),
+  byCoverage: byNum<CollectionTestAutomatioinSummary>(x => {
+    const lastWeek = last(x.weeklyCoverageSummary);
+    if (!lastWeek?.hasCoverage) return 0;
+    return divide(lastWeek.coveredBranches, lastWeek.totalBranches).getOr(0);
+  }),
 };
 
 const CollectionsTestAutomationSummary: React.FC<{
@@ -88,29 +89,60 @@ const CollectionsTestAutomationSummary: React.FC<{
                 </td>
                 <td>
                   <LabelWithSparkline
-                    label={num(last(project.weeklyTestsSummary)?.totalTests || 0)}
-                    data={project.weeklyTestsSummary.map(t => t.totalTests)}
+                    label={(() => {
+                      if (!project.weeklyTestsSummary) return null;
+                      const lastMatch = project.weeklyTestsSummary.findLast(
+                        x => x.hasTests
+                      );
+                      if (!lastMatch) return 0;
+                      if (!lastMatch.hasTests) return 0;
+                      return num(lastMatch.totalTests);
+                    })()}
+                    data={project.weeklyTestsSummary.map(t =>
+                      t.hasTests ? t.totalTests : 0
+                    )}
                     lineColor={increaseIsBetter(
-                      project.weeklyTestsSummary.map(t => t.totalTests)
+                      project.weeklyTestsSummary.map(t => (t.hasTests ? t.totalTests : 0))
                     )}
                   />
                 </td>
                 <td>
                   <LabelWithSparkline
-                    label={divide(
-                      last(project.weeklyCoverageSummary)?.coveredBranches || 0,
-                      last(project.weeklyCoverageSummary)?.totalBranches || 0
-                    )
-                      .map(toPercentage)
-                      .getOr('-')}
+                    // label={divide(
+                    //   last(project.weeklyCoverageSummary)?.coveredBranches || 0,
+                    //   last(project.weeklyCoverageSummary)?.totalBranches || 0
+                    // )
+                    //   .map(toPercentage)
+                    //   .getOr('-')}
+
+                    // eslint-disable-next-line react/jsx-props-no-multi-spaces
+                    label={(() => {
+                      if (!project.weeklyCoverageSummary) return null;
+                      const lastMatch = project.weeklyCoverageSummary.findLast(
+                        x => x.hasCoverage
+                      );
+                      if (!lastMatch) return '-';
+                      if (!lastMatch.hasCoverage) {
+                        throw new Error("TS can't figure out that hasTests is true");
+                      }
+                      return divide(lastMatch.coveredBranches, lastMatch.totalBranches)
+                        .map(toPercentage)
+                        .getOr('-');
+                    })()}
                     data={project.weeklyCoverageSummary.map(week => {
-                      return divide(week.coveredBranches, week.totalBranches)
+                      return divide(
+                        week.hasCoverage ? week.coveredBranches : 0,
+                        week.hasCoverage ? week.totalBranches : 0
+                      )
                         .map(multiply(100))
                         .getOr(0);
                     })}
                     lineColor={increaseIsBetter(
                       project.weeklyCoverageSummary.map(week => {
-                        return divide(week.coveredBranches || 0, week.totalBranches || 0)
+                        return divide(
+                          week.hasCoverage ? week.coveredBranches : 0,
+                          week.hasCoverage ? week.totalBranches : 0
+                        )
                           .map(multiply(100))
                           .getOr(0);
                       })

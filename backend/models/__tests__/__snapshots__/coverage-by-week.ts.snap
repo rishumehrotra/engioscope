@@ -4,62 +4,74 @@ exports[`should handle missing coverages 1`] = `
 [
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 1,
   },
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 2,
   },
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 3,
   },
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 4,
   },
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 5,
   },
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 6,
   },
   {
     "coveredBranches": 0,
+    "hasCoverage": false,
     "totalBranches": 0,
     "weekIndex": 7,
   },
   {
     "coveredBranches": 5,
+    "hasCoverage": true,
     "totalBranches": 10,
     "weekIndex": 8,
   },
   {
     "coveredBranches": 5,
+    "hasCoverage": true,
     "totalBranches": 10,
     "weekIndex": 9,
   },
   {
     "coveredBranches": 5,
+    "hasCoverage": true,
     "totalBranches": 10,
     "weekIndex": 10,
   },
   {
-    "coveredBranches": 0,
-    "totalBranches": 0,
+    "coveredBranches": 5,
+    "hasCoverage": true,
+    "totalBranches": 10,
     "weekIndex": 11,
   },
   {
-    "coveredBranches": 0,
-    "totalBranches": 0,
+    "coveredBranches": 5,
+    "hasCoverage": true,
+    "totalBranches": 10,
     "weekIndex": 12,
   },
 ]

@@ -353,6 +353,10 @@ export const getTestsAndCoveragesCount = async (
                 'project.name': project,
                 '$expr': { $eq: ['$buildConfiguration.id', '$$buildId'] },
                 'release': { $exists: false },
+                // NOTE - This is a workaround to make sure we will fetch the testruns,
+                // where runStatistics array of object field is not empty.
+                // This is happening because Azure itself is not storing the testruns in the database due to some type issue.
+                'runStatistics.state': { $exists: true },
               },
             },
             { $project: { _id: 1 } },
@@ -476,28 +480,42 @@ export const getTestsAndCoverageByWeek = async (
     repositoryIds,
   });
 
+  type PrevTest =
+    | { hasTests: false }
+    | { hasTests: true; totalTests: number; passedTests: number };
+
+  type PrevCoverage =
+    | { hasCoverage: false }
+    | { hasCoverage: true; coveredBranches: number; totalBranches: number };
+
   const testsByWeek = mergeNestedForWeekIndex(
     testsAndCoverage,
     prop('tests'),
-    (prev, definition) => ({
-      passedTests: prev.passedTests + (definition.hasTests ? definition.passedTests : 0),
-      totalTests: prev.totalTests + (definition.hasTests ? definition.totalTests : 0),
+    (prev: PrevTest, definition) => ({
+      hasTests: prev.hasTests || definition.hasTests,
+      passedTests: prev.hasTests
+        ? prev.passedTests
+        : 0 + (definition.hasTests ? definition.passedTests : 0),
+      totalTests: prev.hasTests
+        ? prev.totalTests
+        : 0 + (definition.hasTests ? definition.totalTests : 0),
     }),
-    { passedTests: 0, totalTests: 0 }
+    { hasTests: false }
   );
 
   const coveragesByWeek = mergeNestedForWeekIndex(
     testsAndCoverage,
     prop('coverageByWeek'),
-    (prev, definition) => ({
-      coveredBranches:
-        prev.coveredBranches +
-        (definition.hasCoverage ? definition.coverage.coveredBranches : 0),
-      totalBranches:
-        prev.totalBranches +
-        (definition.hasCoverage ? definition.coverage.totalBranches : 0),
+    (prev: PrevCoverage, definition) => ({
+      hasCoverage: prev.hasCoverage || definition.hasCoverage,
+      coveredBranches: prev.hasCoverage
+        ? prev.coveredBranches
+        : 0 + (definition.hasCoverage ? definition.coverage.coveredBranches : 0),
+      totalBranches: prev.hasCoverage
+        ? prev.totalBranches
+        : 0 + (definition.hasCoverage ? definition.coverage.totalBranches : 0),
     }),
-    { coveredBranches: 0, totalBranches: 0 }
+    { hasCoverage: false }
   );
 
   return { testsByWeek, coveragesByWeek };

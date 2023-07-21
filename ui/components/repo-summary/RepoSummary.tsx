@@ -1,4 +1,4 @@
-import { last, multiply, prop } from 'rambda';
+import { multiply, prop } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { Info } from 'react-feather';
 import { divide, toPercentage } from '../../../shared/utils.js';
@@ -253,23 +253,31 @@ const StreamingRepoSummary: React.FC = () => {
                     ].join(' ')
                   : undefined
               }
-              value={
-                isDefined(summaries.weeklyTestsSummary)
-                  ? num(last(summaries.weeklyTestsSummary)?.totalTests || 0)
-                  : null
-              }
+              value={(() => {
+                if (!isDefined(summaries.weeklyTestsSummary)) return null;
+                const lastMatch = summaries.weeklyTestsSummary.findLast(x => x.hasTests);
+                if (!lastMatch) return '0';
+                if (!lastMatch.hasTests) {
+                  throw new Error("Stupid TS can't figure out that hasTests is true");
+                }
+                return num(lastMatch.totalTests);
+              })()}
               graphPosition="bottom"
               graphData={summaries.weeklyTestsSummary}
               graphColor={
                 isDefined(summaries.weeklyTestsSummary)
-                  ? increaseIsBetter(summaries.weeklyTestsSummary.map(t => t.totalTests))
+                  ? increaseIsBetter(
+                      summaries.weeklyTestsSummary.map(x =>
+                        x.hasTests ? x.totalTests : 0
+                      )
+                    )
                   : null
               }
-              graphItemToValue={prop('totalTests')}
+              graphItemToValue={x => (x.hasTests ? x.totalTests : undefined)}
               graphDataPointLabel={x =>
                 [
-                  bold(num(x.totalTests)),
-                  minPluralise(x.totalTests, 'test', 'tests'),
+                  bold(num(x.hasTests ? x.totalTests : 0)),
+                  minPluralise(x.hasTests ? x.totalTests : 0, 'test', 'tests'),
                 ].join(' ')
               }
               onClick={{
@@ -300,23 +308,29 @@ const StreamingRepoSummary: React.FC = () => {
                     ].join(' ')
                   : undefined
               }
-              value={
-                isDefined(summaries.weeklyCoverageSummary)
-                  ? divide(
-                      last(summaries.weeklyCoverageSummary)?.coveredBranches || 0,
-                      last(summaries.weeklyCoverageSummary)?.totalBranches || 0
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
+              value={(() => {
+                if (!isDefined(summaries.weeklyCoverageSummary)) return null;
+                const lastMatch = summaries.weeklyCoverageSummary.findLast(
+                  x => x.hasCoverage
+                );
+                if (!lastMatch) return '-';
+                if (!lastMatch.hasCoverage) {
+                  throw new Error("TS can't figure out that hasTests is true");
+                }
+                return divide(lastMatch.coveredBranches, lastMatch.totalBranches)
+                  .map(toPercentage)
+                  .getOr('-');
+              })()}
               graphPosition="bottom"
               graphData={summaries.weeklyCoverageSummary}
               graphColor={
                 isDefined(summaries.weeklyCoverageSummary)
                   ? increaseIsBetter(
                       summaries.weeklyCoverageSummary.map(week => {
-                        return divide(week.coveredBranches || 0, week.totalBranches || 0)
+                        return divide(
+                          week.hasCoverage ? week.coveredBranches : 0,
+                          week.hasCoverage ? week.totalBranches : 0
+                        )
                           .map(multiply(100))
                           .getOr(0);
                       })
@@ -324,14 +338,20 @@ const StreamingRepoSummary: React.FC = () => {
                   : null
               }
               graphItemToValue={x => {
-                return divide(x.coveredBranches, x.totalBranches)
+                return divide(
+                  x.hasCoverage ? x.coveredBranches : 0,
+                  x.hasCoverage ? x.totalBranches : 0
+                )
                   .map(multiply(100))
                   .getOr(0);
               }}
               graphDataPointLabel={x =>
                 [
                   bold(
-                    divide(x.coveredBranches, x.totalBranches)
+                    divide(
+                      x.hasCoverage ? x.coveredBranches : 0,
+                      x.hasCoverage ? x.totalBranches : 0
+                    )
                       .map(toPercentage)
                       .getOr('Unknown')
                   ),

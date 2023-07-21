@@ -160,6 +160,10 @@ export const getTestsForBuildIds = (
               $eq: ['$buildConfiguration.id', '$$buildId'],
             },
             'release': { $exists: false },
+            // NOTE - This is a workaround to make sure we will fetch the testruns,
+            // where runStatistics array of object field is not empty.
+            // This is happening because Azure itself is not storing the testruns in the database due to some type issue.
+            'runStatistics.state': { $exists: true },
           },
         },
         {
@@ -198,6 +202,7 @@ export const getTestsForBuildIds = (
       buildId: '$build.buildId',
     },
   },
+  { $match: { hasTests: true } },
   { $sort: { weekIndex: -1 } },
 ];
 
@@ -312,6 +317,7 @@ export const getCoverageForBuildIDs = (
       _id: 0,
     },
   },
+  { $match: { hasCoverage: true } },
   {
     $unwind: {
       path: '$coverage',

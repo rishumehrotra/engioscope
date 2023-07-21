@@ -31,9 +31,9 @@ it('should not give coverage counts when there are no coverages', async () => {
     ['repo-1']
   );
 
-  expect(coveragesByWeek.length).toBe(12);
-  expect(coveragesByWeek.every(t => t.coveredBranches === 0)).toBe(true);
-  expect(coveragesByWeek.every(t => t.totalBranches === 0)).toBe(true);
+  expect(coveragesByWeek.length).toBe(0);
+  expect(coveragesByWeek.every(t => t.hasCoverage && t.coveredBranches === 0)).toBe(true);
+  expect(coveragesByWeek.every(t => t.hasCoverage && t.totalBranches === 0)).toBe(true);
 });
 
 it('should give coverage counts when there are coverages', async () => {
@@ -48,8 +48,8 @@ it('should give coverage counts when there are coverages', async () => {
   );
 
   expect(coveragesByWeek.length).toBe(12);
-  expect(coveragesByWeek.every(t => t.coveredBranches === 5)).toBe(true);
-  expect(coveragesByWeek.every(t => t.totalBranches === 10)).toBe(true);
+  expect(coveragesByWeek.every(t => t.hasCoverage && t.coveredBranches === 5)).toBe(true);
+  expect(coveragesByWeek.every(t => t.hasCoverage && t.totalBranches === 10)).toBe(true);
 });
 
 it('should handle missing coverage counts with no past data', async () => {
@@ -65,11 +65,14 @@ it('should handle missing coverage counts with no past data', async () => {
   );
 
   expect(coveragesByWeek.length).toBe(12);
-  expect(coveragesByWeek.slice(0, 5).every(t => t.coveredBranches === 0)).toBe(true);
-  expect(coveragesByWeek.slice(0, 5).every(t => t.totalBranches === 0)).toBe(true);
+  expect(coveragesByWeek.slice(0, 5).every(t => !t.hasCoverage)).toBe(true);
 
-  expect(coveragesByWeek.slice(5).every(t => t.coveredBranches === 5)).toBe(true);
-  expect(coveragesByWeek.slice(5).every(t => t.totalBranches === 10)).toBe(true);
+  expect(
+    coveragesByWeek.slice(5).every(t => t.hasCoverage && t.coveredBranches === 5)
+  ).toBe(true);
+  expect(
+    coveragesByWeek.slice(5).every(t => t.hasCoverage && t.totalBranches === 10)
+  ).toBe(true);
 });
 
 it('should handle missing coverage counts with past data', async () => {
@@ -86,11 +89,19 @@ it('should handle missing coverage counts with past data', async () => {
   );
 
   expect(coveragesByWeek.length).toBe(12);
-  expect(coveragesByWeek.slice(0, 7).every(t => t.coveredBranches === 7)).toBe(true);
-  expect(coveragesByWeek.slice(0, 7).every(t => t.totalBranches === 10)).toBe(true);
+  expect(
+    coveragesByWeek.slice(0, 7).every(t => t.hasCoverage && t.coveredBranches === 7)
+  ).toBe(true);
+  expect(
+    coveragesByWeek.slice(0, 7).every(t => t.hasCoverage && t.totalBranches === 10)
+  ).toBe(true);
 
-  expect(coveragesByWeek.slice(7).every(t => t.coveredBranches === 5)).toBe(true);
-  expect(coveragesByWeek.slice(7).every(t => t.totalBranches === 10)).toBe(true);
+  expect(
+    coveragesByWeek.slice(7).every(t => t.hasCoverage && t.coveredBranches === 5)
+  ).toBe(true);
+  expect(
+    coveragesByWeek.slice(7).every(t => t.hasCoverage && t.totalBranches === 10)
+  ).toBe(true);
 });
 
 it('should handle missing coverages', async () => {
@@ -104,5 +115,6 @@ it('should handle missing coverages', async () => {
     ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
     ['repo-1']
   );
+
   expect(coveragesByWeek).toMatchSnapshot();
 });

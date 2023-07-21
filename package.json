@@ -18,6 +18,7 @@
     "serve": "vite preview",
     "test:ci": "CI=true npm run test",
     "test": "vitest --dom",
+    "update-snapshot": "vitest --dom -u",
     "parallelised-ci-tasks": "npm-run-all --parallel checks build",
     "scrape": "DEBUG=* node --max-old-space-size=8192 -- node_modules/.bin/ts-node --esm -P backend/tsconfig.json ./backend/dev/scrape.ts",
     "onboard": "DEBUG=* node --max-old-space-size=8192 -- node_modules/.bin/ts-node --esm -P backend/tsconfig.json ./backend/dev/onboard.ts",

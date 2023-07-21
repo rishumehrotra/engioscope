@@ -3,63 +3,75 @@
 exports[`should handle missing test run 1`] = `
 [
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 1,
   },
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 2,
   },
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 3,
   },
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 4,
   },
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 5,
   },
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 6,
   },
   {
+    "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
     "weekIndex": 7,
   },
   {
+    "hasTests": true,
     "passedTests": 10,
     "totalTests": 10,
     "weekIndex": 8,
   },
   {
+    "hasTests": true,
     "passedTests": 10,
     "totalTests": 10,
     "weekIndex": 9,
   },
   {
+    "hasTests": true,
     "passedTests": 10,
     "totalTests": 10,
     "weekIndex": 10,
   },
   {
-    "passedTests": 0,
-    "totalTests": 0,
+    "hasTests": true,
+    "passedTests": 10,
+    "totalTests": 10,
     "weekIndex": 11,
   },
   {
-    "passedTests": 0,
-    "totalTests": 0,
+    "hasTests": true,
+    "passedTests": 10,
+    "totalTests": 10,
     "weekIndex": 12,
   },
 ]

@@ -44,9 +44,7 @@ it('should not give test counts when there are no testruns', async () => {
     ['repo-1']
   );
 
-  expect(testsByWeek.length).toBe(12);
-  expect(testsByWeek.every(t => t.passedTests === 0)).toBe(true);
-  expect(testsByWeek.every(t => t.totalTests === 0)).toBe(true);
+  expect(testsByWeek.length).toBe(0);
 });
 
 it('should give test counts when there are testruns', async () => {
@@ -59,8 +57,8 @@ it('should give test counts when there are testruns', async () => {
     ['repo-1']
   );
   expect(testsByWeek.length).toBe(12);
-  expect(testsByWeek.every(t => t.passedTests === 10)).toBe(true);
-  expect(testsByWeek.every(t => t.totalTests === 10)).toBe(true);
+  expect(testsByWeek.every(t => t.hasTests && t.passedTests === 10)).toBe(true);
+  expect(testsByWeek.every(t => t.hasTests && t.totalTests === 10)).toBe(true);
 });
 
 it('should handle missing test run counts with no past data', async () => {
@@ -76,11 +74,9 @@ it('should handle missing test run counts with no past data', async () => {
   );
 
   expect(testsByWeek.length).toBe(12);
-  expect(testsByWeek.slice(0, 5).every(t => t.passedTests === 0)).toBe(true);
-  expect(testsByWeek.slice(0, 5).every(t => t.totalTests === 0)).toBe(true);
-
-  expect(testsByWeek.slice(5).every(t => t.passedTests === 10)).toBe(true);
-  expect(testsByWeek.slice(5).every(t => t.totalTests === 10)).toBe(true);
+  expect(testsByWeek.slice(0, 5).every(t => !t.hasTests)).toBe(true);
+  expect(testsByWeek.slice(5).every(t => t.hasTests && t.passedTests === 10)).toBe(true);
+  expect(testsByWeek.slice(5).every(t => t.hasTests && t.totalTests === 10)).toBe(true);
 });
 
 it('should handle missing test run counts with past data', async () => {
@@ -99,11 +95,15 @@ it('should handle missing test run counts with past data', async () => {
   );
 
   expect(testsByWeek.length).toBe(12);
-  expect(testsByWeek.slice(0, 7).every(t => t.passedTests === 15)).toBe(true);
-  expect(testsByWeek.slice(0, 7).every(t => t.totalTests === 15)).toBe(true);
+  expect(testsByWeek.slice(0, 7).every(t => t.hasTests && t.passedTests === 15)).toBe(
+    true
+  );
+  expect(testsByWeek.slice(0, 7).every(t => t.hasTests && t.totalTests === 15)).toBe(
+    true
+  );
 
-  expect(testsByWeek.slice(7).every(t => t.passedTests === 10)).toBe(true);
-  expect(testsByWeek.slice(7).every(t => t.totalTests === 10)).toBe(true);
+  expect(testsByWeek.slice(7).every(t => t.hasTests && t.passedTests === 10)).toBe(true);
+  expect(testsByWeek.slice(7).every(t => t.hasTests && t.totalTests === 10)).toBe(true);
 });
 
 it('should handle missing test run', async () => {
