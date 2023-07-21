@@ -270,7 +270,7 @@ const BugLeakageGraphForModal: React.FC<BugLeakageGraphForModalProps> = ({
           heading: (
             <>
               {`${rcaCategory} - `}
-              <strong>{`${wisInCategory.length}`}</strong>
+              <strong>{wisInCategory.length}</strong>
               {` (${Math.round((wisInCategory.length * 100) / totalOfCategories)}%)`}
             </>
           ),

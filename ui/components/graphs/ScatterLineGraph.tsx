@@ -106,7 +106,7 @@ const Bar = <T extends {}>({
         width={xAxisLabelWidth}
         height={xAxisLabelHeight}
       >
-        <div className="text-sm text-gray-700 text-center">{`${label}`}</div>
+        <div className="text-sm text-gray-700 text-center">{label}</div>
       </foreignObject>
       {items.map((item, index) => {
         const fillColorHSL = hexToHsl(pointColor?.(item) || '#197fe6');

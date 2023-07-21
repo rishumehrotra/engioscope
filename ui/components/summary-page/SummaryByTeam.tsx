@@ -831,7 +831,7 @@ const SummaryItem: React.FC<SummaryItemProps> = ({
     <details>
       <summary
         className="text-2xl font-bold group cursor-pointer"
-        id={`${group.groupName}`}
+        id={group.groupName}
         ref={summaryRef}
         onClick={evt => {
           if (summaryRef.current?.contains(evt.currentTarget)) {
