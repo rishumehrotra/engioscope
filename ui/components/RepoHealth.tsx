@@ -59,7 +59,9 @@ const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
       <div
         className={twJoin(
           'text-sm px-2 rounded-sm cursor-default',
-          conformanceRatio.getOr(0) === 1 ? 'bg-theme-success-dim' : 'bg-theme-danger-dim'
+          conformanceRatio.getOr(0) === 1
+            ? 'bg-theme-success-dim'
+            : 'bg-theme-danger-dim',
         )}
         data-tooltip-id={`${repositoryId}-conformance`}
       >
@@ -99,7 +101,7 @@ const ReleaseBranches: React.FC<ReleaseBranchesProps> = ({
               <h3
                 className={twJoin(
                   'font-medium mb-2',
-                  branchesThatConform.length && 'mt-1'
+                  branchesThatConform.length && 'mt-1',
                 )}
               >
                 Release branches not conforming to branch policies
@@ -158,12 +160,7 @@ const Languages = ({ qualityGateStatus, className }: LanguagesProps) => {
                 <span>
                   {l.lang}{' '}
                   <span className="text-theme-helptext">
-                    {divide(
-                      l.loc,
-                      !qualityGateStatus || qualityGateStatus?.language === null
-                        ? 0
-                        : qualityGateStatus.language.ncloc || 0
-                    )
+                    {divide(l.loc, qualityGateStatus?.language?.ncloc || 0)
                       .map(toPercentage)
                       .getOr('-')}
                   </span>
@@ -194,7 +191,7 @@ const PRs = ({ isInactive, prCount, repositoryId }: PRsProps) => {
       queryContext: useQueryContext(),
       repositoryId,
     },
-    { enabled: prCount !== 0 && isTooltipTriggered }
+    { enabled: prCount !== 0 && isTooltipTriggered },
   );
   const [queryPeriodDays] = useQueryPeriodDays();
 
@@ -270,7 +267,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
       authorEmail: hoveredDevEmail!,
       repositoryId,
     },
-    { enabled: hoveredDevEmail !== null }
+    { enabled: hoveredDevEmail !== null },
   );
 
   if (!devs?.count) return;
@@ -290,7 +287,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
                 src={d.imageUrl}
                 className={twJoin(
                   'inline-block object-cover max-w-[32px] max-h-[32px]',
-                  'rounded-full bg-theme-tag border border-theme-page-content'
+                  'rounded-full bg-theme-tag border border-theme-page-content',
                 )}
               />
             </li>
@@ -311,7 +308,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
                     src={d.imageUrl}
                     className={twJoin(
                       'inline-block object-cover max-w-[32px] max-h-[32px]',
-                      'rounded-full bg-theme-tag border border-theme-page-content'
+                      'rounded-full bg-theme-tag border border-theme-page-content',
                     )}
                   />
                 </div>
@@ -366,7 +363,7 @@ const Developers = ({ devs, repositoryId, repoName }: DeveloeprsProps) => {
               'inline-block -ml-2',
               'rounded-full w-[32px] h-[32px] leading-8 text-center',
               'text-xs text-theme-danger bg-theme-danger-dim font-medium',
-              'border border-theme-page-content'
+              'border border-theme-page-content',
             )}
           >
             <span>{`+${devs.count - devs.top.length}`}</span>
@@ -389,7 +386,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   const isFirst = index === 0;
   const isInactive = useMemo(
     () => item.builds === 0 && item.commits === 0,
-    [item.builds, item.commits]
+    [item.builds, item.commits],
   );
 
   const tabs = useMemo(
@@ -399,7 +396,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         item.repoDetails.defaultBranch || 'master',
         item.repositoryId,
         item.repoDetails.url || '',
-        item.branches
+        item.branches,
       ),
       tests(item.repositoryId, item.tests),
       ...(uiConfig.hasSonar
@@ -408,7 +405,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
               item.repositoryId,
               item.repoDetails.name,
               item.repoDetails.defaultBranch || 'master',
-              combinedQualityGate(item.sonarQualityGateStatuses?.status || [])
+              combinedQualityGate(item.sonarQualityGateStatuses?.status || []),
             ),
           ]
         : []),
@@ -423,7 +420,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
       item.tests,
       item.sonarQualityGateStatuses?.status,
       uiConfig.hasSonar,
-    ]
+    ],
   );
 
   const [{ sortBy }] = useSortParams();
@@ -439,7 +436,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
 
   const pipelinesUrl = location.pathname.replace(
     '/repos',
-    `/release-pipelines?search=repo:"${item.repoDetails.name}"`
+    `/release-pipelines?search=repo:"${item.repoDetails.name}"`,
   );
   const isExpanded = selectedTab !== null;
 
@@ -450,7 +447,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
         'hover:shadow-md transition-shadow duration-200',
         'group',
         isExpanded ? 'shadow-md' : 'shadow-sm',
-        isInactive && 'opacity-60'
+        isInactive && 'opacity-60',
       )}
     >
       <div className="grid grid-flow-col p-6 justify-between items-end">
@@ -463,7 +460,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
               className={twJoin(
                 'font-medium text-lg truncate max-w-full',
                 'group-hover:text-theme-highlight hover:underline',
-                isExpanded && 'text-theme-highlight'
+                isExpanded && 'text-theme-highlight',
               )}
             >
               {item.repoDetails.name}
@@ -489,13 +486,13 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
                 to={pipelinesUrl}
                 className={twJoin(
                   'group-hover:text-theme-highlight hover:underline',
-                  isExpanded && 'text-theme-highlight'
+                  isExpanded && 'text-theme-highlight',
                 )}
               >
                 {`${pluralise(
                   item.pipelineCounts,
                   'release pipeline',
-                  'release pipelines'
+                  'release pipelines',
                 )}`}{' '}
               </Link>
             ) : (
@@ -550,7 +547,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
           'border-t border-theme-seperator',
           selectedTab !== null && 'after:content-["_"] after:absolute after:w-full',
           selectedTab !== null && 'after:bottom-0 after:left-0',
-          selectedTab !== null && 'after:border-b after:border-b-theme-seperator'
+          selectedTab !== null && 'after:border-b after:border-b-theme-seperator',
         )}
       >
         <ul className="inline-grid grid-flow-col">
@@ -566,7 +563,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
                     isSelected ? 'border-x-theme-seperator' : 'border-x-transparent',
                     isExpanded && !isSelected && 'hover:border-b-theme-seperator',
                     index === 0 && !isSelected && 'rounded-bl',
-                    isSelected && 'bg-theme-hover'
+                    isSelected && 'bg-theme-hover',
                   )}
                   onClick={() => setSelectedTab(selectedTab === tab ? null : tab)}
                 >

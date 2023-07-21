@@ -8,7 +8,7 @@ const SearchCombobox = () => {
   const navigate = useNavigate();
   const searchResult = trpc.collections.searchProjects.useQuery(
     { searchTerm },
-    { enabled: searchTerm.length > 0 }
+    { enabled: searchTerm.length > 0 },
   );
 
   const { isOpen, getMenuProps, getInputProps, highlightedIndex, getItemProps } =
@@ -47,8 +47,7 @@ const SearchCombobox = () => {
           {...getMenuProps()}
         >
           {isOpen &&
-            searchResult.data &&
-            searchResult.data.map((item, index) => (
+            searchResult.data?.map((item, index) => (
               <li
                 key={`${item.collectionName}-${item.project}`}
                 {...getItemProps({ item, index })}

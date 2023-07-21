@@ -1,5 +1,5 @@
 import { CronJob } from 'cron';
-import cronTime from 'cron-time-generator';
+import { CronTime } from 'cron-time-generator';
 import debug from 'debug';
 import { last } from 'rambda';
 import { oneDayInMs, oneHourInMs } from '../../shared/utils.js';
@@ -9,10 +9,10 @@ const cronLog = debug('cron');
 
 export const setupJob = (
   name: string,
-  when: (time: typeof cronTime) => string,
-  onTick: () => Promise<unknown>
+  when: (time: typeof CronTime) => string,
+  onTick: () => Promise<unknown>,
 ) => {
-  const timePattern = when(cronTime);
+  const timePattern = when(CronTime);
 
   cronLog('Setting up cron for fetching', name, 'with pattern', timePattern);
   registerCron(name, timePattern);
