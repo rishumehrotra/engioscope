@@ -52,9 +52,8 @@ const dataByDay = (
         groupName === noGroup
           ? workItemTypes.find(wit => wit.name[0] === workItemType)?.name[1] ||
             workItemType
-          : `${
-              workItemTypes.find(wit => wit.name[0] === workItemType)?.name[1]
-            } - ${groupName}`,
+          : `${workItemTypes.find(wit => wit.name[0] === workItemType)
+              ?.name[1]} - ${groupName}`,
       workItemTypeName: workItemType,
       groupName,
       points: range(0, queryPeriodDays)

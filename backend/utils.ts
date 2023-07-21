@@ -85,8 +85,8 @@ export const mapSettleSeries = <T, U>(xs: T[], fn: (x: T) => Promise<U>) =>
     (acc, x) =>
       acc.then(accArr =>
         fn(x)
-          .then(value => ({ status: 'fulfilled', value } as const))
-          .catch(error => ({ status: 'rejected', reason: error } as const))
+          .then(value => ({ status: 'fulfilled', value }) as const)
+          .catch(error => ({ status: 'rejected', reason: error }) as const)
           .then(result => [...accArr, result])
       ),
     Promise.resolve([])

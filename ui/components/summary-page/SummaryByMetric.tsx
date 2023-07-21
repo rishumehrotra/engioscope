@@ -34,20 +34,19 @@ import {
 
 const renderGroupItem =
   (link: string) =>
-  (label: ReactNode, anchor = '') =>
-    (
-      <div className="group">
-        <a
-          href={`${link}${anchor}`}
-          className="text-blue-500"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <span className="font-medium text-lg text-black inline-block">{label}</span>
-          <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 ml-1" />
-        </a>
-      </div>
-    );
+  (label: ReactNode, anchor = '') => (
+    <div className="group">
+      <a
+        href={`${link}${anchor}`}
+        className="text-blue-500"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <span className="font-medium text-lg text-black inline-block">{label}</span>
+        <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 ml-1" />
+      </a>
+    </div>
+  );
 
 type CollapsibleSectionProps = {
   heading: ReactNode;
@@ -320,10 +319,9 @@ const FlowMetricsByWorkItemType: React.FC<{
               Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)
                 ?.icon
             }
-            alt={`Icon for ${
-              Object.values(workItemTypes).find(wit => wit.name[0] === workItemTypeName)
-                ?.name[1]
-            }`}
+            alt={`Icon for ${Object.values(workItemTypes).find(
+              wit => wit.name[0] === workItemTypeName
+            )?.name[1]}`}
             className="inline-block mr-1"
             width="18"
           />

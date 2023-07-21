@@ -10,7 +10,7 @@ const cronLog = debug('cron');
 export const setupJob = (
   name: string,
   when: (time: typeof CronTime) => string,
-  onTick: () => Promise<unknown>,
+  onTick: () => Promise<unknown>
 ) => {
   const timePattern = when(CronTime);
 

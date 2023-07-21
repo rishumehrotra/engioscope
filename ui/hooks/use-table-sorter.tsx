@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp } from '../components/common/Icons.jsx';
 
 export function useTableSorter<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const T extends Record<string, (a: any, b: any) => number>
+  const T extends Record<string, (a: any, b: any) => number>,
 >(sorters: T, defaultSorter: keyof T) {
   const [sorter, setSorter] = useState({
     currentSorter: sorters[defaultSorter],

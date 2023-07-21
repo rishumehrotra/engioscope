@@ -147,18 +147,17 @@ export const getMetricCategoryDefinitionId = (
 
 export const renderGroupItem =
   (link: string) =>
-  (label: ReactNode, anchor = '') =>
-    (
-      <a
-        href={`${link}${anchor}`}
-        target="_blank"
-        rel="noreferrer"
-        className="group inline-flex items-center"
-      >
-        {label}
-        <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 text-blue-500 ml-1" />
-      </a>
-    );
+  (label: ReactNode, anchor = '') => (
+    <a
+      href={`${link}${anchor}`}
+      target="_blank"
+      rel="noreferrer"
+      className="group inline-flex items-center"
+    >
+      {label}
+      <ExternalLink className="w-4 opacity-0 group-hover:opacity-100 text-blue-500 ml-1" />
+    </a>
+  );
 
 export type SummaryGroupKey = keyof SummaryItemProps['group'];
 

@@ -150,8 +150,9 @@ const CollectionsBuildsSummary: React.FC<{
                     project.centralTemplatePipeline.central
                   )} out of ${num(
                     project.pipelines.totalCount
-                  )} build pipelines use the central template on the master branch<br>
-                        ${num(project.centralTemplateUsage.templateUsers)} out of ${num(
+                  )} build pipelines use the central template on the master branch<br>${num(
+                    project.centralTemplateUsage.templateUsers
+                  )} out of ${num(
                     project.totalBuilds.count
                   )} build runs used the central template`}
                 >

@@ -32,7 +32,8 @@
     "dead:ui": "ts-prune -p ui/tsconfig.json -i 'backend/|shared/'",
     "dead:backend": "ts-prune -p backend/tsconfig.json -i 'ui/|shared/'",
     "dead:shared": "ts-prune -p shared/tsconfig.json -i 'backend/|ui/'",
-    "find-dead-code": "npm-run-all --parallel dead:ui dead:backend dead:shared"
+    "find-dead-code": "npm-run-all --parallel dead:ui dead:backend dead:shared",
+    "format": "prettier --log-level warn --write \"**/*.{tsx,ts}\""
   },
   "bin": {
     "engioscope": "dist/backend/cli.js"

@@ -22,7 +22,7 @@ const createHandler = <T extends (...x: any[]) => string>(
   keyCreator: T
 ): [
   (...x: Parameters<T>) => Promise<Date | undefined>,
-  (...x: Parameters<T>) => Promise<void>
+  (...x: Parameters<T>) => Promise<void>,
 ] => [
   (...x) =>
     CronUpdateDatesModel.findOne({ key: keyCreator(...x) })

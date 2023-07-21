@@ -662,7 +662,7 @@ export type WorkItemQueryHierarchialResult = {
 };
 
 export type WorkItemQueryResult<
-  T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult
+  T extends WorkItemQueryFlatResult | WorkItemQueryHierarchialResult,
 > = {
   asOf: Date;
   columns: {

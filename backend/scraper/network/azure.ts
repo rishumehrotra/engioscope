@@ -705,7 +705,7 @@ export default (config: ParsedConfig) => {
       <
         T extends
           | WorkItemQueryResult<WorkItemQueryHierarchialResult>
-          | WorkItemQueryResult<WorkItemQueryFlatResult>
+          | WorkItemQueryResult<WorkItemQueryFlatResult>,
       >(
         query: string
       ) =>
@@ -726,7 +726,7 @@ export default (config: ParsedConfig) => {
     getCollectionWorkItemIdsForQuery: <
       T extends
         | WorkItemQueryResult<WorkItemQueryHierarchialResult>
-        | WorkItemQueryResult<WorkItemQueryFlatResult>
+        | WorkItemQueryResult<WorkItemQueryFlatResult>,
     >(
       // TODO: Remove the `usePreciseTime` arg (set it to true) once moved over completely to the DB
       collectionName: string,

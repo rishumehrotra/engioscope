@@ -86,9 +86,8 @@ const Artefacts: React.FC<{
                               artifact.additionalBranches.length === 1
                                 ? 'branch'
                                 : 'branches'
-                            } that didn't go to ${
-                              projectConfig.data?.releasePipelines.ignoreStagesBefore
-                            }`}
+                            } that didn't go to ${projectConfig.data?.releasePipelines
+                              .ignoreStagesBefore}`}
                           </summary>
                           <ol className="flex flex-wrap mt-2">
                             {artifact.additionalBranches.map(branch => (

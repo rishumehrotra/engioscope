@@ -42,11 +42,12 @@ export const totalSuccessfulBuildsByWeek = (repos: RepoAnalysis[]) =>
     repos
       .flatMap(r => r.builds?.pipelines)
       .filter(exists)
-      .map(p =>
-        p.successesByWeek?.map((success, i) => ({
-          success,
-          total: p.buildsByWeek?.[i] || 0,
-        }))
+      .map(
+        p =>
+          p.successesByWeek?.map((success, i) => ({
+            success,
+            total: p.buildsByWeek?.[i] || 0,
+          }))
       )
       .filter(exists)
   ).map(r =>

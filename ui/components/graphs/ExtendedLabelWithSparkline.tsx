@@ -22,14 +22,17 @@ const tooltip = (
   previousMonthStats: PreviousMonthStats
 ) => `
   <strong>${thisMonthValue}</strong> ${label} ${
-  label === 'WIP' ? 'today' : 'in the last month'
-}${
-  previousMonthStats && previousMonthStats.trendDirection !== 'same'
-    ? `<br />This is a <strong>${previousMonthStats?.changePercentage.replace('-', '')} ${
-        previousMonthStats.trendDirection === 'up' ? 'increase' : 'decrease'
-      }</strong> from the previous month`
-    : ''
-}`;
+    label === 'WIP' ? 'today' : 'in the last month'
+  }${
+    previousMonthStats && previousMonthStats.trendDirection !== 'same'
+      ? `<br />This is a <strong>${previousMonthStats?.changePercentage.replace(
+          '-',
+          ''
+        )} ${
+          previousMonthStats.trendDirection === 'up' ? 'increase' : 'decrease'
+        }</strong> from the previous month`
+      : ''
+  }`;
 
 export type ExtendedLabelWithSparklineProps<T> = {
   data: T[];

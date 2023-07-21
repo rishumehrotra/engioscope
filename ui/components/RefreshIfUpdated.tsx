@@ -18,18 +18,21 @@ const RefreshIfUpdated: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, [location.pathname]);
 
   useEffect(() => {
-    timer.current = window.setInterval(() => {
-      hasVersionChanged()
-        .then(versionHasChanged => {
-          if (versionHasChanged) {
-            refreshPageRef.current = true;
-            window.clearInterval(timer.current);
-          }
-        })
-        .catch(() => {
-          // do nothing
-        });
-    }, 1000 * 60 * 15);
+    timer.current = window.setInterval(
+      () => {
+        hasVersionChanged()
+          .then(versionHasChanged => {
+            if (versionHasChanged) {
+              refreshPageRef.current = true;
+              window.clearInterval(timer.current);
+            }
+          })
+          .catch(() => {
+            // do nothing
+          });
+      },
+      1000 * 60 * 15
+    );
 
     return () => {
       if (timer.current) window.clearInterval(timer.current);

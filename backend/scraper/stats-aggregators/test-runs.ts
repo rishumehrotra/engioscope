@@ -99,8 +99,7 @@ const extrapolateIfNeeded = async <T>(
 
 const getMasterBuilds =
   (allMasterBuilds: Record<string, Record<number, Build[] | undefined>>) =>
-  (repoId?: string) =>
-    repoId ? allMasterBuilds[repoId] || {} : [];
+  (repoId?: string) => (repoId ? allMasterBuilds[repoId] || {} : []);
 
 const getDefinitionIdsWithoutBuildsInFirstWeek = (
   allMasterBuilds: Record<string, Record<number, Build[] | undefined>>

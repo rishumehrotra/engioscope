@@ -62,19 +62,18 @@ export const pathRendererSkippingUndefineds: Renderer =
   ({ data, yCoord, xCoord }) => {
     type Point = [xCoord: number, yCoord: number];
 
-    const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) =>
-      (
-        <line
-          key={index}
-          x1={p1[0]}
-          y1={p1[1]}
-          x2={p2[0]}
-          y2={p2[1]}
-          stroke={lineColor}
-          strokeWidth={lineStrokeWidth}
-          strokeDasharray={continuous ? '' : strokeDasharray || '7,5'}
-        />
-      );
+    const drawLine = (continuous: boolean) => (p1: Point, p2: Point, index: number) => (
+      <line
+        key={index}
+        x1={p1[0]}
+        y1={p1[1]}
+        x2={p2[0]}
+        y2={p2[1]}
+        stroke={lineColor}
+        strokeWidth={lineStrokeWidth}
+        strokeDasharray={continuous ? '' : strokeDasharray || '7,5'}
+      />
+    );
 
     const brokenLine = drawLine(false);
     const continuousLine = drawLine(true);

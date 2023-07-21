@@ -85,10 +85,8 @@ export const refreshCombinedBranchPoliciesView = async () => {
 
   // eslint-disable-next-line no-restricted-syntax
   for await (const match of results) {
-    const branchPolicies = configForProject(
-      match.collectionName,
-      match.project
-    )?.branchPolicies;
+    const branchPolicies = configForProject(match.collectionName, match.project)
+      ?.branchPolicies;
     // eslint-disable-next-line no-continue
     if (!branchPolicies) continue;
 

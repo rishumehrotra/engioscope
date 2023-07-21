@@ -24,18 +24,17 @@ const createLinkWrapper =
     filterLabel: string | undefined,
     trackName: string
   ) =>
-  (contents: ReactNode, stub: string) =>
-    (
-      <a
-        href={`/${collectionName}/${projectName}/?filter=${encodeURIComponent(
-          `${filterLabel}:${trackName}`
-        )}${stub}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {contents}
-      </a>
-    );
+  (contents: ReactNode, stub: string) => (
+    <a
+      href={`/${collectionName}/${projectName}/?filter=${encodeURIComponent(
+        `${filterLabel}:${trackName}`
+      )}${stub}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {contents}
+    </a>
+  );
 
 type FlowMetricsInnerProps = {
   tracks: TrackMetricsByTrack[number];

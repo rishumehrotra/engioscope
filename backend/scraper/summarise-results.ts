@@ -137,10 +137,11 @@ const matchingResults = (group: Group, results: Result[]) => {
       acc.push({
         collection: result.collectionConfig.name,
         project: result.projectConfig.name,
-        workItems: Object.values(overview.byId).filter(workItem =>
-          workItem.filterBy?.some(
-            filter => filter.label === gt[0] && filter.tags.includes(gt[1])
-          )
+        workItems: Object.values(overview.byId).filter(
+          workItem =>
+            workItem.filterBy?.some(
+              filter => filter.label === gt[0] && filter.tags.includes(gt[1])
+            )
         ),
         workItemTypes: overview.types,
         groups: overview.groups,
