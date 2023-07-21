@@ -3,10 +3,11 @@ import { byString, byNum, byDate } from 'sort-lib';
 import { twJoin } from 'tailwind-merge';
 import { Calendar, GitCommit } from 'react-feather';
 import { prop } from 'rambda';
+import { Link } from 'react-router-dom';
 import CommitTimeline, { timelineProp } from './commits/CommitTimeline.jsx';
 import { ProfilePic } from './common/ProfilePic.jsx';
 import useQueryPeriodDays from '../hooks/use-query-period-days.js';
-import { relativeTime } from '../helpers/utils.js';
+import { num, relativeTime } from '../helpers/utils.js';
 import SortableTable from './common/SortableTable.jsx';
 import type { RouterClient } from '../helpers/trpc.js';
 import AnimateHeight from './common/AnimateHeight.jsx';
@@ -57,15 +58,14 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
               {item.authorName}
             </h3>
             <div className="text-sm text-theme-helptext">
-              {item.totalCommits ?? '...'} commits in {item.repos.length ?? '...'}{' '}
-              repositories
+              {num(item.totalCommits)} commits in {num(item.repos.length)} repositories
             </div>
           </div>
           <div className="justify-self-center text-theme-icon">
             <Calendar size={18} />
           </div>
           <div className="text-sm text-theme-helptext">
-            Committed {item.latestCommit ? relativeTime(item.latestCommit) : '...'}
+            Committed {relativeTime(item.latestCommit)}
           </div>
           <div className="justify-self-center text-theme-icon">
             <GitCommit size={18} />
@@ -74,17 +74,17 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
             <div className="flex gap-2">
               {item.repos ? (
                 <span className="text-theme-success">
-                  + {item.repos.reduce((acc, commit) => acc + commit.add, 0)}
+                  + {num(item.repos.reduce((acc, commit) => acc + commit.add, 0))}
                 </span>
               ) : null}
               {item.repos ? (
                 <span className="text-theme-warn">
-                  ~ {item.repos.reduce((acc, commit) => acc + commit.edit, 0)}
+                  ~ {num(item.repos.reduce((acc, commit) => acc + commit.edit, 0))}
                 </span>
               ) : null}
               {item.repos ? (
                 <span className="text-theme-danger">
-                  - {item.repos.reduce((acc, commit) => acc + commit.delete, 0)}
+                  - {num(item.repos.reduce((acc, commit) => acc + commit.delete, 0))}
                 </span>
               ) : null}
             </div>
@@ -128,28 +128,20 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
                   title: 'Repository name',
                   key: 'repository name',
                   // eslint-disable-next-line react/no-unstable-nested-components
-                  value: repository =>
-                    repository.url ? (
-                      <a
-                        href={repository.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        data-tooltip-id="react-tooltip"
-                        data-tooltip-content={repository.name}
-                        className="link-text truncate w-full"
-                      >
-                        {repository.name}
-                      </a>
-                    ) : (
-                      repository.name
-                    ),
-
+                  value: repository => (
+                    <Link
+                      to={`../repos?search="${repository.name}"`}
+                      className="link-text truncate w-full"
+                    >
+                      {repository.name}
+                    </Link>
+                  ),
                   sorter: byString(prop('name')),
                 },
                 {
                   title: 'Commits',
                   key: 'commits',
-                  value: repository => repository.commitCount,
+                  value: repository => num(repository.commitCount),
                   sorter: byNum(prop('commitCount')),
                 },
                 {
@@ -161,15 +153,15 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
                       <div className="text-sm min-h-[2.5rem] flex flex-row justify-end">
                         <div className="flex gap-2">
                           <span className="text-theme-success">
-                            + {repository.add || 0}
+                            + {num(repository.add)}
                           </span>
 
                           <span className="text-theme-warn">
-                            ~ {repository.edit || 0}
+                            ~ {num(repository.edit)}
                           </span>
 
                           <span className="text-theme-danger">
-                            - {repository.delete || 0}
+                            - {num(repository.delete)}
                           </span>
                         </div>
                       </div>

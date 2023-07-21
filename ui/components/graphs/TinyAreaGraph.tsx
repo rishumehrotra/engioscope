@@ -54,15 +54,15 @@ export const graphConfig = {
 export const areaGraphColors = {
   good: {
     line: 'rgba(var(--color-text-success), 1)',
-    area: 'rgba(var(--color-bg-success), 0.1)',
+    area: 'rgba(var(--color-bg-success), 0.2)',
   },
   bad: {
     line: 'rgba(var(--color-text-danger), 1)',
-    area: 'rgba(var(--color-bg-danger), 0.1)',
+    area: 'rgba(var(--color-bg-danger), 0.2)',
   },
   neutral: {
-    line: 'rgba(var(--color-text-helptext), 1)',
-    area: 'rgba(var(--color-text-helptext), 0.1)',
+    line: 'rgba(var(--color-text-icon), 1)',
+    area: 'rgba(var(--color-text-icon), 0.2)',
   },
 };
 
@@ -195,23 +195,27 @@ const GroupPathSkippingUndefineds = <T extends unknown>({
   options,
 }: RendererProps<T>) => {
   type Point = [xCoord: number, yCoord: number];
+  type LineProps = {
+    p1: Point;
+    p2: Point;
+    index: number;
+  };
 
   const [BrokenLine, ContinuousLine] = useMemo(() => {
-    const createLineComponent =
-      (continuous: boolean) =>
-      ({ p1, p2, index }: { p1: Point; p2: Point; index: number }) =>
-        (
-          <line
-            key={index}
-            x1={p1[0]}
-            y1={p1[1]}
-            x2={p2[0]}
-            y2={p2[1]}
-            stroke={(color || areaGraphColors.neutral).line}
-            strokeWidth={options.lineWidth}
-            strokeDasharray={continuous ? '' : options.strokeDasharray.join(',')}
-          />
-        );
+    const createLineComponent = (continuous: boolean) => {
+      return ({ p1, p2, index }: LineProps) => (
+        <line
+          key={index}
+          x1={p1[0]}
+          y1={p1[1]}
+          x2={p2[0]}
+          y2={p2[1]}
+          stroke={(color || areaGraphColors.neutral).line}
+          strokeWidth={options.lineWidth}
+          strokeDasharray={continuous ? '' : options.strokeDasharray.join(',')}
+        />
+      );
+    };
 
     const BrokenLine = createLineComponent(false);
     const ContinuousLine = createLineComponent(true);
@@ -324,7 +328,7 @@ const LineGraph = <T extends unknown>({
 
     const xCoord = (index: number) => index * itemYSpacing + leftPadding;
     const yCoord = (value: number) =>
-      graphConfig.height - (value / maxValue) * graphConfig.height + topPadding;
+      graphConfig.height - (value / maxValue) * (graphConfig.height - topPadding);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { width, height, ...options } = graphConfig;

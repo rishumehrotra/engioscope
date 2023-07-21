@@ -450,8 +450,10 @@ export const getSortedDevListing = async ({
     const repos = commit.repos.map(repo => {
       return {
         ...repo,
-        name: findRepo(repo.repositoryId)?.name || '',
-        url: findRepo(repo.repositoryId)?.url,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        name: findRepo(repo.repositoryId)!.name,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        url: findRepo(repo.repositoryId)!.url,
       };
     });
 
