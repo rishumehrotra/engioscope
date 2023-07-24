@@ -400,3 +400,36 @@ export const ReleasePipeline: React.FC<{
     />
   </svg>
 );
+
+export const BuildPipeline: React.FC<{
+  className?: string;
+  size?: number;
+  color?: string;
+}> = ({ className, size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 18 16" className={className} fill="none">
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      d="M9 1.25v7.5M12 5.75l-3 3-3-3"
+    />
+    <path
+      stroke={color}
+      strokeLinejoin="round"
+      strokeWidth="1.3"
+      d="M7.5 11.75h3v3h-3zM1.5 11.75h3v3h-3zM13.5 11.75h3v3h-3z"
+    />
+  </svg>
+);
+
+export const Artifactory2: React.FC<{
+  className?: string;
+  size?: number;
+  color?: string;
+}> = ({ className, size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 15 18" fill="none" className={className}>
+    <circle cx="7.154" cy="7.154" r="6.154" stroke={color} strokeWidth="1.5" />
+    <path stroke={color} strokeLinecap="round" strokeWidth="1.5" d="M1 17h12.308" />
+  </svg>
+);

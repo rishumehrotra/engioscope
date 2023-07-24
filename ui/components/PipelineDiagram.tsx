@@ -118,9 +118,9 @@ const linePathUsing = (colIndex: number, rowIndex: number) => {
 };
 
 const stageLabelColor = (stage: PipelineStageWithCounts) => {
-  if (stage.total === 0) return 'text-gray-700';
-  if (stage.successful !== stage.total) return 'text-yellow-600';
-  return 'text-green-800';
+  if (stage.total === 0) return 'text-theme-base';
+  if (stage.successful !== stage.total) return 'text-theme-warn';
+  return 'text-theme-success';
 };
 
 type PipelineDiagramProps = {
@@ -172,7 +172,7 @@ const PipelineDiagramInternal: React.FC<PipelineDiagramProps> = ({ stages }) => 
                     }`}
                     style={{ height: `${cellHeight}px`, borderWidth: '1px' }}
                   >
-                    <div className="text-gray-600 truncate px-2 py-1 bg-gray-100 font-semibold">
+                    <div className="text-theme-base truncate px-2 py-1 font-medium">
                       {stage.name}
                     </div>
                     <div className={`px-2 py-1 ${stageLabelColor(stage)}`}>
