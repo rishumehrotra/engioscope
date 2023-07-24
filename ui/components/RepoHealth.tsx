@@ -514,7 +514,7 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
 
           {isInactive ? (
             <div
-              className="text-theme-warn bg-theme-warn text-xs inline-block py-1 px-2 rounded-md"
+              className="text-theme-warn bg-theme-warn-dim text-xs inline-block py-1 px-2 rounded-md"
               data-tooltip-id="react-tooltip"
               data-tooltip-html={`This repository doesn't count towards stats,<br />
           as it hasn't seen any commits or builds in the last ${queryPeriodDays} days.`}

@@ -13,9 +13,9 @@ export const policyNames = {
 } as const;
 
 export const policyClasses = {
-  pass: 'bg-green-500',
-  warn: 'bg-yellow-500',
-  fail: 'bg-red-500',
+  pass: 'bg-theme-success',
+  warn: 'bg-theme-warn',
+  fail: 'bg-theme-danger',
 } as const;
 
 export type PolicyNames = keyof typeof policyNames;

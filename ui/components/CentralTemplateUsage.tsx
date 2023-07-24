@@ -58,7 +58,7 @@ const CentralTemplateUsage: React.FC<CentralTemplateUsageProps> = ({
         className={`px-1.5 py-0.5 rounded-sm font-medium ${
           centralTemplateRuns >= totalRuns
             ? 'text-theme-success bg-theme-success-dim'
-            : 'text-theme-warn bg-theme-warn'
+            : 'text-theme-warn bg-theme-warn-dim'
         }`}
         onMouseOver={() => setHasHovered(true)}
         onFocus={() => setHasHovered(true)}

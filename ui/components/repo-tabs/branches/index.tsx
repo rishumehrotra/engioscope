@@ -164,7 +164,7 @@ const Branches: React.FC<{
       {
         label: 'Abandoned branches',
         key: 'abandoned-branches',
-        indicatorClassName: 'bg-theme-warn',
+        indicatorClassName: 'bg-theme-warn-dim',
         count: branchTotalCount.data?.totalAbandoned,
         // eslint-disable-next-line react/no-unstable-nested-components
         Component: () => {

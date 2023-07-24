@@ -433,3 +433,26 @@ export const Artifactory2: React.FC<{
     <path stroke={color} strokeLinecap="round" strokeWidth="1.5" d="M1 17h12.308" />
   </svg>
 );
+
+export const Git2: React.FC<{
+  className?: string;
+  size?: number;
+  color?: string;
+}> = ({ className, size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 19 19" fill="none" className={className}>
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      d="M9.333 6.832a.833.833 0 1 1 0-1.667.833.833 0 0 1 0 1.667Zm0 0v5m0 0a.833.833 0 1 1 0 1.667.833.833 0 0 1 0-1.667Zm2.5-3.333-1.667-1.667M8.5 5.165 6.917 3.582m4.916 5.75a.834.834 0 1 0 1.667 0 .834.834 0 0 0-1.667 0Z"
+    />
+    <path
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      d="m10.538 1.5 6.63 6.628a1.704 1.704 0 0 1 0 2.41l-6.63 6.63a1.704 1.704 0 0 1-2.41 0L1.5 10.537a1.704 1.704 0 0 1 0-2.41L8.13 1.5a1.704 1.704 0 0 1 2.41 0Z"
+    />
+  </svg>
+);

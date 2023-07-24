@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { twJoin } from 'tailwind-merge';
+import { AlertTriangle } from 'react-feather';
 import { exists } from '../../shared/utils.js';
 import type { RouterClient } from '../helpers/trpc.js';
 import { trpc } from '../helpers/trpc.js';
 import { useCollectionAndProject, useQueryContext } from '../hooks/query-hooks.js';
-import AlertMessage from './common/AlertMessage.jsx';
-import { Artifactory2, BuildPipeline, Git } from './common/Icons.jsx';
+import { Artifactory2, BuildPipeline, Git2 } from './common/Icons.jsx';
 import Loading from './Loading.jsx';
 import PipelineDiagram from './PipelineDiagram.jsx';
 import BranchPolicyPill2 from './BranchPolicyPill2.jsx';
+import { minPluralise } from '../helpers/utils.js';
 
 const ArtifactIcon = ({
   type,
@@ -18,7 +19,7 @@ const ArtifactIcon = ({
 }) => {
   if (type === 'Build') return <BuildPipeline className="text-theme-icon" size={18} />;
   if (type === 'Artifactory') return <Artifactory2 size={18} />;
-  return <Git className="h-4" />;
+  return <Git2 className="text-theme-icon" size={18} />;
 };
 
 const Artefacts: React.FC<{
@@ -60,8 +61,9 @@ const Artefacts: React.FC<{
       </div>
       {artifacts ? (
         artifacts.length === 0 ? (
-          <p>
-            <AlertMessage message="No starting artifact" />
+          <p className="flex px-6 py-1 gap-2 items-center text-theme-danger">
+            <AlertTriangle size={18} />
+            <span>No artifacts</span>
           </p>
         ) : (
           <ol className="mx-6">
@@ -105,11 +107,13 @@ const Artefacts: React.FC<{
                         {artifact.additionalBranches?.length ? (
                           <details>
                             <summary className="text-gray-500 text-xs pl-0 cursor-pointer">
-                              {` ${artifact.additionalBranches.length} additional ${
-                                artifact.additionalBranches.length === 1
-                                  ? 'branch'
-                                  : 'branches'
-                              } that didn't go to ${projectConfig.data?.releasePipelines
+                              {` ${
+                                artifact.additionalBranches.length
+                              } additional ${minPluralise(
+                                artifact.additionalBranches.length,
+                                'branch',
+                                'branches'
+                              )} that didn't go to ${projectConfig.data?.releasePipelines
                                 .ignoreStagesBefore}`}
                             </summary>
                             <ol className="flex flex-wrap mt-2 pl-3">
@@ -224,7 +228,7 @@ export const Pipeline2: React.FC<{
                 doesStageExist && isStageUsed
                   ? 'bg-theme-success-dim'
                   : doesStageExist
-                  ? 'bg-theme-warn'
+                  ? 'bg-theme-warn-dim'
                   : 'bg-theme-danger-dim'
               )}
             >
