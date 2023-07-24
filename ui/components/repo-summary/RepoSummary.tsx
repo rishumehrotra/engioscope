@@ -1,6 +1,5 @@
 import { multiply, prop } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { Info } from 'react-feather';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { minPluralise, num } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
@@ -792,22 +791,22 @@ const StreamingRepoSummary: React.FC = () => {
           {'Excluded '}
           <b className="text-theme-helptext-emphasis">
             {num(summaries.totalRepos - summaries.totalActiveRepos)}
-          </b>
-          {` inactive ${minPluralise(
-            summaries.totalRepos - summaries.totalActiveRepos,
-            'repository',
-            'repositories'
-          )} `}
-          <Info
-            className="inline-block text-theme-helptext"
-            size={16}
+          </b>{' '}
+          <span
+            className="underline decoration-dashed"
             data-tooltip-id="react-tooltip"
             data-tooltip-html={[
               'A repository is considered inactive if it has had<br />',
               "<span class='font-medium'>no commits</span> and <span class='font-medium'>no builds</span>",
               `in the last 90 days`,
             ].join(' ')}
-          />
+          >
+            {`inactive ${minPluralise(
+              summaries.totalRepos - summaries.totalActiveRepos,
+              'repository',
+              'repositories'
+            )}`}
+          </span>
           {' from analysis'}
         </p>
       ) : null}

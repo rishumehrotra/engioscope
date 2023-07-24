@@ -217,6 +217,7 @@ const PRs = ({ isInactive, prCount, repositoryId }: PRsProps) => {
         className="shadow-md border border-theme-seperator max-w-md z-10"
       >
         <div className="px-4 py-3">
+          <h3 className="font-medium mb-2 text-base">Pull requests</h3>
           {prCount === 0 ? (
             `No pull requests raised in the last ${queryPeriodDays} days`
           ) : (
