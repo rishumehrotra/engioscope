@@ -84,12 +84,7 @@ export const getMainBranchBuildIds = (
                 $and: [
                   { $eq: ['$repository.id', '$$repositoryId'] },
                   { $eq: ['$sourceBranch', '$$defaultBranch'] },
-                  {
-                    $or: [
-                      { $eq: ['$result', 'failed'] },
-                      { $eq: ['$result', 'succeeded'] },
-                    ],
-                  },
+                  { $eq: ['$result', 'succeeded'] },
                 ],
               },
               ...additionalQuery,
