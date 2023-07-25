@@ -234,7 +234,7 @@ const parseQualityGateStatus = (gateLabel?: string): QualityGateStatus => {
   }
 };
 
-const getMeasureValue = (fetchDate: Date, measures: Measure[]) => {
+const getMeasureValue = (measures: Measure[]) => {
   const findMeasure = (name: string) => measures.find(isMeasureName(name))?.value;
 
   const measureAsNumber = (name: string) => {
@@ -262,7 +262,6 @@ const getMeasureValue = (fetchDate: Date, measures: Measure[]) => {
   };
 
   return {
-    lastAnalysisDate: fetchDate,
     measureAsNumber,
     qualityGateMetric,
     qualityGateStatus: parseQualityGateStatus(qualityGateDetails.level),
@@ -357,7 +356,6 @@ export const getRepoSonarMeasures = async ({
           ?.name || null;
 
       const { measureAsNumber, qualityGateMetric, qualityGateStatus } = getMeasureValue(
-        measure.fetchDate,
         measure.measures
       );
 
@@ -1115,7 +1113,9 @@ export const getSonarQualityGateStatusForRepoName = async (
 
   return measures
     .map(measure => {
-      const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
+      const qualityGateStatus = parseQualityGateStatus(
+        measure.measures.find(m => m.metric === 'alert_status')?.value
+      );
 
       const sonarProject = sonarProjectById(
         sonarProjectIds.find(p => p._id.equals(measure.sonarProjectId))
@@ -1252,7 +1252,9 @@ export const getSonarQualityGateStatusForRepoId = async (
 
   return measures
     .map(measure => {
-      const { qualityGateStatus } = getMeasureValue(measure.fetchDate, measure.measures);
+      const qualityGateStatus = parseQualityGateStatus(
+        measure.measures.find(m => m.metric === 'alert_status')?.value
+      );
       const sonarProject = sonarProjectById(
         sonarProjectIds.find(p => p._id.equals(measure.sonarProjectId))
       );
