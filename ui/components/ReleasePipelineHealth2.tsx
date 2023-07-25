@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { twJoin } from 'tailwind-merge';
 import { AlertTriangle } from 'react-feather';
+import { byNum } from 'sort-lib';
 import { exists } from '../../shared/utils.js';
 import type { RouterClient } from '../helpers/trpc.js';
 import { trpc } from '../helpers/trpc.js';
@@ -17,9 +18,34 @@ const ArtifactIcon = ({
 }: {
   type: RouterClient['releases']['getArtifacts'][number]['type'];
 }) => {
-  if (type === 'Build') return <BuildPipeline className="text-theme-icon" size={18} />;
-  if (type === 'Artifactory') return <Artifactory2 size={18} />;
-  return <Git2 className="text-theme-icon" size={18} />;
+  if (type === 'Build') {
+    return (
+      <span
+        data-tooltip-id="react-tooltip"
+        data-tooltip-content="This artifact is generated from a build pipeline"
+      >
+        <BuildPipeline className="text-theme-icon" size={18} />
+      </span>
+    );
+  }
+  if (type === 'Artifactory') {
+    return (
+      <span
+        data-tooltip-id="react-tooltip"
+        data-tooltip-content="This artifact is downloaded from JFrog Artifactory"
+      >
+        <Artifactory2 size={18} />
+      </span>
+    );
+  }
+  return (
+    <span
+      data-tooltip-id="react-tooltip"
+      data-tooltip-content={`This artifact is from ${type}`}
+    >
+      <Git2 className="text-theme-icon" size={18} />
+    </span>
+  );
 };
 
 const Artefacts: React.FC<{
@@ -89,15 +115,17 @@ const Artefacts: React.FC<{
                                 {artifact.name}
                               </Link>
                             </li>
-                            {artifact.branches.map(branch => (
-                              <li key={`gone-forward-${branch.name}`}>
-                                <BranchPolicyPill2
-                                  repositoryId={artifact.repoId}
-                                  refName={branch.name}
-                                  conforms={branch.conforms}
-                                />
-                              </li>
-                            ))}
+                            {artifact.branches
+                              .sort(byNum(x => (x.conforms ? 0 : 1)))
+                              .map(branch => (
+                                <li key={`gone-forward-${branch.name}`}>
+                                  <BranchPolicyPill2
+                                    repositoryId={artifact.repoId}
+                                    refName={branch.name}
+                                    conforms={branch.conforms}
+                                  />
+                                </li>
+                              ))}
                           </ol>
                         ) : (
                           <div className="text-sm mb-2">
@@ -116,7 +144,7 @@ const Artefacts: React.FC<{
                               )} that didn't go to ${projectConfig.data?.releasePipelines
                                 .ignoreStagesBefore}`}
                             </summary>
-                            <ol className="flex flex-wrap mt-2 pl-3">
+                            <ol className="flex flex-wrap gap-2 mt-2 pl-3">
                               {artifact.additionalBranches.map(branch => (
                                 <li key={`non-gone-ahead${branch.name}`}>
                                   <BranchPolicyPill2
