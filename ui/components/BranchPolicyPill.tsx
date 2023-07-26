@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { Tooltip } from 'react-tooltip';
+import { GitBranch, XCircle } from 'react-feather';
+import { twMerge } from 'tailwind-merge';
 import { trpc } from '../helpers/trpc.js';
 import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { TickCircle } from './common/Icons.jsx';
 
 export const policyNames = {
   'Minimum number of reviewers': 'Minimum number of reviewers',
@@ -11,9 +14,9 @@ export const policyNames = {
 } as const;
 
 export const policyClasses = {
-  pass: 'bg-green-500',
-  warn: 'bg-yellow-500',
-  fail: 'bg-red-500',
+  pass: 'text-theme-success',
+  warn: 'text-theme-warn',
+  fail: 'text-theme-danger',
 } as const;
 
 export type PolicyNames = keyof typeof policyNames;
@@ -42,45 +45,58 @@ const BranchPolicyPill: React.FC<{
     [branchPolicies.data, branchPolicies.status]
   );
 
-  const policyClassName = useCallback(
+  const policyStatus = useCallback(
     (policyName: PolicyNames) => {
-      if (branchPolicies.status === 'loading') {
-        return '';
-      }
-      const policy = branchPolicies.data?.[policyName];
-      if (!policy) {
-        return policyClasses.fail;
-      }
+      if (branchPolicies.status === 'loading') return;
 
-      if (!policy.isEnabled) {
-        return policyClasses.fail;
-      }
-      if (policy.isEnabled && !policy.isBlocking) {
-        return policyClasses.warn;
-      }
+      const policy = branchPolicies.data?.[policyName];
+      if (!policy) return 'fail';
+
+      if (!policy.isEnabled) return 'fail';
+
+      if (policy.isEnabled && !policy.isBlocking) return 'warn';
 
       if (policyName === 'Minimum number of reviewers') {
-        return (policy.minimumApproverCount || 0) > 1
-          ? policyClasses.pass
-          : policyClasses.warn;
+        return (policy.minimumApproverCount || 0) > 1 ? 'pass' : 'warn';
       }
 
-      return policyClasses.pass;
+      return 'pass';
     },
     [branchPolicies.data, branchPolicies.status]
+  );
+
+  const policyClassName = useCallback(
+    (policyName: PolicyNames) => {
+      switch (policyStatus(policyName)) {
+        case 'pass': {
+          return 'text-theme-success';
+        }
+        case 'fail': {
+          return 'text-theme-danger';
+        }
+        case 'warn': {
+          return 'text-theme-warn';
+        }
+        default:
+      }
+    },
+    [policyStatus]
   );
 
   return (
     <>
       <span
-        className={`text-xs border-2 rounded-full px-2 inline-block ${className || ''} ${
-          conforms ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'
-        }`}
+        className={twMerge(
+          'text-sm rounded px-2 py-0.5 inline-flex items-center gap-1',
+          conforms ? 'bg-theme-success-dim' : 'bg-theme-tag',
+          className
+        )}
         onMouseOver={() => setHasHovered(true)}
         onFocus={() => setHasHovered(true)}
         data-tooltip-id={domId}
       >
-        Policies
+        <GitBranch size={16} className={conforms ? '' : 'text-theme-danger'} />
+        {refName.replace('refs/heads/', '')}
       </span>
       <Tooltip
         id={domId}
@@ -96,14 +112,26 @@ const BranchPolicyPill: React.FC<{
               const policyName = p as PolicyNames;
 
               return (
-                <li key={policyName} className="w-72">
-                  <span
-                    className={`rounded inline-block w-2 h-2 mr-2 ${policyClassName(
-                      policyName
-                    )}`}
-                  />
-                  {displayName}
-                  {isOptional(policyName) ? ' (optional)' : null}
+                <li
+                  key={policyName}
+                  className="w-72 grid grid-cols-[min-content_1fr] gap-2 mb-2 items-start"
+                >
+                  <div className={policyClassName(policyName)}>
+                    {((policy: ReturnType<typeof policyStatus>) => {
+                      if (policy === 'pass' || policy === 'warn') {
+                        return <TickCircle size={18} />;
+                      }
+                      if (policy === 'fail') return <XCircle size={18} />;
+                      return null;
+                    })(policyStatus(policyName))}
+                  </div>
+                  <div>
+                    {displayName}
+                    {policyStatus(policyName) === 'warn' ? (
+                      <div className="text-theme-icon">Enabled, but not blocking</div>
+                    ) : null}
+                    {isOptional(policyName) ? ' (optional)' : null}
+                  </div>
                 </li>
               );
             })}

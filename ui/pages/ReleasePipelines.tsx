@@ -1,4 +1,5 @@
 import React from 'react';
+import { prop } from 'rambda';
 import AppliedFilters from '../components/AppliedFilters.jsx';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary.jsx';
@@ -6,13 +7,13 @@ import { trpc } from '../helpers/trpc.js';
 import { useRemoveSort } from '../hooks/sort-hooks.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
-import { Pipeline2 } from '../components/ReleasePipelineHealth2.jsx';
+import ReleasePipelineHealth from '../components/ReleasePipelineHealth.jsx';
 
 const ReleasePipelines: React.FC = () => {
   const filters = useReleaseFilters();
   useRemoveSort();
   const query = trpc.releases.paginatedReleases.useInfiniteQuery(filters, {
-    getNextPageParam: lastPage => lastPage.nextCursor,
+    getNextPageParam: prop('nextCursor'),
   });
   const count = trpc.releases.filteredReleaseCount.useQuery(filters);
 
@@ -26,7 +27,7 @@ const ReleasePipelines: React.FC = () => {
       <InfiniteScrollList2
         items={query.data?.pages.flatMap(page => page.items) || []}
         itemKey={pipeline => pipeline.id.toString()}
-        itemComponent={Pipeline2}
+        itemComponent={ReleasePipelineHealth}
         loadNextPage={query.fetchNextPage}
       />
     </>
