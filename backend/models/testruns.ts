@@ -493,12 +493,12 @@ export const getTestsAndCoverageByWeek = async (
     prop('tests'),
     (prev: PrevTest, definition) => ({
       hasTests: prev.hasTests || definition.hasTests,
-      passedTests: prev.hasTests
-        ? prev.passedTests
-        : 0 + (definition.hasTests ? definition.passedTests : 0),
-      totalTests: prev.hasTests
-        ? prev.totalTests
-        : 0 + (definition.hasTests ? definition.totalTests : 0),
+      passedTests:
+        (prev.hasTests ? prev.passedTests : 0) +
+        (definition.hasTests ? definition.passedTests : 0),
+      totalTests:
+        (prev.hasTests ? prev.totalTests : 0) +
+        (definition.hasTests ? definition.totalTests : 0),
     }),
     { hasTests: false }
   );
@@ -508,12 +508,12 @@ export const getTestsAndCoverageByWeek = async (
     prop('coverageByWeek'),
     (prev: PrevCoverage, definition) => ({
       hasCoverage: prev.hasCoverage || definition.hasCoverage,
-      coveredBranches: prev.hasCoverage
-        ? prev.coveredBranches
-        : 0 + (definition.hasCoverage ? definition.coverage.coveredBranches : 0),
-      totalBranches: prev.hasCoverage
-        ? prev.totalBranches
-        : 0 + (definition.hasCoverage ? definition.coverage.totalBranches : 0),
+      coveredBranches:
+        (prev.hasCoverage ? prev.coveredBranches : 0) +
+        (definition.hasCoverage ? definition.coverage.coveredBranches : 0),
+      totalBranches:
+        (prev.hasCoverage ? prev.totalBranches : 0) +
+        (definition.hasCoverage ? definition.coverage.totalBranches : 0),
     }),
     { hasCoverage: false }
   );
