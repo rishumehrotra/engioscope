@@ -13,14 +13,15 @@ const getCollectionConfig = (collectionName: string) =>
   }).lean();
 
 export const getProjectConfig = async (collectionName: string, projectName: string) => {
-  const globalConfig = await getGlobalConfig();
-  const collectionConfig = await getCollectionConfig(collectionName);
-  const projectConfig = await ConfigModel.findOne({
-    collectionName,
-    project: projectName,
-  }).lean();
+  const [globalConfig, collectionConfig, projectConfig] = await Promise.all([
+    getGlobalConfig(),
+    getCollectionConfig(collectionName),
+    ConfigModel.findOne({
+      collectionName,
+      project: projectName,
+    }).lean(),
+  ]);
 
-  // override global config with collection config and then project config
   return {
     ...globalConfig,
     ...collectionConfig,
