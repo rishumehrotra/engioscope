@@ -24,7 +24,6 @@ import type {
   WorkItemQueryFlatResult,
   WorkItemQueryHierarchialResult,
   WorkItemQueryResult,
-  WorkItemRevision,
   WorkItemType,
   WorkItemTypeCategory,
   WorkItemWithRelations,
@@ -798,25 +797,28 @@ export default (config: ParsedConfig) => {
     getCollectionWorkItemsAndRelationsChunks: (
       collectionName: string,
       workItemIds: number[],
-      queryName: string
+      queryName: string,
+      chunkHandler: (wirs: WorkItemWithRelations[]) => void
     ) =>
-      chunkArray(workItemIds, 200).map((chunk, index) =>
-        usingDiskCache<{ count: number; value: WorkItemWithRelations[] }>(
-          [collectionName, 'work-items', 'by-id', queryName, String(index)],
-          () =>
-            fetch(
-              url(
-                collectionName,
-                null,
-                `/wit/workitems/?${qs.stringify({
-                  ...apiVersion,
-                  $expand: 'all',
-                  ids: chunk.join(','),
-                })}`
-              ),
-              { headers: authHeader, ...otherFetchParams }
-            )
-        ).then(res => res.data.value)
+      Promise.all(
+        chunkArray(workItemIds, 200).map((chunk, index) =>
+          usingDiskCache<{ count: number; value: WorkItemWithRelations[] }>(
+            [collectionName, 'work-items', 'by-id', queryName, String(index)],
+            () =>
+              fetch(
+                url(
+                  collectionName,
+                  null,
+                  `/wit/workitems/?${qs.stringify({
+                    ...apiVersion,
+                    $expand: 'all',
+                    ids: chunk.join(','),
+                  })}`
+                ),
+                { headers: authHeader, ...otherFetchParams }
+              )
+          ).then(res => chunkHandler(res.data.value))
+        )
       ),
 
     getDeletedWorkItems: (collectionName: string, project: string) => {
@@ -841,7 +843,7 @@ export default (config: ParsedConfig) => {
       ).then(res => res.data.value),
 
     getWorkItemRevisions: (collectionName: string) => (workItemId: number) =>
-      usingDiskCache<ListOf<WorkItemRevision>>(
+      usingDiskCache<ListOf<WorkItem>>(
         [collectionName, 'work-items', 'revisions', String(workItemId)],
         () =>
           fetch(
