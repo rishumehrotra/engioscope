@@ -1,5 +1,23 @@
 import { model, Schema } from 'mongoose';
 
+type WorkCenter = {
+  label: string;
+  startStates?: string[];
+  endStates?: string[];
+};
+
+const workCenterSchema = new Schema<WorkCenter>({
+  label: { type: String, required: true },
+  startStates: {
+    type: [String],
+    default: undefined,
+  },
+  endStates: {
+    type: [String],
+    default: undefined,
+  },
+});
+
 type WorkItemsConfig = {
   type: string;
   groupByField?: string;
@@ -18,18 +36,30 @@ type WorkItemsConfig = {
 const workItemsConfigSchema = new Schema<WorkItemsConfig>({
   type: { type: String, required: true },
   groupByField: String,
-  startStates: [String],
-  endStates: [String],
-  rootCause: [String],
-  devCompletionStates: [String],
-  ignoreStates: [String],
-  workCenters: [
-    {
-      label: String,
-      startStates: [String],
-      endStates: [String],
-    },
-  ],
+  startStates: {
+    type: [String],
+    default: undefined,
+  },
+  endStates: {
+    type: [String],
+    default: undefined,
+  },
+  rootCause: {
+    type: [String],
+    default: undefined,
+  },
+  devCompletionStates: {
+    type: [String],
+    default: undefined,
+  },
+  ignoreStates: {
+    type: [String],
+    default: undefined,
+  },
+  workCenters: {
+    type: [workCenterSchema],
+    default: undefined,
+  },
 });
 
 type FilterBy = {
