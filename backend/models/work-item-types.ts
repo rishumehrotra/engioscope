@@ -1,18 +1,62 @@
 import pluralize from 'pluralize';
 import type { z } from 'zod';
 import { asc, byNum } from 'sort-lib';
-import { prop } from 'rambda';
+import { head, prop } from 'rambda';
 import { exists } from '../../shared/utils.js';
 import { configForCollection } from '../config.js';
 import workItemIconSvgs from '../work-item-icon-svgs.js';
 import type { collectionAndProjectInputParser } from './helpers.js';
 import type { WorkItemType } from './mongoose-models/WorkItemType.js';
 import { WorkItemTypeModel } from './mongoose-models/WorkItemType.js';
+import { getProjectConfig } from './config.js';
 
 const iconSvg = ({ id, url }: WorkItemType['icon']) => {
   const { searchParams } = new URL(url);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return workItemIconSvgs[id](searchParams.get('color')!);
+};
+
+export const getWorkItemConfig = async ({
+  collectionName,
+  project,
+}: z.infer<typeof collectionAndProjectInputParser>) => {
+  const config = await getProjectConfig(collectionName, project);
+
+  const workItemTypes = await WorkItemTypeModel.find({
+    collectionName,
+    project,
+    referenceName: { $in: config.workItemsConfig?.map(w => w.type) },
+  }).lean();
+
+  return {
+    environments: config.environments,
+    workItemsConfig: config.workItemsConfig
+      ?.map(workItemConfig => {
+        const match = workItemTypes.find(
+          wit => wit.referenceName === workItemConfig.type
+        );
+
+        if (!match) return;
+
+        const fieldNames = (fieldIds: string[]) =>
+          match.fields.filter(f => fieldIds.includes(f.referenceName))?.map(prop('name'));
+
+        return {
+          name: [match.referenceName, pluralize(match.referenceName)] as const,
+          icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(match.icon))}`,
+          groupByField:
+            workItemConfig.groupByField &&
+            head(fieldNames([workItemConfig.groupByField])),
+          startStates: workItemConfig.startStates,
+          endStates: workItemConfig.endStates,
+          devCompleteStates: workItemConfig.devCompletionStates,
+          rootCause: workItemConfig.rootCause && fieldNames(workItemConfig.rootCause),
+          ignoreStates: workItemConfig.ignoreStates,
+          workCenters: workItemConfig.workCenters,
+        };
+      })
+      .filter(exists),
+  };
 };
 
 export const getWorkItemTypes = async ({

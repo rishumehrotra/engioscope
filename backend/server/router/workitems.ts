@@ -1,5 +1,5 @@
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
-import { getWorkItemTypes } from '../../models/work-item-types.js';
+import { getWorkItemConfig, getWorkItemTypes } from '../../models/work-item-types.js';
 import {
   newWorkItemsListForDate,
   newWorkItemsListForDateInputParser,
@@ -16,6 +16,10 @@ export default t.router({
   newWorkItems: t.procedure
     .input(newWorkItemsSummaryInputParser)
     .query(passInputTo(newWorkItemsSummary)),
+
+  getWorkItemConfig: t.procedure
+    .input(collectionAndProjectInputParser)
+    .query(passInputTo(getWorkItemConfig)),
 
   getWorkItemTypes: t.procedure
     .input(collectionAndProjectInputParser)

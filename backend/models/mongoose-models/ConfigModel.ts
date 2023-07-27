@@ -6,16 +6,14 @@ type WorkCenter = {
   endStates?: string[];
 };
 
+const requiredString = { type: String, required: true };
+const nullableString = { type: String, default: null };
+const maybeStringArray = { type: [String], default: undefined };
+
 const workCenterSchema = new Schema<WorkCenter>({
-  label: { type: String, required: true },
-  startStates: {
-    type: [String],
-    default: undefined,
-  },
-  endStates: {
-    type: [String],
-    default: undefined,
-  },
+  label: requiredString,
+  startStates: maybeStringArray,
+  endStates: maybeStringArray,
 });
 
 type WorkItemsConfig = {
@@ -34,28 +32,13 @@ type WorkItemsConfig = {
 };
 
 const workItemsConfigSchema = new Schema<WorkItemsConfig>({
-  type: { type: String, required: true },
+  type: requiredString,
   groupByField: String,
-  startStates: {
-    type: [String],
-    default: undefined,
-  },
-  endStates: {
-    type: [String],
-    default: undefined,
-  },
-  rootCause: {
-    type: [String],
-    default: undefined,
-  },
-  devCompletionStates: {
-    type: [String],
-    default: undefined,
-  },
-  ignoreStates: {
-    type: [String],
-    default: undefined,
-  },
+  startStates: maybeStringArray,
+  endStates: maybeStringArray,
+  rootCause: maybeStringArray,
+  devCompletionStates: maybeStringArray,
+  ignoreStates: maybeStringArray,
   workCenters: {
     type: [workCenterSchema],
     default: undefined,
@@ -68,14 +51,8 @@ type FilterBy = {
 };
 
 const filterBySchema = new Schema<FilterBy>({
-  label: {
-    type: String,
-    required: true,
-  },
-  field: {
-    type: [String],
-    required: true,
-  },
+  label: requiredString,
+  field: { type: [String], required: true },
 });
 
 export type Config = {
@@ -89,16 +66,13 @@ export type Config = {
 
 const configSchema = new Schema<Config>(
   {
-    collectionName: { type: String, default: null },
-    project: { type: String, default: null },
+    collectionName: nullableString,
+    project: nullableString,
     filterBy: {
       type: [filterBySchema],
       default: undefined,
     },
-    environments: {
-      type: [String],
-      default: undefined,
-    },
+    environments: maybeStringArray,
     templateRepoName: String,
     workItemsConfig: {
       type: [workItemsConfigSchema],
