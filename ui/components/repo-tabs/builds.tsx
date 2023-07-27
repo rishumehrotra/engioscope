@@ -8,8 +8,7 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import BuildInsights from './BuildInsights.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import { useQueryContext } from '../../hooks/query-hooks.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
+import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import SortableTable from '../common/SortableTable.jsx';
 import { SadEmpty } from '../repo-summary/Empty.jsx';
 import CentralTemplateUsage from '../CentralTemplateUsage.jsx';
@@ -25,7 +24,7 @@ const BuildInsightsWrapper = ({
 const Builds: React.FC<{
   repositoryId: string;
 }> = ({ repositoryId }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
 
   const builds = trpc.builds.getBuildsOverviewForRepository.useQuery({
     queryContext: useQueryContext(),

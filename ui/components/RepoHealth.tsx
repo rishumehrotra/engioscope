@@ -15,10 +15,9 @@ import { useSortParams } from '../hooks/sort-hooks.js';
 import branches from './repo-tabs/branches/index.jsx';
 import { trpc, type RouterClient } from '../helpers/trpc.js';
 import { divide, toPercentage } from '../../shared/utils.js';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { ReleasePipeline } from './common/Icons.jsx';
 import useUiConfig from '../hooks/use-ui-config.js';
-import { useQueryContext } from '../hooks/query-hooks.js';
+import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import { ProfilePic } from './common/ProfilePic.jsx';
 import TinyAreaGraph, { areaGraphColors, graphConfig } from './graphs/TinyAreaGraph.jsx';
 
@@ -191,7 +190,7 @@ const PRs = ({ isInactive, prCount, repositoryId }: PRsProps) => {
     },
     { enabled: prCount !== 0 && isTooltipTriggered }
   );
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
 
   if (isInactive) return null;
   return (
@@ -378,8 +377,8 @@ type RepoHealthProps = {
   index: number;
 };
 
-const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
+const RepoHealth: React.FC<RepoHealthProps> = ({ item, index }) => {
+  const queryPeriodDays = useQueryPeriodDays();
   const location = useLocation();
   const uiConfig = useUiConfig();
   const isFirst = index === 0;
@@ -592,4 +591,4 @@ const RepoHealth2: React.FC<RepoHealthProps> = ({ item, index }) => {
   );
 };
 
-export default RepoHealth2;
+export default RepoHealth;

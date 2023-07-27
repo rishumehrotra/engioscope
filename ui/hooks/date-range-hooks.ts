@@ -1,20 +1,12 @@
 import createContextState from '../helpers/create-context-state.jsx';
-import useQueryParam, { asBoolean, asString } from './use-query-param.js';
+import useQueryParam, { asString } from './use-query-param.js';
 
 const [DateRangeProvider, usePageLoadTime] = createContextState<Date>(new Date());
 
 const useDateRange = () => {
-  const [showTimeSelection] = useQueryParam('time', asBoolean);
   const [fromDate] = useQueryParam('range', asString);
 
   const endDate = usePageLoadTime();
-
-  if (!showTimeSelection) {
-    const startDate = new Date(endDate);
-    startDate.setDate(startDate.getDate() - 90);
-
-    return { startDate, endDate };
-  }
 
   if (fromDate === 'last-6-months') {
     const sixMonthsAgo = new Date(endDate);

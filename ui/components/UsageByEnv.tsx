@@ -2,6 +2,7 @@ import React, { Fragment } from 'react';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { AlertTriangle } from './common/Icons.js';
 import { envRowTooltip } from './OverviewGraphs/helpers/tooltips.js';
+import { useQueryPeriodDays } from '../hooks/query-hooks.js';
 
 type UsageByEnvProps = {
   perEnvUsage: Record<
@@ -12,7 +13,6 @@ type UsageByEnvProps = {
     }
   >;
   pipelineCount?: number;
-  queryPeriodDays: number;
 };
 
 const doesDeploysCountSeemInconsistent = (
@@ -23,11 +23,8 @@ const doesDeploysCountSeemInconsistent = (
   return perEnvUsage[index - 1][1].successful < perEnvUsage[index][1].total;
 };
 
-const UsageByEnv: React.FC<UsageByEnvProps> = ({
-  perEnvUsage,
-  pipelineCount,
-  queryPeriodDays,
-}) => {
+const UsageByEnv: React.FC<UsageByEnvProps> = ({ perEnvUsage, pipelineCount }) => {
+  const queryPeriodDays = useQueryPeriodDays();
   const max = Math.max(...Object.values(perEnvUsage).map(({ total }) => total));
   const allEnvs = Object.entries(perEnvUsage);
   return (

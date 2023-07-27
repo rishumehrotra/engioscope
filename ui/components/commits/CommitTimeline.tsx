@@ -1,5 +1,6 @@
 import React from 'react';
 import { minPluralise, shortDate } from '../../helpers/utils.js';
+import { useQueryPeriodDays } from '../../hooks/query-hooks.js';
 
 type CommitsTimelineItem = {
   date: string;
@@ -18,7 +19,6 @@ export const timelineProp = (commits: CommitsTimelineItem[]) => {
 type CommitTimelineProps = {
   timeline: ReturnType<typeof timelineProp>;
   max: number;
-  queryPeriodDays: number;
   className?: string;
 };
 
@@ -30,13 +30,9 @@ const gapAboveAxis = 3;
 const dateString = (date: Date) => date.toISOString().split('T')[0];
 const range = (max: number) => [...Array.from({ length: max }).keys()];
 
-const CommitTimeline: React.FC<CommitTimelineProps> = ({
-  timeline,
-  max,
-  queryPeriodDays,
-  className,
-}) => {
+const CommitTimeline: React.FC<CommitTimelineProps> = ({ timeline, max, className }) => {
   const startDate = new Date();
+  const queryPeriodDays = useQueryPeriodDays();
   startDate.setDate(new Date().getDate() - queryPeriodDays);
   const svgWidth = (barWidth + barSpacing) * queryPeriodDays;
 

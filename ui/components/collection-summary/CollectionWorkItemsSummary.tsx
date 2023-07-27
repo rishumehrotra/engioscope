@@ -7,8 +7,8 @@ import { trpc } from '../../helpers/trpc.js';
 import { divide, toPercentage } from '../../../shared/utils';
 import type { UIWorkItemType } from '../../../shared/types.js';
 import { num, prettyMS } from '../../helpers/utils.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { useTableSorter } from '../../hooks/use-table-sorter.jsx';
+import { useQueryPeriodDays } from '../../hooks/query-hooks.js';
 
 type ProjectWorkItemSummaryForType =
   RouterClient['summary']['collectionWorkItemsSummary']['projects'][number]['byType'][string];
@@ -137,7 +137,7 @@ const witByName = (name: string, types: Record<string, UIWorkItemType>) => {
 const WorkItemTable: React.FC<{ summaries: ProjectWorkItemSummaryWithName[] }> = ({
   summaries,
 }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
   const { buttonProps, sortIcon, sorter } = useTableSorter(sorters, 'byName');
 
   return (

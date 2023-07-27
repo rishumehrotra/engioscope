@@ -8,7 +8,7 @@ import { fetchTrackFeatures, fetchTrackFlowMetrics } from '../network.js';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
 import FlowMetrics from '../components/tracks-page/FlowMetrics.jsx';
 import FeaturesList from '../components/tracks-page/FeaturesList.jsx';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
+import { useQueryPeriodDays } from '../hooks/query-hooks.js';
 
 const navItems = [
   { key: 'metrics', label: 'Flow metrics', linkTo: '/tracks' },
@@ -34,7 +34,7 @@ const fromDate = (refDate: string, daysAgo: number) => {
 };
 
 const Tracks: React.FC = () => {
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
   const [trackFlowMetrics, setTrackFlowMetrics] = useState<TrackFlowMetrics | null>(null);
   const [trackFeatures, setTrackFeatures] = useState<TrackFeatures | null>(null);
   const [show] = useQueryParam('show', asString);

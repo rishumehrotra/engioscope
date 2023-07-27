@@ -6,7 +6,6 @@ import { prop } from 'rambda';
 import { Link } from 'react-router-dom';
 import CommitTimeline, { timelineProp } from './commits/CommitTimeline.jsx';
 import { ProfilePic } from './common/ProfilePic.jsx';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
 import { num, relativeTime } from '../helpers/utils.js';
 import SortableTable from './common/SortableTable.jsx';
 import type { RouterClient } from '../helpers/trpc.js';
@@ -18,7 +17,6 @@ type DeveloperProps = {
 };
 
 const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
   const [expandedState, setExpandedState] = useState<'open' | 'closing' | 'closed'>(
     index === 0 ? 'open' : 'closed'
   );
@@ -105,7 +103,6 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
                 .sort(byDate(x => new Date(x.date)))
             )}
             max={max}
-            queryPeriodDays={queryPeriodDays}
           />
           <span className="text-theme-highlight inline-block mt-6">
             {expandedState === 'open' ? 'Show less' : 'Show more'}
@@ -181,7 +178,6 @@ const Developer: React.FC<DeveloperProps> = ({ item, index }) => {
                         }))
                       )}
                       max={max}
-                      queryPeriodDays={queryPeriodDays}
                       className="inline-block"
                     />
                   ),

@@ -21,7 +21,7 @@ import { createPalette, num } from '../../helpers/utils.js';
 import ProjectStat from '../ProjectStat.js';
 import NewGraph from './New.js';
 import TimeSpentGraph from './TimeSpentGraph.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
+import { useQueryPeriodDays } from '../../hooks/query-hooks.js';
 
 const palette = createPalette(['#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9']);
 
@@ -84,7 +84,7 @@ const TestCaseStats: React.FC<{
 const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = ({
   projectAnalysis,
 }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
   const rootNode = useRef<HTMLDivElement>(null);
   const workItems = useMemo(
     () => Object.values(projectAnalysis.overview.byId),

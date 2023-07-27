@@ -41,11 +41,11 @@ export default () => {
 
   return (
     <>
-      <div className="flex items-end mb-6 justify-between mx-1">
+      <div className="grid grid-flow-row mb-4">
         <TeamsSelector />
         <QueryPeriodSelector />
       </div>
-      <AppliedFilters type="repos" count={filteredReposCount?.data || 0} />
+      <AppliedFilters type="repos" count={filteredReposCount?.data} />
       {filteredReposCount.data !== undefined && filteredReposCount.data === 0 ? (
         <div className="text-center">
           <img src={noSearchResults} alt="No search results" className="inline-block" />

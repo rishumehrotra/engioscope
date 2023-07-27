@@ -8,6 +8,7 @@ import { useRemoveSort } from '../hooks/sort-hooks.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import ReleasePipelineHealth from '../components/ReleasePipelineHealth.jsx';
+import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 
 const ReleasePipelines: React.FC = () => {
   const filters = useReleaseFilters();
@@ -19,8 +20,9 @@ const ReleasePipelines: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6 ml-1">
+      <div className="grid grid-flow-row mb-4">
         <TeamsSelector />
+        <QueryPeriodSelector />
       </div>
       <AppliedFilters type="release-pipelines" count={count.data} />
       <ReleasePipelineSummary />

@@ -3,9 +3,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { trpc } from '../../helpers/trpc.js';
 import { num, shortDate } from '../../helpers/utils.js';
-import { useCollectionAndProject, useQueryPeriod } from '../../hooks/query-hooks.js';
+import {
+  useCollectionAndProject,
+  useQueryPeriod,
+  useQueryPeriodDays,
+} from '../../hooks/query-hooks.js';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import type { LineGraphProps } from '../graphs/LineGraph.jsx';
 import LineGraph from '../graphs/LineGraph.jsx';
 import Loading from '../Loading.jsx';
@@ -186,7 +189,7 @@ type NewGraphProps = {
 const NewGraph: React.FC<NewGraphProps> = ({ openModal }) => {
   const cnp = useCollectionAndProject();
   const qp = useQueryPeriod();
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
   const additionalFilters = useAdditionalFilters();
 
   const workItemSummary = trpc.workItems.newWorkItems.useQuery({

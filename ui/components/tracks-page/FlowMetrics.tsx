@@ -5,7 +5,6 @@ import { asc, byNum, byString, desc } from 'sort-lib';
 import type { TrackFlowMetrics, TrackMetricsByTrack } from '../../../shared/types.js';
 import { divide } from '../../../shared/utils.js';
 import { prettyMS } from '../../helpers/utils.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
 import { ArrowDown, ArrowUp } from '../common/Icons.jsx';
 import ExtendedLabelWithSparkline from '../graphs/ExtendedLabelWithSparkline.jsx';
 import {
@@ -16,6 +15,7 @@ import {
   velocitySparkline,
   wipTrendSparkline,
 } from '../sparkline-props.js';
+import { useQueryPeriodDays } from '../../hooks/query-hooks.js';
 
 const createLinkWrapper =
   (
@@ -41,7 +41,7 @@ type FlowMetricsInnerProps = {
 };
 
 const FlowMetricsInner: React.FC<FlowMetricsInnerProps> = ({ tracks }) => {
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
 
   const table = useMemo(
     () => ({

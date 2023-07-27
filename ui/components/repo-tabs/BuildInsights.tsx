@@ -2,8 +2,7 @@ import prettyMilliseconds from 'pretty-ms';
 import type { ReactNode } from 'react';
 import React from 'react';
 import { trpc } from '../../helpers/trpc.js';
-import useQueryPeriodDays from '../../hooks/use-query-period-days.js';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import { useCollectionAndProject, useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import { toPercentage } from '../../../shared/utils.js';
 import noTasks from './no-tasks.svg';
 
@@ -76,7 +75,7 @@ const BuildInsights: React.FC<{
     ...cnp,
     buildDefinitionId,
   });
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
 
   return (
     <div className="grid grid-cols-3 gap-5 p-5 bg-gray-100">

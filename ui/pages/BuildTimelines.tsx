@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import useQueryPeriodDays from '../hooks/use-query-period-days.js';
-import { useCollectionAndProject } from '../hooks/query-hooks.js';
+import { useCollectionAndProject, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import { trpc } from '../helpers/trpc.js';
 import Loading from '../components/Loading.jsx';
 import { num, prettyMS } from '../helpers/utils.js';
@@ -8,7 +7,7 @@ import { toPercentage } from '../../shared/utils.js';
 
 const BuildTimelines: React.FC = () => {
   const cnp = useCollectionAndProject();
-  const [queryPeriodDays] = useQueryPeriodDays();
+  const queryPeriodDays = useQueryPeriodDays();
 
   const queryFrom = useMemo(() => {
     const d = new Date();

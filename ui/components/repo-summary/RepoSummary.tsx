@@ -2,7 +2,7 @@ import { multiply, prop } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { minPluralise, num } from '../../helpers/utils.js';
-import { useQueryContext } from '../../hooks/query-hooks.js';
+import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
 import { Stat, SummaryCard } from '../SummaryCard.jsx';
@@ -66,6 +66,7 @@ const StreamingRepoSummary: React.FC = () => {
   const sseUrl = useCreateUrlWithFilter('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const key = useUpdateSummary();
+  const queryPeriodDays = useQueryPeriodDays();
   const summaries = useSse<SummaryStats>(sseUrl, key);
 
   return (
@@ -798,7 +799,7 @@ const StreamingRepoSummary: React.FC = () => {
             data-tooltip-html={[
               'A repository is considered inactive if it has had<br />',
               "<span class='font-medium'>no commits</span> and <span class='font-medium'>no builds</span>",
-              `in the last 90 days`,
+              `in the last ${queryPeriodDays} days`,
             ].join(' ')}
           >
             {`inactive ${minPluralise(

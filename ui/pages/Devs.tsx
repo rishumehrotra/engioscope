@@ -7,10 +7,17 @@ import useDevFilters from '../hooks/use-dev-filters.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import AlertMessage from '../components/common/AlertMessage.jsx';
 import SortControls from '../components/SortControls.jsx';
+import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
+import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 
 const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
   return (
     <>
+      <div className="grid grid-flow-row mb-4">
+        <TeamsSelector />
+        <QueryPeriodSelector />
+      </div>
+
       <AppliedFilters type="devs" count={devsCount} />
       <SortControls sortByList={['Name', 'Repos Committed']} defaultSortDirection="asc" />
     </>
@@ -53,7 +60,7 @@ export default () => {
 
   return (
     <>
-      <FiltersAndSorters devsCount={filteredDevs?.data || 0} />
+      <FiltersAndSorters devsCount={filteredDevs?.data} />
       <Devs />
     </>
   );

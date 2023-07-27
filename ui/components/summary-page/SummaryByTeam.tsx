@@ -809,7 +809,6 @@ const HealthMetrics: React.FC<{
               <UsageByEnv
                 perEnvUsage={pipelineStats.usageByEnvironment}
                 pipelineCount={pipelineStats.pipelines}
-                queryPeriodDays={queryPeriodDays}
               />
             </div>
           </div>

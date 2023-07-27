@@ -1,6 +1,6 @@
+import type { ChangeEventHandler } from 'react';
 import { useCallback, useMemo } from 'react';
 import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
-import Select from './common/Select.jsx';
 import { oneDayInMs } from '../../shared/utils.js';
 
 const QueryPeriodSelector = () => {
@@ -24,35 +24,39 @@ const QueryPeriodSelector = () => {
     twoWeeksAgo.setDate(now.getDate() - 14 * oneDayInMs);
 
     return [
-      { label: 'Last 6 months', value: 'last-6-months', from: sixMonthsAgo },
-      { label: 'Last 3 months', value: 'last-3-months', from: threeMonthsAgo },
-      { label: 'Last 1 month', value: 'last-1-month', from: oneMonthsAgo },
-      { label: 'Last 2 weeks', value: 'last-2-weeks', from: twoWeeksAgo },
+      { label: 'last 6 months', value: 'last-6-months', from: sixMonthsAgo },
+      { label: 'last 3 months', value: 'last-3-months', from: threeMonthsAgo },
+      { label: 'last 1 month', value: 'last-1-month', from: oneMonthsAgo },
+      { label: 'last 2 weeks', value: 'last-2-weeks', from: twoWeeksAgo },
     ];
   }, []);
 
-  const onDateRangeChange = useCallback(
-    (value: string) => {
-      setFromDate(value === 'last-3-months' ? undefined : value, true);
+  const onDateRangeChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
+    event => {
+      setFromDate(
+        event.target.value === 'last-3-months' ? undefined : event.target.value,
+        true
+      );
     },
     [setFromDate]
   );
 
-  if (!showTimeSelection) return null;
+  if (!(showTimeSelection || import.meta.env.DEV)) return null;
 
   return (
-    // eslint-disable-next-line jsx-a11y/label-has-associated-control
-    <label className="text-gray-600 font-semibold text-sm text-right">
-      Showing data for the
-      <br />
-      <Select
-        className="bg-transparent text-gray-900 form-select sm:text-sm font-medium
-  focus:shadow-none focus-visible:ring-2 focus-visible:ring-teal-500 border rounded border-gray-400 "
-        onChange={onDateRangeChange}
-        options={timeOptions}
-        value={fromDate || 'last-3-months'}
-      />
-    </label>
+    <div className="mt-4 ml-1">
+      <label className="text-theme-helptext inline-flex items-center gap-2">
+        <span>Showing data for the</span>
+        {}
+        <select value={fromDate || 'last-3-months'} onChange={onDateRangeChange}>
+          {timeOptions.map(t => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
   );
 };
 
