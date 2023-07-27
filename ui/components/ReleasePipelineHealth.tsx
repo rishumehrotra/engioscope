@@ -16,7 +16,7 @@ import { minPluralise } from '../helpers/utils.js';
 const ArtifactIcon = ({
   type,
 }: {
-  type: RouterClient['releases']['getArtifacts'][number]['type'];
+  type: RouterClient['releases']['releasePipelineDetails']['artifacts'][number]['type'];
 }) => {
   if (type === 'Build') {
     return (
@@ -49,44 +49,38 @@ const ArtifactIcon = ({
 };
 
 const Artefacts: React.FC<{
-  releaseDefinitionId: number;
-}> = ({ releaseDefinitionId }) => {
+  artefacts?: RouterClient['releases']['releasePipelineDetails']['artifacts'];
+}> = ({ artefacts }) => {
   const { collectionName, project } = useCollectionAndProject();
-  const artifactsResponse = trpc.releases.getArtifacts.useQuery({
-    queryContext: useQueryContext(),
-    releaseDefnId: releaseDefinitionId,
-  });
   const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
 
-  const artifacts = useMemo(() => {
-    if (!artifactsResponse.data) return;
-    const primary = artifactsResponse.data?.find(a => a.isPrimary);
-    const rest = artifactsResponse.data?.filter(a => !a.isPrimary);
+  const as = useMemo(() => {
+    if (!artefacts) return;
+    const primary = artefacts.find(a => a.isPrimary);
+    const rest = artefacts.filter(a => !a.isPrimary);
     return [primary, ...(rest || [])].filter(exists);
-  }, [artifactsResponse.data]);
+  }, [artefacts]);
 
   const groupedArtifacts = useMemo(() => {
-    if (!artifactsResponse.data) return;
+    if (!artefacts) return;
 
     return Object.values(
-      artifactsResponse.data.reduce<
-        Record<string, RouterClient['releases']['getArtifacts']>
-      >((acc, artifact) => {
-        acc[artifact.type] ||= [];
-        acc[artifact.type].push(artifact);
+      artefacts.reduce<Record<string, typeof artefacts>>((acc, a) => {
+        acc[a.type] ||= [];
+        acc[a.type].push(a);
 
         return acc;
       }, {})
     );
-  }, [artifactsResponse.data]);
+  }, [artefacts]);
 
   return (
     <div className="my-4">
       <div className="uppercase text-xs mb-2 bg-theme-hover border-y border-y-theme-seperator py-2 px-6">
         Artifacts
       </div>
-      {artifacts ? (
-        artifacts.length === 0 ? (
+      {as ? (
+        as.length === 0 ? (
           <p className="flex px-6 py-1 gap-2 items-center text-theme-danger">
             <AlertTriangle size={18} />
             <span>No artifacts</span>
@@ -194,18 +188,16 @@ const Artefacts: React.FC<{
   );
 };
 
-const Stages: React.FC<{ releaseDefinitionId: number }> = ({ releaseDefinitionId }) => {
-  const stages = trpc.releases.releasePipelineStages.useQuery({
-    queryContext: useQueryContext(),
-    releaseDefnId: releaseDefinitionId,
-  });
+const Stages: React.FC<{
+  stages: RouterClient['releases']['releasePipelineDetails']['stages'];
+}> = ({ stages }) => {
   return (
     <>
       <div className="uppercase text-xs mb-2 bg-theme-hover border-y border-y-theme-seperator py-2 px-6">
         Stages
       </div>
       <div className="m-6">
-        {stages.data ? <PipelineDiagram stages={stages.data} /> : <Loading />}
+        {stages ? <PipelineDiagram stages={stages} /> : <Loading />}
       </div>
     </>
   );
@@ -220,7 +212,7 @@ const ReleasePipelineHealth: React.FC<{
 }> = ({ item: { id, name, url } }) => {
   const { collectionName, project } = useCollectionAndProject();
   const projectConfig = trpc.projectConfig.useQuery({ collectionName, project });
-  const stages = trpc.releases.releasePipelineStages.useQuery({
+  const releasePipelineDetails = trpc.releases.releasePipelineDetails.useQuery({
     queryContext: useQueryContext(),
     releaseDefnId: id,
   });
@@ -234,7 +226,7 @@ const ReleasePipelineHealth: React.FC<{
         'shadow-sm hover:shadow-md transition-shadow duration-200'
       )}
     >
-      <h3 className="m-6">
+      <h3 className="m-6 mb-2">
         <a
           href={url}
           className="group-hover:text-theme-highlight hover:underline font-medium"
@@ -242,7 +234,7 @@ const ReleasePipelineHealth: React.FC<{
           {name}
         </a>
         {stagesToHighlight?.map(stageToHighlight => {
-          const matchingStage = stages.data?.find(s =>
+          const matchingStage = releasePipelineDetails.data?.stages?.find(s =>
             s.name.toLowerCase().includes(stageToHighlight.toLowerCase())
           );
           const doesStageExist = Boolean(matchingStage);
@@ -267,8 +259,30 @@ const ReleasePipelineHealth: React.FC<{
           );
         })}
       </h3>
-      <Artefacts releaseDefinitionId={id} />
-      <Stages releaseDefinitionId={id} />
+      <ul className="ml-6 inline-flex gap-3 text-theme-helptext">
+        <li>
+          <strong className="text-theme-base">
+            {releasePipelineDetails.data?.artifacts.length}
+          </strong>
+          {` ${minPluralise(
+            releasePipelineDetails.data?.artifacts.length || 0,
+            'artifact',
+            'artifacts'
+          )} `}
+        </li>
+        <li>
+          <strong className="text-theme-base">
+            {releasePipelineDetails.data?.stages?.length}
+          </strong>
+          {` ${minPluralise(
+            releasePipelineDetails.data?.stages?.length || 0,
+            'stage',
+            'stages'
+          )} `}
+        </li>
+      </ul>
+      <Artefacts artefacts={releasePipelineDetails.data?.artifacts} />
+      <Stages stages={releasePipelineDetails.data?.stages} />
     </div>
   );
 };

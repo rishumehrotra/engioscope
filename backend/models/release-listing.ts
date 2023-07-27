@@ -655,7 +655,7 @@ export const releasePipelineDetailsInputParser = z.object({
   releaseDefnId: z.number(),
 });
 
-export const releasePipelineStages = async ({
+const releasePipelineStages = async ({
   queryContext,
   releaseDefnId,
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
@@ -717,7 +717,7 @@ export const releasePipelineStages = async ({
   });
 };
 
-export const getArtifacts = async ({
+const getArtifacts = async ({
   queryContext,
   releaseDefnId,
 }: z.infer<typeof releasePipelineDetailsInputParser>) => {
@@ -873,6 +873,17 @@ export const getArtifacts = async ({
   );
 
   return [...others, ...Object.values(builds)];
+};
+
+export const releasePipelineDetails = async (
+  args: z.infer<typeof releasePipelineDetailsInputParser>
+) => {
+  const [stages, artifacts] = await Promise.all([
+    releasePipelineStages(args),
+    getArtifacts(args),
+  ]);
+
+  return { stages, artifacts };
 };
 
 export const releaseBranchesForRepo = async (
