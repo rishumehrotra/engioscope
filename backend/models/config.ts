@@ -22,9 +22,20 @@ export const getProjectConfig = async (collectionName: string, projectName: stri
     }).lean(),
   ]);
 
-  return {
+  const merged = {
     ...globalConfig,
     ...collectionConfig,
     ...projectConfig,
+  };
+
+  return {
+    ...merged,
+    workItemsConfig: merged.workItemsConfig?.map(wic => {
+      return {
+        ...wic,
+        startStates: wic.startStates || ['New'],
+        endStates: wic.endStates || ['Closed'],
+      };
+    }),
   };
 };
