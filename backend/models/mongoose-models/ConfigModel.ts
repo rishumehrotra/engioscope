@@ -3,31 +3,31 @@ import { model, Schema } from 'mongoose';
 type WorkItemsConfig = {
   type: string;
   groupByField?: string;
-  startState?: string[];
-  endState?: string[];
+  startStates?: string[];
+  endStates?: string[];
   rootCause?: string[];
-  devCompletionState?: string[];
+  devCompletionStates?: string[];
   ignoreStates: string[];
   workCenters?: {
     label: string;
-    startState?: string[];
-    endState?: string[];
+    startStates?: string[];
+    endStates?: string[];
   }[];
 };
 
 const workItemsConfigSchema = new Schema<WorkItemsConfig>({
   type: { type: String, required: true },
   groupByField: String,
-  startState: [String],
-  endState: [String],
+  startStates: [String],
+  endStates: [String],
   rootCause: [String],
-  devCompletionState: [String],
+  devCompletionStates: [String],
   ignoreStates: [String],
   workCenters: [
     {
       label: String,
-      startState: [String],
-      endState: [String],
+      startStates: [String],
+      endStates: [String],
     },
   ],
 });
