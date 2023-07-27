@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { oneWeekInMs } from '../../shared/utils.js';
 
 export const queryContextInputParser = z.tuple([
   z.string(),
@@ -17,3 +18,7 @@ export const fromContext = (x: QueryContext) => {
     endDate: x[3],
   };
 };
+
+export const weekIndexValue = (startDate: Date, field: string) => ({
+  $trunc: { $divide: [{ $subtract: [field, startDate] }, oneWeekInMs] },
+});

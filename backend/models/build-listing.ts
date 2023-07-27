@@ -1,9 +1,9 @@
 import type { PipelineStage } from 'mongoose';
 import { range } from 'rambda';
-import { oneDayInMs, oneWeekInMs } from '../../shared/utils.js';
+import { oneDayInMs } from '../../shared/utils.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { fromContext, weekIndexValue } from './utils.js';
 import { inDateRange } from './helpers.js';
 
 export const getSplitUpBy = (
@@ -14,16 +14,7 @@ export const getSplitUpBy = (
   return [
     {
       $group: {
-        _id: {
-          $trunc: {
-            $divide: [
-              {
-                $subtract: [field, new Date(startDate)],
-              },
-              oneWeekInMs,
-            ],
-          },
-        },
+        _id: weekIndexValue(startDate, field),
         count: { $sum: condition },
         // For Debugging Remove Once In Production
         start: { $min: field },

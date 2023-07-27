@@ -5,9 +5,8 @@ import { CommitModel } from './mongoose-models/CommitModel.js';
 import { inDateRange } from './helpers.js';
 import { getConfig } from '../config.js';
 import type { QueryContext } from './utils.js';
-import { queryContextInputParser, fromContext } from './utils.js';
+import { queryContextInputParser, fromContext, weekIndexValue } from './utils.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
-import { oneWeekInMs } from '../../shared/utils.js';
 
 export const getLatestCommitIdAndDate = async (
   collectionName: string,
@@ -599,14 +598,7 @@ export const getWeeklyCommitsForRepositoryIds = async (
       $group: {
         _id: {
           repositoryId: '$repositoryId',
-          weekIndex: {
-            $trunc: {
-              $divide: [
-                { $subtract: ['$author.date', new Date(startDate)] },
-                oneWeekInMs,
-              ],
-            },
-          },
+          weekIndex: weekIndexValue(startDate, '$author.date'),
         },
         totalCommits: { $sum: 1 },
       },

@@ -2,9 +2,9 @@ import type { PipelineStage } from 'mongoose';
 import { model, Schema } from 'mongoose';
 import pMemoize from 'p-memoize';
 import ExpiryMap from 'expiry-map';
-import { oneMinuteInMs, oneWeekInMs } from '../../shared/utils.js';
+import { oneMinuteInMs } from '../../shared/utils.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { fromContext, weekIndexValue } from './utils.js';
 import { inDateRange } from './helpers.js';
 
 export type ReleaseCondition = {
@@ -270,11 +270,7 @@ export const getTestsForReleaseDefinitionId = (
     ...getTestsForReleasePipelineEnvironments(queryContext, releaseDefinitionId),
     {
       $addFields: {
-        'tests.weekIndex': {
-          $trunc: {
-            $divide: [{ $subtract: ['$tests.completedDate', startDate] }, oneWeekInMs],
-          },
-        },
+        'tests.weekIndex': weekIndexValue(startDate, '$tests.completedDate'),
       },
     },
     { $sort: { 'tests.completedDate': 1 } },
@@ -329,11 +325,7 @@ export const getOneOldTestForEnvironmentId = (
     ),
     {
       $addFields: {
-        'tests.weekIndex': {
-          $trunc: {
-            $divide: [{ $subtract: ['$tests.completedDate', startDate] }, oneWeekInMs],
-          },
-        },
+        'tests.weekIndex': weekIndexValue(startDate, '$tests.completedDate'),
       },
     },
     { $sort: { 'tests.completedDate': 1 } },

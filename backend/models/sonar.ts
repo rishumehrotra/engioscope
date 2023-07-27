@@ -18,12 +18,11 @@ import type { QualityGateStatus } from '../../shared/types';
 import {
   capitalizeFirstLetter,
   exists,
-  oneWeekInMs,
   weightedQualityGate,
 } from '../../shared/utils.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { fromContext, weekIndexValue } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
@@ -690,9 +689,7 @@ const getWeeklySonarProjectIds = async (
     },
     {
       $addFields: {
-        weekIndex: {
-          $trunc: { $divide: [{ $subtract: ['$alerts.date', startDate] }, oneWeekInMs] },
-        },
+        weekIndex: weekIndexValue(startDate, '$alerts.date'),
       },
     },
     { $sort: { date: -1 } },
@@ -1030,13 +1027,7 @@ export const getWeeklyReposWithSonarQubeSummary = (
         preserveNullAndEmptyArrays: false,
       },
     },
-    {
-      $addFields: {
-        weekIndex: {
-          $trunc: { $divide: [{ $subtract: ['$alerts.date', startDate] }, oneWeekInMs] },
-        },
-      },
-    },
+    { $addFields: { weekIndex: weekIndexValue(startDate, '$alerts.date') } },
     { $sort: { date: -1 } },
     {
       $group: {

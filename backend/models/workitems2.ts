@@ -3,6 +3,7 @@ import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
 import { fromContext, type QueryContext } from './utils.js';
+import { noGroup } from '../../shared/work-item-utils.js';
 
 const getWorkItemConfig = async (
   collectionName: string,
@@ -48,7 +49,7 @@ const addGroupNameField = (
         { $unwind: '$groupName' },
         { $addFields: { groupName: '$groupName.group' } },
       ]
-    : [];
+    : [{ $addFields: { groupName: noGroup } }];
 
 export const getNewGraphForWorkItem = async (
   queryContent: QueryContext,
@@ -80,10 +81,12 @@ export const getNewGraphForWorkItem = async (
       },
     },
     { $unwind: '$stateChanges' },
-    { $match: { 'stateChanges.date': inDateRange(startDate, endDate) } },
     { $group: { _id: '$id', date: { $min: '$stateChanges.date' } } },
+    { $match: { date: inDateRange(startDate, endDate) } },
 
     ...addGroupNameField(collectionName, project, workItemConfig.groupByField),
+
+    { $group: { _id: '$groupName', workItems: { $push: '$$ROOT' } } },
 
     // { $count: 'count' },
     { $limit: 10 },

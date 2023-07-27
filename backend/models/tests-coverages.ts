@@ -1,12 +1,10 @@
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import { head } from 'rambda';
-import { oneWeekInMs } from '../../shared/utils.js';
-
 import { inDateRange } from './helpers.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import type { TestsForDef, TestsForWeek } from './testruns.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { fromContext, weekIndexValue } from './utils.js';
 
 export type CoverageByWeek = {
   weekIndex: number;
@@ -113,14 +111,7 @@ export const getMainBranchBuildIds = (
             $group: {
               _id: {
                 definitionId: '$build.definitionId',
-                weekIndex: {
-                  $trunc: {
-                    $divide: [
-                      { $subtract: ['$build.finishTime', new Date(startDate)] },
-                      oneWeekInMs,
-                    ],
-                  },
-                },
+                weekIndex: weekIndexValue(startDate, '$build.finishTime'),
               },
               collectionName: { $first: '$collectionName' },
               project: { $first: '$project' },
