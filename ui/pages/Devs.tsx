@@ -29,6 +29,7 @@ const Devs: React.FC = () => {
   const filters = useDevFilters();
   const query = trpc.commits.getSortedDevListing.useInfiniteQuery(filters, {
     getNextPageParam: lastPage => lastPage.nextCursor,
+    keepPreviousData: true,
   });
 
   if (!query.data) return <Loading />;

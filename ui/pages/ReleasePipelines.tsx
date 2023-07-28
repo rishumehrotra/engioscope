@@ -14,6 +14,7 @@ const ReleasePipelines: React.FC = () => {
   useRemoveSort();
   const query = trpc.releases.paginatedReleases.useInfiniteQuery(filters, {
     getNextPageParam: prop('nextCursor'),
+    keepPreviousData: true,
   });
   const count = trpc.releases.filteredReleaseCount.useQuery(filters);
 

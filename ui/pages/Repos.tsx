@@ -16,6 +16,7 @@ const RepoListing: React.FC = () => {
   const filters = useRepoFilters();
   const query = trpc.repos.getFilteredAndSortedReposWithStats.useInfiniteQuery(filters, {
     getNextPageParam: prop('nextCursor'),
+    keepPreviousData: true,
   });
 
   return (
