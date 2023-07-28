@@ -1,4 +1,5 @@
 import type { PipelineStage } from 'mongoose';
+import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
@@ -52,12 +53,121 @@ const addGroupNameField = (
   ];
 };
 
+const filterByFields = (
+  collectionName: string,
+  project: string,
+  filterConfig: ParsedConfig['filterWorkItemsBy'],
+  filterInput?: { label: string; values: string[] }[],
+  workItemIdField = '$_id'
+): PipelineStage[] => {
+  if (!filterConfig) return [];
+  if (!filterInput) return [];
+
+  const relevantFilterConfig = filterConfig.filter(f =>
+    filterInput.some(filter => filter.label === f.label)
+  );
+
+  return [
+    {
+      $lookup: {
+        from: 'workitems',
+        let: { workItemId: workItemIdField },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$id', '$$workItemId'] },
+            },
+          },
+          {
+            $addFields: Object.fromEntries(
+              relevantFilterConfig.map(filter => {
+                return [filter.label, filter.fields.map(field)];
+              })
+            ),
+          },
+          {
+            $addFields: Object.fromEntries(
+              relevantFilterConfig.map(filter => {
+                return [
+                  filter.label,
+                  {
+                    $filter: {
+                      input: `$${filter.label}`,
+                      as: 'value',
+                      cond: {
+                        $and: [{ $ne: ['$$value', null] }, { $ne: ['$$value', ''] }],
+                      },
+                    },
+                  },
+                ];
+              })
+            ),
+          },
+          {
+            $addFields: Object.fromEntries(
+              relevantFilterConfig.map(filter => {
+                return [
+                  filter.label,
+                  {
+                    $reduce: {
+                      input: `$${filter.label}`,
+                      initialValue: '',
+                      in: {
+                        $concat: [
+                          '$$value',
+                          { $cond: [{ $eq: ['$$value', ''] }, '', ';'] },
+                          '$$this',
+                        ],
+                      },
+                    },
+                  },
+                ];
+              })
+            ),
+          },
+          {
+            $project: Object.fromEntries(
+              relevantFilterConfig.map(filter => [
+                filter.label,
+                {
+                  $filter: {
+                    input: { $split: [`$${filter.label}`, ';'] },
+                    as: 'items',
+                    cond: { $ne: ['$$items', ''] },
+                  },
+                },
+              ])
+            ),
+          },
+          {
+            $match: {
+              $and: filterInput.map(filter => ({
+                $or: filter.values.map(val => ({
+                  [`${filter.label}`]: val,
+                })),
+              })),
+            },
+          },
+        ],
+        as: 'filterFieldValues',
+      },
+    },
+
+    { $match: { filterFieldValues: { $gt: ['$size', 0] } } },
+    { $unset: 'filterFieldValues' },
+  ];
+};
+
 export const getNewGraphForWorkItem = async (
   queryContent: QueryContext,
-  workItemType: string
+  workItemType: string,
+  filters?: { label: string; values: string[] }[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContent);
 
+  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
   const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
 
   if (!workItemConfig) return;
@@ -83,6 +193,8 @@ export const getNewGraphForWorkItem = async (
     { $match: { date: inDateRange(startDate, endDate) } },
 
     ...addGroupNameField(collectionName, project, workItemConfig.groupByField),
+
+    ...filterByFields(collectionName, project, filterWorkItemsBy, filters),
 
     {
       $group: {
@@ -112,6 +224,6 @@ export const getNewGraphForWorkItem = async (
     },
 
     // { $count: 'count' },
-    { $limit: 10 },
+    // { $limit: 10 },
   ]);
 };

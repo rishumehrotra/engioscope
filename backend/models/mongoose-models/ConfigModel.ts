@@ -47,18 +47,18 @@ const workItemsConfigSchema = new Schema<WorkItemsConfig>({
 
 type FilterBy = {
   label: string;
-  field: string[];
+  fields: string[];
 };
 
 const filterBySchema = new Schema<FilterBy>({
   label: requiredString,
-  field: { type: [String], required: true },
+  fields: { type: [String], required: true },
 });
 
 export type Config = {
   collectionName: string | null;
   project: string | null;
-  filterBy?: FilterBy[];
+  filterWorkItemsBy?: FilterBy[];
   environments?: string[];
   templateRepoName?: string;
   workItemsConfig?: WorkItemsConfig[];
@@ -68,7 +68,7 @@ const configSchema = new Schema<Config>(
   {
     collectionName: nullableString,
     project: nullableString,
-    filterBy: {
+    filterWorkItemsBy: {
       type: [filterBySchema],
       default: undefined,
     },

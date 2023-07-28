@@ -30,6 +30,7 @@ export const getProjectConfig = async (collectionName: string, projectName: stri
 
   return {
     ...merged,
+    filterWorkItemsBy: merged.filterWorkItemsBy?.map(f => ({ ...f })),
     workItemsConfig: merged.workItemsConfig?.map(wic => {
       return {
         ...wic,
@@ -39,3 +40,5 @@ export const getProjectConfig = async (collectionName: string, projectName: stri
     }),
   };
 };
+
+export type ParsedConfig = Awaited<ReturnType<typeof getProjectConfig>>;
