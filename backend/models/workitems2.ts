@@ -24,7 +24,6 @@ const field = (fieldName: string) => ({
 
 const addGroupNameField = (
   collectionName: string,
-  project: string,
   groupByField?: string,
   workItemField = '$_id'
 ): PipelineStage[] => {
@@ -39,7 +38,6 @@ const addGroupNameField = (
           {
             $match: {
               collectionName,
-              project,
               $expr: { $eq: ['$id', '$$workItemId'] },
             },
           },
@@ -55,9 +53,9 @@ const addGroupNameField = (
 
 const filterByFields = (
   collectionName: string,
-  project: string,
   filterConfig: ParsedConfig['filterWorkItemsBy'],
   filterInput?: { label: string; values: string[] }[],
+  priority?: number[],
   workItemIdField = '$_id'
 ): PipelineStage[] => {
   if (!filterConfig) return [];
@@ -76,8 +74,8 @@ const filterByFields = (
           {
             $match: {
               collectionName,
-              project,
               $expr: { $eq: ['$id', '$$workItemId'] },
+              ...(priority ? { priority: { $in: priority } } : {}),
             },
           },
           {
@@ -163,7 +161,8 @@ const filterByFields = (
 export const getNewGraphForWorkItem = async (
   queryContent: QueryContext,
   workItemType: string,
-  filters?: { label: string; values: string[] }[]
+  filters?: { label: string; values: string[] }[],
+  priority?: number[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContent);
 
@@ -192,9 +191,8 @@ export const getNewGraphForWorkItem = async (
     { $group: { _id: '$id', date: { $min: '$stateChanges.date' } } },
     { $match: { date: inDateRange(startDate, endDate) } },
 
-    ...addGroupNameField(collectionName, project, workItemConfig.groupByField),
-
-    ...filterByFields(collectionName, project, filterWorkItemsBy, filters),
+    ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
+    ...addGroupNameField(collectionName, workItemConfig.groupByField),
 
     {
       $group: {

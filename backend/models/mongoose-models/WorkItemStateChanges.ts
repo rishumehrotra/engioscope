@@ -28,6 +28,7 @@ const workItemStateChanges = new Schema<WorkItemStateChanges>(
 );
 
 workItemStateChanges.index({ collectionName: 1, id: 1 }, { unique: true }); // Used for writes
+workItemStateChanges.index({ collectionName: 1, workItemType: 1 });
 
 export const WorkItemStateChangesModel = model<WorkItemStateChanges>(
   'WorkItemStateChanges',
