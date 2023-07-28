@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Ascending, Descending } from './common/Icons.jsx';
-import Select from './common/Select.jsx';
 import useQueryParam, { asString } from '../hooks/use-query-param.js';
+import InlineSelect from './common/InlineSelect.jsx';
 
 type SortControlsProps = {
   sortByList: string[];
@@ -42,8 +42,8 @@ const SortControls: React.FC<SortControlsProps> = ({
       <h4 className="text-theme-helptext">Sort by</h4>
 
       <div className="flex items-center">
-        <Select
-          className="bg-transparent text-sm font-medium"
+        <InlineSelect
+          className="text-base"
           onChange={onSortByChange}
           options={sortByList.map(x => ({ label: x, value: x }))}
           value={sortBy || defaultSortBy}

@@ -262,6 +262,7 @@ const SonarReposDrawer: React.FC<{ projectsType: ProjectStatus }> = ({
                   <InlineSelect
                     id="status"
                     value={statusType}
+                    className="py-2 ml-3"
                     options={[
                       { label: 'All SonarQube projects', value: 'all' },
                       { label: 'Pass', value: 'pass' },

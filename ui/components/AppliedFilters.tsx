@@ -1,16 +1,13 @@
 import type { ReactNode } from 'react';
 import React, { useMemo } from 'react';
 import { Search, Users } from 'react-feather';
-import usePageName from '../hooks/use-page-name.js';
 import useQueryParam, {
   asBoolean,
   asNumber,
   asString,
   asStringArray,
 } from '../hooks/use-query-param.js';
-import type { Tab } from '../types.js';
 import { Close } from './common/Icons.js';
-import { num } from '../helpers/utils.js';
 
 const FilterTag: React.FC<{ label: ReactNode; onClose: () => void }> = ({
   label,
@@ -24,12 +21,7 @@ const FilterTag: React.FC<{ label: ReactNode; onClose: () => void }> = ({
   </span>
 );
 
-const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
-  count,
-  type = 'repos',
-}) => {
-  const pageName = usePageName();
-
+const AppliedFilters = () => {
   const [search, setSearch] = useQueryParam('search', asString);
   const [teams, setTeams] = useQueryParam('teams', asStringArray);
 
@@ -205,27 +197,19 @@ const AppliedFilters: React.FC<{ count?: number; type: Tab }> = ({
     ]
   );
 
+  if (!isFilterApplied) return null;
+
   return (
-    <>
-      {isFilterApplied && (
-        <div className="w-auto flex flex-wrap gap-2 items-center text-gray-800 mt-6 mb-6 ml-1">
-          <span>Filters applied</span>
-          {filtersToRender.map(f => (
-            <FilterTag
-              key={f.key}
-              label={f.label}
-              onClose={() => f.clearUsing(undefined, true)}
-            />
-          ))}
-        </div>
-      )}
-      {count !== 0 && (
-        <div className="mb-6 ml-1">
-          Showing <strong>{count === undefined ? '...' : num(count)}</strong>{' '}
-          {pageName(type, count ?? 3).toLowerCase()}
-        </div>
-      )}
-    </>
+    <div className="w-auto flex flex-wrap gap-2 items-center text-gray-800 mt-6 mb-6 ml-1">
+      <span>Filters applied</span>
+      {filtersToRender.map(f => (
+        <FilterTag
+          key={f.key}
+          label={f.label}
+          onClose={() => f.clearUsing(undefined, true)}
+        />
+      ))}
+    </div>
   );
 };
 

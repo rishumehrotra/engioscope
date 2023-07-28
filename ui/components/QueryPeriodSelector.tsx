@@ -1,7 +1,7 @@
-import type { ChangeEventHandler } from 'react';
 import { useCallback, useMemo } from 'react';
 import useQueryParam, { asBoolean, asString } from '../hooks/use-query-param.js';
 import { oneDayInMs } from '../../shared/utils.js';
+import InlineSelect from './common/InlineSelect.jsx';
 
 const QueryPeriodSelector = () => {
   const [showTimeSelection] = useQueryParam('time', asBoolean);
@@ -31,12 +31,9 @@ const QueryPeriodSelector = () => {
     ];
   }, []);
 
-  const onDateRangeChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
-    event => {
-      setFromDate(
-        event.target.value === 'last-3-months' ? undefined : event.target.value,
-        true
-      );
+  const onDateRangeChange = useCallback(
+    (value: string) => {
+      setFromDate(value === 'last-3-months' ? undefined : value, true);
     },
     [setFromDate]
   );
@@ -44,17 +41,16 @@ const QueryPeriodSelector = () => {
   if (!(showTimeSelection || import.meta.env.DEV)) return null;
 
   return (
-    <div className="mt-4 ml-1">
-      <label className="text-theme-helptext inline-flex items-center gap-2">
+    <div>
+      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+      <label className="text-theme-helptext inline-flex items-center gap-[0.6ch]">
         <span>Showing data for the</span>
-        {}
-        <select value={fromDate || 'last-3-months'} onChange={onDateRangeChange}>
-          {timeOptions.map(t => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        <InlineSelect
+          value={fromDate || 'last-3-months'}
+          options={timeOptions}
+          onChange={onDateRangeChange}
+          className="text-base -mr-2"
+        />
       </label>
     </div>
   );

@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react';
 import React, { useCallback, useEffect, useRef } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 type Option = {
   label: string;
@@ -42,7 +43,8 @@ const InlineSelect = ({
     dummySelect.remove();
 
     // Set the select width to the width of the dummy select
-    selectRef.current.style.width = `${width - 25}px`;
+    // selectRef.current.style.width = `${width - 25}px`;
+    selectRef.current.style.width = `calc(${width}px - 10px - 0.2rem)`;
   }, [className]);
 
   const onSelection = useCallback(
@@ -64,7 +66,11 @@ const InlineSelect = ({
       ref={selectRef}
       onChange={onSelection}
       value={value}
-      className={`inline-block border-transparent hover:border-transparent focus:border-transparent focus:ring-0 text-theme-highlight text-sm font-medium p-1 pr-0 m-2 ${className} `}
+      className={twMerge(
+        'inline-block border-0 ring-0 focus:ring-0 bg-transparent',
+        'text-theme-highlight text-sm font-medium p-0 m-0 cursor-pointer',
+        className
+      )}
     >
       {options.map(({ value, label }) => (
         <option value={value} key={value}>

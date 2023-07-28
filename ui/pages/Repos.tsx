@@ -1,15 +1,14 @@
 import React, { Suspense, lazy } from 'react';
 import { prop } from 'rambda';
-import AppliedFilters from '../components/AppliedFilters.js';
 import Loading from '../components/Loading.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import { trpc } from '../helpers/trpc.js';
 import useRepoFilters from '../hooks/use-repo-filters.js';
-import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 import StreamingRepoSummary from '../components/repo-summary/RepoSummary.jsx';
 import SortControls from '../components/SortControls.jsx';
-import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import noSearchResults from '../images/no-search-results.svg';
+import { minPluralise, num } from '../helpers/utils.js';
+import PageTopBlock from '../components/PageTopBlock.jsx';
 
 const RepoHealth = lazy(() => import('../components/RepoHealth.jsx'));
 
@@ -41,11 +40,17 @@ export default () => {
 
   return (
     <>
-      <div className="grid grid-flow-row mb-4">
-        <TeamsSelector />
-        <QueryPeriodSelector />
-      </div>
-      <AppliedFilters type="repos" count={filteredReposCount?.data} />
+      <PageTopBlock>
+        <>
+          Showing{' '}
+          <strong>
+            {filteredReposCount?.data === undefined
+              ? '...'
+              : num(filteredReposCount.data)}
+          </strong>{' '}
+          {minPluralise(filteredReposCount.data || 0, 'repository', 'repositories')}
+        </>
+      </PageTopBlock>
       {filteredReposCount.data !== undefined && filteredReposCount.data === 0 ? (
         <div className="text-center">
           <img src={noSearchResults} alt="No search results" className="inline-block" />

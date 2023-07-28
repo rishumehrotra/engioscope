@@ -407,6 +407,7 @@ const BuildPipelinesDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
       <InlineSelect
         id="status"
         value={statusType}
+        className="py-2 ml-4"
         options={[
           { label: 'All pipelines', value: 'all' },
           { label: 'Currently succeeding', value: 'currentlySucceeding' },

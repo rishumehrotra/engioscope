@@ -1,14 +1,13 @@
 import React from 'react';
 import { prop } from 'rambda';
-import AppliedFilters from '../components/AppliedFilters.jsx';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import ReleasePipelineSummary from '../components/ReleasePipelineSummary.jsx';
 import { trpc } from '../helpers/trpc.js';
 import { useRemoveSort } from '../hooks/sort-hooks.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
-import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import ReleasePipelineHealth from '../components/ReleasePipelineHealth.jsx';
-import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
+import { minPluralise, num } from '../helpers/utils.js';
+import PageTopBlock from '../components/PageTopBlock.jsx';
 
 const ReleasePipelines: React.FC = () => {
   const filters = useReleaseFilters();
@@ -20,11 +19,12 @@ const ReleasePipelines: React.FC = () => {
 
   return (
     <>
-      <div className="grid grid-flow-row mb-4">
-        <TeamsSelector />
-        <QueryPeriodSelector />
-      </div>
-      <AppliedFilters type="release-pipelines" count={count.data} />
+      <PageTopBlock>
+        <>
+          Showing <strong>{count?.data === undefined ? '...' : num(count.data)}</strong>{' '}
+          {minPluralise(count.data || 0, 'release pipeline', 'release pipelines')}
+        </>
+      </PageTopBlock>
       <ReleasePipelineSummary />
       <InfiniteScrollList2
         items={query.data?.pages.flatMap(page => page.items) || []}

@@ -1,5 +1,4 @@
 import React from 'react';
-import AppliedFilters from '../components/AppliedFilters.js';
 import Loading from '../components/Loading.js';
 import Developer from '../components/Dev.jsx';
 import { trpc } from '../helpers/trpc.js';
@@ -7,18 +6,20 @@ import useDevFilters from '../hooks/use-dev-filters.js';
 import InfiniteScrollList2 from '../components/common/InfiniteScrollList2.jsx';
 import AlertMessage from '../components/common/AlertMessage.jsx';
 import SortControls from '../components/SortControls.jsx';
-import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
-import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
+import { minPluralise, num } from '../helpers/utils.js';
+import PageTopBlock from '../components/PageTopBlock.jsx';
 
-const FiltersAndSorters: React.FC<{ devsCount: number }> = ({ devsCount }) => {
+const FiltersAndSorters: React.FC<{ devsCount?: number }> = ({ devsCount }) => {
   return (
     <>
-      <div className="grid grid-flow-row mb-4">
-        <TeamsSelector />
-        <QueryPeriodSelector />
-      </div>
-
-      <AppliedFilters type="devs" count={devsCount} />
+      <PageTopBlock>
+        {devsCount !== 0 && (
+          <>
+            Showing <strong>{devsCount === undefined ? '...' : num(devsCount)}</strong>{' '}
+            {minPluralise(devsCount || 0, 'developer', 'developers')}
+          </>
+        )}
+      </PageTopBlock>
       <SortControls sortByList={['Name', 'Repos Committed']} defaultSortDirection="asc" />
     </>
   );

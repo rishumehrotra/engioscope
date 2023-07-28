@@ -296,6 +296,7 @@ const TestsDrawer: React.FC<{ pipelineType: PipelineTypes }> = ({
       <InlineSelect
         id="status"
         value={statusType}
+        className="py-2 ml-4"
         options={[
           { label: 'All pipelines', value: 'all' },
           { label: 'Pipelines running tests', value: 'withTests' },

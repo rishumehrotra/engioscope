@@ -481,7 +481,7 @@ export const getFilteredDevCount = async ({
     searchTerm || ''
   );
 
-  const filteredDevs = await CommitModel.aggregate([
+  const filteredDevs = await CommitModel.aggregate<{ total: number }>([
     {
       $match: {
         collectionName,
