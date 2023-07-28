@@ -286,7 +286,7 @@ export const getWeeklyPipelinesWithTestsCount = async (
       getQueryPeriodPipelinesWithTests(queryContext, repoIds),
     ]);
 
-  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
 
   const missingDaysPipelinesCount = range(0, numberOfIntervals).map(weekIndex => {
     return (
@@ -303,25 +303,23 @@ export const getWeeklyPipelinesWithTestsCount = async (
     preStartDatePipelinesWithTests.defsWithoutTests || []
   );
 
-  return missingDaysPipelinesCount
-    .map(day => {
-      day.defsWithTests.forEach(id => {
-        defsWithTestsSet.add(id);
-        defsWithoutTestsSet.delete(id);
-      });
+  return missingDaysPipelinesCount.map(day => {
+    day.defsWithTests.forEach(id => {
+      defsWithTestsSet.add(id);
+      defsWithoutTestsSet.delete(id);
+    });
 
-      day.defsWithoutTests.forEach(id => {
-        defsWithoutTestsSet.add(id);
-        defsWithTestsSet.delete(id);
-      });
+    day.defsWithoutTests.forEach(id => {
+      defsWithoutTestsSet.add(id);
+      defsWithTestsSet.delete(id);
+    });
 
-      return {
-        weekIndex: day.weekIndex,
-        defsWithTests: defsWithTestsSet.size,
-        defsWithoutTests: defsWithoutTestsSet.size,
-      };
-    })
-    .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
+    return {
+      weekIndex: day.weekIndex,
+      defsWithTests: defsWithTestsSet.size,
+      defsWithoutTests: defsWithoutTestsSet.size,
+    };
+  });
 };
 
 const getPreStartDatePipelinesWithCoverage = async (
@@ -525,7 +523,7 @@ export const getWeeklyPipelinesWithCoverageCount = async (
       getQueryPeriodPipelinesWithCoverage(queryContext, repoIds),
     ]);
 
-  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
 
   const missingDaysPipelinesCount = range(0, numberOfIntervals).map(weekIndex => {
     return (
@@ -544,23 +542,21 @@ export const getWeeklyPipelinesWithCoverageCount = async (
     preStartDatePipelinesWithCoverage.defsWithoutCoverage || []
   );
 
-  return missingDaysPipelinesCount
-    .map(week => {
-      week.defsWithCoverage.forEach(id => {
-        defsWithCoverageSet.add(id);
-        defsWithoutCoverageSet.delete(id);
-      });
+  return missingDaysPipelinesCount.map(week => {
+    week.defsWithCoverage.forEach(id => {
+      defsWithCoverageSet.add(id);
+      defsWithoutCoverageSet.delete(id);
+    });
 
-      week.defsWithoutCoverage.forEach(id => {
-        defsWithoutCoverageSet.add(id);
-        defsWithCoverageSet.delete(id);
-      });
+    week.defsWithoutCoverage.forEach(id => {
+      defsWithoutCoverageSet.add(id);
+      defsWithCoverageSet.delete(id);
+    });
 
-      return {
-        weekIndex: week.weekIndex,
-        defsWithCoverage: defsWithCoverageSet.size,
-        defsWithoutCoverage: defsWithoutCoverageSet.size,
-      };
-    })
-    .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
+    return {
+      weekIndex: week.weekIndex,
+      defsWithCoverage: defsWithCoverageSet.size,
+      defsWithoutCoverage: defsWithoutCoverageSet.size,
+    };
+  });
 };

@@ -27,7 +27,7 @@ it('should give right no of weeks for query period', async () => {
   await createTestRun('foo', 'bar', 122, 12_345);
 
   const { testsByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
@@ -40,7 +40,7 @@ it('should not give test counts when there are no testruns', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-03-25'));
 
   const { testsByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
@@ -53,7 +53,7 @@ it('should give test counts when there are testruns', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-01-02'));
   await createTestRun('foo', 'bar', 122, 12_345);
   const { testsByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
   expect(testsByWeek.length).toBe(12);
@@ -69,14 +69,14 @@ it('should handle missing test run counts with no past data', async () => {
   await createTestRun('foo', 'bar', 122, 12_345);
 
   const { testsByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
   expect(testsByWeek.length).toBe(12);
-  expect(testsByWeek.slice(0, 5).every(t => !t.hasTests)).toBe(true);
-  expect(testsByWeek.slice(5).every(t => t.hasTests && t.passedTests === 10)).toBe(true);
-  expect(testsByWeek.slice(5).every(t => t.hasTests && t.totalTests === 10)).toBe(true);
+  expect(testsByWeek.slice(0, 6).every(t => !t.hasTests)).toBe(true);
+  expect(testsByWeek.slice(6).every(t => t.hasTests && t.passedTests === 10)).toBe(true);
+  expect(testsByWeek.slice(6).every(t => t.hasTests && t.totalTests === 10)).toBe(true);
 });
 
 it('should handle missing test run counts with past data', async () => {
@@ -90,20 +90,20 @@ it('should handle missing test run counts with past data', async () => {
   await createTestRun('foo', 'bar', 121, 12_345, 15);
 
   const { testsByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
   expect(testsByWeek.length).toBe(12);
-  expect(testsByWeek.slice(0, 7).every(t => t.hasTests && t.passedTests === 15)).toBe(
+  expect(testsByWeek.slice(0, 8).every(t => t.hasTests && t.passedTests === 15)).toBe(
     true
   );
-  expect(testsByWeek.slice(0, 7).every(t => t.hasTests && t.totalTests === 15)).toBe(
+  expect(testsByWeek.slice(0, 8).every(t => t.hasTests && t.totalTests === 15)).toBe(
     true
   );
 
-  expect(testsByWeek.slice(7).every(t => t.hasTests && t.passedTests === 10)).toBe(true);
-  expect(testsByWeek.slice(7).every(t => t.hasTests && t.totalTests === 10)).toBe(true);
+  expect(testsByWeek.slice(8).every(t => t.hasTests && t.passedTests === 10)).toBe(true);
+  expect(testsByWeek.slice(8).every(t => t.hasTests && t.totalTests === 10)).toBe(true);
 });
 
 it('should handle missing test run', async () => {
@@ -114,7 +114,7 @@ it('should handle missing test run', async () => {
   await createTestRun('foo', 'bar', 122, 12_345);
 
   const { testsByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 

@@ -6,6 +6,12 @@ exports[`should handle missing test run 1`] = `
     "hasTests": false,
     "passedTests": 0,
     "totalTests": 0,
+    "weekIndex": 0,
+  },
+  {
+    "hasTests": false,
+    "passedTests": 0,
+    "totalTests": 0,
     "weekIndex": 1,
   },
   {
@@ -67,12 +73,6 @@ exports[`should handle missing test run 1`] = `
     "passedTests": 10,
     "totalTests": 10,
     "weekIndex": 11,
-  },
-  {
-    "hasTests": true,
-    "passedTests": 10,
-    "totalTests": 10,
-    "weekIndex": 12,
   },
 ]
 `;

@@ -148,7 +148,6 @@ export const splitDateRangeByDays =
 
     const numberOfIntervals =
       Math.floor((end.getTime() - start.getTime()) / (days * oneDayInMs)) + 1;
-
     return range(1, numberOfIntervals).map(intervalIndex => {
       const intervalStart = new Date(start.getTime() + intervalIndex * days * oneDayInMs);
       return intervalStart.toISOString().split('T')[0];

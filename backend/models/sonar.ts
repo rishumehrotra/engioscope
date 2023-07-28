@@ -786,7 +786,7 @@ export const updateWeeklySonarProjectCount = async (
     getWeeklySonarProjectIds(queryContext, repositoryIds),
   ]);
 
-  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
   const completeWeeklySonarProjectIds = range(0, numberOfIntervals).map(weekIndex => {
     return (
       weeklySonarProjectIds.find(week => week.weekIndex === weekIndex) || {
@@ -803,7 +803,7 @@ export const updateWeeklySonarProjectCount = async (
   const warningProjectsSet = new Set(preStartDateSonarSummary?.warnProjectIds || []);
   const failedProjectsSet = new Set(preStartDateSonarSummary?.failedProjectIds || []);
   const allProjectsSet = new Set(preStartDateSonarSummary?.allProjectIds || []);
-  const weeklyUpdatedStats = completeWeeklySonarProjectIds.map(week => {
+  return completeWeeklySonarProjectIds.map(week => {
     week.allProjectIds.forEach(id => {
       allProjectsSet.add(id);
     });
@@ -833,8 +833,6 @@ export const updateWeeklySonarProjectCount = async (
       totalProjects: allProjectsSet.size,
     };
   });
-
-  return weeklyUpdatedStats.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
 const matchSonarProjectsForReposDocs = (
@@ -1056,7 +1054,7 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
     getWeeklyReposWithSonarQubeSummary(queryContext, repositoryIds),
   ]);
 
-  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
 
   const completeWeeklyReposSummary = range(0, numberOfIntervals).map(weekIndex => {
     return (
@@ -1069,7 +1067,7 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
 
   const reposSet = new Set(preStartDateReposSummary);
 
-  const weeklyUpdatedStats = completeWeeklyReposSummary.map(week => {
+  return completeWeeklyReposSummary.map(week => {
     week.repos.forEach(id => {
       reposSet.add(id);
     });
@@ -1079,8 +1077,6 @@ export const updatedWeeklyReposWithSonarQubeCount = async (
       count: reposSet.size,
     };
   });
-
-  return weeklyUpdatedStats.slice(numberOfIntervals - Math.floor(numberOfDays / 7));
 };
 
 export const getSonarQualityGateStatusForRepoName = async (

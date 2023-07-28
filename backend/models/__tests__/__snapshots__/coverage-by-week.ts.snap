@@ -6,6 +6,12 @@ exports[`should handle missing coverages 1`] = `
     "coveredBranches": 0,
     "hasCoverage": false,
     "totalBranches": 0,
+    "weekIndex": 0,
+  },
+  {
+    "coveredBranches": 0,
+    "hasCoverage": false,
+    "totalBranches": 0,
     "weekIndex": 1,
   },
   {
@@ -67,12 +73,6 @@ exports[`should handle missing coverages 1`] = `
     "hasCoverage": true,
     "totalBranches": 10,
     "weekIndex": 11,
-  },
-  {
-    "coveredBranches": 5,
-    "hasCoverage": true,
-    "totalBranches": 10,
-    "weekIndex": 12,
   },
 ]
 `;

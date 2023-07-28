@@ -15,7 +15,7 @@ it('should give right no of weeks for query period', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const { coveragesByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
   expect(coveragesByWeek.length).toBe(12);
@@ -27,7 +27,7 @@ it('should not give coverage counts when there are no coverages', async () => {
   await createBuild('foo', 'bar', 'repo-1', 122, 12_345, new Date('2022-03-25'));
 
   const { coveragesByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
@@ -43,7 +43,7 @@ it('should give coverage counts when there are coverages', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const { coveragesByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
@@ -60,18 +60,18 @@ it('should handle missing coverage counts with no past data', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const { coveragesByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
   expect(coveragesByWeek.length).toBe(12);
-  expect(coveragesByWeek.slice(0, 5).every(t => !t.hasCoverage)).toBe(true);
+  expect(coveragesByWeek.slice(0, 6).every(t => !t.hasCoverage)).toBe(true);
 
   expect(
-    coveragesByWeek.slice(5).every(t => t.hasCoverage && t.coveredBranches === 5)
+    coveragesByWeek.slice(6).every(t => t.hasCoverage && t.coveredBranches === 5)
   ).toBe(true);
   expect(
-    coveragesByWeek.slice(5).every(t => t.hasCoverage && t.totalBranches === 10)
+    coveragesByWeek.slice(6).every(t => t.hasCoverage && t.totalBranches === 10)
   ).toBe(true);
 });
 
@@ -84,23 +84,23 @@ it('should handle missing coverage counts with past data', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const { coveragesByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
   expect(coveragesByWeek.length).toBe(12);
   expect(
-    coveragesByWeek.slice(0, 7).every(t => t.hasCoverage && t.coveredBranches === 7)
+    coveragesByWeek.slice(0, 8).every(t => t.hasCoverage && t.coveredBranches === 7)
   ).toBe(true);
   expect(
-    coveragesByWeek.slice(0, 7).every(t => t.hasCoverage && t.totalBranches === 10)
+    coveragesByWeek.slice(0, 8).every(t => t.hasCoverage && t.totalBranches === 10)
   ).toBe(true);
 
   expect(
-    coveragesByWeek.slice(7).every(t => t.hasCoverage && t.coveredBranches === 5)
+    coveragesByWeek.slice(8).every(t => t.hasCoverage && t.coveredBranches === 5)
   ).toBe(true);
   expect(
-    coveragesByWeek.slice(7).every(t => t.hasCoverage && t.totalBranches === 10)
+    coveragesByWeek.slice(8).every(t => t.hasCoverage && t.totalBranches === 10)
   ).toBe(true);
 });
 
@@ -112,7 +112,7 @@ it('should handle missing coverages', async () => {
   await createCoverage('foo', 'bar', 122);
 
   const { coveragesByWeek } = await getTestsAndCoverageByWeek(
-    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-30')],
+    ['foo', 'bar', new Date('2022-01-01'), new Date('2022-03-26')],
     ['repo-1']
   );
 
