@@ -131,7 +131,7 @@
     "@vitejs/plugin-react": "^4.0.0",
     "core-js": "3.32.0",
     "downshift": "^8.0.0",
-    "eslint": "8.45.0",
+    "eslint": "8.46.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-import-resolver-typescript": "3.5.5",
     "eslint-plugin-eslint-comments": "3.2.0",
