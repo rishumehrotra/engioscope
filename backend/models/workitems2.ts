@@ -2,7 +2,7 @@ import type { PipelineStage } from 'mongoose';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
-import { fromContext, type QueryContext } from './utils.js';
+import { fromContext, weekIndexValue, type QueryContext } from './utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 
 const getWorkItemConfig = async (
@@ -26,30 +26,31 @@ const addGroupNameField = (
   project: string,
   groupByField?: string,
   workItemField = '$_id'
-): PipelineStage[] =>
-  groupByField
-    ? [
-        {
-          $lookup: {
-            from: 'workitems',
-            let: { workItemId: workItemField },
-            pipeline: [
-              {
-                $match: {
-                  collectionName,
-                  project,
-                  $expr: { $eq: ['$id', '$$workItemId'] },
-                },
-              },
-              { $project: { group: field(groupByField) } },
-            ],
-            as: 'groupName',
+): PipelineStage[] => {
+  if (!groupByField) return [{ $addFields: { groupName: noGroup } }];
+
+  return [
+    {
+      $lookup: {
+        from: 'workitems',
+        let: { workItemId: workItemField },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$id', '$$workItemId'] },
+            },
           },
-        },
-        { $unwind: '$groupName' },
-        { $addFields: { groupName: '$groupName.group' } },
-      ]
-    : [{ $addFields: { groupName: noGroup } }];
+          { $project: { group: field(groupByField) } },
+        ],
+        as: 'groupName',
+      },
+    },
+    { $unwind: '$groupName' },
+    { $addFields: { groupName: '$groupName.group' } },
+  ];
+};
 
 export const getNewGraphForWorkItem = async (
   queryContent: QueryContext,
@@ -61,14 +62,11 @@ export const getNewGraphForWorkItem = async (
 
   if (!workItemConfig) return;
 
-  return WorkItemStateChangesModel.aggregate([
-    {
-      $match: {
-        collectionName,
-        project,
-        workItemType,
-      },
-    },
+  return WorkItemStateChangesModel.aggregate<{
+    groupName: string;
+    countsByWeek: { weekIndex: number; count: number }[];
+  }>([
+    { $match: { collectionName, workItemType } },
     {
       $addFields: {
         stateChanges: {
@@ -86,7 +84,32 @@ export const getNewGraphForWorkItem = async (
 
     ...addGroupNameField(collectionName, project, workItemConfig.groupByField),
 
-    { $group: { _id: '$groupName', workItems: { $push: '$$ROOT' } } },
+    {
+      $group: {
+        _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
+        workItems: { $push: '$$ROOT' },
+      },
+    },
+    {
+      $group: {
+        _id: '$_id.groupName',
+        countsByWeek: {
+          $push: {
+            weekIndex: '$_id.weekIndex',
+            count: { $size: '$workItems' },
+          },
+        },
+      },
+    },
+    { $addFields: { groupName: '$_id' } },
+    { $unset: '_id' },
+    {
+      $addFields: {
+        countsByWeek: {
+          $sortArray: { input: '$countsByWeek', sortBy: { weekIndex: 1 } },
+        },
+      },
+    },
 
     // { $count: 'count' },
     { $limit: 10 },
