@@ -75,7 +75,7 @@ const makeContinuous = async <T extends { weekIndex: number }>(
   emptyValue: Omit<T, 'weekIndex'>
 ) => {
   const { startDate, endDate } = fromContext(queryContext);
-  const { numberOfDays, numberOfIntervals } = createIntervals(startDate, endDate);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
   const sortedDataByWeek = unsortedDataByWeek
     ? [...unsortedDataByWeek].sort(byNum(prop('weekIndex')))
     : undefined;
@@ -84,9 +84,7 @@ const makeContinuous = async <T extends { weekIndex: number }>(
     const olderTest = await getOneOlderItem(queryContext);
     if (!olderTest) return null;
 
-    return range(0, numberOfIntervals)
-      .map(weekIndex => ({ ...olderTest, weekIndex }))
-      .slice(numberOfIntervals - Math.floor(numberOfDays / 7));
+    return range(0, numberOfIntervals).map(weekIndex => ({ ...olderTest, weekIndex }));
   }
 
   return range(0, numberOfIntervals)
@@ -104,7 +102,6 @@ const makeContinuous = async <T extends { weekIndex: number }>(
       const lastItem = last(await acc)!;
       return [...(await acc), { ...lastItem, weekIndex }];
     }, Promise.resolve([]))
-    .then(list => list.slice(numberOfIntervals - Math.floor(numberOfDays / 7)))
     .then(sort(byNum(prop('weekIndex'))));
 };
 

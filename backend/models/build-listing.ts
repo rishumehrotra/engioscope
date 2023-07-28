@@ -1,10 +1,10 @@
 import type { PipelineStage } from 'mongoose';
 import { range } from 'rambda';
-import { oneDayInMs } from '../../shared/utils.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
 import { inDateRange } from './helpers.js';
+import { createIntervals } from '../utils.js';
 
 export const getSplitUpBy = (
   field: string,
@@ -56,16 +56,12 @@ export const getBuildsSplitUp =
       ...getSplitUpBy('$startTime', condition, startDate),
     ]);
 
-    const totalDays = (endDate.getTime() - startDate.getTime()) / oneDayInMs;
-    const totalIntervals = Math.floor(totalDays / 7 + (totalDays % 7 === 0 ? 0 : 1));
-
+    const { numberOfIntervals } = createIntervals(startDate, endDate);
     return {
       count: result.reduce((acc, item) => acc + item.count, 0),
-      byWeek: range(0, totalIntervals)
-        .map(id => {
-          return result.find(obj => obj.weekIndex === id) || { weekIndex: id, count: 0 };
-        })
-        .slice(totalIntervals - Math.floor(totalDays / 7)),
+      byWeek: range(0, numberOfIntervals).map(id => {
+        return result.find(obj => obj.weekIndex === id) || { weekIndex: id, count: 0 };
+      }),
     };
   };
 
