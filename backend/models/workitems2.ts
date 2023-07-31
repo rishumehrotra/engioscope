@@ -158,70 +158,81 @@ const filterByFields = (
   ];
 };
 
-export const getNewGraphForWorkItem = async (
-  queryContent: QueryContext,
-  workItemType: string,
-  filters?: { label: string; values: string[] }[],
-  priority?: number[]
-) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContent);
+export const getGraphDataForWorkItem =
+  (statesType: 'start' | 'end') =>
+  async (
+    queryContent: QueryContext,
+    workItemType: string,
+    filters?: { label: string; values: string[] }[],
+    priority?: number[]
+  ) => {
+    const { collectionName, project, startDate, endDate } = fromContext(queryContent);
 
-  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
-  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+    const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+    const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
 
-  if (!workItemConfig) return;
+    if (!workItemConfig) return;
 
-  return WorkItemStateChangesModel.aggregate<{
-    groupName: string;
-    countsByWeek: { weekIndex: number; count: number }[];
-  }>([
-    { $match: { collectionName, workItemType } },
-    {
-      $addFields: {
-        stateChanges: {
-          $filter: {
-            input: '$stateChanges',
-            as: 'state',
-            cond: { $in: ['$$state.state', workItemConfig.startStates] },
+    return WorkItemStateChangesModel.aggregate<{
+      groupName: string;
+      countsByWeek: { weekIndex: number; count: number }[];
+    }>([
+      { $match: { collectionName, workItemType } },
+      {
+        $addFields: {
+          stateChanges: {
+            $filter: {
+              input: '$stateChanges',
+              as: 'state',
+              cond: {
+                $in: [
+                  '$$state.state',
+                  statesType === 'start'
+                    ? workItemConfig.startStates
+                    : statesType === 'end'
+                    ? workItemConfig.endStates
+                    : workItemConfig.startStates,
+                ],
+              },
+            },
           },
         },
       },
-    },
-    { $unwind: '$stateChanges' },
-    { $group: { _id: '$id', date: { $min: '$stateChanges.date' } } },
-    { $match: { date: inDateRange(startDate, endDate) } },
+      { $unwind: '$stateChanges' },
+      { $group: { _id: '$id', date: { $min: '$stateChanges.date' } } },
+      { $match: { date: inDateRange(startDate, endDate) } },
 
-    ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
-    ...addGroupNameField(collectionName, workItemConfig.groupByField),
+      ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
+      ...addGroupNameField(collectionName, workItemConfig.groupByField),
 
-    {
-      $group: {
-        _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
-        workItems: { $push: '$$ROOT' },
+      {
+        $group: {
+          _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
+          workItems: { $push: '$$ROOT' },
+        },
       },
-    },
-    {
-      $group: {
-        _id: '$_id.groupName',
-        countsByWeek: {
-          $push: {
-            weekIndex: '$_id.weekIndex',
-            count: { $size: '$workItems' },
+      {
+        $group: {
+          _id: '$_id.groupName',
+          countsByWeek: {
+            $push: {
+              weekIndex: '$_id.weekIndex',
+              count: { $size: '$workItems' },
+            },
           },
         },
       },
-    },
-    { $addFields: { groupName: '$_id' } },
-    { $unset: '_id' },
-    {
-      $addFields: {
-        countsByWeek: {
-          $sortArray: { input: '$countsByWeek', sortBy: { weekIndex: 1 } },
+      { $addFields: { groupName: '$_id' } },
+      { $unset: '_id' },
+      {
+        $addFields: {
+          countsByWeek: {
+            $sortArray: { input: '$countsByWeek', sortBy: { weekIndex: 1 } },
+          },
         },
       },
-    },
+    ]);
+  };
 
-    // { $count: 'count' },
-    // { $limit: 10 },
-  ]);
-};
+export const getNewGraphForWorkItem = getGraphDataForWorkItem('start');
+export const getVelocityGraphForWorkItems = getGraphDataForWorkItem('end');
