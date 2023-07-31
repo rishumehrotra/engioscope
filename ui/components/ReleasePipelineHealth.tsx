@@ -259,8 +259,8 @@ const ReleasePipelineHealth: React.FC<{
           );
         })}
       </h3>
-      <ul className="ml-6 inline-flex gap-3 text-theme-helptext">
-        <li>
+      <ul className="ml-6 inline-flex gap-2 text-theme-helptext">
+        <li className="border-r border-theme-seperator pr-2">
           <strong className="text-theme-base">
             {releasePipelineDetails.data?.artifacts.length}
           </strong>

@@ -95,7 +95,10 @@ const BranchPolicyPill: React.FC<{
         onFocus={() => setHasHovered(true)}
         data-tooltip-id={domId}
       >
-        <GitBranch size={16} className={conforms ? '' : 'text-theme-danger'} />
+        <GitBranch
+          size={16}
+          className={conforms ? 'text-theme-helptext' : 'text-theme-danger'}
+        />
         {refName.replace('refs/heads/', '')}
       </span>
       <Tooltip
