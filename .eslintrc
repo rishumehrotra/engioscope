@@ -49,6 +49,9 @@
     "react/static-property-placement": "warn",
     "react/jsx-props-no-spreading": "off",
     "react/jsx-filename-extension": "off",
+    "react/jsx-first-prop-new-line": "off",
+    "react/jsx-closing-bracket-location": "off",
+    "react/jsx-max-props-per-line": "off",
     "space-infix-ops": "off",
     "no-useless-assign/no-useless-assign": "error",
     "import/no-unresolved": [

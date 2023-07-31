@@ -1,9 +1,10 @@
 import type { PipelineStage } from 'mongoose';
+import { z } from 'zod';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
-import { fromContext, weekIndexValue, type QueryContext } from './utils.js';
+import { fromContext, weekIndexValue, queryContextInputParser } from './utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 
 const getWorkItemConfig = async (
@@ -158,15 +159,24 @@ const filterByFields = (
   ];
 };
 
+export const graphInputParser = z.object({
+  queryContext: queryContextInputParser,
+  workItemType: z.string(),
+  filters: z
+    .array(z.object({ label: z.string(), values: z.array(z.string()) }))
+    .optional(),
+  priority: z.array(z.number()).optional(),
+});
+
 export const getGraphDataForWorkItem =
   (graphType: 'newWorkItem' | 'velocity' | 'cycleTime') =>
-  async (
-    queryContent: QueryContext,
-    workItemType: string,
-    filters?: { label: string; values: string[] }[],
-    priority?: number[]
-  ) => {
-    const { collectionName, project, startDate, endDate } = fromContext(queryContent);
+  async ({
+    queryContext,
+    workItemType,
+    filters,
+    priority,
+  }: z.infer<typeof graphInputParser>) => {
+    const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
     const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
     const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
