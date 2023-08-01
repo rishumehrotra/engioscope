@@ -159,7 +159,7 @@ const filterByFields = (
 };
 
 export const getGraphDataForWorkItem =
-  (statesType: 'start' | 'end') =>
+  (graphType: 'newWorkItem' | 'velocity' | 'cycleTime') =>
   async (
     queryContent: QueryContext,
     workItemType: string,
@@ -187,9 +187,9 @@ export const getGraphDataForWorkItem =
               cond: {
                 $in: [
                   '$$state.state',
-                  statesType === 'start'
+                  graphType === 'newWorkItem'
                     ? workItemConfig.startStates
-                    : statesType === 'end'
+                    : graphType === 'velocity'
                     ? workItemConfig.endStates
                     : workItemConfig.startStates,
                 ],
@@ -211,6 +211,7 @@ export const getGraphDataForWorkItem =
           workItems: { $push: '$$ROOT' },
         },
       },
+      { $sort: { '_id.weekIndex': 1 } },
       {
         $group: {
           _id: '$_id.groupName',
@@ -224,15 +225,8 @@ export const getGraphDataForWorkItem =
       },
       { $addFields: { groupName: '$_id' } },
       { $unset: '_id' },
-      {
-        $addFields: {
-          countsByWeek: {
-            $sortArray: { input: '$countsByWeek', sortBy: { weekIndex: 1 } },
-          },
-        },
-      },
     ]);
   };
 
-export const getNewGraphForWorkItem = getGraphDataForWorkItem('start');
-export const getVelocityGraphForWorkItems = getGraphDataForWorkItem('end');
+export const getNewGraphForWorkItem = getGraphDataForWorkItem('newWorkItem');
+export const getVelocityGraphForWorkItems = getGraphDataForWorkItem('velocity');
