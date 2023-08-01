@@ -10,7 +10,7 @@ import {
   workItemForTooltip,
   workItemForTooltipInputParser,
 } from '../../models/workitems.js';
-import { getNewGraphForWorkItem, graphInputParser } from '../../models/workitems2.js';
+import { getNewGraph, graphInputParser } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
 export default t.router({
@@ -38,7 +38,5 @@ export default t.router({
     .input(workItemForTooltipInputParser)
     .query(passInputTo(workItemForTooltip)),
 
-  getNewGraphForWorkItem: t.procedure
-    .input(graphInputParser)
-    .query(passInputTo(getNewGraphForWorkItem)),
+  getNewGraph: t.procedure.input(graphInputParser).query(passInputTo(getNewGraph)),
 });

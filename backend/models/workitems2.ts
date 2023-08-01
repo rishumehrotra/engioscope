@@ -1,11 +1,13 @@
 import type { PipelineStage } from 'mongoose';
 import { z } from 'zod';
+import { filter, map } from 'rambda';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
 import { fromContext, weekIndexValue, queryContextInputParser } from './utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
+import { exists } from '../../shared/utils.js';
 
 const getWorkItemConfig = async (
   collectionName: string,
@@ -303,3 +305,22 @@ export const getGraphDataForWorkItem =
 export const getNewGraphForWorkItem = getGraphDataForWorkItem('newWorkItem');
 export const getVelocityGraphForWorkItems = getGraphDataForWorkItem('velocity');
 export const getCycleTimeGraphForWorkItems = getGraphDataForWorkItem('cycleTime');
+
+export const getNewGraph = async (args: z.infer<typeof graphInputParser>) => {
+  const { collectionName, project } = fromContext(args.queryContext);
+
+  const config = await getProjectConfig(collectionName, project);
+
+  return (
+    Promise.all(
+      config.workItemsConfig?.map(async wic => ({
+        workItemType: wic.type,
+        data: await getNewGraphForWorkItem({ ...args, workItemType: wic.type }),
+      })) || []
+    )
+      .then(filter(exists))
+      .then(filter(x => Boolean(x?.data?.length)))
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      .then(map(x => ({ ...x, data: x.data! })))
+  );
+};
