@@ -215,7 +215,6 @@ export const getGraphDataForWorkItem =
         ? [
             {
               $addFields: {
-                testField: 'test',
                 startStatesChanges: {
                   $filter: {
                     input: '$stateChanges',
@@ -267,7 +266,6 @@ export const getGraphDataForWorkItem =
             },
           ]
         : []),
-
       { $unwind: '$stateChanges' },
       {
         $group: {
@@ -277,10 +275,8 @@ export const getGraphDataForWorkItem =
         },
       },
       { $match: { date: inDateRange(startDate, endDate) } },
-
       ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
       ...addGroupNameField(collectionName, workItemConfig.groupByField),
-
       {
         $group: {
           _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
