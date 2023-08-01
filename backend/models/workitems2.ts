@@ -185,8 +185,7 @@ export const getGraphDataForWorkItem =
 
     return WorkItemStateChangesModel.aggregate<{
       groupName: string;
-      countsByWeek: { weekIndex: number; count: number }[];
-      totalDuration?: number;
+      countsByWeek: { weekIndex: number; count: number; totalDuration?: number }[];
     }>([
       { $match: { collectionName, workItemType } },
       {
@@ -257,12 +256,7 @@ export const getGraphDataForWorkItem =
               },
             },
             {
-              $unset: [
-                'dateStarted',
-                'dateCompleted',
-                'startStatesChanges',
-                'endStatesChanges',
-              ],
+              $unset: ['dateStarted', 'startStatesChanges', 'endStatesChanges'],
             },
           ]
         : []),
@@ -270,8 +264,12 @@ export const getGraphDataForWorkItem =
       {
         $group: {
           _id: '$id',
-          date: { $min: '$stateChanges.date' },
-          ...(graphType === 'cycleTime' ? { duration: { $first: '$duration' } } : {}),
+          ...(graphType === 'cycleTime'
+            ? {
+                date: { $min: '$dateCompleted' },
+                duration: { $first: '$duration' },
+              }
+            : { date: { $min: '$stateChanges.date' } }),
         },
       },
       { $match: { date: inDateRange(startDate, endDate) } },
