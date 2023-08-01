@@ -185,7 +185,7 @@ export const getGraphDataForWorkItem =
 
     return WorkItemStateChangesModel.aggregate<{
       groupName: string;
-      countsByWeek: { weekIndex: number; count: number }[];
+      countsByWeek: { weekIndex: number; count: number; totalDuration?: number }[];
     }>([
       { $match: { collectionName, workItemType } },
       {
@@ -201,6 +201,8 @@ export const getGraphDataForWorkItem =
                     ? workItemConfig.startStates
                     : graphType === 'velocity'
                     ? workItemConfig.endStates
+                    : graphType === 'cycleTime'
+                    ? [...workItemConfig.startStates, ...workItemConfig.endStates]
                     : workItemConfig.startStates,
                 ],
               },
@@ -208,17 +210,76 @@ export const getGraphDataForWorkItem =
           },
         },
       },
+      ...(graphType === 'cycleTime'
+        ? [
+            {
+              $addFields: {
+                startStatesChanges: {
+                  $filter: {
+                    input: '$stateChanges',
+                    as: 'state',
+                    cond: { $in: ['$$state.state', workItemConfig.startStates] },
+                  },
+                },
+                endStatesChanges: {
+                  $filter: {
+                    input: '$stateChanges',
+                    as: 'state',
+                    cond: { $in: ['$$state.state', workItemConfig.endStates] },
+                  },
+                },
+              },
+            },
+            {
+              $match: {
+                $and: [
+                  { startStatesChanges: { $gt: ['$size', 0] } },
+                  { endStatesChanges: { $gt: ['$size', 0] } },
+                ],
+              },
+            },
+            {
+              $addFields: {
+                dateStarted: { $min: '$startStatesChanges.date' },
+                dateCompleted: { $min: '$endStatesChanges.date' },
+              },
+            },
+            {
+              $addFields: {
+                duration: {
+                  $dateDiff: {
+                    startDate: '$dateStarted',
+                    endDate: '$dateCompleted',
+                    unit: 'millisecond',
+                  },
+                },
+              },
+            },
+            {
+              $unset: ['dateStarted', 'startStatesChanges', 'endStatesChanges'],
+            },
+          ]
+        : []),
       { $unwind: '$stateChanges' },
-      { $group: { _id: '$id', date: { $min: '$stateChanges.date' } } },
+      {
+        $group: {
+          _id: '$id',
+          ...(graphType === 'cycleTime'
+            ? {
+                date: { $min: '$dateCompleted' },
+                duration: { $first: '$duration' },
+              }
+            : { date: { $min: '$stateChanges.date' } }),
+        },
+      },
       { $match: { date: inDateRange(startDate, endDate) } },
-
       ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
       ...addGroupNameField(collectionName, workItemConfig.groupByField),
-
       {
         $group: {
           _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
           workItems: { $push: '$$ROOT' },
+          ...(graphType === 'cycleTime' ? { totalDuration: { $sum: '$duration' } } : {}),
         },
       },
       { $sort: { '_id.weekIndex': 1 } },
@@ -229,6 +290,7 @@ export const getGraphDataForWorkItem =
             $push: {
               weekIndex: '$_id.weekIndex',
               count: { $size: '$workItems' },
+              ...(graphType === 'cycleTime' ? { totalDuration: '$totalDuration' } : {}),
             },
           },
         },
@@ -240,3 +302,4 @@ export const getGraphDataForWorkItem =
 
 export const getNewGraphForWorkItem = getGraphDataForWorkItem('newWorkItem');
 export const getVelocityGraphForWorkItems = getGraphDataForWorkItem('velocity');
+export const getCycleTimeGraphForWorkItems = getGraphDataForWorkItem('cycleTime');
