@@ -10,7 +10,6 @@ import {
   ConnectionModel,
 } from './mongoose-models/ConnectionModel.js';
 
-/* eslint-disable no-redeclare */
 export function getConnections(type: 'azure-pat'): Promise<
   (AzurePATConnection & {
     _id: Types.ObjectId;
@@ -35,7 +34,6 @@ export function getConnections(type?: Connection['type']) {
     return SonarConnectionModel.find().lean();
   }
 }
-/* eslint-enable */
 
 export const getConnectionById = <T extends Connection>(id: Types.ObjectId | string) =>
   ConnectionModel.findOne({ _id: id }).lean() as Promise<T & { _id: Types.ObjectId }>;

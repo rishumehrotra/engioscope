@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { z } from 'zod';
-import { filter, map } from 'rambda';
+import { filter, map, prop } from 'rambda';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
@@ -17,6 +17,8 @@ const getWorkItemConfig = async (
   const config = await getProjectConfig(collectionName, project);
   return config.workItemsConfig?.find(wic => wic.type === workItemType);
 };
+
+type WorkItemConfig = NonNullable<Awaited<ReturnType<typeof getWorkItemConfig>>>;
 
 const field = (fieldName: string) => ({
   $getField: {
@@ -170,9 +172,87 @@ export const graphInputParser = z.object({
   priority: z.array(z.number()).optional(),
 });
 
-export const getGraphDataForWorkItem =
-  (graphType: 'newWorkItem' | 'velocity' | 'cycleTime') =>
-  async ({
+const filterStateChangesMatching = (stages: string[]) => ({
+  $filter: {
+    input: '$stateChanges',
+    as: 'state',
+    cond: {
+      $in: ['$$state.state', stages],
+    },
+  },
+});
+
+const addDateDiffField = (fromStates: string[], endStates: string[]): PipelineStage[] => [
+  {
+    $addFields: {
+      startStatesChanges: filterStateChangesMatching(fromStates),
+      endStatesChanges: filterStateChangesMatching(endStates),
+    },
+  },
+  {
+    $match: {
+      $and: [
+        { startStatesChanges: { $gt: ['$size', 0] } },
+        { endStatesChanges: { $gt: ['$size', 0] } },
+      ],
+    },
+  },
+  {
+    $addFields: {
+      dateStarted: { $min: '$startStatesChanges.date' },
+      dateCompleted: { $min: '$endStatesChanges.date' },
+    },
+  },
+  {
+    $addFields: {
+      duration: {
+        $dateDiff: {
+          startDate: '$dateStarted',
+          endDate: '$dateCompleted',
+          unit: 'millisecond',
+        },
+      },
+    },
+  },
+  { $unset: ['dateStarted', 'startStatesChanges', 'endStatesChanges'] },
+];
+
+type CountArgs = {
+  type: 'count';
+  states: (wic: WorkItemConfig) => string[];
+};
+
+type DateDiffArgs = {
+  type: 'datediff';
+  startStates: (wic: WorkItemConfig) => string[];
+  endStates: (wic: WorkItemConfig) => string[];
+};
+
+type CountResponse = {
+  groupName: string;
+  countsByWeek: {
+    weekIndex: number;
+    count: number;
+  }[];
+};
+
+type DateDiffResponse = {
+  groupName: string;
+  countsByWeek: {
+    weekIndex: number;
+    count: number;
+    totalDuration: number;
+  }[];
+};
+
+export function getGraphDataForWorkItem(
+  args: CountArgs
+): (args: z.infer<typeof graphInputParser>) => Promise<CountResponse[]>;
+export function getGraphDataForWorkItem(
+  args: DateDiffArgs
+): (args: z.infer<typeof graphInputParser>) => Promise<DateDiffResponse[]>;
+export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
+  return async ({
     queryContext,
     workItemType,
     filters,
@@ -185,93 +265,33 @@ export const getGraphDataForWorkItem =
 
     if (!workItemConfig) return;
 
-    return WorkItemStateChangesModel.aggregate<{
-      groupName: string;
-      countsByWeek: { weekIndex: number; count: number; totalDuration?: number }[];
-    }>([
+    return WorkItemStateChangesModel.aggregate([
       { $match: { collectionName, workItemType } },
       {
         $addFields: {
-          stateChanges: {
-            $filter: {
-              input: '$stateChanges',
-              as: 'state',
-              cond: {
-                $in: [
-                  '$$state.state',
-                  graphType === 'newWorkItem'
-                    ? workItemConfig.startStates
-                    : graphType === 'velocity'
-                    ? workItemConfig.endStates
-                    : graphType === 'cycleTime'
-                    ? [...workItemConfig.startStates, ...workItemConfig.endStates]
-                    : workItemConfig.startStates,
-                ],
-              },
-            },
-          },
+          stateChanges: filterStateChangesMatching(
+            args.type === 'count'
+              ? args.states(workItemConfig)
+              : [...args.startStates(workItemConfig), ...args.endStates(workItemConfig)]
+          ),
         },
       },
-      ...(graphType === 'cycleTime'
-        ? [
-            {
-              $addFields: {
-                startStatesChanges: {
-                  $filter: {
-                    input: '$stateChanges',
-                    as: 'state',
-                    cond: { $in: ['$$state.state', workItemConfig.startStates] },
-                  },
-                },
-                endStatesChanges: {
-                  $filter: {
-                    input: '$stateChanges',
-                    as: 'state',
-                    cond: { $in: ['$$state.state', workItemConfig.endStates] },
-                  },
-                },
-              },
-            },
-            {
-              $match: {
-                $and: [
-                  { startStatesChanges: { $gt: ['$size', 0] } },
-                  { endStatesChanges: { $gt: ['$size', 0] } },
-                ],
-              },
-            },
-            {
-              $addFields: {
-                dateStarted: { $min: '$startStatesChanges.date' },
-                dateCompleted: { $min: '$endStatesChanges.date' },
-              },
-            },
-            {
-              $addFields: {
-                duration: {
-                  $dateDiff: {
-                    startDate: '$dateStarted',
-                    endDate: '$dateCompleted',
-                    unit: 'millisecond',
-                  },
-                },
-              },
-            },
-            {
-              $unset: ['dateStarted', 'startStatesChanges', 'endStatesChanges'],
-            },
-          ]
+      ...(args.type === 'datediff'
+        ? addDateDiffField(
+            args.startStates(workItemConfig),
+            args.endStates(workItemConfig)
+          )
         : []),
       { $unwind: '$stateChanges' },
       {
         $group: {
           _id: '$id',
-          ...(graphType === 'cycleTime'
-            ? {
+          ...(args.type === 'count'
+            ? { date: { $min: '$stateChanges.date' } }
+            : {
                 date: { $min: '$dateCompleted' },
                 duration: { $first: '$duration' },
-              }
-            : { date: { $min: '$stateChanges.date' } }),
+              }),
         },
       },
       { $match: { date: inDateRange(startDate, endDate) } },
@@ -281,7 +301,7 @@ export const getGraphDataForWorkItem =
         $group: {
           _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
           workItems: { $push: '$$ROOT' },
-          ...(graphType === 'cycleTime' ? { totalDuration: { $sum: '$duration' } } : {}),
+          ...(args.type === 'datediff' ? { totalDuration: { $sum: '$duration' } } : {}),
         },
       },
       { $sort: { '_id.weekIndex': 1 } },
@@ -292,7 +312,7 @@ export const getGraphDataForWorkItem =
             $push: {
               weekIndex: '$_id.weekIndex',
               count: { $size: '$workItems' },
-              ...(graphType === 'cycleTime' ? { totalDuration: '$totalDuration' } : {}),
+              ...(args.type === 'datediff' ? { totalDuration: '$totalDuration' } : {}),
             },
           },
         },
@@ -301,10 +321,29 @@ export const getGraphDataForWorkItem =
       { $unset: '_id' },
     ]);
   };
+}
 
-export const getNewGraphForWorkItem = getGraphDataForWorkItem('newWorkItem');
-export const getVelocityGraphForWorkItems = getGraphDataForWorkItem('velocity');
-export const getCycleTimeGraphForWorkItems = getGraphDataForWorkItem('cycleTime');
+export const getNewGraphForWorkItem = getGraphDataForWorkItem({
+  type: 'count',
+  states: prop('startStates'),
+});
+
+export const getVelocityGraphForWorkItems = getGraphDataForWorkItem({
+  type: 'count',
+  states: prop('endStates'),
+});
+
+export const getCycleTimeGraphForWorkItems = getGraphDataForWorkItem({
+  type: 'datediff',
+  startStates: prop('startStates'),
+  endStates: prop('endStates'),
+});
+
+export const getChangeLeadTimeGraphForWorkItems = getGraphDataForWorkItem({
+  type: 'datediff',
+  startStates: x => x.devCompletionStates || [],
+  endStates: prop('endStates'),
+});
 
 export const getNewGraph = async (args: z.infer<typeof graphInputParser>) => {
   const { collectionName, project } = fromContext(args.queryContext);

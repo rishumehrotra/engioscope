@@ -43,6 +43,8 @@
         "props": false
       }
     ],
+    "no-redeclare": "off",
+    "@typescript-eslint/no-redeclare": "error",
     "no-extra-parens": "off",
     "react/jsx-fragments": "error",
     "react/state-in-constructor": "warn",
