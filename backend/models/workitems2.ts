@@ -8,6 +8,7 @@ import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChange
 import { fromContext, weekIndexValue, queryContextInputParser } from './utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { exists } from '../../shared/utils.js';
+import { createIntervals } from '../utils.js';
 
 const getWorkItemConfig = async (
   collectionName: string,
@@ -371,7 +372,10 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
 
   if (!workItemConfig) return;
 
-  return WorkItemStateChangesModel.aggregate([
+  return WorkItemStateChangesModel.aggregate<{
+    groupName: string;
+    workItemIds: number[];
+  }>([
     { $match: { collectionName, workItemType } },
     {
       $addFields: {
@@ -402,6 +406,127 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
         workItemIds: { $addToSet: '$_id' },
       },
     },
-    { $addFields: { count: { $size: '$workItemIds' } } },
+    { $addFields: { groupName: '$_id' } },
+    { $unset: '_id' },
   ]);
+};
+
+export const getWipTrendGraphDataFor =
+  (stateType: 'startStates' | 'endStates') =>
+  async ({
+    queryContext,
+    workItemType,
+    filters,
+    priority,
+  }: z.infer<typeof graphInputParser>) => {
+    const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+    const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+    const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+
+    if (!workItemConfig) return;
+
+    return WorkItemStateChangesModel.aggregate<{
+      groupName: string;
+      workItemIdsByWeek: {
+        weekIndex: number;
+        workItemIds: number[];
+      };
+    }>([
+      { $match: { collectionName, workItemType } },
+      {
+        $addFields: {
+          startStateChanges: {
+            $filter: {
+              input: '$stateChanges',
+              as: 'state',
+              cond: {
+                $in: [
+                  '$$state.state',
+                  stateType === 'startStates'
+                    ? workItemConfig.startStates
+                    : workItemConfig.endStates,
+                ],
+              },
+            },
+          },
+        },
+      },
+      { $unwind: '$stateChanges' },
+      {
+        $group: {
+          _id: '$id',
+          date: { $min: '$stateChanges.date' },
+        },
+      },
+      { $match: { date: inDateRange(startDate, endDate) } },
+      ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
+      ...addGroupNameField(collectionName, workItemConfig.groupByField),
+      {
+        $group: {
+          _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
+          workItemIds: { $addToSet: '$_id' },
+        },
+      },
+      { $sort: { '_id.weekIndex': 1 } },
+      {
+        $group: {
+          _id: '$_id.groupName',
+          workItemIdsByWeek: {
+            $push: {
+              weekIndex: '$_id.weekIndex',
+              workItemIds: '$workItemIds',
+            },
+          },
+        },
+      },
+      { $addFields: { groupName: '$_id' } },
+      { $unset: '_id' },
+    ]);
+  };
+
+export const getWipTrendGraphDataForStartStates = getWipTrendGraphDataFor('startStates');
+export const getWipTrendGraphDataForEndStates = getWipTrendGraphDataFor('endStates');
+
+export const getWipTrendGraphData = async ({
+  queryContext,
+  workItemType,
+  filters,
+  priority,
+}: z.infer<typeof graphInputParser>) => {
+  const { startDate, endDate } = fromContext(queryContext);
+
+  const [
+    wipTrendGraphDataBeforeStartDate,
+    wipTrendGraphDataForStartStates,
+    wipTrendGraphDataForEndStates,
+  ] = await Promise.all([
+    getWipTrendGraphDataBeforeStartDate({
+      queryContext,
+      workItemType,
+      filters,
+      priority,
+    }),
+
+    getWipTrendGraphDataForStartStates({
+      queryContext,
+      workItemType,
+      filters,
+      priority,
+    }),
+    getWipTrendGraphDataForEndStates({
+      queryContext,
+      workItemType,
+      filters,
+      priority,
+    }),
+  ]);
+
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
+
+  return {
+    wipTrendGraphDataBeforeStartDate,
+    wipTrendGraphDataForStartStates,
+    wipTrendGraphDataForEndStates,
+    numberOfIntervals,
+  };
 };
