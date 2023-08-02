@@ -5,3 +5,7 @@ import type { AppRouter } from '../../backend/server/router';
 export const trpc = createTRPCReact<AppRouter>();
 
 export type RouterClient = inferRouterOutputs<AppRouter>;
+
+export type SingleWorkItemConfig = NonNullable<
+  RouterClient['workItems']['getWorkItemConfig']['workItemsConfig']
+>[number];

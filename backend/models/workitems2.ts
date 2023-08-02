@@ -165,7 +165,6 @@ const filterByFields = (
 
 export const graphInputParser = z.object({
   queryContext: queryContextInputParser,
-  workItemType: z.string(),
   filters: z
     .array(z.object({ label: z.string(), values: z.array(z.string()) }))
     .optional(),
@@ -245,19 +244,16 @@ type DateDiffResponse = {
   }[];
 };
 
+type GraphArgs = z.infer<typeof graphInputParser> & { workItemType: string };
+
 export function getGraphDataForWorkItem(
   args: CountArgs
-): (args: z.infer<typeof graphInputParser>) => Promise<CountResponse[]>;
+): (args: GraphArgs) => Promise<CountResponse[]>;
 export function getGraphDataForWorkItem(
   args: DateDiffArgs
-): (args: z.infer<typeof graphInputParser>) => Promise<DateDiffResponse[]>;
+): (args: GraphArgs) => Promise<DateDiffResponse[]>;
 export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
-  return async ({
-    queryContext,
-    workItemType,
-    filters,
-    priority,
-  }: z.infer<typeof graphInputParser>) => {
+  return async ({ queryContext, workItemType, filters, priority }: GraphArgs) => {
     const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
     const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
