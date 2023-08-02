@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { append, filter, prop, range, sum } from 'rambda';
 import { twJoin } from 'tailwind-merge';
+import { ExternalLink } from 'react-feather';
 import GraphSection from './GraphSection.jsx';
 import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
@@ -59,6 +60,17 @@ const GraphCard = <T extends {}>({
     data.map(prop('groupName'))
   );
 
+  const toggleSelectedGroup = useCallback(
+    (groupName: string) => {
+      if (selectedGroups.includes(groupName)) {
+        setSelectedGroups(filter(x => x !== groupName));
+      } else {
+        setSelectedGroups(append(groupName));
+      }
+    },
+    [selectedGroups]
+  );
+
   return (
     <div className="contents">
       <h3 className="flex items-center gap-3" style={{ gridArea: `heading${index}` }}>
@@ -77,7 +89,7 @@ const GraphCard = <T extends {}>({
       </p>
       <div
         className={twJoin(
-          'rounded-md border border-theme-seperator p-4 mt-4 mb-8',
+          'rounded-xl border border-theme-seperator p-4 mt-4 mb-8',
           'grid grid-flow-row gap-2',
           'grid-rows-[min-content_min-content_1fr_min-content_min-content]',
           'bg-theme-page-content'
@@ -88,27 +100,49 @@ const GraphCard = <T extends {}>({
           <div className="text-lg font-medium">
             {formatValue(combineToValue(data.flatMap(prop('countsByWeek'))))}
           </div>
-          <div className="text-sm flex gap-3">
-            <button className="link-text">Select all</button>
-            <button className="link-text">Clear all</button>
-          </div>
+          <ul className="text-sm flex gap-2">
+            {selectedGroups.length !== data.length && (
+              <li
+                className={twJoin(
+                  'pr-2',
+                  selectedGroups.length === 0 ? '' : 'border-r border-theme-seperator'
+                )}
+              >
+                <button
+                  className="link-text"
+                  onClick={() => setSelectedGroups(data.map(prop('groupName')))}
+                >
+                  Select all
+                </button>
+              </li>
+            )}
+            {selectedGroups.length !== 0 && (
+              <li>
+                <button className="link-text" onClick={() => setSelectedGroups([])}>
+                  Clear all
+                </button>
+              </li>
+            )}
+          </ul>
         </div>
         <ul className="grid grid-cols-4 gap-2">
           {data.length === 1 && data[0].groupName === noGroup
             ? null
             : data.map(group => (
                 <li key={group.groupName}>
-                  <button
-                    onClick={() => {
-                      if (selectedGroups.includes(group.groupName)) {
-                        setSelectedGroups(filter(x => x !== group.groupName));
-                      } else {
-                        setSelectedGroups(append(group.groupName));
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSelectedGroup(group.groupName);
                       }
                     }}
+                    onClick={() => toggleSelectedGroup(group.groupName)}
                     className={twJoin(
                       'block border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
-                      'text-sm text-left transition-all duration-200',
+                      'text-sm text-left transition-all duration-200 group',
                       'hover:ring-theme-input-highlight hover:ring-1',
                       selectedGroups.includes(group.groupName)
                         ? 'bg-theme-page-content shadow'
@@ -119,14 +153,24 @@ const GraphCard = <T extends {}>({
                     }}
                   >
                     <div>{group.groupName || 'Unclassified'}</div>
-                    <div className="font-medium">
-                      {formatValue(combineToValue(group.countsByWeek))}
+                    <div className="font-medium flex items-end">
+                      <span>{formatValue(combineToValue(group.countsByWeek))}</span>
+                      <button
+                        className={twJoin(
+                          'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                          'group-focus-visible:opacity-100'
+                        )}
+                      >
+                        <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 </li>
               ))}
         </ul>
-        <div className="self-end">{graphRenderer(selectedGroups)}</div>
+        <div className="self-end min-h-[20rem] flex items-end justify-center">
+          {graphRenderer(selectedGroups)}
+        </div>
         <div className="text-sm text-theme-helptext">Priority</div>
       </div>
     </div>
@@ -201,12 +245,23 @@ const New = () => {
               formatValue={num}
               index={index}
               // eslint-disable-next-line react/no-unstable-nested-components
-              graphRenderer={selectedLines => (
-                <StackedAreaGraph
-                  className="w-full"
-                  lines={data
-                    .filter(line => selectedLines.includes(line.groupName))
-                    .map(line => ({
+              graphRenderer={selectedLines => {
+                const linesForGraph = data.filter(line =>
+                  selectedLines.includes(line.groupName)
+                );
+
+                if (linesForGraph.length === 0) {
+                  return (
+                    <div className="mb-48 text-center text-sm text-theme-helptext">
+                      No data
+                    </div>
+                  );
+                }
+
+                return (
+                  <StackedAreaGraph
+                    className="w-full"
+                    lines={linesForGraph.map(line => ({
                       ...line,
                       countsByWeek: range(
                         0,
@@ -220,14 +275,15 @@ const New = () => {
                           0,
                       })),
                     }))}
-                  points={x => x.countsByWeek}
-                  pointToValue={x => x.count}
-                  lineColor={x => lineColor(x.groupName)}
-                  // lineLabel={x => x.groupName}
-                  xAxisLabel={x => String(x.weekIndex)}
-                  yAxisLabel={num}
-                />
-              )}
+                    points={x => x.countsByWeek}
+                    pointToValue={x => x.count}
+                    lineColor={x => lineColor(x.groupName)}
+                    // lineLabel={x => x.groupName}
+                    xAxisLabel={x => String(x.weekIndex)}
+                    yAxisLabel={num}
+                  />
+                );
+              }}
             />
           ) : null
         )}

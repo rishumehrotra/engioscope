@@ -283,11 +283,13 @@ const StackedAreaGraph = <L, P>({
 }: StackedAreaGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const yAxisMax = Math.max(
-    ...range(0, points(lines[0]).length).map(weekIndex => {
-      return sum(lines.map(line => pointToValue(points(line)[weekIndex])));
-    })
-  );
+  const yAxisMax = lines[0]
+    ? Math.max(
+        ...range(0, points(lines[0]).length).map(weekIndex => {
+          return sum(lines.map(line => pointToValue(points(line)[weekIndex])));
+        })
+      )
+    : 0;
 
   const xCoord = useCallback(
     (index: number) => index * yAxisItemSpacing + yAxisLeftPadding,
@@ -333,30 +335,29 @@ const StackedAreaGraph = <L, P>({
           acc.push(points.map((point, pointIndex) => point + previousLine[pointIndex]));
           return acc;
         },
-        [Array.from({ length: points(lines[0]).length }).fill(0) as number[]]
+        lines[0]
+          ? [Array.from({ length: points(lines[0]).length }).fill(0) as number[]]
+          : []
       );
+
+    const toPoint = (point: number, index: number) => {
+      return [xCoord(index), yCoord(point)].join(',');
+    };
 
     return stackedLines
       .flatMap((line, index) => {
         if (index === 0) return null;
 
         const previousLine = stackedLines[index - 1];
-
         return [
           <polygon
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            points={[
-              ...line.map((point, index) => {
-                return [xCoord(index), yCoord(point)].join(',');
-              }),
-              ...previousLine
-                .map((point, index) => {
-                  return [xCoord(index), yCoord(point)].join(',');
-                })
-                .reverse(),
-            ].join(' ')}
-            fill={`${lineColor(lines[index - 1])}22`}
+            points={[...line.map(toPoint), ...previousLine.map(toPoint).reverse()].join(
+              ' '
+            )}
+            fill={lineColor(lines[index - 1])}
+            className="opacity-25"
           />,
           <path
             // eslint-disable-next-line react/no-array-index-key
@@ -376,8 +377,6 @@ const StackedAreaGraph = <L, P>({
       })
       .filter(exists);
   }, [lineColor, lines, pointToValue, points, xCoord, yCoord]);
-
-  if (lines.length === 0) return <div>Couldn't find any matching workitems</div>;
 
   return (
     <svg
