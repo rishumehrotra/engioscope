@@ -1,11 +1,11 @@
 import type { PipelineStage } from 'mongoose';
 import { z } from 'zod';
-import { filter, map, prop } from 'rambda';
+import { filter, map, prop, range } from 'rambda';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
-import { fromContext, weekIndexValue, queryContextInputParser } from './utils.js';
+import { fromContext, queryContextInputParser, weekIndexValue } from './utils.js';
 import { noGroup } from '../../shared/work-item-utils.js';
 import { exists } from '../../shared/utils.js';
 import { createIntervals } from '../utils.js';
@@ -430,7 +430,7 @@ export const getWipTrendGraphDataFor =
       workItemIdsByWeek: {
         weekIndex: number;
         workItemIds: number[];
-      };
+      }[];
     }>([
       { $match: { collectionName, workItemType } },
       {
@@ -523,10 +523,57 @@ export const getWipTrendGraphData = async ({
 
   const { numberOfIntervals } = createIntervals(startDate, endDate);
 
-  return {
-    wipTrendGraphDataBeforeStartDate,
-    wipTrendGraphDataForStartStates,
-    wipTrendGraphDataForEndStates,
-    numberOfIntervals,
-  };
+  const groups = Array.from(
+    new Set([
+      ...(wipTrendGraphDataBeforeStartDate?.map(x => x.groupName) || []),
+      ...(wipTrendGraphDataForStartStates?.map(x => x.groupName) || []),
+      ...(wipTrendGraphDataForEndStates?.map(x => x.groupName) || []),
+    ])
+  );
+
+  return groups.map(groupName => {
+    const wipTrendGraphDataBeforeStartDateForGroup =
+      wipTrendGraphDataBeforeStartDate?.find(x => x.groupName === groupName);
+
+    const wipTrendGraphDataForStartStatesForGroup = wipTrendGraphDataForStartStates?.find(
+      x => x.groupName === groupName
+    );
+
+    const wipTrendGraphDataForEndStatesForGroup = wipTrendGraphDataForEndStates?.find(
+      x => x.groupName === groupName
+    );
+
+    const workItemIdsSet = new Set(
+      wipTrendGraphDataBeforeStartDateForGroup?.workItemIds || []
+    );
+
+    const groupWeeklyGraph = range(0, numberOfIntervals).map(weekIndex => {
+      return {
+        weekIndex,
+        workInProgressIds:
+          wipTrendGraphDataForStartStatesForGroup?.workItemIdsByWeek?.find(
+            x => x.weekIndex === weekIndex
+          )?.workItemIds || [],
+        workDoneIds:
+          wipTrendGraphDataForEndStatesForGroup?.workItemIdsByWeek?.find(
+            x => x.weekIndex === weekIndex
+          )?.workItemIds || [],
+      };
+    });
+
+    const groupWeeklyGraphWithWorkInProgressIds = groupWeeklyGraph.map(week => {
+      week.workInProgressIds.forEach(id => workItemIdsSet.add(id));
+      week.workDoneIds.forEach(id => workItemIdsSet.delete(id));
+
+      return {
+        weekIndex: week.weekIndex,
+        count: [...workItemIdsSet].length,
+      };
+    });
+
+    return {
+      groupName,
+      groupWeeklyGraph: groupWeeklyGraphWithWorkInProgressIds,
+    };
+  });
 };
