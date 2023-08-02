@@ -255,7 +255,6 @@ export function getGraphDataForWorkItem(
 export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
   return async ({ queryContext, workItemType, filters, priority }: GraphArgs) => {
     const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-
     const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
     const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
 
@@ -358,4 +357,51 @@ export const getNewGraph = async (args: z.infer<typeof graphInputParser>) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       .then(map(x => ({ ...x, data: x.data! })))
   );
+};
+
+export const getWipTrendGraphDataBeforeStartDate = async ({
+  queryContext,
+  workItemType,
+  filters,
+  priority,
+}: z.infer<typeof graphInputParser>) => {
+  const { collectionName, project, startDate } = fromContext(queryContext);
+  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+
+  if (!workItemConfig) return;
+
+  return WorkItemStateChangesModel.aggregate([
+    { $match: { collectionName, workItemType } },
+    {
+      $addFields: {
+        stateChanges: {
+          $filter: {
+            input: '$stateChanges',
+            as: 'state',
+            cond: {
+              $in: ['$$state.state', workItemConfig.endStates],
+            },
+          },
+        },
+      },
+    },
+    { $unwind: '$stateChanges' },
+    {
+      $group: {
+        _id: '$id',
+        date: { $min: '$stateChanges.date' },
+      },
+    },
+    { $match: { date: { $lt: startDate } } },
+    ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
+    ...addGroupNameField(collectionName, workItemConfig.groupByField),
+    {
+      $group: {
+        _id: '$groupName',
+        workItemIds: { $addToSet: '$_id' },
+      },
+    },
+    { $addFields: { count: { $size: '$workItemIds' } } },
+  ]);
 };
