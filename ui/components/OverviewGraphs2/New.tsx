@@ -8,6 +8,7 @@ import { trpc } from '../../helpers/trpc.js';
 import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hooks.js';
 import { createPalette, exists, num } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
+import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 
 const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -41,7 +42,7 @@ type GraphCardProps<T extends {}> = {
   }[];
   combineToValue: (x: T[]) => number;
   formatValue?: (x: number) => string | number;
-  children: ReactNode;
+  graphRenderer: (selectedGroups: string[]) => ReactNode;
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -52,7 +53,7 @@ const GraphCard = <T extends {}>({
   data,
   combineToValue,
   formatValue = num,
-  children,
+  graphRenderer,
 }: GraphCardProps<T>) => {
   const [selectedGroups, setSelectedGroups] = useState<string[]>(
     data.map(prop('groupName'))
@@ -107,8 +108,8 @@ const GraphCard = <T extends {}>({
                     }}
                     className={twJoin(
                       'block border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
-                      'text-sm text-left',
-                      'hover:border-theme-input-highlight transition-all duration-200',
+                      'text-sm text-left transition-all duration-200',
+                      'hover:ring-theme-input-highlight hover:ring-1',
                       selectedGroups.includes(group.groupName)
                         ? 'bg-theme-page-content shadow'
                         : 'bg-theme-col-header'
@@ -125,7 +126,7 @@ const GraphCard = <T extends {}>({
                 </li>
               ))}
         </ul>
-        <div className="self-end">{children}</div>
+        <div className="self-end">{graphRenderer(selectedGroups)}</div>
         <div className="text-sm text-theme-helptext">Priority</div>
       </div>
     </div>
@@ -199,9 +200,35 @@ const New = () => {
               combineToValue={values => sum(values.map(prop('count')))}
               formatValue={num}
               index={index}
-            >
-              Graph goes here
-            </GraphCard>
+              // eslint-disable-next-line react/no-unstable-nested-components
+              graphRenderer={selectedLines => (
+                <StackedAreaGraph
+                  className="w-full"
+                  lines={data
+                    .filter(line => selectedLines.includes(line.groupName))
+                    .map(line => ({
+                      ...line,
+                      countsByWeek: range(
+                        0,
+                        Math.max(
+                          ...data.flatMap(x => x.countsByWeek).map(x => x.weekIndex)
+                        )
+                      ).map(weekIndex => ({
+                        weekIndex: index,
+                        count:
+                          line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ??
+                          0,
+                      })),
+                    }))}
+                  points={x => x.countsByWeek}
+                  pointToValue={x => x.count}
+                  lineColor={x => lineColor(x.groupName)}
+                  // lineLabel={x => x.groupName}
+                  xAxisLabel={x => String(x.weekIndex)}
+                  yAxisLabel={num}
+                />
+              )}
+            />
           ) : null
         )}
       </div>
