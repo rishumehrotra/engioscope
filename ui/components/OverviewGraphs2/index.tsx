@@ -7,7 +7,7 @@ import ChangeLoadTime from './ChangeLeadTime.jsx';
 const OverviewGraphs2 = () => {
   return (
     <>
-      <New />;
+      <New />
       <Velocity />
       <CycleTime />
       <ChangeLoadTime />

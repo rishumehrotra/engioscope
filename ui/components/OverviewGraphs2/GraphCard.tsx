@@ -75,8 +75,13 @@ export const GraphCard = <T extends {}>({
         style={{ gridArea: `graphBlock${index}` }}
       >
         <div className="grid grid-flow-col justify-between items-end">
-          <div className="text-lg font-medium">
+          <div className="text-lg font-medium flex items-center gap-2">
             {formatValue(combineToValue(data.flatMap(prop('countsByWeek'))))}
+            {data.length === 1 && data[0].groupName === noGroup ? (
+              <button className="link-text">
+                <ExternalLink size={16} />
+              </button>
+            ) : null}
           </div>
           <ul className="text-sm flex gap-2">
             {selectedGroups.length !== data.length && (
