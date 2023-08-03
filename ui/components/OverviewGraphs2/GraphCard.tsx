@@ -119,7 +119,7 @@ export const GraphCard = <T extends {}>({
                     }}
                     onClick={() => toggleSelectedGroup(group.groupName)}
                     className={twJoin(
-                      'block border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
+                      'block h-full border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
                       'text-sm text-left transition-all duration-200 group',
                       'hover:ring-theme-input-highlight hover:ring-1',
                       selectedGroups.includes(group.groupName)

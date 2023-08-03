@@ -227,7 +227,7 @@ type DateDiffArgs = {
   endStates: (wic: WorkItemConfig) => string[];
 };
 
-type CountResponse = {
+export type CountResponse = {
   groupName: string;
   countsByWeek: {
     weekIndex: number;
@@ -235,7 +235,7 @@ type CountResponse = {
   }[];
 };
 
-type DateDiffResponse = {
+export type DateDiffResponse = {
   groupName: string;
   countsByWeek: {
     weekIndex: number;
