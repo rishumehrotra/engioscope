@@ -319,53 +319,59 @@ export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
   };
 }
 
-export const getNewGraphForWorkItem = getGraphDataForWorkItem({
-  type: 'count',
-  states: prop('startStates'),
-});
-
-export const getVelocityGraphForWorkItems = getGraphDataForWorkItem({
-  type: 'count',
-  states: prop('endStates'),
-});
-
-export const getCycleTimeGraphForWorkItems = getGraphDataForWorkItem({
-  type: 'datediff',
-  startStates: prop('startStates'),
-  endStates: prop('endStates'),
-});
-
-export const getChangeLeadTimeGraphForWorkItems = getGraphDataForWorkItem({
-  type: 'datediff',
-  startStates: x => x.devCompletionStates || [],
-  endStates: prop('endStates'),
-});
-
-export const getNewGraph = async (args: z.infer<typeof graphInputParser>) => {
-  const { collectionName, project } = fromContext(args.queryContext);
-
-  const config = await getProjectConfig(collectionName, project);
-
-  return (
-    Promise.all(
-      config.workItemsConfig?.map(async wic => ({
-        workItemType: wic.type,
-        data: await getNewGraphForWorkItem({ ...args, workItemType: wic.type }),
-      })) || []
-    )
-      .then(filter(exists))
-      .then(filter(x => Boolean(x?.data?.length)))
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      .then(map(x => ({ ...x, data: x.data! })))
-  );
+const graphTypes = {
+  new: getGraphDataForWorkItem({
+    type: 'count',
+    states: prop('startStates'),
+  }),
+  velocity: getGraphDataForWorkItem({
+    type: 'count',
+    states: prop('endStates'),
+  }),
+  cycleTime: getGraphDataForWorkItem({
+    type: 'datediff',
+    startStates: prop('startStates'),
+    endStates: prop('endStates'),
+  }),
+  changeLeadTime: getGraphDataForWorkItem({
+    type: 'datediff',
+    startStates: x => x.devCompletionStates || [],
+    endStates: prop('endStates'),
+  }),
 };
+
+export const getGraphOfType =
+  <T extends CountResponse | DateDiffResponse>(
+    graphType: (args: GraphArgs) => Promise<T[]>
+  ) =>
+  async (args: z.infer<typeof graphInputParser>) => {
+    const { collectionName, project } = fromContext(args.queryContext);
+
+    const config = await getProjectConfig(collectionName, project);
+
+    return (
+      Promise.all(
+        config.workItemsConfig?.map(async wic => ({
+          workItemType: wic.type,
+          data: await graphType({ ...args, workItemType: wic.type }),
+        })) || []
+      )
+        .then(filter(exists))
+        .then(filter(x => Boolean(x?.data?.length)))
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .then(map(x => ({ ...x, data: x.data! })))
+    );
+  };
+
+export const getNewGraph = getGraphOfType(graphTypes.new);
+export const getOverviewGraph = getGraphOfType(graphTypes.velocity);
 
 export const getWipTrendGraphDataBeforeStartDate = async ({
   queryContext,
   workItemType,
   filters,
   priority,
-}: z.infer<typeof graphInputParser>) => {
+}: GraphArgs) => {
   const { collectionName, project, startDate } = fromContext(queryContext);
   const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
   const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
@@ -413,12 +419,7 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
 
 export const getWipTrendGraphDataFor =
   (stateType: 'startStates' | 'endStates') =>
-  async ({
-    queryContext,
-    workItemType,
-    filters,
-    priority,
-  }: z.infer<typeof graphInputParser>) => {
+  async ({ queryContext, workItemType, filters, priority }: GraphArgs) => {
     const { collectionName, project, startDate, endDate } = fromContext(queryContext);
     const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
     const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
@@ -492,7 +493,7 @@ export const getWipTrendGraphData = async ({
   workItemType,
   filters,
   priority,
-}: z.infer<typeof graphInputParser>) => {
+}: GraphArgs) => {
   const { startDate, endDate } = fromContext(queryContext);
 
   const [
