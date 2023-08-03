@@ -11,6 +11,8 @@ import {
   workItemForTooltipInputParser,
 } from '../../models/workitems.js';
 import {
+  getChangeLoadTimeGraph,
+  getCycleTimeGraph,
   getNewGraph,
   getOverviewGraph,
   graphInputParser,
@@ -46,4 +48,10 @@ export default t.router({
   getOverviewGraph: t.procedure
     .input(graphInputParser)
     .query(passInputTo(getOverviewGraph)),
+  getCycleTimeGraph: t.procedure
+    .input(graphInputParser)
+    .query(passInputTo(getCycleTimeGraph)),
+  getChangeLeadTimeGraph: t.procedure
+    .input(graphInputParser)
+    .query(passInputTo(getChangeLoadTimeGraph)),
 });

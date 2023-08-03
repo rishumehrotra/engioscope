@@ -365,6 +365,8 @@ export const getGraphOfType =
 
 export const getNewGraph = getGraphOfType(graphTypes.new);
 export const getOverviewGraph = getGraphOfType(graphTypes.velocity);
+export const getCycleTimeGraph = getGraphOfType(graphTypes.cycleTime);
+export const getChangeLoadTimeGraph = getGraphOfType(graphTypes.changeLeadTime);
 
 export const getWipTrendGraphDataBeforeStartDate = async ({
   queryContext,
