@@ -119,7 +119,7 @@ export const getCentralTemplatePipeline = async (
     project
   );
 
-  const buildDefinitionId = centralTemplateBuildDefs?.map(
+  const buildDefinitionIds = centralTemplateBuildDefs?.map(
     buildDef => buildDef.buildDefinitionId
   );
 
@@ -129,7 +129,7 @@ export const getCentralTemplatePipeline = async (
         collectionName,
         project,
         ...(repoIds ? { repositoryId: { $in: repoIds } } : {}),
-        ...(buildDefinitionId ? { id: { $in: buildDefinitionId } } : {}),
+        ...(buildDefinitionIds ? { id: { $in: buildDefinitionIds } } : {}),
       },
     },
     {
@@ -232,6 +232,7 @@ export const getCentralTemplatePipeline = async (
       (total, build) => total + build.centralTemplateBuilds,
       0
     ),
+    totalCentralTemplatePipelines: centralTemplateBuildDefs.length,
     central: result.length,
     idsWithMainBranchBuilds: result.map(r => r.buildDefinitionId),
   };
