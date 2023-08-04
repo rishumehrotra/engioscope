@@ -105,7 +105,7 @@
     "@trpc/react-query": "10.37.1",
     "@types/compression": "1.7.2",
     "@types/cookie-parser": "1.4.3",
-    "@types/cron": "2.0.1",
+    "@types/cron": "2.4.0",
     "@types/debug": "4.1.8",
     "@types/express": "4.17.17",
     "@types/glob": "8.1.0",
