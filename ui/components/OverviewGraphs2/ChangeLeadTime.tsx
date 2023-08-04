@@ -2,16 +2,16 @@ import React from 'react';
 import { prop, range, sum } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
-import { useQueryContext } from '../../hooks/query-hooks.js';
 import { prettyMS } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
 import { prettyStates, lineColor, useMergeWithConfig } from './utils.js';
 import { divide } from '../../../shared/utils.js';
+import useGraphArgs from './useGraphArgs.js';
 
 const ChangeLoadTime = () => {
-  const queryContext = useQueryContext();
-  const graph = trpc.workItems.getChangeLeadTimeGraph.useQuery({ queryContext });
+  const graphArgs = useGraphArgs();
+  const graph = trpc.workItems.getChangeLeadTimeGraph.useQuery(graphArgs);
   const graphWithConfig = useMergeWithConfig(graph.data);
   const gridTemplateAreas = useGridTemplateAreas();
 

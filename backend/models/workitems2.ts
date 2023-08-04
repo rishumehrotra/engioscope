@@ -200,12 +200,19 @@ export const filterConfig = async ({
 }: Omit<z.infer<typeof graphInputParser>, 'priority'>) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const config = await getProjectConfig(collectionName, project);
+
+  // TODO: This is a hack. We should also consider the work item type
+  const ignoreStates = config.workItemsConfig
+    ?.flatMap(wic => wic.ignoreStates)
+    .filter(exists);
+
   const results = await WorkItemModel.aggregate<Record<string, string[]>>([
     {
       $match: {
         collectionName,
         project,
         stateChangeDate: inDateRange(startDate, endDate),
+        ...(ignoreStates?.length ? { state: { $nin: ignoreStates } } : {}),
       },
     },
     ...(config.filterWorkItemsBy
