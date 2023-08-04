@@ -86,7 +86,7 @@ const ChangeLoadTime = () => {
                     points={x => x.countsByWeek}
                     pointToValue={x => divide(x.totalDuration, x.count).getOr(0)}
                     lineColor={x => lineColor(x.groupName)}
-                    // lineLabel={x => x.groupName}
+                    lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={prettyMS}
                   />

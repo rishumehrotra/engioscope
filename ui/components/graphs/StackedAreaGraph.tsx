@@ -262,7 +262,7 @@ export type StackedAreaGraphProps<Line, Point> = {
   pointToValue: (point: Point) => number;
   lineColor: (line: Line) => string;
   yAxisLabel: (value: number) => string;
-  // lineLabel: (line: Line) => string;
+  lineLabel: (line: Line) => string;
   xAxisLabel: (point: Point) => string;
   crosshairBubble?: (pointIndex: number) => React.ReactNode;
   className?: string;
@@ -276,7 +276,7 @@ const StackedAreaGraph = <L, P>({
   className,
   lineColor,
   yAxisLabel,
-  // lineLabel,
+  lineLabel,
   xAxisLabel,
   crosshairBubble = () => null,
   onClick,
@@ -327,16 +327,28 @@ const StackedAreaGraph = <L, P>({
 
   const polygons = useMemo(() => {
     const stackedLines = lines
-      .map(line => points(line).map(pointToValue))
-      .reduce<number[][]>(
+      .map(line => ({ value: points(line).map(pointToValue), line }))
+      .reduce<{ line: L; value: number[] }[]>(
         (acc, points) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const previousLine = last(acc)!;
-          acc.push(points.map((point, pointIndex) => point + previousLine[pointIndex]));
+          acc.push({
+            line: points.line,
+            value: points.value.map(
+              (point, pointIndex) => point + previousLine.value[pointIndex]
+            ),
+          });
           return acc;
         },
         lines[0]
-          ? [Array.from({ length: points(lines[0]).length }).fill(0) as number[]]
+          ? [
+              {
+                line: null as L,
+                value: Array.from({ length: points(lines[0]).length }).fill(
+                  0
+                ) as number[],
+              },
+            ]
           : []
       );
 
@@ -351,18 +363,17 @@ const StackedAreaGraph = <L, P>({
         const previousLine = stackedLines[index - 1];
         return [
           <polygon
-            // eslint-disable-next-line react/no-array-index-key
-            key={index}
-            points={[...line.map(toPoint), ...previousLine.map(toPoint).reverse()].join(
-              ' '
-            )}
+            key={`${lineLabel(line.line)}-area`}
+            points={[
+              ...line.value.map(toPoint),
+              ...previousLine.value.map(toPoint).reverse(),
+            ].join(' ')}
             fill={lineColor(lines[index - 1])}
-            className="opacity-25"
+            className="opacity-25 transition-all duration-200"
           />,
           <path
-            // eslint-disable-next-line react/no-array-index-key
-            key={`${index}path`}
-            d={line
+            key={`${lineLabel(line.line)}-path`}
+            d={line.value
               .map(
                 (point, pointIndex) =>
                   `${pointIndex === 0 ? 'M' : 'L'} ${xCoord(pointIndex)} ${yCoord(point)}`
@@ -372,11 +383,12 @@ const StackedAreaGraph = <L, P>({
             stroke={lineColor(lines[index - 1])}
             strokeWidth={1}
             strokeLinejoin="round"
+            className="transition-all duration-200"
           />,
         ];
       })
       .filter(exists);
-  }, [lineColor, lines, pointToValue, points, xCoord, yCoord]);
+  }, [lineColor, lineLabel, lines, pointToValue, points, xCoord, yCoord]);
 
   return (
     <svg

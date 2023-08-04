@@ -68,7 +68,7 @@ const Velocity = () => {
                     points={x => x.countsByWeek}
                     pointToValue={x => x.count}
                     lineColor={x => lineColor(x.groupName)}
-                    // lineLabel={x => x.groupName}
+                    lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={num}
                   />
