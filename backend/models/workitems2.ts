@@ -217,6 +217,18 @@ const addDateDiffField = (fromStates: string[], endStates: string[]): PipelineSt
   { $unset: ['dateStarted', 'startStatesChanges', 'endStatesChanges'] },
 ];
 
+const filterOutIfInIgnoredState = (ignoreStates?: string[]): PipelineStage[] => {
+  if (!ignoreStates?.length) return [];
+  return [
+    {
+      $addFields: {
+        currentState: { $arrayElemAt: ['$stateChanges.state', -1] },
+      },
+    },
+    { $match: { currentState: { $nin: ignoreStates } } },
+  ];
+};
+
 type CountArgs = {
   type: 'count';
   states: (wic: WorkItemConfig) => string[];
@@ -262,7 +274,8 @@ export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
     if (!workItemConfig) return;
 
     return WorkItemStateChangesModel.aggregate([
-      { $match: { collectionName, workItemType } },
+      { $match: { collectionName, project, workItemType } },
+      ...filterOutIfInIgnoredState(workItemConfig.ignoreStates),
       {
         $addFields: {
           stateChanges: filterStateChangesMatching(

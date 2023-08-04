@@ -19,6 +19,9 @@ export const fromContext = (x: QueryContext) => {
   };
 };
 
-export const weekIndexValue = (startDate: Date, field: string) => ({
-  $trunc: { $divide: [{ $subtract: [field, startDate] }, oneWeekInMs] },
+export const durationIndex = (startDate: Date, field: string, durationMs: number) => ({
+  $trunc: { $divide: [{ $subtract: [field, startDate] }, durationMs] },
 });
+
+export const weekIndexValue = (startDate: Date, field: string) =>
+  durationIndex(startDate, field, oneWeekInMs);

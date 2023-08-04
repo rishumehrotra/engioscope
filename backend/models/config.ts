@@ -1,5 +1,7 @@
 import pMemoize from 'p-memoize';
+import ExpiryMap from 'expiry-map';
 import { ConfigModel } from './mongoose-models/ConfigModel.js';
+import { oneSecondInMs } from '../../shared/utils.js';
 
 const getGlobalConfig = () =>
   ConfigModel.findOne({
@@ -12,6 +14,8 @@ const getCollectionConfig = (collectionName: string) =>
     collectionName,
     project: null,
   }).lean();
+
+const cache = new ExpiryMap(10 * oneSecondInMs);
 
 export const getProjectConfig = pMemoize(
   async (collectionName: string, projectName: string) => {
@@ -42,7 +46,7 @@ export const getProjectConfig = pMemoize(
       }),
     };
   },
-  { cacheKey: args => args.join('::') }
+  { cache, cacheKey: args => args.join('::') }
 );
 
 export type ParsedConfig = Awaited<ReturnType<typeof getProjectConfig>>;

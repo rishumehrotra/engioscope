@@ -23,7 +23,7 @@ type WorkItemsConfig = {
   endStates?: string[];
   rootCause?: string[];
   devCompletionStates?: string[];
-  ignoreStates: string[];
+  ignoreStates?: string[];
   workCenters?: {
     label: string;
     startStates?: string[];
