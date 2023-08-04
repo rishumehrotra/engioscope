@@ -520,6 +520,21 @@ const StreamingRepoSummary: React.FC = () => {
                   isDefined(summaries.activePipelineCentralTemplateBuilds) &&
                   isDefined(summaries.activePipelineBuilds)
                     ? [
+                        bold(
+                          num(
+                            summaries.centralTemplatePipeline
+                              .totalCentralTemplatePipelines
+                          )
+                        ),
+                        'out of',
+                        bold(num(summaries.pipelines.totalCount)),
+                        minPluralise(
+                          summaries.centralTemplatePipeline.central,
+                          'build pipeline',
+                          'build pipelines'
+                        ),
+                        'use the central template',
+                        '<div class="mt-1">',
                         bold(num(summaries.centralTemplatePipeline.central)),
                         'out of',
                         bold(num(summaries.pipelines.totalCount)),
@@ -529,6 +544,7 @@ const StreamingRepoSummary: React.FC = () => {
                           'build pipelines'
                         ),
                         'use the central template on the master branch',
+                        '</div>',
                         '<div class="mt-1">',
                         bold(num(summaries.centralTemplateUsage.templateUsers)),
                         'out of',
@@ -550,7 +566,7 @@ const StreamingRepoSummary: React.FC = () => {
                   isDefined(summaries.centralTemplatePipeline) &&
                   isDefined(summaries.pipelines)
                     ? divide(
-                        summaries.centralTemplatePipeline.central,
+                        summaries.centralTemplatePipeline.totalCentralTemplatePipelines,
                         summaries.pipelines.totalCount
                       )
                         .map(toPercentage)
