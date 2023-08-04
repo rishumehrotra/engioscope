@@ -6,7 +6,7 @@ import { ExternalLink } from 'react-feather';
 import { trpc, type SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type GraphCardProps<T extends {}> = {
@@ -161,19 +161,19 @@ export const GraphCard = <T extends {}>({
 };
 
 export const useGridTemplateAreas = () => {
-  const cnp = useCollectionAndProject();
-  const workItemConfig = trpc.workItems.getWorkItemConfig.useQuery(cnp);
+  const queryContext = useQueryContext();
+  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
 
-  if (!workItemConfig.data?.workItemsConfig) return;
+  if (!pageConfig.data?.workItemsConfig) return;
 
-  const rowCount = Math.ceil(workItemConfig.data.workItemsConfig.length / 2);
+  const rowCount = Math.ceil(pageConfig.data.workItemsConfig.length / 2);
 
   const graphGrid = range(0, rowCount).reduce<
     [SingleWorkItemConfig | undefined, SingleWorkItemConfig | undefined][]
   >((acc, rowIndex) => {
     acc.push([
-      workItemConfig.data.workItemsConfig?.[2 * rowIndex],
-      workItemConfig.data.workItemsConfig?.[2 * rowIndex + 1],
+      pageConfig.data.workItemsConfig?.[2 * rowIndex],
+      pageConfig.data.workItemsConfig?.[2 * rowIndex + 1],
     ]);
     return acc;
   }, []);

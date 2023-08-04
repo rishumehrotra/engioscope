@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { createPalette } from '../../helpers/utils.js';
-import { useCollectionAndProject } from '../../hooks/query-hooks.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import { exists } from '../../../shared/utils.js';
 import type {
@@ -32,18 +32,18 @@ export const lineColor = createPalette([
 export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
   data: { workItemType: string; data: T[] }[] | undefined
 ) => {
-  const cnp = useCollectionAndProject();
-  const workItemConfig = trpc.workItems.getWorkItemConfig.useQuery(cnp);
+  const queryContext = useQueryContext();
+  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
 
   return useMemo(() => {
     return data
       ?.map(wit => {
-        const matchingConfig = workItemConfig.data?.workItemsConfig?.find(
+        const matchingConfig = pageConfig.data?.workItemsConfig?.find(
           w => w.name[0] === wit.workItemType
         );
         if (!matchingConfig) return null;
         return { config: matchingConfig, data: wit.data };
       })
       .filter(exists);
-  }, [data, workItemConfig.data?.workItemsConfig]);
+  }, [data, pageConfig.data?.workItemsConfig]);
 };

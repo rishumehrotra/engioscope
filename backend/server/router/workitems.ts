@@ -1,5 +1,5 @@
 import { collectionAndProjectInputParser } from '../../models/helpers.js';
-import { getWorkItemConfig, getWorkItemTypes } from '../../models/work-item-types.js';
+import { getWorkItemTypes } from '../../models/work-item-types.js';
 import {
   newWorkItemsListForDate,
   newWorkItemsListForDateInputParser,
@@ -15,7 +15,9 @@ import {
   getCycleTimeGraph,
   getNewGraph,
   getOverviewGraph,
+  getPageConfig,
   graphInputParser,
+  pageConfigInputParser,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -24,9 +26,9 @@ export default t.router({
     .input(newWorkItemsSummaryInputParser)
     .query(passInputTo(newWorkItemsSummary)),
 
-  getWorkItemConfig: t.procedure
-    .input(collectionAndProjectInputParser)
-    .query(passInputTo(getWorkItemConfig)),
+  getPageConfig: t.procedure
+    .input(pageConfigInputParser)
+    .query(passInputTo(getPageConfig)),
 
   getWorkItemTypes: t.procedure
     .input(collectionAndProjectInputParser)

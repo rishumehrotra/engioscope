@@ -1,6 +1,7 @@
 import type { PipelineStage } from 'mongoose';
 import { z } from 'zod';
-import { filter, map, prop, range } from 'rambda';
+import { filter, identity, map, prop, range } from 'rambda';
+import { byString } from 'sort-lib';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
@@ -9,6 +10,8 @@ import { fromContext, queryContextInputParser, weekIndexValue } from './utils.js
 import { noGroup } from '../../shared/work-item-utils.js';
 import { exists } from '../../shared/utils.js';
 import { createIntervals } from '../utils.js';
+import { WorkItemModel } from './mongoose-models/WorkItem.js';
+import { getWorkItemConfig as getAllWorkItemConfigs } from './work-item-types.js';
 
 const getWorkItemConfig = async (
   collectionName: string,
@@ -57,6 +60,72 @@ const addGroupNameField = (
   ];
 };
 
+const explodeFilterFieldValues = (
+  filterConfig: NonNullable<ParsedConfig['filterWorkItemsBy']>
+) => [
+  {
+    $addFields: Object.fromEntries(
+      filterConfig.map(filter => {
+        return [filter.label, filter.fields.map(field)];
+      })
+    ),
+  },
+  {
+    $addFields: Object.fromEntries(
+      filterConfig.map(filter => {
+        return [
+          filter.label,
+          {
+            $filter: {
+              input: `$${filter.label}`,
+              as: 'value',
+              cond: {
+                $and: [{ $ne: ['$$value', null] }, { $ne: ['$$value', ''] }],
+              },
+            },
+          },
+        ];
+      })
+    ),
+  },
+  {
+    $addFields: Object.fromEntries(
+      filterConfig.map(filter => {
+        return [
+          filter.label,
+          {
+            $reduce: {
+              input: `$${filter.label}`,
+              initialValue: '',
+              in: {
+                $concat: [
+                  '$$value',
+                  { $cond: [{ $eq: ['$$value', ''] }, '', ';'] },
+                  '$$this',
+                ],
+              },
+            },
+          },
+        ];
+      })
+    ),
+  },
+  {
+    $project: Object.fromEntries(
+      filterConfig.map(filter => [
+        filter.label,
+        {
+          $filter: {
+            input: { $split: [`$${filter.label}`, ';'] },
+            as: 'items',
+            cond: { $ne: ['$$items', ''] },
+          },
+        },
+      ])
+    ),
+  },
+];
+
 const filterByFields = (
   collectionName: string,
   filterConfig: ParsedConfig['filterWorkItemsBy'],
@@ -84,53 +153,7 @@ const filterByFields = (
               ...(priority ? { priority: { $in: priority } } : {}),
             },
           },
-          {
-            $addFields: Object.fromEntries(
-              relevantFilterConfig.map(filter => {
-                return [filter.label, filter.fields.map(field)];
-              })
-            ),
-          },
-          {
-            $addFields: Object.fromEntries(
-              relevantFilterConfig.map(filter => {
-                return [
-                  filter.label,
-                  {
-                    $filter: {
-                      input: `$${filter.label}`,
-                      as: 'value',
-                      cond: {
-                        $and: [{ $ne: ['$$value', null] }, { $ne: ['$$value', ''] }],
-                      },
-                    },
-                  },
-                ];
-              })
-            ),
-          },
-          {
-            $addFields: Object.fromEntries(
-              relevantFilterConfig.map(filter => {
-                return [
-                  filter.label,
-                  {
-                    $reduce: {
-                      input: `$${filter.label}`,
-                      initialValue: '',
-                      in: {
-                        $concat: [
-                          '$$value',
-                          { $cond: [{ $eq: ['$$value', ''] }, '', ';'] },
-                          '$$this',
-                        ],
-                      },
-                    },
-                  },
-                ];
-              })
-            ),
-          },
+          ...explodeFilterFieldValues(relevantFilterConfig),
           {
             $project: Object.fromEntries(
               relevantFilterConfig.map(filter => [
@@ -171,6 +194,77 @@ export const graphInputParser = z.object({
     .optional(),
   priority: z.array(z.number()).optional(),
 });
+
+export const filterConfig = async ({
+  queryContext,
+}: Omit<z.infer<typeof graphInputParser>, 'priority'>) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const config = await getProjectConfig(collectionName, project);
+  const results = await WorkItemModel.aggregate<Record<string, string[]>>([
+    {
+      $match: {
+        collectionName,
+        project,
+        stateChangeDate: inDateRange(startDate, endDate),
+      },
+    },
+    ...(config.filterWorkItemsBy
+      ? explodeFilterFieldValues(config.filterWorkItemsBy)
+      : []),
+    {
+      $group: {
+        _id: null,
+        ...(config.filterWorkItemsBy || []).reduce<Record<string, unknown>>(
+          (acc, { label }) => ({
+            ...acc,
+            [label]: { $push: `$${label}` },
+          }),
+          {}
+        ),
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        ...(config.filterWorkItemsBy || []).reduce(
+          (acc, { label }) => ({
+            ...acc,
+            [label]: {
+              $reduce: {
+                input: `$${label}`,
+                initialValue: [],
+                in: { $setUnion: ['$$value', '$$this'] },
+              },
+            },
+          }),
+          {}
+        ),
+      },
+    },
+  ]);
+
+  return Object.fromEntries(
+    Object.entries(results[0] || {})
+      .filter(([, values]) => values.length)
+      .map(([key, values]) => [key, values.sort(byString(identity))])
+  );
+};
+
+export const pageConfigInputParser = z.object({
+  queryContext: queryContextInputParser,
+});
+
+export const getPageConfig = async ({
+  queryContext,
+}: z.infer<typeof pageConfigInputParser>) => {
+  const { collectionName, project } = fromContext(queryContext);
+  const [workItemConfig, filters] = await Promise.all([
+    getAllWorkItemConfigs({ collectionName, project }),
+    filterConfig({ queryContext }),
+  ]);
+
+  return { ...workItemConfig, filters };
+};
 
 const filterStateChangesMatching = (stages: string[]) => ({
   $filter: {
@@ -397,18 +491,10 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
     groupName: string;
     workItemIds: number[];
   }>([
-    { $match: { collectionName, workItemType } },
+    { $match: { collectionName, project, workItemType } },
     {
       $addFields: {
-        stateChanges: {
-          $filter: {
-            input: '$stateChanges',
-            as: 'state',
-            cond: {
-              $in: ['$$state.state', workItemConfig.endStates],
-            },
-          },
-        },
+        stateChanges: filterStateChangesMatching(workItemConfig.endStates),
       },
     },
     { $unwind: '$stateChanges' },
@@ -451,20 +537,11 @@ export const getWipTrendGraphDataFor =
       { $match: { collectionName, workItemType } },
       {
         $addFields: {
-          startStateChanges: {
-            $filter: {
-              input: '$stateChanges',
-              as: 'state',
-              cond: {
-                $in: [
-                  '$$state.state',
-                  stateType === 'startStates'
-                    ? workItemConfig.startStates
-                    : workItemConfig.endStates,
-                ],
-              },
-            },
-          },
+          startStateChanges: filterStateChangesMatching(
+            stateType === 'startStates'
+              ? workItemConfig.startStates
+              : workItemConfig.endStates
+          ),
         },
       },
       { $unwind: '$stateChanges' },
