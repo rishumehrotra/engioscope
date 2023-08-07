@@ -15,7 +15,7 @@ const xAxisLabelWidth = 100;
 const axisOverhang = 0;
 const numberOfHorizontalGridLines = 5;
 const numberOfVerticalGridLines = 6;
-const hoverBubbleWidth = 360;
+const hoverBubbleWidth = 200;
 
 const hoverBubbleMaxHeight = (height * 2) / 3;
 
@@ -240,7 +240,16 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
         y={0}
         width={crosshairWidth}
         height={height - xAxisBottomPadding}
-        fill="rgba(51, 170, 250, 0.2)"
+        fill="none"
+        data-tooltip-id="react-tooltip-id"
+        data-tooltip-html={renderIndex === null ? null : contents(renderIndex)}
+      />
+      <line
+        x1={0}
+        y1={0}
+        x2={0}
+        y2={height - xAxisBottomPadding}
+        stroke="rgba(0,0,0,0.07)"
       />
       <foreignObject
         x={-1 * (hoverBubbleWidth / 2)}
@@ -250,7 +259,9 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
         overflow="visible"
       >
         {/* This div is needed for the useCrosshair hook */}
-        <div>{renderIndex === null ? null : contents(renderIndex)}</div>
+        <div className="bg-black rounded-md text-theme-base-inverted py-2 px-4">
+          {renderIndex === null ? null : contents(renderIndex)}
+        </div>
       </foreignObject>
     </g>
   );

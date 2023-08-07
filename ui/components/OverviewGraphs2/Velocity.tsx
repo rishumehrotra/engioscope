@@ -5,7 +5,12 @@ import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
-import { prettyStates, lineColor, useMergeWithConfig } from './utils.js';
+import {
+  prettyStates,
+  lineColor,
+  useMergeWithConfig,
+  graphHoverTooltip,
+} from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
 
 const Velocity = () => {
@@ -71,6 +76,12 @@ const Velocity = () => {
                     lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={num}
+                    crosshairBubble={graphHoverTooltip(
+                      linesForGraph,
+                      prop('countsByWeek'),
+                      prop('count'),
+                      num
+                    )}
                   />
                 );
               }}

@@ -7,6 +7,7 @@ import type {
   CountResponse,
   DateDiffResponse,
 } from '../../../backend/models/workitems2.js';
+import { noGroup } from '../../../shared/work-item-utils.js';
 
 export const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -46,4 +47,40 @@ export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
       })
       .filter(exists);
   }, [data, pageConfig.data?.workItemsConfig]);
+};
+
+export const graphHoverTooltip = <
+  T extends { groupName: string },
+  U extends { weekIndex: number },
+>(
+  data: T[],
+  subArray: (x: T) => U[],
+  subField: (x: U) => number,
+  formatter: (x: number) => string
+) => {
+  return (index: number) => {
+    return (
+      <ul className="text-sm grid grid-cols-[fit-content_1fr]">
+        {data
+          .reduce<{ groupName: string; count?: number }[]>((acc, line) => {
+            const match = subArray(line).find(w => w.weekIndex === index);
+
+            if (match) {
+              acc.push({ groupName: line.groupName, count: subField(match) });
+            }
+            return acc;
+          }, [])
+          .map(item => (
+            <li key={item.groupName} className="flex items-center">
+              <span
+                className="inline-block w-3 h-3 rounded-full mr-2"
+                style={{ background: lineColor(item.groupName) }}
+              />{' '}
+              {item.groupName === noGroup ? '' : item.groupName}
+              <span className="inline-block ml-2">{formatter(item.count || 0)}</span>
+            </li>
+          ))}
+      </ul>
+    );
+  };
 };
