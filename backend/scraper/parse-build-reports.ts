@@ -1,7 +1,7 @@
-import { parse as parseHtml } from 'node-html-parser';
-import { decode } from 'html-entities';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
+import { parse as parseHtml } from 'node-html-parser';
+import { decode } from 'html-entities';
 import { glob } from 'glob';
 import { normalizeBranchName } from '../utils.js';
 import { exists } from '../../shared/utils.js';

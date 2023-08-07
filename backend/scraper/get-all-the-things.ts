@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
-import chalk from 'chalk';
-import debug from 'debug';
-import { tap, zip } from 'rambda';
-import mongoose from 'mongoose';
 import { promisify } from 'node:util';
 import { exec as cpsExec } from 'node:child_process';
 import { rename } from 'node:fs/promises';
 import { join } from 'node:path';
+import chalk from 'chalk';
+import debug from 'debug';
+import { tap, zip } from 'rambda';
+import mongoose from 'mongoose';
 import writeToFile, {
   writeChangeProgramFile,
   writeSummaryMetricsFile,

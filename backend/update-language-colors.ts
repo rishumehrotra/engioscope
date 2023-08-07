@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
-import yaml from 'yaml';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
+import fetch from 'node-fetch';
+import yaml from 'yaml';
 import { dirname } from './utils.js';
 
 const run = async () => {

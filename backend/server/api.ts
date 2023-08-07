@@ -1,6 +1,6 @@
-import Router from 'express-promise-router';
 import { join } from 'node:path';
 import { promises as fs, createReadStream } from 'node:fs';
+import Router from 'express-promise-router';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';

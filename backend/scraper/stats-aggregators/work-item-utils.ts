@@ -1,5 +1,5 @@
-import md5 from 'md5';
 import { URL } from 'node:url';
+import md5 from 'md5';
 import type { WorkItem, WorkItemType } from '../types-azure.js';
 
 const iconColorCache = new Map<string, string>();

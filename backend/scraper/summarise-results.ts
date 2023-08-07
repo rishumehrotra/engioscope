@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import {
   always,
   anyPass,
@@ -12,8 +14,6 @@ import {
   subtract,
   T,
 } from 'rambda';
-import { join } from 'node:path';
-import { readFile } from 'node:fs/promises';
 import type {
   Overview,
   ProjectOverviewAnalysis,

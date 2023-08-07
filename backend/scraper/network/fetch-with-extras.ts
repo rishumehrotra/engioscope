@@ -1,9 +1,9 @@
+import https from 'node:https';
+import { constants } from 'node:crypto';
 import AbortController from 'abort-controller';
 import type { RequestInfo, RequestInit } from 'node-fetch';
 import fetch from 'node-fetch';
-import https from 'node:https';
 import pLimit from 'p-limit';
-import { constants } from 'node:crypto';
 import { HTTPError } from './http-error.js';
 
 const limit = pLimit(35);

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { join } from 'node:path';
+import { promises as fs } from 'node:fs';
 import yargs from 'yargs';
 import chalk from 'chalk';
-import { promises as fs } from 'node:fs';
 import getAllTheThings from './scraper/get-all-the-things.js';
 import startServer from './server/express.js';
 import { doesFileExist } from './utils.js';

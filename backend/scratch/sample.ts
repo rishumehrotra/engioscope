@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import mongoose from 'mongoose';
 import { readFileSync } from 'node:fs';
+import mongoose from 'mongoose';
 import { getConfig, setConfig } from '../config.js';
 import parseConfig from '../scraper/parse-config.js';
 

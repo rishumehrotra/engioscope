@@ -1,10 +1,10 @@
-import type { Response } from 'node-fetch';
 import { createWriteStream, createReadStream, promises as fs } from 'node:fs';
 import readline from 'node:readline';
 import { pipeline, Readable } from 'node:stream';
 import { promisify } from 'node:util';
-import debug from 'debug';
 import { join } from 'node:path';
+import debug from 'debug';
+import type { Response } from 'node-fetch';
 import rimraf from '@zkochan/rimraf';
 import { last } from 'rambda';
 import { doesFileExist, retry } from '../../utils.js';

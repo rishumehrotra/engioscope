@@ -3,10 +3,10 @@
 /// <reference path="../node_modules/@types/node/fs.d.ts" />
 
 import { promises as fs } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import ms from 'ms';
 import { allPass, compose, not, range } from 'rambda';
 import AL from 'await-lock';
-import { fileURLToPath } from 'node:url';
 import type { ParsedConfig } from './scraper/parse-config.js';
 import { HTTPError } from './scraper/network/http-error.js';
 import { oneDayInMs } from '../shared/utils.js';
