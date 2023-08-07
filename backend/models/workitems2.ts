@@ -133,6 +133,8 @@ const filterByFields = (
   priority?: number[],
   workItemIdField = '$_id'
 ): PipelineStage[] => {
+  if (!filterInput && !priority) return [];
+
   if (!filterConfig) return [];
   if (!filterInput) return [];
 
@@ -153,30 +155,18 @@ const filterByFields = (
               ...(priority ? { priority: { $in: priority } } : {}),
             },
           },
-          ...explodeFilterFieldValues(relevantFilterConfig),
-          {
-            $project: Object.fromEntries(
-              relevantFilterConfig.map(filter => [
-                filter.label,
+          ...(filterConfig && filterInput
+            ? [
+                ...explodeFilterFieldValues(relevantFilterConfig),
                 {
-                  $filter: {
-                    input: { $split: [`$${filter.label}`, ';'] },
-                    as: 'items',
-                    cond: { $ne: ['$$items', ''] },
+                  $match: {
+                    $and: filterInput.map(filter => ({
+                      [`${filter.label}`]: { $in: filter.values },
+                    })),
                   },
                 },
-              ])
-            ),
-          },
-          {
-            $match: {
-              $and: filterInput.map(filter => ({
-                $or: filter.values.map(val => ({
-                  [`${filter.label}`]: val,
-                })),
-              })),
-            },
-          },
+              ]
+            : []),
         ],
         as: 'filterFieldValues',
       },
