@@ -496,7 +496,7 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
 
   return WorkItemStateChangesModel.aggregate<{
     groupName: string;
-    workItemIds: number[];
+    count: number;
   }>([
     { $match: { collectionName, project, workItemType } },
     {
@@ -520,8 +520,8 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
         workItemIds: { $addToSet: '$_id' },
       },
     },
-    { $addFields: { groupName: '$_id' } },
-    { $unset: '_id' },
+    { $addFields: { groupName: '$_id', count: { $size: '$workItemIds' } } },
+    { $unset: ['_id', 'workItemIds'] },
   ]);
 };
 
@@ -538,13 +538,13 @@ export const getWipTrendGraphDataFor =
       groupName: string;
       workItemIdsByWeek: {
         weekIndex: number;
-        workItemIds: number[];
+        count: number;
       }[];
     }>([
       { $match: { collectionName, workItemType } },
       {
         $addFields: {
-          startStateChanges: filterStateChangesMatching(
+          stateChanges: filterStateChangesMatching(
             stateType === 'startStates'
               ? workItemConfig.startStates
               : workItemConfig.endStates
@@ -574,7 +574,7 @@ export const getWipTrendGraphDataFor =
           workItemIdsByWeek: {
             $push: {
               weekIndex: '$_id.weekIndex',
-              workItemIds: '$workItemIds',
+              count: { $size: '$workItemIds' },
             },
           },
         },
@@ -631,6 +631,23 @@ export const getWipTrendGraphData = async ({
     ])
   );
 
+  console.log('groups', JSON.stringify(groups, null, 2));
+
+  console.log(
+    'getWipTrendGraphDataBeforeStartDate',
+    JSON.stringify(wipTrendGraphDataBeforeStartDate, null, 2)
+  );
+
+  console.log(
+    'getWipTrendGraphDataForStartStates',
+    JSON.stringify(wipTrendGraphDataForStartStates, null, 2)
+  );
+
+  console.log(
+    'getWipTrendGraphDataForEndStates',
+    JSON.stringify(wipTrendGraphDataForEndStates, null, 2)
+  );
+
   return groups.map(groupName => {
     const wipTrendGraphDataBeforeStartDateForGroup =
       wipTrendGraphDataBeforeStartDate?.find(x => x.groupName === groupName);
@@ -643,33 +660,36 @@ export const getWipTrendGraphData = async ({
       x => x.groupName === groupName
     );
 
-    const workItemIdsSet = new Set(
-      wipTrendGraphDataBeforeStartDateForGroup?.workItemIds || []
-    );
+    const beforeStartDateWIPCount = wipTrendGraphDataBeforeStartDateForGroup?.count || 0;
 
     const groupWeeklyGraph = range(0, numberOfIntervals).map(weekIndex => {
       return {
         weekIndex,
-        workInProgressIds:
+        workInProgressCount:
           wipTrendGraphDataForStartStatesForGroup?.workItemIdsByWeek?.find(
             x => x.weekIndex === weekIndex
-          )?.workItemIds || [],
-        workDoneIds:
+          )?.count || 0,
+        workDoneCount:
           wipTrendGraphDataForEndStatesForGroup?.workItemIdsByWeek?.find(
             x => x.weekIndex === weekIndex
-          )?.workItemIds || [],
+          )?.count || 0,
       };
     });
 
-    const groupWeeklyGraphWithWorkInProgressIds = groupWeeklyGraph.map(week => {
-      week.workInProgressIds.forEach(id => workItemIdsSet.add(id));
-      week.workDoneIds.forEach(id => workItemIdsSet.delete(id));
+    const groupWeeklyGraphWithWorkInProgressIds = groupWeeklyGraph.reduce<
+      {
+        weekIndex: number;
+        count: number;
+      }[]
+    >((acc, curr) => {
+      const { workInProgressCount, workDoneCount, weekIndex } = curr;
 
-      return {
-        weekIndex: week.weekIndex,
-        count: [...workItemIdsSet].length,
-      };
-    });
+      const updatedCount = acc.length
+        ? (acc.at(-1)?.count || 0) + workInProgressCount - workDoneCount
+        : beforeStartDateWIPCount + workInProgressCount - workDoneCount;
+
+      return [...acc, { weekIndex, count: updatedCount }];
+    }, []);
 
     return {
       groupName,
