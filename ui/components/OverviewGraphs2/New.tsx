@@ -9,7 +9,7 @@ import {
   prettyStates,
   lineColor,
   useMergeWithConfig,
-  graphHoverTooltip,
+  groupHoverTooltipForCounts,
 } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
 
@@ -79,12 +79,7 @@ const New = () => {
                     lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={num}
-                    crosshairBubble={graphHoverTooltip(
-                      linesForGraph,
-                      prop('countsByWeek'),
-                      prop('count'),
-                      num
-                    )}
+                    crosshairBubble={groupHoverTooltipForCounts(linesForGraph)}
                   />
                 );
               }}

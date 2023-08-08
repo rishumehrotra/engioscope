@@ -57,8 +57,10 @@ export const isWIPInTimeRange =
 export const isWIP = (workItemTimes: WorkItemTimesGetter, statesToIgnore: string[]) =>
   isWIPInTimeRange(workItemTimes, statesToIgnore)(T);
 
-export const isBug = (workItemType: UIWorkItemType) =>
-  workItemType.name[0].toLowerCase().includes('bug');
+export const isBugLike = (workItemType: string) =>
+  workItemType.toLowerCase().includes('bug');
+
+export const isBug = (workItemType: UIWorkItemType) => isBugLike(workItemType.name[0]);
 
 export const isNewInTimeRange =
   (workItemType: (wit: string) => UIWorkItemType, workItemTimes: WorkItemTimesGetter) =>

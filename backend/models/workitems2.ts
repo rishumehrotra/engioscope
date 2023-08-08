@@ -1,14 +1,14 @@
 import type { PipelineStage } from 'mongoose';
 import { z } from 'zod';
-import { filter, identity, map, prop, range } from 'rambda';
-import { byString } from 'sort-lib';
+import { filter, identity, map, prop, range, sum } from 'rambda';
+import { byNum, byString, desc } from 'sort-lib';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
 import { fromContext, queryContextInputParser, weekIndexValue } from './utils.js';
-import { noGroup } from '../../shared/work-item-utils.js';
-import { exists } from '../../shared/utils.js';
+import { isBugLike, noGroup } from '../../shared/work-item-utils.js';
+import { divide, exists } from '../../shared/utils.js';
 import { createIntervals } from '../utils.js';
 import { WorkItemModel } from './mongoose-models/WorkItem.js';
 import { getWorkItemConfig as getAllWorkItemConfigs } from './work-item-types.js';
@@ -359,12 +359,15 @@ export function getGraphDataForWorkItem(
 export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
   return async ({ queryContext, workItemType, filters, priority }: GraphArgs) => {
     const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-    const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+    const { filterWorkItemsBy, environments } = await getProjectConfig(
+      collectionName,
+      project
+    );
     const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
 
     if (!workItemConfig) return;
 
-    return WorkItemStateChangesModel.aggregate([
+    const result = await WorkItemStateChangesModel.aggregate([
       { $match: { collectionName, project, workItemType } },
       ...filterOutIfInIgnoredState(workItemConfig.ignoreStates),
       {
@@ -420,6 +423,30 @@ export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
       { $addFields: { groupName: '$_id' } },
       { $unset: '_id' },
     ]);
+
+    if (isBugLike(workItemType) && environments) {
+      const env = environments.map(e => e.toLocaleLowerCase());
+      return result.sort(
+        byNum((x: CountResponse | DateDiffResponse) =>
+          env.indexOf(x.groupName.toLocaleLowerCase())
+        )
+      );
+    }
+
+    return result.sort(
+      desc(
+        byNum(x => {
+          if (args.type === 'count') {
+            return sum((x as CountResponse).countsByWeek.map(x => x.count));
+          }
+
+          return divide(
+            sum((x as DateDiffResponse).countsByWeek.map(x => x.totalDuration)),
+            sum((x as DateDiffResponse).countsByWeek.map(x => x.count))
+          ).getOr(0);
+        })
+      )
+    );
   };
 }
 

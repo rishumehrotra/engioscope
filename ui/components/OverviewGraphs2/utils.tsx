@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { createPalette } from '../../helpers/utils.js';
+import { createPalette, num, prettyMS } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import { exists } from '../../../shared/utils.js';
@@ -49,25 +49,15 @@ export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
   }, [data, pageConfig.data?.workItemsConfig]);
 };
 
-export const graphHoverTooltip = <
-  T extends { groupName: string },
-  U extends { weekIndex: number },
->(
-  data: T[],
-  subArray: (x: T) => U[],
-  subField: (x: U) => number,
-  formatter: (x: number) => string
-) => {
+export const groupHoverTooltipForCounts = (data: CountResponse[]) => {
   return (index: number) => {
     return (
       <ul className="text-sm grid grid-cols-[fit-content_1fr]">
         {data
-          .reduce<{ groupName: string; count?: number }[]>((acc, line) => {
-            const match = subArray(line).find(w => w.weekIndex === index);
-
-            if (match) {
-              acc.push({ groupName: line.groupName, count: subField(match) });
-            }
+          .reduce<{ groupName: string; count: number }[]>((acc, line) => {
+            const match = line.countsByWeek.find(w => w.weekIndex === index);
+            if (!match) return acc;
+            acc.push({ groupName: line.groupName, count: match.count });
             return acc;
           }, [])
           .map(item => (
@@ -77,7 +67,36 @@ export const graphHoverTooltip = <
                 style={{ background: lineColor(item.groupName) }}
               />{' '}
               {item.groupName === noGroup ? '' : item.groupName}
-              <span className="inline-block ml-2">{formatter(item.count || 0)}</span>
+              <span className="inline-block ml-2">{num(item.count || 0)}</span>
+            </li>
+          ))}
+      </ul>
+    );
+  };
+};
+
+export const groupHoverTooltipForDateDiff = (data: DateDiffResponse[]) => {
+  return (index: number) => {
+    return (
+      <ul className="text-sm grid grid-cols-[fit-content_1fr]">
+        {data
+          .reduce<{ groupName: string; count: number }[]>((acc, line) => {
+            const match = line.countsByWeek.find(w => w.weekIndex === index);
+            if (!match) return acc;
+            acc.push({
+              groupName: line.groupName,
+              count: match.totalDuration / match.count,
+            });
+            return acc;
+          }, [])
+          .map(item => (
+            <li key={item.groupName} className="flex items-center">
+              <span
+                className="inline-block w-3 h-3 rounded-full mr-2"
+                style={{ background: lineColor(item.groupName) }}
+              />{' '}
+              {item.groupName === noGroup ? '' : item.groupName}
+              <span className="inline-block ml-2">{prettyMS(item.count || 0)}</span>
             </li>
           ))}
       </ul>

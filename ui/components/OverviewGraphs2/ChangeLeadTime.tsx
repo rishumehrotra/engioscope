@@ -5,7 +5,12 @@ import { trpc } from '../../helpers/trpc.js';
 import { prettyMS } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
-import { prettyStates, lineColor, useMergeWithConfig } from './utils.js';
+import {
+  prettyStates,
+  lineColor,
+  useMergeWithConfig,
+  groupHoverTooltipForDateDiff,
+} from './utils.js';
 import { divide } from '../../../shared/utils.js';
 import useGraphArgs from './useGraphArgs.js';
 
@@ -89,6 +94,7 @@ const ChangeLoadTime = () => {
                     lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={prettyMS}
+                    crosshairBubble={groupHoverTooltipForDateDiff(linesForGraph)}
                   />
                 );
               }}
