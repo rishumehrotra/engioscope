@@ -259,9 +259,7 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
         overflow="visible"
       >
         {/* This div is needed for the useCrosshair hook */}
-        <div className="bg-black rounded-md text-theme-base-inverted py-2 px-4">
-          {renderIndex === null ? null : contents(renderIndex)}
-        </div>
+        <div>{renderIndex === null ? null : contents(renderIndex)}</div>
       </foreignObject>
     </g>
   );

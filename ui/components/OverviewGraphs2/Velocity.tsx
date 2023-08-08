@@ -76,7 +76,7 @@ const Velocity = () => {
                     lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={num}
-                    crosshairBubble={groupHoverTooltipForCounts(linesForGraph)}
+                    crosshairBubble={groupHoverTooltipForCounts(config, linesForGraph)}
                   />
                 );
               }}

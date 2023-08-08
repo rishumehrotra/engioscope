@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
-import { createPalette, num, prettyMS } from '../../helpers/utils.js';
+import { propEq } from 'rambda';
+import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
+import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import { exists } from '../../../shared/utils.js';
+import { divide, exists } from '../../../shared/utils.js';
 import type {
   CountResponse,
   DateDiffResponse,
@@ -49,57 +51,101 @@ export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
   }, [data, pageConfig.data?.workItemsConfig]);
 };
 
-export const groupHoverTooltipForCounts = (data: CountResponse[]) => {
+export type WorkItemConfig = NonNullable<
+  RouterClient['workItems']['getPageConfig']['workItemsConfig']
+>[number];
+
+export const groupHoverTooltipForCounts = (
+  workItemConfig: WorkItemConfig,
+  data: CountResponse[]
+) => {
   return (index: number) => {
+    const groups = data.reduce<{ groupName: string; count: number }[]>((acc, line) => {
+      const match = line.countsByWeek.find(propEq('weekIndex', index));
+      if (!match) return acc;
+      acc.push({ groupName: line.groupName, count: match.count });
+      return acc;
+    }, []);
+
+    if (!groups.length) return null;
+
     return (
-      <ul className="text-sm grid grid-cols-[fit-content_1fr]">
-        {data
-          .reduce<{ groupName: string; count: number }[]>((acc, line) => {
-            const match = line.countsByWeek.find(w => w.weekIndex === index);
-            if (!match) return acc;
-            acc.push({ groupName: line.groupName, count: match.count });
-            return acc;
-          }, [])
-          .map(item => (
+      <div className="bg-theme-backdrop bg-opacity-90 rounded-md text-theme-base-inverted py-2 px-4">
+        <div className="flex gap-2 items-center mb-1">
+          <img
+            src={workItemConfig.icon}
+            alt={`Iconn for ${workItemConfig.name[1]}`}
+            className="w-3"
+          />
+          <span className="font-semibold">{workItemConfig.name[1]}</span>
+        </div>
+        <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
+          {groups.map(item => (
             <li key={item.groupName} className="flex items-center">
               <span
                 className="inline-block w-3 h-3 rounded-full mr-2"
                 style={{ background: lineColor(item.groupName) }}
               />{' '}
-              {item.groupName === noGroup ? '' : item.groupName}
+              {item.groupName === noGroup
+                ? minPluralise(item.count, ...workItemConfig.name)
+                : item.groupName}
               <span className="inline-block ml-2">{num(item.count || 0)}</span>
             </li>
           ))}
-      </ul>
+        </ul>
+      </div>
     );
   };
 };
 
-export const groupHoverTooltipForDateDiff = (data: DateDiffResponse[]) => {
+export const groupHoverTooltipForDateDiff = (
+  workItemConfig: WorkItemConfig,
+  data: DateDiffResponse[]
+) => {
   return (index: number) => {
+    const groups = data.reduce<
+      { groupName: string; totalDuration: number; count: number }[]
+    >((acc, line) => {
+      const match = line.countsByWeek.find(w => w.weekIndex === index);
+      if (!match) return acc;
+      acc.push({
+        groupName: line.groupName,
+        totalDuration: match.totalDuration,
+        count: match.count,
+      });
+      return acc;
+    }, []);
+
+    if (!groups.length) return null;
+
     return (
-      <ul className="text-sm grid grid-cols-[fit-content_1fr]">
-        {data
-          .reduce<{ groupName: string; count: number }[]>((acc, line) => {
-            const match = line.countsByWeek.find(w => w.weekIndex === index);
-            if (!match) return acc;
-            acc.push({
-              groupName: line.groupName,
-              count: match.totalDuration / match.count,
-            });
-            return acc;
-          }, [])
-          .map(item => (
+      <div className="bg-black rounded-md text-theme-base-inverted py-2 px-4">
+        <div className="flex gap-2 items-center mb-1">
+          <img
+            src={workItemConfig.icon}
+            alt={`Iconn for ${workItemConfig.name[1]}`}
+            className="w-3"
+          />
+          <span className="font-semibold">{workItemConfig.name[1]}</span>
+        </div>
+        <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
+          {groups.map(item => (
             <li key={item.groupName} className="flex items-center">
               <span
                 className="inline-block w-3 h-3 rounded-full mr-2"
                 style={{ background: lineColor(item.groupName) }}
               />{' '}
-              {item.groupName === noGroup ? '' : item.groupName}
-              <span className="inline-block ml-2">{prettyMS(item.count || 0)}</span>
+              {item.groupName === noGroup
+                ? minPluralise(item.count, ...workItemConfig.name)
+                : item.groupName}{' '}
+              {item.count}
+              <span className="inline-block ml-2">
+                {divide(item.totalDuration, item.count).map(prettyMS).getOr('-')}
+              </span>
             </li>
           ))}
-      </ul>
+        </ul>
+      </div>
     );
   };
 };

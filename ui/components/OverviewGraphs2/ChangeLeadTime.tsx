@@ -94,7 +94,7 @@ const ChangeLoadTime = () => {
                     lineLabel={x => x.groupName}
                     xAxisLabel={x => String(x.weekIndex)}
                     yAxisLabel={prettyMS}
-                    crosshairBubble={groupHoverTooltipForDateDiff(linesForGraph)}
+                    crosshairBubble={groupHoverTooltipForDateDiff(config, linesForGraph)}
                   />
                 );
               }}
