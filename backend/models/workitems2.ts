@@ -350,6 +350,113 @@ export type DateDiffResponse = {
 
 type GraphArgs = z.infer<typeof graphInputParser> & { workItemType: string };
 
+const workItemDataStages = async (
+  args: CountArgs | DateDiffArgs,
+  { queryContext, workItemType, filters, priority }: GraphArgs,
+  workItemConfig: WorkItemConfig
+): Promise<PipelineStage[]> => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+
+  return [
+    { $match: { collectionName, project, workItemType } },
+    ...filterOutIfInIgnoredState(workItemConfig.ignoreStates),
+    {
+      $addFields: {
+        stateChanges: filterStateChangesMatching(
+          args.type === 'count'
+            ? args.states(workItemConfig)
+            : [...args.startStates(workItemConfig), ...args.endStates(workItemConfig)]
+        ),
+      },
+    },
+    ...(args.type === 'datediff'
+      ? addDateDiffField(args.startStates(workItemConfig), args.endStates(workItemConfig))
+      : []),
+    { $unwind: '$stateChanges' },
+    {
+      $group: {
+        _id: '$id',
+        ...(args.type === 'count'
+          ? { date: { $min: '$stateChanges.date' } }
+          : {
+              date: { $min: '$dateCompleted' },
+              duration: { $first: '$duration' },
+            }),
+      },
+    },
+    { $match: { date: inDateRange(startDate, endDate) } },
+    ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
+    ...addGroupNameField(collectionName, workItemConfig.groupByField),
+  ];
+};
+
+export type CountWorkItems = {
+  date: Date;
+  groupName: string;
+  title: string;
+  state: string;
+  url: string;
+};
+
+export type DateDiffWorkItems = {
+  groupName: string;
+  countsByWeek: {
+    weekIndex: number;
+    count: number;
+    totalDuration: number;
+  }[];
+};
+
+export function getDrawerDataForWorkItem(
+  args: CountArgs
+): (args: GraphArgs) => Promise<CountWorkItems[]>;
+export function getDrawerDataForWorkItem(
+  args: DateDiffArgs
+): (args: GraphArgs) => Promise<DateDiffWorkItems[]>;
+export function getDrawerDataForWorkItem(args: CountArgs | DateDiffArgs) {
+  return async (graphArgs: GraphArgs) => {
+    const { queryContext, workItemType } = graphArgs;
+    const { collectionName, project } = fromContext(queryContext);
+    const [workItemConfig] = await Promise.all([
+      // getProjectConfig(collectionName, project),
+      getWorkItemConfig(collectionName, project, workItemType),
+    ]);
+
+    if (!workItemConfig) return;
+
+    return WorkItemStateChangesModel.aggregate([
+      ...(await workItemDataStages(args, graphArgs, workItemConfig)),
+      {
+        $lookup: {
+          from: 'workitems',
+          let: { workItemId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                collectionName,
+                $expr: { $eq: ['$id', '$$workItemId'] },
+              },
+            },
+            { $project: { title: 1, url: 1, state: 1 } },
+          ],
+          as: 'details',
+        },
+      },
+      { $unwind: '$details' },
+      {
+        $addFields: {
+          title: '$details.title',
+          state: '$details.state',
+          url: '$details.url',
+        },
+      },
+      { $unset: 'details' },
+      { $project: { _id: 0 } },
+    ]);
+  };
+}
+
 export function getGraphDataForWorkItem(
   args: CountArgs
 ): (args: GraphArgs) => Promise<CountResponse[]>;
@@ -357,49 +464,18 @@ export function getGraphDataForWorkItem(
   args: DateDiffArgs
 ): (args: GraphArgs) => Promise<DateDiffResponse[]>;
 export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
-  return async ({ queryContext, workItemType, filters, priority }: GraphArgs) => {
-    const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-    const { filterWorkItemsBy, environments } = await getProjectConfig(
-      collectionName,
-      project
-    );
-    const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+  return async (graphArgs: GraphArgs) => {
+    const { queryContext, workItemType } = graphArgs;
+    const { collectionName, project, startDate } = fromContext(queryContext);
+    const [{ environments }, workItemConfig] = await Promise.all([
+      getProjectConfig(collectionName, project),
+      getWorkItemConfig(collectionName, project, workItemType),
+    ]);
 
     if (!workItemConfig) return;
 
     const result = await WorkItemStateChangesModel.aggregate([
-      { $match: { collectionName, project, workItemType } },
-      ...filterOutIfInIgnoredState(workItemConfig.ignoreStates),
-      {
-        $addFields: {
-          stateChanges: filterStateChangesMatching(
-            args.type === 'count'
-              ? args.states(workItemConfig)
-              : [...args.startStates(workItemConfig), ...args.endStates(workItemConfig)]
-          ),
-        },
-      },
-      ...(args.type === 'datediff'
-        ? addDateDiffField(
-            args.startStates(workItemConfig),
-            args.endStates(workItemConfig)
-          )
-        : []),
-      { $unwind: '$stateChanges' },
-      {
-        $group: {
-          _id: '$id',
-          ...(args.type === 'count'
-            ? { date: { $min: '$stateChanges.date' } }
-            : {
-                date: { $min: '$dateCompleted' },
-                duration: { $first: '$duration' },
-              }),
-        },
-      },
-      { $match: { date: inDateRange(startDate, endDate) } },
-      ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
-      ...addGroupNameField(collectionName, workItemConfig.groupByField),
+      ...(await workItemDataStages(args, graphArgs, workItemConfig)),
       {
         $group: {
           _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
