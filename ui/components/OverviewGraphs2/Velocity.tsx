@@ -15,7 +15,7 @@ import useGraphArgs from './useGraphArgs.js';
 
 const Velocity = () => {
   const graphArgs = useGraphArgs();
-  const graph = trpc.workItems.getOverviewGraph.useQuery(graphArgs);
+  const graph = trpc.workItems.getVelocityGraph.useQuery(graphArgs);
   const graphWithConfig = useMergeWithConfig(graph.data);
   const gridTemplateAreas = useGridTemplateAreas();
 

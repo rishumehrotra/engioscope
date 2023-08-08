@@ -14,10 +14,15 @@ import {
   getChangeLoadTimeGraph,
   getCycleTimeGraph,
   getNewGraph,
-  getOverviewGraph,
+  getVelocityGraph,
   getPageConfig,
   graphInputParser,
   pageConfigInputParser,
+  getNewWorkItems,
+  graphArgsInputParser,
+  getVelocityWorkItems,
+  getCycleTimeWorkItems,
+  getChangeLeadTimeWorkItems,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -47,13 +52,26 @@ export default t.router({
     .query(passInputTo(workItemForTooltip)),
 
   getNewGraph: t.procedure.input(graphInputParser).query(passInputTo(getNewGraph)),
-  getOverviewGraph: t.procedure
+  getVelocityGraph: t.procedure
     .input(graphInputParser)
-    .query(passInputTo(getOverviewGraph)),
+    .query(passInputTo(getVelocityGraph)),
   getCycleTimeGraph: t.procedure
     .input(graphInputParser)
     .query(passInputTo(getCycleTimeGraph)),
   getChangeLeadTimeGraph: t.procedure
     .input(graphInputParser)
     .query(passInputTo(getChangeLoadTimeGraph)),
+
+  getNewWorkItems: t.procedure
+    .input(graphArgsInputParser)
+    .query(passInputTo(getNewWorkItems)),
+  getVelocityWorkItems: t.procedure
+    .input(graphArgsInputParser)
+    .query(passInputTo(getVelocityWorkItems)),
+  getCycleTimeWorkItems: t.procedure
+    .input(graphArgsInputParser)
+    .query(passInputTo(getCycleTimeWorkItems)),
+  getChangeLeadTimeWorkItems: t.procedure
+    .input(graphArgsInputParser)
+    .query(passInputTo(getChangeLeadTimeWorkItems)),
 });

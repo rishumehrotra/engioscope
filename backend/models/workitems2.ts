@@ -348,7 +348,8 @@ export type DateDiffResponse = {
   }[];
 };
 
-type GraphArgs = z.infer<typeof graphInputParser> & { workItemType: string };
+export const graphArgsInputParser = graphInputParser.extend({ workItemType: z.string() });
+type GraphArgs = z.infer<typeof graphArgsInputParser>;
 
 const workItemDataStages = async (
   args: CountArgs | DateDiffArgs,
@@ -527,25 +528,25 @@ export function getGraphDataForWorkItem(args: CountArgs | DateDiffArgs) {
 }
 
 const graphTypes = {
-  new: getGraphDataForWorkItem({
+  new: {
     type: 'count',
     states: prop('startStates'),
-  }),
-  velocity: getGraphDataForWorkItem({
+  },
+  velocity: {
     type: 'count',
     states: prop('endStates'),
-  }),
-  cycleTime: getGraphDataForWorkItem({
+  },
+  cycleTime: {
     type: 'datediff',
     startStates: prop('startStates'),
     endStates: prop('endStates'),
-  }),
-  changeLeadTime: getGraphDataForWorkItem({
+  },
+  changeLeadTime: {
     type: 'datediff',
     startStates: x => x.devCompletionStates || [],
     endStates: prop('endStates'),
-  }),
-};
+  } as DateDiffArgs,
+} as const;
 
 export const getGraphOfType =
   <T extends CountResponse | DateDiffResponse>(
@@ -570,10 +571,23 @@ export const getGraphOfType =
     );
   };
 
-export const getNewGraph = getGraphOfType(graphTypes.new);
-export const getOverviewGraph = getGraphOfType(graphTypes.velocity);
-export const getCycleTimeGraph = getGraphOfType(graphTypes.cycleTime);
-export const getChangeLoadTimeGraph = getGraphOfType(graphTypes.changeLeadTime);
+export const getNewGraph = getGraphOfType(getGraphDataForWorkItem(graphTypes.new));
+export const getVelocityGraph = getGraphOfType(
+  getGraphDataForWorkItem(graphTypes.velocity)
+);
+export const getCycleTimeGraph = getGraphOfType(
+  getGraphDataForWorkItem(graphTypes.cycleTime)
+);
+export const getChangeLoadTimeGraph = getGraphOfType(
+  getGraphDataForWorkItem(graphTypes.changeLeadTime)
+);
+
+export const getNewWorkItems = getDrawerDataForWorkItem(graphTypes.new);
+export const getVelocityWorkItems = getDrawerDataForWorkItem(graphTypes.velocity);
+export const getCycleTimeWorkItems = getDrawerDataForWorkItem(graphTypes.cycleTime);
+export const getChangeLeadTimeWorkItems = getDrawerDataForWorkItem(
+  graphTypes.changeLeadTime
+);
 
 export const getWipTrendGraphDataBeforeStartDate = async ({
   queryContext,
