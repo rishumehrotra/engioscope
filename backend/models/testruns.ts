@@ -304,6 +304,12 @@ export const getTestsAndCoveragePipelinesForDownload = async ({
     repositoryName: x.repositoryName,
     repositoryUrl: x.repositoryUrl,
     totalTests: x.latestTest?.hasTests ? x.latestTest.totalTests : 0,
+    totalBranches: x.latestCoverage?.hasCoverage
+      ? x.latestCoverage.coverage.totalBranches
+      : 0,
+    coveredBranches: x.latestCoverage?.hasCoverage
+      ? x.latestCoverage.coverage.coveredBranches
+      : 0,
     totalCoverage: x.latestCoverage?.hasCoverage
       ? divide(
           x.latestCoverage.coverage.coveredBranches,

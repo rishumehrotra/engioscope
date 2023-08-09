@@ -140,6 +140,14 @@ const drawerDownloads = {
           value: x => x.failedTests,
         },
         {
+          title: 'Branches covered',
+          value: x => x.coveredBranches,
+        },
+        {
+          title: 'Total branches',
+          value: x => x.totalBranches,
+        },
+        {
           title: 'Coverage %',
           value: x => Number(x.totalCoverage.toFixed(0)),
         },
