@@ -1,12 +1,16 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
-import { append, filter, prop, range } from 'rambda';
+import { append, filter, prop, range, sum } from 'rambda';
 import { twJoin } from 'tailwind-merge';
 import { ExternalLink } from 'react-feather';
 import { trpc, type SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
+import { useDrawer } from '../common/Drawer.jsx';
+import type { useMergeWithConfig } from './utils.jsx';
+import { lineColor } from './utils.jsx';
+import type { CountResponse } from '../../../backend/models/workitems2.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type GraphCardProps<T extends {}> = {
@@ -21,6 +25,10 @@ type GraphCardProps<T extends {}> = {
   formatValue?: (x: number) => string | number;
   graphRenderer: (selectedGroups: string[]) => ReactNode;
   lineColor: (groupName: string) => string;
+  drawer?: (groupName: string) => {
+    heading: ReactNode;
+    children: ReactNode;
+  };
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -33,7 +41,17 @@ export const GraphCard = <T extends {}>({
   formatValue = num,
   graphRenderer,
   lineColor,
+  drawer,
 }: GraphCardProps<T>) => {
+  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
+    heading: ReactNode;
+    children: ReactNode;
+    downloadUrl?: string;
+  }>({
+    heading: 'Loading...',
+    children: 'Loading...',
+  });
   const [selectedGroups, setSelectedGroups] = useState<string[]>(
     data.map(prop('groupName'))
   );
@@ -49,8 +67,20 @@ export const GraphCard = <T extends {}>({
     [selectedGroups]
   );
 
+  const openDrawerFromGroupPill = useCallback(
+    (groupName: string) => (event: MouseEvent) => {
+      event.stopPropagation();
+      if (drawer) {
+        setAdditionalDrawerProps(drawer(groupName));
+        openDrawer();
+      }
+    },
+    [drawer, openDrawer]
+  );
+
   return (
     <div className="contents">
+      <Drawer {...drawerProps} {...additionalDrawerProps} />
       <h3 className="flex items-center gap-3" style={{ gridArea: `heading${index}` }}>
         <img
           className="w-4 h-4 inline-block"
@@ -138,14 +168,17 @@ export const GraphCard = <T extends {}>({
                     <div>{group.groupName || 'Unclassified'}</div>
                     <div className="font-medium flex items-end">
                       <span>{formatValue(combineToValue(group.countsByWeek))}</span>
-                      <button
-                        className={twJoin(
-                          'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-                          'group-focus-visible:opacity-100'
-                        )}
-                      >
-                        <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                      </button>
+                      {drawer && (
+                        <button
+                          className={twJoin(
+                            'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                            'group-focus-visible:opacity-100'
+                          )}
+                          onClick={openDrawerFromGroupPill(group.groupName)}
+                        >
+                          <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </li>
@@ -154,7 +187,7 @@ export const GraphCard = <T extends {}>({
         <div className="self-end min-h-[20rem] flex items-end justify-center">
           {graphRenderer(selectedGroups)}
         </div>
-        <div className="text-sm text-theme-helptext">Priority</div>
+        {/* <div className="text-sm text-theme-helptext">Priority</div> */}
       </div>
     </div>
   );
@@ -188,4 +221,34 @@ export const useGridTemplateAreas = () => {
       return acc;
     }, [])
     .join(' ');
+};
+
+export const graphCardPropsForCount = (
+  config: NonNullable<ReturnType<typeof useMergeWithConfig>>[number]['config'],
+  data: CountResponse[],
+  index: number
+) => ({
+  key: config.name[0],
+  index,
+  workItemConfig: config,
+  data,
+  combineToValue: (values: CountResponse['countsByWeek']) =>
+    sum(values.map(prop('count'))),
+  lineColor,
+  formatValue: num,
+});
+
+export const drawerHeading = (
+  title: string,
+  config: NonNullable<ReturnType<typeof useMergeWithConfig>>[number]['config']
+) => {
+  return (
+    <>
+      {title}
+      <span className="inline-flex text-base ml-2 font-normal text-theme-helptext items-center gap-2">
+        <img src={config.icon} className="w-4" alt={`Icon for ${config.name[1]}`} />
+        <span>{config.name[1]}</span>
+      </span>
+    </>
+  );
 };

@@ -1,10 +1,15 @@
 import React from 'react';
-import { prop, range, sum } from 'rambda';
+import { range } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
-import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
+import {
+  GraphCard,
+  drawerHeading,
+  graphCardPropsForCount,
+  useGridTemplateAreas,
+} from './GraphCard.jsx';
 import {
   prettyStates,
   lineColor,
@@ -27,21 +32,20 @@ const New = () => {
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
         {graphWithConfig?.map(({ config, data }, index) => {
           if (!config) return null;
+
           return (
             <GraphCard
-              key={config.name[0]}
-              index={index}
-              workItemConfig={config}
+              {...graphCardPropsForCount(config, data, index)}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),
                 'is considered openeed if it reached',
                 prettyStates(config.startStates),
               ].join(' ')}
-              data={data}
-              combineToValue={values => sum(values.map(prop('count')))}
-              lineColor={lineColor}
-              formatValue={num}
+              drawer={groupName => ({
+                heading: drawerHeading('New work items', config),
+                children: <div>{groupName}</div>,
+              })}
               // eslint-disable-next-line react/no-unstable-nested-components
               graphRenderer={selectedLines => {
                 const linesForGraph = data.filter(line =>

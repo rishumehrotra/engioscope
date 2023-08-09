@@ -135,13 +135,6 @@ const filterByFields = (
 ): PipelineStage[] => {
   if (!filterInput && !priority) return [];
 
-  if (!filterConfig) return [];
-  if (!filterInput) return [];
-
-  const relevantFilterConfig = filterConfig.filter(f =>
-    filterInput.some(filter => filter.label === f.label)
-  );
-
   return [
     {
       $lookup: {
@@ -157,7 +150,11 @@ const filterByFields = (
           },
           ...(filterConfig && filterInput
             ? [
-                ...explodeFilterFieldValues(relevantFilterConfig),
+                ...explodeFilterFieldValues(
+                  filterConfig.filter(f =>
+                    filterInput.some(filter => filter.label === f.label)
+                  )
+                ),
                 {
                   $match: {
                     $and: filterInput.map(filter => ({

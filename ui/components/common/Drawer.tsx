@@ -40,10 +40,10 @@ const Drawer: React.FC<DrawerProps> = ({
     <dialog
       {...dialogProps}
       className={twMerge(
-        dialogClassName,
         'w-[700px] max-w-[80%] h-screen max-h-screen m-0',
         'translate-x-full duration-200 p-0',
-        'grid grid-flow-row grid-rows-[auto_1fr]'
+        'grid grid-flow-row grid-rows-[auto_1fr]',
+        dialogClassName
       )}
       style={{ inset: 'unset', top: 0, right: 0 }}
     >
@@ -53,7 +53,7 @@ const Drawer: React.FC<DrawerProps> = ({
           'pl-4 pr-2 py-3 border-b border-theme-seperator items-center',
         ].join(' ')}
       >
-        <h1 className="font-semibold text-xl">{heading}</h1>
+        <h1 className="font-semibold text-xl flex items-center">{heading}</h1>
         <div>
           {downloadUrl ? (
             <a
