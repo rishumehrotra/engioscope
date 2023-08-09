@@ -113,11 +113,7 @@ export const getCentralTemplatePipeline = async (
   repoIds: string[],
   repoNames: string[]
 ) => {
-  console.log('repoIds', repoIds.length);
-  console.log('repoNames', repoNames.length);
-
   const { collectionName, project } = fromContext(queryContext);
-
   const centralTemplateBuildDefs = await getCentralTemplateBuildDefs(
     queryContext,
     repoNames
