@@ -323,6 +323,8 @@ const filterOutIfInIgnoredState = (ignoreStates?: string[]): PipelineStage[] => 
 type CountArgs = {
   type: 'count';
   states: (wic: WorkItemConfig) => string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dateRange?: any;
 };
 
 type DateDiffArgs = {
@@ -386,7 +388,14 @@ const workItemDataStages = async (
             }),
       },
     },
-    { $match: { date: inDateRange(startDate, endDate) } },
+    {
+      $match: {
+        date:
+          args.type === 'count' && args.dateRange
+            ? args.dateRange
+            : inDateRange(startDate, endDate),
+      },
+    },
     ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
     ...addGroupNameField(collectionName, workItemConfig.groupByField),
   ];
@@ -589,15 +598,13 @@ export const getChangeLeadTimeWorkItems = getDrawerDataForWorkItem(
   graphTypes.changeLeadTime
 );
 
-export const getWipTrendGraphDataBeforeStartDate = async ({
-  queryContext,
-  workItemType,
-  filters,
-  priority,
-}: GraphArgs) => {
-  const { collectionName, project, startDate } = fromContext(queryContext);
-  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
-  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+export const getWipTrendGraphDataBeforeStartDate = async (graphArgs: GraphArgs) => {
+  const { collectionName, project, startDate } = fromContext(graphArgs.queryContext);
+  const workItemConfig = await getWorkItemConfig(
+    collectionName,
+    project,
+    graphArgs.workItemType
+  );
 
   if (!workItemConfig) return;
 
@@ -605,22 +612,15 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
     groupName: string;
     count: number;
   }>([
-    { $match: { collectionName, project, workItemType } },
-    {
-      $addFields: {
-        stateChanges: filterStateChangesMatching(workItemConfig.endStates),
+    ...(await workItemDataStages(
+      {
+        type: 'count',
+        states: prop('endStates'),
+        dateRange: { $lt: startDate },
       },
-    },
-    { $unwind: '$stateChanges' },
-    {
-      $group: {
-        _id: '$id',
-        date: { $min: '$stateChanges.date' },
-      },
-    },
-    { $match: { date: { $lt: startDate } } },
-    ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
-    ...addGroupNameField(collectionName, workItemConfig.groupByField),
+      graphArgs,
+      workItemConfig
+    )),
     {
       $group: {
         _id: '$groupName',
@@ -633,41 +633,25 @@ export const getWipTrendGraphDataBeforeStartDate = async ({
 };
 
 export const getWipTrendGraphDataFor =
-  (stateType: 'startStates' | 'endStates') =>
-  async ({ queryContext, workItemType, filters, priority }: GraphArgs) => {
-    const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-    const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
-    const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+  (stateType: 'startStates' | 'endStates') => async (graphArgs: GraphArgs) => {
+    const { collectionName, project, startDate } = fromContext(graphArgs.queryContext);
+    const workItemConfig = await getWorkItemConfig(
+      collectionName,
+      project,
+      graphArgs.workItemType
+    );
 
     if (!workItemConfig) return;
 
-    return WorkItemStateChangesModel.aggregate<{
-      groupName: string;
-      workItemIdsByWeek: {
-        weekIndex: number;
-        count: number;
-      }[];
-    }>([
-      { $match: { collectionName, workItemType } },
-      {
-        $addFields: {
-          stateChanges: filterStateChangesMatching(
-            stateType === 'startStates'
-              ? workItemConfig.startStates
-              : workItemConfig.endStates
-          ),
+    return WorkItemStateChangesModel.aggregate<CountResponse>([
+      ...(await workItemDataStages(
+        {
+          type: 'count',
+          states: prop(stateType),
         },
-      },
-      { $unwind: '$stateChanges' },
-      {
-        $group: {
-          _id: '$id',
-          date: { $min: '$stateChanges.date' },
-        },
-      },
-      { $match: { date: inDateRange(startDate, endDate) } },
-      ...filterByFields(collectionName, filterWorkItemsBy, filters, priority),
-      ...addGroupNameField(collectionName, workItemConfig.groupByField),
+        graphArgs,
+        workItemConfig
+      )),
       {
         $group: {
           _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
@@ -678,7 +662,7 @@ export const getWipTrendGraphDataFor =
       {
         $group: {
           _id: '$_id.groupName',
-          workItemIdsByWeek: {
+          countsByWeek: {
             $push: {
               weekIndex: '$_id.weekIndex',
               count: { $size: '$workItemIds' },
@@ -691,10 +675,10 @@ export const getWipTrendGraphDataFor =
     ]);
   };
 
-export const getWipTrendGraphDataForStartStates = getWipTrendGraphDataFor('startStates');
-export const getWipTrendGraphDataForEndStates = getWipTrendGraphDataFor('endStates');
+const getWipTrendGraphDataForStartStates = getWipTrendGraphDataFor('startStates');
+const getWipTrendGraphDataForEndStates = getWipTrendGraphDataFor('endStates');
 
-export const getWipTrendGraphData = async ({
+const getWipTrendGraphData = async ({
   queryContext,
   workItemType,
   filters,
@@ -737,7 +721,7 @@ export const getWipTrendGraphData = async ({
       ...(workItemsCountWithEndStates?.map(x => x.groupName) || []),
     ])
   );
-  return groups.map(groupName => {
+  return groups.map((groupName): CountResponse => {
     const beforeStartDateWorkItems = wipCountBeforeStartDate?.find(
       x => x.groupName === groupName
     );
@@ -756,16 +740,15 @@ export const getWipTrendGraphData = async ({
       return {
         weekIndex,
         workInProgressCount:
-          workItemsWithStartStates?.workItemIdsByWeek?.find(
-            x => x.weekIndex === weekIndex
-          )?.count || 0,
+          workItemsWithStartStates?.countsByWeek?.find(x => x.weekIndex === weekIndex)
+            ?.count || 0,
         workDoneCount:
-          workItemsWithEndStates?.workItemIdsByWeek?.find(x => x.weekIndex === weekIndex)
+          workItemsWithEndStates?.countsByWeek?.find(x => x.weekIndex === weekIndex)
             ?.count || 0,
       };
     });
 
-    const weeklyWIPCount = groupWeeklyGraph.reduce<
+    const countsByWeek = groupWeeklyGraph.reduce<
       {
         weekIndex: number;
         count: number;
@@ -780,9 +763,8 @@ export const getWipTrendGraphData = async ({
       return [...acc, { weekIndex, count: updatedCount }];
     }, []);
 
-    return {
-      groupName,
-      weeklyWIPCount,
-    };
+    return { groupName, countsByWeek };
   });
 };
+
+export const getWipGraph = getGraphOfType(getWipTrendGraphData);

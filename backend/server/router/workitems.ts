@@ -23,6 +23,7 @@ import {
   getVelocityWorkItems,
   getCycleTimeWorkItems,
   getChangeLeadTimeWorkItems,
+  getWipGraph,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -61,6 +62,7 @@ export default t.router({
   getChangeLeadTimeGraph: t.procedure
     .input(graphInputParser)
     .query(passInputTo(getChangeLoadTimeGraph)),
+  getWipGraph: t.procedure.input(graphInputParser).query(passInputTo(getWipGraph)),
 
   getNewWorkItems: t.procedure
     .input(graphArgsInputParser)
