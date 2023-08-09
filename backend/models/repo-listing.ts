@@ -110,13 +110,13 @@ export const getYamlPipelinesCountSummary = async (
 };
 export const getCentralTemplatePipeline = async (
   queryContext: QueryContext,
-  repoIds: string[]
+  repoIds: string[],
+  repoNames: string[]
 ) => {
   const { collectionName, project } = fromContext(queryContext);
-
   const centralTemplateBuildDefs = await getCentralTemplateBuildDefs(
-    collectionName,
-    project
+    queryContext,
+    repoNames
   );
 
   const buildDefinitionIds = centralTemplateBuildDefs?.map(
@@ -319,7 +319,8 @@ export const getSummaryAsChunks = async (
   const activePipelineIdsPromise = getActivePipelineIds(queryContext, activeRepoIds);
   const centralTemplatePipelinePromise = getCentralTemplatePipeline(
     queryContext,
-    activeRepoIds
+    activeRepoIds,
+    activeRepoNames
   );
 
   const activePipelineWithCentralTemplateCountPromise = Promise.all([

@@ -366,9 +366,11 @@ export const getTotalCentralTemplateUsage = async (
 };
 
 export const getCentralTemplateBuildDefs = async (
-  collectionName: string,
-  project: string
+  queryContext: QueryContext,
+  repoNames: string[]
 ) => {
+  const { collectionName, project } = fromContext(queryContext);
+
   return AzureBuildReportModel.aggregate<{
     buildDefinitionId: string;
     collectionName: string;
@@ -380,6 +382,7 @@ export const getCentralTemplateBuildDefs = async (
       $match: {
         collectionName,
         project,
+        repo: { $in: repoNames },
       },
     },
     {
