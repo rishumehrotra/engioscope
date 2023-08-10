@@ -57,7 +57,7 @@ const InlineSelect = ({
 
   useEffect(() => {
     setWidth();
-  }, [setWidth]);
+  }, [setWidth, options]);
 
   return (
     <select

@@ -1,5 +1,5 @@
 import React from 'react';
-import { range } from 'rambda';
+import { range, sum } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
@@ -17,6 +17,8 @@ import {
   groupHoverTooltipForCounts,
 } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
+
+const NewDrawer = React.lazy(() => import('./NewDrawer.jsx'));
 
 const New = () => {
   const graphArgs = useGraphArgs();
@@ -43,8 +45,12 @@ const New = () => {
                 prettyStates(config.startStates),
               ].join(' ')}
               drawer={groupName => ({
-                heading: drawerHeading('New work items', config),
-                children: <div>{groupName}</div>,
+                heading: drawerHeading(
+                  'New work items',
+                  config,
+                  sum(data.flatMap(d => d.countsByWeek.map(c => c.count)))
+                ),
+                children: <NewDrawer workItemConfig={config} selectedTab={groupName} />,
               })}
               // eslint-disable-next-line react/no-unstable-nested-components
               graphRenderer={selectedLines => {

@@ -240,14 +240,17 @@ export const graphCardPropsForCount = (
 
 export const drawerHeading = (
   title: string,
-  config: NonNullable<ReturnType<typeof useMergeWithConfig>>[number]['config']
+  config: NonNullable<ReturnType<typeof useMergeWithConfig>>[number]['config'],
+  count?: number
 ) => {
   return (
     <>
       {title}
       <span className="inline-flex text-base ml-2 font-normal text-theme-helptext items-center gap-2">
         <img src={config.icon} className="w-4" alt={`Icon for ${config.name[1]}`} />
-        <span>{config.name[1]}</span>
+        <span>
+          {config.name[1]} {count !== undefined && `(${count})`}
+        </span>
       </span>
     </>
   );

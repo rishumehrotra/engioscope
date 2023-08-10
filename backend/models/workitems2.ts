@@ -399,6 +399,7 @@ const workItemDataStages = async (
 };
 
 export type CountWorkItems = {
+  id: number;
   date: Date;
   groupName: string;
   title: string;
@@ -445,7 +446,7 @@ export function getDrawerDataForWorkItem(args: CountArgs | DateDiffArgs) {
                 $expr: { $eq: ['$id', '$$workItemId'] },
               },
             },
-            { $project: { title: 1, url: 1, state: 1 } },
+            { $project: { title: 1, url: 1, state: 1, id: 1 } },
           ],
           as: 'details',
         },
@@ -453,9 +454,16 @@ export function getDrawerDataForWorkItem(args: CountArgs | DateDiffArgs) {
       { $unwind: '$details' },
       {
         $addFields: {
+          id: '$details.id',
           title: '$details.title',
           state: '$details.state',
-          url: '$details.url',
+          url: {
+            $replaceAll: {
+              input: '$details.url',
+              find: '/_apis/wit/workItems/',
+              replacement: '/_workitems/edit/',
+            },
+          },
         },
       },
       { $unset: 'details' },

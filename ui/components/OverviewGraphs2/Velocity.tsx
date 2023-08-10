@@ -1,10 +1,10 @@
 import React from 'react';
-import { prop, range, sum } from 'rambda';
+import { range } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
-import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
+import { GraphCard, graphCardPropsForCount, useGridTemplateAreas } from './GraphCard.jsx';
 import {
   prettyStates,
   lineColor,
@@ -26,19 +26,13 @@ const Velocity = () => {
           if (!config) return null;
           return (
             <GraphCard
-              key={config.name[0]}
-              index={index}
-              workItemConfig={config}
+              {...graphCardPropsForCount(config, data, index)}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),
                 'is considered closed if it reached',
                 prettyStates(config.endStates),
               ].join(' ')}
-              data={data}
-              combineToValue={values => sum(values.map(prop('count')))}
-              lineColor={lineColor}
-              formatValue={num}
               // eslint-disable-next-line react/no-unstable-nested-components
               graphRenderer={selectedLines => {
                 const linesForGraph = data.filter(line =>

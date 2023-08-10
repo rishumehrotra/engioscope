@@ -19,9 +19,9 @@ export const prettyStates = (startStates: string[]) => {
 };
 
 export const lineColor = createPalette([
+  '#3cb44b',
   '#9A6324',
   '#e6194B',
-  '#3cb44b',
   '#ffe119',
   '#000075',
   '#f58231',
