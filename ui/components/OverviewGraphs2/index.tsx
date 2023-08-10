@@ -5,6 +5,7 @@ import CycleTime from './CycleTime.jsx';
 import ChangeLoadTime from './ChangeLeadTime.jsx';
 import QueryPeriodSelector from '../QueryPeriodSelector.jsx';
 import Filters from './Filters.jsx';
+import WIPTrend from './WIPTrend.jsx';
 
 const OverviewGraphs2 = () => {
   return (
@@ -19,6 +20,7 @@ const OverviewGraphs2 = () => {
       <Velocity />
       <CycleTime />
       <ChangeLoadTime />
+      <WIPTrend />
     </>
   );
 };
