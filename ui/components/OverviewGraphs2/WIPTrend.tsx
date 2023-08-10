@@ -22,10 +22,11 @@ const WIPTrend = () => {
           if (!config) return null;
           return (
             <GraphCard
-              {...graphCardProps}
-              combineToValue={value =>
-                sum(value.map(x => last(x.countsByWeek)?.count || 0))
-              }
+              {...graphCardProps({
+                graphName: 'Work in progress trend',
+                combineToValue: value =>
+                  sum(value.map(x => last(x.countsByWeek)?.count || 0)),
+              })}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),

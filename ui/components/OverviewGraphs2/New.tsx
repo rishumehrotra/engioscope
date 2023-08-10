@@ -1,12 +1,9 @@
 import React from 'react';
-import { sum } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
-import { GraphCard, drawerHeading, useGridTemplateAreas } from './GraphCard.jsx';
-import { drawerComponent, prettyStates, useDecorateForGraph } from './utils.js';
+import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
+import { prettyStates, useDecorateForGraph } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
-
-const NewDrawer = drawerComponent('NewDrawer');
 
 const New = () => {
   const graphArgs = useGraphArgs();
@@ -20,26 +17,21 @@ const New = () => {
       subheading="Work items on which work work has started"
     >
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-        {graphWithConfig?.map(({ config, data, graphCardProps }) => {
+        {graphWithConfig?.map(({ config, graphCardProps }) => {
           if (!config) return null;
 
           return (
             <GraphCard
-              {...graphCardProps}
+              {...graphCardProps({
+                graphName: 'New work items',
+                drawerComponentName: 'NewDrawer',
+              })}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),
                 'is considered opened if it reached',
                 prettyStates(config.startStates),
               ].join(' ')}
-              drawer={groupName => ({
-                heading: drawerHeading(
-                  'New work items',
-                  config,
-                  sum(data.flatMap(d => d.countsByWeek.map(c => c.count)))
-                ),
-                children: <NewDrawer workItemConfig={config} selectedTab={groupName} />,
-              })}
             />
           );
         })}

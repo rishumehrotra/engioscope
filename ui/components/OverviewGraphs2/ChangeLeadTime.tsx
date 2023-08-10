@@ -25,7 +25,10 @@ const ChangeLoadTime = () => {
           }
           return (
             <GraphCard
-              {...graphCardProps}
+              {...graphCardProps({
+                graphName: 'Change lead time',
+                drawerComponentName: 'ChangeLeadTimeDrawer',
+              })}
               subheading={[
                 'Change load time for',
                 config.name[0].toLowerCase(),

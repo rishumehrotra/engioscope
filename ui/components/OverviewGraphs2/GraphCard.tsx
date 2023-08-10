@@ -8,7 +8,6 @@ import { num } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import { useDrawer } from '../common/Drawer.jsx';
-import type { useDecorateForGraph } from './utils.jsx';
 import type {
   CountResponse,
   DateDiffResponse,
@@ -222,7 +221,7 @@ export const useGridTemplateAreas = () => {
 
 export const drawerHeading = (
   title: string,
-  config: NonNullable<ReturnType<typeof useDecorateForGraph>>[number]['config'],
+  config: SingleWorkItemConfig,
   count?: number
 ) => {
   return (

@@ -10,7 +10,7 @@ import type {
   DateDiffResponse,
 } from '../../../backend/models/workitems2.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
-import type { GraphCardProps } from './GraphCard.jsx';
+import { drawerHeading, type GraphCardProps } from './GraphCard.jsx';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 
 export const prettyStates = (startStates: string[]) => {
@@ -133,6 +133,10 @@ export const groupHoverTooltipForDateDiff = (
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+export const drawerComponent = (drawerName: keyof typeof import('./Drawers.jsx')) =>
+  React.lazy(() => import('./Drawers.jsx').then(x => ({ default: x[drawerName] })));
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isDateDiffResponse = (x: any): x is DateDiffResponse => {
   if (!x?.countsByWeek) return false;
@@ -162,94 +166,120 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
 
         const isDateDiff = data.some(({ data }) => data.some(isDateDiffResponse));
 
-        const graphCardProps = {
-          key: config.name[0],
-          index,
-          workItemConfig: config,
-          data: wit.data,
-          combineToValue: isDateDiff
-            ? values =>
-                divide(
-                  sum(
-                    values.flatMap(x =>
-                      x.countsByWeek.map(y => (y as DateDiffResponseItem).totalDuration)
-                    )
-                  ),
-                  sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
-                ).getOr(0)
-            : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count)),
-          lineColor,
-          formatValue: isDateDiff ? prettyMS : num,
-          graphRenderer: selectedGroups => {
-            const linesForGraph = wit.data.filter(line =>
-              selectedGroups.includes(line.groupName)
-            );
+        const graphCardProps = ({
+          graphName,
+          drawerComponentName,
+          combineToValue,
+        }: {
+          graphName: string;
+          combineToValue?: (x: T[]) => number;
+          // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+          drawerComponentName?: keyof typeof import('./Drawers.jsx');
+        }) => {
+          const drawer: GraphCardProps<T>['drawer'] = drawerComponentName
+            ? (groupName: string) => ({
+                heading: drawerHeading(
+                  graphName,
+                  config,
+                  sum(wit.data.flatMap(d => d.countsByWeek.map(c => c.count)))
+                ),
+                children: (() => {
+                  const Component = drawerComponent(drawerComponentName);
+                  return <Component workItemConfig={config} selectedTab={groupName} />;
+                })(),
+              })
+            : undefined;
 
-            if (linesForGraph.length === 0) {
-              return (
-                <div className="mb-48 text-center text-sm text-theme-helptext">
-                  No data
-                </div>
-              );
-            }
-
-            return (
-              <StackedAreaGraph
-                className="w-full"
-                lines={linesForGraph.map(line => ({
-                  ...line,
-                  countsByWeek: range(
-                    0,
-                    Math.max(
-                      ...wit.data.flatMap(x => x.countsByWeek).map(x => x.weekIndex)
-                    )
-                  ).map(weekIndex => ({
-                    weekIndex: index,
-                    count:
-                      line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ?? 0,
-                    ...(isDateDiff
-                      ? {
-                          totalDuration:
-                            (
-                              line.countsByWeek.find(x => x.weekIndex === weekIndex) as
-                                | DateDiffResponseItem
-                                | undefined
-                            )?.totalDuration ?? 0,
-                        }
-                      : {}),
-                  })),
-                }))}
-                points={x => x.countsByWeek}
-                pointToValue={
-                  isDateDiff
-                    ? x =>
-                        divide(
-                          (x as DateDiffResponse['countsByWeek'][number]).totalDuration,
-                          x.count
-                        ).getOr(0)
-                    : x => x.count
-                }
-                lineColor={x => lineColor(x.groupName)}
-                lineLabel={x => x.groupName}
-                xAxisLabel={x => String(x.weekIndex)}
-                yAxisLabel={isDateDiff ? prettyMS : num}
-                crosshairBubble={
-                  isDateDiff
-                    ? groupHoverTooltipForDateDiff(
-                        config,
-                        linesForGraph as DateDiffResponse[]
+          const internalCombineToValue: GraphCardProps<T>['combineToValue'] =
+            combineToValue || isDateDiff
+              ? values =>
+                  divide(
+                    sum(
+                      values.flatMap(x =>
+                        x.countsByWeek.map(y => (y as DateDiffResponseItem).totalDuration)
                       )
-                    : groupHoverTooltipForCounts(config, linesForGraph)
-                }
-              />
-            );
-          },
-        } satisfies Partial<GraphCardProps<T>> & { key: string };
+                    ),
+                    sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
+                  ).getOr(0)
+              : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count));
+
+          return {
+            key: config.name[0],
+            index,
+            workItemConfig: config,
+            data: wit.data,
+            combineToValue: internalCombineToValue,
+            lineColor,
+            formatValue: isDateDiff ? prettyMS : num,
+            graphRenderer: selectedGroups => {
+              const linesForGraph = wit.data.filter(line =>
+                selectedGroups.includes(line.groupName)
+              );
+
+              if (linesForGraph.length === 0) {
+                return (
+                  <div className="mb-48 text-center text-sm text-theme-helptext">
+                    No data
+                  </div>
+                );
+              }
+
+              return (
+                <StackedAreaGraph
+                  className="w-full"
+                  lines={linesForGraph.map(line => ({
+                    ...line,
+                    countsByWeek: range(
+                      0,
+                      Math.max(
+                        ...wit.data.flatMap(x => x.countsByWeek).map(x => x.weekIndex)
+                      )
+                    ).map(weekIndex => ({
+                      weekIndex: index,
+                      count:
+                        line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ??
+                        0,
+                      ...(isDateDiff
+                        ? {
+                            totalDuration:
+                              (
+                                line.countsByWeek.find(x => x.weekIndex === weekIndex) as
+                                  | DateDiffResponseItem
+                                  | undefined
+                              )?.totalDuration ?? 0,
+                          }
+                        : {}),
+                    })),
+                  }))}
+                  points={x => x.countsByWeek}
+                  pointToValue={
+                    isDateDiff
+                      ? x =>
+                          divide(
+                            (x as DateDiffResponse['countsByWeek'][number]).totalDuration,
+                            x.count
+                          ).getOr(0)
+                      : x => x.count
+                  }
+                  lineColor={x => lineColor(x.groupName)}
+                  lineLabel={x => x.groupName}
+                  xAxisLabel={x => String(x.weekIndex)}
+                  yAxisLabel={isDateDiff ? prettyMS : num}
+                  crosshairBubble={
+                    isDateDiff
+                      ? groupHoverTooltipForDateDiff(
+                          config,
+                          linesForGraph as DateDiffResponse[]
+                        )
+                      : groupHoverTooltipForCounts(config, linesForGraph)
+                  }
+                />
+              );
+            },
+            drawer,
+          } satisfies Partial<GraphCardProps<T>> & { key: string };
+        };
         return { config, data: wit.data, graphCardProps };
       });
   }, [data, pageConfig.data?.workItemsConfig]);
 };
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
-export const drawerComponent = (drawerName: keyof typeof import('./Drawers.jsx')) =>
-  React.lazy(() => import('./Drawers.jsx').then(x => ({ default: x[drawerName] })));

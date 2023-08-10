@@ -18,7 +18,10 @@ const CycleTime = () => {
           if (!config) return null;
           return (
             <GraphCard
-              {...graphCardProps}
+              {...graphCardProps({
+                graphName: 'Cycle time',
+                drawerComponentName: 'CycleTimeDrawer',
+              })}
               subheading={[
                 'Cycle time for',
                 config.name[0].toLowerCase(),

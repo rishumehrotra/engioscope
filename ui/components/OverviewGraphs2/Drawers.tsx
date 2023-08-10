@@ -28,3 +28,23 @@ export const VelocityDrawer = ({ selectedTab, workItemConfig }: DrawerProps) => 
 
   return <DrawerContents selectedTab={selectedTab} workItems={newWorkItems.data} />;
 };
+
+export const CycleTimeDrawer = ({ selectedTab, workItemConfig }: DrawerProps) => {
+  const graphArgs = useGraphArgs();
+  const newWorkItems = trpc.workItems.getCycleTimeWorkItems.useQuery({
+    ...graphArgs,
+    workItemType: workItemConfig.name[0],
+  });
+
+  return <DrawerContents selectedTab={selectedTab} workItems={newWorkItems.data} />;
+};
+
+export const ChangeLeadTimeDrawer = ({ selectedTab, workItemConfig }: DrawerProps) => {
+  const graphArgs = useGraphArgs();
+  const newWorkItems = trpc.workItems.getChangeLeadTimeWorkItems.useQuery({
+    ...graphArgs,
+    workItemType: workItemConfig.name[0],
+  });
+
+  return <DrawerContents selectedTab={selectedTab} workItems={newWorkItems.data} />;
+};
