@@ -1,15 +1,10 @@
 import React from 'react';
-import { range, sum } from 'rambda';
+import { prop, range, sum } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
-import {
-  GraphCard,
-  drawerHeading,
-  graphCardPropsForCount,
-  useGridTemplateAreas,
-} from './GraphCard.jsx';
+import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
 import {
   prettyStates,
   lineColor,
@@ -18,40 +13,37 @@ import {
 } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
 
-const NewDrawer = React.lazy(() => import('./NewDrawer.jsx'));
-
-const New = () => {
+const WIPTrend = () => {
   const graphArgs = useGraphArgs();
-  const graph = trpc.workItems.getNewGraph.useQuery(graphArgs);
+  const graph = trpc.workItems.getWipGraph.useQuery(graphArgs);
   const graphWithConfig = useMergeWithConfig(graph.data);
   const gridTemplateAreas = useGridTemplateAreas();
 
   return (
     <PageSection
-      heading="New work items"
-      subheading="Work items on which work work has started"
+      heading="Work in progress trend"
+      subheading="Trend of work items in progress per day over the last 84 days"
     >
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
         {graphWithConfig?.map(({ config, data }, index) => {
           if (!config) return null;
-
           return (
             <GraphCard
-              {...graphCardPropsForCount(config, data, index)}
+              key={config.name[0]}
+              index={index}
+              workItemConfig={config}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),
-                'is considered opened if it reached',
+                'considered to be WIP if it has a',
                 prettyStates(config.startStates),
+                "but doesn't have a",
+                prettyStates(config.endStates),
               ].join(' ')}
-              drawer={groupName => ({
-                heading: drawerHeading(
-                  'New work items',
-                  config,
-                  sum(data.flatMap(d => d.countsByWeek.map(c => c.count)))
-                ),
-                children: <NewDrawer workItemConfig={config} selectedTab={groupName} />,
-              })}
+              data={data}
+              combineToValue={values => sum(values.map(prop('count')))}
+              lineColor={lineColor}
+              formatValue={num}
               // eslint-disable-next-line react/no-unstable-nested-components
               graphRenderer={selectedLines => {
                 const linesForGraph = data.filter(line =>
@@ -101,4 +93,4 @@ const New = () => {
   );
 };
 
-export default New;
+export default WIPTrend;
