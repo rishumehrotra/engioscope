@@ -96,7 +96,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
           'rounded-xl border border-theme-seperator p-4 mt-4 mb-8',
           'grid grid-flow-row gap-2',
           'grid-rows-[min-content_min-content_1fr_min-content_min-content]',
-          'bg-theme-page-content'
+          'bg-theme-page-content group/block'
         )}
         style={{ gridArea: `graphBlock${index}` }}
       >
@@ -104,7 +104,10 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
           <div className="text-lg font-medium flex items-center gap-2">
             {formatValue(combineToValue(data))}
             {data.length === 1 && data[0].groupName === noGroup ? (
-              <button className="link-text">
+              <button
+                className="link-text opacity-0 transition-opacity group-hover/block:opacity-100"
+                onClick={openDrawerFromGroupPill(noGroup)}
+              >
                 <ExternalLink size={16} />
               </button>
             ) : null}

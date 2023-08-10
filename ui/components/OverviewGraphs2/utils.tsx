@@ -191,7 +191,8 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
             : undefined;
 
           const internalCombineToValue: GraphCardProps<T>['combineToValue'] =
-            combineToValue || isDateDiff
+            combineToValue ||
+            (isDateDiff
               ? values =>
                   divide(
                     sum(
@@ -201,7 +202,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                     ),
                     sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
                   ).getOr(0)
-              : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count));
+              : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count)));
 
           return {
             key: config.name[0],
