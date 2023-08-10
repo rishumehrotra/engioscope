@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { propEq, range, sum } from 'rambda';
 import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
@@ -249,3 +249,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
       });
   }, [data, pageConfig.data?.workItemsConfig]);
 };
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+export const drawerComponent = (drawerName: keyof typeof import('./Drawers.jsx')) =>
+  React.lazy(() => import('./Drawers.jsx').then(x => ({ default: x[drawerName] })));

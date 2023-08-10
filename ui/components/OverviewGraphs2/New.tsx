@@ -3,10 +3,10 @@ import { sum } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { GraphCard, drawerHeading, useGridTemplateAreas } from './GraphCard.jsx';
-import { prettyStates, useDecorateForGraph } from './utils.js';
+import { drawerComponent, prettyStates, useDecorateForGraph } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
 
-const NewDrawer = React.lazy(() => import('./NewDrawer.jsx'));
+const NewDrawer = drawerComponent('NewDrawer');
 
 const New = () => {
   const graphArgs = useGraphArgs();

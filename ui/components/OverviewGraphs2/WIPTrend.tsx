@@ -15,7 +15,7 @@ const WIPTrend = () => {
   return (
     <PageSection
       heading="Work in progress trend"
-      subheading="Trend of work items in progress per day over the last 84 days"
+      subheading="Trend of work items in progress"
     >
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
         {graphWithConfig?.map(({ config, graphCardProps }) => {

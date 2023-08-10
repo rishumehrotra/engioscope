@@ -408,12 +408,12 @@ export type CountWorkItems = {
 };
 
 export type DateDiffWorkItems = {
+  id: number;
+  date: Date;
   groupName: string;
-  countsByWeek: {
-    weekIndex: number;
-    count: number;
-    totalDuration: number;
-  }[];
+  title: string;
+  state: string;
+  url: string;
 };
 
 export function getDrawerDataForWorkItem(

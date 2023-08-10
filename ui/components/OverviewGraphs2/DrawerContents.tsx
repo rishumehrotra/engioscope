@@ -1,30 +1,25 @@
 import React, { useMemo, useState } from 'react';
 import { byDate, byNum, desc } from 'sort-lib';
-import { prop } from 'rambda';
-import { trpc } from '../../helpers/trpc.js';
-import type { WorkItemConfig } from './utils.jsx';
-import useGraphArgs from './useGraphArgs.js';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { shortDate } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
+import type {
+  CountWorkItems,
+  DateDiffWorkItems,
+} from '../../../backend/models/workitems2.js';
 
 type NewDrawerProps = {
   selectedTab: string;
-  workItemConfig: WorkItemConfig;
+  workItems: (CountWorkItems | DateDiffWorkItems)[] | undefined;
 };
 
-const NewDrawer = ({ selectedTab, workItemConfig }: NewDrawerProps) => {
-  const graphArgs = useGraphArgs();
-  const newWorkItems = trpc.workItems.getNewWorkItems.useQuery({
-    ...graphArgs,
-    workItemType: workItemConfig.name[0],
-  });
+const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedTab);
 
   const subTypePickerOptions = useMemo(() => {
-    if (!newWorkItems.data) return [];
+    if (!workItems) return [];
 
-    const groupTypeCounts = newWorkItems.data.reduce((acc, wi) => {
+    const groupTypeCounts = workItems.reduce((acc, wi) => {
       const count = acc.get(wi.groupName) || 0;
       acc.set(wi.groupName, count + 1);
       return acc;
@@ -36,15 +31,15 @@ const NewDrawer = ({ selectedTab, workItemConfig }: NewDrawerProps) => {
         label: `${groupName} (${count})`,
         value: groupName,
       }));
-  }, [newWorkItems.data]);
+  }, [workItems]);
 
   const workItemListing = useMemo(() => {
-    if (!newWorkItems.data) return [];
+    if (!workItems) return [];
 
-    return newWorkItems.data
+    return workItems
       .filter(wi => wi.groupName === selectedGroupName)
-      .sort(byDate(prop('date')));
-  }, [newWorkItems.data, selectedGroupName]);
+      .sort(byDate(x => x.date));
+  }, [workItems, selectedGroupName]);
 
   return (
     <div className="mx-4">
@@ -85,4 +80,4 @@ const NewDrawer = ({ selectedTab, workItemConfig }: NewDrawerProps) => {
   );
 };
 
-export default NewDrawer;
+export default DrawerContents;
