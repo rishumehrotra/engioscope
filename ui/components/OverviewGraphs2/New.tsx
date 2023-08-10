@@ -35,7 +35,7 @@ const New = () => {
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),
-                'is considered openeed if it reached',
+                'is considered opened if it reached',
                 prettyStates(config.startStates),
               ].join(' ')}
               data={data}
