@@ -1,5 +1,5 @@
 import React from 'react';
-import { prop, range, sum } from 'rambda';
+import { range } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { prettyMS } from '../../helpers/utils.js';
@@ -26,7 +26,7 @@ const ChangeLoadTime = () => {
       subheading="Time taken after development to complete a work item"
     >
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-        {graphWithConfig?.map(({ config, data }, index) => {
+        {graphWithConfig?.map(({ config, data, graphCardProps }, index) => {
           if (!config) return null;
 
           if (!config.devCompleteStates) {
@@ -34,9 +34,7 @@ const ChangeLoadTime = () => {
           }
           return (
             <GraphCard
-              key={config.name[0]}
-              index={index}
-              workItemConfig={config}
+              {...graphCardProps}
               subheading={[
                 'Change load time for',
                 config.name[0].toLowerCase(),
@@ -45,15 +43,6 @@ const ChangeLoadTime = () => {
                 'to',
                 prettyStates(config.endStates),
               ].join(' ')}
-              data={data}
-              combineToValue={values =>
-                divide(
-                  sum(values.map(prop('totalDuration'))),
-                  sum(values.map(prop('count')))
-                ).getOr(0)
-              }
-              lineColor={lineColor}
-              formatValue={prettyMS}
               // eslint-disable-next-line react/no-unstable-nested-components
               graphRenderer={selectedLines => {
                 const linesForGraph = data.filter(line =>

@@ -4,7 +4,7 @@ import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
-import { GraphCard, graphCardPropsForCount, useGridTemplateAreas } from './GraphCard.jsx';
+import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
 import {
   prettyStates,
   lineColor,
@@ -22,11 +22,11 @@ const Velocity = () => {
   return (
     <PageSection heading="Velocity" subheading="Work items completed">
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-        {graphWithConfig?.map(({ config, data }, index) => {
+        {graphWithConfig?.map(({ config, data, graphCardProps }, index) => {
           if (!config) return null;
           return (
             <GraphCard
-              {...graphCardPropsForCount(config, data, index)}
+              {...graphCardProps}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),

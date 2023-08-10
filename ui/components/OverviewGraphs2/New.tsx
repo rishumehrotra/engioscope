@@ -4,16 +4,11 @@ import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
-import {
-  GraphCard,
-  drawerHeading,
-  graphCardPropsForCount,
-  useGridTemplateAreas,
-} from './GraphCard.jsx';
+import { GraphCard, drawerHeading, useGridTemplateAreas } from './GraphCard.jsx';
 import {
   prettyStates,
   lineColor,
-  useMergeWithConfig,
+  useMergeWithConfig as useDecorateForGraph,
   groupHoverTooltipForCounts,
 } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
@@ -23,7 +18,7 @@ const NewDrawer = React.lazy(() => import('./NewDrawer.jsx'));
 const New = () => {
   const graphArgs = useGraphArgs();
   const graph = trpc.workItems.getNewGraph.useQuery(graphArgs);
-  const graphWithConfig = useMergeWithConfig(graph.data);
+  const graphWithConfig = useDecorateForGraph(graph.data);
   const gridTemplateAreas = useGridTemplateAreas();
 
   return (
@@ -32,12 +27,12 @@ const New = () => {
       subheading="Work items on which work work has started"
     >
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-        {graphWithConfig?.map(({ config, data }, index) => {
+        {graphWithConfig?.map(({ config, data, graphCardProps }, index) => {
           if (!config) return null;
 
           return (
             <GraphCard
-              {...graphCardPropsForCount(config, data, index)}
+              {...graphCardProps}
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),

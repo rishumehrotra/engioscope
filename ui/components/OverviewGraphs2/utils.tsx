@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
-import { propEq } from 'rambda';
+import { propEq, sum } from 'rambda';
 import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import { divide, exists } from '../../../shared/utils.js';
+import { divide } from '../../../shared/utils.js';
 import type {
   CountResponse,
   DateDiffResponse,
 } from '../../../backend/models/workitems2.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
+import type { GraphCardProps } from './GraphCard.jsx';
 
 export const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -32,6 +33,13 @@ export const lineColor = createPalette([
   '#a9a9a9',
 ]);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isDateDiffResponse = (x: any): x is DateDiffResponse => {
+  if (!x?.countsByWeek) return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return x.countsByWeek.some((y: any) => 'totalDuration' in y);
+};
+
 export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
   data: { workItemType: string; data: T[] }[] | undefined
 ) => {
@@ -41,13 +49,40 @@ export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
   return useMemo(() => {
     return data
       ?.map(wit => {
-        const matchingConfig = pageConfig.data?.workItemsConfig?.find(
+        const config = pageConfig.data?.workItemsConfig?.find(
           w => w.name[0] === wit.workItemType
         );
-        if (!matchingConfig) return null;
-        return { config: matchingConfig, data: wit.data };
+        return { wit, config };
       })
-      .filter(exists);
+      .filter(x => !!x.config)
+      ?.map(({ wit, config }, index) => {
+        if (!config) throw new Error('Stupid TS');
+
+        const isDateDiff = data.some(({ data }) => data.some(isDateDiffResponse));
+
+        const graphCardProps = {
+          key: config.name[0],
+          index,
+          workItemConfig: config,
+          data: wit.data,
+          combineToValue: values => {
+            if (isDateDiff) {
+              return divide(
+                sum(
+                  values.flatMap(x =>
+                    x.countsByWeek.map(y => ('totalDuration' in y ? y.totalDuration : 0))
+                  )
+                ),
+                sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
+              ).getOr(0);
+            }
+            return sum(values.flatMap(x => x.countsByWeek).map(x => x.count));
+          },
+          lineColor,
+          formatValue: isDateDiff ? prettyMS : num,
+        } satisfies Partial<GraphCardProps<T>> & { key: string };
+        return { config, data: wit.data, graphCardProps };
+      });
   }, [data, pageConfig.data?.workItemsConfig]);
 };
 

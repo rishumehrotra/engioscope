@@ -1,5 +1,5 @@
 import React from 'react';
-import { prop, range, sum } from 'rambda';
+import { last, range, sum } from 'rambda';
 import PageSection from './PageSection.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
@@ -25,13 +25,14 @@ const WIPTrend = () => {
       subheading="Trend of work items in progress per day over the last 84 days"
     >
       <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-        {graphWithConfig?.map(({ config, data }, index) => {
+        {graphWithConfig?.map(({ config, data, graphCardProps }, index) => {
           if (!config) return null;
           return (
             <GraphCard
-              key={config.name[0]}
-              index={index}
-              workItemConfig={config}
+              {...graphCardProps}
+              combineToValue={value =>
+                sum(value.map(x => last(x.countsByWeek)?.count || 0))
+              }
               subheading={[
                 'A',
                 config.name[0].toLowerCase(),
@@ -40,10 +41,6 @@ const WIPTrend = () => {
                 "but doesn't have a",
                 prettyStates(config.endStates),
               ].join(' ')}
-              data={data}
-              combineToValue={values => sum(values.map(prop('count')))}
-              lineColor={lineColor}
-              formatValue={num}
               // eslint-disable-next-line react/no-unstable-nested-components
               graphRenderer={selectedLines => {
                 const linesForGraph = data.filter(line =>

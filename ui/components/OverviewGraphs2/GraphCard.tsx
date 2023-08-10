@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
-import { append, filter, prop, range, sum } from 'rambda';
+import { append, filter, prop, range } from 'rambda';
 import { twJoin } from 'tailwind-merge';
 import { ExternalLink } from 'react-feather';
 import { trpc, type SingleWorkItemConfig } from '../../helpers/trpc.js';
@@ -9,18 +9,16 @@ import { noGroup } from '../../../shared/work-item-utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import { useDrawer } from '../common/Drawer.jsx';
 import type { useMergeWithConfig } from './utils.jsx';
-import { lineColor } from './utils.jsx';
-import type { CountResponse } from '../../../backend/models/workitems2.js';
+import type {
+  CountResponse,
+  DateDiffResponse,
+} from '../../../backend/models/workitems2.js';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-type GraphCardProps<T extends {}> = {
+export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
   workItemConfig: SingleWorkItemConfig;
   subheading: ReactNode;
   index: number;
-  data: {
-    groupName: string;
-    countsByWeek: T[];
-  }[];
+  data: T[];
   combineToValue: (x: T[]) => number;
   formatValue?: (x: number) => string | number;
   graphRenderer: (selectedGroups: string[]) => ReactNode;
@@ -31,8 +29,7 @@ type GraphCardProps<T extends {}> = {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const GraphCard = <T extends {}>({
+export const GraphCard = <T extends CountResponse | DateDiffResponse>({
   workItemConfig,
   subheading,
   index,
@@ -106,7 +103,7 @@ export const GraphCard = <T extends {}>({
       >
         <div className="grid grid-flow-col justify-between items-end">
           <div className="text-lg font-medium flex items-center gap-2">
-            {formatValue(combineToValue(data.flatMap(prop('countsByWeek'))))}
+            {formatValue(combineToValue(data))}
             {data.length === 1 && data[0].groupName === noGroup ? (
               <button className="link-text">
                 <ExternalLink size={16} />
@@ -167,7 +164,7 @@ export const GraphCard = <T extends {}>({
                   >
                     <div>{group.groupName || 'Unclassified'}</div>
                     <div className="font-medium flex items-end">
-                      <span>{formatValue(combineToValue(group.countsByWeek))}</span>
+                      <span>{formatValue(combineToValue([group]))}</span>
                       {drawer && (
                         <button
                           className={twJoin(
@@ -222,21 +219,6 @@ export const useGridTemplateAreas = () => {
     }, [])
     .join(' ');
 };
-
-export const graphCardPropsForCount = (
-  config: NonNullable<ReturnType<typeof useMergeWithConfig>>[number]['config'],
-  data: CountResponse[],
-  index: number
-) => ({
-  key: config.name[0],
-  index,
-  workItemConfig: config,
-  data,
-  combineToValue: (values: CountResponse['countsByWeek']) =>
-    sum(values.map(prop('count'))),
-  lineColor,
-  formatValue: num,
-});
 
 export const drawerHeading = (
   title: string,
