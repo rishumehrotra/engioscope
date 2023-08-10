@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { propEq, range, sum } from 'rambda';
+import React, { useCallback, useMemo } from 'react';
+import { prop, propEq, range, sum } from 'rambda';
 import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
 import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
@@ -154,6 +154,33 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
   const queryPeriodDays = useQueryPeriodDays();
   const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
 
+  const isDateDiff = useMemo(
+    () => data?.some(x => x.data.some(isDateDiffResponse)),
+    [data]
+  );
+
+  const fillGapsForGraph = useCallback(
+    (linesForGraph: T[]) =>
+      linesForGraph.map(line => ({
+        ...line,
+        countsByWeek: range(0, Math.round(queryPeriodDays / 7)).map(weekIndex => ({
+          weekIndex,
+          count: line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ?? 0,
+          ...(isDateDiff
+            ? {
+                totalDuration:
+                  (
+                    line.countsByWeek.find(x => x.weekIndex === weekIndex) as
+                      | DateDiffResponseItem
+                      | undefined
+                  )?.totalDuration ?? 0,
+              }
+            : {}),
+        })),
+      })),
+    [isDateDiff, queryPeriodDays]
+  );
+
   return useMemo(() => {
     return data
       ?.map(wit => {
@@ -167,8 +194,6 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
         if (!config) throw new Error('Stupid TS');
 
         const witData = wit.data;
-
-        const isDateDiff = data.some(({ data }) => data.some(isDateDiffResponse));
 
         const graphCardProps = ({
           graphName,
@@ -228,27 +253,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
               return (
                 <StackedAreaGraph
                   className="w-full"
-                  lines={linesForGraph.map(line => ({
-                    ...line,
-                    countsByWeek: range(0, Math.round(queryPeriodDays / 7)).map(
-                      weekIndex => ({
-                        weekIndex: index,
-                        count:
-                          line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ??
-                          0,
-                        ...(isDateDiff
-                          ? {
-                              totalDuration:
-                                (
-                                  line.countsByWeek.find(
-                                    x => x.weekIndex === weekIndex
-                                  ) as DateDiffResponseItem | undefined
-                                )?.totalDuration ?? 0,
-                            }
-                          : {}),
-                      })
-                    ),
-                  }))}
+                  lines={fillGapsForGraph(linesForGraph)}
                   points={x => x.countsByWeek}
                   pointToValue={
                     isDateDiff
@@ -257,10 +262,10 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                             (x as DateDiffResponse['countsByWeek'][number]).totalDuration,
                             x.count
                           ).getOr(0)
-                      : x => x.count
+                      : prop('count')
                   }
                   lineColor={x => lineColor(x.groupName)}
-                  lineLabel={x => x.groupName}
+                  lineLabel={prop('groupName')}
                   xAxisLabel={x => String(x.weekIndex)}
                   yAxisLabel={isDateDiff ? prettyMS : num}
                   crosshairBubble={
@@ -279,5 +284,5 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
         };
         return { config, data: witData, graphCardProps };
       });
-  }, [data, pageConfig.data?.workItemsConfig, queryPeriodDays]);
+  }, [data, fillGapsForGraph, isDateDiff, pageConfig.data?.workItemsConfig]);
 };
