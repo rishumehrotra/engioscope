@@ -9,9 +9,10 @@ import type {
   CountResponse,
   DateDiffResponse,
 } from '../../../backend/models/workitems2.js';
-import { noGroup } from '../../../shared/work-item-utils.js';
+import { isBugLike, noGroup } from '../../../shared/work-item-utils.js';
 import { drawerHeading, type GraphCardProps } from './GraphCard.jsx';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
+import emptySvgPath from './empty.svg';
 
 export const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -217,10 +218,19 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                 selectedGroups.includes(line.groupName)
               );
 
-              if (linesForGraph.length === 0) {
+              if (linesForGraph.length === 0 && wit.data.length !== 0) {
                 return (
-                  <div className="mb-48 text-center text-sm text-theme-helptext">
-                    No data
+                  <div className="self-center text-center text-sm text-theme-helptext w-full">
+                    <img
+                      src={emptySvgPath}
+                      alt="No results"
+                      className="m-4 mt-6 block mx-auto"
+                    />
+                    <h1 className="text-base mb-2 font-medium">Nothing selected</h1>
+                    <p>
+                      Please select{' '}
+                      {isBugLike(config.name[0]) ? 'an environment' : 'a type'} above.
+                    </p>
                   </div>
                 );
               }
