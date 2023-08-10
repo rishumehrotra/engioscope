@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { propEq, sum } from 'rambda';
+import { propEq, range, sum } from 'rambda';
 import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
@@ -11,6 +11,7 @@ import type {
 } from '../../../backend/models/workitems2.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import type { GraphCardProps } from './GraphCard.jsx';
+import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 
 export const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -32,59 +33,6 @@ export const lineColor = createPalette([
   '#fabed4',
   '#a9a9a9',
 ]);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const isDateDiffResponse = (x: any): x is DateDiffResponse => {
-  if (!x?.countsByWeek) return false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return x.countsByWeek.some((y: any) => 'totalDuration' in y);
-};
-
-export const useMergeWithConfig = <T extends CountResponse | DateDiffResponse>(
-  data: { workItemType: string; data: T[] }[] | undefined
-) => {
-  const queryContext = useQueryContext();
-  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
-
-  return useMemo(() => {
-    return data
-      ?.map(wit => {
-        const config = pageConfig.data?.workItemsConfig?.find(
-          w => w.name[0] === wit.workItemType
-        );
-        return { wit, config };
-      })
-      .filter(x => !!x.config)
-      ?.map(({ wit, config }, index) => {
-        if (!config) throw new Error('Stupid TS');
-
-        const isDateDiff = data.some(({ data }) => data.some(isDateDiffResponse));
-
-        const graphCardProps = {
-          key: config.name[0],
-          index,
-          workItemConfig: config,
-          data: wit.data,
-          combineToValue: values => {
-            if (isDateDiff) {
-              return divide(
-                sum(
-                  values.flatMap(x =>
-                    x.countsByWeek.map(y => ('totalDuration' in y ? y.totalDuration : 0))
-                  )
-                ),
-                sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
-              ).getOr(0);
-            }
-            return sum(values.flatMap(x => x.countsByWeek).map(x => x.count));
-          },
-          lineColor,
-          formatValue: isDateDiff ? prettyMS : num,
-        } satisfies Partial<GraphCardProps<T>> & { key: string };
-        return { config, data: wit.data, graphCardProps };
-      });
-  }, [data, pageConfig.data?.workItemsConfig]);
-};
 
 export type WorkItemConfig = NonNullable<
   RouterClient['workItems']['getPageConfig']['workItemsConfig']
@@ -183,4 +131,121 @@ export const groupHoverTooltipForDateDiff = (
       </div>
     );
   };
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isDateDiffResponse = (x: any): x is DateDiffResponse => {
+  if (!x?.countsByWeek) return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return x.countsByWeek.some((y: any) => 'totalDuration' in y);
+};
+
+type DateDiffResponseItem = DateDiffResponse['countsByWeek'][number];
+
+export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
+  data: { workItemType: string; data: T[] }[] | undefined
+) => {
+  const queryContext = useQueryContext();
+  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
+
+  return useMemo(() => {
+    return data
+      ?.map(wit => {
+        const config = pageConfig.data?.workItemsConfig?.find(
+          w => w.name[0] === wit.workItemType
+        );
+        return { wit, config };
+      })
+      .filter(x => !!x.config)
+      ?.map(({ wit, config }, index) => {
+        if (!config) throw new Error('Stupid TS');
+
+        const isDateDiff = data.some(({ data }) => data.some(isDateDiffResponse));
+
+        const graphCardProps = {
+          key: config.name[0],
+          index,
+          workItemConfig: config,
+          data: wit.data,
+          combineToValue: isDateDiff
+            ? values =>
+                divide(
+                  sum(
+                    values.flatMap(x =>
+                      x.countsByWeek.map(y => (y as DateDiffResponseItem).totalDuration)
+                    )
+                  ),
+                  sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
+                ).getOr(0)
+            : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count)),
+          lineColor,
+          formatValue: isDateDiff ? prettyMS : num,
+          graphRenderer: selectedGroups => {
+            const linesForGraph = wit.data.filter(line =>
+              selectedGroups.includes(line.groupName)
+            );
+
+            if (linesForGraph.length === 0) {
+              return (
+                <div className="mb-48 text-center text-sm text-theme-helptext">
+                  No data
+                </div>
+              );
+            }
+
+            return (
+              <StackedAreaGraph
+                className="w-full"
+                lines={linesForGraph.map(line => ({
+                  ...line,
+                  countsByWeek: range(
+                    0,
+                    Math.max(
+                      ...wit.data.flatMap(x => x.countsByWeek).map(x => x.weekIndex)
+                    )
+                  ).map(weekIndex => ({
+                    weekIndex: index,
+                    count:
+                      line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ?? 0,
+                    ...(isDateDiff
+                      ? {
+                          totalDuration:
+                            (
+                              line.countsByWeek.find(x => x.weekIndex === weekIndex) as
+                                | DateDiffResponseItem
+                                | undefined
+                            )?.totalDuration ?? 0,
+                        }
+                      : {}),
+                  })),
+                }))}
+                points={x => x.countsByWeek}
+                pointToValue={
+                  isDateDiff
+                    ? x =>
+                        divide(
+                          (x as DateDiffResponse['countsByWeek'][number]).totalDuration,
+                          x.count
+                        ).getOr(0)
+                    : x => x.count
+                }
+                lineColor={x => lineColor(x.groupName)}
+                lineLabel={x => x.groupName}
+                xAxisLabel={x => String(x.weekIndex)}
+                yAxisLabel={isDateDiff ? prettyMS : num}
+                crosshairBubble={
+                  isDateDiff
+                    ? groupHoverTooltipForDateDiff(
+                        config,
+                        linesForGraph as DateDiffResponse[]
+                      )
+                    : groupHoverTooltipForCounts(config, linesForGraph)
+                }
+              />
+            );
+          },
+        } satisfies Partial<GraphCardProps<T>> & { key: string };
+        return { config, data: wit.data, graphCardProps };
+      });
+  }, [data, pageConfig.data?.workItemsConfig]);
 };
