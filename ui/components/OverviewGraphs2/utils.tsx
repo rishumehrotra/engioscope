@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { propEq, range, sum } from 'rambda';
 import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
-import { useQueryContext } from '../../hooks/query-hooks.js';
+import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import { divide } from '../../../shared/utils.js';
@@ -12,7 +12,7 @@ import type {
 import { isBugLike, noGroup } from '../../../shared/work-item-utils.js';
 import { drawerHeading, type GraphCardProps } from './GraphCard.jsx';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
-import emptySvgPath from './empty.svg';
+import NoSelectedPills from './NoSelectedPills.jsx';
 
 export const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -151,6 +151,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
   data: { workItemType: string; data: T[] }[] | undefined
 ) => {
   const queryContext = useQueryContext();
+  const queryPeriodDays = useQueryPeriodDays();
   const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
 
   return useMemo(() => {
@@ -164,6 +165,8 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
       .filter(x => !!x.config)
       ?.map(({ wit, config }, index) => {
         if (!config) throw new Error('Stupid TS');
+
+        const witData = wit.data;
 
         const isDateDiff = data.some(({ data }) => data.some(isDateDiffResponse));
 
@@ -182,7 +185,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                 heading: drawerHeading(
                   graphName,
                   config,
-                  sum(wit.data.flatMap(d => d.countsByWeek.map(c => c.count)))
+                  sum(witData.flatMap(d => d.countsByWeek.map(c => c.count)))
                 ),
                 children: (() => {
                   const Component = drawerComponent(drawerComponentName);
@@ -209,30 +212,17 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
             key: config.name[0],
             index,
             workItemConfig: config,
-            data: wit.data,
+            data: witData,
             combineToValue: internalCombineToValue,
             lineColor,
             formatValue: isDateDiff ? prettyMS : num,
             graphRenderer: selectedGroups => {
-              const linesForGraph = wit.data.filter(line =>
+              const linesForGraph = witData.filter(line =>
                 selectedGroups.includes(line.groupName)
               );
 
-              if (linesForGraph.length === 0 && wit.data.length !== 0) {
-                return (
-                  <div className="self-center text-center text-sm text-theme-helptext w-full">
-                    <img
-                      src={emptySvgPath}
-                      alt="No results"
-                      className="m-4 mt-6 block mx-auto"
-                    />
-                    <h1 className="text-base mb-2 font-medium">Nothing selected</h1>
-                    <p>
-                      Please select{' '}
-                      {isBugLike(config.name[0]) ? 'an environment' : 'a type'} above.
-                    </p>
-                  </div>
-                );
+              if (linesForGraph.length === 0 && witData.length !== 0) {
+                return <NoSelectedPills isBug={isBugLike(config.name[0])} />;
               }
 
               return (
@@ -240,27 +230,24 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                   className="w-full"
                   lines={linesForGraph.map(line => ({
                     ...line,
-                    countsByWeek: range(
-                      0,
-                      Math.max(
-                        ...wit.data.flatMap(x => x.countsByWeek).map(x => x.weekIndex)
-                      )
-                    ).map(weekIndex => ({
-                      weekIndex: index,
-                      count:
-                        line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ??
-                        0,
-                      ...(isDateDiff
-                        ? {
-                            totalDuration:
-                              (
-                                line.countsByWeek.find(x => x.weekIndex === weekIndex) as
-                                  | DateDiffResponseItem
-                                  | undefined
-                              )?.totalDuration ?? 0,
-                          }
-                        : {}),
-                    })),
+                    countsByWeek: range(0, Math.round(queryPeriodDays / 7)).map(
+                      weekIndex => ({
+                        weekIndex: index,
+                        count:
+                          line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ??
+                          0,
+                        ...(isDateDiff
+                          ? {
+                              totalDuration:
+                                (
+                                  line.countsByWeek.find(
+                                    x => x.weekIndex === weekIndex
+                                  ) as DateDiffResponseItem | undefined
+                                )?.totalDuration ?? 0,
+                            }
+                          : {}),
+                      })
+                    ),
                   }))}
                   points={x => x.countsByWeek}
                   pointToValue={
@@ -290,7 +277,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
             drawer,
           } satisfies Partial<GraphCardProps<T>> & { key: string };
         };
-        return { config, data: wit.data, graphCardProps };
+        return { config, data: witData, graphCardProps };
       });
-  }, [data, pageConfig.data?.workItemsConfig]);
+  }, [data, pageConfig.data?.workItemsConfig, queryPeriodDays]);
 };

@@ -115,10 +115,11 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
           <ul className="text-sm flex gap-2">
             {selectedGroups.length !== data.length && (
               <li
-                className={twJoin(
-                  'pr-2',
-                  selectedGroups.length === 0 ? '' : 'border-r border-theme-seperator'
-                )}
+                className={
+                  selectedGroups.length === 0
+                    ? ''
+                    : 'border-r border-theme-seperator pr-2'
+                }
               >
                 <button
                   className="link-text"
