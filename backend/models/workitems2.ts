@@ -773,3 +773,75 @@ const getWipTrendGraphData = async ({
 };
 
 export const getWipGraph = getGraphOfType(getWipTrendGraphData);
+
+export const getDrawerDataForWipTrendOnDate = async (
+  graphArgs: GraphArgs,
+  date: Date
+) => {
+  const { collectionName, project } = fromContext(graphArgs.queryContext);
+  const workItemConfig = await getWorkItemConfig(
+    collectionName,
+    project,
+    graphArgs.workItemType
+  );
+
+  if (!workItemConfig) return;
+
+  return WorkItemStateChangesModel.aggregate<CountWorkItems>([
+    ...(await workItemDataStages(
+      {
+        type: 'count',
+        states: prop('endStates'),
+        dateRange: { $lt: date },
+      },
+      graphArgs,
+      workItemConfig
+    )),
+    {
+      $group: {
+        _id: '$groupName',
+        workItemIds: { $addToSet: '$_id' },
+        date: { $min: '$date' },
+      },
+    },
+    { $addFields: { groupName: '$_id' } },
+    { $unset: ['_id'] },
+    { $unwind: '$workItemIds' },
+    { $addFields: { workItemId: '$workItemIds' } },
+    { $unset: 'workItemIds' },
+    {
+      $lookup: {
+        from: 'workitems',
+        let: { workItemId: '$workItemId' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              $expr: { $eq: ['$id', '$$workItemId'] },
+            },
+          },
+          { $project: { title: 1, url: 1, state: 1, id: 1 } },
+        ],
+        as: 'details',
+      },
+    },
+    { $unwind: '$details' },
+    {
+      $addFields: {
+        id: '$details.id',
+        title: '$details.title',
+        state: '$details.state',
+        url: {
+          $replaceAll: {
+            input: '$details.url',
+            find: '/_apis/wit/workItems/',
+            replacement: '/_workitems/edit/',
+          },
+        },
+      },
+    },
+    { $unset: ['details', 'workItemId'] },
+    { $project: { _id: 0 } },
+    { $match: { state: { $ne: workItemConfig.endStates } } },
+  ]);
+};
