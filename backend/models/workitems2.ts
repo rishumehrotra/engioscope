@@ -398,6 +398,44 @@ const workItemDataStages = async (
   ];
 };
 
+const addWorkItemDetails = (
+  collectionName: string,
+  workItemIdField = '$_id'
+): PipelineStage[] => [
+  {
+    $lookup: {
+      from: 'workitems',
+      let: { workItemId: workItemIdField },
+      pipeline: [
+        {
+          $match: {
+            collectionName,
+            $expr: { $eq: ['$id', '$$workItemId'] },
+          },
+        },
+        { $project: { title: 1, url: 1, state: 1, id: 1 } },
+      ],
+      as: 'details',
+    },
+  },
+  { $unwind: '$details' },
+  {
+    $addFields: {
+      id: '$details.id',
+      title: '$details.title',
+      state: '$details.state',
+      url: {
+        $replaceAll: {
+          input: '$details.url',
+          find: '/_apis/wit/workItems/',
+          replacement: '/_workitems/edit/',
+        },
+      },
+    },
+  },
+  { $project: { _id: 0, details: 0 } },
+];
+
 export type CountWorkItems = {
   id: number;
   date: Date;
@@ -435,39 +473,7 @@ export function getDrawerDataForWorkItem(args: CountArgs | DateDiffArgs) {
 
     return WorkItemStateChangesModel.aggregate([
       ...(await workItemDataStages(args, graphArgs, workItemConfig)),
-      {
-        $lookup: {
-          from: 'workitems',
-          let: { workItemId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                collectionName,
-                $expr: { $eq: ['$id', '$$workItemId'] },
-              },
-            },
-            { $project: { title: 1, url: 1, state: 1, id: 1 } },
-          ],
-          as: 'details',
-        },
-      },
-      { $unwind: '$details' },
-      {
-        $addFields: {
-          id: '$details.id',
-          title: '$details.title',
-          state: '$details.state',
-          url: {
-            $replaceAll: {
-              input: '$details.url',
-              find: '/_apis/wit/workItems/',
-              replacement: '/_workitems/edit/',
-            },
-          },
-        },
-      },
-      { $unset: 'details' },
-      { $project: { _id: 0 } },
+      ...addWorkItemDetails(collectionName),
     ]);
   };
 }
@@ -620,20 +626,17 @@ export const getWipTrendGraphDataBeforeStartDate = async (graphArgs: GraphArgs) 
     ...(await workItemDataStages(
       {
         type: 'count',
-        states: prop('endStates'),
+        states: prop('startStates'),
         dateRange: { $lt: startDate },
       },
       graphArgs,
       workItemConfig
     )),
-    {
-      $group: {
-        _id: '$groupName',
-        workItemIds: { $addToSet: '$_id' },
-      },
-    },
+    ...addWorkItemDetails(collectionName),
+    { $match: { state: { $ne: workItemConfig.endStates } } },
+    { $group: { _id: '$groupName', workItemIds: { $addToSet: '$id' } } },
     { $addFields: { groupName: '$_id', count: { $size: '$workItemIds' } } },
-    { $unset: ['_id', 'workItemIds'] },
+    { $project: { _id: 0, groupName: 1, count: 1 } },
   ]);
 };
 
@@ -773,3 +776,44 @@ const getWipTrendGraphData = async ({
 };
 
 export const getWipGraph = getGraphOfType(getWipTrendGraphData);
+
+export const getDrawerDataForWipTrendOnDate = async (
+  graphArgs: GraphArgs,
+  date: Date
+) => {
+  const { collectionName, project } = fromContext(graphArgs.queryContext);
+  const workItemConfig = await getWorkItemConfig(
+    collectionName,
+    project,
+    graphArgs.workItemType
+  );
+
+  if (!workItemConfig) return;
+
+  return WorkItemStateChangesModel.aggregate<CountWorkItems>([
+    ...(await workItemDataStages(
+      {
+        type: 'count',
+        states: prop('startStates'),
+        dateRange: { $lt: date },
+      },
+      graphArgs,
+      workItemConfig
+    )),
+    {
+      $group: {
+        _id: '$groupName',
+        workItemIds: { $addToSet: '$_id' },
+        date: { $min: '$date' },
+      },
+    },
+    { $addFields: { groupName: '$_id' } },
+    { $unset: ['_id'] },
+    { $unwind: '$workItemIds' },
+    { $addFields: { workItemId: '$workItemIds' } },
+    { $unset: 'workItemIds' },
+    ...addWorkItemDetails(collectionName, '$workItemId'),
+    { $project: { workItemId: 0 } },
+    { $match: { state: { $ne: workItemConfig.endStates } } },
+  ]);
+};
