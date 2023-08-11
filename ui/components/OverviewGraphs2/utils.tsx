@@ -1,7 +1,13 @@
 import React, { useCallback, useMemo } from 'react';
 import { prop, propEq, range, sum } from 'rambda';
-import { createPalette, minPluralise, num, prettyMS } from '../../helpers/utils.js';
-import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
+import {
+  createPalette,
+  minPluralise,
+  num,
+  prettyMS,
+  shortDate,
+} from '../../helpers/utils.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import { divide } from '../../../shared/utils.js';
@@ -13,6 +19,7 @@ import { isBugLike, noGroup } from '../../../shared/work-item-utils.js';
 import { drawerHeading, type GraphCardProps } from './GraphCard.jsx';
 import StackedAreaGraph from '../graphs/StackedAreaGraph.jsx';
 import NoSelectedPills from './NoSelectedPills.jsx';
+import { useDatesForWeekIndex, useMaxWeekIndex } from '../../hooks/week-index-hooks.js';
 
 export const prettyStates = (startStates: string[]) => {
   if (startStates.length === 1) return `the '${startStates[0]}' state`;
@@ -151,7 +158,8 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
   data: { workItemType: string; data: T[] }[] | undefined
 ) => {
   const queryContext = useQueryContext();
-  const queryPeriodDays = useQueryPeriodDays();
+  const maxWeekIndex = useMaxWeekIndex();
+  const datesForWeekIndex = useDatesForWeekIndex();
   const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
 
   const isDateDiff = useMemo(
@@ -163,7 +171,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
     (linesForGraph: T[]) =>
       linesForGraph.map(line => ({
         ...line,
-        countsByWeek: range(0, Math.round(queryPeriodDays / 7)).map(weekIndex => ({
+        countsByWeek: range(0, maxWeekIndex).map(weekIndex => ({
           weekIndex,
           count: line.countsByWeek.find(x => x.weekIndex === weekIndex)?.count ?? 0,
           ...(isDateDiff
@@ -178,7 +186,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
             : {}),
         })),
       })),
-    [isDateDiff, queryPeriodDays]
+    [isDateDiff, maxWeekIndex]
   );
 
   return useMemo(() => {
@@ -266,7 +274,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                   }
                   lineColor={x => lineColor(x.groupName)}
                   lineLabel={prop('groupName')}
-                  xAxisLabel={x => String(x.weekIndex)}
+                  xAxisLabel={x => shortDate(datesForWeekIndex(x.weekIndex).endDate)}
                   yAxisLabel={isDateDiff ? prettyMS : num}
                   crosshairBubble={
                     isDateDiff
@@ -284,5 +292,11 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
         };
         return { config, data: witData, graphCardProps };
       });
-  }, [data, fillGapsForGraph, isDateDiff, pageConfig.data?.workItemsConfig]);
+  }, [
+    data,
+    datesForWeekIndex,
+    fillGapsForGraph,
+    isDateDiff,
+    pageConfig.data?.workItemsConfig,
+  ]);
 };

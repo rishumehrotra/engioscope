@@ -9,7 +9,7 @@ import type {
   CountWorkItems,
   DateDiffWorkItems,
 } from '../../../backend/models/workitems2.js';
-import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
+import { useDatesForWeekIndex, useMaxWeekIndex } from '../../hooks/week-index-hooks.js';
 
 type NewDrawerProps = {
   selectedTab: string;
@@ -18,8 +18,8 @@ type NewDrawerProps = {
 
 const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedTab);
-  const queryPeriodDays = useQueryPeriodDays();
-  const queryContext = useQueryContext();
+  const maxWeekIndex = useMaxWeekIndex();
+  const datesForWeekIndex = useDatesForWeekIndex();
 
   const subTypePickerOptions = useMemo(() => {
     if (!workItems) return [];
@@ -45,14 +45,8 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
       .filter(wi => wi.groupName === selectedGroupName)
       .sort(byDate(x => x.date));
 
-    return range(0, Math.round(queryPeriodDays / 7))
-      .map(weekIndex => {
-        const startDate = new Date(queryContext[2]);
-        startDate.setDate(startDate.getDate() + (weekIndex + 0) * 7);
-        const endDate = new Date(new Date(startDate).setDate(startDate.getDate() + 7));
-
-        return { startDate, endDate, weekIndex };
-      })
+    return range(0, maxWeekIndex)
+      .map(datesForWeekIndex)
       .map(({ startDate, endDate }) => ({
         weekStartDate: startDate,
         weekEndDate: endDate,
@@ -61,7 +55,7 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
         ),
       }))
       .filter(x => x.workItems.length > 0);
-  }, [workItems, queryPeriodDays, selectedGroupName, queryContext]);
+  }, [workItems, maxWeekIndex, datesForWeekIndex, selectedGroupName]);
 
   return (
     <div className="mx-4">

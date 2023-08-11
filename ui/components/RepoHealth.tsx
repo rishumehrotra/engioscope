@@ -20,6 +20,7 @@ import useUiConfig from '../hooks/use-ui-config.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import { ProfilePic } from './common/ProfilePic.jsx';
 import TinyAreaGraph, { areaGraphColors, graphConfig } from './graphs/TinyAreaGraph.jsx';
+import { useMaxWeekIndex } from '../hooks/week-index-hooks.js';
 
 type ReleaseBranchesProps = {
   repositoryId: string;
@@ -379,6 +380,7 @@ type RepoHealthProps = {
 
 const RepoHealth: React.FC<RepoHealthProps> = ({ item, index }) => {
   const queryPeriodDays = useQueryPeriodDays();
+  const maxWeekIndex = useMaxWeekIndex();
   const location = useLocation();
   const uiConfig = useUiConfig();
   const isFirst = index === 0;
@@ -524,7 +526,7 @@ const RepoHealth: React.FC<RepoHealthProps> = ({ item, index }) => {
         </div>
         <div className="text-right">
           <TinyAreaGraph
-            data={range(0, Math.floor(queryPeriodDays / 7)).map(weekIndex => {
+            data={range(0, maxWeekIndex).map(weekIndex => {
               return item.weeklyCommits?.find(x => x.weekIndex === weekIndex)?.count || 0;
             })}
             itemToValue={identity}
