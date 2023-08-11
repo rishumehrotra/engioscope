@@ -626,20 +626,17 @@ export const getWipTrendGraphDataBeforeStartDate = async (graphArgs: GraphArgs) 
     ...(await workItemDataStages(
       {
         type: 'count',
-        states: prop('endStates'),
+        states: prop('startStates'),
         dateRange: { $lt: startDate },
       },
       graphArgs,
       workItemConfig
     )),
-    {
-      $group: {
-        _id: '$groupName',
-        workItemIds: { $addToSet: '$_id' },
-      },
-    },
+    ...addWorkItemDetails(collectionName),
+    { $match: { state: { $ne: workItemConfig.endStates } } },
+    { $group: { _id: '$groupName', workItemIds: { $addToSet: '$id' } } },
     { $addFields: { groupName: '$_id', count: { $size: '$workItemIds' } } },
-    { $unset: ['_id', 'workItemIds'] },
+    { $project: { _id: 0, groupName: 1, count: 1 } },
   ]);
 };
 
@@ -797,7 +794,7 @@ export const getDrawerDataForWipTrendOnDate = async (
     ...(await workItemDataStages(
       {
         type: 'count',
-        states: prop('endStates'),
+        states: prop('startStates'),
         dateRange: { $lt: date },
       },
       graphArgs,
