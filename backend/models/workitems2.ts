@@ -398,6 +398,44 @@ const workItemDataStages = async (
   ];
 };
 
+const addWorkItemDetails = (
+  collectionName: string,
+  workItemIdField = '$_id'
+): PipelineStage[] => [
+  {
+    $lookup: {
+      from: 'workitems',
+      let: { workItemId: workItemIdField },
+      pipeline: [
+        {
+          $match: {
+            collectionName,
+            $expr: { $eq: ['$id', '$$workItemId'] },
+          },
+        },
+        { $project: { title: 1, url: 1, state: 1, id: 1 } },
+      ],
+      as: 'details',
+    },
+  },
+  { $unwind: '$details' },
+  {
+    $addFields: {
+      id: '$details.id',
+      title: '$details.title',
+      state: '$details.state',
+      url: {
+        $replaceAll: {
+          input: '$details.url',
+          find: '/_apis/wit/workItems/',
+          replacement: '/_workitems/edit/',
+        },
+      },
+    },
+  },
+  { $project: { _id: 0, details: 0 } },
+];
+
 export type CountWorkItems = {
   id: number;
   date: Date;
@@ -435,39 +473,7 @@ export function getDrawerDataForWorkItem(args: CountArgs | DateDiffArgs) {
 
     return WorkItemStateChangesModel.aggregate([
       ...(await workItemDataStages(args, graphArgs, workItemConfig)),
-      {
-        $lookup: {
-          from: 'workitems',
-          let: { workItemId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                collectionName,
-                $expr: { $eq: ['$id', '$$workItemId'] },
-              },
-            },
-            { $project: { title: 1, url: 1, state: 1, id: 1 } },
-          ],
-          as: 'details',
-        },
-      },
-      { $unwind: '$details' },
-      {
-        $addFields: {
-          id: '$details.id',
-          title: '$details.title',
-          state: '$details.state',
-          url: {
-            $replaceAll: {
-              input: '$details.url',
-              find: '/_apis/wit/workItems/',
-              replacement: '/_workitems/edit/',
-            },
-          },
-        },
-      },
-      { $unset: 'details' },
-      { $project: { _id: 0 } },
+      ...addWorkItemDetails(collectionName),
     ]);
   };
 }
@@ -809,39 +815,8 @@ export const getDrawerDataForWipTrendOnDate = async (
     { $unwind: '$workItemIds' },
     { $addFields: { workItemId: '$workItemIds' } },
     { $unset: 'workItemIds' },
-    {
-      $lookup: {
-        from: 'workitems',
-        let: { workItemId: '$workItemId' },
-        pipeline: [
-          {
-            $match: {
-              collectionName,
-              $expr: { $eq: ['$id', '$$workItemId'] },
-            },
-          },
-          { $project: { title: 1, url: 1, state: 1, id: 1 } },
-        ],
-        as: 'details',
-      },
-    },
-    { $unwind: '$details' },
-    {
-      $addFields: {
-        id: '$details.id',
-        title: '$details.title',
-        state: '$details.state',
-        url: {
-          $replaceAll: {
-            input: '$details.url',
-            find: '/_apis/wit/workItems/',
-            replacement: '/_workitems/edit/',
-          },
-        },
-      },
-    },
-    { $unset: ['details', 'workItemId'] },
-    { $project: { _id: 0 } },
+    ...addWorkItemDetails(collectionName, '$workItemId'),
+    { $project: { workItemId: 0 } },
     { $match: { state: { $ne: workItemConfig.endStates } } },
   ]);
 };
