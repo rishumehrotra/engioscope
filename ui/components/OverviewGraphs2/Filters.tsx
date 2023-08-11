@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { forwardRef, useCallback, useLayoutEffect, useMemo } from 'react';
+import { add } from 'rambda';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown.jsx';
@@ -38,7 +39,10 @@ export const useFilter = () => {
   return { filters: pageConfig.data?.filters, selectedFilters, setSelectedFilters };
 };
 
-const Filters = () => {
+const Filters = forwardRef<
+  HTMLDivElement,
+  { setRenderCount: React.Dispatch<React.SetStateAction<number>> }
+>(({ setRenderCount }, ref) => {
   const { filters, selectedFilters, setSelectedFilters } = useFilter();
 
   const onChange = useCallback(
@@ -50,8 +54,12 @@ const Filters = () => {
     [selectedFilters, setSelectedFilters]
   );
 
+  useLayoutEffect(() => {
+    setRenderCount(add(1));
+  }, [setRenderCount, filters]);
+
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-wrap gap-4" ref={ref}>
       {Object.entries(filters || {}).map(([label, values]) => (
         <MultiSelectDropdownWithLabel
           key={label}
@@ -63,6 +71,6 @@ const Filters = () => {
       ))}
     </div>
   );
-};
+});
 
 export default Filters;
