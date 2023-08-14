@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import { renderToString } from 'react-dom/server';
 import { prop, propEq, range, sum } from 'rambda';
 import {
   createPalette,
@@ -61,16 +62,16 @@ export const groupHoverTooltipForCounts = (
 
     if (!groups.length) return null;
 
-    return (
-      <div className="bg-theme-backdrop bg-opacity-90 rounded-md text-theme-base-inverted py-2 px-4">
-        <div className="flex gap-2 items-center mb-1">
+    return renderToString(
+      <div className="bg-theme-backdrop bg-opacity-90 rounded-md text-theme-base-inverted min-w-[13rem]">
+        <div className="grid grid-cols-[0.75rem_1fr_1fr] gap-2 justify-between items-center text-base font-semibold mb-2">
           <img
             src={workItemConfig.icon}
-            alt={`Iconn for ${workItemConfig.name[1]}`}
-            className="w-3"
+            alt={`Icon for ${workItemConfig.name[1]}`}
+            className="w-3 block"
           />
           <span className="font-semibold">{workItemConfig.name[1]}</span>
-          <div>{shortDate(datesForWeekIndex(index).endDate)}</div>
+          <div className="text-right">{shortDate(datesForWeekIndex(index).endDate)}</div>
         </div>
         <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
           {groups.map(item => (
@@ -93,7 +94,8 @@ export const groupHoverTooltipForCounts = (
 
 export const groupHoverTooltipForDateDiff = (
   workItemConfig: WorkItemConfig,
-  data: DateDiffResponse[]
+  data: DateDiffResponse[],
+  datesForWeekIndex: ReturnType<typeof useDatesForWeekIndex>
 ) => {
   return (index: number) => {
     const groups = data.reduce<
@@ -111,15 +113,16 @@ export const groupHoverTooltipForDateDiff = (
 
     if (!groups.length) return null;
 
-    return (
-      <div className="bg-black rounded-md text-theme-base-inverted py-2 px-4">
-        <div className="flex gap-2 items-center mb-1">
+    return renderToString(
+      <div className="bg-black rounded-md text-theme-base-inverted">
+        <div className="grid grid-cols-[0.75rem_1fr_1fr] gap-2 justify-between items-center text-base font-semibold mb-2">
           <img
             src={workItemConfig.icon}
-            alt={`Iconn for ${workItemConfig.name[1]}`}
-            className="w-3"
+            alt={`Icon for ${workItemConfig.name[1]}`}
+            className="w-3 block"
           />
           <span className="font-semibold">{workItemConfig.name[1]}</span>
+          <div className="text-right">{shortDate(datesForWeekIndex(index).endDate)}</div>
         </div>
         <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
           {groups.map(item => (
@@ -282,7 +285,8 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                     isDateDiff
                       ? groupHoverTooltipForDateDiff(
                           config,
-                          linesForGraph as DateDiffResponse[]
+                          linesForGraph as DateDiffResponse[],
+                          datesForWeekIndex
                         )
                       : groupHoverTooltipForCounts(
                           config,

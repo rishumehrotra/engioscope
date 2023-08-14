@@ -14,16 +14,12 @@ import { divide, exists } from '../../../shared/utils.js';
 
 const yAxisLeftPadding = 70;
 const yAxisLabelHeight = 20;
-// const height = 300;
 const xAxisBottomPadding = 30;
 const xAxisLabelHeight = 30;
 const xAxisLabelWidth = 100;
 const axisOverhang = 0;
 const numberOfHorizontalGridLines = 5;
 const numberOfVerticalGridLines = 6;
-const hoverBubbleWidth = 200;
-// const hoverBubbleMaxHeight = (height * 2) / 3;
-const hoverBubbleMaxHeight = (300 * 2) / 3;
 
 const useGraphProperties = <L, P>({
   lines,
@@ -198,9 +194,7 @@ const GridLines = <Point extends unknown>({
 const useCrosshair = (
   svgRef: MutableRefObject<SVGSVGElement | null>,
   crosshairRef: MutableRefObject<SVGGElement | null>,
-  width: number,
-  closestPointIndex: (xCoord: number) => number,
-  xCoord: (index: number) => number
+  graphProperties: GraphProperties
 ) => {
   const hoverXCoord = useRef<number | null>(null);
   const prevHoverXCoord = useRef<number | null>(null);
@@ -222,30 +216,14 @@ const useCrosshair = (
     }
 
     svg.style.cursor = 'pointer';
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const crosshairLabel = crosshair.querySelector('div')!;
-    const closest = closestPointIndex(hoverXCoord.current);
+
+    // const crosshairLabel = crosshair.querySelector('div')!;
+    const closest = graphProperties.closestPointIndex(hoverXCoord.current);
 
     crosshair.style.display = '';
-    crosshair.style.transform = `translateX(${xCoord(closest)}px)`;
+    crosshair.style.transform = `translateX(${graphProperties.xCoord(closest)}px)`;
     if (closest !== closestIndex) setClosestIndex(closest);
-
-    const closeToRightEdge = width - xCoord(closest) < hoverBubbleWidth / 2;
-    const closeToLeftEdge = xCoord(closest) < hoverBubbleWidth / 2;
-    if (closeToRightEdge) {
-      // crosshairLabel.style.transformOrigin = 'right';
-      crosshairLabel.style.transform = `translateX(${
-        width - xCoord(closest) - hoverBubbleWidth / 2
-      }px)`;
-    } else if (closeToLeftEdge) {
-      crosshairLabel.style.transform = `translateX(${
-        hoverBubbleWidth / 2 - xCoord(closest)
-      }px)`;
-    } else {
-      crosshairLabel.style.transform = 'translateX(0)';
-      crosshairLabel.style.width = `${hoverBubbleWidth}px`;
-    }
-  }, [svgRef, crosshairRef, width, closestPointIndex, xCoord, closestIndex]);
+  }, [svgRef, crosshairRef, graphProperties, closestIndex]);
   useRequestAnimationFrame(repositionCrosshair);
 
   const mouseMove = useCallback(
@@ -255,10 +233,10 @@ const useCrosshair = (
         return;
       }
       const rect = svgRef.current.getBoundingClientRect();
-      const mappedPosition = (width / rect.width) * e.offsetX;
+      const mappedPosition = (graphProperties.width / rect.width) * e.offsetX;
       hoverXCoord.current = mappedPosition < yAxisLeftPadding ? null : mappedPosition;
     },
-    [svgRef, width]
+    [graphProperties.width, svgRef]
   );
   useSvgEvent(svgRef, 'mousemove', mouseMove);
 
@@ -282,24 +260,19 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
   contents,
 }) => {
   const crosshairRef = useRef<SVGGElement | null>(null);
-  const renderIndex = useCrosshair(
-    svgRef,
-    crosshairRef,
-    graphProperties.width,
-    graphProperties.closestPointIndex,
-    graphProperties.xCoord
-  );
+  const renderIndex = useCrosshair(svgRef, crosshairRef, graphProperties);
 
   return (
-    <g ref={crosshairRef} className="pointer-events-none" style={{ display: 'none' }}>
+    <g ref={crosshairRef} style={{ display: 'none' }}>
       <rect
         x={-1 * (graphProperties.xAxisItemSpacing / 2)}
         y={0}
         width={graphProperties.xAxisItemSpacing}
         height={graphProperties.height - xAxisBottomPadding}
-        fill="none"
-        data-tooltip-id="react-tooltip-id"
-        data-tooltip-html={renderIndex === null ? null : contents(renderIndex)}
+        fill="transparent"
+        data-tooltip-id="react-tooltip"
+        data-tooltip-html={renderIndex === null ? '' : contents(renderIndex)}
+        data-tooltip-float="true"
       />
       <line
         x1={0}
@@ -307,17 +280,8 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
         x2={0}
         y2={graphProperties.height - xAxisBottomPadding}
         stroke="rgba(0,0,0,0.07)"
+        className="pointer-events-none"
       />
-      <foreignObject
-        x={-1 * (hoverBubbleWidth / 2)}
-        y={0}
-        width={hoverBubbleWidth}
-        height={hoverBubbleMaxHeight}
-        overflow="visible"
-      >
-        {/* This div is needed for the useCrosshair hook */}
-        <div>{renderIndex === null ? null : contents(renderIndex)}</div>
-      </foreignObject>
     </g>
   );
 };
@@ -330,7 +294,7 @@ export type StackedAreaGraphProps<Line, Point> = {
   yAxisLabel: (value: number) => string;
   lineLabel: (line: Line) => string;
   xAxisLabel: (point: Point) => string;
-  crosshairBubble?: (pointIndex: number) => React.ReactNode;
+  crosshairBubble?: (pointIndex: number) => string | null;
   className?: string;
   onClick?: (pointIndex: number) => void;
 };
