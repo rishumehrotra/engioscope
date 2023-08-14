@@ -10,6 +10,8 @@ import type {
   DateDiffWorkItems,
 } from '../../../backend/models/workitems2.js';
 import { useDatesForWeekIndex, useMaxWeekIndex } from '../../hooks/week-index-hooks.js';
+import { useQueryContext } from '../../hooks/query-hooks.js';
+import { oneWeekInMs } from '../../../shared/utils.js';
 
 type NewDrawerProps = {
   selectedTab: string;
@@ -18,6 +20,7 @@ type NewDrawerProps = {
 
 const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedTab);
+  const queryContext = useQueryContext();
   const maxWeekIndex = useMaxWeekIndex();
   const datesForWeekIndex = useDatesForWeekIndex();
   const subTypePickerOptions = useMemo(() => {
@@ -44,7 +47,12 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
       .filter(wi => wi.groupName === selectedGroupName)
       .sort(byDate(x => x.date));
 
-    return range(0, maxWeekIndex)
+    const minDateMs = Math.min(...workItems.map(w => w.date.getTime()));
+
+    return range(
+      Math.floor((minDateMs - queryContext[2].getTime()) / oneWeekInMs),
+      maxWeekIndex
+    )
       .map(datesForWeekIndex)
       .map(({ startDate, endDate }) => ({
         weekStartDate: startDate,
@@ -54,7 +62,7 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
         ),
       }))
       .filter(x => x.workItems.length > 0);
-  }, [workItems, maxWeekIndex, datesForWeekIndex, selectedGroupName]);
+  }, [workItems, queryContext, maxWeekIndex, datesForWeekIndex, selectedGroupName]);
 
   return (
     <div className="mx-4">
