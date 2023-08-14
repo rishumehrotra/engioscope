@@ -48,7 +48,8 @@ export type WorkItemConfig = NonNullable<
 
 export const groupHoverTooltipForCounts = (
   workItemConfig: WorkItemConfig,
-  data: CountResponse[]
+  data: CountResponse[],
+  datesForWeekIndex: ReturnType<typeof useDatesForWeekIndex>
 ) => {
   return (index: number) => {
     const groups = data.reduce<{ groupName: string; count: number }[]>((acc, line) => {
@@ -69,6 +70,7 @@ export const groupHoverTooltipForCounts = (
             className="w-3"
           />
           <span className="font-semibold">{workItemConfig.name[1]}</span>
+          <div>{shortDate(datesForWeekIndex(index).endDate)}</div>
         </div>
         <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
           {groups.map(item => (
@@ -282,7 +284,11 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                           config,
                           linesForGraph as DateDiffResponse[]
                         )
-                      : groupHoverTooltipForCounts(config, linesForGraph)
+                      : groupHoverTooltipForCounts(
+                          config,
+                          linesForGraph,
+                          datesForWeekIndex
+                        )
                   }
                 />
               );

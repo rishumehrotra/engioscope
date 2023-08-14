@@ -95,7 +95,7 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
                         className="grid grid-cols-[1fr_70px] gap-4 pl-9 pr-2 rounded-md hover:bg-theme-hover group"
                       >
                         <div className="border-l border-l-transparent hover:border-l-theme-input pl-10 pt-2 pb-3">
-                          <div className="group-hover:text-theme-highlight group-hover:underline">
+                          <div className="group-hover:text-theme-highlight group-hover:underline mb-2">
                             #{wi.id}: {wi.title}
                           </div>
                           <span className="bg-theme-tag text-sm px-2 py-1 rounded-md">

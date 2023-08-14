@@ -3,12 +3,12 @@ import type { MutableRefObject } from 'react';
 import React, { useMemo, useState, useCallback, Fragment, useRef } from 'react';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
 import useSvgEvent from '../../hooks/use-svg-event.js';
-import { exists } from '../../../shared/utils.js';
+import { divide, exists } from '../../../shared/utils.js';
 
-const yAxisItemSpacing = 60;
+const xAxisItemSpacing = 60;
 const yAxisLeftPadding = 70;
 const yAxisLabelHeight = 20;
-const height = 300;
+// const height = 300;
 const xAxisBottomPadding = 30;
 const xAxisLabelHeight = 30;
 const xAxisLabelWidth = 100;
@@ -17,23 +17,74 @@ const numberOfHorizontalGridLines = 5;
 const numberOfVerticalGridLines = 6;
 const hoverBubbleWidth = 200;
 
-const hoverBubbleMaxHeight = (height * 2) / 3;
+// const hoverBubbleMaxHeight = (height * 2) / 3;
+const hoverBubbleMaxHeight = (300 * 2) / 3;
 
-const Axes: React.FC<{ width: number }> = ({ width }) => (
+const computeGraphProperties = <L, P>({
+  lines,
+  points,
+  pointToValue,
+  width,
+  height,
+}: {
+  lines: L[];
+  points: (x: L) => P[];
+  pointToValue: (x: P) => number;
+  width: number;
+  height: number;
+}) => {
+  const pointsHorizontalCount = lines[0] ? points(lines[0]).length : 0;
+
+  const yAxisMax = lines[0]
+    ? Math.max(
+        ...range(0, pointsHorizontalCount).map(weekIndex => {
+          return sum(lines.map(line => pointToValue(points(line)[weekIndex])));
+        })
+      )
+    : 0;
+
+  const numXAxisPoints = lines[0] ? points(lines[0]).length : 0;
+  const xAxisItemSpacing = divide(width - yAxisLeftPadding, numXAxisPoints - 1).getOr(0);
+
+  const xCoord = (index: number) => index * xAxisItemSpacing + yAxisLeftPadding;
+  const yCoord = (value: number) =>
+    height - (value / yAxisMax) * (height - xAxisBottomPadding) - xAxisBottomPadding;
+  const closestPointIndex = (xCoord: number) =>
+    Math.round((xCoord - yAxisLeftPadding) / xAxisItemSpacing);
+
+  const toPoint = (value: number, index: number) => {
+    return [xCoord(index), yCoord(value)].join(',');
+  };
+
+  return {
+    xCoord,
+    yCoord,
+    xAxisItemSpacing,
+    closestPointIndex,
+    toPoint,
+    yAxisMax,
+    width,
+    height,
+  };
+};
+
+type GraphProperties = ReturnType<typeof computeGraphProperties>;
+
+const Axes: React.FC<{ graphProperties: GraphProperties }> = ({ graphProperties }) => (
   <g>
     <line
       x1={yAxisLeftPadding}
       y1={0}
       x2={yAxisLeftPadding}
-      y2={height - xAxisBottomPadding + axisOverhang}
+      y2={graphProperties.height - xAxisBottomPadding + axisOverhang}
       stroke="#ddd"
       strokeWidth={1}
     />
     <line
       x1={yAxisLeftPadding - axisOverhang}
-      y1={height - xAxisBottomPadding}
-      x2={width}
-      y2={height - xAxisBottomPadding}
+      y1={graphProperties.height - xAxisBottomPadding}
+      x2={graphProperties.width}
+      y2={graphProperties.height - xAxisBottomPadding}
       stroke="#ddd"
       strokeWidth={1}
     />
@@ -42,27 +93,23 @@ const Axes: React.FC<{ width: number }> = ({ width }) => (
 
 type GridLinesProps<Point> = {
   svgRef: MutableRefObject<SVGSVGElement | null>;
-  yAxisMax: number;
-  yCoord: (value: number) => number;
-  width: number;
+  graphProperties: GraphProperties;
   yAxisLabel: (value: number) => string;
   xAxisLabel: (point: Point) => string;
   points: Point[];
-  closestPointIndex: (xCoord: number) => number;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 const GridLines = <Point extends unknown>({
   svgRef,
-  yAxisMax,
-  yCoord,
-  width,
+  graphProperties,
   yAxisLabel,
   xAxisLabel,
   points,
-  closestPointIndex,
 }: GridLinesProps<Point>) => {
-  const gridLinesGap = Math.ceil(yAxisMax / (numberOfHorizontalGridLines + 1));
+  const gridLinesGap = Math.ceil(
+    graphProperties.yAxisMax / (numberOfHorizontalGridLines + 1)
+  );
 
   const labelForVerticalGridline = useMemo(() => {
     const svgDimensions = svgRef.current?.getBoundingClientRect();
@@ -70,15 +117,16 @@ const GridLines = <Point extends unknown>({
       if (!svgDimensions) return;
       return xAxisLabel(
         points[
-          closestPointIndex(
+          graphProperties.closestPointIndex(
             (gridLineIndex *
-              (svgDimensions.width - (yAxisLeftPadding * svgDimensions.width) / width)) /
+              (svgDimensions.width -
+                (yAxisLeftPadding * svgDimensions.width) / graphProperties.width)) /
               (numberOfVerticalGridLines - 1)
           )
         ]
       );
     };
-  }, [closestPointIndex, points, svgRef, width, xAxisLabel]);
+  }, [graphProperties, points, svgRef, xAxisLabel]);
 
   return (
     <>
@@ -87,15 +135,15 @@ const GridLines = <Point extends unknown>({
           <Fragment key={i}>
             <line
               x1={yAxisLeftPadding}
-              y1={yCoord(gridLinesGap * i)}
-              x2={width}
-              y2={yCoord(gridLinesGap * i)}
+              y1={graphProperties.yCoord(gridLinesGap * i)}
+              x2={graphProperties.width}
+              y2={graphProperties.yCoord(gridLinesGap * i)}
               stroke="#f6f6f6"
               strokeWidth={1}
             />
             <foreignObject
               x={0}
-              y={yCoord(gridLinesGap * i)}
+              y={graphProperties.yCoord(gridLinesGap * i)}
               width={yAxisLeftPadding - axisOverhang}
               height={yAxisLabelHeight}
             >
@@ -113,10 +161,11 @@ const GridLines = <Point extends unknown>({
               <foreignObject
                 x={
                   yAxisLeftPadding +
-                  (i * (width - yAxisLeftPadding)) / numberOfVerticalGridLines -
+                  (i * (graphProperties.width - yAxisLeftPadding)) /
+                    numberOfVerticalGridLines -
                   xAxisLabelWidth / 2
                 }
-                y={height - xAxisBottomPadding + axisOverhang / 2}
+                y={graphProperties.height - xAxisBottomPadding + axisOverhang / 2}
                 width={xAxisLabelWidth}
                 height={xAxisLabelHeight}
               >
@@ -209,37 +258,31 @@ const useCrosshair = (
 
 type VerticalCrosshairProps = {
   svgRef: MutableRefObject<SVGSVGElement | null>;
-  width: number;
-  closestPointIndex: (xCoord: number) => number;
-  xCoord: (index: number) => number;
+  graphProperties: GraphProperties;
   contents: (pointIndex: number) => React.ReactNode;
-  crosshairWidth: number;
 };
 
 const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
   svgRef,
-  width,
-  closestPointIndex,
-  xCoord,
+  graphProperties,
   contents,
-  crosshairWidth,
 }) => {
   const crosshairRef = useRef<SVGGElement | null>(null);
   const renderIndex = useCrosshair(
     svgRef,
     crosshairRef,
-    width,
-    closestPointIndex,
-    xCoord
+    graphProperties.width,
+    graphProperties.closestPointIndex,
+    graphProperties.xCoord
   );
 
   return (
     <g ref={crosshairRef} className="pointer-events-none" style={{ display: 'none' }}>
       <rect
-        x={-1 * (crosshairWidth / 2)}
+        x={-1 * (graphProperties.xAxisItemSpacing / 2)}
         y={0}
-        width={crosshairWidth}
-        height={height - xAxisBottomPadding}
+        width={graphProperties.xAxisItemSpacing}
+        height={graphProperties.height - xAxisBottomPadding}
         fill="none"
         data-tooltip-id="react-tooltip-id"
         data-tooltip-html={renderIndex === null ? null : contents(renderIndex)}
@@ -248,7 +291,7 @@ const VerticalCrosshair: React.FC<VerticalCrosshairProps> = ({
         x1={0}
         y1={0}
         x2={0}
-        y2={height - xAxisBottomPadding}
+        y2={graphProperties.height - xAxisBottomPadding}
         stroke="rgba(0,0,0,0.07)"
       />
       <foreignObject
@@ -276,6 +319,8 @@ export type StackedAreaGraphProps<Line, Point> = {
   crosshairBubble?: (pointIndex: number) => React.ReactNode;
   className?: string;
   onClick?: (pointIndex: number) => void;
+  width?: number;
+  height?: number;
 };
 
 const StackedAreaGraph = <L, P>({
@@ -289,37 +334,30 @@ const StackedAreaGraph = <L, P>({
   xAxisLabel,
   crosshairBubble = () => null,
   onClick,
+  width = 730,
+  height = 300,
 }: StackedAreaGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const yAxisMax = lines[0]
-    ? Math.max(
-        ...range(0, points(lines[0]).length).map(weekIndex => {
-          return sum(lines.map(line => pointToValue(points(line)[weekIndex])));
-        })
-      )
-    : 0;
-
-  const xCoord = useCallback(
-    (index: number) => index * yAxisItemSpacing + yAxisLeftPadding,
-    []
-  );
-
-  const yCoord = useCallback(
-    (value: number) =>
-      height - (value / yAxisMax) * (height - xAxisBottomPadding) - xAxisBottomPadding,
-    [yAxisMax]
-  );
+  const graphProperties = useMemo(() => {
+    return computeGraphProperties({
+      lines,
+      points,
+      pointToValue,
+      width,
+      height,
+    });
+  }, [height, lines, pointToValue, points, width]);
 
   const closestPointIndex = useCallback(
-    (xCoord: number) => Math.round((xCoord - yAxisLeftPadding) / yAxisItemSpacing),
+    (xCoord: number) => Math.round((xCoord - yAxisLeftPadding) / xAxisItemSpacing),
     []
   );
 
-  const width =
+  const widthOld =
     lines.length === 0
       ? 0
-      : (points(lines[0]).length - 1) * yAxisItemSpacing + yAxisLeftPadding;
+      : (points(lines[0]).length - 1) * xAxisItemSpacing + yAxisLeftPadding;
 
   const onSvgClick = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
@@ -327,11 +365,11 @@ const StackedAreaGraph = <L, P>({
       const svgDimensions = svgRef.current?.getBoundingClientRect();
       if (!svgDimensions) return;
       const index = closestPointIndex(
-        (e.nativeEvent.offsetX / svgDimensions.width) * width
+        (e.nativeEvent.offsetX / svgDimensions.width) * widthOld
       );
       if (index !== null && index >= 0) onClick(index);
     },
-    [closestPointIndex, onClick, width]
+    [closestPointIndex, onClick, widthOld]
   );
 
   const polygons = useMemo(() => {
@@ -361,10 +399,6 @@ const StackedAreaGraph = <L, P>({
           : []
       );
 
-    const toPoint = (point: number, index: number) => {
-      return [xCoord(index), yCoord(point)].join(',');
-    };
-
     return stackedLines
       .flatMap((line, index) => {
         if (index === 0) return null;
@@ -374,8 +408,8 @@ const StackedAreaGraph = <L, P>({
           <polygon
             key={`${lineLabel(line.line)}-area`}
             points={[
-              ...line.value.map(toPoint),
-              ...previousLine.value.map(toPoint).reverse(),
+              ...line.value.map(graphProperties.toPoint),
+              ...previousLine.value.map(graphProperties.toPoint).reverse(),
             ].join(' ')}
             fill={lineColor(lines[index - 1])}
             className="opacity-25 transition-all duration-200"
@@ -385,7 +419,9 @@ const StackedAreaGraph = <L, P>({
             d={line.value
               .map(
                 (point, pointIndex) =>
-                  `${pointIndex === 0 ? 'M' : 'L'} ${xCoord(pointIndex)} ${yCoord(point)}`
+                  `${pointIndex === 0 ? 'M' : 'L'} ${graphProperties.xCoord(
+                    pointIndex
+                  )} ${graphProperties.yCoord(point)}`
               )
               .join(' ')}
             fill="none"
@@ -397,35 +433,29 @@ const StackedAreaGraph = <L, P>({
         ];
       })
       .filter(exists);
-  }, [lineColor, lineLabel, lines, pointToValue, points, xCoord, yCoord]);
+  }, [graphProperties, lineColor, lineLabel, lines, pointToValue, points]);
 
   return (
     <svg
-      viewBox={`0 0 ${width} ${height}`}
-      width={width}
-      height={height}
+      viewBox={`0 0 ${graphProperties.width} ${graphProperties.height}`}
+      width={graphProperties.width}
+      height={graphProperties.height}
       className={className}
       ref={svgRef}
       onClick={onSvgClick}
     >
-      <Axes width={width} />
+      <Axes graphProperties={graphProperties} />
       <GridLines
         svgRef={svgRef}
-        yAxisMax={yAxisMax}
-        yCoord={yCoord}
-        width={width}
+        graphProperties={graphProperties}
         yAxisLabel={yAxisLabel}
         xAxisLabel={xAxisLabel}
         points={points(lines[0])}
-        closestPointIndex={closestPointIndex}
       />
       {polygons}
       <VerticalCrosshair
         svgRef={svgRef}
-        width={width}
-        xCoord={xCoord}
-        crosshairWidth={yAxisItemSpacing}
-        closestPointIndex={closestPointIndex}
+        graphProperties={graphProperties}
         contents={crosshairBubble}
       />
     </svg>
