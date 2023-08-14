@@ -1,11 +1,17 @@
 import { last, range, sum } from 'rambda';
 import type { MutableRefObject } from 'react';
-import React, { useMemo, useState, useCallback, Fragment, useRef } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  Fragment,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import useRequestAnimationFrame from '../../hooks/use-request-animation-frame.js';
 import useSvgEvent from '../../hooks/use-svg-event.js';
 import { divide, exists } from '../../../shared/utils.js';
 
-const xAxisItemSpacing = 60;
 const yAxisLeftPadding = 70;
 const yAxisLabelHeight = 20;
 // const height = 300;
@@ -16,23 +22,31 @@ const axisOverhang = 0;
 const numberOfHorizontalGridLines = 5;
 const numberOfVerticalGridLines = 6;
 const hoverBubbleWidth = 200;
-
 // const hoverBubbleMaxHeight = (height * 2) / 3;
 const hoverBubbleMaxHeight = (300 * 2) / 3;
 
-const computeGraphProperties = <L, P>({
+const useGraphProperties = <L, P>({
   lines,
   points,
   pointToValue,
-  width,
-  height,
+  svgRef,
 }: {
   lines: L[];
   points: (x: L) => P[];
   pointToValue: (x: P) => number;
-  width: number;
-  height: number;
+  svgRef: MutableRefObject<SVGSVGElement | null>;
 }) => {
+  const [svgDimensions, setSvgDimensions] = useState({ width: 0, height: 0 });
+  useLayoutEffect(
+    () =>
+      setSvgDimensions(
+        svgRef.current?.getBoundingClientRect() || { width: 0, height: 0 }
+      ),
+    [svgRef]
+  );
+
+  const { width, height } = svgDimensions;
+
   const pointsHorizontalCount = lines[0] ? points(lines[0]).length : 0;
 
   const yAxisMax = lines[0]
@@ -68,7 +82,7 @@ const computeGraphProperties = <L, P>({
   };
 };
 
-type GraphProperties = ReturnType<typeof computeGraphProperties>;
+type GraphProperties = ReturnType<typeof useGraphProperties>;
 
 const Axes: React.FC<{ graphProperties: GraphProperties }> = ({ graphProperties }) => (
   <g>
@@ -319,8 +333,6 @@ export type StackedAreaGraphProps<Line, Point> = {
   crosshairBubble?: (pointIndex: number) => React.ReactNode;
   className?: string;
   onClick?: (pointIndex: number) => void;
-  width?: number;
-  height?: number;
 };
 
 const StackedAreaGraph = <L, P>({
@@ -334,42 +346,27 @@ const StackedAreaGraph = <L, P>({
   xAxisLabel,
   crosshairBubble = () => null,
   onClick,
-  width = 730,
-  height = 300,
 }: StackedAreaGraphProps<L, P>) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const graphProperties = useMemo(() => {
-    return computeGraphProperties({
-      lines,
-      points,
-      pointToValue,
-      width,
-      height,
-    });
-  }, [height, lines, pointToValue, points, width]);
-
-  const closestPointIndex = useCallback(
-    (xCoord: number) => Math.round((xCoord - yAxisLeftPadding) / xAxisItemSpacing),
-    []
-  );
-
-  const widthOld =
-    lines.length === 0
-      ? 0
-      : (points(lines[0]).length - 1) * xAxisItemSpacing + yAxisLeftPadding;
+  const graphProperties = useGraphProperties({
+    lines,
+    points,
+    pointToValue,
+    svgRef,
+  });
 
   const onSvgClick = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
       if (!onClick) return;
       const svgDimensions = svgRef.current?.getBoundingClientRect();
       if (!svgDimensions) return;
-      const index = closestPointIndex(
-        (e.nativeEvent.offsetX / svgDimensions.width) * widthOld
+      const index = graphProperties.closestPointIndex(
+        (e.nativeEvent.offsetX / svgDimensions.width) * svgDimensions.width
       );
       if (index !== null && index >= 0) onClick(index);
     },
-    [closestPointIndex, onClick, widthOld]
+    [graphProperties, onClick]
   );
 
   const polygons = useMemo(() => {
@@ -417,11 +414,12 @@ const StackedAreaGraph = <L, P>({
           <path
             key={`${lineLabel(line.line)}-path`}
             d={line.value
-              .map(
-                (point, pointIndex) =>
-                  `${pointIndex === 0 ? 'M' : 'L'} ${graphProperties.xCoord(
-                    pointIndex
-                  )} ${graphProperties.yCoord(point)}`
+              .map((point, pointIndex) =>
+                [
+                  pointIndex === 0 ? 'M' : 'L',
+                  graphProperties.xCoord(pointIndex),
+                  graphProperties.yCoord(point),
+                ].join(' ')
               )
               .join(' ')}
             fill="none"
@@ -438,8 +436,6 @@ const StackedAreaGraph = <L, P>({
   return (
     <svg
       viewBox={`0 0 ${graphProperties.width} ${graphProperties.height}`}
-      width={graphProperties.width}
-      height={graphProperties.height}
       className={className}
       ref={svgRef}
       onClick={onSvgClick}

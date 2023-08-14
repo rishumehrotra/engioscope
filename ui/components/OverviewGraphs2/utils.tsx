@@ -262,7 +262,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
 
               return (
                 <StackedAreaGraph
-                  className="w-full"
+                  className="w-full h-80"
                   lines={fillGapsForGraph(linesForGraph)}
                   points={x => x.countsByWeek}
                   pointToValue={
