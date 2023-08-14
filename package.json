@@ -80,7 +80,7 @@
     "xlsx": "^0.18.5",
     "yaml": "2.3.1",
     "yargs": "17.7.2",
-    "zod": "3.21.4"
+    "zod": "3.22.0"
   },
   "browserslist": {
     "production": [
