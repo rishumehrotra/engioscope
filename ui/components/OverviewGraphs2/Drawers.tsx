@@ -48,3 +48,13 @@ export const ChangeLeadTimeDrawer = ({ selectedTab, workItemConfig }: DrawerProp
 
   return <DrawerContents selectedTab={selectedTab} workItems={newWorkItems.data} />;
 };
+
+export const WIPTrendDrawer = ({ selectedTab, workItemConfig }: DrawerProps) => {
+  const graphArgs = useGraphArgs();
+  const wipTrendItems = trpc.workItems.getWipTrendOnDateWorkItems.useQuery({
+    ...graphArgs,
+    workItemType: workItemConfig.name[0],
+    date: graphArgs.queryContext[3],
+  });
+  return <DrawerContents selectedTab={selectedTab} workItems={wipTrendItems.data} />;
+};

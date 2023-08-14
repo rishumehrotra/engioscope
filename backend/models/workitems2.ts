@@ -777,16 +777,18 @@ const getWipTrendGraphData = async ({
 
 export const getWipGraph = getGraphOfType(getWipTrendGraphData);
 
-export const getDrawerDataForWipTrendOnDate = async (
-  graphArgs: GraphArgs,
-  date: Date
-) => {
-  const { collectionName, project } = fromContext(graphArgs.queryContext);
-  const workItemConfig = await getWorkItemConfig(
-    collectionName,
-    project,
-    graphArgs.workItemType
-  );
+export const wipTrendOnDateWorkItemsInputParser = graphArgsInputParser.extend({
+  date: z.date(),
+});
+export const getWipTrendOnDateWorkItems = async ({
+  queryContext,
+  workItemType,
+  filters,
+  priority,
+  date,
+}: z.infer<typeof wipTrendOnDateWorkItemsInputParser>) => {
+  const { collectionName, project } = fromContext(queryContext);
+  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
 
   if (!workItemConfig) return;
 
@@ -797,20 +799,24 @@ export const getDrawerDataForWipTrendOnDate = async (
         states: prop('startStates'),
         dateRange: { $lt: date },
       },
-      graphArgs,
+      { queryContext, workItemType, filters, priority },
       workItemConfig
     )),
     {
       $group: {
         _id: '$groupName',
-        workItemIds: { $addToSet: '$_id' },
-        date: { $min: '$date' },
+        workItemIds: {
+          $push: {
+            id: '$_id',
+            date: { $min: '$date' },
+          },
+        },
       },
     },
     { $addFields: { groupName: '$_id' } },
     { $unset: ['_id'] },
     { $unwind: '$workItemIds' },
-    { $addFields: { workItemId: '$workItemIds' } },
+    { $addFields: { workItemId: '$workItemIds.id', date: '$workItemIds.date' } },
     { $unset: 'workItemIds' },
     ...addWorkItemDetails(collectionName, '$workItemId'),
     { $project: { workItemId: 0 } },

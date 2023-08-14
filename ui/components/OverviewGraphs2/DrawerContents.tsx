@@ -20,7 +20,6 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedTab);
   const maxWeekIndex = useMaxWeekIndex();
   const datesForWeekIndex = useDatesForWeekIndex();
-
   const subTypePickerOptions = useMemo(() => {
     if (!workItems) return [];
 

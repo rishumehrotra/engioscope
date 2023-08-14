@@ -24,6 +24,7 @@ const WIPTrend = () => {
             <GraphCard
               {...graphCardProps({
                 graphName: 'Work in progress trend',
+                drawerComponentName: 'WIPTrendDrawer',
                 combineToValue: value =>
                   sum(value.map(x => last(x.countsByWeek)?.count || 0)),
               })}

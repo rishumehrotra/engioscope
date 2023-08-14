@@ -24,6 +24,8 @@ import {
   getCycleTimeWorkItems,
   getChangeLeadTimeWorkItems,
   getWipGraph,
+  getWipTrendOnDateWorkItems,
+  wipTrendOnDateWorkItemsInputParser,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -76,4 +78,7 @@ export default t.router({
   getChangeLeadTimeWorkItems: t.procedure
     .input(graphArgsInputParser)
     .query(passInputTo(getChangeLeadTimeWorkItems)),
+  getWipTrendOnDateWorkItems: t.procedure
+    .input(wipTrendOnDateWorkItemsInputParser)
+    .query(passInputTo(getWipTrendOnDateWorkItems)),
 });
