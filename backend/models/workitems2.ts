@@ -838,7 +838,7 @@ export const getBugLeakage = async ({
     workItemConfig.rootCause.map(async rootCause => {
       const bugWorkItems = await WorkItemModel.aggregate<{
         rootCauseField: string;
-        bugs: {
+        groups: {
           rootCauseType: string;
           bugs: {
             groupName: string;
@@ -854,18 +854,7 @@ export const getBugLeakage = async ({
             createdDate: inDateRange(startDate, endDate),
           },
         },
-        {
-          $addFields: {
-            rootCauseType: {
-              $getField: {
-                field: {
-                  $literal: rootCause,
-                },
-                input: '$fields',
-              },
-            },
-          },
-        },
+        { $addFields: { rootCauseType: field(rootCause) } },
         {
           $addFields: {
             rootCauseType: { $ifNull: ['$rootCauseType', 'No Root Cause Type'] },
@@ -904,7 +893,7 @@ export const getBugLeakage = async ({
         { $addFields: { groupName: '$_id' } },
         { $unset: '_id' },
       ]);
-      return { rootCauseField: rootCause, bugs: bugWorkItems };
+      return { rootCauseField: rootCause, groups: bugWorkItems };
     })
   );
 };
