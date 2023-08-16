@@ -98,10 +98,13 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
           'grid-rows-[min-content_min-content_1fr_min-content_min-content]',
           'bg-theme-page-content group/block'
         )}
-        style={{ gridArea: `graphBlock${index}` }}
+        style={{
+          gridArea: `graphBlock${index}`,
+          boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
+        }}
       >
         <div className="grid grid-flow-col justify-between items-end">
-          <div className="text-lg font-medium flex items-center gap-2">
+          <div className="text-lg font-bold flex items-center gap-2">
             {formatValue(combineToValue(data))}
             {data.length === 1 && data[0].groupName === noGroup ? (
               <button
@@ -122,7 +125,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
                 }
               >
                 <button
-                  className="link-text"
+                  className="link-text font-semibold"
                   onClick={() => setSelectedGroups(data.map(prop('groupName')))}
                 >
                   Select all
@@ -131,7 +134,10 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
             )}
             {selectedGroups.length !== 0 && (
               <li>
-                <button className="link-text" onClick={() => setSelectedGroups([])}>
+                <button
+                  className="link-text font-semibold"
+                  onClick={() => setSelectedGroups([])}
+                >
                   Clear all
                 </button>
               </li>
@@ -158,11 +164,12 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
                       'text-sm text-left transition-all duration-200 group',
                       'hover:ring-theme-input-highlight hover:ring-1',
                       selectedGroups.includes(group.groupName)
-                        ? 'bg-theme-page-content shadow'
+                        ? 'bg-theme-page-content'
                         : 'bg-theme-col-header'
                     )}
                     style={{
                       borderLeftColor: lineColor(group.groupName),
+                      boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 3px',
                     }}
                   >
                     <div>{group.groupName || 'Unclassified'}</div>

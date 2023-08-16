@@ -373,7 +373,7 @@ const StackedAreaGraph = <L, P>({
               ...previousLine.value.map(graphProperties.toPoint).reverse(),
             ].join(' ')}
             fill={lineColor(lines[index - 1])}
-            className="opacity-25 transition-all duration-200"
+            className="opacity-[0.15] transition-all duration-200"
           />,
           <path
             key={`${lineLabel(line.line)}-path`}
