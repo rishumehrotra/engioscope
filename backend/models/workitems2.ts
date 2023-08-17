@@ -823,12 +823,25 @@ export const getWipTrendOnDateWorkItems = async ({
   ]);
 };
 
+export const bugGraphArgsInputParser = graphInputParser.extend({
+  workItemType: z.string().default('Bug'),
+});
+type BugGraphArgs = z.infer<typeof bugGraphArgsInputParser>;
+
+type GroupedBugs = {
+  bugs: {
+    rootCauseType: string;
+    count: number;
+  }[];
+  groupName: string;
+};
+
 export const getBugLeakage = async ({
   queryContext,
-  workItemType,
   filters,
   priority,
-}: GraphArgs) => {
+  workItemType = 'Bug',
+}: BugGraphArgs) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
   const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
@@ -836,16 +849,7 @@ export const getBugLeakage = async ({
 
   return Promise.all(
     workItemConfig.rootCause.map(async rootCause => {
-      const bugWorkItems = await WorkItemModel.aggregate<{
-        rootCauseField: string;
-        groups: {
-          rootCauseType: string;
-          bugs: {
-            groupName: string;
-            count: number;
-          }[];
-        }[];
-      }>([
+      const bugWorkItems = await WorkItemModel.aggregate<GroupedBugs>([
         {
           $match: {
             collectionName,

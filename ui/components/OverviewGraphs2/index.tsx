@@ -7,6 +7,7 @@ import ChangeLoadTime from './ChangeLeadTime.jsx';
 import QueryPeriodSelector from '../QueryPeriodSelector.jsx';
 import Filters from './Filters.jsx';
 import WIPTrend from './WIPTrend.jsx';
+import BugLeakage from './BugLeakage.jsx';
 
 const OverviewGraphs2 = () => {
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -67,6 +68,7 @@ const OverviewGraphs2 = () => {
       <CycleTime />
       <ChangeLoadTime />
       <WIPTrend />
+      <BugLeakage />
     </>
   );
 };

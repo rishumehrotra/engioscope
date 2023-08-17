@@ -29,6 +29,13 @@ export const prettyStates = (startStates: string[]) => {
   )} states`;
 };
 
+export const prettyFields = (startStates: string[]) => {
+  if (startStates.length === 1) return `the '${startStates[0]}' field`;
+  return `the ${new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(
+    startStates.map(x => `'${x}'`)
+  )} fields`;
+};
+
 export const lineColor = createPalette([
   '#3cb44b',
   '#9A6324',

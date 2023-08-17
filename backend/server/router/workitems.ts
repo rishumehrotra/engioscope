@@ -26,6 +26,8 @@ import {
   getWipGraph,
   getWipTrendOnDateWorkItems,
   wipTrendOnDateWorkItemsInputParser,
+  getBugLeakage,
+  bugGraphArgsInputParser,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -81,4 +83,8 @@ export default t.router({
   getWipTrendOnDateWorkItems: t.procedure
     .input(wipTrendOnDateWorkItemsInputParser)
     .query(passInputTo(getWipTrendOnDateWorkItems)),
+
+  getBugLeakage: t.procedure
+    .input(bugGraphArgsInputParser)
+    .query(passInputTo(getBugLeakage)),
 });
