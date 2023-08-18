@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { byDate, byNum, desc } from 'sort-lib';
-import { range } from 'rambda';
+import { T, range } from 'rambda';
 import { Calendar } from 'react-feather';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { shortDate } from '../../helpers/utils.js';
@@ -32,19 +32,22 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
       return acc;
     }, new Map<string, number>());
 
-    return [...groupTypeCounts.entries()]
-      .sort(desc(byNum(x => x[1])))
-      .map(([groupName, count]) => ({
-        label: `${groupName} (${count})`,
-        value: groupName,
-      }));
+    return [
+      { label: `All (${workItems.length})`, value: 'all' },
+      ...[...groupTypeCounts.entries()]
+        .sort(desc(byNum(x => x[1])))
+        .map(([groupName, count]) => ({
+          label: `${groupName} (${count})`,
+          value: groupName,
+        })),
+    ];
   }, [workItems]);
 
-  const workItemListing2 = useMemo(() => {
+  const workItemListing = useMemo(() => {
     if (!workItems) return [];
 
     const matchingWorkItems = workItems
-      .filter(wi => wi.groupName === selectedGroupName)
+      .filter(selectedGroupName === 'all' ? T : wi => wi.groupName === selectedGroupName)
       .sort(byDate(x => x.date));
 
     const minDateMs = Math.min(...workItems.map(w => w.date.getTime()));
@@ -80,7 +83,7 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
       <div className="relative">
         <div className="absolute top-2 left-9 h-full border-l border-l-theme-input -z-10" />
         <ol className="pt-2">
-          {workItemListing2.map(({ weekStartDate, weekEndDate, workItems }) => {
+          {workItemListing.map(({ weekStartDate, weekEndDate, workItems }) => {
             return (
               <li key={weekEndDate.toISOString()}>
                 <div className="grid grid-cols-[auto_1fr] items-center my-2">
