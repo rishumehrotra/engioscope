@@ -8,6 +8,7 @@ import Switcher from '../common/Switcher.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { DownChevron, UpChevron } from '../common/Icons.jsx';
 import type { BugWorkItems, Group } from './BugLeakage.jsx';
+import { num } from '../../helpers/utils.js';
 
 const combinedBugs = (
   data: BugWorkItems,
@@ -91,7 +92,6 @@ const BugGraphCard = ({
   );
   const collapsedCount = 10;
   const [isExpanded, setIsExpanded] = useState(false);
-  const index = 0;
 
   const toggleSelectedGroup = useCallback(
     (groupName: string) => {
@@ -145,19 +145,10 @@ const BugGraphCard = ({
         }}
       >
         <div className="flex justify-between">
-          <div
-            className={twJoin(
-              'grid grid-flow-row gap-2',
-              'grid-rows-[min-content_min-content_1fr_min-content_min-content]',
-              'bg-theme-page-content group/block'
-            )}
-            style={{
-              gridArea: `graphBlock${index}`,
-            }}
-          >
+          <div className={twJoin('bg-theme-page-content group/block')}>
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                {groups.reduce((sum, group) => sum + group.count, 0) || 0} Bugs
+                {num(groups.reduce((sum, group) => sum + group.count, 0) || 0)}
                 {groupsForField.length === 1 &&
                 groupsForField[0].groupName === 'noGroup' ? (
                   <button
@@ -169,85 +160,7 @@ const BugGraphCard = ({
                   </button>
                 ) : null}
               </div>
-              <ul className="text-sm flex gap-2">
-                {selectedGroups.length !== data.length && (
-                  <li
-                    className={
-                      selectedGroups.length === 0
-                        ? ''
-                        : 'border-r border-theme-seperator pr-2'
-                    }
-                  >
-                    <button
-                      className="link-text font-semibold"
-                      onClick={() =>
-                        setSelectedGroups(groupsForField.map(prop('groupName')))
-                      }
-                    >
-                      Select all
-                    </button>
-                  </li>
-                )}
-                {selectedGroups.length !== 0 && (
-                  <li>
-                    <button
-                      className="link-text font-semibold"
-                      onClick={() => setSelectedGroups([])}
-                    >
-                      Clear all
-                    </button>
-                  </li>
-                )}
-              </ul>
             </div>
-            <ul className="grid grid-cols-4 gap-2">
-              {groupsForField.length === 1 && groupsForField[0].groupName === 'noGroup'
-                ? null
-                : groupsForField.map(group => (
-                    <li key={group.groupName}>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleSelectedGroup(group.groupName);
-                          }
-                        }}
-                        onClick={() => toggleSelectedGroup(group.groupName)}
-                        className={twJoin(
-                          'block h-full border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
-                          'text-sm text-left transition-all duration-200 group',
-                          'hover:ring-theme-input-highlight hover:ring-1',
-                          selectedGroups.includes(group.groupName)
-                            ? 'bg-theme-page-content'
-                            : 'bg-theme-col-header'
-                        )}
-                        style={{
-                          borderLeftColor: lineColor(group.groupName),
-                          boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 3px',
-                        }}
-                      >
-                        <div>{group.groupName || 'Unclassified'}</div>
-                        <div className="font-medium flex items-end">
-                          <span>{group.count}</span>
-                          {/* TODO: Drawer /*}
-                          {/* {drawer && (
-                        <button
-                          className={twJoin(
-                            'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-                            'group-focus-visible:opacity-100'
-                          )}
-                          onClick={openDrawerFromGroupPill(group.groupName)}
-                        >
-                          <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                        </button>
-                      )} */}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-            </ul>
           </div>
           <div className="flex items-start">
             {data && rcaFields.length > 1 && selectedField ? (
@@ -259,6 +172,86 @@ const BugGraphCard = ({
             ) : null}
           </div>
         </div>
+        <div className="flex">
+          <ul className="grid grid-flow-col gap-2">
+            {groupsForField.length === 1 && groupsForField[0].groupName === 'noGroup'
+              ? null
+              : groupsForField.map(group => (
+                  <li key={group.groupName}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleSelectedGroup(group.groupName);
+                        }
+                      }}
+                      onClick={() => toggleSelectedGroup(group.groupName)}
+                      className={twJoin(
+                        'block h-full border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
+                        'text-sm text-left transition-all duration-200 group',
+                        'hover:ring-theme-input-highlight hover:ring-1',
+                        selectedGroups.includes(group.groupName)
+                          ? 'bg-theme-page-content'
+                          : 'bg-theme-col-header'
+                      )}
+                      style={{
+                        borderLeftColor: lineColor(group.groupName),
+                        boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 3px',
+                        width: 'calc((100vw - 17.5rem) / 8)',
+                      }}
+                    >
+                      <div>{group.groupName || 'Unclassified'}</div>
+                      <div className="font-medium flex items-end">
+                        <span>{num(group.count)}</span>
+                        {/* TODO: Drawer /*}
+                          {/* {drawer && (
+                        <button
+                          className={twJoin(
+                            'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                            'group-focus-visible:opacity-100'
+                          )}
+                          onClick={openDrawerFromGroupPill(group.groupName)}
+                        >
+                          <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                        </button>
+                      )} */}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+          </ul>
+          <ul className="text-sm flex gap-2 items-center ml-4">
+            {selectedGroups.length !== data.length && (
+              <li
+                className={
+                  selectedGroups.length === 0
+                    ? ''
+                    : 'border-r border-theme-seperator pr-2'
+                }
+              >
+                <button
+                  className="link-text font-semibold"
+                  onClick={() => setSelectedGroups(groupsForField.map(prop('groupName')))}
+                >
+                  Select all
+                </button>
+              </li>
+            )}
+            {selectedGroups.length !== 0 && (
+              <li>
+                <button
+                  className="link-text font-semibold"
+                  onClick={() => setSelectedGroups([])}
+                >
+                  Clear all
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+
         {data ? (
           <>
             <ul>
@@ -268,23 +261,11 @@ const BugGraphCard = ({
                   <li key={bug.rootCauseType} className="p2">
                     <button
                       className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
-                      style={{ gridTemplateColumns: '20% 85px 1fr' }}
+                      style={{ gridTemplateColumns: '20% 1fr 85px' }}
                     >
                       <div className="flex items-center justify-end">
                         <span className="truncate">{bug.rootCauseType}</span>
                       </div>
-                      <span className="justify-self-end">
-                        <b>
-                          {divide(
-                            bug.count,
-                            combinedBugs(data, selectedField || '', selectedGroups)
-                              ?.total || 0
-                          )
-                            .map(toPercentage)
-                            .getOr('-')}
-                        </b>
-                        <span className="text-sm text-gray-500">{` (${bug.count})`}</span>
-                      </span>
                       <div className="bg-gray-100 rounded-md overflow-hidden">
                         <div
                           className="rounded-md"
@@ -301,6 +282,20 @@ const BugGraphCard = ({
                           }}
                         />
                       </div>
+                      <span className="justify-self-start">
+                        <b>
+                          {divide(
+                            bug.count,
+                            combinedBugs(data, selectedField || '', selectedGroups)
+                              ?.total || 0
+                          )
+                            .map(toPercentage)
+                            .getOr('-')}
+                        </b>
+                        <span className="text-sm text-gray-500">{` (${num(
+                          bug.count
+                        )})`}</span>
+                      </span>
                     </button>
                   </li>
                 ))}
