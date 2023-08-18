@@ -22,37 +22,13 @@ const getRcaFields = (data: BugWorkItems) => {
 const getGroups = (data: BugWorkItems) => {
   if (!data) return null;
 
-  const groupsWithCount2 = data.flatMap(rootCauseField => {
+  return data.flatMap(rootCauseField => {
     return rootCauseField.groups.map(group => ({
       rootCauseField: rootCauseField.rootCauseField,
       groupName: group.groupName,
       count: group.bugs.reduce((sum, rootCause) => sum + rootCause.count, 0),
     }));
   });
-
-  console.log('groupsWithCount2', groupsWithCount2);
-  return groupsWithCount2;
-
-  // const groupsWithCount = data
-  //   .flatMap(bug =>
-  //     bug.groups.map(group => ({
-  //       groupName: group.groupName,
-  //       count: group.bugs.reduce((sum, rootCause) => sum + rootCause.count, 0),
-  //     }))
-  //   )
-  //   .reduce((groupAcc, { groupName, count }) => {
-  //     if (groupAcc?.has(groupName)) {
-  //       groupAcc.set(groupName, (groupAcc?.get(groupName) || 0) + count);
-  //     } else {
-  //       groupAcc.set(groupName, count);
-  //     }
-  //     return groupAcc;
-  //   }, new Map<string, number>());
-
-  // return Array.from(groupsWithCount, ([groupName, count]) => ({
-  //   groupName,
-  //   count,
-  // })) as { groupName: string; count: number }[];
 };
 
 const BugLeakage = () => {
