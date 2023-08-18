@@ -901,3 +901,56 @@ export const getBugLeakage = async ({
     })
   );
 };
+
+export const getFlowEfficiency = async ({
+  queryContext,
+  workItemType,
+  filters,
+  priority,
+}: GraphArgs) => {
+  const { collectionName, project } = fromContext(queryContext);
+  const [workItemConfig] = await Promise.all([
+    // getProjectConfig(collectionName, project),
+    getWorkItemConfig(collectionName, project, workItemType),
+  ]);
+
+  if (!workItemConfig) return;
+
+  return WorkItemStateChangesModel.aggregate([
+    ...(await workItemDataStages(
+      {
+        type: 'count',
+        states: prop('endStates'),
+      },
+      { queryContext, workItemType, filters, priority },
+      workItemConfig
+    )),
+    {
+      $lookup: {
+        from: 'workitemstatechanges',
+        as: 'stateChanges',
+        let: { id: '$_id' },
+        pipeline: [
+          { $match: { collectionName, project, $expr: { $eq: ['$id', '$$id'] } } },
+          // {
+          //   $addFields: {
+          //     workCenterTime: {
+          //       $reduce: {
+          //         input: '$stateChanges',
+          //         initialValue: { workingTime: 0, cycleTimeStart: null },
+          //         in: {
+          //           workingTime: {
+
+          //           },
+          //           cycleTimeStart: {}
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
+        ],
+      },
+    },
+    { $limit: 10 },
+  ]);
+};
