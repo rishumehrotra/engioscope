@@ -1,15 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { append, filter, not, prop } from 'rambda';
 import { twJoin } from 'tailwind-merge';
 import { ExternalLink } from 'react-feather';
 import { byNum, desc } from 'sort-lib';
-import type { RouterClient } from '../../helpers/trpc.js';
 import { lineColor, prettyFields } from './utils.jsx';
 import Switcher from '../common/Switcher.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { DownChevron, UpChevron } from '../common/Icons.jsx';
-
-type BugWorkItems = RouterClient['workItems']['getBugLeakage'];
+import type { BugWorkItems, Group } from './BugLeakage.jsx';
 
 const combinedBugs = (
   data: BugWorkItems,
@@ -20,22 +18,18 @@ const combinedBugs = (
 
   const rcaFieldGroupedBugs = data.find(field => field.rootCauseField === selectedField);
 
-  const groupedBugs = rcaFieldGroupedBugs?.groups.filter(group =>
+  if (!rcaFieldGroupedBugs) return null;
+
+  const groupedBugs = rcaFieldGroupedBugs.groups.filter(group =>
     selectedGroups.includes(group.groupName)
   );
 
-  const combinedBugs = groupedBugs?.map(group => group.bugs).flat();
+  const combinedBugs = groupedBugs.flatMap(group => group.bugs);
 
-  const combinedBugsGroupedByRootCauseType = combinedBugs?.reduce((acc, bug) => {
-    if (acc?.has(bug.rootCauseType)) {
-      acc.set(bug.rootCauseType, (acc?.get(bug.rootCauseType) || 0) + bug.count);
-    } else {
-      acc.set(bug.rootCauseType, bug.count);
-    }
+  const combinedBugsGroupedByRootCauseType = combinedBugs.reduce((acc, bug) => {
+    acc.set(bug.rootCauseType, (acc?.get(bug.rootCauseType) || 0) + bug.count);
     return acc;
   }, new Map<string, number>());
-
-  if (!combinedBugsGroupedByRootCauseType) return null;
 
   const list = Array.from(
     combinedBugsGroupedByRootCauseType,
@@ -47,7 +41,7 @@ const combinedBugs = (
 
   const max = Math.max(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ...Array.from(combinedBugsGroupedByRootCauseType, ([_, count]) => count)
+    ...list.map(({ count, ...rest }) => count)
   );
 
   const total = list.reduce((acc, bug) => acc + bug.count, 0);
@@ -67,7 +61,7 @@ const combinedBugs = (
 export type BugGraphCardProps = {
   // workItemConfig: SingleWorkItemConfig;
   data: BugWorkItems;
-  groups: { groupName: string; count: number }[];
+  groups: Group[];
   rcaFields: { label: string; value: string }[];
 };
 
@@ -88,17 +82,15 @@ const BugGraphCard = ({
   //   children: 'Loading...',
   // });
 
+  const [groupsForField, setGroupsForField] = useState<Group[]>([]);
+  const [selectedField, setSelectedField] = useState<string | undefined>(
+    rcaFields && rcaFields.length > 0 ? rcaFields[0]?.value : undefined
+  );
   const [selectedGroups, setSelectedGroups] = useState<string[]>(
-    (groups || []).map(prop('groupName'))
+    groupsForField.map(prop('groupName'))
   );
   const collapsedCount = 10;
   const [isExpanded, setIsExpanded] = useState(false);
-  const [rcaFieldsGroup] = useState<{ label: string; value: string }[]>(rcaFields);
-
-  const [selectedField, setSelectedField] = useState<string | undefined>(
-    rcaFieldsGroup && rcaFieldsGroup.length > 0 ? rcaFieldsGroup[0]?.value : undefined
-  );
-
   const index = 0;
 
   const toggleSelectedGroup = useCallback(
@@ -122,6 +114,22 @@ const BugGraphCard = ({
   //   },
   //   [drawer, openDrawer]
   // );
+
+  useEffect(() => {
+    setGroupsForField(
+      groups
+        .filter(group => group.rootCauseField === selectedField)
+        .sort(desc(byNum(g => g.count)))
+    );
+  }, [groups, selectedField]);
+
+  useEffect(() => {
+    setSelectedField(rcaFields && rcaFields.length > 0 ? rcaFields[0]?.value : undefined);
+  }, [rcaFields]);
+
+  useEffect(() => {
+    setSelectedGroups((groups || []).map(prop('groupName')));
+  }, [groups]);
 
   if (!data) return null;
 
@@ -149,8 +157,9 @@ const BugGraphCard = ({
           >
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                {groups.reduce((sum, cls) => sum + cls.count, 0) || 0} Bugs
-                {groups.length === 1 && groups[0].groupName === 'noGroup' ? (
+                {groups.reduce((sum, group) => sum + group.count, 0) || 0} Bugs
+                {groupsForField.length === 1 &&
+                groupsForField[0].groupName === 'noGroup' ? (
                   <button
                     className="link-text opacity-0 transition-opacity group-hover/block:opacity-100"
                     // TODO: Drawer
@@ -171,7 +180,9 @@ const BugGraphCard = ({
                   >
                     <button
                       className="link-text font-semibold"
-                      onClick={() => setSelectedGroups(groups.map(prop('groupName')))}
+                      onClick={() =>
+                        setSelectedGroups(groupsForField.map(prop('groupName')))
+                      }
                     >
                       Select all
                     </button>
@@ -190,9 +201,9 @@ const BugGraphCard = ({
               </ul>
             </div>
             <ul className="grid grid-cols-4 gap-2">
-              {groups.length === 1 && groups[0].groupName === 'noGroup'
+              {groupsForField.length === 1 && groupsForField[0].groupName === 'noGroup'
                 ? null
-                : groups.map(group => (
+                : groupsForField.map(group => (
                     <li key={group.groupName}>
                       <div
                         role="button"
@@ -239,9 +250,9 @@ const BugGraphCard = ({
             </ul>
           </div>
           <div className="flex items-start">
-            {data && rcaFieldsGroup && selectedField ? (
+            {data && rcaFields.length > 1 && selectedField ? (
               <Switcher
-                options={rcaFieldsGroup}
+                options={rcaFields}
                 onChange={e => setSelectedField(e)}
                 value={selectedField}
               />
@@ -320,9 +331,7 @@ const BugGraphCard = ({
           The root cause for a bug is determined from{' '}
           {prettyFields(data.map(rootCause => rootCause.rootCauseField))}
         </p>
-      ) : (
-        <p className="text-sm text-theme-helptext">Couldn't find any RCA data.</p>
-      )}
+      ) : null}
     </>
   );
 };
