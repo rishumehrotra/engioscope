@@ -54,7 +54,15 @@ const BugLeakage = () => {
       heading="Bug leakage with root cause"
       subheading="Bugs leaked over the last 84 days with their root cause"
     >
-      <BugGraphCard data={graph.data} rcaFields={rcaFields || []} groups={groups || []} />
+      <BugGraphCard
+        data={graph.data}
+        rcaFields={rcaFields || []}
+        groups={groups || []}
+        drawer={(groupName: string) => ({
+          heading: groupName,
+          children: 'Loading...',
+        })}
+      />
     </PageSection>
   );
 };

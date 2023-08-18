@@ -954,3 +954,60 @@ export const getFlowEfficiency = async ({
     { $limit: 10 },
   ]);
 };
+
+type BugLeakageWorkItems = {
+  id: number;
+  state: string;
+  url: string;
+  date: Date;
+  title: string;
+  groupName: string;
+  rootCauseType: string;
+};
+export const getBugLeakageDataForDrawer = async ({
+  queryContext,
+  filters,
+  priority,
+  workItemType = 'Bug',
+}: BugGraphArgs) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+  if (!workItemConfig?.rootCause) return;
+
+  return Promise.all(
+    workItemConfig.rootCause.map(async rootCause => {
+      const bugWorkItems = await WorkItemModel.aggregate<BugLeakageWorkItems>([
+        {
+          $match: {
+            collectionName,
+            project,
+            workItemType,
+            createdDate: inDateRange(startDate, endDate),
+          },
+        },
+        { $addFields: { rootCauseType: field(rootCause) } },
+        {
+          $addFields: {
+            rootCauseType: { $ifNull: ['$rootCauseType', 'No Root Cause Type'] },
+          },
+        },
+        ...filterByFields(collectionName, filterWorkItemsBy, filters, priority, '$id'),
+        ...addGroupNameField(collectionName, workItemConfig.groupByField, '$id'),
+        {
+          $project: {
+            _id: 0,
+            id: 1,
+            state: 1,
+            url: 1,
+            date: '$createdDate',
+            title: 1,
+            groupName: 1,
+            rootCauseType: 1,
+          },
+        },
+      ]);
+      return { rootCauseField: rootCause, groups: bugWorkItems };
+    })
+  );
+};

@@ -1,3 +1,4 @@
+import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { append, filter, not, prop } from 'rambda';
 import { twJoin } from 'tailwind-merge';
@@ -9,6 +10,8 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import { DownChevron, UpChevron } from '../common/Icons.jsx';
 import type { BugWorkItems, Group } from './BugLeakage.jsx';
 import { num } from '../../helpers/utils.js';
+import { useDrawer } from '../common/Drawer.jsx';
+import { noGroup } from '../../../shared/work-item-utils.js';
 
 const combinedBugs = (
   data: BugWorkItems,
@@ -64,6 +67,10 @@ export type BugGraphCardProps = {
   data: BugWorkItems;
   groups: Group[];
   rcaFields: { label: string; value: string }[];
+  drawer?: (groupName: string) => {
+    heading: ReactNode;
+    children: ReactNode;
+  };
 };
 
 const BugGraphCard = ({
@@ -71,17 +78,18 @@ const BugGraphCard = ({
   data,
   groups,
   rcaFields,
+  drawer,
 }: BugGraphCardProps) => {
   // TODO: Drawer
-  // const [Drawer, drawerProps, openDrawer] = useDrawer();
-  // const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
-  //   heading: ReactNode;
-  //   children: ReactNode;
-  //   downloadUrl?: string;
-  // }>({
-  //   heading: 'Loading...',
-  //   children: 'Loading...',
-  // });
+  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
+    heading: ReactNode;
+    children: ReactNode;
+    downloadUrl?: string;
+  }>({
+    heading: 'Loading...',
+    children: 'Loading...',
+  });
 
   const [groupsForField, setGroupsForField] = useState<Group[]>([]);
   const [selectedField, setSelectedField] = useState<string | undefined>(
@@ -104,16 +112,16 @@ const BugGraphCard = ({
     [selectedGroups]
   );
 
-  // const openDrawerFromGroupPill = useCallback(
-  //   (groupName: string) => (event: MouseEvent) => {
-  //     event.stopPropagation();
-  //     if (drawer) {
-  //       setAdditionalDrawerProps(drawer(groupName));
-  //       openDrawer();
-  //     }
-  //   },
-  //   [drawer, openDrawer]
-  // );
+  const openDrawerFromGroupPill = useCallback(
+    (groupName: string) => (event: MouseEvent) => {
+      event.stopPropagation();
+      if (drawer) {
+        setAdditionalDrawerProps(drawer(groupName));
+        openDrawer();
+      }
+    },
+    [drawer, openDrawer]
+  );
 
   useEffect(() => {
     setGroupsForField(
@@ -134,7 +142,8 @@ const BugGraphCard = ({
   if (!data) return null;
 
   return (
-    <>
+    <div className="contents">
+      <Drawer {...drawerProps} {...additionalDrawerProps} />
       <div
         className={twJoin(
           'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
@@ -154,7 +163,7 @@ const BugGraphCard = ({
                   <button
                     className="link-text opacity-0 transition-opacity group-hover/block:opacity-100"
                     // TODO: Drawer
-                    // onClick={openDrawerFromGroupPill(noGroup)}
+                    onClick={openDrawerFromGroupPill(noGroup)}
                   >
                     <ExternalLink size={16} />
                   </button>
@@ -205,18 +214,17 @@ const BugGraphCard = ({
                       <div>{group.groupName || 'Unclassified'}</div>
                       <div className="font-medium flex items-end">
                         <span>{num(group.count)}</span>
-                        {/* TODO: Drawer /*}
-                          {/* {drawer && (
-                        <button
-                          className={twJoin(
-                            'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-                            'group-focus-visible:opacity-100'
-                          )}
-                          onClick={openDrawerFromGroupPill(group.groupName)}
-                        >
-                          <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                        </button>
-                      )} */}
+                        {drawer && (
+                          <button
+                            className={twJoin(
+                              'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                              'group-focus-visible:opacity-100'
+                            )}
+                            onClick={openDrawerFromGroupPill(group.groupName)}
+                          >
+                            <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </li>
@@ -327,7 +335,7 @@ const BugGraphCard = ({
           {prettyFields(data.map(rootCause => rootCause.rootCauseField))}
         </p>
       ) : null}
-    </>
+    </div>
   );
 };
 
