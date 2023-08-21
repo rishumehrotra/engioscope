@@ -10,6 +10,39 @@ import WIPTrend from './WIPTrend.jsx';
 import BugLeakage from './BugLeakage.jsx';
 import PageSection from './PageSection.jsx';
 
+const sections = [
+  {
+    heading: 'New work items',
+    subheading: 'Work items on which work work has started',
+    children: <New />,
+  },
+  {
+    heading: 'Velocity',
+    subheading: 'Work items completed',
+    children: <Velocity />,
+  },
+  {
+    heading: 'Cycle time',
+    subheading: 'Time taken to complete a work item',
+    children: <CycleTime />,
+  },
+  {
+    heading: 'Change lead time',
+    subheading: 'Time taken after development to complete a work item',
+    children: <ChangeLoadTime />,
+  },
+  {
+    heading: 'Work in progress trend',
+    subheading: 'Trend of work items in progress',
+    children: <WIPTrend />,
+  },
+  {
+    heading: 'Bug leakage with root cause',
+    subheading: 'Bugs leaked over the last 84 days with their root cause',
+    children: <BugLeakage />,
+  },
+] as const;
+
 const OverviewGraphs2 = () => {
   const filtersRef = useRef<HTMLDivElement>(null);
   const [filterRenderCount, setFilterRenderCount] = useState(0);
@@ -64,43 +97,9 @@ const OverviewGraphs2 = () => {
           <QueryPeriodSelector />
         </div>
       </div>
-
-      <PageSection
-        heading="New work items"
-        subheading="Work items on which work work has started"
-        isOpen
-      >
-        <New />
-      </PageSection>
-
-      <PageSection heading="Velocity" subheading="Work items completed">
-        <Velocity />
-      </PageSection>
-
-      <PageSection heading="Cycle time" subheading="Time taken to complete a work item">
-        <CycleTime />
-      </PageSection>
-
-      <PageSection
-        heading="Change lead time"
-        subheading="Time taken after development to complete a work item"
-      >
-        <ChangeLoadTime />
-      </PageSection>
-
-      <PageSection
-        heading="Work in progress trend"
-        subheading="Trend of work items in progress"
-      >
-        <WIPTrend />
-      </PageSection>
-
-      <PageSection
-        heading="Bug leakage with root cause"
-        subheading="Bugs leaked over the last 84 days with their root cause"
-      >
-        <BugLeakage />
-      </PageSection>
+      {sections.map((props, index) => (
+        <PageSection {...props} isOpen={index === 0} />
+      ))}
     </>
   );
 };

@@ -60,9 +60,9 @@ export type WorkItemConfig = NonNullable<
 >[number];
 
 export const groupHoverTooltipForCounts = (
-  workItemConfig: WorkItemConfig,
   data: CountResponse[],
-  datesForWeekIndex: ReturnType<typeof useDatesForWeekIndex>
+  datesForWeekIndex: ReturnType<typeof useDatesForWeekIndex>,
+  workItemConfig?: WorkItemConfig
 ) => {
   return (index: number) => {
     const groups = data.reduce<{ groupName: string; count: number }[]>((acc, line) => {
@@ -78,11 +78,11 @@ export const groupHoverTooltipForCounts = (
       <div className="bg-theme-backdrop bg-opacity-90 rounded-md text-theme-base-inverted min-w-[13rem]">
         <div className="grid grid-cols-[0.75rem_1fr_1fr] gap-2 justify-between items-center text-base font-semibold mb-2">
           <img
-            src={workItemConfig.icon}
-            alt={`Icon for ${workItemConfig.name[1]}`}
+            src={workItemConfig?.icon}
+            alt={`Icon for ${workItemConfig?.name[1]}`}
             className="w-3 block"
           />
-          <span className="font-semibold">{workItemConfig.name[1]}</span>
+          <span className="font-semibold">{workItemConfig?.name[1]}</span>
           <div className="text-right">{shortDate(datesForWeekIndex(index).endDate)}</div>
         </div>
         <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
@@ -93,7 +93,9 @@ export const groupHoverTooltipForCounts = (
                 style={{ background: lineColor(item.groupName) }}
               />{' '}
               {item.groupName === noGroup
-                ? minPluralise(item.count, ...workItemConfig.name)
+                ? workItemConfig
+                  ? minPluralise(item.count, ...workItemConfig.name)
+                  : ''
                 : item.groupName}
               <span className="inline-block ml-2">{num(item.count || 0)}</span>
             </li>
@@ -105,9 +107,9 @@ export const groupHoverTooltipForCounts = (
 };
 
 export const groupHoverTooltipForDateDiff = (
-  workItemConfig: WorkItemConfig,
   data: DateDiffResponse[],
-  datesForWeekIndex: ReturnType<typeof useDatesForWeekIndex>
+  datesForWeekIndex: ReturnType<typeof useDatesForWeekIndex>,
+  workItemConfig?: WorkItemConfig
 ) => {
   return (index: number) => {
     const groups = data.reduce<
@@ -129,11 +131,11 @@ export const groupHoverTooltipForDateDiff = (
       <div className="bg-black rounded-md text-theme-base-inverted">
         <div className="grid grid-cols-[0.75rem_1fr_1fr] gap-2 justify-between items-center text-base font-semibold mb-2">
           <img
-            src={workItemConfig.icon}
-            alt={`Icon for ${workItemConfig.name[1]}`}
+            src={workItemConfig?.icon}
+            alt={`Icon for ${workItemConfig?.name[1]}`}
             className="w-3 block"
           />
-          <span className="font-semibold">{workItemConfig.name[1]}</span>
+          <span className="font-semibold">{workItemConfig?.name[1]}</span>
           <div className="text-right">{shortDate(datesForWeekIndex(index).endDate)}</div>
         </div>
         <ul className="text-sm grid grid-cols-[fit-content_1fr] gap-y-0.5">
@@ -144,7 +146,9 @@ export const groupHoverTooltipForDateDiff = (
                 style={{ background: lineColor(item.groupName) }}
               />{' '}
               {item.groupName === noGroup
-                ? minPluralise(item.count, ...workItemConfig.name)
+                ? workItemConfig
+                  ? minPluralise(item.count, ...workItemConfig.name)
+                  : ''
                 : item.groupName}{' '}
               {item.count}
               <span className="inline-block ml-2">
@@ -177,7 +181,10 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
   const queryContext = useQueryContext();
   const maxWeekIndex = useMaxWeekIndex();
   const datesForWeekIndex = useDatesForWeekIndex();
-  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
+  const pageConfig = trpc.workItems.getPageConfig.useQuery(
+    { queryContext },
+    { keepPreviousData: true }
+  );
 
   const isDateDiff = useMemo(
     () => data?.some(x => x.data.some(isDateDiffResponse)),
@@ -216,8 +223,6 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
       })
       .filter(x => !!x.config)
       ?.map(({ wit, config }, index) => {
-        if (!config) throw new Error('Stupid TS');
-
         const witData = wit.data;
 
         const graphCardProps = ({
@@ -259,7 +264,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
               : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count)));
 
           return {
-            key: config.name[0],
+            key: wit.workItemType,
             index,
             workItemConfig: config,
             data: witData,
@@ -272,7 +277,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
               );
 
               if (linesForGraph.length === 0 && witData.length !== 0) {
-                return <NoSelectedPills isBug={isBugLike(config.name[0])} />;
+                return <NoSelectedPills isBug={isBugLike(wit.workItemType)} />;
               }
 
               return (
@@ -296,14 +301,14 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                   crosshairBubble={
                     isDateDiff
                       ? groupHoverTooltipForDateDiff(
-                          config,
                           linesForGraph as DateDiffResponse[],
-                          datesForWeekIndex
+                          datesForWeekIndex,
+                          config
                         )
                       : groupHoverTooltipForCounts(
-                          config,
                           linesForGraph,
-                          datesForWeekIndex
+                          datesForWeekIndex,
+                          config
                         )
                   }
                 />

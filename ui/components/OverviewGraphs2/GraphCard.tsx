@@ -14,7 +14,7 @@ import type {
 } from '../../../backend/models/workitems2.js';
 
 export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
-  workItemConfig: SingleWorkItemConfig;
+  workItemConfig?: SingleWorkItemConfig;
   subheading: ReactNode;
   index: number;
   data: T[];
@@ -80,10 +80,10 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
       <h3 className="flex items-center gap-3" style={{ gridArea: `heading${index}` }}>
         <img
           className="w-4 h-4 inline-block"
-          src={workItemConfig.icon}
-          alt={`Icon for ${workItemConfig.name[1]}`}
+          src={workItemConfig?.icon}
+          alt={`Icon for ${workItemConfig?.name[1]}`}
         />
-        <span className="text-lg font-medium">{workItemConfig.name[1]}</span>
+        <span className="text-lg font-medium">{workItemConfig?.name[1]}</span>
       </h3>
       <p
         className="text-sm text-theme-helptext"
@@ -215,7 +215,10 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
 
 export const useGridTemplateAreas = () => {
   const queryContext = useQueryContext();
-  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
+  const pageConfig = trpc.workItems.getPageConfig.useQuery(
+    { queryContext },
+    { keepPreviousData: true }
+  );
 
   if (!pageConfig.data?.workItemsConfig) return;
 
@@ -245,16 +248,16 @@ export const useGridTemplateAreas = () => {
 
 export const drawerHeading = (
   title: string,
-  config: SingleWorkItemConfig,
+  config?: SingleWorkItemConfig,
   count?: number
 ) => {
   return (
     <>
       {title}
       <span className="inline-flex text-base ml-2 font-normal text-theme-helptext items-center gap-2">
-        <img src={config.icon} className="w-4" alt={`Icon for ${config.name[1]}`} />
+        <img src={config?.icon} className="w-4" alt={`Icon for ${config?.name[1]}`} />
         <span>
-          {config.name[1]} {count !== undefined && `(${count})`}
+          {config?.name[1]} {count !== undefined && `(${count})`}
         </span>
       </span>
     </>

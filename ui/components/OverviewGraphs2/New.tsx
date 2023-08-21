@@ -12,8 +12,6 @@ const New = () => {
   const graphWithConfig = useDecorateForGraph(graph.data);
   const gridTemplateAreas = useGridTemplateAreas();
 
-  console.log(graph.data, graphWithConfig);
-
   return (
     <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
       {graphWithConfig?.map(({ config, graphCardProps }) => {
