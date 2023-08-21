@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { append, filter, not, prop } from 'rambda';
 import { twJoin } from 'tailwind-merge';
 import { ExternalLink } from 'react-feather';
@@ -9,12 +9,13 @@ import Switcher from '../common/Switcher.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { DownChevron, UpChevron } from '../common/Icons.jsx';
 import type { BugWorkItems, Group } from './BugLeakage.jsx';
-import { num } from '../../helpers/utils.js';
+import { minPluralise, num } from '../../helpers/utils.js';
 import { useDrawer } from '../common/Drawer.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
+import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 
 const combinedBugs = (
-  data: BugWorkItems,
+  data: BugWorkItems[number]['data'],
   selectedField: string,
   selectedGroups: string[]
 ) => {
@@ -63,24 +64,37 @@ const combinedBugs = (
 };
 
 export type BugGraphCardProps = {
-  // workItemConfig: SingleWorkItemConfig;
-  data: BugWorkItems;
-  groups: Group[];
-  rcaFields: { label: string; value: string }[];
+  workItemConfig: SingleWorkItemConfig | undefined;
+  data: BugWorkItems[number]['data'];
   drawer?: (groupName: string) => {
     heading: ReactNode;
     children: ReactNode;
   };
 };
 
-const BugGraphCard = ({
-  // workItemConfig,
-  data,
-  groups,
-  rcaFields,
-  drawer,
-}: BugGraphCardProps) => {
-  // TODO: Drawer
+const getRcaFields = (
+  data: BugWorkItems[number]['data'],
+  workItemConfig: SingleWorkItemConfig | undefined
+) => {
+  return data.map(prop('rootCauseField')).map(fieldId => {
+    return {
+      label: workItemConfig?.rootCause?.[fieldId] || fieldId,
+      value: fieldId,
+    };
+  });
+};
+
+const getGroups = (data: BugWorkItems[number]['data']) => {
+  return data.flatMap(rootCauseField => {
+    return rootCauseField.groups.map(group => ({
+      rootCauseField: rootCauseField.rootCauseField,
+      groupName: group.groupName,
+      count: group.bugs.reduce((sum, rootCause) => sum + rootCause.count, 0),
+    }));
+  });
+};
+
+const BugGraphCard = ({ workItemConfig, data, drawer }: BugGraphCardProps) => {
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
@@ -90,6 +104,12 @@ const BugGraphCard = ({
     heading: 'Loading...',
     children: 'Loading...',
   });
+
+  const rcaFields = useMemo(
+    () => getRcaFields(data, workItemConfig),
+    [data, workItemConfig]
+  );
+  const groups = useMemo(() => getGroups(data), [data]);
 
   const [groupsForField, setGroupsForField] = useState<Group[]>([]);
   const [selectedField, setSelectedField] = useState<string | undefined>(
@@ -157,12 +177,15 @@ const BugGraphCard = ({
           <div className={twJoin('bg-theme-page-content group/block')}>
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                {num(groups.reduce((sum, group) => sum + group.count, 0) || 0)}
+                {num(groups.reduce((sum, group) => sum + group.count, 0))}{' '}
+                {minPluralise(
+                  groups.reduce((sum, group) => sum + group.count, 0),
+                  ...(workItemConfig?.name || ['', ''])
+                ).toLowerCase()}
                 {groupsForField.length === 1 &&
                 groupsForField[0].groupName === 'noGroup' ? (
                   <button
                     className="link-text opacity-0 transition-opacity group-hover/block:opacity-100"
-                    // TODO: Drawer
                     onClick={openDrawerFromGroupPill(noGroup)}
                   >
                     <ExternalLink size={16} />
@@ -332,7 +355,10 @@ const BugGraphCard = ({
       {data && data.length > 0 ? (
         <p className="text-sm text-theme-helptext">
           The root cause for a bug is determined from{' '}
-          {prettyFields(data.map(rootCause => rootCause.rootCauseField))}
+          {prettyFields(
+            data.map(rootCause => rootCause.rootCauseField),
+            workItemConfig?.rootCause
+          )}
         </p>
       ) : null}
     </div>

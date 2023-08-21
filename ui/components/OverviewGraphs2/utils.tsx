@@ -29,10 +29,15 @@ export const prettyStates = (startStates: string[]) => {
   )} states`;
 };
 
-export const prettyFields = (fieldsGroup: string[]) => {
-  if (fieldsGroup.length === 1) return `the '${fieldsGroup[0]}' field`;
+export const prettyFields = (
+  fieldsGroup: string[],
+  fieldNameLookup: Record<string, string> | undefined
+) => {
+  if (fieldsGroup.length === 1) {
+    return `the '${fieldNameLookup?.[fieldsGroup[0]] || fieldsGroup[0]}' field`;
+  }
   return `the ${new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(
-    fieldsGroup.map(x => `'${x}'`)
+    fieldsGroup.map(x => `'${fieldNameLookup?.[x] || x}'`)
   )} fields`;
 };
 

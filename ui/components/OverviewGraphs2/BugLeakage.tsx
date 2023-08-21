@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { prop } from 'rambda';
+import React from 'react';
 import PageSection from './PageSection.jsx';
 import BugGraphCard from './BugGraphCard.jsx';
 import useGraphArgs from './useGraphArgs.js';
@@ -9,60 +8,32 @@ import { trpc } from '../../helpers/trpc.js';
 export type BugWorkItems = RouterClient['workItems']['getBugLeakage'];
 export type Group = { rootCauseField: string; groupName: string; count: number };
 
-const getRcaFields = (data: BugWorkItems) => {
-  if (!data) return null;
-  return data.map(prop('rootCauseField')).map(fields => {
-    return {
-      label: fields,
-      value: fields,
-    };
-  });
-};
-
-const getGroups = (data: BugWorkItems) => {
-  if (!data) return null;
-
-  return data.flatMap(rootCauseField => {
-    return rootCauseField.groups.map(group => ({
-      rootCauseField: rootCauseField.rootCauseField,
-      groupName: group.groupName,
-      count: group.bugs.reduce((sum, rootCause) => sum + rootCause.count, 0),
-    }));
-  });
-};
-
 const BugLeakage = () => {
   const graphArgs = useGraphArgs();
   const graph = trpc.workItems.getBugLeakage.useQuery(graphArgs);
-  const [rcaFields, setRcaFields] = React.useState<
-    { label: string; value: string }[] | null
-  >(getRcaFields(graph.data) || null);
-  const [groups, setGroups] = React.useState<Group[] | null>(
-    getGroups(graph.data) || null
-  );
-
-  useEffect(() => {
-    setGroups(getGroups(graph.data) || null);
-  }, [graph.data]);
-
-  useEffect(() => {
-    setRcaFields(getRcaFields(graph.data) || null);
-  }, [graph.data]);
+  const projectConfig = trpc.workItems.getPageConfig.useQuery({
+    queryContext: graphArgs.queryContext,
+  });
 
   return (
     <PageSection
       heading="Bug leakage with root cause"
       subheading="Bugs leaked over the last 84 days with their root cause"
     >
-      <BugGraphCard
-        data={graph.data}
-        rcaFields={rcaFields || []}
-        groups={groups || []}
-        drawer={(groupName: string) => ({
-          heading: groupName,
-          children: 'Loading...',
-        })}
-      />
+      {graph.data?.map(data => {
+        return (
+          <BugGraphCard
+            workItemConfig={projectConfig.data?.workItemsConfig?.find(
+              wic => wic.name[0] === data.type
+            )}
+            data={data.data}
+            drawer={(groupName: string) => ({
+              heading: groupName,
+              children: 'Loading...',
+            })}
+          />
+        );
+      })}
     </PageSection>
   );
 };

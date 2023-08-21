@@ -840,65 +840,81 @@ export const getBugLeakage = async ({
   queryContext,
   filters,
   priority,
-  workItemType = 'Bug',
 }: BugGraphArgs) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
-  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
-  if (!workItemConfig?.rootCause) return;
+  const { filterWorkItemsBy, workItemsConfig } = await getProjectConfig(
+    collectionName,
+    project
+  );
 
   return Promise.all(
-    workItemConfig.rootCause.map(async rootCause => {
-      const bugWorkItems = await WorkItemModel.aggregate<GroupedBugs>([
-        {
-          $match: {
-            collectionName,
-            project,
-            workItemType,
-            createdDate: inDateRange(startDate, endDate),
-          },
-        },
-        { $addFields: { rootCauseType: field(rootCause) } },
-        {
-          $addFields: {
-            rootCauseType: { $ifNull: ['$rootCauseType', 'No Root Cause Type'] },
-          },
-        },
-        ...filterByFields(collectionName, filterWorkItemsBy, filters, priority, '$id'),
-        ...addGroupNameField(collectionName, workItemConfig.groupByField, '$id'),
-        {
-          $project: {
-            _id: 0,
-            id: 1,
-            groupName: 1,
-            rootCauseType: 1,
-          },
-        },
-        {
-          $group: {
-            _id: {
-              groupName: '$groupName',
-              rootCauseType: '$rootCauseType',
-            },
-            count: { $sum: 1 },
-          },
-        },
-        {
-          $group: {
-            _id: '$_id.groupName',
-            bugs: {
-              $push: {
-                rootCauseType: '$_id.rootCauseType',
-                count: '$count',
-              },
-            },
-          },
-        },
-        { $addFields: { groupName: '$_id' } },
-        { $unset: '_id' },
-      ]);
-      return { rootCauseField: rootCause, groups: bugWorkItems };
-    })
+    (workItemsConfig || [])
+      .filter(wic => isBugLike(wic.type) && wic.rootCause)
+      .map(async wic => {
+        return {
+          type: wic.type,
+          data: await Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            wic.rootCause!.map(async rootCause => {
+              const bugWorkItems = await WorkItemModel.aggregate<GroupedBugs>([
+                {
+                  $match: {
+                    collectionName,
+                    project,
+                    workItemType: wic.type,
+                    createdDate: inDateRange(startDate, endDate),
+                  },
+                },
+                { $addFields: { rootCauseType: field(rootCause) } },
+                {
+                  $addFields: {
+                    rootCauseType: { $ifNull: ['$rootCauseType', 'No Root Cause Type'] },
+                  },
+                },
+                ...filterByFields(
+                  collectionName,
+                  filterWorkItemsBy,
+                  filters,
+                  priority,
+                  '$id'
+                ),
+                ...addGroupNameField(collectionName, wic.groupByField, '$id'),
+                {
+                  $project: {
+                    _id: 0,
+                    id: 1,
+                    groupName: 1,
+                    rootCauseType: 1,
+                  },
+                },
+                {
+                  $group: {
+                    _id: {
+                      groupName: '$groupName',
+                      rootCauseType: '$rootCauseType',
+                    },
+                    count: { $sum: 1 },
+                  },
+                },
+                {
+                  $group: {
+                    _id: '$_id.groupName',
+                    bugs: {
+                      $push: {
+                        rootCauseType: '$_id.rootCauseType',
+                        count: '$count',
+                      },
+                    },
+                  },
+                },
+                { $addFields: { groupName: '$_id' } },
+                { $unset: '_id' },
+              ]);
+              return { rootCauseField: rootCause, groups: bugWorkItems };
+            })
+          ),
+        };
+      })
   );
 };
 
@@ -972,11 +988,11 @@ export const getBugLeakageDataForDrawer = async ({
 }: BugGraphArgs) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
-  
+
   if (!workItemConfig?.rootCause) return;
 
   const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
-  
+
   return Promise.all(
     workItemConfig.rootCause.map(async rootCause => {
       const bugWorkItems = await WorkItemModel.aggregate<BugLeakageWorkItems>([

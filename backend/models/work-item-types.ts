@@ -1,7 +1,7 @@
 import pluralize from 'pluralize';
 import type { z } from 'zod';
 import { asc, byNum } from 'sort-lib';
-import { head, prop } from 'rambda';
+import { prop } from 'rambda';
 import { exists } from '../../shared/utils.js';
 import { configForCollection } from '../config.js';
 import workItemIconSvgs from '../work-item-icon-svgs.js';
@@ -38,15 +38,21 @@ export const getWorkItemConfig = async ({
 
         if (!match) return;
 
-        const fieldNames = (fieldIds: string[]) =>
-          match.fields.filter(f => fieldIds.includes(f.referenceName))?.map(prop('name'));
+        const fieldName = (fieldId: string) => {
+          const fieldDetails = match.fields.find(f => f.referenceName === fieldId);
+          if (!fieldDetails) return;
+          return [fieldDetails.referenceName, fieldDetails.name] as const;
+        };
+
+        const fieldNames = (fieldIds: string[]) => {
+          return Object.fromEntries(fieldIds.map(fieldName).filter(exists));
+        };
 
         return {
           name: [match.referenceName, pluralize(match.referenceName)] as const,
           icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(match.icon))}`,
           groupByField:
-            workItemConfig.groupByField &&
-            head(fieldNames([workItemConfig.groupByField])),
+            workItemConfig.groupByField && fieldNames([workItemConfig.groupByField]),
           startStates: workItemConfig.startStates,
           endStates: workItemConfig.endStates,
           devCompleteStates: workItemConfig.devCompletionStates,
