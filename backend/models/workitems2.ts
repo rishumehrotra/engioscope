@@ -1025,7 +1025,7 @@ export const getBugLeakageDataForDrawer = async ({
           },
         },
       ]);
-      return { rootCauseField: rootCause, groups: bugWorkItems };
+      return { rootCauseField: rootCause, bugWorkItems };
     })
   );
 };

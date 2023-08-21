@@ -13,6 +13,7 @@ import { minPluralise, num } from '../../helpers/utils.js';
 import { useDrawer } from '../common/Drawer.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
+import BugGraphDrawer from './BugGraphDrawer.jsx';
 
 const combinedBugs = (
   data: BugWorkItems[number]['data'],
@@ -94,7 +95,38 @@ const getGroups = (data: BugWorkItems[number]['data']) => {
   });
 };
 
-const BugGraphCard = ({ workItemConfig, data, drawer }: BugGraphCardProps) => {
+const getDrawer = (
+  selectedGroup: string,
+  selectedField: string,
+  groups: Group[],
+  workItemConfig: SingleWorkItemConfig | undefined
+) => ({
+  heading: (
+    <>
+      Bug leakage with root cause
+      <span className="inline-flex text-base ml-2 font-normal text-theme-helptext items-center gap-2">
+        <img
+          src={workItemConfig?.icon}
+          className="w-4"
+          alt={`Icon for ${workItemConfig?.name[1]}`}
+        />
+        <span>
+          {workItemConfig?.name[1]}{' '}
+          {num(groups.reduce((sum, group) => sum + group.count, 0))}
+        </span>
+      </span>
+    </>
+  ),
+  children: (
+    <BugGraphDrawer
+      groups={groups.filter(group => group.rootCauseField === selectedField)}
+      selectedRCAField={selectedField}
+      selectedGroup={selectedGroup}
+    />
+  ),
+});
+
+const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
@@ -132,15 +164,24 @@ const BugGraphCard = ({ workItemConfig, data, drawer }: BugGraphCardProps) => {
     [selectedGroups]
   );
 
+  const drawer = getDrawer(
+    selectedGroups[0] || 'noGroup',
+    selectedField || '',
+    groups,
+    workItemConfig
+  );
+
   const openDrawerFromGroupPill = useCallback(
-    (groupName: string) => (event: MouseEvent) => {
+    (groupName: string, rootCauseField: string) => (event: MouseEvent) => {
       event.stopPropagation();
       if (drawer) {
-        setAdditionalDrawerProps(drawer(groupName));
+        setAdditionalDrawerProps(
+          getDrawer(groupName, rootCauseField, groups, workItemConfig)
+        );
         openDrawer();
       }
     },
-    [drawer, openDrawer]
+    [drawer, groups, openDrawer, workItemConfig]
   );
 
   useEffect(() => {
@@ -186,7 +227,10 @@ const BugGraphCard = ({ workItemConfig, data, drawer }: BugGraphCardProps) => {
                 groupsForField[0].groupName === 'noGroup' ? (
                   <button
                     className="link-text opacity-0 transition-opacity group-hover/block:opacity-100"
-                    onClick={openDrawerFromGroupPill(noGroup)}
+                    onClick={openDrawerFromGroupPill(
+                      noGroup,
+                      groupsForField[0].rootCauseField
+                    )}
                   >
                     <ExternalLink size={16} />
                   </button>
@@ -243,7 +287,10 @@ const BugGraphCard = ({ workItemConfig, data, drawer }: BugGraphCardProps) => {
                               'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
                               'group-focus-visible:opacity-100'
                             )}
-                            onClick={openDrawerFromGroupPill(group.groupName)}
+                            onClick={openDrawerFromGroupPill(
+                              group.groupName,
+                              group.rootCauseField
+                            )}
                           >
                             <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                           </button>
