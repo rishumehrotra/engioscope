@@ -23,7 +23,10 @@ const fromUrlFilter = (urlParam = '') =>
 
 export const useFilter = () => {
   const queryContext = useQueryContext();
-  const pageConfig = trpc.workItems.getPageConfig.useQuery({ queryContext });
+  const pageConfig = trpc.workItems.getPageConfig.useQuery(
+    { queryContext },
+    { keepPreviousData: true }
+  );
 
   const [urlFilter, setUrlFilter] = useQueryParam('filter', asString);
 

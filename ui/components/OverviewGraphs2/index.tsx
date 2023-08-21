@@ -8,6 +8,7 @@ import QueryPeriodSelector from '../QueryPeriodSelector.jsx';
 import Filters from './Filters.jsx';
 import WIPTrend from './WIPTrend.jsx';
 import BugLeakage from './BugLeakage.jsx';
+import PageSection from './PageSection.jsx';
 
 const OverviewGraphs2 = () => {
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -63,12 +64,43 @@ const OverviewGraphs2 = () => {
           <QueryPeriodSelector />
         </div>
       </div>
-      <New />
-      <Velocity />
-      <CycleTime />
-      <ChangeLoadTime />
-      <WIPTrend />
-      <BugLeakage />
+
+      <PageSection
+        heading="New work items"
+        subheading="Work items on which work work has started"
+        isOpen
+      >
+        <New />
+      </PageSection>
+
+      <PageSection heading="Velocity" subheading="Work items completed">
+        <Velocity />
+      </PageSection>
+
+      <PageSection heading="Cycle time" subheading="Time taken to complete a work item">
+        <CycleTime />
+      </PageSection>
+
+      <PageSection
+        heading="Change lead time"
+        subheading="Time taken after development to complete a work item"
+      >
+        <ChangeLoadTime />
+      </PageSection>
+
+      <PageSection
+        heading="Work in progress trend"
+        subheading="Trend of work items in progress"
+      >
+        <WIPTrend />
+      </PageSection>
+
+      <PageSection
+        heading="Bug leakage with root cause"
+        subheading="Bugs leaked over the last 84 days with their root cause"
+      >
+        <BugLeakage />
+      </PageSection>
     </>
   );
 };
