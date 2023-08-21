@@ -972,9 +972,11 @@ export const getBugLeakageDataForDrawer = async ({
 }: BugGraphArgs) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
   const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
-  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+  
   if (!workItemConfig?.rootCause) return;
 
+  const { filterWorkItemsBy } = await getProjectConfig(collectionName, project);
+  
   return Promise.all(
     workItemConfig.rootCause.map(async rootCause => {
       const bugWorkItems = await WorkItemModel.aggregate<BugLeakageWorkItems>([
