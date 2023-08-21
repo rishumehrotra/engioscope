@@ -918,6 +918,55 @@ export const getBugLeakage = async ({
   );
 };
 
+export const getWorkCentersDuration = (
+  workItemConfig: Awaited<ReturnType<typeof getWorkItemConfig>>
+): PipelineStage[] => {
+  return [
+    { $addFields: { workCenters: workItemConfig?.workCenters } },
+    { $unwind: '$workCenters' },
+    {
+      $addFields: {
+        'workCenters.startStateDates': {
+          $filter: {
+            input: '$stateChanges',
+            as: 'state',
+            cond: { $in: ['$$state.state', '$workCenters.startStates'] },
+          },
+        },
+        'workCenters.endStateDates': {
+          $filter: {
+            input: '$stateChanges',
+            as: 'state',
+            cond: { $in: ['$$state.state', '$workCenters.endStates'] },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        'workCenters.duration': {
+          $dateDiff: {
+            startDate: { $min: '$workCenters.startStateDates.date' },
+            endDate: { $min: '$workCenters.endStateDates.date' },
+            unit: 'millisecond',
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$id',
+        id: { $first: '$id' },
+        stateChanges: { $first: '$stateChanges' },
+        workItemType: { $first: '$workItemType' },
+        workCenters: {
+          $push: { label: '$workCenters.label', duration: '$workCenters.duration' },
+        },
+      },
+    },
+  ];
+};
+
 export const getFlowEfficiency = async ({
   queryContext,
   workItemType,
