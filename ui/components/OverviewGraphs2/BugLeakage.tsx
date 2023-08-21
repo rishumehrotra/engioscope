@@ -24,10 +24,6 @@ const BugLeakage = () => {
           wic => wic.name[0] === data.type
         )}
         data={data.data}
-        drawer={(groupName: string) => ({
-          heading: groupName,
-          children: 'Loading...',
-        })}
       />
     );
   });
