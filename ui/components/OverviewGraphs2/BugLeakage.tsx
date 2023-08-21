@@ -22,16 +22,14 @@ const BugLeakage = () => {
     >
       {graph.data?.map(data => {
         return (
-          <BugGraphCard
-            workItemConfig={projectConfig.data?.workItemsConfig?.find(
-              wic => wic.name[0] === data.type
-            )}
-            data={data.data}
-            drawer={(groupName: string) => ({
-              heading: groupName,
-              children: 'Loading...',
-            })}
-          />
+          <React.Fragment key={data.type}>
+            <BugGraphCard
+              workItemConfig={projectConfig.data?.workItemsConfig?.find(
+                wic => wic.name[0] === data.type
+              )}
+              data={data.data}
+            />
+          </React.Fragment>
         );
       })}
     </PageSection>
