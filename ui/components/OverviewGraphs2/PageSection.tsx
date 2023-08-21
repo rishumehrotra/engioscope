@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import { ChevronRight } from 'react-feather';
+import { twJoin } from 'tailwind-merge';
 import AnimateHeight from '../common/AnimateHeight.jsx';
 
 type PageSectionProps = {
@@ -24,7 +25,10 @@ const PageSection = ({
     <section className="grid grid-cols-[2em_1fr] mb-10">
       <div>
         <button
-          className="mt-1 text-theme-icon"
+          className={twJoin(
+            'mt-1 text-theme-icon transition-transform',
+            state === 'open' && 'rotate-90'
+          )}
           onClick={() => setState(x => (x === 'open' ? 'closing' : 'open'))}
         >
           <ChevronRight />
@@ -32,7 +36,7 @@ const PageSection = ({
       </div>
       <div>
         <button
-          className="w-full text-left"
+          className="w-full text-left transition-transform"
           onClick={() => setState(x => (x === 'open' ? 'closing' : 'open'))}
         >
           <h2 className="text-2xl font-medium mb-1">{heading}</h2>

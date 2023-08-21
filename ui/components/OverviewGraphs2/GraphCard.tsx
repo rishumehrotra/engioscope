@@ -2,7 +2,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
 import { append, filter, prop, range } from 'rambda';
 import { twJoin } from 'tailwind-merge';
-import { ExternalLink } from 'react-feather';
+import { Check, ExternalLink } from 'react-feather';
 import { trpc, type SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { num } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
@@ -162,17 +162,30 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
                     className={twJoin(
                       'block h-full border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
                       'text-sm text-left transition-all duration-200 group',
-                      'hover:ring-theme-input-highlight hover:ring-1',
+                      // 'hover:ring-theme-input-highlight hover:ring-1',
                       selectedGroups.includes(group.groupName)
                         ? 'bg-theme-page-content'
                         : 'bg-theme-col-header'
                     )}
                     style={{
                       borderLeftColor: lineColor(group.groupName),
-                      boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 3px',
+                      boxShadow: selectedGroups.includes(group.groupName)
+                        ? 'rgba(30, 41, 59, 0.05) 0px 4px 3px'
+                        : undefined,
                     }}
                   >
-                    <div>{group.groupName || 'Unclassified'}</div>
+                    <div className="grid grid-flow-col justify-between">
+                      <div>{group.groupName || 'Unclassified'}</div>
+                      <div>
+                        <Check
+                          size={20}
+                          className={twJoin(
+                            'text-theme-highlight transition-opacity',
+                            !selectedGroups.includes(group.groupName) && 'opacity-0'
+                          )}
+                        />
+                      </div>
+                    </div>
                     <div className="font-medium flex items-end">
                       <span>{formatValue(combineToValue([group]))}</span>
                       {drawer && (
