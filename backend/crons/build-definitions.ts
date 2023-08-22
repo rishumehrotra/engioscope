@@ -1,4 +1,5 @@
 import { collectionsAndProjects, getConfig } from '../config.js';
+import { AzureBuildReportModel } from '../models/build-reports.js';
 import { BuildDefinitionModel } from '../models/mongoose-models/BuildDefinitionModel.js';
 import { BuildModel } from '../models/mongoose-models/BuildModel.js';
 import { TestRunModel } from '../models/mongoose-models/TestRunModel.js';
@@ -28,7 +29,7 @@ export const bulkSaveBuildDefinitions =
       'buildConfiguration.buildDefinitionId': { $nin: buildDefinitions.map(b => b.id) },
     });
 
-    return BuildDefinitionModel.bulkWrite(
+    await BuildDefinitionModel.bulkWrite(
       buildDefinitions.map(buildDefinition => {
         const { project, process, ...rest } = buildDefinition;
 
@@ -59,6 +60,12 @@ export const bulkSaveBuildDefinitions =
         };
       })
     );
+
+    await AzureBuildReportModel.deleteMany({
+      collectionName,
+      project,
+      buildDefinitionId: { $nin: buildDefinitions.map(b => String(b.id)) },
+    });
   };
 
 export const getBuildDefinitions = () => {
