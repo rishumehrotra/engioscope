@@ -12,6 +12,16 @@ import type {
   CountResponse,
   DateDiffResponse,
 } from '../../../backend/models/workitems2.js';
+import { useModal } from '../common/Modal2.jsx';
+
+const popups = {
+  'time-spent-completed': (config: SingleWorkItemConfig) => ({
+    label: 'View time spent',
+    heading: `Time spent - closed ${config.name[1].toLowerCase()}`,
+    subheading: `See where closed ${config.name[1].toLowerCase()} spend their time`,
+    children: 'foo',
+  }),
+} as const;
 
 export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
   workItemConfig?: SingleWorkItemConfig;
@@ -26,6 +36,7 @@ export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
     heading: ReactNode;
     children: ReactNode;
   };
+  popup?: keyof typeof popups;
 };
 
 export const GraphCard = <T extends CountResponse | DateDiffResponse>({
@@ -38,16 +49,26 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
   graphRenderer,
   lineColor,
   drawer,
+  popup,
 }: GraphCardProps<T>) => {
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
+    subheading?: string;
     children: ReactNode;
-    downloadUrl?: string;
   }>({
     heading: 'Loading...',
     children: 'Loading...',
   });
+  const [Modal, modalProps, openModal] = useModal();
+  const [additionalModalProps, setAdditionalModalProps] = useState<{
+    heading: ReactNode;
+    children: ReactNode;
+  }>({
+    heading: 'Loading...',
+    children: 'Loading...',
+  });
+
   const [selectedGroups, setSelectedGroups] = useState<string[]>(
     data.map(prop('groupName'))
   );
@@ -74,9 +95,21 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
     [drawer, openDrawer]
   );
 
+  const openModalForWorkItemType = useCallback(
+    (event: MouseEvent) => {
+      event.stopPropagation();
+      if (popup && workItemConfig) {
+        setAdditionalModalProps(popups[popup](workItemConfig));
+        openModal();
+      }
+    },
+    [openModal, popup, workItemConfig]
+  );
+
   return (
     <div className="contents">
       <Drawer {...drawerProps} {...additionalDrawerProps} />
+      <Modal {...modalProps} {...additionalModalProps} className="w-96 h-72" />
       <h3 className="flex items-center gap-3" style={{ gridArea: `heading${index}` }}>
         <img
           className="w-4 h-4 inline-block"
@@ -207,7 +240,14 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
         <div className="self-end min-h-[20rem] flex items-end justify-center">
           {graphRenderer(selectedGroups)}
         </div>
-        {/* <div className="text-sm text-theme-helptext">Priority</div> */}
+        {popup ? (
+          <div className="text-sm text-theme-helptext flex justify-between">
+            <div>{' ' || 'Priority'}</div>
+            <button className="link-text font-medium" onClick={openModalForWorkItemType}>
+              {workItemConfig && popups[popup](workItemConfig).label}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -239,7 +279,8 @@ export const useGridTemplateAreas = () => {
       acc.push(
         `"heading${2 * index} heading${2 * index + 1}"`,
         `"subheading${2 * index} subheading${2 * index + 1}"`,
-        `"graphBlock${2 * index} graphBlock${2 * index + 1}"`
+        `"graphBlock${2 * index} graphBlock${2 * index + 1}"`,
+        `"graphFooter${2 * index} graphFooter${2 * index + 1}"`
       );
       return acc;
     }, [])

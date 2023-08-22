@@ -30,6 +30,7 @@ const CycleTime = () => {
               'to',
               prettyStates(config.endStates),
             ].join(' ')}
+            popup="time-spent-completed"
           />
         );
       })}
