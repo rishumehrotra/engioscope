@@ -19,7 +19,7 @@ import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos } from './active-repos.js';
 import { divide } from '../../shared/utils.js';
 import { getDefinitionListWithRepoInfo } from './build-definitions.js';
-import { formatRepoUrlForUI } from './repos';
+import { formatRepoUrlForUI } from './repos.js';
 import { buildDefinitionWebUrl } from './builds.js';
 
 export const testRunsForRepositoriesInputParser = z.object({
