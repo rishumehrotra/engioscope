@@ -24,7 +24,7 @@ import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
 import { formatLoc } from '../scraper/stats-aggregators/code-quality.js';
-import { getDefaultBranchAndNameForRepoIds } from './repos.js';
+import { formatRepoUrlForUI, getDefaultBranchAndNameForRepoIds } from './repos.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
 import { getLanguageColor } from '../language-colors.js';
 import { getActiveRepos, type filteredReposInputParser } from './active-repos.js';
@@ -1605,7 +1605,7 @@ export const getSonarProjectsForDownload = async ({
     )?.url;
     return {
       ...repo,
-      repositoryUrl: repo.repositoryUrl.replace('/_apis/git/repositories/', '/_git/'),
+      repositoryUrl: formatRepoUrlForUI(repo.repositoryUrl),
       status: capitalizeFirstLetter(parseQualityGateStatus(repo.status)),
       sonarProjectUrl: connectionUrl
         ? `${connectionUrl}/dashboard?id=${repo.sonarProjectKey}`
