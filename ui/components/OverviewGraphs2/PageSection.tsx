@@ -22,26 +22,29 @@ const PageSection = ({
   );
 
   return (
-    <section className="grid grid-cols-[2em_1fr] mb-10">
-      <div>
-        <button
+    <section className="mb-8">
+      <button
+        className={twJoin(
+          'grid grid-cols-[2em_1fr] w-full',
+          'text-left hover:bg-theme-page-content rounded-md py-2 px-1'
+        )}
+        onClick={() => setState(x => (x === 'open' ? 'closing' : 'open'))}
+      >
+        <div
           className={twJoin(
             'mt-1 text-theme-icon transition-transform',
-            state === 'open' && 'rotate-90'
+            state === 'open' && 'rotate-90 translate-y-1.5 -translate-x-1'
           )}
-          onClick={() => setState(x => (x === 'open' ? 'closing' : 'open'))}
         >
           <ChevronRight />
-        </button>
-      </div>
-      <div>
-        <button
-          className="w-full text-left transition-transform"
-          onClick={() => setState(x => (x === 'open' ? 'closing' : 'open'))}
-        >
+        </div>
+        <div>
           <h2 className="text-2xl font-medium mb-1">{heading}</h2>
           <p className="text-theme-helptext">{subheading}</p>
-        </button>
+        </div>
+      </button>
+      <div className="grid grid-cols-[2em_1fr]">
+        <span />
         {state === 'closed' ? null : (
           <AnimateHeight
             collapse={state === 'closing'}

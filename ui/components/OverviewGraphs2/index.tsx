@@ -81,7 +81,7 @@ const OverviewGraphs2 = () => {
       <div
         ref={ref}
         className={twJoin(
-          'sticky top-0 bg-theme-page pb-4 pt-2 mb-6 grid px-32',
+          'sticky top-0 bg-theme-page pb-4 pt-2 mb-6 grid px-32 z-10',
           isSticky ? 'shadow' : '',
           layoutType === '2-col'
             ? 'grid-flow-col justify-between items-center'
