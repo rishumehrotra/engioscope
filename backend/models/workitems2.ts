@@ -953,18 +953,20 @@ export const getWorkCentersDuration = (
         },
       },
     },
-    {
-      $group: {
-        _id: '$id',
-        id: { $first: '$id' },
-        stateChanges: { $first: '$stateChanges' },
-        workItemType: { $first: '$workItemType' },
-        workCenters: {
-          $push: { label: '$workCenters.label', duration: '$workCenters.duration' },
-        },
-      },
-    },
   ];
+};
+
+export type WorkCenter = {
+  label: string;
+  duration: number | null;
+};
+export type FlowEfficiencyWorkItems = {
+  id: number;
+  date: string;
+  cycleTime: number;
+  groupName: string;
+  workCenters: WorkCenter[];
+  workCentersDuration: number;
 };
 
 export const getFlowEfficiency = async ({
@@ -981,41 +983,58 @@ export const getFlowEfficiency = async ({
 
   if (!workItemConfig) return;
 
-  return WorkItemStateChangesModel.aggregate([
+  return WorkItemStateChangesModel.aggregate<FlowEfficiencyWorkItems>([
     ...(await workItemDataStages(
       {
-        type: 'count',
-        states: prop('endStates'),
+        type: 'datediff',
+        endStates: prop('endStates'),
+        startStates: prop('startStates'),
       },
       { queryContext, workItemType, filters, priority },
       workItemConfig
     )),
     {
-      $lookup: {
-        from: 'workitemstatechanges',
-        as: 'stateChanges',
-        let: { id: '$_id' },
-        pipeline: [
-          { $match: { collectionName, project, $expr: { $eq: ['$id', '$$id'] } } },
-          // {
-          //   $addFields: {
-          //     workCenterTime: {
-          //       $reduce: {
-          //         input: '$stateChanges',
-          //         initialValue: { workingTime: 0, cycleTimeStart: null },
-          //         in: {
-          //           workingTime: {
-
-          //           },
-          //           cycleTimeStart: {}
-          //         },
-          //       },
-          //     },
-          //   },
-          // },
-        ],
+      $project: {
+        _id: 0,
+        id: '$_id',
+        groupName: 1,
+        date: 1,
+        cycleTime: '$duration',
       },
     },
+    {
+      $lookup: {
+        from: 'workitemstatechanges',
+        let: { id: '$id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              $expr: { $eq: ['$id', '$$id'] },
+            },
+          },
+          { $project: { _id: 0, stateChanges: 1 } },
+        ],
+        as: 'stateChanges',
+      },
+    },
+    { $unwind: '$stateChanges' },
+    { $addFields: { stateChanges: '$stateChanges.stateChanges' } },
+    ...getWorkCentersDuration(workItemConfig),
+    {
+      $group: {
+        _id: '$id',
+        id: { $first: '$id' },
+        date: { $first: '$date' },
+        cycleTime: { $first: '$cycleDuration' },
+        groupName: { $first: '$groupName' },
+        workCenters: {
+          $push: { label: '$workCenters.label', duration: '$workCenters.duration' },
+        },
+      },
+    },
+    { $addFields: { workCentersDuration: { $sum: '$workCenters.duration' } } },
+    { $project: { _id: 0 } },
     { $limit: 10 },
   ]);
 };
