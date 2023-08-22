@@ -98,7 +98,7 @@ const OverviewGraphs2 = () => {
         </div>
       </div>
       {sections.map((props, index) => (
-        <PageSection {...props} isOpen={index === 0} />
+        <PageSection {...props} key={props.heading} isOpen={index === 0} />
       ))}
     </>
   );
