@@ -13,6 +13,7 @@ import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser } from './utils.js';
 import { getActiveRepos, type filteredReposInputParser } from './active-repos.js';
 import { RepositoryModel } from './mongoose-models/RepositoryModel.js';
+import { formatRepoUrlForUI } from './repos.js';
 
 export const saveBuild = (collectionName: string) => (build: AzureBuild) => {
   const { project, ...rest } = build;
@@ -43,7 +44,7 @@ export const getBuildsOverviewForRepositoryInputParser = z.object({
   repositoryId: z.string(),
 });
 
-const buildDefinitionWebUrl = pipe(
+export const buildDefinitionWebUrl = pipe(
   replace('_apis/build/Definitions/', '_build/definition?definitionId='),
   replace(/\?revision=.*/, '')
 );
@@ -1094,9 +1095,9 @@ export const getBuildPipelineListForDownload = async ({
   return repos.flatMap(repo => {
     return repo.pipelines.map(pipeline => {
       return {
-        repositoryUrl: repo.repositoryUrl,
+        repositoryUrl: formatRepoUrlForUI(repo.repositoryUrl),
         repositoryName: repo.repositoryName,
-        pipelineUrl: pipeline.def.url,
+        pipelineUrl: buildDefinitionWebUrl(pipeline.def.url),
         pipelineName: pipeline.def.name,
         pipelineType: pipeline.def.process.processType === 2 ? 'YAML' : 'Non YAML',
         totalBuilds: pipeline.hasBuilds ? pipeline.builds.totalBuilds : null,

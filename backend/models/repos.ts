@@ -123,7 +123,7 @@ export const getAllRepoDefaultBranchIDs = async (
   return repoDefaultBranches.map(repo => repo.defaultBranchId);
 };
 
-const formatRepoUrlForUI = (repoUrl: string) =>
+export const formatRepoUrlForUI = (repoUrl: string) =>
   repoUrl.replace('/_apis/git/repositories/', '/_git/');
 
 export const getDefaultBranchAndNameForRepoIds = (

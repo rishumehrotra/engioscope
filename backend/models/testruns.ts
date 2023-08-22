@@ -19,6 +19,8 @@ import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos } from './active-repos.js';
 import { divide } from '../../shared/utils.js';
 import { getDefinitionListWithRepoInfo } from './build-definitions.js';
+import { formatRepoUrlForUI } from './repos';
+import { buildDefinitionWebUrl } from './builds.js';
 
 export const testRunsForRepositoriesInputParser = z.object({
   queryContext: queryContextInputParser,
@@ -299,10 +301,10 @@ export const getTestsAndCoveragePipelinesForDownload = async ({
   );
 
   return testsAndCoverageForRepos.map(x => ({
-    pipelineUrl: x.url,
+    pipelineUrl: buildDefinitionWebUrl(x.url),
     pipelineName: x.name,
     repositoryName: x.repositoryName,
-    repositoryUrl: x.repositoryUrl,
+    repositoryUrl: formatRepoUrlForUI(x.repositoryUrl),
     totalTests: x.latestTest?.hasTests ? x.latestTest.totalTests : 0,
     totalBranches: x.latestCoverage?.hasCoverage
       ? x.latestCoverage.coverage.totalBranches
