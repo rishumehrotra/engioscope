@@ -13,15 +13,7 @@ import type {
   DateDiffResponse,
 } from '../../../backend/models/workitems2.js';
 import { useModal } from '../common/Modal2.jsx';
-
-const popups = {
-  'time-spent-completed': (config: SingleWorkItemConfig) => ({
-    label: 'View time spent',
-    heading: `Time spent - closed ${config.name[1].toLowerCase()}`,
-    subheading: `See where closed ${config.name[1].toLowerCase()} spend their time`,
-    children: 'foo',
-  }),
-} as const;
+import popups from './popups.jsx';
 
 export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
   workItemConfig?: SingleWorkItemConfig;
@@ -109,7 +101,11 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
   return (
     <div className="contents">
       <Drawer {...drawerProps} {...additionalDrawerProps} />
-      <Modal {...modalProps} {...additionalModalProps} className="w-96 h-72" />
+      <Modal
+        {...modalProps}
+        {...additionalModalProps}
+        className="w-full max-w-4xl h-fit"
+      />
       <h3 className="flex items-center gap-3" style={{ gridArea: `heading${index}` }}>
         <img
           className="w-4 h-4 inline-block"

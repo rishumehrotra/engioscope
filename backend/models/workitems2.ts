@@ -956,6 +956,77 @@ export const getWorkCentersDuration = (
   ];
 };
 
+export const timeSpentArgs = graphArgsInputParser.extend({
+  type: z.enum(['wip', 'closed']),
+});
+
+export const getWorkItemTimeSpent = async ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  type,
+  queryContext,
+  workItemType,
+  filters,
+  priority,
+}: z.infer<typeof timeSpentArgs>) => {
+  const { collectionName, project } = fromContext(queryContext);
+  const workItemConfig = await getWorkItemConfig(collectionName, project, workItemType);
+
+  if (!workItemConfig) return;
+
+  const workItems = await WorkItemStateChangesModel.aggregate<{
+    groupName: string;
+    id: number;
+    stateChanges: { state: string; date: Date }[];
+    cycleTime: number;
+  }>([
+    ...(await workItemDataStages(
+      {
+        type: 'datediff',
+        startStates: prop('startStates'),
+        endStates: prop('endStates'),
+      },
+      { queryContext, workItemType, filters, priority },
+      workItemConfig
+    )),
+    {
+      $project: {
+        _id: 0,
+        id: '$_id',
+        groupName: 1,
+        cycleTime: '$duration',
+      },
+    },
+    {
+      $lookup: {
+        from: 'workitemstatechanges',
+        let: { id: '$id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              $expr: { $eq: ['$id', '$$id'] },
+            },
+          },
+          { $project: { _id: 0, stateChanges: 1 } },
+        ],
+        as: 'stateChanges',
+      },
+    },
+    { $addFields: { stateChanges: { $first: '$stateChanges' } } },
+    { $addFields: { stateChanges: '$stateChanges.stateChanges' } },
+    { $unset: 'stateChanges._id' },
+  ]);
+
+  return workItems
+    .map(wi => ({
+      ...wi,
+      stateChanges: wi.stateChanges.slice(
+        wi.stateChanges.findIndex(s => workItemConfig.startStates.includes(s.state))
+      ),
+    }))
+    .filter(x => x.stateChanges.length !== 0);
+};
+
 export type WorkCenter = {
   label: string;
   duration: number | null;
