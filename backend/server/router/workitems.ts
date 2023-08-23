@@ -29,6 +29,7 @@ import {
   getBugLeakage,
   bugGraphArgsInputParser,
   getBugLeakageDataForDrawer,
+  getFlowEfficiencyGraph,
   getWorkItemTimeSpent,
   timeSpentArgs,
 } from '../../models/workitems2.js';
@@ -94,6 +95,10 @@ export default t.router({
   getBugLeakageDataForDrawer: t.procedure
     .input(bugGraphArgsInputParser)
     .query(passInputTo(getBugLeakageDataForDrawer)),
+
+  getFlowEfficiencyGraph: t.procedure
+    .input(graphInputParser)
+    .query(passInputTo(getFlowEfficiencyGraph)),
 
   getWorkItemTimeSpent: t.procedure
     .input(timeSpentArgs)

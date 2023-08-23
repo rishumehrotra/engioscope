@@ -1032,15 +1032,14 @@ export type WorkCenter = {
   duration: number | null;
 };
 export type FlowEfficiencyWorkItems = {
-  id: number;
-  date: string;
-  cycleTime: number;
   groupName: string;
-  workCenters: WorkCenter[];
   workCentersDuration: number;
+  cycleTime: number;
+  count: number;
+  workItemType: string;
 };
 
-export const getFlowEfficiency = async ({
+export const getFlowEfficiencyData = async ({
   queryContext,
   workItemType,
   filters,
@@ -1097,17 +1096,42 @@ export const getFlowEfficiency = async ({
         _id: '$id',
         id: { $first: '$id' },
         date: { $first: '$date' },
-        cycleTime: { $first: '$cycleDuration' },
+        cycleTime: { $first: '$cycleTime' },
         groupName: { $first: '$groupName' },
-        workCenters: {
-          $push: { label: '$workCenters.label', duration: '$workCenters.duration' },
-        },
+        workCentersDuration: { $sum: '$workCenters.duration' },
       },
     },
-    { $addFields: { workCentersDuration: { $sum: '$workCenters.duration' } } },
+    {
+      $group: {
+        _id: '$groupName',
+        groupName: { $first: '$groupName' },
+        workCentersDuration: { $sum: '$workCentersDuration' },
+        cycleTime: { $sum: '$cycleTime' },
+        count: { $sum: 1 },
+      },
+    },
+    { $addFields: { workItemType } },
     { $project: { _id: 0 } },
-    { $limit: 10 },
   ]);
+};
+
+export const getFlowEfficiencyGraph = async (args: z.infer<typeof graphInputParser>) => {
+  const { collectionName, project } = fromContext(args.queryContext);
+
+  const config = await getProjectConfig(collectionName, project);
+
+  return (
+    Promise.all(
+      config.workItemsConfig?.map(async wic => ({
+        workItemType: wic.type,
+        data: await getFlowEfficiencyData({ ...args, workItemType: wic.type }),
+      })) || []
+    )
+      .then(filter(exists))
+      .then(filter(x => Boolean(x?.data?.length)))
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      .then(map(x => ({ ...x, data: x.data! })))
+  );
 };
 
 type BugLeakageWorkItems = {
