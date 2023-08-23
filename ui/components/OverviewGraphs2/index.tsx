@@ -9,6 +9,7 @@ import Filters from './Filters.jsx';
 import WIPTrend from './WIPTrend.jsx';
 import BugLeakage from './BugLeakage.jsx';
 import PageSection from './PageSection.jsx';
+import FlowEfficiency from './FlowEfficiency.jsx';
 
 const sections = [
   {
@@ -40,6 +41,12 @@ const sections = [
     heading: 'Bug leakage with root cause',
     subheading: 'Bugs leaked over the last 84 days with their root cause',
     children: <BugLeakage />,
+  },
+  {
+    heading: 'Flow efficiency',
+    subheading:
+      'Fraction of overall time that work items spend in work centers on average',
+    children: <FlowEfficiency />,
   },
 ] as const;
 
