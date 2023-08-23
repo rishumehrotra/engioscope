@@ -4,7 +4,7 @@ import { twJoin } from 'tailwind-merge';
 import { Check } from 'react-feather';
 import { trpc, type SingleWorkItemConfig } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
-import { exists, prettyMS } from '../../helpers/utils.js';
+import { exists, num, prettyMS } from '../../helpers/utils.js';
 import { divide } from '../../../shared/utils.js';
 import ScatterLineGraph from '../graphs/ScatterLineGraph.jsx';
 
@@ -92,6 +92,28 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
     [selectedGroups]
   );
 
+  const graphData = useMemo(
+    () =>
+      Object.fromEntries(
+        (states || [])
+          .map(state => {
+            return [
+              state.state,
+              (wiWithTimeSpent || [])
+                .filter(wi => selectedGroups.includes(wi.groupName))
+                .map(wi => ({
+                  ...wi,
+                  stateTime: sum(
+                    wi.timeSpent.filter(t => t.state === state.state).map(prop('time'))
+                  ),
+                })),
+            ] as const;
+          })
+          .filter(exists)
+      ),
+    [selectedGroups, states, wiWithTimeSpent]
+  );
+
   return (
     <div className="p-6 grid grid-flow-row gap-4">
       <div>
@@ -136,36 +158,30 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
                   </div>
                 </div>
                 <div className="font-medium flex items-end">
-                  <span>{prettyMS(group.time)}</span>
+                  <span>{divide(group.time, group.count).map(prettyMS).getOr('-')}</span>
+                  <span className="inline-block text-theme-helptext ml-2">
+                    ({num(group.count)})
+                  </span>
                 </div>
               </button>
             </li>
           ))}
         </ul>
       </div>
-      <ScatterLineGraph
-        graphData={[
-          {
-            label: workItemConfig.name[1],
-            data: Object.fromEntries(
-              (states || [])
-                .map(state => {
-                  return [
-                    state.state,
-                    workItems.data?.filter(wi =>
-                      wi.stateChanges.map(s => s.state).includes(state.state)
-                    ) || [],
-                  ] as const;
-                })
-                .filter(exists)
-            ),
-            yAxisPoint: x => x.cycleTime,
-            tooltip: () => 'foo',
-          },
-        ]}
-        height={400}
-        linkForItem={() => ''}
-      />
+      <div className="overflow-x-auto">
+        <ScatterLineGraph
+          graphData={[
+            {
+              label: workItemConfig.name[1],
+              data: graphData,
+              yAxisPoint: x => x.stateTime,
+              tooltip: () => 'foo',
+            },
+          ]}
+          height={400}
+          linkForItem={() => ''}
+        />
+      </div>
     </div>
   );
 };
