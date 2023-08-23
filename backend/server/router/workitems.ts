@@ -30,6 +30,8 @@ import {
   bugGraphArgsInputParser,
   getBugLeakageDataForDrawer,
   getFlowEfficiencyGraph,
+  getWorkItemTimeSpent,
+  timeSpentArgs,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -97,4 +99,8 @@ export default t.router({
   getFlowEfficiencyGraph: t.procedure
     .input(graphInputParser)
     .query(passInputTo(getFlowEfficiencyGraph)),
+
+  getWorkItemTimeSpent: t.procedure
+    .input(timeSpentArgs)
+    .query(passInputTo(getWorkItemTimeSpent)),
 });

@@ -16,7 +16,7 @@ const yAxisLeftPadding = 70;
 const yAxisLabelHeight = 20;
 const xAxisBottomPadding = 30;
 const xAxisLabelHeight = 30;
-const xAxisLabelWidth = 100;
+const xAxisLabelWidth = 60;
 const axisOverhang = 0;
 const numberOfHorizontalGridLines = 5;
 const numberOfVerticalGridLines = 6;
@@ -102,7 +102,6 @@ const Axes: React.FC<{ graphProperties: GraphProperties }> = ({ graphProperties 
 );
 
 type GridLinesProps<Point> = {
-  svgRef: MutableRefObject<SVGSVGElement | null>;
   graphProperties: GraphProperties;
   yAxisLabel: (value: number) => string;
   xAxisLabel: (point: Point) => string;
@@ -111,7 +110,6 @@ type GridLinesProps<Point> = {
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 const GridLines = <Point extends unknown>({
-  svgRef,
   graphProperties,
   yAxisLabel,
   xAxisLabel,
@@ -122,21 +120,10 @@ const GridLines = <Point extends unknown>({
   );
 
   const labelForVerticalGridline = useMemo(() => {
-    const svgDimensions = svgRef.current?.getBoundingClientRect();
-    return (gridLineIndex: number) => {
-      if (!svgDimensions) return;
-      return xAxisLabel(
-        points[
-          graphProperties.closestPointIndex(
-            (gridLineIndex *
-              (svgDimensions.width -
-                (yAxisLeftPadding * svgDimensions.width) / graphProperties.width)) /
-              (numberOfVerticalGridLines - 1)
-          )
-        ]
-      );
+    return (xPoint: number) => {
+      return xAxisLabel(points[graphProperties.closestPointIndex(xPoint)]);
     };
-  }, [graphProperties, points, svgRef, xAxisLabel]);
+  }, [graphProperties, points, xAxisLabel]);
 
   return (
     <>
@@ -165,27 +152,26 @@ const GridLines = <Point extends unknown>({
         ))}
       </g>
       <g>
-        {range(1, numberOfVerticalGridLines + 1).map(i => (
-          <Fragment key={i}>
-            {i === numberOfVerticalGridLines ? null : (
-              <foreignObject
-                x={
-                  yAxisLeftPadding +
-                  (i * (graphProperties.width - yAxisLeftPadding)) /
-                    numberOfVerticalGridLines -
-                  xAxisLabelWidth / 2
-                }
-                y={graphProperties.height - xAxisBottomPadding + axisOverhang / 2}
-                width={xAxisLabelWidth}
-                height={xAxisLabelHeight}
-              >
-                <div className="flex text-theme-icon justify-center text-sm w-full items-center">
-                  {labelForVerticalGridline(i)}
-                </div>
-              </foreignObject>
-            )}
-          </Fragment>
-        ))}
+        {range(1, numberOfVerticalGridLines + 1).map(i => {
+          const xPoint = graphProperties.xCoord(i * 2 - 1);
+
+          return (
+            <Fragment key={i}>
+              {i === numberOfVerticalGridLines ? null : (
+                <foreignObject
+                  x={xPoint - xAxisLabelWidth / 2}
+                  y={graphProperties.height - xAxisBottomPadding + axisOverhang / 2}
+                  width={xAxisLabelWidth}
+                  height={xAxisLabelHeight}
+                >
+                  <div className="text-theme-icon text-sm text-center">
+                    {labelForVerticalGridline(xPoint)}
+                  </div>
+                </foreignObject>
+              )}
+            </Fragment>
+          );
+        })}
       </g>
     </>
   );
@@ -405,7 +391,6 @@ const StackedAreaGraph = <L, P>({
     >
       <Axes graphProperties={graphProperties} />
       <GridLines
-        svgRef={svgRef}
         graphProperties={graphProperties}
         yAxisLabel={yAxisLabel}
         xAxisLabel={xAxisLabel}
