@@ -91,11 +91,11 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
     (event: MouseEvent) => {
       event.stopPropagation();
       if (popup && workItemConfig) {
-        setAdditionalModalProps(popups[popup](workItemConfig));
+        setAdditionalModalProps(popups[popup](workItemConfig, lineColor));
         openModal();
       }
     },
-    [openModal, popup, workItemConfig]
+    [lineColor, openModal, popup, workItemConfig]
   );
 
   return (
@@ -240,7 +240,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
           <div className="text-sm text-theme-helptext flex justify-between">
             <div>{' ' || 'Priority'}</div>
             <button className="link-text font-medium" onClick={openModalForWorkItemType}>
-              {workItemConfig && popups[popup](workItemConfig).label}
+              {workItemConfig && popups[popup](workItemConfig, lineColor).label}
             </button>
           </div>
         ) : null}
