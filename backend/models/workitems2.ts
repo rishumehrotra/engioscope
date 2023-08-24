@@ -863,6 +863,9 @@ export const getBugLeakage = async ({
                     project,
                     workItemType: wic.type,
                     createdDate: inDateRange(startDate, endDate),
+                    ...(wic.ignoreStates?.length
+                      ? { state: { $nin: wic.ignoreStates } }
+                      : {}),
                   },
                 },
                 { $addFields: { rootCauseType: field(rootCause) } },
@@ -1165,6 +1168,9 @@ export const getBugLeakageDataForDrawer = async ({
             project,
             workItemType,
             createdDate: inDateRange(startDate, endDate),
+            ...(workItemConfig.ignoreStates?.length
+              ? { state: { $nin: workItemConfig.ignoreStates } }
+              : {}),
           },
         },
         { $addFields: { rootCauseType: field(rootCause) } },

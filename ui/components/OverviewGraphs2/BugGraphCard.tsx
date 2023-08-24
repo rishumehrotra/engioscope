@@ -97,9 +97,11 @@ const getGroups = (data: BugWorkItems[number]['data']) => {
 
 const getDrawer = (
   selectedGroup: string,
+  selectedGroups: string[],
   selectedField: string,
   groups: Group[],
-  workItemConfig: SingleWorkItemConfig | undefined
+  workItemConfig: SingleWorkItemConfig | undefined,
+  data: BugWorkItems[number]['data']
 ) => ({
   heading: (
     <>
@@ -121,7 +123,9 @@ const getDrawer = (
     <BugGraphDrawer
       groups={groups.filter(group => group.rootCauseField === selectedField)}
       selectedRCAField={selectedField}
+      rcaFields={getRcaFields(data, workItemConfig)}
       selectedGroup={selectedGroup}
+      combinedBugs={combinedBugs(data, selectedField, selectedGroups)}
     />
   ),
 });
@@ -166,9 +170,11 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
 
   const drawer = getDrawer(
     selectedGroups[0] || 'noGroup',
+    selectedGroups,
     selectedField || '',
     groups,
-    workItemConfig
+    workItemConfig,
+    data
   );
 
   const openDrawerFromGroupPill = useCallback(
@@ -176,12 +182,19 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
       event.stopPropagation();
       if (drawer) {
         setAdditionalDrawerProps(
-          getDrawer(groupName, rootCauseField, groups, workItemConfig)
+          getDrawer(
+            groupName,
+            selectedGroups,
+            rootCauseField,
+            groups,
+            workItemConfig,
+            data
+          )
         );
         openDrawer();
       }
     },
-    [drawer, groups, openDrawer, workItemConfig]
+    [drawer, selectedGroups, groups, workItemConfig, data, openDrawer]
   );
 
   useEffect(() => {
@@ -200,7 +213,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
     setSelectedGroups((groups || []).map(prop('groupName')));
   }, [groups]);
 
-  if (!data) return null;
+  if (!data || groups.reduce((sum, group) => sum + group.count, 0) === 0) return null;
 
   return (
     <div className="contents">
