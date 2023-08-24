@@ -57,52 +57,54 @@ export const updateWorkItemStateChanges = (
 
   return Promise.all(
     chunkArray(workItemIds, 20).map(chunk => {
-      return chunk.map(async wiId => {
-        try {
-          const revisions = await getWorkItemRevisions(collectionName)(wiId);
+      return Promise.all(
+        chunk.map(async wiId => {
+          try {
+            const revisions = await getWorkItemRevisions(collectionName)(wiId);
 
-          const stateChanges = revisions.reduce<WorkItemStateChanges['stateChanges']>(
-            (acc, rev) => {
-              if (!acc.length) {
-                acc.push({
-                  state: rev.fields['System.State'],
-                  date: rev.fields['System.ChangedDate'],
-                });
+            const stateChanges = revisions.reduce<WorkItemStateChanges['stateChanges']>(
+              (acc, rev) => {
+                if (!acc.length) {
+                  acc.push({
+                    state: rev.fields['System.State'],
+                    date: rev.fields['System.ChangedDate'],
+                  });
+                  return acc;
+                }
+
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const lastEntry = last(acc)!;
+                if (rev.fields['System.State'] !== lastEntry.state) {
+                  acc.push({
+                    state: rev.fields['System.State'],
+                    date: rev.fields['System.ChangedDate'],
+                  });
+                }
+
                 return acc;
-              }
-
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              const lastEntry = last(acc)!;
-              if (rev.fields['System.State'] !== lastEntry.state) {
-                acc.push({
-                  state: rev.fields['System.State'],
-                  date: rev.fields['System.ChangedDate'],
-                });
-              }
-
-              return acc;
-            },
-            []
-          );
-
-          return WorkItemStateChangesModel.findOneAndUpdate(
-            { collectionName, id: wiId },
-            {
-              $set: {
-                project: last(revisions)?.fields['System.TeamProject'],
-                workItemType: last(revisions)?.fields['System.WorkItemType'],
-                stateChanges,
               },
-            },
-            { upsert: true }
-          );
-        } catch (error) {
-          if (error instanceof HTTPError && is404(error)) {
-            return WorkItemModel.deleteOne({ collectionName, id: wiId });
+              []
+            );
+
+            return WorkItemStateChangesModel.findOneAndUpdate(
+              { collectionName, id: wiId },
+              {
+                $set: {
+                  project: last(revisions)?.fields['System.TeamProject'],
+                  workItemType: last(revisions)?.fields['System.WorkItemType'],
+                  stateChanges,
+                },
+              },
+              { upsert: true }
+            );
+          } catch (error) {
+            if (error instanceof HTTPError && is404(error)) {
+              return WorkItemModel.deleteOne({ collectionName, id: wiId });
+            }
+            throw error;
           }
-          throw error;
-        }
-      });
+        })
+      );
     })
   );
 };
