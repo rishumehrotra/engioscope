@@ -64,18 +64,6 @@ const combinedBugs = (
   };
 };
 
-const rootCauseFieldCombinedBugs = (
-  data: BugWorkItems[number]['data'],
-  selectedGroups: string[]
-) => {
-  return data.map(prop('rootCauseField')).map(field => {
-    return {
-      rootCauseField: field,
-      combinedBugs: combinedBugs(data, field, selectedGroups),
-    };
-  });
-};
-
 export type BugGraphCardProps = {
   workItemConfig: SingleWorkItemConfig | undefined;
   data: BugWorkItems[number]['data'];
@@ -137,11 +125,12 @@ const getDrawer = (
   ),
   children: (
     <BugGraphDrawer
+      graphData={data}
       groups={groups.filter(group => group.rootCauseField === selectedField)}
       selectedRCAField={selectedField}
       rcaFields={getRcaFields(data, workItemConfig)}
       selectedGroup={selectedGroup}
-      rootCauseList={rootCauseFieldCombinedBugs(data, selectedGroups)}
+      // rootCauseList={rootCauseFieldCombinedBugs(data, selectedGroups)}
     />
   ),
 });

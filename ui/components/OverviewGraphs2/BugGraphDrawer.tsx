@@ -1,42 +1,90 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { byNum, byString } from 'sort-lib';
-import { multiply } from 'rambda';
+import { byNum, byString, desc } from 'sort-lib';
+import { multiply, prop } from 'rambda';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { toPercentage, divide } from '../../../shared/utils.js';
-import type { Group } from './BugLeakage.jsx';
+import type { BugWorkItems, Group } from './BugLeakage.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
 import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import SortableTable from '../common/SortableTable.jsx';
 
-type CombinedBugs = {
-  list: {
-    percentage: string;
-    rootCauseType: string;
-    count: number;
-  }[];
-  total: number;
-  max: number;
-} | null;
+const combinedBugs = (
+  data: BugWorkItems[number]['data'],
+  selectedField: string,
+  selectedGroup: string
+) => {
+  if (!data) return null;
+
+  const rcaFieldGroupedBugs = data.find(field => field.rootCauseField === selectedField);
+
+  if (!rcaFieldGroupedBugs) return null;
+
+  const groupedBugs = rcaFieldGroupedBugs.groups.filter(group =>
+    selectedGroup === 'all' ? group : group.groupName === selectedGroup
+  );
+
+  const combinedBugs = groupedBugs.flatMap(group => group.bugs);
+
+  const combinedBugsGroupedByRootCauseType = combinedBugs.reduce((acc, bug) => {
+    acc.set(bug.rootCauseType, (acc?.get(bug.rootCauseType) || 0) + bug.count);
+    return acc;
+  }, new Map<string, number>());
+
+  const list = Array.from(
+    combinedBugsGroupedByRootCauseType,
+    ([rootCauseType, count]) => ({
+      rootCauseType,
+      count,
+    })
+  ).sort(desc(byNum(l => l.count)));
+
+  const max = Math.max(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ...list.map(({ count, ...rest }) => count)
+  );
+
+  const total = list.reduce((acc, bug) => acc + bug.count, 0);
+
+  return {
+    list: list.map(bug => ({
+      ...bug,
+      percentage: divide(total, bug.count || 0)
+        .map(toPercentage)
+        .getOr('-'),
+    })),
+    total,
+    max,
+  };
+};
+
+const rootCauseFieldCombinedBugs = (
+  data: BugWorkItems[number]['data'],
+  selectedGroup: string
+) => {
+  return data.map(prop('rootCauseField')).map(field => {
+    return {
+      rootCauseField: field,
+      combinedBugs: combinedBugs(data, field, selectedGroup),
+    };
+  });
+};
 
 type NewDrawerProps = {
+  graphData: BugWorkItems[number]['data'];
   selectedRCAField: string;
   selectedGroup: string;
   groups: Group[];
   rcaFields: { label: string; value: string }[];
-  rootCauseList: {
-    rootCauseField: string;
-    combinedBugs: CombinedBugs;
-  }[];
 };
 
 const BugGraphDrawer = ({
+  graphData,
   selectedRCAField,
   selectedGroup,
   groups,
-  rcaFields,
-  rootCauseList,
+  rcaFields, // rootCauseList,
 }: NewDrawerProps) => {
   const graphArgs = useGraphArgs();
   const workItems = trpc.workItems.getBugLeakageDataForDrawer.useQuery({
@@ -44,6 +92,11 @@ const BugGraphDrawer = ({
   })?.data;
   const [currentRCAField, setCurrentRCAField] = useState<string>(selectedRCAField);
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedGroup);
+  const rootCauseList = useMemo(
+    () => rootCauseFieldCombinedBugs(graphData, selectedGroupName),
+    [graphData, selectedGroupName]
+  );
+
   const subTypePickerOptions = useMemo(() => {
     if (!workItems) return [];
 
