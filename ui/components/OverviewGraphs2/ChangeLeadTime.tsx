@@ -3,6 +3,7 @@ import { trpc } from '../../helpers/trpc.js';
 import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
 import { prettyStates, useDecorateForGraph } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
+import GraphAreaLoader from './GraphAreaLoader.jsx';
 
 const ChangeLoadTime = () => {
   const graphArgs = useGraphArgs();
@@ -14,29 +15,33 @@ const ChangeLoadTime = () => {
 
   return (
     <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-      {graphWithConfig?.map(({ config, graphCardProps }) => {
-        if (!config) return null;
+      {graphWithConfig ? (
+        graphWithConfig.map(({ config, graphCardProps }) => {
+          if (!config) return null;
 
-        if (!config.devCompleteStates) {
-          return <div>Dev complete state not specified</div>;
-        }
-        return (
-          <GraphCard
-            {...graphCardProps({
-              graphName: 'Change lead time',
-              drawerComponentName: 'ChangeLeadTimeDrawer',
-            })}
-            subheading={[
-              'Change load time for',
-              config.name[0].toLowerCase(),
-              'is computed from',
-              prettyStates(config.devCompleteStates),
-              'to',
-              prettyStates(config.endStates),
-            ].join(' ')}
-          />
-        );
-      })}
+          if (!config.devCompleteStates) {
+            return <div>Dev complete state not specified</div>;
+          }
+          return (
+            <GraphCard
+              {...graphCardProps({
+                graphName: 'Change lead time',
+                drawerComponentName: 'ChangeLeadTimeDrawer',
+              })}
+              subheading={[
+                'Change load time for',
+                config.name[0].toLowerCase(),
+                'is computed from',
+                prettyStates(config.devCompleteStates),
+                'to',
+                prettyStates(config.endStates),
+              ].join(' ')}
+            />
+          );
+        })
+      ) : (
+        <GraphAreaLoader />
+      )}
     </div>
   );
 };

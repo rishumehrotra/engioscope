@@ -214,6 +214,8 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
   );
 
   return useMemo(() => {
+    if (!data || !pageConfig.data) return;
+
     return data
       ?.map(wit => {
         const config = pageConfig.data?.workItemsConfig?.find(
@@ -319,11 +321,5 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
         };
         return { config, data: witData, graphCardProps };
       });
-  }, [
-    data,
-    datesForWeekIndex,
-    fillGapsForGraph,
-    isDateDiff,
-    pageConfig.data?.workItemsConfig,
-  ]);
+  }, [data, datesForWeekIndex, fillGapsForGraph, isDateDiff, pageConfig.data]);
 };

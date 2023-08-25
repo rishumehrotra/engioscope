@@ -3,6 +3,7 @@ import { trpc } from '../../helpers/trpc.js';
 import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
 import { prettyStates, useDecorateForGraph } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
+import GraphAreaLoader from './GraphAreaLoader.jsx';
 
 const New = () => {
   const graphArgs = useGraphArgs();
@@ -14,24 +15,28 @@ const New = () => {
 
   return (
     <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
-      {graphWithConfig?.map(({ config, graphCardProps }) => {
-        if (!config) return null;
+      {graphWithConfig ? (
+        graphWithConfig.map(({ config, graphCardProps }) => {
+          if (!config) return null;
 
-        return (
-          <GraphCard
-            {...graphCardProps({
-              graphName: 'New work items',
-              drawerComponentName: 'NewDrawer',
-            })}
-            subheading={[
-              'A',
-              config.name[0].toLowerCase(),
-              'is considered opened if it reached',
-              prettyStates(config.startStates),
-            ].join(' ')}
-          />
-        );
-      })}
+          return (
+            <GraphCard
+              {...graphCardProps({
+                graphName: 'New work items',
+                drawerComponentName: 'NewDrawer',
+              })}
+              subheading={[
+                'A',
+                config.name[0].toLowerCase(),
+                'is considered opened if it reached',
+                prettyStates(config.startStates),
+              ].join(' ')}
+            />
+          );
+        })
+      ) : (
+        <GraphAreaLoader />
+      )}
     </div>
   );
 };
