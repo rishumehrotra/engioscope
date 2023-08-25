@@ -121,7 +121,8 @@ const GridLines = <Point extends unknown>({
 
   const labelForVerticalGridline = useMemo(() => {
     return (xPoint: number) => {
-      return xAxisLabel(points[graphProperties.closestPointIndex(xPoint)]);
+      const point = points[graphProperties.closestPointIndex(xPoint)];
+      return point && xAxisLabel(point);
     };
   }, [graphProperties, points, xAxisLabel]);
 
