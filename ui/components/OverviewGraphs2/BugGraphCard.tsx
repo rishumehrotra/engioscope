@@ -236,15 +236,20 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           <div className={twJoin('bg-theme-page-content group/block')}>
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                {num(
-                  groups
-                    .filter(g => g.rootCauseField === selectedField)
-                    .reduce((sum, group) => sum + group.count, 0)
-                )}{' '}
-                {minPluralise(
-                  groups.reduce((sum, group) => sum + group.count, 0),
-                  ...(workItemConfig?.name || ['', ''])
-                ).toLowerCase()}
+                {groups.reduce((sum, group) => sum + group.count, 0) === 0 ? null : (
+                  <span className="text-theme-text">
+                    {num(
+                      groups
+                        .filter(g => g.rootCauseField === selectedField)
+                        .reduce((sum, group) => sum + group.count, 0)
+                    )}
+                    &nbsp;
+                    {minPluralise(
+                      groups.reduce((sum, group) => sum + group.count, 0),
+                      ...(workItemConfig?.name || ['', ''])
+                    ).toLowerCase()}
+                  </span>
+                )}
                 {groupsForField.length === 1 &&
                 groupsForField[0].groupName === 'noGroup' ? (
                   <button
@@ -261,7 +266,10 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
             </div>
           </div>
           <div className="flex items-start">
-            {data && rcaFields.length > 1 && selectedField ? (
+            {data &&
+            rcaFields.length > 1 &&
+            groups.reduce((sum, group) => sum + group.count, 0) !== 0 &&
+            selectedField ? (
               <Switcher
                 options={rcaFields}
                 onChange={e => setSelectedField(e)}
@@ -323,22 +331,26 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                 ))}
           </ul>
           <ul className="text-sm flex gap-2 items-center ml-4">
-            {selectedGroups.length !== data.length && (
-              <li
-                className={
-                  selectedGroups.length === 0
-                    ? ''
-                    : 'border-r border-theme-seperator pr-2'
-                }
-              >
-                <button
-                  className="link-text font-semibold"
-                  onClick={() => setSelectedGroups(groupsForField.map(prop('groupName')))}
+            {selectedGroups.length !== data.length &&
+              data &&
+              groups.reduce((sum, group) => sum + group.count, 0) !== 0 && (
+                <li
+                  className={
+                    selectedGroups.length === 0
+                      ? ''
+                      : 'border-r border-theme-seperator pr-2'
+                  }
                 >
-                  Select all
-                </button>
-              </li>
-            )}
+                  <button
+                    className="link-text font-semibold"
+                    onClick={() =>
+                      setSelectedGroups(groupsForField.map(prop('groupName')))
+                    }
+                  >
+                    Select all
+                  </button>
+                </li>
+              )}
             {selectedGroups.length !== 0 && (
               <li>
                 <button
@@ -353,66 +365,24 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
         </div>
 
         {data.length === 0 ? (
-          <div
-            className={twJoin(
-              'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
-              'bg-theme-page-content group/block'
-            )}
-            style={{
-              boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
-            }}
-          >
-            <div className="self-center text-center text-sm text-theme-helptext w-full">
-              <img
-                src={emptySvgPath}
-                alt="No results"
-                className="m-4 mt-6 block mx-auto"
-              />
-              <h1 className="text-base mb-2 font-medium">No Data Available</h1>
-              <p>
-                Looks like the RCA fields aren't configured. You may configure this here
-                to enable data visualization.
-              </p>
-            </div>
+          <div className="self-center text-center text-sm text-theme-helptext w-full">
+            <img src={emptySvgPath} alt="No results" className="m-4 mt-6 block mx-auto" />
+            <h1 className="text-base mb-2 font-medium">No Data Available</h1>
+            <p>
+              Looks like the RCA fields aren't configured. You may configure this here to
+              enable data visualization.
+            </p>
           </div>
         ) : data && groups.reduce((sum, group) => sum + group.count, 0) === 0 ? (
-          <div
-            className={twJoin(
-              'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
-              'bg-theme-page-content group/block'
-            )}
-            style={{
-              boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
-            }}
-          >
-            <div className="self-center text-center text-sm text-theme-helptext w-full">
-              <img
-                src={emptySvgPath}
-                alt="No results"
-                className="m-4 mt-6 block mx-auto"
-              />
-              <h1 className="text-base mb-2 font-medium">No Bug Leakages</h1>
-            </div>
+          <div className="self-center text-center text-sm text-theme-helptext w-full">
+            <img src={emptySvgPath} alt="No results" className="m-4 mt-6 block mx-auto" />
+            <h1 className="text-base mb-2 font-medium">No Bug Leakages</h1>
           </div>
         ) : data && selectedGroups.length === 0 ? (
-          <div
-            className={twJoin(
-              'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
-              'bg-theme-page-content group/block'
-            )}
-            style={{
-              boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
-            }}
-          >
-            <div className="self-center text-center text-sm text-theme-helptext w-full">
-              <img
-                src={emptySvgPath}
-                alt="No results"
-                className="m-4 mt-6 block mx-auto"
-              />
-              <h1 className="text-base mb-2 font-medium">No Environment Selected</h1>
-              <p>Please select environment.</p>
-            </div>
+          <div className="self-center text-center text-sm text-theme-helptext w-full">
+            <img src={emptySvgPath} alt="No results" className="m-4 mt-6 block mx-auto" />
+            <h1 className="text-base mb-2 font-medium">No Environment Selected</h1>
+            <p>Please select environment.</p>
           </div>
         ) : (
           <>
