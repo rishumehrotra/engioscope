@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { byDate, byNum, desc } from 'sort-lib';
 import { T, range } from 'rambda';
-import { Calendar } from 'react-feather';
+import { Calendar, Clock } from 'react-feather';
 import InlineSelect from '../common/InlineSelect.jsx';
-import { shortDate } from '../../helpers/utils.js';
+import { prettyMS, shortDate } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import type {
   CountWorkItems,
@@ -117,12 +117,18 @@ const DrawerContents = <T extends CountWorkItems | DateDiffWorkItems>({
                           {ChildComponent ? (
                             <ChildComponent workitem={wi} />
                           ) : (
-                            <span className="bg-theme-tag text-sm px-2 py-1 rounded-md">
-                              {wi.state}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="bg-theme-tag text-sm px-2 py-1 rounded-md">
+                                {wi.state}
+                              </span>
+                              <Clock size={16} className="text-theme-icon" />
+                              <span>{prettyMS(Date.now() - wi.date.getTime())}</span>
+                            </div>
                           )}
                         </div>
-                        <div className="text-right py-2">{shortDate(wi.date)}</div>
+                        <div className="text-right py-2">
+                          <span>{shortDate(wi.date)}</span>
+                        </div>
                       </a>
                     </li>
                   ))}

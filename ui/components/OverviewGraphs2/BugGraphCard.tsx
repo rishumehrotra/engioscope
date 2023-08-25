@@ -394,10 +394,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                     <button
                       className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
                       style={{ gridTemplateColumns: '20% 1fr 85px' }}
-                      onClick={openDrawerFromGroupPill(
-                        bug.rootCauseType,
-                        selectedField || ''
-                      )}
+                      onClick={openDrawerFromGroupPill('all', selectedField || '')}
                     >
                       <div className="flex items-center justify-end">
                         <span className="truncate">{bug.rootCauseType}</span>

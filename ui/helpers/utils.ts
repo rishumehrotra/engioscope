@@ -14,8 +14,16 @@ export const oneYear = 1000 * 60 * 60 * 24 * 365;
 
 export const num = (num: number) => Intl.NumberFormat().format(num);
 
-export const shortDate = (date: Date) =>
-  Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+export const shortDate = (date: Date) => {
+  if (Date.now() - date.getTime() > oneYear) {
+    return Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  }
+  return Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+};
 
 export const mediumDate = (date: Date) =>
   Intl.DateTimeFormat(undefined, {

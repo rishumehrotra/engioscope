@@ -10,6 +10,7 @@ import { DownChevron, UpChevron } from '../common/Icons.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import type { FlowEfficiencyWorkItems } from '../../../backend/models/workitems2';
 import { FlowEfficiencyHelpText } from './FlowEfficiencyHelpText.jsx';
+import { CycleTimeDrawer } from './Drawers.jsx';
 
 type FlowEfficiencyGraphCardProps = {
   data: FlowEfficiencyWorkItems[];
@@ -35,6 +36,11 @@ const FlowEfficiencyGraphCard = ({
   });
 
   const [groups, setGroups] = useState<{ groupName: string; count: number }[]>([]);
+  const [workItemType, setWorkItemType] = useState<string>('');
+
+  useEffect(() => {
+    setWorkItemType(workItemConfig?.name?.[1] || '');
+  }, [workItemConfig]);
 
   useEffect(() => {
     setGroups(data?.map(g => ({ groupName: g.groupName, count: g.count })) || []);
@@ -76,8 +82,15 @@ const FlowEfficiencyGraphCard = ({
                       style={{ gridTemplateColumns: '20% 1fr 85px' }}
                       onClick={() => {
                         setAdditionalDrawerProps({
-                          heading: group.groupName,
-                          children: 'Loading...',
+                          heading: `${workItemType} - ${num(
+                            groups.reduce((sum, group) => sum + group.count, 0)
+                          )}`,
+                          children: (
+                            <CycleTimeDrawer
+                              selectedTab={workItemType}
+                              workItemConfig={workItemConfig}
+                            />
+                          ),
                         });
                         openDrawer();
                       }}
