@@ -99,7 +99,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
   );
 
   return (
-    <div>
+    <>
       <Drawer {...drawerProps} {...additionalDrawerProps} />
       <Modal
         {...modalProps}
@@ -245,7 +245,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
           </div>
         ) : null}
       </div>
-    </div>
+    </>
   );
 };
 
