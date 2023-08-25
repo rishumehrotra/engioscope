@@ -14,6 +14,7 @@ import { useDrawer } from '../common/Drawer.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import BugGraphDrawer from './BugGraphDrawer.jsx';
+import emptySvgPath from './empty.svg';
 
 const combinedBugs = (
   data: BugWorkItems[number]['data'],
@@ -130,7 +131,6 @@ const getDrawer = (
       selectedRCAField={selectedField}
       rcaFields={getRcaFields(data, workItemConfig)}
       selectedGroup={selectedGroup}
-      // rootCauseList={rootCauseFieldCombinedBugs(data, selectedGroups)}
     />
   ),
 });
@@ -218,7 +218,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
     setSelectedGroups((groups || []).map(prop('groupName')));
   }, [groups]);
 
-  if (!data || groups.reduce((sum, group) => sum + group.count, 0) === 0) return null;
+  if (!data) return null;
 
   return (
     <div className="contents">
@@ -352,7 +352,69 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           </ul>
         </div>
 
-        {data ? (
+        {data.length === 0 ? (
+          <div
+            className={twJoin(
+              'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
+              'bg-theme-page-content group/block'
+            )}
+            style={{
+              boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
+            }}
+          >
+            <div className="self-center text-center text-sm text-theme-helptext w-full">
+              <img
+                src={emptySvgPath}
+                alt="No results"
+                className="m-4 mt-6 block mx-auto"
+              />
+              <h1 className="text-base mb-2 font-medium">No Data Available</h1>
+              <p>
+                Looks like the RCA fields aren't configured. You may configure this here
+                to enable data visualization.
+              </p>
+            </div>
+          </div>
+        ) : data && groups.reduce((sum, group) => sum + group.count, 0) === 0 ? (
+          <div
+            className={twJoin(
+              'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
+              'bg-theme-page-content group/block'
+            )}
+            style={{
+              boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
+            }}
+          >
+            <div className="self-center text-center text-sm text-theme-helptext w-full">
+              <img
+                src={emptySvgPath}
+                alt="No results"
+                className="m-4 mt-6 block mx-auto"
+              />
+              <h1 className="text-base mb-2 font-medium">No Bug Leakages</h1>
+            </div>
+          </div>
+        ) : data && selectedGroups.length === 0 ? (
+          <div
+            className={twJoin(
+              'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
+              'bg-theme-page-content group/block'
+            )}
+            style={{
+              boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
+            }}
+          >
+            <div className="self-center text-center text-sm text-theme-helptext w-full">
+              <img
+                src={emptySvgPath}
+                alt="No results"
+                className="m-4 mt-6 block mx-auto"
+              />
+              <h1 className="text-base mb-2 font-medium">No Environment Selected</h1>
+              <p>Please select environment.</p>
+            </div>
+          </div>
+        ) : (
           <>
             <ul>
               {combinedBugs(data, selectedField || '', selectedGroups)
@@ -421,8 +483,6 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
               </div>
             )}
           </>
-        ) : (
-          <p className="text-gray-600 italic text-sm">Couldn't find any RCA data.</p>
         )}
       </div>
       {data && data.length > 0 ? (
