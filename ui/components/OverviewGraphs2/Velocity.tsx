@@ -22,7 +22,7 @@ const Velocity = () => {
             <GraphCard
               {...graphCardProps({
                 graphName: 'Velocity',
-                drawerComponentName: 'VelocityDrawer',
+                drawerComponentName: 'CycleTimeDrawer',
               })}
               subheading={[
                 'A',

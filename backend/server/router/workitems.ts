@@ -20,7 +20,6 @@ import {
   pageConfigInputParser,
   getNewWorkItems,
   graphArgsInputParser,
-  getVelocityWorkItems,
   getCycleTimeWorkItems,
   getChangeLeadTimeWorkItems,
   getWipGraph,
@@ -75,9 +74,6 @@ export default t.router({
   getNewWorkItems: t.procedure
     .input(graphArgsInputParser)
     .query(passInputTo(getNewWorkItems)),
-  getVelocityWorkItems: t.procedure
-    .input(graphArgsInputParser)
-    .query(passInputTo(getVelocityWorkItems)),
   getCycleTimeWorkItems: t.procedure
     .input(graphArgsInputParser)
     .query(passInputTo(getCycleTimeWorkItems)),

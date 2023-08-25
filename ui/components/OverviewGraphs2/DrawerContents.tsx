@@ -13,12 +13,17 @@ import { useDatesForWeekIndex, useMaxWeekIndex } from '../../hooks/week-index-ho
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import { oneWeekInMs } from '../../../shared/utils.js';
 
-type NewDrawerProps = {
+type DrawerContentsProps<T extends CountWorkItems | DateDiffWorkItems> = {
   selectedTab: string;
-  workItems: (CountWorkItems | DateDiffWorkItems)[] | undefined;
+  workItems: T[] | undefined;
+  workItemDetailsRenderer?: React.FC<{ workitem: T }>;
 };
 
-const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
+const DrawerContents = <T extends CountWorkItems | DateDiffWorkItems>({
+  selectedTab,
+  workItems,
+  workItemDetailsRenderer: ChildComponent,
+}: DrawerContentsProps<T>) => {
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedTab);
   const queryContext = useQueryContext();
   const maxWeekIndex = useMaxWeekIndex();
@@ -109,9 +114,13 @@ const DrawerContents = ({ selectedTab, workItems }: NewDrawerProps) => {
                           <div className="group-hover:text-theme-highlight group-hover:underline mb-2">
                             #{wi.id}: {wi.title}
                           </div>
-                          <span className="bg-theme-tag text-sm px-2 py-1 rounded-md">
-                            {wi.state}
-                          </span>
+                          {ChildComponent ? (
+                            <ChildComponent workitem={wi} />
+                          ) : (
+                            <span className="bg-theme-tag text-sm px-2 py-1 rounded-md">
+                              {wi.state}
+                            </span>
+                          )}
                         </div>
                         <div className="text-right py-2">{shortDate(wi.date)}</div>
                       </a>

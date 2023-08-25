@@ -452,6 +452,7 @@ export type DateDiffWorkItems = {
   title: string;
   state: string;
   url: string;
+  duration: number;
 };
 
 export function getDrawerDataForWorkItem(
@@ -603,7 +604,6 @@ export const getChangeLoadTimeGraph = getGraphOfType(
 );
 
 export const getNewWorkItems = getDrawerDataForWorkItem(graphTypes.new);
-export const getVelocityWorkItems = getDrawerDataForWorkItem(graphTypes.velocity);
 export const getCycleTimeWorkItems = getDrawerDataForWorkItem(graphTypes.cycleTime);
 export const getChangeLeadTimeWorkItems = getDrawerDataForWorkItem(
   graphTypes.changeLeadTime

@@ -1,32 +1,31 @@
 import React from 'react';
 
 const SingleLoader = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="600"
-    height="517"
-    viewBox="14.5 0 600 517"
-    fill="none"
-  >
-    <rect width="114" height="16" x="38.5" y="105" fill="currentColor" rx="8" />
-    <rect width="114" height="16" x="38.5" y="458" fill="currentColor" rx="8" />
-    <rect width="114" height="16" x="168.5" y="105" fill="currentColor" rx="8" />
-    <rect width="114" height="16" x="14.5" y="10" fill="currentColor" rx="8" />
-    <rect width="571" height="16" x="14.5" y="41" fill="currentColor" rx="8" />
-    <rect width="90" height="33" x="38.5" y="137" fill="currentColor" rx="16.5" />
-    <rect width="90" height="33" x="168.5" y="137" fill="currentColor" rx="16.5" />
-    <path
-      fill="currentColor"
-      fillRule="evenodd"
-      d="M10 81a8.5 8.5 0 0 1 8.5-8.5h564A8.5 8.5 0 0 1 591 81v417a8.5 8.5 0 0 1-8.5 8.5h-564A8.5 8.5 0 0 1 10 498V81Zm8.5-7.5A7.5 7.5 0 0 0 11 81v417a7.5 7.5 0 0 0 7.5 7.5h564a7.5 7.5 0 0 0 7.5-7.5V81a7.5 7.5 0 0 0-7.5-7.5h-564Z"
-      clipRule="evenodd"
-    />
-    <path
-      fill="currentColor"
-      fillRule="evenodd"
-      d="M359.485 349H490.5a4 4 0 0 1 0 8H360.494L240.4 387.79l-118.15-9.896-84.768 33.821a4 4 0 1 1-2.964-7.43l86.52-34.521 118.684 9.942L359.485 349ZM566.5 416h-532v-1h532v1Z"
-      clipRule="evenodd"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="517" fill="none">
+    <g fill="#F3F4F6" clipPath="url(#a)">
+      <rect width="117.728" height="16.661" x="29.432" y="98.922" rx="8.33" />
+      <rect width="117.728" height="16.661" x="29.432" y="466.497" rx="8.33" />
+      <rect width="117.728" height="16.661" x="163.684" y="98.922" rx="8.33" />
+      <rect width="117.728" height="16.661" x="4.647" rx="8.33" />
+      <rect width="589.673" height="16.661" x="4.647" y="32.28" rx="8.33" />
+      <rect width="92.943" height="34.362" x="29.432" y="132.244" rx="17.181" />
+      <rect width="92.943" height="34.362" x="163.684" y="132.244" rx="17.181" />
+      <path
+        fillRule="evenodd"
+        d="M0 73.931c0-4.888 3.93-8.85 8.778-8.85h582.444c4.848 0 8.778 3.962 8.778 8.85V508.15c0 4.888-3.93 8.851-8.778 8.851H8.778C3.93 517 0 513.037 0 508.149V73.932Zm8.778-7.81c-4.278 0-7.745 3.497-7.745 7.81V508.15c0 4.313 3.467 7.81 7.745 7.81h582.444c4.278 0 7.745-3.497 7.745-7.81V73.932c0-4.314-3.467-7.81-7.745-7.81H8.778Z"
+        clipRule="evenodd"
+      />
+      <path
+        fillRule="evenodd"
+        d="M360.914 352.997h135.299c2.282 0 4.131 1.865 4.131 4.165 0 2.301-1.849 4.165-4.131 4.165H361.956l-124.021 32.062-122.014-10.305-87.54 35.218c-2.119.852-4.522-.189-5.367-2.325-.846-2.137.186-4.56 2.305-5.413l89.35-35.945 122.565 10.351 123.68-31.973ZM574.699 422.763H25.301v-1.041H574.7v1.041Z"
+        clipRule="evenodd"
+      />
+    </g>
+    <defs>
+      <clipPath id="a">
+        <path fill="#fff" d="M0 0h600v517H0z" />
+      </clipPath>
+    </defs>
   </svg>
 );
 
