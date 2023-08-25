@@ -1,33 +1,34 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { byDate, byNum, byString } from 'sort-lib';
-import { multiply, range } from 'rambda';
-import { Calendar } from 'react-feather';
+import { byNum, byString } from 'sort-lib';
+import { multiply } from 'rambda';
 import InlineSelect from '../common/InlineSelect.jsx';
-import { shortDate } from '../../helpers/utils.js';
 import { noGroup } from '../../../shared/work-item-utils.js';
-import { useDatesForWeekIndex, useMaxWeekIndex } from '../../hooks/week-index-hooks.js';
-import { useQueryContext } from '../../hooks/query-hooks.js';
-import { oneWeekInMs, toPercentage, divide } from '../../../shared/utils.js';
+import { toPercentage, divide } from '../../../shared/utils.js';
 import type { Group } from './BugLeakage.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
 import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import SortableTable from '../common/SortableTable.jsx';
 
+type CombinedBugs = {
+  list: {
+    percentage: string;
+    rootCauseType: string;
+    count: number;
+  }[];
+  total: number;
+  max: number;
+} | null;
+
 type NewDrawerProps = {
   selectedRCAField: string;
   selectedGroup: string;
   groups: Group[];
   rcaFields: { label: string; value: string }[];
-  combinedBugs: {
-    list: {
-      percentage: string;
-      rootCauseType: string;
-      count: number;
-    }[];
-    total: number;
-    max: number;
-  } | null;
+  rootCauseList: {
+    rootCauseField: string;
+    combinedBugs: CombinedBugs;
+  }[];
 };
 
 const BugGraphDrawer = ({
@@ -35,7 +36,7 @@ const BugGraphDrawer = ({
   selectedGroup,
   groups,
   rcaFields,
-  combinedBugs,
+  rootCauseList,
 }: NewDrawerProps) => {
   const graphArgs = useGraphArgs();
   const workItems = trpc.workItems.getBugLeakageDataForDrawer.useQuery({
@@ -43,9 +44,6 @@ const BugGraphDrawer = ({
   })?.data;
   const [currentRCAField, setCurrentRCAField] = useState<string>(selectedRCAField);
   const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedGroup);
-  const queryContext = useQueryContext();
-  const maxWeekIndex = useMaxWeekIndex();
-  const datesForWeekIndex = useDatesForWeekIndex();
   const subTypePickerOptions = useMemo(() => {
     if (!workItems) return [];
 
@@ -61,52 +59,13 @@ const BugGraphDrawer = ({
     ];
   }, [groups, workItems]);
 
-  const workItemListing = useMemo(() => {
-    if (!workItems) return [];
-    const matchingField = workItems.find(wi => wi.rootCauseField === currentRCAField);
-
-    if (!matchingField) return [];
-
-    const matchingGroupWorkItems =
-      selectedGroupName === 'all'
-        ? matchingField.bugWorkItems.sort(byDate(x => x.date))
-        : matchingField.bugWorkItems
-            .filter(wi => wi.groupName === selectedGroupName)
-            .sort(byDate(x => x.date));
-
-    const minDateMs = Math.min(...matchingField.bugWorkItems.map(w => w.date.getTime()));
-
-    return range(
-      Math.floor((minDateMs - queryContext[2].getTime()) / oneWeekInMs),
-      maxWeekIndex
-    )
-      .map(datesForWeekIndex)
-      .map(({ startDate, endDate }) => ({
-        weekStartDate: startDate,
-        weekEndDate: endDate,
-        workItems: matchingGroupWorkItems.filter(
-          wi => wi.date >= startDate && wi.date < endDate
-        ),
-      }))
-      .filter(x => x.workItems.length > 0);
-  }, [
-    workItems,
-    selectedGroupName,
-    queryContext,
-    maxWeekIndex,
-    datesForWeekIndex,
-    currentRCAField,
-  ]);
-
   useEffect(() => {
     setCurrentRCAField(selectedRCAField);
   }, [selectedRCAField]);
 
   const tabs = rcaFields.map(rcaField => {
     return {
-      title: `${rcaField.label} (${workItems?.find(
-        x => x.rootCauseField === rcaField.value
-      )?.bugWorkItems.length})`,
+      title: `${rcaField.label}`,
       key: rcaField.value,
       // eslint-disable-next-line react/no-unstable-nested-components
       BodyComponent: () => {
@@ -123,7 +82,10 @@ const BugGraphDrawer = ({
               </>
             )}
             <SortableTable
-              data={combinedBugs?.list || []}
+              data={
+                rootCauseList.find(r => r.rootCauseField === rcaField.value)?.combinedBugs
+                  ?.list || []
+              }
               rowKey={x => x.rootCauseType.toString()}
               variant="drawer"
               columns={[
@@ -148,14 +110,18 @@ const BugGraphDrawer = ({
                   value: x =>
                     divide(
                       x.count,
-                      combinedBugs?.list.reduce((acc, bug) => acc + bug.count, 0) || 0
+                      rootCauseList
+                        .find(r => r.rootCauseField === rcaField.value)
+                        ?.combinedBugs?.list.reduce((acc, bug) => acc + bug.count, 0) || 0
                     )
                       .map(toPercentage)
                       .getOr(`0%`),
                   sorter: byNum(x =>
                     divide(
                       x.count,
-                      combinedBugs?.list.reduce((acc, bug) => acc + bug.count, 0) || 0
+                      rootCauseList
+                        .find(r => r.rootCauseField === rcaField.value)
+                        ?.combinedBugs?.list.reduce((acc, bug) => acc + bug.count, 0) || 0
                     )
                       .map(multiply(100))
                       .getOr(0)
@@ -166,65 +132,32 @@ const BugGraphDrawer = ({
               // eslint-disable-next-line react/no-unstable-nested-components
               ChildComponent={item => {
                 return (
-                  <div className="relative">
-                    <div className="absolute top-2 left-9 h-full border-l border-l-theme-input -z-10" />
-                    <ol className="pt-2">
-                      {workItemListing.map(
-                        ({ weekStartDate, weekEndDate, workItems }) => {
-                          if (
-                            !workItems.some(
-                              wi => wi.rootCauseType === item.item.rootCauseType
-                            )
-                          ) {
-                            return null;
-                          }
-
-                          return (
-                            <li key={weekEndDate.toISOString()}>
-                              <div className="grid grid-cols-[auto_1fr] items-center my-2">
-                                <span className="text-theme-icon mx-4 bg-theme-tag p-3 rounded-full">
-                                  <Calendar size={18} />
+                  <ul>
+                    {workItems
+                      ?.find(x => x.rootCauseField === rcaField.value)
+                      ?.bugWorkItems.filter(
+                        wi => wi.rootCauseType === item.item.rootCauseType
+                      )
+                      .map(wi => (
+                        <li key={wi.id} className="rounded-md hover:bg-theme-hover group">
+                          <a
+                            href={wi.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-md hover:bg-theme-hover group"
+                          >
+                            <div className="border-l border-l-transparent pl-10 pt-2 pb-3">
+                              <div className="group-hover:text-theme-highlight group-hover:underline mb-2">
+                                #{wi.id}: {wi.title}{' '}
+                                <span className="bg-theme-tag text-sm px-2 py-1 rounded-md mx-2">
+                                  {wi.state}
                                 </span>
-                                <h2 className="font-medium text-lg">
-                                  {shortDate(weekStartDate)} - {shortDate(weekEndDate)} (
-                                  {workItems.length})
-                                </h2>
                               </div>
-
-                              <ul>
-                                {workItems
-                                  .filter(
-                                    wi => wi.rootCauseType === item.item.rootCauseType
-                                  )
-                                  .map(wi => (
-                                    <li key={wi.id}>
-                                      <a
-                                        href={wi.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="grid grid-cols-[1fr_70px] gap-4 pl-9 pr-2 rounded-md hover:bg-theme-hover group"
-                                      >
-                                        <div className="border-l border-l-transparent hover:border-l-theme-input pl-10 pt-2 pb-3">
-                                          <div className="group-hover:text-theme-highlight group-hover:underline mb-2">
-                                            #{wi.id}: {wi.title}
-                                          </div>
-                                          <span className="bg-theme-tag text-sm px-2 py-1 rounded-md">
-                                            {wi.state}
-                                          </span>
-                                        </div>
-                                        <div className="text-right py-2">
-                                          {shortDate(wi.date)}
-                                        </div>
-                                      </a>
-                                    </li>
-                                  ))}
-                              </ul>
-                            </li>
-                          );
-                        }
-                      )}
-                    </ol>
-                  </div>
+                            </div>
+                          </a>
+                        </li>
+                      ))}
+                  </ul>
                 );
               }}
             />

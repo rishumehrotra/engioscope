@@ -64,6 +64,18 @@ const combinedBugs = (
   };
 };
 
+const rootCauseFieldCombinedBugs = (
+  data: BugWorkItems[number]['data'],
+  selectedGroups: string[]
+) => {
+  return data.map(prop('rootCauseField')).map(field => {
+    return {
+      rootCauseField: field,
+      combinedBugs: combinedBugs(data, field, selectedGroups),
+    };
+  });
+};
+
 export type BugGraphCardProps = {
   workItemConfig: SingleWorkItemConfig | undefined;
   data: BugWorkItems[number]['data'];
@@ -114,7 +126,11 @@ const getDrawer = (
         />
         <span>
           {workItemConfig?.name[1]}{' '}
-          {num(groups.reduce((sum, group) => sum + group.count, 0))}
+          {num(
+            groups
+              .filter(g => g.rootCauseField === selectedField)
+              .reduce((sum, group) => sum + group.count, 0)
+          )}
         </span>
       </span>
     </>
@@ -125,7 +141,7 @@ const getDrawer = (
       selectedRCAField={selectedField}
       rcaFields={getRcaFields(data, workItemConfig)}
       selectedGroup={selectedGroup}
-      combinedBugs={combinedBugs(data, selectedField, selectedGroups)}
+      rootCauseList={rootCauseFieldCombinedBugs(data, selectedGroups)}
     />
   ),
 });
@@ -231,7 +247,11 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           <div className={twJoin('bg-theme-page-content group/block')}>
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                {num(groups.reduce((sum, group) => sum + group.count, 0))}{' '}
+                {num(
+                  groups
+                    .filter(g => g.rootCauseField === selectedField)
+                    .reduce((sum, group) => sum + group.count, 0)
+                )}{' '}
                 {minPluralise(
                   groups.reduce((sum, group) => sum + group.count, 0),
                   ...(workItemConfig?.name || ['', ''])
@@ -353,6 +373,10 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                     <button
                       className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
                       style={{ gridTemplateColumns: '20% 1fr 85px' }}
+                      onClick={openDrawerFromGroupPill(
+                        bug.rootCauseType,
+                        selectedField || ''
+                      )}
                     >
                       <div className="flex items-center justify-end">
                         <span className="truncate">{bug.rootCauseType}</span>
