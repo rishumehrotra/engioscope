@@ -50,7 +50,7 @@
     "chalk": "5.3.0",
     "compression": "1.7.4",
     "cookie-parser": "1.4.6",
-    "cron": "2.4.1",
+    "cron": "2.4.3",
     "cron-time-generator": "2.0.0",
     "cronstrue": "^2.27.0",
     "debug": "4.3.4",
