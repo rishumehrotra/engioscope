@@ -87,7 +87,7 @@ const FlowEfficiencyGraphCard = ({
                           )}`,
                           children: (
                             <CycleTimeDrawer
-                              selectedTab={workItemType}
+                              selectedTab={group.groupName}
                               workItemConfig={workItemConfig}
                             />
                           ),
