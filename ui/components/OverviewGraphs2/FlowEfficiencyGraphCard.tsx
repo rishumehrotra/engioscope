@@ -11,7 +11,7 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import type { FlowEfficiencyWorkItems } from '../../../backend/models/workitems2';
 import { FlowEfficiencyHelpText } from './FlowEfficiencyHelpText.jsx';
 import { CycleTimeDrawer } from './Drawers.jsx';
-import emptySvgPath from './empty.svg';
+import { GraphEmptyState } from './GraphEmptyState.jsx';
 
 type FlowEfficiencyGraphCardProps = {
   data: FlowEfficiencyWorkItems[];
@@ -142,15 +142,11 @@ const FlowEfficiencyGraphCard = ({
               )}
             </>
           ) : (
-            <div className="self-center text-center text-sm text-theme-helptext w-full">
-              <img
-                src={emptySvgPath}
-                alt="No results"
-                className="m-4 mt-6 block mx-auto"
-              />
-              <h1 className="text-base mb-2 font-medium">No Data Available</h1>
-              <p> Your work centers are not configured. </p>
-            </div>
+            <GraphEmptyState
+              className="self-center text-center text-sm text-theme-helptext w-full"
+              heading="No data available"
+              description="Your work centers are not configured."
+            />
           )}
         </div>
       </div>
