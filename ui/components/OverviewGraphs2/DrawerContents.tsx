@@ -73,7 +73,7 @@ const DrawerContents = <T extends CountWorkItems | DateDiffWorkItems>({
   }, [workItems, queryContext, maxWeekIndex, datesForWeekIndex, selectedGroupName]);
 
   return (
-    <div className="mx-4">
+    <div className="mx-4 pt-2">
       {selectedGroupName === noGroup ? null : (
         <>
           <span className="text-sm text-theme-helptext">Show </span>
@@ -91,9 +91,9 @@ const DrawerContents = <T extends CountWorkItems | DateDiffWorkItems>({
           {workItemListing.map(({ weekStartDate, weekEndDate, workItems }) => {
             return (
               <li key={weekEndDate.toISOString()}>
-                <div className="grid grid-cols-[auto_1fr] items-center my-2">
-                  <span className="text-theme-icon mx-4 bg-theme-tag p-3 rounded-full">
-                    <Calendar size={18} />
+                <div className="grid grid-cols-[auto_1fr] items-center mt-1">
+                  <span className="text-theme-icon mx-5 bg-theme-tag p-2 rounded-full">
+                    <Calendar size={16} />
                   </span>
                   <h2 className="font-medium text-lg">
                     {shortDate(weekStartDate)} - {shortDate(weekEndDate)} (
