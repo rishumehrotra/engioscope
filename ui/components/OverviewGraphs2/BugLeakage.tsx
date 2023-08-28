@@ -3,6 +3,7 @@ import BugGraphCard from './BugGraphCard.jsx';
 import useGraphArgs from './useGraphArgs.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
+import BugLeakageLoader from './BugLeakageLoader.jsx';
 
 export type BugWorkItems = RouterClient['workItems']['getBugLeakage'];
 export type Group = { rootCauseField: string; groupName: string; count: number };
@@ -15,6 +16,10 @@ const BugLeakage = () => {
   const projectConfig = trpc.workItems.getPageConfig.useQuery({
     queryContext: graphArgs.queryContext,
   });
+
+  if (!graph.data || !projectConfig.data) return <BugLeakageLoader />;
+
+  if (!graph.data.length) return null;
 
   return graph.data?.map(data => {
     return (

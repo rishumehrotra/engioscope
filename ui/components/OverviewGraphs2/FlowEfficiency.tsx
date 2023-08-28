@@ -4,6 +4,7 @@ import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
 import FlowEfficiencyGraphCard from './FlowEfficiencyGraphCard.jsx';
+import FlowEfficiencyLoader from './FlowEfficiencyLoader.jsx';
 
 const FlowEfficiency = () => {
   const graphArgs = useGraphArgs();
@@ -40,6 +41,8 @@ const FlowEfficiency = () => {
       }, [])
       .join(' ');
   }, [projectConfig.data?.workItemsConfig]);
+
+  if (!graph.data) return <FlowEfficiencyLoader />;
 
   if (!graph.data?.length) return null;
 
