@@ -14,6 +14,7 @@ import type {
 } from '../../../backend/models/workitems2.js';
 import { useModal } from '../common/Modal2.jsx';
 import popups from './popups.jsx';
+import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 
 export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
   workItemConfig?: SingleWorkItemConfig;
@@ -43,6 +44,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
   drawer,
   popup,
 }: GraphCardProps<T>) => {
+  const [isPopupEnabled] = useQueryParam<boolean>('popup', asBoolean);
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
@@ -236,7 +238,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
         <div className="self-end min-h-[20rem] flex items-end justify-center">
           {graphRenderer(selectedGroups)}
         </div>
-        {popup ? (
+        {popup && isPopupEnabled ? (
           <div className="text-sm text-theme-helptext flex justify-between">
             <div>{' ' || 'Priority'}</div>
             <button className="link-text font-medium" onClick={openModalForWorkItemType}>

@@ -22,6 +22,9 @@ import ProjectStat from '../ProjectStat.js';
 import NewGraph from './New.js';
 import TimeSpentGraph from './TimeSpentGraph.js';
 import { useQueryPeriodDays } from '../../hooks/query-hooks.js';
+import useFetchForProject from '../../hooks/use-fetch-for-project.js';
+import { overview } from '../../network.js';
+import Loading from '../Loading.jsx';
 
 const palette = createPalette(['#e6194B', '#f58231', '#fabed4', '#ffe119', '#a9a9a9']);
 
@@ -225,4 +228,11 @@ const OverviewGraphs: React.FC<{ projectAnalysis: ProjectOverviewAnalysis }> = (
   );
 };
 
-export default OverviewGraphs;
+const OverviewGraphsWrapper = () => {
+  const projectAnalysis = useFetchForProject(overview);
+
+  if (projectAnalysis === 'loading') return <Loading />;
+  return <OverviewGraphs projectAnalysis={projectAnalysis} />;
+};
+
+export default OverviewGraphsWrapper;
