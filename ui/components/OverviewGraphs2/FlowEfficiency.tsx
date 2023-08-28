@@ -1,12 +1,11 @@
 import React, { useMemo } from 'react';
 import { range } from 'rambda';
-import { twJoin } from 'tailwind-merge';
 import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
 import FlowEfficiencyGraphCard from './FlowEfficiencyGraphCard.jsx';
 import FlowEfficiencyLoader from './FlowEfficiencyLoader.jsx';
-import emptySvgPath from './empty.svg';
+import { GraphEmptyState } from './GraphEmptyState.jsx';
 
 const FlowEfficiency = () => {
   const graphArgs = useGraphArgs();
@@ -48,20 +47,10 @@ const FlowEfficiency = () => {
 
   if (!graph.data?.length) {
     return (
-      <div
-        className={twJoin(
-          'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
-          'bg-theme-page-content group/block',
-          'self-center text-center text-sm text-theme-helptext w-full'
-        )}
-        style={{
-          boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
-        }}
-      >
-        <img src={emptySvgPath} alt="No results" className="m-4 mt-6 block mx-auto" />
-        <h1 className="text-base mb-2 font-medium">No Data Available</h1>
-        <p> Your work centers are not configured. </p>
-      </div>
+      <GraphEmptyState
+        heading="No data available"
+        description="Your work centers are not configured."
+      />
     );
   }
 

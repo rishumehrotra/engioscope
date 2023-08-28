@@ -5,6 +5,7 @@ import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
 import { prettyStates, useDecorateForGraph } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
 import GraphAreaLoader from './GraphAreaLoader.jsx';
+import { GraphEmptyState } from './GraphEmptyState.jsx';
 
 const WIPTrend = () => {
   const graphArgs = useGraphArgs();
@@ -13,6 +14,17 @@ const WIPTrend = () => {
   });
   const graphWithConfig = useDecorateForGraph(graph.data);
   const gridTemplateAreas = useGridTemplateAreas();
+
+  if (!graph.data) return <GraphAreaLoader />;
+
+  if (!graph.data?.length) {
+    return (
+      <GraphEmptyState
+        heading="No data available"
+        description="No work items available"
+      />
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 gap-x-10 py-6" style={{ gridTemplateAreas }}>
