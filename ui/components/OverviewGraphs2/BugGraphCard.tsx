@@ -368,10 +368,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           <div className="self-center text-center text-sm text-theme-helptext w-full">
             <img src={emptySvgPath} alt="No results" className="m-4 mt-6 block mx-auto" />
             <h1 className="text-base mb-2 font-medium">No Data Available</h1>
-            <p>
-              Looks like the RCA fields aren't configured. You may configure this here to
-              enable data visualization.
-            </p>
+            <p>Looks like the RCA fields aren't configured.</p>
           </div>
         ) : data && groups.reduce((sum, group) => sum + group.count, 0) === 0 ? (
           <div className="self-center text-center text-sm text-theme-helptext w-full">
