@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { append, filter, not, prop } from 'rambda';
+import { append, filter, not, prop, sum } from 'rambda';
 import { twJoin } from 'tailwind-merge';
 import { ExternalLink } from 'react-feather';
 import { byNum, desc } from 'sort-lib';
@@ -16,14 +16,16 @@ import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import BugGraphDrawer from './BugGraphDrawer.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
 
+const collapsedCount = 10;
+
 const combinedBugs = (
   data: BugWorkItems[number]['data'],
-  selectedField: string,
+  selectedRCAField: string,
   selectedGroups: string[]
 ) => {
-  if (!data) return null;
-
-  const rcaFieldGroupedBugs = data.find(field => field.rootCauseField === selectedField);
+  const rcaFieldGroupedBugs = data.find(
+    field => field.rootCauseField === selectedRCAField
+  );
 
   if (!rcaFieldGroupedBugs) return null;
 
@@ -31,10 +33,10 @@ const combinedBugs = (
     selectedGroups.includes(group.groupName)
   );
 
-  const combinedBugs = groupedBugs.flatMap(group => group.bugs);
+  const combinedBugs = groupedBugs.flatMap(prop('bugs'));
 
   const combinedBugsGroupedByRootCauseType = combinedBugs.reduce((acc, bug) => {
-    acc.set(bug.rootCauseType, (acc?.get(bug.rootCauseType) || 0) + bug.count);
+    acc.set(bug.rootCauseType, (acc.get(bug.rootCauseType) || 0) + bug.count);
     return acc;
   }, new Map<string, number>());
 
@@ -44,21 +46,15 @@ const combinedBugs = (
       rootCauseType,
       count,
     })
-  ).sort(desc(byNum(l => l.count)));
+  ).sort(desc(byNum(prop('count'))));
 
-  const max = Math.max(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ...list.map(({ count, ...rest }) => count)
-  );
-
-  const total = list.reduce((acc, bug) => acc + bug.count, 0);
+  const max = Math.max(...list.map(prop('count')));
+  const total = sum(list.map(prop('count')));
 
   return {
     list: list.map(bug => ({
       ...bug,
-      percentage: divide(total, bug.count || 0)
-        .map(toPercentage)
-        .getOr('-'),
+      percentage: divide(total, bug.count).map(toPercentage).getOr('-'),
     })),
     total,
     max,
@@ -78,12 +74,10 @@ const getRcaFields = (
   data: BugWorkItems[number]['data'],
   workItemConfig: SingleWorkItemConfig | undefined
 ) => {
-  return data.map(prop('rootCauseField')).map(fieldId => {
-    return {
-      label: workItemConfig?.rootCause?.[fieldId] || fieldId,
-      value: fieldId,
-    };
-  });
+  return data.map(prop('rootCauseField')).map(fieldId => ({
+    label: workItemConfig?.rootCause?.[fieldId] || fieldId,
+    value: fieldId,
+  }));
 };
 
 const getGroups = (data: BugWorkItems[number]['data']) => {
@@ -98,7 +92,6 @@ const getGroups = (data: BugWorkItems[number]['data']) => {
 
 const getDrawer = (
   selectedGroup: string,
-  selectedGroups: string[],
   selectedField: string,
   groups: Group[],
   workItemConfig: SingleWorkItemConfig | undefined,
@@ -150,16 +143,15 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
     () => getRcaFields(data, workItemConfig),
     [data, workItemConfig]
   );
+  const [selectedRCAField, setSelectedRCAField] = useState(rcaFields[0].value);
+
   const groups = useMemo(() => getGroups(data), [data]);
+  console.log({ groups });
 
   const [groupsForField, setGroupsForField] = useState<Group[]>([]);
-  const [selectedField, setSelectedField] = useState<string | undefined>(
-    rcaFields && rcaFields.length > 0 ? rcaFields[0]?.value : undefined
-  );
-  const [selectedGroups, setSelectedGroups] = useState<string[]>(
+  const [selectedGroups, setSelectedGroups] = useState(
     groupsForField.map(prop('groupName'))
   );
-  const collapsedCount = 10;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleSelectedGroup = useCallback(
@@ -173,55 +165,37 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
     [selectedGroups]
   );
 
-  const drawer = getDrawer(
-    selectedGroups[0] || 'noGroup',
-    selectedGroups,
-    selectedField || '',
-    groups,
-    workItemConfig,
-    data
-  );
-
   const openDrawerFromGroupPill = useCallback(
     (groupName: string, rootCauseField: string) => (event: MouseEvent) => {
       event.stopPropagation();
-      if (drawer) {
-        setAdditionalDrawerProps(
-          getDrawer(
-            groupName,
-            selectedGroups,
-            rootCauseField,
-            groups,
-            workItemConfig,
-            data
-          )
-        );
-        openDrawer();
-      }
+      setAdditionalDrawerProps(
+        getDrawer(groupName, rootCauseField, groups, workItemConfig, data)
+      );
+      openDrawer();
     },
-    [drawer, selectedGroups, groups, workItemConfig, data, openDrawer]
+    [groups, workItemConfig, data, openDrawer]
   );
 
   useEffect(() => {
     setGroupsForField(
       groups
-        .filter(group => group.rootCauseField === selectedField)
+        .filter(group => group.rootCauseField === selectedRCAField)
         .sort(desc(byNum(g => g.count)))
     );
-  }, [groups, selectedField]);
+  }, [groups, selectedRCAField]);
 
   useEffect(() => {
-    setSelectedField(rcaFields && rcaFields.length > 0 ? rcaFields[0]?.value : undefined);
+    setSelectedRCAField(rcaFields[0].value);
   }, [rcaFields]);
 
   useEffect(() => {
-    setSelectedGroups((groups || []).map(prop('groupName')));
-  }, [groups]);
+    setSelectedGroups(groupsForField.map(prop('groupName')));
+  }, [groups, groupsForField]);
 
-  if (!data) return null;
+  console.log(combinedBugs(data, selectedRCAField, selectedGroups));
 
   return (
-    <div className="contents">
+    <>
       <Drawer {...drawerProps} {...additionalDrawerProps} />
       <div
         className={twJoin(
@@ -236,28 +210,23 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           <div className={twJoin('bg-theme-page-content group/block')}>
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                {groups.reduce((sum, group) => sum + group.count, 0) === 0 ? null : (
-                  <span className="text-theme-text">
-                    {num(
-                      groups
-                        .filter(g => g.rootCauseField === selectedField)
-                        .reduce((sum, group) => sum + group.count, 0)
-                    )}
-                    &nbsp;
-                    {minPluralise(
-                      groups.reduce((sum, group) => sum + group.count, 0),
-                      ...(workItemConfig?.name || ['', ''])
-                    ).toLowerCase()}
-                  </span>
-                )}
+                <span className="text-theme-text">
+                  {num(
+                    groups
+                      .filter(g => g.rootCauseField === selectedRCAField)
+                      .reduce((sum, group) => sum + group.count, 0)
+                  )}
+                  &nbsp;
+                  {minPluralise(
+                    groups.reduce((sum, group) => sum + group.count, 0),
+                    ...(workItemConfig?.name || ['', ''])
+                  ).toLowerCase()}
+                </span>
                 {groupsForField.length === 1 &&
-                groupsForField[0].groupName === 'noGroup' ? (
+                groupsForField[0].groupName === noGroup ? (
                   <button
                     className="link-text opacity-0 transition-opacity group-hover/block:opacity-100"
-                    onClick={openDrawerFromGroupPill(
-                      noGroup,
-                      groupsForField[0].rootCauseField
-                    )}
+                    onClick={openDrawerFromGroupPill(noGroup, selectedRCAField)}
                   >
                     <ExternalLink size={16} />
                   </button>
@@ -266,21 +235,18 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
             </div>
           </div>
           <div className="flex items-start">
-            {data &&
-            rcaFields.length > 1 &&
-            groups.reduce((sum, group) => sum + group.count, 0) !== 0 &&
-            selectedField ? (
+            {rcaFields.length > 1 && (
               <Switcher
                 options={rcaFields}
-                onChange={e => setSelectedField(e)}
-                value={selectedField}
+                onChange={setSelectedRCAField}
+                value={selectedRCAField}
               />
-            ) : null}
+            )}
           </div>
         </div>
         <div className="flex">
           <ul className="grid grid-flow-col gap-2">
-            {groupsForField.length === 1 && groupsForField[0].groupName === 'noGroup'
+            {groupsForField.length === 1 && groupsForField[0].groupName === noGroup
               ? null
               : groupsForField.map(group => (
                   <li key={group.groupName}>
@@ -311,46 +277,40 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                       <div>{group.groupName || 'Unclassified'}</div>
                       <div className="font-medium flex items-end">
                         <span>{num(group.count)}</span>
-                        {drawer && (
-                          <button
-                            className={twJoin(
-                              'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-                              'group-focus-visible:opacity-100'
-                            )}
-                            onClick={openDrawerFromGroupPill(
-                              group.groupName,
-                              group.rootCauseField
-                            )}
-                          >
-                            <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                          </button>
-                        )}
+                        <button
+                          className={twJoin(
+                            'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                            'group-focus-visible:opacity-100'
+                          )}
+                          onClick={openDrawerFromGroupPill(
+                            group.groupName,
+                            selectedRCAField
+                          )}
+                        >
+                          <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                        </button>
                       </div>
                     </div>
                   </li>
                 ))}
           </ul>
           <ul className="text-sm flex gap-2 items-center ml-4">
-            {selectedGroups.length !== data.length &&
-              data &&
-              groups.reduce((sum, group) => sum + group.count, 0) !== 0 && (
-                <li
-                  className={
-                    selectedGroups.length === 0
-                      ? ''
-                      : 'border-r border-theme-seperator pr-2'
-                  }
+            {selectedGroups.length !== groupsForField.length && (
+              <li
+                className={
+                  selectedGroups.length === 0
+                    ? ''
+                    : 'border-r border-theme-seperator pr-2'
+                }
+              >
+                <button
+                  className="link-text font-semibold"
+                  onClick={() => setSelectedGroups(groupsForField.map(prop('groupName')))}
                 >
-                  <button
-                    className="link-text font-semibold"
-                    onClick={() =>
-                      setSelectedGroups(groupsForField.map(prop('groupName')))
-                    }
-                  >
-                    Select all
-                  </button>
-                </li>
-              )}
+                  Select all
+                </button>
+              </li>
+            )}
             {selectedGroups.length !== 0 && (
               <li>
                 <button
@@ -370,13 +330,13 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
             heading="No data available"
             description="Looks like the RCA fields aren't configured."
           />
-        ) : data && groups.reduce((sum, group) => sum + group.count, 0) === 0 ? (
+        ) : sum(groups.map(prop('count'))) === 0 ? (
           <GraphEmptyState
             className="self-center text-center text-sm text-theme-helptext w-full"
             heading="No data available"
             description="No Bug Leakages"
           />
-        ) : data && selectedGroups.length === 0 ? (
+        ) : selectedGroups.length === 0 ? (
           <GraphEmptyState
             className="self-center text-center text-sm text-theme-helptext w-full"
             heading="No Environment Selected"
@@ -385,14 +345,14 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
         ) : (
           <>
             <ul>
-              {combinedBugs(data, selectedField || '', selectedGroups)
+              {combinedBugs(data, selectedRCAField, selectedGroups)
                 ?.list.slice(0, isExpanded ? undefined : collapsedCount)
                 .map(bug => (
                   <li key={bug.rootCauseType} className="p2">
                     <button
                       className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
-                      style={{ gridTemplateColumns: '20% 1fr 85px' }}
-                      onClick={openDrawerFromGroupPill('all', selectedField || '')}
+                      style={{ gridTemplateColumns: '20% 1fr 90px' }}
+                      onClick={openDrawerFromGroupPill('all', selectedRCAField || '')}
                     >
                       <div className="flex items-center justify-end">
                         <span className="truncate">{bug.rootCauseType}</span>
@@ -401,13 +361,13 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                         <div
                           className="rounded-md"
                           style={{
-                            width: `${divide(
+                            width: divide(
                               bug.count,
-                              combinedBugs(data, selectedField || '', selectedGroups)
-                                ?.max || 0
+                              combinedBugs(data, selectedRCAField, selectedGroups)?.max ||
+                                0
                             )
                               .map(toPercentage)
-                              .getOr(`0%`)}`,
+                              .getOr(`0%`),
                             backgroundColor: 'rgba(66, 212, 244, 1)',
                             height: '30px',
                           }}
@@ -417,8 +377,8 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                         <b>
                           {divide(
                             bug.count,
-                            combinedBugs(data, selectedField || '', selectedGroups)
-                              ?.total || 0
+                            combinedBugs(data, selectedRCAField, selectedGroups)?.total ||
+                              0
                           )
                             .map(toPercentage)
                             .getOr('-')}
@@ -431,8 +391,8 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                   </li>
                 ))}
             </ul>
-            {(combinedBugs(data, selectedField || '', selectedGroups)?.list || [])
-              .length > collapsedCount && (
+            {(combinedBugs(data, selectedRCAField, selectedGroups)?.list || []).length >
+              collapsedCount && (
               <div className="flex justify-end">
                 <button
                   className="text-blue-700 text-sm flex items-center hover:text-blue-900 hover:underline"
@@ -459,7 +419,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           )}
         </p>
       ) : null}
-    </div>
+    </>
   );
 };
 
