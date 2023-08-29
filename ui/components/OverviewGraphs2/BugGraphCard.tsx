@@ -54,7 +54,7 @@ export type BugGraphCardProps = {
   };
 };
 
-const getRcaFields = (
+const getRCAFields = (
   data: BugWorkItems[number]['data'],
   workItemConfig: SingleWorkItemConfig | undefined
 ) => {
@@ -91,7 +91,7 @@ const getDrawer = (
     <BugGraphDrawer
       graphData={data}
       groups={groupsForRCAField}
-      rcaFields={getRcaFields(data, workItemConfig)}
+      rcaFields={getRCAFields(data, workItemConfig)}
       selectedRCAField={selectedField}
       selectedGroup={selectedGroup}
     />
@@ -110,7 +110,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
   });
 
   const rcaFields = useMemo(
-    () => getRcaFields(data, workItemConfig),
+    () => getRCAFields(data, workItemConfig),
     [data, workItemConfig]
   );
   const [selectedRCAField, setSelectedRCAField] = useState(rcaFields[0].value);
@@ -158,10 +158,6 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
   );
 
   useEffect(() => {
-    setSelectedRCAField(rcaFields[0].value);
-  }, [rcaFields]);
-
-  useEffect(() => {
     setSelectedGroups(groupsForField.map(prop('groupName')));
   }, [groupsForField]);
 
@@ -176,7 +172,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
         style={{ boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px' }}
       >
         <div className="flex justify-between">
-          <div className={twJoin('bg-theme-page-content group/block')}>
+          <div className="bg-theme-page-content group/block">
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
                 <span className="text-theme-text">
@@ -315,14 +311,16 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                 .map(bug => (
                   <li key={bug.rootCauseType} className="p2">
                     <button
-                      className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
-                      style={{ gridTemplateColumns: '20% 1fr 90px' }}
+                      className={twJoin(
+                        'grid gap-4 grid-cols-[20%_1fr_90px] w-full',
+                        'pl-3 my-3 rounded-lg items-center hover:bg-theme-hover cursor-pointer'
+                      )}
                       onClick={openDrawerFromGroupPill('all', selectedRCAField)}
                     >
                       <div className="flex items-center justify-end">
                         <span className="truncate">{bug.rootCauseType}</span>
                       </div>
-                      <div className="bg-gray-100 rounded-md overflow-hidden">
+                      <div className="bg-theme-secondary rounded-md overflow-hidden">
                         <div
                           className="rounded-md"
                           style={{
@@ -340,7 +338,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                             .map(toPercentage)
                             .getOr('-')}
                         </b>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-theme-helptext">
                           {` (${num(bug.count)})`}
                         </span>
                       </span>
@@ -351,7 +349,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
             {bugsToShow.list.length > collapsedCount && (
               <div className="flex justify-end">
                 <button
-                  className="text-blue-700 text-sm flex items-center hover:text-blue-900 hover:underline"
+                  className="link-text text-sm flex items-center"
                   onClick={() => setIsExpanded(not)}
                 >
                   {isExpanded ? (

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { byNum, byString, desc } from 'sort-lib';
-import { multiply, prop, sum } from 'rambda';
+import { T, multiply, prop, sum } from 'rambda';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { toPercentage, divide } from '../../../shared/utils.js';
@@ -11,31 +11,16 @@ import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import SortableTable from '../common/SortableTable.jsx';
 import type { GroupedBugs } from '../../../backend/models/workitems2.js';
 
-const bugCountForGroup = (group: GroupedBugs) => {
-  return sum(group.bugs.map(prop('count')));
-};
+const bugCountForGroup = (group: GroupedBugs) => sum(group.bugs.map(prop('count')));
 
-const combinedBugs = (
-  data: BugWorkItems[number]['data'],
-  selectedField: string,
-  selectedGroup: string
-) => {
-  if (!data) return null;
-
-  const rcaFieldGroupedBugs = data.find(field => field.rootCauseField === selectedField);
-
-  if (!rcaFieldGroupedBugs) return null;
-
-  const groupedBugs = rcaFieldGroupedBugs.groups.filter(group =>
-    selectedGroup === 'all' ? group : group.groupName === selectedGroup
-  );
-
-  const combinedBugs = groupedBugs.flatMap(group => group.bugs);
-
-  const combinedBugsGroupedByRootCauseType = combinedBugs.reduce((acc, bug) => {
-    acc.set(bug.rootCauseType, (acc?.get(bug.rootCauseType) || 0) + bug.count);
-    return acc;
-  }, new Map<string, number>());
+const combinedBugs = (groupedBugs: GroupedBugs[], selectedGroup: string) => {
+  const combinedBugsGroupedByRootCauseType = groupedBugs
+    .filter(selectedGroup === 'all' ? T : g => g.groupName === selectedGroup)
+    .flatMap(prop('bugs'))
+    .reduce((acc, bug) => {
+      acc.set(bug.rootCauseType, (acc.get(bug.rootCauseType) || 0) + bug.count);
+      return acc;
+    }, new Map<string, number>());
 
   const list = Array.from(
     combinedBugsGroupedByRootCauseType,
@@ -43,24 +28,12 @@ const combinedBugs = (
       rootCauseType,
       count,
     })
-  ).sort(desc(byNum(l => l.count)));
-
-  const max = Math.max(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ...list.map(({ count, ...rest }) => count)
-  );
-
-  const total = list.reduce((acc, bug) => acc + bug.count, 0);
+  ).sort(desc(byNum(prop('count'))));
 
   return {
-    list: list.map(bug => ({
-      ...bug,
-      percentage: divide(total, bug.count || 0)
-        .map(toPercentage)
-        .getOr('-'),
-    })),
-    total,
-    max,
+    list,
+    total: sum(list.map(prop('count'))),
+    max: Math.max(...list.map(prop('count'))),
   };
 };
 
@@ -68,12 +41,10 @@ const rootCauseFieldCombinedBugs = (
   data: BugWorkItems[number]['data'],
   selectedGroup: string
 ) => {
-  return data.map(prop('rootCauseField')).map(field => {
-    return {
-      rootCauseField: field,
-      combinedBugs: combinedBugs(data, field, selectedGroup),
-    };
-  });
+  return data.map(({ rootCauseField, groups }) => ({
+    rootCauseField,
+    combinedBugs: combinedBugs(groups, selectedGroup),
+  }));
 };
 
 type NewDrawerProps = {
@@ -92,19 +63,14 @@ const BugGraphDrawer = ({
   rcaFields,
 }: NewDrawerProps) => {
   const graphArgs = useGraphArgs();
-  const workItems = trpc.workItems.getBugLeakageDataForDrawer.useQuery({
-    ...graphArgs,
-  })?.data;
-  const [currentRCAField, setCurrentRCAField] = useState<string>(selectedRCAField);
-  const [selectedGroupName, setSelectedGroupName] = useState<string>(selectedGroup);
+  const workItems = trpc.workItems.getBugLeakageDataForDrawer.useQuery(graphArgs);
+  const [selectedGroupName, setSelectedGroupName] = useState(selectedGroup);
   const rootCauseList = useMemo(
     () => rootCauseFieldCombinedBugs(graphData, selectedGroupName),
     [graphData, selectedGroupName]
   );
 
   const subTypePickerOptions = useMemo(() => {
-    if (!workItems) return [];
-
     return [
       {
         label: `All (${sum(groups.map(bugCountForGroup))})`,
@@ -115,72 +81,57 @@ const BugGraphDrawer = ({
         value: group.groupName,
       })),
     ];
-  }, [groups, workItems]);
+  }, [groups]);
 
-  useEffect(() => {
-    setCurrentRCAField(selectedRCAField);
-  }, [selectedRCAField]);
-
-  const tabs = rcaFields.map(rcaField => {
-    return {
-      title: `${rcaField.label}`,
+  const tabs = useMemo(() => {
+    return rcaFields.map(rcaField => ({
+      title: rcaField.label,
       key: rcaField.value,
       // eslint-disable-next-line react/no-unstable-nested-components
       BodyComponent: () => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const rootCauseBugs = rootCauseList.find(
+          x => x.rootCauseField === rcaField.value
+        )!.combinedBugs;
+
         return (
           <div>
             {selectedGroupName === noGroup ? null : (
-              <>
+              <div className="p-2">
                 <span className="text-sm text-theme-helptext mx-1 my-2">Show </span>
                 <InlineSelect
                   options={subTypePickerOptions}
                   value={selectedGroupName}
                   onChange={setSelectedGroupName}
                 />
-              </>
+              </div>
             )}
             <SortableTable
-              data={
-                rootCauseList.find(r => r.rootCauseField === rcaField.value)?.combinedBugs
-                  ?.list || []
-              }
-              rowKey={x => x.rootCauseType.toString()}
+              data={rootCauseBugs.list}
+              rowKey={prop('rootCauseType')}
               variant="drawer"
               columns={[
                 {
                   title: 'RCA Type',
                   key: 'rca-type',
-
-                  value: x => x.rootCauseType,
+                  value: prop('rootCauseType'),
                   sorter: byString(x => x.rootCauseType.toLocaleLowerCase()),
                 },
                 {
                   title: 'Count',
                   key: 'count',
-
-                  value: x => x.count,
-                  sorter: byNum(x => x.count),
+                  value: prop('count'),
+                  sorter: byNum(prop('count')),
                 },
                 {
                   title: 'Percentage',
                   key: 'percentage',
-
                   value: x =>
-                    divide(
-                      x.count,
-                      rootCauseList
-                        .find(r => r.rootCauseField === rcaField.value)
-                        ?.combinedBugs?.list.reduce((acc, bug) => acc + bug.count, 0) || 0
-                    )
+                    divide(x.count, sum(rootCauseBugs.list.map(prop('count'))))
                       .map(toPercentage)
                       .getOr(`0%`),
                   sorter: byNum(x =>
-                    divide(
-                      x.count,
-                      rootCauseList
-                        .find(r => r.rootCauseField === rcaField.value)
-                        ?.combinedBugs?.list.reduce((acc, bug) => acc + bug.count, 0) || 0
-                    )
+                    divide(x.count, sum(rootCauseBugs.list.map(prop('count'))))
                       .map(multiply(100))
                       .getOr(0)
                   ),
@@ -188,14 +139,12 @@ const BugGraphDrawer = ({
               ]}
               defaultSortColumnIndex={1}
               // eslint-disable-next-line react/no-unstable-nested-components
-              ChildComponent={item => {
+              ChildComponent={({ item }) => {
                 return (
                   <ul>
-                    {workItems
+                    {workItems.data
                       ?.find(x => x.rootCauseField === rcaField.value)
-                      ?.bugWorkItems.filter(
-                        wi => wi.rootCauseType === item.item.rootCauseType
-                      )
+                      ?.bugWorkItems.filter(wi => wi.rootCauseType === item.rootCauseType)
                       .map(wi => (
                         <li key={wi.id} className="rounded-md hover:bg-theme-hover group">
                           <a
@@ -222,12 +171,12 @@ const BugGraphDrawer = ({
           </div>
         );
       },
-    };
-  });
+    }));
+  }, [rcaFields, rootCauseList, selectedGroupName, subTypePickerOptions, workItems.data]);
 
   return (
     <DrawerTabs
-      selectedTabIndex={Math.max(0, rcaFields.map(f => f.value).indexOf(currentRCAField))}
+      selectedTabIndex={rcaFields.map(prop('value')).indexOf(selectedRCAField)}
       tabs={tabs}
     />
   );
