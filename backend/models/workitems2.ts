@@ -828,7 +828,7 @@ export const bugGraphArgsInputParser = graphInputParser.extend({
 });
 type BugGraphArgs = z.infer<typeof bugGraphArgsInputParser>;
 
-type GroupedBugs = {
+export type GroupedBugs = {
   bugs: {
     rootCauseType: string;
     count: number;

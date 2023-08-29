@@ -1,14 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { byNum, byString, desc } from 'sort-lib';
-import { multiply, prop } from 'rambda';
+import { multiply, prop, sum } from 'rambda';
 import InlineSelect from '../common/InlineSelect.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import { toPercentage, divide } from '../../../shared/utils.js';
-import type { BugWorkItems, Group } from './BugLeakage.jsx';
+import type { BugWorkItems } from './BugLeakage.jsx';
 import { trpc } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
 import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import SortableTable from '../common/SortableTable.jsx';
+import type { GroupedBugs } from '../../../backend/models/workitems2.js';
+
+const bugCountForGroup = (group: GroupedBugs) => {
+  return sum(group.bugs.map(prop('count')));
+};
 
 const combinedBugs = (
   data: BugWorkItems[number]['data'],
@@ -75,7 +80,7 @@ type NewDrawerProps = {
   graphData: BugWorkItems[number]['data'];
   selectedRCAField: string;
   selectedGroup: string;
-  groups: Group[];
+  groups: GroupedBugs[];
   rcaFields: { label: string; value: string }[];
 };
 
@@ -84,7 +89,7 @@ const BugGraphDrawer = ({
   selectedRCAField,
   selectedGroup,
   groups,
-  rcaFields, // rootCauseList,
+  rcaFields,
 }: NewDrawerProps) => {
   const graphArgs = useGraphArgs();
   const workItems = trpc.workItems.getBugLeakageDataForDrawer.useQuery({
@@ -102,11 +107,11 @@ const BugGraphDrawer = ({
 
     return [
       {
-        label: `All (${groups.reduce((sum, group) => sum + group.count, 0)})`,
+        label: `All (${sum(groups.map(bugCountForGroup))})`,
         value: 'all',
       },
       ...groups.map(group => ({
-        label: `${group.groupName} (${group.count})`,
+        label: `${group.groupName} (${bugCountForGroup(group)})`,
         value: group.groupName,
       })),
     ];

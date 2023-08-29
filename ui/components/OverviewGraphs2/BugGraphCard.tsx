@@ -8,37 +8,27 @@ import { lineColor, prettyFields } from './utils.jsx';
 import Switcher from '../common/Switcher.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { DownChevron, UpChevron } from '../common/Icons.jsx';
-import type { BugWorkItems, Group } from './BugLeakage.jsx';
+import type { BugWorkItems } from './BugLeakage.jsx';
 import { minPluralise, num } from '../../helpers/utils.js';
 import { useDrawer } from '../common/Drawer.jsx';
 import { noGroup } from '../../../shared/work-item-utils.js';
 import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import BugGraphDrawer from './BugGraphDrawer.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
+import type { GroupedBugs } from '../../../backend/models/workitems2.js';
 
 const collapsedCount = 10;
 
-const combinedBugs = (
-  data: BugWorkItems[number]['data'],
-  selectedRCAField: string,
-  selectedGroups: string[]
-) => {
-  const rcaFieldGroupedBugs = data.find(
-    field => field.rootCauseField === selectedRCAField
-  );
+const bugCountForGroup = (group: GroupedBugs) => sum(group.bugs.map(prop('count')));
 
-  if (!rcaFieldGroupedBugs) return null;
-
-  const groupedBugs = rcaFieldGroupedBugs.groups.filter(group =>
-    selectedGroups.includes(group.groupName)
-  );
-
-  const combinedBugs = groupedBugs.flatMap(prop('bugs'));
-
-  const combinedBugsGroupedByRootCauseType = combinedBugs.reduce((acc, bug) => {
-    acc.set(bug.rootCauseType, (acc.get(bug.rootCauseType) || 0) + bug.count);
-    return acc;
-  }, new Map<string, number>());
+const combinedBugs = (groupedBugs: GroupedBugs[], selectedGroups: string[]) => {
+  const combinedBugsGroupedByRootCauseType = groupedBugs
+    .filter(g => selectedGroups.includes(g.groupName))
+    .flatMap(prop('bugs'))
+    .reduce((acc, bug) => {
+      acc.set(bug.rootCauseType, (acc.get(bug.rootCauseType) || 0) + bug.count);
+      return acc;
+    }, new Map<string, number>());
 
   const list = Array.from(
     combinedBugsGroupedByRootCauseType,
@@ -48,16 +38,10 @@ const combinedBugs = (
     })
   ).sort(desc(byNum(prop('count'))));
 
-  const max = Math.max(...list.map(prop('count')));
-  const total = sum(list.map(prop('count')));
-
   return {
-    list: list.map(bug => ({
-      ...bug,
-      percentage: divide(total, bug.count).map(toPercentage).getOr('-'),
-    })),
-    total,
-    max,
+    list,
+    total: sum(list.map(prop('count'))),
+    max: Math.max(...list.map(prop('count'))),
   };
 };
 
@@ -80,20 +64,10 @@ const getRcaFields = (
   }));
 };
 
-const getGroups = (data: BugWorkItems[number]['data']) => {
-  return data.flatMap(rootCauseField => {
-    return rootCauseField.groups.map(group => ({
-      rootCauseField: rootCauseField.rootCauseField,
-      groupName: group.groupName,
-      count: group.bugs.reduce((sum, rootCause) => sum + rootCause.count, 0),
-    }));
-  });
-};
-
 const getDrawer = (
   selectedGroup: string,
   selectedField: string,
-  groups: Group[],
+  groupsForRCAField: GroupedBugs[],
   workItemConfig: SingleWorkItemConfig | undefined,
   data: BugWorkItems[number]['data']
 ) => ({
@@ -108,11 +82,7 @@ const getDrawer = (
         />
         <span>
           {workItemConfig?.name[1]}{' '}
-          {num(
-            groups
-              .filter(g => g.rootCauseField === selectedField)
-              .reduce((sum, group) => sum + group.count, 0)
-          )}
+          {num(sum(groupsForRCAField.flatMap(bugCountForGroup)))}
         </span>
       </span>
     </>
@@ -120,9 +90,9 @@ const getDrawer = (
   children: (
     <BugGraphDrawer
       graphData={data}
-      groups={groups.filter(group => group.rootCauseField === selectedField)}
-      selectedRCAField={selectedField}
+      groups={groupsForRCAField}
       rcaFields={getRcaFields(data, workItemConfig)}
+      selectedRCAField={selectedField}
       selectedGroup={selectedGroup}
     />
   ),
@@ -145,13 +115,24 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
   );
   const [selectedRCAField, setSelectedRCAField] = useState(rcaFields[0].value);
 
-  const groups = useMemo(() => getGroups(data), [data]);
-  console.log({ groups });
+  const groupsForField = useMemo(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      data
+        .find(x => x.rootCauseField === selectedRCAField)!
+        .groups.sort(desc(byNum(bugCountForGroup))),
+    [data, selectedRCAField]
+  );
 
-  const [groupsForField, setGroupsForField] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState(
     groupsForField.map(prop('groupName'))
   );
+
+  const bugsToShow = useMemo(
+    () => combinedBugs(groupsForField, selectedGroups),
+    [groupsForField, selectedGroups]
+  );
+
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleSelectedGroup = useCallback(
@@ -169,20 +150,12 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
     (groupName: string, rootCauseField: string) => (event: MouseEvent) => {
       event.stopPropagation();
       setAdditionalDrawerProps(
-        getDrawer(groupName, rootCauseField, groups, workItemConfig, data)
+        getDrawer(groupName, rootCauseField, groupsForField, workItemConfig, data)
       );
       openDrawer();
     },
-    [groups, workItemConfig, data, openDrawer]
+    [groupsForField, workItemConfig, data, openDrawer]
   );
-
-  useEffect(() => {
-    setGroupsForField(
-      groups
-        .filter(group => group.rootCauseField === selectedRCAField)
-        .sort(desc(byNum(g => g.count)))
-    );
-  }, [groups, selectedRCAField]);
 
   useEffect(() => {
     setSelectedRCAField(rcaFields[0].value);
@@ -190,9 +163,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
 
   useEffect(() => {
     setSelectedGroups(groupsForField.map(prop('groupName')));
-  }, [groups, groupsForField]);
-
-  console.log(combinedBugs(data, selectedRCAField, selectedGroups));
+  }, [groupsForField]);
 
   return (
     <>
@@ -202,23 +173,17 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
           'bg-theme-page-content group/block'
         )}
-        style={{
-          boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px',
-        }}
+        style={{ boxShadow: 'rgba(30, 41, 59, 0.05) 0px 4px 8px' }}
       >
         <div className="flex justify-between">
           <div className={twJoin('bg-theme-page-content group/block')}>
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
                 <span className="text-theme-text">
-                  {num(
-                    groups
-                      .filter(g => g.rootCauseField === selectedRCAField)
-                      .reduce((sum, group) => sum + group.count, 0)
-                  )}
+                  {num(sum(groupsForField.map(bugCountForGroup)))}
                   &nbsp;
                   {minPluralise(
-                    groups.reduce((sum, group) => sum + group.count, 0),
+                    sum(groupsForField.map(bugCountForGroup)),
                     ...(workItemConfig?.name || ['', ''])
                   ).toLowerCase()}
                 </span>
@@ -276,7 +241,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                     >
                       <div>{group.groupName || 'Unclassified'}</div>
                       <div className="font-medium flex items-end">
-                        <span>{num(group.count)}</span>
+                        <span>{num(bugCountForGroup(group))}</span>
                         <button
                           className={twJoin(
                             'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
@@ -330,7 +295,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
             heading="No data available"
             description="Looks like the RCA fields aren't configured."
           />
-        ) : sum(groups.map(prop('count'))) === 0 ? (
+        ) : sum(groupsForField.map(bugCountForGroup)) === 0 ? (
           <GraphEmptyState
             className="self-center text-center text-sm text-theme-helptext w-full"
             heading="No data available"
@@ -345,14 +310,14 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
         ) : (
           <>
             <ul>
-              {combinedBugs(data, selectedRCAField, selectedGroups)
-                ?.list.slice(0, isExpanded ? undefined : collapsedCount)
+              {bugsToShow.list
+                .slice(0, isExpanded ? undefined : collapsedCount)
                 .map(bug => (
                   <li key={bug.rootCauseType} className="p2">
                     <button
                       className="grid gap-4 pl-3 my-3 w-full rounded-lg items-center hover:bg-gray-100 cursor-pointer"
                       style={{ gridTemplateColumns: '20% 1fr 90px' }}
-                      onClick={openDrawerFromGroupPill('all', selectedRCAField || '')}
+                      onClick={openDrawerFromGroupPill('all', selectedRCAField)}
                     >
                       <div className="flex items-center justify-end">
                         <span className="truncate">{bug.rootCauseType}</span>
@@ -361,11 +326,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                         <div
                           className="rounded-md"
                           style={{
-                            width: divide(
-                              bug.count,
-                              combinedBugs(data, selectedRCAField, selectedGroups)?.max ||
-                                0
-                            )
+                            width: divide(bug.count, bugsToShow.max)
                               .map(toPercentage)
                               .getOr(`0%`),
                             backgroundColor: 'rgba(66, 212, 244, 1)',
@@ -375,24 +336,19 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                       </div>
                       <span className="justify-self-start">
                         <b>
-                          {divide(
-                            bug.count,
-                            combinedBugs(data, selectedRCAField, selectedGroups)?.total ||
-                              0
-                          )
+                          {divide(bug.count, bugsToShow.total)
                             .map(toPercentage)
                             .getOr('-')}
                         </b>
-                        <span className="text-sm text-gray-500">{` (${num(
-                          bug.count
-                        )})`}</span>
+                        <span className="text-sm text-gray-500">
+                          {` (${num(bug.count)})`}
+                        </span>
                       </span>
                     </button>
                   </li>
                 ))}
             </ul>
-            {(combinedBugs(data, selectedRCAField, selectedGroups)?.list || []).length >
-              collapsedCount && (
+            {bugsToShow.list.length > collapsedCount && (
               <div className="flex justify-end">
                 <button
                   className="text-blue-700 text-sm flex items-center hover:text-blue-900 hover:underline"
@@ -410,7 +366,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           </>
         )}
       </div>
-      {data && data.length > 0 ? (
+      {data.length > 0 ? (
         <p className="text-sm text-theme-helptext">
           The root cause for a bug is determined from{' '}
           {prettyFields(
