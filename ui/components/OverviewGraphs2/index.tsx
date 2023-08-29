@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { twJoin } from 'tailwind-merge';
+import { Settings } from 'react-feather';
 import New from './New.jsx';
 import Velocity from './Velocity.jsx';
 import CycleTime from './CycleTime.jsx';
@@ -10,6 +12,8 @@ import WIPTrend from './WIPTrend.jsx';
 import BugLeakage from './BugLeakage.jsx';
 import PageSection from './PageSection.jsx';
 import FlowEfficiency from './FlowEfficiency.jsx';
+import { useDrawer } from '../common/Drawer.jsx';
+import { ConfigDrawer } from './ConfigDrawer.jsx';
 
 const sections = [
   {
@@ -54,9 +58,22 @@ const OverviewGraphs2 = () => {
   const filtersRef = useRef<HTMLDivElement>(null);
   const [filterRenderCount, setFilterRenderCount] = useState(0);
   const [layoutType, setLayoutType] = useState<'2-col' | 'full-width'>('2-col');
-
   const ref = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
+
+  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [drawerDetails, setDrawerDetails] = useState<{
+    heading: ReactNode;
+    children: ReactNode;
+  }>({ heading: 'Loading...', children: 'Loading...' });
+
+  const onConfigOpen = useCallback(() => {
+    setDrawerDetails({
+      heading: 'Configure work items',
+      children: <ConfigDrawer />,
+    });
+    openDrawer();
+  }, [openDrawer]);
 
   useEffect(() => {
     const elem = ref.current;
@@ -104,6 +121,15 @@ const OverviewGraphs2 = () => {
           <QueryPeriodSelector />
         </div>
       </div>
+      <Drawer {...drawerDetails} {...drawerProps} />
+      <button onClick={onConfigOpen} name="configure">
+        <div className="flex items-start">
+          <Settings className="text-theme-highlight" />
+          <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
+            Configure
+          </span>
+        </div>
+      </button>
       {sections.map((props, index) => (
         <PageSection {...props} key={props.heading} isOpen={index === 0} />
       ))}

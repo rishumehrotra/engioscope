@@ -51,8 +51,9 @@ export const getWorkItemConfig = async ({
         return {
           name: [match.referenceName, pluralize(match.referenceName)] as const,
           icon: `data:image/svg+xml;utf8,${encodeURIComponent(iconSvg(match.icon))}`,
-          groupByField:
-            workItemConfig.groupByField && fieldNames([workItemConfig.groupByField]),
+          groupByField: workItemConfig.groupByField
+            ? fieldNames([workItemConfig.groupByField])
+            : undefined,
           startStates: workItemConfig.startStates,
           endStates: workItemConfig.endStates,
           devCompleteStates: workItemConfig.devCompletionStates,

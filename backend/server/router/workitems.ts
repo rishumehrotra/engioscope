@@ -31,6 +31,8 @@ import {
   getFlowEfficiencyGraph,
   getWorkItemTimeSpent,
   timeSpentArgs,
+  getGroupByFieldAndStatesForWorkType,
+  groupByFieldAndStatesForWorkTypeParser,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -99,4 +101,8 @@ export default t.router({
   getWorkItemTimeSpent: t.procedure
     .input(timeSpentArgs)
     .query(passInputTo(getWorkItemTimeSpent)),
+
+  getGroupByFieldAndStatesForWorkType: t.procedure
+    .input(groupByFieldAndStatesForWorkTypeParser)
+    .query(passInputTo(getGroupByFieldAndStatesForWorkType)),
 });

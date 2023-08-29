@@ -12,6 +12,7 @@ import { divide, exists } from '../../shared/utils.js';
 import { createIntervals } from '../utils.js';
 import { WorkItemModel } from './mongoose-models/WorkItem.js';
 import { getWorkItemConfig as getAllWorkItemConfigs } from './work-item-types.js';
+import { WorkItemTypeModel } from './mongoose-models/WorkItemType.js';
 
 const getWorkItemConfig = async (
   collectionName: string,
@@ -1198,3 +1199,32 @@ export const getBugLeakageDataForDrawer = async ({
     })
   );
 };
+
+export const groupByFieldAndStatesForWorkTypeParser = z.object({
+  collectionName: z.string(),
+  project: z.string(),
+  workItemType: z.string(),
+});
+
+export const getGroupByFieldAndStatesForWorkType = ({
+  collectionName,
+  project,
+  workItemType,
+}: z.infer<typeof groupByFieldAndStatesForWorkTypeParser>) =>
+  WorkItemTypeModel.aggregate<{
+    fields: { referenceName: string; name: string }[];
+    states: { category: string; name: string }[];
+  }>([
+    { $match: { collectionName, project, name: workItemType } },
+    {
+      $project: {
+        '_id': 0,
+        'fields.referenceName': 1,
+        'fields.name': 1,
+        'states.category': 1,
+        'states.name': 1,
+      },
+    },
+  ])
+    .exec()
+    .then(x => x[0]);
