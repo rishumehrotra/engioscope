@@ -122,14 +122,16 @@ const OverviewGraphs2 = () => {
         </div>
       </div>
       <Drawer {...drawerDetails} {...drawerProps} />
-      <button onClick={onConfigOpen} name="configure">
-        <div className="flex items-start">
-          <Settings className="text-theme-highlight" />
-          <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
-            Configure
-          </span>
-        </div>
-      </button>
+      <div className="flex justify-end items-center px-32">
+        <button onClick={onConfigOpen} name="configure">
+          <div className="flex items-start">
+            <Settings className="text-theme-highlight" />
+            <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
+              Configure
+            </span>
+          </div>
+        </button>
+      </div>
       {sections.map((props, index) => (
         <PageSection {...props} key={props.heading} isOpen={index === 0} />
       ))}
