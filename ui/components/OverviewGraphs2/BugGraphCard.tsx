@@ -2,7 +2,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { append, filter, not, prop, sum } from 'rambda';
 import { twJoin } from 'tailwind-merge';
-import { ExternalLink } from 'react-feather';
+import { Check, ExternalLink } from 'react-feather';
 import { byNum, desc } from 'sort-lib';
 import { lineColor, prettyFields } from './utils.jsx';
 import Switcher from '../common/Switcher.jsx';
@@ -235,7 +235,18 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                         width: 'calc((100vw - 17.5rem) / 8)',
                       }}
                     >
-                      <div>{group.groupName || 'Unclassified'}</div>
+                      <div className="grid grid-flow-col justify-between">
+                        <div>{group.groupName || 'Unclassified'}</div>
+                        <div>
+                          <Check
+                            size={20}
+                            className={twJoin(
+                              'text-theme-highlight transition-opacity',
+                              !selectedGroups.includes(group.groupName) && 'opacity-0'
+                            )}
+                          />
+                        </div>
+                      </div>
                       <div className="font-medium flex items-end">
                         <span>{num(bugCountForGroup(group))}</span>
                         <button
