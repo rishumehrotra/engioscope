@@ -1,18 +1,52 @@
-import React from 'react';
+import type { FormEvent } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { head } from 'rambda';
+import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
-import { useQueryContext } from '../../hooks/query-hooks.js';
+import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hooks.js';
 import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import { WorkTypeTabConfigBody } from './WorkTypeTabConfigBody.jsx';
 
 export const ConfigDrawer = () => {
   const queryContext = useQueryContext();
+  const cnp = useCollectionAndProject();
   const pageConfig = trpc.workItems.getPageConfig.useQuery(
     { queryContext },
     { keepPreviousData: true }
   );
+  const saveConfigs = trpc.config.updateProjectConfig.useMutation();
+
+  const [modifiedWorkItemConfigs, setModifiedWorkItemConfigs] = useState<
+    SingleWorkItemConfig[]
+  >([]);
+
+  useEffect(() => {
+    if (pageConfig.data?.workItemsConfig) {
+      setModifiedWorkItemConfigs(pageConfig.data.workItemsConfig);
+    }
+  }, [pageConfig.data?.workItemsConfig]);
+
+  const submitForm = useCallback(
+    (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      saveConfigs.mutate({
+        ...cnp,
+        config: modifiedWorkItemConfigs.map(wic => ({
+          type: wic.name[0],
+          startStates: wic.startStates,
+          endStates: wic.endStates,
+          groupByField: head(Object.keys(wic.groupByField || {})),
+          ignoreStates: wic.ignoreStates,
+          rootCause: Object.keys(wic.rootCause || {}),
+          workCenters: wic.workCenters,
+        })),
+      });
+    },
+    [cnp, modifiedWorkItemConfigs, saveConfigs]
+  );
 
   return (
-    <div>
+    <form onSubmit={submitForm}>
       <DrawerTabs
         tabs={
           pageConfig.data?.workItemsConfig?.map(config => ({
@@ -20,11 +54,31 @@ export const ConfigDrawer = () => {
             key: config.name[1],
             // eslint-disable-next-line react/no-unstable-nested-components
             BodyComponent: () => (
-              <WorkTypeTabConfigBody config={config} key={config.name[1]} />
+              <WorkTypeTabConfigBody
+                config={modifiedWorkItemConfigs.find(
+                  wic => wic.name[0] === config.name[0]
+                )}
+                setConfig={setter => {
+                  setModifiedWorkItemConfigs(prev => {
+                    return prev.map(wic => {
+                      if (wic.name[0] === config.name[0]) {
+                        return setter(wic);
+                      }
+                      return wic;
+                    });
+                  });
+                }}
+                key={config.name[1]}
+              />
             ),
           })) || []
         }
       />
-    </div>
+      <div className="text-right px-6 whitespace-nowrap mt-4">
+        <button type="submit" className="primary-button">
+          Save
+        </button>
+      </div>
+    </form>
   );
 };

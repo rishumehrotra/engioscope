@@ -16,6 +16,7 @@ import sonar from './sonar.js';
 import summary from './summary.js';
 import pullRequests from './pull-requests.js';
 import teams from './teams.js';
+import config from './config.js';
 
 export const appRouter = t.router({
   builds,
@@ -32,6 +33,7 @@ export const appRouter = t.router({
   summary,
   pullRequests,
   teams,
+  config,
   ...others,
 });
 

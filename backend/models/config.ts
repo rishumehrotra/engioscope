@@ -74,23 +74,14 @@ export const updateProjectConfigInputParser = z.object({
   ),
 });
 
-export const updateProjectConfig = async ({
+export const updateProjectConfig = ({
   collectionName,
   project,
   config,
 }: z.infer<typeof updateProjectConfigInputParser>) => {
   return ConfigModel.findOneAndUpdate(
-    {
-      collectionName,
-      project,
-    },
-    {
-      $set: {
-        collectionName,
-        project,
-        workItemsConfig: config,
-      },
-    },
+    { collectionName, project },
+    { $set: { collectionName, project, workItemsConfig: config } },
     { upsert: true }
   );
 };
