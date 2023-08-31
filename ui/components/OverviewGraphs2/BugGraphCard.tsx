@@ -16,6 +16,7 @@ import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import BugGraphDrawer from './BugGraphDrawer.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
 import type { GroupedBugs } from '../../../backend/models/workitems2.js';
+import { ConfigDrawer } from './ConfigDrawer.jsx';
 
 const collapsedCount = 10;
 
@@ -99,7 +100,7 @@ const getDrawer = (
 });
 
 const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
-  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [Drawer, drawerProps, openDrawer, , closeDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
     children: ReactNode;
@@ -175,14 +176,16 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           <div className="bg-theme-page-content group/block">
             <div className="grid grid-flow-col justify-between items-end">
               <div className="text-lg font-bold flex items-center gap-2">
-                <span className="text-theme-text">
-                  {num(sum(groupsForField.map(bugCountForGroup)))}
-                  &nbsp;
-                  {minPluralise(
-                    sum(groupsForField.map(bugCountForGroup)),
-                    ...(workItemConfig?.name || ['', ''])
-                  ).toLowerCase()}
-                </span>
+                {sum(groupsForField.map(bugCountForGroup)) > 0 ? (
+                  <span className="text-theme-text">
+                    {num(sum(groupsForField.map(bugCountForGroup)))}
+                    &nbsp;
+                    {minPluralise(
+                      sum(groupsForField.map(bugCountForGroup)),
+                      ...(workItemConfig?.name || ['', ''])
+                    ).toLowerCase()}
+                  </span>
+                ) : null}
                 {groupsForField.length === 1 &&
                 groupsForField[0].groupName === noGroup ? (
                   <button
@@ -300,13 +303,30 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
           <GraphEmptyState
             className="self-center text-center text-sm text-theme-helptext w-full"
             heading="No data available"
-            description="Looks like the RCA fields aren't configured."
+            description={
+              <h1>
+                Looks like the RCA fields aren't configured. Configure them{' '}
+                <button
+                  className="text-theme-highlight font-medium"
+                  onClick={() => {
+                    setAdditionalDrawerProps({
+                      heading: 'Configure work items',
+                      children: <ConfigDrawer closeDrawer={closeDrawer} />,
+                    });
+                    openDrawer();
+                  }}
+                >
+                  here
+                </button>
+              </h1>
+            }
           />
         ) : sum(groupsForField.map(bugCountForGroup)) === 0 ? (
           <GraphEmptyState
             className="self-center text-center text-sm text-theme-helptext w-full"
             heading="No data available"
             description="No Bug Leakages"
+            style={{ boxShadow: 'none' }}
           />
         ) : selectedGroups.length === 0 ? (
           <GraphEmptyState

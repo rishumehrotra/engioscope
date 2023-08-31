@@ -4,7 +4,7 @@ import emptySvgPath from './empty.svg';
 
 type GraphEmptyStateProps = {
   heading: string;
-  description: string;
+  description: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -33,7 +33,7 @@ export const GraphEmptyState = ({
     >
       <img src={emptySvgPath} alt="No data" className="m-4 mt-6 block mx-auto" />
       <h1 className="text-base mb-2 font-medium">{heading}</h1>
-      <p>{description}</p>
+      {description}
     </div>
   );
 };

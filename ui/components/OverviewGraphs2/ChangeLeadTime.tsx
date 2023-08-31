@@ -32,7 +32,12 @@ const ChangeLoadTime = () => {
           if (!config) return null;
 
           if (!config.devCompleteStates) {
-            return <div>Dev complete state not specified</div>;
+            return (
+              <div>
+                Looks like Dev completion dates aren't configured. You may configure this{' '}
+                <button>here</button> to enable data visualization.
+              </div>
+            );
           }
           return (
             <GraphCard
