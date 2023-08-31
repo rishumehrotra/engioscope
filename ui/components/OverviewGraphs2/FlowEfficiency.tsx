@@ -6,9 +6,12 @@ import useGraphArgs from './useGraphArgs.js';
 import FlowEfficiencyGraphCard from './FlowEfficiencyGraphCard.jsx';
 import FlowEfficiencyLoader from './FlowEfficiencyLoader.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
+import type { PageSectionBlockProps } from './utils.jsx';
+import useFeatureFlag from '../../hooks/use-feature-flag.js';
 
-const FlowEfficiency = () => {
+const FlowEfficiency = ({ openDrawer }: PageSectionBlockProps) => {
   const graphArgs = useGraphArgs();
+  const showConfigDrawer = useFeatureFlag('config-drawer');
   const graph = trpc.workItems.getFlowEfficiencyGraph.useQuery(graphArgs, {
     keepPreviousData: true,
   });
@@ -49,7 +52,18 @@ const FlowEfficiency = () => {
     return (
       <GraphEmptyState
         heading="No data available"
-        description="Your work centers are not configured."
+        description={
+          showConfigDrawer ? (
+            <>
+              <button className="link-text" onClick={() => openDrawer()}>
+                Configure
+              </button>{' '}
+              your work centers.
+            </>
+          ) : (
+            "Looks like the work centers aren't configured."
+          )
+        }
       />
     );
   }

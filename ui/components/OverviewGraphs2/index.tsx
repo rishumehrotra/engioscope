@@ -14,46 +14,50 @@ import PageSection from './PageSection.jsx';
 import FlowEfficiency from './FlowEfficiency.jsx';
 import { useDrawer } from '../common/Drawer.jsx';
 import { ConfigDrawer } from './ConfigDrawer.jsx';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
+import useFeatureFlag from '../../hooks/use-feature-flag.js';
 
-const sections = [
+const sections: {
+  heading: string;
+  subheading: string;
+  renderChildren: (openDrawer: () => void) => ReactNode;
+}[] = [
   {
     heading: 'New work items',
     subheading: 'Work items on which work work has started',
-    children: <New />,
+    renderChildren: () => <New />,
   },
   {
     heading: 'Velocity',
     subheading: 'Work items completed',
-    children: <Velocity />,
+    renderChildren: () => <Velocity />,
   },
   {
     heading: 'Cycle time',
     subheading: 'Time taken to complete a work item',
-    children: <CycleTime />,
+    renderChildren: () => <CycleTime />,
   },
   {
     heading: 'Change lead time',
     subheading: 'Time taken after development to complete a work item',
-    children: <ChangeLoadTime />,
+    renderChildren: openDrawer => <ChangeLoadTime openDrawer={openDrawer} />,
   },
   {
     heading: 'Work in progress trend',
     subheading: 'Trend of work items in progress',
-    children: <WIPTrend />,
+    renderChildren: () => <WIPTrend />,
   },
   {
     heading: 'Bug leakage with root cause',
     subheading: 'Bugs leaked over the last 84 days with their root cause',
-    children: <BugLeakage />,
+    renderChildren: openDrawer => <BugLeakage openDrawer={openDrawer} />,
   },
   {
     heading: 'Flow efficiency',
     subheading:
       'Fraction of overall time that work items spend in work centers on average',
-    children: <FlowEfficiency />,
+    renderChildren: openDrawer => <FlowEfficiency openDrawer={openDrawer} />,
   },
-] as const;
+];
 
 const OverviewGraphs2 = () => {
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -61,14 +65,14 @@ const OverviewGraphs2 = () => {
   const [layoutType, setLayoutType] = useState<'2-col' | 'full-width'>('2-col');
   const ref = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
-  const [showConfigDrawer] = useQueryParam('config-drawer', asBoolean);
+  const showConfigDrawer = useFeatureFlag('config-drawer');
   const [Drawer, drawerProps, openDrawer, , closeDrawer] = useDrawer();
   const [drawerDetails, setDrawerDetails] = useState<{
     heading: ReactNode;
     children: ReactNode;
   }>({ heading: 'Loading...', children: 'Loading...' });
 
-  const onConfigOpen = useCallback(() => {
+  const openConfig = useCallback(() => {
     setDrawerDetails({
       heading: 'Configure work items',
       children: <ConfigDrawer closeDrawer={closeDrawer} />,
@@ -126,7 +130,7 @@ const OverviewGraphs2 = () => {
         <div className="relative">
           <Drawer {...drawerDetails} {...drawerProps} />
           <div className="absolute right-1">
-            <button onClick={onConfigOpen} name="configure">
+            <button onClick={() => openConfig()} name="configure">
               <div className="flex items-start">
                 <Settings className="text-theme-highlight" />
                 <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
@@ -137,8 +141,10 @@ const OverviewGraphs2 = () => {
           </div>
         </div>
       ) : null}
-      {sections.map((props, index) => (
-        <PageSection {...props} key={props.heading} isOpen={index === 0} />
+      {sections.map(({ renderChildren, ...props }, index) => (
+        <PageSection {...props} key={props.heading} isOpen={index === 0}>
+          {renderChildren(openConfig)}
+        </PageSection>
       ))}
     </>
   );

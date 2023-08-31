@@ -850,7 +850,7 @@ export const getBugLeakage = async ({
 
   return Promise.all(
     (workItemsConfig || [])
-      .filter(wic => isBugLike(wic.type) && wic.rootCause)
+      .filter(wic => isBugLike(wic.type) && wic.rootCause?.length)
       .map(async wic => {
         return {
           type: wic.type,

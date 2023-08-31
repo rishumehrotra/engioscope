@@ -1,13 +1,16 @@
 import React from 'react';
 import { trpc } from '../../helpers/trpc.js';
 import { GraphCard, useGridTemplateAreas } from './GraphCard.jsx';
+import type { PageSectionBlockProps } from './utils.js';
 import { prettyStates, useDecorateForGraph } from './utils.js';
 import useGraphArgs from './useGraphArgs.js';
 import GraphAreaLoader from './GraphAreaLoader.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
+import useFeatureFlag from '../../hooks/use-feature-flag.js';
 
-const ChangeLoadTime = () => {
+const ChangeLoadTime = ({ openDrawer }: PageSectionBlockProps) => {
   const graphArgs = useGraphArgs();
+  const showConfigDrawer = useFeatureFlag('config-drawer');
   const graph = trpc.workItems.getChangeLeadTimeGraph.useQuery(graphArgs, {
     keepPreviousData: true,
   });
@@ -16,11 +19,23 @@ const ChangeLoadTime = () => {
 
   if (!graph.data) return <GraphAreaLoader />;
 
-  if (!graph.data?.length) {
+  if (!graph.data.length) {
     return (
       <GraphEmptyState
         heading="No data available"
-        description="No work items available"
+        description={
+          showConfigDrawer ? (
+            <>
+              No work items available.{' '}
+              <button className="link-text" onClick={() => openDrawer()}>
+                Configure
+              </button>{' '}
+              the 'Dev completion states' for your work items.
+            </>
+          ) : (
+            "Looks like the 'Dev completion states' aren't configured."
+          )
+        }
       />
     );
   }

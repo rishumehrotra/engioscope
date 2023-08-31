@@ -323,3 +323,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
       });
   }, [data, datesForWeekIndex, fillGapsForGraph, isDateDiff, pageConfig.data]);
 };
+
+export type PageSectionBlockProps = {
+  openDrawer: (workItemConfig?: string) => void;
+};

@@ -19,6 +19,7 @@ const DrawerTabs: React.FC<DrawerTabsProps> = ({
   const [selectedTabIndex, setSelectedTabIndex] = useState(inputSelectedTabIndex);
 
   const tabContents = useMemo(() => {
+    if (!tabs.length) return null;
     const Component = tabs[selectedTabIndex].BodyComponent;
     return <Component />;
   }, [selectedTabIndex, tabs]);

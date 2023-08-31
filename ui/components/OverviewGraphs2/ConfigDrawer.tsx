@@ -26,7 +26,7 @@ export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
 
   const [modifiedWorkItemConfigs, setModifiedWorkItemConfigs] = useState<
     SingleWorkItemConfig[]
-  >([]);
+  >(pageConfig.data?.workItemsConfig || []);
 
   useEffect(() => {
     if (pageConfig.data?.workItemsConfig) {

@@ -20,7 +20,7 @@ export const GraphEmptyState = ({
       className={
         className ||
         twJoin(
-          'rounded-xl border border-theme-seperator p-4 mt-4 mb-4',
+          'rounded-xl border border-theme-seperator p-4 mt-4 mb-4 pb-10',
           'bg-theme-page-content group/block',
           'self-center text-center text-sm text-theme-helptext w-full'
         )
@@ -33,7 +33,7 @@ export const GraphEmptyState = ({
     >
       <img src={emptySvgPath} alt="No data" className="m-4 mt-6 block mx-auto" />
       <h1 className="text-base mb-2 font-medium">{heading}</h1>
-      {description}
+      <div className="w-96 mx-auto">{description}</div>
     </div>
   );
 };
