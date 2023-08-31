@@ -1,8 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 
-const makeSSECall = (url: string, handleChunk: (e: MessageEvent) => void) => {
+const makeTerminatingSSECall = (
+  url: string,
+  handleChunk: (e: MessageEvent) => void,
+  onComplete?: () => void,
+  terminator = 'done'
+) => {
   const sse = new EventSource(url, { withCredentials: true });
-  sse.addEventListener('message', handleChunk);
+  sse.addEventListener('message', e => {
+    if (e.data === terminator) {
+      sse.close();
+      onComplete?.();
+    } else {
+      handleChunk(e);
+    }
+  });
   sse.addEventListener('error', sse.close);
   return sse;
 };
@@ -18,7 +30,7 @@ export default <T>(url: string, key: string) => {
     }
 
     if (!ref.current) {
-      ref.current = makeSSECall(url, e => {
+      ref.current = makeTerminatingSSECall(url, e => {
         setData(d => ({ ...d, ...(JSON.parse(e.data) as Partial<T>) }));
       });
     }

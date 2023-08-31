@@ -93,7 +93,7 @@ export default (config: ParsedConfig) => {
         res.flush();
       });
 
-      res.end();
+      res.end('data: done\n\n');
     }
   );
 
