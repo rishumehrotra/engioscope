@@ -110,10 +110,10 @@ export const WorkTypeTabConfigBody = ({
       />
       {isBugLike(config.name[0]) ? (
         <>
-          <div className="text-sm font-medium pt-5 pb-1">Root Cause</div>
+          <div className="text-sm font-medium pt-5 pb-1">Root cause</div>
           <div className="text-sm text-theme-helptext pb-2">
-            'The field that records the root cause for{' '}
-            {config.name[1].toLocaleLowerCase()}'
+            {`The field that records the root cause for 
+            ${config.name[1].toLocaleLowerCase()}`}
           </div>
           <MultiSelectDropdown
             value={Object.keys(config.rootCause || {})}
