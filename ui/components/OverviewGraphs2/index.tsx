@@ -123,9 +123,9 @@ const OverviewGraphs2 = () => {
         </div>
       </div>
       {showConfigDrawer ? (
-        <>
+        <div className="relative">
           <Drawer {...drawerDetails} {...drawerProps} />
-          <div className="flex justify-end items-center px-32">
+          <div className="absolute right-1">
             <button onClick={onConfigOpen} name="configure">
               <div className="flex items-start">
                 <Settings className="text-theme-highlight" />
@@ -135,7 +135,7 @@ const OverviewGraphs2 = () => {
               </div>
             </button>
           </div>
-        </>
+        </div>
       ) : null}
       {sections.map((props, index) => (
         <PageSection {...props} key={props.heading} isOpen={index === 0} />

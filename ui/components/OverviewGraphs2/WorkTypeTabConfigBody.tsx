@@ -108,6 +108,36 @@ export const WorkTypeTabConfigBody = ({
           });
         }}
       />
+      {isBugLike(config.name[0]) ? (
+        <>
+          <div className="text-sm font-medium pt-5 pb-1">Root Cause</div>
+          <div className="text-sm text-theme-helptext pb-2">
+            'The field that records the root cause for{' '}
+            {config.name[1].toLocaleLowerCase()}'
+          </div>
+          <MultiSelectDropdown
+            value={Object.keys(config.rootCause || {})}
+            options={(groupByAndStates.data?.fields || []).map(f => ({
+              label: f.name,
+              value: f.referenceName,
+            }))}
+            onChange={referenceNames => {
+              setConfig(x => {
+                return {
+                  ...x,
+                  rootCause: referenceNames.reduce(
+                    (acc, curr) => ({
+                      ...acc,
+                      [curr]: config.rootCause?.[curr] || [],
+                    }),
+                    {}
+                  ),
+                };
+              });
+            }}
+          />
+        </>
+      ) : null}
       <div className="text-sm font-medium pt-5 pb-1">Ignored states</div>
       <div className="text-sm text-theme-helptext pb-2">
         {config.name[1]} in this state will not be considered for analysis

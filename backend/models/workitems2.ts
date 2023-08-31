@@ -1,6 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import { z } from 'zod';
-import { filter, identity, map, prop, range, sum } from 'rambda';
+import { filter, head, identity, map, prop, range, sum } from 'rambda';
 import { byNum, byString, desc } from 'sort-lib';
 import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
@@ -1206,7 +1206,7 @@ export const groupByFieldAndStatesForWorkTypeParser = z.object({
   workItemType: z.string(),
 });
 
-export const getGroupByFieldAndStatesForWorkType = ({
+export const getGroupByFieldAndStatesForWorkType = async ({
   collectionName,
   project,
   workItemType,
@@ -1227,4 +1227,4 @@ export const getGroupByFieldAndStatesForWorkType = ({
     },
   ])
     .exec()
-    .then(x => x[0]);
+    .then(x => head(x) || { fields: [], states: [] });

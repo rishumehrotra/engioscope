@@ -90,7 +90,7 @@ export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
         <button
           type="submit"
           className="primary-button w-full hover:bg-blue-700"
-          disabled={saveConfigs.isLoading}
+          disabled={saveConfigs.isLoading || pageConfig.isLoading}
         >
           Save
         </button>
