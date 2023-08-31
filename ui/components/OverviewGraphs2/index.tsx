@@ -14,6 +14,7 @@ import PageSection from './PageSection.jsx';
 import FlowEfficiency from './FlowEfficiency.jsx';
 import { useDrawer } from '../common/Drawer.jsx';
 import { ConfigDrawer } from './ConfigDrawer.jsx';
+import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
 
 const sections = [
   {
@@ -60,8 +61,8 @@ const OverviewGraphs2 = () => {
   const [layoutType, setLayoutType] = useState<'2-col' | 'full-width'>('2-col');
   const ref = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
-
-  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [showConfigDrawer] = useQueryParam('config-drawer', asBoolean);
+  const [Drawer, drawerProps, openDrawer, , closeDrawer] = useDrawer();
   const [drawerDetails, setDrawerDetails] = useState<{
     heading: ReactNode;
     children: ReactNode;
@@ -70,10 +71,10 @@ const OverviewGraphs2 = () => {
   const onConfigOpen = useCallback(() => {
     setDrawerDetails({
       heading: 'Configure work items',
-      children: <ConfigDrawer />,
+      children: <ConfigDrawer closeDrawer={closeDrawer} />,
     });
     openDrawer();
-  }, [openDrawer]);
+  }, [closeDrawer, openDrawer]);
 
   useEffect(() => {
     const elem = ref.current;
@@ -121,17 +122,21 @@ const OverviewGraphs2 = () => {
           <QueryPeriodSelector />
         </div>
       </div>
-      <Drawer {...drawerDetails} {...drawerProps} />
-      <div className="flex justify-end items-center px-32">
-        <button onClick={onConfigOpen} name="configure">
-          <div className="flex items-start">
-            <Settings className="text-theme-highlight" />
-            <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
-              Configure
-            </span>
+      {showConfigDrawer ? (
+        <>
+          <Drawer {...drawerDetails} {...drawerProps} />
+          <div className="flex justify-end items-center px-32">
+            <button onClick={onConfigOpen} name="configure">
+              <div className="flex items-start">
+                <Settings className="text-theme-highlight" />
+                <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
+                  Configure
+                </span>
+              </div>
+            </button>
           </div>
-        </button>
-      </div>
+        </>
+      ) : null}
       {sections.map((props, index) => (
         <PageSection {...props} key={props.heading} isOpen={index === 0} />
       ))}

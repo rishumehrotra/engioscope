@@ -30,8 +30,8 @@ export const WorkTypeTabConfigBody = ({
 
   return (
     <div className="p-6">
-      <div className="text-gray-950 text-sm font-medium pt-3">Start states</div>
-      <div className="text-gray-600 text-sm font-normal pb-2">
+      <div className="text-sm font-medium pt-3">Start states</div>
+      <div className="text-sm text-theme-helptext pb-2">
         Work on a {config.name[0].toLocaleLowerCase()} starts when it enters one of these
         states. This is used in the 'New work items' graph and the 'Cycle time' graph.
       </div>
@@ -45,8 +45,8 @@ export const WorkTypeTabConfigBody = ({
           setConfig(x => ({ ...x, startStates }));
         }}
       />
-      <div className="text-gray-950 text-sm font-medium  pt-5 pb-1">End states</div>
-      <div className="text-gray-600 text-sm font-normal pb-2">
+      <div className="text-sm font-medium pt-5 pb-1">End states</div>
+      <div className="text-sm text-theme-helptext pb-2">
         Work on a {config.name[0].toLocaleLowerCase()} ends when it enters one of these
         states. This will be reflected on the 'Velocity' graph and the 'Cycle time' graph.
       </div>
@@ -60,10 +60,8 @@ export const WorkTypeTabConfigBody = ({
           setConfig(x => ({ ...x, endStates }));
         }}
       />
-      <div className="text-gray-950 text-sm font-medium  pt-5 pb-1">
-        Dev completion states
-      </div>
-      <div className="text-gray-600 text-sm font-normal pb-2">
+      <div className=" text-sm font-medium pt-5 pb-1">Dev completion states</div>
+      <div className="text-sm text-theme-helptext pb-2">
         Development is completed in this state. This will be reflected on the the 'Change
         lead time' graph.
       </div>
@@ -77,10 +75,10 @@ export const WorkTypeTabConfigBody = ({
           setConfig(x => ({ ...x, devCompleteStates }));
         }}
       />
-      <div className="text-gray-950 text-sm font-medium  pt-5 pb-1">
+      <div className="text-sm font-medium pt-5 pb-1">
         {isBugLike(config.name[0]) ? 'Found in environment' : `${config.name[0]} type`}
       </div>
-      <div className="text-gray-600 text-sm font-normal  pb-2">
+      <div className="text-sm text-theme-helptext pb-2">
         {isBugLike(config.name[0])
           ? "The field which specifies the bug's environment"
           : `The field by which ${config.name[1].toLocaleLowerCase()} are categorized`}
@@ -110,8 +108,8 @@ export const WorkTypeTabConfigBody = ({
           });
         }}
       />
-      <div className="text-gray-950 text-sm font-medium pt-5 pb-1">Ignored states</div>
-      <div className="text-gray-600 text-sm font-normal pb-2">
+      <div className="text-sm font-medium pt-5 pb-1">Ignored states</div>
+      <div className="text-sm text-theme-helptext pb-2">
         {config.name[1]} in this state will not be considered for analysis
       </div>
       <MultiSelectDropdown
@@ -125,7 +123,7 @@ export const WorkTypeTabConfigBody = ({
         }}
       />
       <div className="flex pt-5 pb-1 justify-between">
-        <div className="text-gray-950 text-sm font-medium">Work centers</div>
+        <div className="text-sm font-medium">Work centers</div>
         <button
           className="flex"
           type="button"
@@ -144,26 +142,22 @@ export const WorkTypeTabConfigBody = ({
           }}
         >
           <Plus className="text-theme-highlight" size={20} />
-          <span className="font-medium  text-sm text-theme-highlight ml-1">
+          <span className="font-medium text-sm text-theme-highlight ml-1">
             Add work center
           </span>
         </button>
       </div>
-      <div className="text-gray-600 text-sm font-normal">
+      <div className="text-sm text-theme-helptext">
         Work centers are states where work actually happens. This is used for the 'Flow
         efficiency' graph. You may define a work center by clicking on the link above.
       </div>
-      {config.workCenters?.map((workCenter, index) => (
+      {config.workCenters?.map(workCenter => (
         <div key={workCenter.label}>
-          <div className="text-gray-950 text-sm font-bold pt-3">
-            Work Center : {index + 1}
-          </div>
-          <div className="text-gray-950 text-sm font-medium pt-3">Label</div>
-          <div className="text-gray-600 text-sm font-normal pb-2">
-            Name of the work center.
-          </div>
+          <div className="text-sm font-medium pt-3">Label</div>
+          <div className="text-sm text-theme-helptext pb-2">Name of the work center.</div>
 
           <input
+            className="w-full"
             type="text"
             placeholder="Enter work center name"
             value={workCenter.label}
@@ -182,8 +176,8 @@ export const WorkTypeTabConfigBody = ({
               }));
             }}
           />
-          <div className="text-gray-950 text-sm font-medium pt-3">Start states</div>
-          <div className="text-gray-600 text-sm font-normal pb-2">
+          <div className="text-sm font-medium pt-3">Start states</div>
+          <div className="text-sm text-theme-helptext pb-2">
             Work in this work center starts at these states
           </div>
           <MultiSelectDropdown
@@ -204,8 +198,8 @@ export const WorkTypeTabConfigBody = ({
               }));
             }}
           />
-          <div className="text-gray-950 text-sm font-medium  pt-5 pb-1">End states</div>
-          <div className="text-gray-600 text-sm font-normal pb-2">
+          <div className="text-sm font-medium pt-5 pb-1">End states</div>
+          <div className="text-sm text-theme-helptext pb-2">
             Work in this work center ends at these states
           </div>
           <MultiSelectDropdown

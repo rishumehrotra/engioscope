@@ -7,14 +7,22 @@ import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hook
 import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import { WorkTypeTabConfigBody } from './WorkTypeTabConfigBody.jsx';
 
-export const ConfigDrawer = () => {
+type ConfigDrawerProps = {
+  closeDrawer: () => void;
+};
+
+export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
   const queryContext = useQueryContext();
   const cnp = useCollectionAndProject();
   const pageConfig = trpc.workItems.getPageConfig.useQuery(
     { queryContext },
     { keepPreviousData: true }
   );
-  const saveConfigs = trpc.config.updateProjectConfig.useMutation();
+  const saveConfigs = trpc.config.updateProjectConfig.useMutation({
+    onSettled: () => {
+      closeDrawer();
+    },
+  });
 
   const [modifiedWorkItemConfigs, setModifiedWorkItemConfigs] = useState<
     SingleWorkItemConfig[]
@@ -29,6 +37,7 @@ export const ConfigDrawer = () => {
   const submitForm = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+
       saveConfigs.mutate({
         ...cnp,
         config: modifiedWorkItemConfigs.map(wic => ({
@@ -74,8 +83,15 @@ export const ConfigDrawer = () => {
           })) || []
         }
       />
-      <div className="text-right px-6 whitespace-nowrap mt-4">
-        <button type="submit" className="primary-button">
+      <div className="text-right px-6 whitespace-nowrap mt-4 flex gap-4 justify-evenly mb-5">
+        <button type="reset" className="secondary-button w-full" onClick={closeDrawer}>
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="primary-button w-full hover:bg-blue-700"
+          disabled={saveConfigs.isLoading}
+        >
           Save
         </button>
       </div>
