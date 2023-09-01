@@ -6,6 +6,7 @@ import { trpc } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import MultiSelectDropdown from '../common/MultiSelectDropdown.jsx';
 import { isBugLike } from '../../../shared/work-item-utils.js';
+import WorkCenterItem from './WorkCenterItem.jsx';
 
 export type WorkTypeTabConfigBodyProps = {
   config?: SingleWorkItemConfig;
@@ -163,7 +164,7 @@ export const WorkTypeTabConfigBody = ({
               workCenters: [
                 ...(x.workCenters || []),
                 {
-                  label: '',
+                  label: `Work center ${x.workCenters?.length || 0 + 1}`,
                   startStates: [],
                   endStates: [],
                 },
@@ -182,75 +183,23 @@ export const WorkTypeTabConfigBody = ({
         efficiency' graph. You may define a work center by clicking on the link above.
       </div>
       {config.workCenters?.map(workCenter => (
-        <div key={workCenter.label}>
-          <div className="text-sm font-medium pt-3">Label</div>
-          <div className="text-sm text-theme-helptext pb-2">Name of the work center.</div>
-
-          <input
-            className="w-full"
-            type="text"
-            placeholder="Enter work center name"
-            value={workCenter.label}
-            onChange={event => {
-              setConfig(x => ({
-                ...x,
-                workCenters: (x.workCenters || []).map(wc => {
-                  if (wc.label === workCenter.label) {
-                    return {
-                      ...wc,
-                      label: event.target.value,
-                    };
-                  }
-                  return wc;
-                }),
-              }));
-            }}
-          />
-          <div className="text-sm font-medium pt-3">Start states</div>
-          <div className="text-sm text-theme-helptext pb-2">
-            Work in this work center starts at these states
-          </div>
-          <MultiSelectDropdown
-            value={workCenter.startStates || []}
-            options={(groupByAndStates.data?.states || []).map(state => ({
-              label: state.name,
-              value: state.name,
-            }))}
-            onChange={startStates => {
-              setConfig(x => ({
-                ...x,
-                workCenters: (x.workCenters || []).map(wc => {
-                  if (wc.label === workCenter.label) {
-                    return { ...wc, startStates };
-                  }
-                  return wc;
-                }),
-              }));
-            }}
-          />
-          <div className="text-sm font-medium pt-5 pb-1">End states</div>
-          <div className="text-sm text-theme-helptext pb-2">
-            Work in this work center ends at these states
-          </div>
-          <MultiSelectDropdown
-            value={workCenter.endStates || []}
-            options={(groupByAndStates.data?.states || []).map(state => ({
-              label: state.name,
-              value: state.name,
-            }))}
-            onChange={endStates => {
-              setConfig(x => ({
-                ...x,
-                workCenters: (x.workCenters || []).map(wc => {
-                  if (wc.label === workCenter.label) {
-                    return { ...wc, endStates };
-                  }
-                  return wc;
-                }),
-              }));
-            }}
-          />
-        </div>
+        <WorkCenterItem
+          key={workCenter.label}
+          workCenter={workCenter}
+          states={groupByAndStates.data?.states || []}
+          setConfig={setConfig}
+          id={workCenter.label}
+          index={config.workCenters?.indexOf(workCenter) || 0}
+          moveWorkCenterItem={(dragIndex, hoverIndex) => {
+            setConfig(x => {
+              const workCenters = [...(x.workCenters || [])];
+              const dragCard = workCenters[dragIndex];
+              workCenters.splice(dragIndex, 1);
+              workCenters.splice(hoverIndex, 0, dragCard);
+              return { ...x, workCenters };
+            });
+          }}
+        />
       ))}
     </div>
   );

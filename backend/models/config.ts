@@ -70,6 +70,7 @@ export const updateProjectConfigInputParser = z.object({
           })
         )
         .optional(),
+      devCompletionStates: z.array(z.string()).optional(),
     })
   ),
 });

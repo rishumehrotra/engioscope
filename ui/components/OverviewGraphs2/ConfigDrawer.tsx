@@ -51,6 +51,7 @@ export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
             ignoreStates: wic.ignoreStates,
             rootCause: Object.keys(wic.rootCause || {}),
             workCenters: wic.workCenters,
+            devCompletionStates: wic.devCompleteStates,
           })),
         })
         .then(clearCache)

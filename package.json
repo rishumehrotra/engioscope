@@ -73,6 +73,8 @@
     "pretty-ms": "8.0.0",
     "qs": "6.11.2",
     "rambda": "7.3.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-hotkeys-hook": "4.4.1",
     "sort-lib": "^1.0.2",
     "superjson": "1.13.1",
