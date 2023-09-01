@@ -1,4 +1,4 @@
-import { multiply, pipe, replace } from 'rambda';
+import { map, multiply, pipe, replace } from 'rambda';
 import { z } from 'zod';
 import { divide, exists } from '../../shared/utils.js';
 import { getConfig } from '../config.js';
@@ -1078,7 +1078,15 @@ export const getBuildsDrawerListing = async ({
         'pipelines.builds.builds': 0,
       },
     },
-  ]);
+  ]).then(
+    map(x => ({
+      ...x,
+      pipelines: x.pipelines.map(p => ({
+        ...p,
+        def: { ...p.def, url: buildDefinitionWebUrl(p.def.url) },
+      })),
+    }))
+  );
 };
 
 export const getBuildPipelineListForDownload = async ({
