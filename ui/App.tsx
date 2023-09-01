@@ -4,8 +4,6 @@ import { httpLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import superjson from 'superjson';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import Project from './pages/Project.js';
 import HomePage from './pages/HomePage.js';
 import { ProjectDetailsProvider } from './hooks/project-details-hooks.js';
@@ -56,22 +54,20 @@ const App: React.FC = () => {
               <ProjectDetailsProvider>
                 <SortContextProvider>
                   <HeaderProvider>
-                    <DndProvider backend={HTML5Backend}>
-                      <div className="pb-64 transition duration-500 ease-in-out">
-                        <RecordAnalytics />
-                        <Header />
-                        <Routes>
-                          <Route path="/analytics" element={<Analytics />} />
-                          <Route path="/summary" element={<Summary />} />
-                          <Route path="/change-program" element={<ChangeProgram />} />
-                          <Route path="/tracks" element={<Tracks />} />
-                          <Route path="/status" element={<Status />} />
-                          <Route path="/:collection" element={<Collections />} />
-                          <Route path="/:collection/:project/*" element={<Project />} />
-                          <Route path="/" element={<HomePage />} />
-                        </Routes>
-                      </div>
-                    </DndProvider>
+                    <div className="pb-64 transition duration-500 ease-in-out">
+                      <RecordAnalytics />
+                      <Header />
+                      <Routes>
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/summary" element={<Summary />} />
+                        <Route path="/change-program" element={<ChangeProgram />} />
+                        <Route path="/tracks" element={<Tracks />} />
+                        <Route path="/status" element={<Status />} />
+                        <Route path="/:collection" element={<Collections />} />
+                        <Route path="/:collection/:project/*" element={<Project />} />
+                        <Route path="/" element={<HomePage />} />
+                      </Routes>
+                    </div>
                   </HeaderProvider>
                 </SortContextProvider>
               </ProjectDetailsProvider>

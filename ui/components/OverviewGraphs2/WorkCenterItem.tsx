@@ -38,20 +38,21 @@ const WorkCenterItem = ({
   index,
   moveWorkCenterItem,
 }: WorkCenterItemProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null }>(
     {
       accept: ItemTypes.workCenterItem,
       collect: monitor => ({ handlerId: monitor.getHandlerId() }),
       hover: (item, monitor) => {
-        if (!ref.current) return;
+        if (!dragRef.current) return;
 
         const dragIndex = item.index;
         const hoverIndex = index;
 
         if (dragIndex === hoverIndex) return;
 
-        const hoverBoundingRect = ref.current?.getBoundingClientRect();
+        const hoverBoundingRect = dragRef.current?.getBoundingClientRect();
         const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
         const clientOffset = monitor.getClientOffset();
         const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top;
@@ -65,7 +66,7 @@ const WorkCenterItem = ({
     }
   );
 
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag, preview] = useDrag({
     type: ItemTypes.workCenterItem,
     item: () => ({ id, index }),
     collect: monitor => ({
@@ -73,18 +74,24 @@ const WorkCenterItem = ({
     }),
   });
 
-  drag(drop(ref));
+  drag(drop(dragRef));
+  preview(previewRef);
   return (
     <div
       key={workCenter?.label}
-      ref={ref}
-      data-handler-id={handlerId}
+      ref={previewRef}
+      // data-handler-id={handlerId}
       className={twMerge(
-        'flex flex-row gap-2 mb-4 cursor-default',
-        isDragging && 'opacity-0'
+        'flex flex-row gap-2 mb-4 cursor-default p-3',
+        'hover:shadow-sm hover:bg-theme-secondary hover:border-l-4 border-blue-600',
+        isDragging ? 'opacity-10' : 'opacity-100'
       )}
     >
-      <div className="text-sm font-medium pt-3 cursor-move">
+      <div
+        className="text-sm font-medium pt-3 cursor-move"
+        ref={dragRef}
+        data-handler-id={handlerId}
+      >
         <AlignJustify size={20} />
       </div>
 

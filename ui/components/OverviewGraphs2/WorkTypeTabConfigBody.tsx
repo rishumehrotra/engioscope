@@ -1,6 +1,8 @@
 import React from 'react';
 import { Plus } from 'react-feather';
 import { head } from 'rambda';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
@@ -183,23 +185,25 @@ export const WorkTypeTabConfigBody = ({
         efficiency' graph. You may define a work center by clicking on the link above.
       </div>
       {config.workCenters?.map(workCenter => (
-        <WorkCenterItem
-          key={workCenter.label}
-          workCenter={workCenter}
-          states={groupByAndStates.data?.states || []}
-          setConfig={setConfig}
-          id={workCenter.label}
-          index={config.workCenters?.indexOf(workCenter) || 0}
-          moveWorkCenterItem={(dragIndex, hoverIndex) => {
-            setConfig(x => {
-              const workCenters = [...(x.workCenters || [])];
-              const dragCard = workCenters[dragIndex];
-              workCenters.splice(dragIndex, 1);
-              workCenters.splice(hoverIndex, 0, dragCard);
-              return { ...x, workCenters };
-            });
-          }}
-        />
+        <DndProvider backend={HTML5Backend}>
+          <WorkCenterItem
+            key={workCenter.label}
+            workCenter={workCenter}
+            states={groupByAndStates.data?.states || []}
+            setConfig={setConfig}
+            id={workCenter.label}
+            index={config.workCenters?.indexOf(workCenter) || 0}
+            moveWorkCenterItem={(dragIndex, hoverIndex) => {
+              setConfig(x => {
+                const workCenters = [...(x.workCenters || [])];
+                const dragCard = workCenters[dragIndex];
+                workCenters.splice(dragIndex, 1);
+                workCenters.splice(hoverIndex, 0, dragCard);
+                return { ...x, workCenters };
+              });
+            }}
+          />
+        </DndProvider>
       ))}
     </div>
   );
