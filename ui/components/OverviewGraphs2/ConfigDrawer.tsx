@@ -7,6 +7,11 @@ import { useCollectionAndProject, useQueryContext } from '../../hooks/query-hook
 import DrawerTabs from '../repo-summary/DrawerTabs.jsx';
 import { WorkTypeTabConfigBody } from './WorkTypeTabConfigBody.jsx';
 
+const useClearCache = () => {
+  const utils = trpc.useContext();
+
+  return useCallback(() => utils.workItems.invalidate(), [utils.workItems]);
+};
 type ConfigDrawerProps = {
   closeDrawer: () => void;
 };
@@ -14,15 +19,12 @@ type ConfigDrawerProps = {
 export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
   const queryContext = useQueryContext();
   const cnp = useCollectionAndProject();
+  const clearCache = useClearCache();
   const pageConfig = trpc.workItems.getPageConfig.useQuery(
     { queryContext },
     { keepPreviousData: true }
   );
-  const saveConfigs = trpc.config.updateProjectConfig.useMutation({
-    onSettled: () => {
-      closeDrawer();
-    },
-  });
+  const saveConfigs = trpc.config.updateProjectConfig.useMutation();
 
   const [modifiedWorkItemConfigs, setModifiedWorkItemConfigs] = useState<
     SingleWorkItemConfig[]
@@ -38,20 +40,26 @@ export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
     (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
-      saveConfigs.mutate({
-        ...cnp,
-        config: modifiedWorkItemConfigs.map(wic => ({
-          type: wic.name[0],
-          startStates: wic.startStates,
-          endStates: wic.endStates,
-          groupByField: head(Object.keys(wic.groupByField || {})),
-          ignoreStates: wic.ignoreStates,
-          rootCause: Object.keys(wic.rootCause || {}),
-          workCenters: wic.workCenters,
-        })),
-      });
+      saveConfigs
+        .mutateAsync({
+          ...cnp,
+          config: modifiedWorkItemConfigs.map(wic => ({
+            type: wic.name[0],
+            startStates: wic.startStates,
+            endStates: wic.endStates,
+            groupByField: head(Object.keys(wic.groupByField || {})),
+            ignoreStates: wic.ignoreStates,
+            rootCause: Object.keys(wic.rootCause || {}),
+            workCenters: wic.workCenters,
+          })),
+        })
+        .then(clearCache)
+        .then(closeDrawer)
+        .catch(() => {
+          // set error message
+        });
     },
-    [cnp, modifiedWorkItemConfigs, saveConfigs]
+    [clearCache, closeDrawer, cnp, modifiedWorkItemConfigs, saveConfigs]
   );
 
   return (
