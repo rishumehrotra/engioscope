@@ -10,13 +10,12 @@ const ItemTypes = {
   workCenterItem: 'workCenterItem',
 };
 
+type SingleWorkCenter = NonNullable<SingleWorkItemConfig['workCenters']>[number];
+
 type WorkCenterItemProps = {
-  workCenter: {
-    label: string;
-    startStates?: string[] | undefined;
-    endStates?: string[] | undefined;
-  };
-  setConfig: (x: (config: SingleWorkItemConfig) => SingleWorkItemConfig) => void;
+  workCenter: SingleWorkCenter;
+  setConfig: (x: (config: SingleWorkCenter) => SingleWorkCenter) => void;
+  deleteWorkCenter: () => void;
   states: RouterClient['workItems']['getGroupByFieldAndStatesForWorkType']['states'];
   id: string;
   index: number;
@@ -34,6 +33,7 @@ const WorkCenterItem = ({
   workCenter,
   states,
   setConfig,
+  deleteWorkCenter,
   id,
   index,
   moveWorkCenterItem,
@@ -69,9 +69,7 @@ const WorkCenterItem = ({
   const [{ isDragging }, drag, preview] = useDrag({
     type: ItemTypes.workCenterItem,
     item: () => ({ id, index }),
-    collect: monitor => ({
-      isDragging: monitor.isDragging(),
-    }),
+    collect: monitor => ({ isDragging: monitor.isDragging() }),
   });
 
   drag(drop(dragRef));
@@ -99,14 +97,7 @@ const WorkCenterItem = ({
         <X
           className="absolute right-0 top-2 cursor-pointer text-theme-icon hover:text-theme-icon-active"
           size={14}
-          onClick={() => {
-            setConfig(x => ({
-              ...x,
-              workCenters: (x.workCenters || []).filter(
-                wc => wc.label !== workCenter?.label
-              ),
-            }));
-          }}
+          onClick={deleteWorkCenter}
         />
         <div className="text-sm font-medium pt-3">Label</div>
         <div className="text-sm text-theme-helptext pb-2">Name of the work center.</div>
@@ -117,18 +108,7 @@ const WorkCenterItem = ({
           placeholder="Enter work center name"
           value={workCenter?.label}
           onChange={event => {
-            setConfig(x => ({
-              ...x,
-              workCenters: (x.workCenters || []).map(wc => {
-                if (wc.label === workCenter?.label) {
-                  return {
-                    ...wc,
-                    label: event.target.value,
-                  };
-                }
-                return wc;
-              }),
-            }));
+            setConfig(x => ({ ...x, label: event.target.value }));
           }}
         />
         <div className="text-sm font-medium pt-3">Start states</div>
@@ -142,15 +122,7 @@ const WorkCenterItem = ({
             value: state.name,
           }))}
           onChange={startStates => {
-            setConfig(x => ({
-              ...x,
-              workCenters: (x.workCenters || []).map(wc => {
-                if (wc.label === workCenter?.label) {
-                  return { ...wc, startStates };
-                }
-                return wc;
-              }),
-            }));
+            setConfig(x => ({ ...x, startStates }));
           }}
         />
         <div className="text-sm font-medium pt-5 pb-1">End states</div>
@@ -164,15 +136,7 @@ const WorkCenterItem = ({
             value: state.name,
           }))}
           onChange={endStates => {
-            setConfig(x => ({
-              ...x,
-              workCenters: (x.workCenters || []).map(wc => {
-                if (wc.label === workCenter?.label) {
-                  return { ...wc, endStates };
-                }
-                return wc;
-              }),
-            }));
+            setConfig(x => ({ ...x, endStates }));
           }}
         />
       </div>

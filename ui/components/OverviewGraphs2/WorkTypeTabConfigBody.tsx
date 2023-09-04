@@ -187,15 +187,31 @@ export const WorkTypeTabConfigBody = ({
         Work centers are states where work actually happens. This is used for the 'Flow
         efficiency' graph. You may define a work center by clicking on the link above.
       </div>
-      {config.workCenters?.map(workCenter => (
-        <DndProvider backend={HTML5Backend}>
+      <DndProvider backend={HTML5Backend}>
+        {config.workCenters?.map((workCenter, workCenterIndex) => (
           <WorkCenterItem
             key={workCenter.label}
             workCenter={workCenter}
             states={groupByAndStates.data?.states || []}
-            setConfig={setConfig}
+            setConfig={setter => {
+              setConfig(x => {
+                return {
+                  ...x,
+                  workCenters: x.workCenters?.map((wc, i) =>
+                    i === workCenterIndex ? setter(wc) : wc
+                  ),
+                };
+              });
+            }}
+            deleteWorkCenter={() => {
+              setConfig(x => {
+                const workCenters = [...(x.workCenters || [])];
+                workCenters.splice(workCenterIndex, 1);
+                return { ...x, workCenters };
+              });
+            }}
             id={workCenter.label}
-            index={config.workCenters?.indexOf(workCenter) || 0}
+            index={workCenterIndex}
             moveWorkCenterItem={(dragIndex, hoverIndex) => {
               setConfig(x => {
                 const workCenters = [...(x.workCenters || [])];
@@ -206,8 +222,8 @@ export const WorkTypeTabConfigBody = ({
               });
             }}
           />
-        </DndProvider>
-      ))}
+        ))}
+      </DndProvider>
     </div>
   );
 };
