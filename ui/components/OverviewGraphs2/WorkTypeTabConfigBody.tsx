@@ -36,7 +36,8 @@ export const WorkTypeTabConfigBody = ({
       <div className="text-sm font-medium pt-3">Start states</div>
       <div className="text-sm text-theme-helptext pb-2">
         Work on a {config.name[0].toLocaleLowerCase()} starts when it enters one of these
-        states. This is used in the 'New work items' graph and the 'Cycle time' graph.
+        states. This is used in most graphs, like the 'New work items' graph and the
+        'Cycle time' graph.
       </div>
       <MultiSelectDropdown
         value={config.startStates}
@@ -51,7 +52,8 @@ export const WorkTypeTabConfigBody = ({
       <div className="text-sm font-medium pt-5 pb-1">End states</div>
       <div className="text-sm text-theme-helptext pb-2">
         Work on a {config.name[0].toLocaleLowerCase()} ends when it enters one of these
-        states. This will be reflected on the 'Velocity' graph and the 'Cycle time' graph.
+        states. This is used in many graphs, like the 'Velocity' graph and the 'Cycle
+        time' graph.
       </div>
       <MultiSelectDropdown
         value={config.endStates}
@@ -65,8 +67,8 @@ export const WorkTypeTabConfigBody = ({
       />
       <div className=" text-sm font-medium pt-5 pb-1">Dev completion states</div>
       <div className="text-sm text-theme-helptext pb-2">
-        Development is completed in this state. This will be reflected on the the 'Change
-        lead time' graph.
+        Development is completed in this state. This is used on the the 'Change lead time'
+        graph.
       </div>
       <MultiSelectDropdown
         value={config.devCompleteStates || []}
@@ -83,8 +85,9 @@ export const WorkTypeTabConfigBody = ({
       </div>
       <div className="text-sm text-theme-helptext pb-2">
         {isBugLike(config.name[0])
-          ? "The field which specifies the bug's environment"
-          : `The field by which ${config.name[1].toLocaleLowerCase()} are categorized`}
+          ? "The field which specifies the bug's environment."
+          : `The field by which ${config.name[1].toLocaleLowerCase()} are categorized.`}
+        {` This lets you filter ${config.name[1].toLocaleLowerCase()} on all graphs.`}
       </div>
       <MultiSelectDropdown
         value={Object.keys(config.groupByField || {})}
@@ -116,7 +119,7 @@ export const WorkTypeTabConfigBody = ({
           <div className="text-sm font-medium pt-5 pb-1">Root cause</div>
           <div className="text-sm text-theme-helptext pb-2">
             {`The field that records the root cause for 
-            ${config.name[1].toLocaleLowerCase()}`}
+            ${config.name[1].toLocaleLowerCase()}. This is used in the 'Bug leakage' graph.`}
           </div>
           <MultiSelectDropdown
             value={Object.keys(config.rootCause || {})}
@@ -143,7 +146,7 @@ export const WorkTypeTabConfigBody = ({
       ) : null}
       <div className="text-sm font-medium pt-5 pb-1">Ignored states</div>
       <div className="text-sm text-theme-helptext pb-2">
-        {config.name[1]} in this state will not be considered for analysis
+        {config.name[1]} in this state will not be considered for analysis.
       </div>
       <MultiSelectDropdown
         value={config.ignoreStates || []}

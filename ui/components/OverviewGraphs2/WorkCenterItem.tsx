@@ -82,8 +82,8 @@ const WorkCenterItem = ({
       ref={previewRef}
       // data-handler-id={handlerId}
       className={twMerge(
-        'flex flex-row gap-2 mb-4 cursor-default p-3',
-        'hover:shadow-sm hover:bg-theme-secondary hover:border-l-4 border-blue-600',
+        'flex flex-row gap-2 mb-4 cursor-default p-3 border-l-4 border-transparent',
+        'hover:shadow-sm hover:bg-theme-secondary hover:border-blue-600',
         isDragging ? 'opacity-10' : 'opacity-100'
       )}
     >

@@ -67,29 +67,27 @@ export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
     <form onSubmit={submitForm}>
       <DrawerTabs
         tabs={
-          pageConfig.data?.workItemsConfig?.map(config => ({
-            title: config.name[0],
-            key: config.name[1],
-            // eslint-disable-next-line react/no-unstable-nested-components
-            BodyComponent: () => (
-              <WorkTypeTabConfigBody
-                config={modifiedWorkItemConfigs.find(
-                  wic => wic.name[0] === config.name[0]
-                )}
-                setConfig={setter => {
-                  setModifiedWorkItemConfigs(prev => {
-                    return prev.map(wic => {
-                      if (wic.name[0] === config.name[0]) {
-                        return setter(wic);
-                      }
-                      return wic;
-                    });
-                  });
-                }}
-                key={config.name[1]}
-              />
-            ),
-          })) || []
+          pageConfig.data?.workItemsConfig?.map(config => {
+            const isMatchingConfig = (wic: SingleWorkItemConfig) => {
+              return wic.name[0] === config.name[0];
+            };
+            return {
+              title: config.name[0],
+              key: config.name[1],
+              // eslint-disable-next-line react/no-unstable-nested-components
+              BodyComponent: () => (
+                <WorkTypeTabConfigBody
+                  config={modifiedWorkItemConfigs.find(isMatchingConfig)}
+                  setConfig={setter => {
+                    setModifiedWorkItemConfigs(prev =>
+                      prev.map(wic => (isMatchingConfig(wic) ? setter(wic) : wic))
+                    );
+                  }}
+                  key={config.name[1]}
+                />
+              ),
+            };
+          }) || []
         }
       />
       <div className="text-right px-6 whitespace-nowrap mt-4 flex gap-4 justify-evenly mb-5">
