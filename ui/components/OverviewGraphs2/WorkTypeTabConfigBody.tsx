@@ -11,7 +11,7 @@ import { isBugLike } from '../../../shared/work-item-utils.js';
 import WorkCenterItem from './WorkCenterItem.jsx';
 
 export type WorkTypeTabConfigBodyProps = {
-  config?: SingleWorkItemConfig;
+  config: SingleWorkItemConfig;
   setConfig: (x: (config: SingleWorkItemConfig) => SingleWorkItemConfig) => void;
 };
 
@@ -28,8 +28,6 @@ export const WorkTypeTabConfigBody = ({
     },
     { keepPreviousData: true, enabled: Boolean(config) }
   );
-
-  if (!config) return null;
 
   return (
     <div className="p-6">
@@ -190,7 +188,8 @@ export const WorkTypeTabConfigBody = ({
       <DndProvider backend={HTML5Backend}>
         {config.workCenters?.map((workCenter, workCenterIndex) => (
           <WorkCenterItem
-            key={workCenter.label}
+            // eslint-disable-next-line react/no-array-index-key
+            key={workCenterIndex}
             workCenter={workCenter}
             states={groupByAndStates.data?.states || []}
             setConfig={setter => {
@@ -205,9 +204,11 @@ export const WorkTypeTabConfigBody = ({
             }}
             deleteWorkCenter={() => {
               setConfig(x => {
-                const workCenters = [...(x.workCenters || [])];
-                workCenters.splice(workCenterIndex, 1);
-                return { ...x, workCenters };
+                return {
+                  ...x,
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  workCenters: [...x.workCenters!].splice(workCenterIndex, 1),
+                };
               });
             }}
             id={workCenter.label}

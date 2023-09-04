@@ -74,9 +74,9 @@ const WorkCenterItem = ({
 
   drag(drop(dragRef));
   preview(previewRef);
+
   return (
     <div
-      key={workCenter?.label}
       ref={previewRef}
       // data-handler-id={handlerId}
       className={twMerge(
@@ -106,7 +106,7 @@ const WorkCenterItem = ({
           className="w-full"
           type="text"
           placeholder="Enter work center name"
-          value={workCenter?.label}
+          value={workCenter.label}
           onChange={event => {
             setConfig(x => ({ ...x, label: event.target.value }));
           }}
@@ -116,7 +116,7 @@ const WorkCenterItem = ({
           Work in this work center starts at these states
         </div>
         <MultiSelectDropdown
-          value={workCenter?.startStates || []}
+          value={workCenter.startStates || []}
           options={(states || []).map(state => ({
             label: state.name,
             value: state.name,
@@ -130,7 +130,7 @@ const WorkCenterItem = ({
           Work in this work center ends at these states
         </div>
         <MultiSelectDropdown
-          value={workCenter?.endStates || []}
+          value={workCenter.endStates || []}
           options={(states || []).map(state => ({
             label: state.name,
             value: state.name,

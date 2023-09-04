@@ -20,8 +20,7 @@ const DrawerTabs: React.FC<DrawerTabsProps> = ({
 
   const tabContents = useMemo(() => {
     if (!tabs.length) return null;
-    const Component = tabs[selectedTabIndex].BodyComponent;
-    return <Component />;
+    return tabs[selectedTabIndex].BodyComponent({});
   }, [selectedTabIndex, tabs]);
 
   return (
