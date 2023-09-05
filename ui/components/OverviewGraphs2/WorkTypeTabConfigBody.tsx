@@ -10,6 +10,13 @@ import MultiSelectDropdown from '../common/MultiSelectDropdown.jsx';
 import { isBugLike } from '../../../shared/work-item-utils.js';
 import WorkCenterItem from './WorkCenterItem.jsx';
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+const arrayMove = <T extends unknown>(arr: T[], fromIndex: number, toIndex: number) => {
+  const newArr = [...arr];
+  newArr.splice(toIndex, 0, newArr.splice(fromIndex, 1)[0]);
+  return newArr;
+};
+
 export type WorkTypeTabConfigBodyProps = {
   config: SingleWorkItemConfig;
   setConfig: (x: (config: SingleWorkItemConfig) => SingleWorkItemConfig) => void;
@@ -211,15 +218,13 @@ export const WorkTypeTabConfigBody = ({
                 };
               });
             }}
-            id={workCenter.label}
             index={workCenterIndex}
-            moveWorkCenterItem={(dragIndex, hoverIndex) => {
+            moveWorkCenterItem={(oldIndex, newIndex) => {
               setConfig(x => {
-                const workCenters = [...(x.workCenters || [])];
-                const dragCard = workCenters[dragIndex];
-                workCenters.splice(dragIndex, 1);
-                workCenters.splice(hoverIndex, 0, dragCard);
-                return { ...x, workCenters };
+                return {
+                  ...x,
+                  workCenters: arrayMove(x.workCenters || [], oldIndex, newIndex),
+                };
               });
             }}
           />
