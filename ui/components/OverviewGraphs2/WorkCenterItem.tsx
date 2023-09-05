@@ -1,9 +1,10 @@
 import React from 'react';
-import { AlignJustify, X } from 'react-feather';
+import { X } from 'react-feather';
 import { useDrag, useDrop } from 'react-dnd';
 import { twMerge } from 'tailwind-merge';
 import type { RouterClient, SingleWorkItemConfig } from '../../helpers/trpc.js';
 import MultiSelectDropdown from '../common/MultiSelectDropdown.jsx';
+import dragHandlePath from './drag-handle.svg';
 
 const dndType = 'workCenterItem';
 
@@ -50,7 +51,6 @@ const WorkCenterItem = ({
   return (
     <div
       ref={node => drop(preview(node))}
-      // data-handler-id={handlerId}
       className={twMerge(
         'flex flex-row gap-2 mb-4 cursor-default p-3 border-l-4 border-transparent',
         'hover:shadow-sm hover:bg-theme-secondary hover:border-blue-600',
@@ -58,7 +58,7 @@ const WorkCenterItem = ({
       )}
     >
       <div className="text-sm font-medium pt-3 cursor-move" ref={drag}>
-        <AlignJustify size={20} />
+        <img src={dragHandlePath} alt="Drag handle" className="w-4 h-4" />
       </div>
 
       <div className="w-full relative">
