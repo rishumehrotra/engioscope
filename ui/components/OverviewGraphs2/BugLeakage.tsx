@@ -52,6 +52,7 @@ const BugLeakage = ({ openDrawer }: PageSectionBlockProps) => {
           wic => wic.name[0] === data.type
         )}
         data={data.data}
+        openConfigDrawer={openDrawer}
       />
     );
   });

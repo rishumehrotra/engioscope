@@ -13,8 +13,9 @@ import BugLeakage from './BugLeakage.jsx';
 import PageSection from './PageSection.jsx';
 import FlowEfficiency from './FlowEfficiency.jsx';
 import { useDrawer } from '../common/Drawer.jsx';
-import { ConfigDrawer } from './ConfigDrawer.jsx';
 import useFeatureFlag from '../../hooks/use-feature-flag.js';
+
+const ConfigDrawer = React.lazy(() => import('./ConfigDrawer.jsx'));
 
 const sections: {
   heading: string;

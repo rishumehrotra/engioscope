@@ -16,7 +16,6 @@ import type { SingleWorkItemConfig } from '../../helpers/trpc.js';
 import BugGraphDrawer from './BugGraphDrawer.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
 import type { GroupedBugs } from '../../../backend/models/workitems2.js';
-import { ConfigDrawer } from './ConfigDrawer.jsx';
 
 const collapsedCount = 10;
 
@@ -53,6 +52,7 @@ export type BugGraphCardProps = {
     heading: ReactNode;
     children: ReactNode;
   };
+  openConfigDrawer?: () => void;
 };
 
 const getRCAFields = (
@@ -99,8 +99,8 @@ const getDrawer = (
   ),
 });
 
-const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
-  const [Drawer, drawerProps, openDrawer, , closeDrawer] = useDrawer();
+const BugGraphCard = ({ workItemConfig, data, openConfigDrawer }: BugGraphCardProps) => {
+  const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
     children: ReactNode;
@@ -308,13 +308,7 @@ const BugGraphCard = ({ workItemConfig, data }: BugGraphCardProps) => {
                 Looks like the RCA fields aren't configured. Configure them{' '}
                 <button
                   className="text-theme-highlight font-medium"
-                  onClick={() => {
-                    setAdditionalDrawerProps({
-                      heading: 'Configure work items',
-                      children: <ConfigDrawer closeDrawer={closeDrawer} />,
-                    });
-                    openDrawer();
-                  }}
+                  onClick={openConfigDrawer}
                 >
                   here
                 </button>

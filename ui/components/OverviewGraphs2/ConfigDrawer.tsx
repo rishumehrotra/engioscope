@@ -16,7 +16,7 @@ type ConfigDrawerProps = {
   closeDrawer: () => void;
 };
 
-export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
+const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
   const queryContext = useQueryContext();
   const cnp = useCollectionAndProject();
   const clearCache = useClearCache();
@@ -109,3 +109,5 @@ export const ConfigDrawer = ({ closeDrawer }: ConfigDrawerProps) => {
     </form>
   );
 };
+
+export default ConfigDrawer;
