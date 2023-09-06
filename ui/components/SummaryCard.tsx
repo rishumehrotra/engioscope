@@ -27,7 +27,7 @@ export const SummaryStat: React.FC<{ children?: React.ReactNode }> = ({ children
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
 export type StatProps<T extends unknown> = {
   title: string;
-  value: string | null;
+  value: ReactNode | null;
   tooltip?: string;
   onClick?: {
     open: 'drawer';

@@ -10,8 +10,11 @@ import { DownChevron, UpChevron } from '../common/Icons.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import type { FlowEfficiencyWorkItems } from '../../../backend/models/workitems2';
 import { FlowEfficiencyHelpText } from './FlowEfficiencyHelpText.jsx';
-import { CycleTimeDrawer } from './Drawers.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
+
+const CycleTimeDrawer = React.lazy(() =>
+  import('./Drawers.jsx').then(m => ({ default: m.CycleTimeDrawer }))
+);
 
 type FlowEfficiencyGraphCardProps = {
   data: FlowEfficiencyWorkItems[];

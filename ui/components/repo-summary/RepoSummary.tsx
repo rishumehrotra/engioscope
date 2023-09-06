@@ -578,18 +578,21 @@ const StreamingRepoSummary: React.FC = () => {
         </SummaryCard>
         <SummaryCard className="col-span-2 grid grid-cols-1 gap-6">
           <Stat
-            title="PR Merges"
+            title="PR merges"
             tooltip={
               isDefined(summaries.pullRequestMerges)
                 ? `${bold(
                     sum(summaries.pullRequestMerges.weekly.map(w => w.mergeCount))
-                  )} PR merges`
+                  )} PRs merged`
                 : undefined
             }
             value={
-              isDefined(summaries.pullRequestMerges)
-                ? `${summaries.pullRequestMerges.average.toFixed(0)}%`
-                : null
+              isDefined(summaries.pullRequestMerges) ? (
+                <>
+                  {summaries.pullRequestMerges.average.toFixed(0)}
+                  <span className="text-base font-normal inline-block pl-1">/ week</span>
+                </>
+              ) : null
             }
             graphPosition="bottom"
             graphColor={
