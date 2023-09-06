@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { PullRequestModel } from './mongoose-models/PullRequestModel.js';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
-import { queryContextInputParser, fromContext } from './utils.js';
+import { queryContextInputParser, fromContext, weekIndexValue } from './utils.js';
 
 export const PullRequestsSummaryForRepoInputParser = z.object({
   queryContext: queryContextInputParser,
@@ -118,4 +118,43 @@ export const getTotalPullRequestsForRepositoryIds = async (
       },
     },
   ]).exec();
+};
+
+export const getWeeklyPullRequestMerges = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return PullRequestModel.aggregate<{
+    weekly: { weekIndex: number; mergeCount: number }[];
+    average: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repositoryId: { $in: repositoryIds },
+        closedDate: inDateRange(startDate, endDate),
+        status: 'completed',
+      },
+    },
+    { $addFields: { weekIndex: weekIndexValue(startDate, '$closedDate') } },
+    {
+      $group: {
+        _id: '$weekIndex',
+        weekIndex: { $first: '$weekIndex' },
+        mergeCount: { $sum: 1 },
+      },
+    },
+    { $sort: { weekIndex: 1 } },
+    {
+      $group: {
+        _id: null,
+        weekly: { $push: { weekIndex: '$weekIndex', mergeCount: '$mergeCount' } },
+        average: { $avg: '$mergeCount' },
+      },
+    },
+    { $project: { _id: 0 } },
+  ]).then(result => result[0] || { weekly: [], average: 0 });
 };

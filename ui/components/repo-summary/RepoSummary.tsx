@@ -1,4 +1,4 @@
-import { multiply, prop } from 'rambda';
+import { multiply, prop, sum } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import { minPluralise, num } from '../../helpers/utils.js';
@@ -71,8 +71,8 @@ const StreamingRepoSummary: React.FC = () => {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-6">
-        <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-6 gap-6">
+        <SummaryCard className="col-span-3 grid grid-cols-2 gap-6">
           <div className="row-span-2 border-r border-theme-seperator pr-6">
             <Stat
               title="SonarQube"
@@ -232,8 +232,7 @@ const StreamingRepoSummary: React.FC = () => {
             />
           </div>
         </SummaryCard>
-
-        <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
+        <SummaryCard className="col-span-3 grid grid-cols-2 gap-6">
           <div className="border-r border-theme-seperator pr-6">
             <Stat
               title="Tests"
@@ -361,8 +360,258 @@ const StreamingRepoSummary: React.FC = () => {
             />
           </div>
         </SummaryCard>
-
-        <SummaryCard className="col-span-4">
+        <SummaryCard className="col-span-2 grid grid-cols-1 gap-6">
+          <div className="pb-6">
+            <Stat
+              title="Builds"
+              tooltip="Total number of builds across all matching repos"
+              value={
+                isDefined(summaries.totalBuilds) ? num(summaries.totalBuilds.count) : null
+              }
+              onClick={{
+                open: 'drawer',
+                heading: 'Build details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('build-pipelines'),
+                body: <BuildPipelinesDrawer pipelineType="all" />,
+              }}
+              graphPosition="right"
+              graphColor={
+                isDefined(summaries.totalBuilds)
+                  ? increaseIsBetter(summaries.totalBuilds.byWeek.map(week => week.count))
+                  : null
+              }
+              graphData={summaries.totalBuilds?.byWeek}
+              graphDataPointLabel={x => `${bold(num(x.count))} builds`}
+              graphItemToValue={prop('count')}
+            />
+          </div>
+          <div>
+            <Stat
+              title="Success"
+              tooltip={
+                isDefined(summaries.successfulBuilds) && isDefined(summaries.totalBuilds)
+                  ? [
+                      bold(num(summaries.successfulBuilds.count)),
+                      'out of',
+                      bold(num(summaries.totalBuilds.count)),
+                      minPluralise(
+                        summaries.totalBuilds.count,
+                        'build has',
+                        'builds have'
+                      ),
+                      'succeeded',
+                    ].join(' ')
+                  : undefined
+              }
+              value={
+                isDefined(summaries.successfulBuilds) && isDefined(summaries.totalBuilds)
+                  ? divide(summaries.successfulBuilds.count, summaries.totalBuilds.count)
+                      .map(toPercentage)
+                      .getOr('-')
+                  : null
+              }
+              onClick={{
+                open: 'drawer',
+                heading: 'Build details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('build-pipelines'),
+                body: <BuildPipelinesDrawer pipelineType="currentlySucceeding" />,
+              }}
+              graphPosition="right"
+              graphColor={
+                isDefined(summaries.totalBuilds)
+                  ? increaseIsBetter(
+                      summaries.totalBuilds.byWeek.map(build => {
+                        const successfulBuildsForWeek = isDefined(
+                          summaries.successfulBuilds
+                        )
+                          ? summaries.successfulBuilds.byWeek.find(
+                              s => s.weekIndex === build.weekIndex
+                            )
+                          : null;
+                        return divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                          .map(multiply(100))
+                          .getOr(0);
+                      })
+                    )
+                  : null
+              }
+              graphData={summaries.totalBuilds?.byWeek}
+              graphItemToValue={build => {
+                const successfulBuildsForWeek = isDefined(summaries.successfulBuilds)
+                  ? summaries.successfulBuilds.byWeek.find(
+                      s => s.weekIndex === build.weekIndex
+                    )
+                  : undefined;
+                return divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                  .map(multiply(100))
+                  .getOr(0);
+              }}
+              graphDataPointLabel={build => {
+                const successfulBuildsForWeek = isDefined(summaries.successfulBuilds)
+                  ? summaries.successfulBuilds.byWeek.find(
+                      s => s.weekIndex === build.weekIndex
+                    )
+                  : undefined;
+                return [
+                  bold(
+                    divide(successfulBuildsForWeek?.count ?? 0, build.count)
+                      .map(toPercentage)
+                      .getOr('Unknown')
+                  ),
+                  'success rate',
+                ].join(' ');
+              }}
+            />
+          </div>
+        </SummaryCard>
+        <SummaryCard className="col-span-2 grid grid-cols-1 gap-6">
+          <div className="pb-6">
+            <Stat
+              title="Pipelines running tests"
+              tooltip={
+                isDefined(summaries.defSummary)
+                  ? [
+                      bold(num(summaries.defSummary.defsWithTests)),
+                      'of',
+                      bold(num(summaries.defSummary.totalDefs)),
+                      minPluralise(
+                        summaries.defSummary.totalDefs,
+                        'pipeline reports',
+                        'pipelines report'
+                      ),
+                      'test results',
+                    ].join(' ')
+                  : undefined
+              }
+              value={
+                isDefined(summaries.defSummary)
+                  ? divide(
+                      summaries.defSummary.defsWithTests,
+                      summaries.defSummary.totalDefs
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : null
+              }
+              graphPosition="right"
+              graphData={summaries.weeklyPipelinesWithTestsCount}
+              graphColor={
+                isDefined(summaries.weeklyPipelinesWithTestsCount)
+                  ? increaseIsBetter(
+                      summaries.weeklyPipelinesWithTestsCount.map(w => w.defsWithTests)
+                    )
+                  : null
+              }
+              graphItemToValue={prop('defsWithTests')}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.defsWithTests)),
+                  minPluralise(x.defsWithTests, 'pipeline runs', 'pipelines run'),
+                  'tests',
+                ].join(' ')
+              }
+              onClick={{
+                open: 'drawer',
+                heading: 'Test & coverage details',
+                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+                downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
+                body: <TestsDrawer pipelineType="withTests" />,
+              }}
+            />
+          </div>
+          <Stat
+            title="Reporting coverage"
+            tooltip={
+              isDefined(summaries.defSummary)
+                ? [
+                    bold(num(summaries.defSummary.defsWithCoverage)),
+                    'of',
+                    bold(num(summaries.defSummary.totalDefs)),
+                    minPluralise(
+                      summaries.defSummary.totalDefs,
+                      'pipeline reports',
+                      'pipelines report'
+                    ),
+                    'branch coverage',
+                  ].join(' ')
+                : undefined
+            }
+            value={
+              isDefined(summaries.defSummary)
+                ? divide(
+                    summaries.defSummary.defsWithCoverage,
+                    summaries.defSummary.totalDefs
+                  )
+                    .map(toPercentage)
+                    .getOr('-')
+                : null
+            }
+            graphPosition="right"
+            graphData={summaries.weeklyPipelinesWithCoverageCount}
+            graphColor={
+              isDefined(summaries.weeklyPipelinesWithCoverageCount)
+                ? increaseIsBetter(
+                    summaries.weeklyPipelinesWithCoverageCount.map(
+                      w => w.defsWithCoverage
+                    )
+                  )
+                : null
+            }
+            graphItemToValue={prop('defsWithCoverage')}
+            graphDataPointLabel={x =>
+              [
+                bold(num(x.defsWithCoverage)),
+                minPluralise(x.defsWithCoverage, 'pipeline reports', 'pipelines report'),
+                'coverage',
+              ].join(' ')
+            }
+            onClick={{
+              open: 'drawer',
+              heading: 'Test & coverage details',
+              enabledIf: (summaries?.totalActiveRepos || 0) > 0,
+              downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
+              body: <TestsDrawer pipelineType="withCoverage" />,
+            }}
+          />
+        </SummaryCard>
+        <SummaryCard className="col-span-2 grid grid-cols-1 gap-6">
+          <Stat
+            title="PR Merges"
+            tooltip={
+              isDefined(summaries.pullRequestMerges)
+                ? `${bold(
+                    sum(summaries.pullRequestMerges.weekly.map(w => w.mergeCount))
+                  )} PR merges`
+                : undefined
+            }
+            value={
+              isDefined(summaries.pullRequestMerges)
+                ? `${summaries.pullRequestMerges.average.toFixed(0)}%`
+                : null
+            }
+            graphPosition="bottom"
+            graphColor={
+              isDefined(summaries.pullRequestMerges)
+                ? increaseIsBetter(
+                    summaries.pullRequestMerges.weekly.map(w => w.mergeCount)
+                  )
+                : null
+            }
+            graphData={summaries.pullRequestMerges?.weekly}
+            graphItemToValue={week => {
+              return week.mergeCount;
+            }}
+            graphDataPointLabel={week => {
+              return [
+                bold(num(week.mergeCount)),
+                minPluralise(week.mergeCount, 'PR merge', 'PR merges'),
+              ].join(' ');
+            }}
+          />
+        </SummaryCard>
+        <SummaryCard className="col-span-6">
           <div className="grid grid-cols-5 gap-6">
             <div className="border-r border-theme-seperator">
               <Stat
@@ -583,222 +832,6 @@ const StreamingRepoSummary: React.FC = () => {
               />
             </div>
           </div>
-        </SummaryCard>
-        <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="border-r border-theme-seperator pr-6">
-            <Stat
-              title="Builds"
-              tooltip="Total number of builds across all matching repos"
-              value={
-                isDefined(summaries.totalBuilds) ? num(summaries.totalBuilds.count) : null
-              }
-              onClick={{
-                open: 'drawer',
-                heading: 'Build details',
-                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
-                downloadUrl: drawerDownloadUrl('build-pipelines'),
-                body: <BuildPipelinesDrawer pipelineType="all" />,
-              }}
-              graphPosition="right"
-              graphColor={
-                isDefined(summaries.totalBuilds)
-                  ? increaseIsBetter(summaries.totalBuilds.byWeek.map(week => week.count))
-                  : null
-              }
-              graphData={summaries.totalBuilds?.byWeek}
-              graphDataPointLabel={x => `${bold(num(x.count))} builds`}
-              graphItemToValue={prop('count')}
-            />
-          </div>
-          <div>
-            <Stat
-              title="Success"
-              tooltip={
-                isDefined(summaries.successfulBuilds) && isDefined(summaries.totalBuilds)
-                  ? [
-                      bold(num(summaries.successfulBuilds.count)),
-                      'out of',
-                      bold(num(summaries.totalBuilds.count)),
-                      minPluralise(
-                        summaries.totalBuilds.count,
-                        'build has',
-                        'builds have'
-                      ),
-                      'succeeded',
-                    ].join(' ')
-                  : undefined
-              }
-              value={
-                isDefined(summaries.successfulBuilds) && isDefined(summaries.totalBuilds)
-                  ? divide(summaries.successfulBuilds.count, summaries.totalBuilds.count)
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-              onClick={{
-                open: 'drawer',
-                heading: 'Build details',
-                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
-                downloadUrl: drawerDownloadUrl('build-pipelines'),
-                body: <BuildPipelinesDrawer pipelineType="currentlySucceeding" />,
-              }}
-              graphPosition="right"
-              graphColor={
-                isDefined(summaries.totalBuilds)
-                  ? increaseIsBetter(
-                      summaries.totalBuilds.byWeek.map(build => {
-                        const successfulBuildsForWeek = isDefined(
-                          summaries.successfulBuilds
-                        )
-                          ? summaries.successfulBuilds.byWeek.find(
-                              s => s.weekIndex === build.weekIndex
-                            )
-                          : null;
-                        return divide(successfulBuildsForWeek?.count ?? 0, build.count)
-                          .map(multiply(100))
-                          .getOr(0);
-                      })
-                    )
-                  : null
-              }
-              graphData={summaries.totalBuilds?.byWeek}
-              graphItemToValue={build => {
-                const successfulBuildsForWeek = isDefined(summaries.successfulBuilds)
-                  ? summaries.successfulBuilds.byWeek.find(
-                      s => s.weekIndex === build.weekIndex
-                    )
-                  : undefined;
-                return divide(successfulBuildsForWeek?.count ?? 0, build.count)
-                  .map(multiply(100))
-                  .getOr(0);
-              }}
-              graphDataPointLabel={build => {
-                const successfulBuildsForWeek = isDefined(summaries.successfulBuilds)
-                  ? summaries.successfulBuilds.byWeek.find(
-                      s => s.weekIndex === build.weekIndex
-                    )
-                  : undefined;
-                return [
-                  bold(
-                    divide(successfulBuildsForWeek?.count ?? 0, build.count)
-                      .map(toPercentage)
-                      .getOr('Unknown')
-                  ),
-                  'success rate',
-                ].join(' ');
-              }}
-            />
-          </div>
-        </SummaryCard>
-        <SummaryCard className="col-span-2 grid grid-cols-2 gap-6">
-          <div className="border-r border-theme-seperator pr-6">
-            <Stat
-              title="Pipelines running tests"
-              tooltip={
-                isDefined(summaries.defSummary)
-                  ? [
-                      bold(num(summaries.defSummary.defsWithTests)),
-                      'of',
-                      bold(num(summaries.defSummary.totalDefs)),
-                      minPluralise(
-                        summaries.defSummary.totalDefs,
-                        'pipeline reports',
-                        'pipelines report'
-                      ),
-                      'test results',
-                    ].join(' ')
-                  : undefined
-              }
-              value={
-                isDefined(summaries.defSummary)
-                  ? divide(
-                      summaries.defSummary.defsWithTests,
-                      summaries.defSummary.totalDefs
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-              graphPosition="right"
-              graphData={summaries.weeklyPipelinesWithTestsCount}
-              graphColor={
-                isDefined(summaries.weeklyPipelinesWithTestsCount)
-                  ? increaseIsBetter(
-                      summaries.weeklyPipelinesWithTestsCount.map(w => w.defsWithTests)
-                    )
-                  : null
-              }
-              graphItemToValue={prop('defsWithTests')}
-              graphDataPointLabel={x =>
-                [
-                  bold(num(x.defsWithTests)),
-                  minPluralise(x.defsWithTests, 'pipeline runs', 'pipelines run'),
-                  'tests',
-                ].join(' ')
-              }
-              onClick={{
-                open: 'drawer',
-                heading: 'Test & coverage details',
-                enabledIf: (summaries?.totalActiveRepos || 0) > 0,
-                downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
-                body: <TestsDrawer pipelineType="withTests" />,
-              }}
-            />
-          </div>
-          <Stat
-            title="Reporting coverage"
-            tooltip={
-              isDefined(summaries.defSummary)
-                ? [
-                    bold(num(summaries.defSummary.defsWithCoverage)),
-                    'of',
-                    bold(num(summaries.defSummary.totalDefs)),
-                    minPluralise(
-                      summaries.defSummary.totalDefs,
-                      'pipeline reports',
-                      'pipelines report'
-                    ),
-                    'branch coverage',
-                  ].join(' ')
-                : undefined
-            }
-            value={
-              isDefined(summaries.defSummary)
-                ? divide(
-                    summaries.defSummary.defsWithCoverage,
-                    summaries.defSummary.totalDefs
-                  )
-                    .map(toPercentage)
-                    .getOr('-')
-                : null
-            }
-            graphPosition="right"
-            graphData={summaries.weeklyPipelinesWithCoverageCount}
-            graphColor={
-              isDefined(summaries.weeklyPipelinesWithCoverageCount)
-                ? increaseIsBetter(
-                    summaries.weeklyPipelinesWithCoverageCount.map(
-                      w => w.defsWithCoverage
-                    )
-                  )
-                : null
-            }
-            graphItemToValue={prop('defsWithCoverage')}
-            graphDataPointLabel={x =>
-              [
-                bold(num(x.defsWithCoverage)),
-                minPluralise(x.defsWithCoverage, 'pipeline reports', 'pipelines report'),
-                'coverage',
-              ].join(' ')
-            }
-            onClick={{
-              open: 'drawer',
-              heading: 'Test & coverage details',
-              enabledIf: (summaries?.totalActiveRepos || 0) > 0,
-              downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
-              body: <TestsDrawer pipelineType="withCoverage" />,
-            }}
-          />
         </SummaryCard>
       </div>
       {isDefined(summaries.totalRepos) &&

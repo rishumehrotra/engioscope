@@ -47,7 +47,10 @@ import {
 } from './sonar.js';
 import type { QueryContext } from './utils.js';
 import { fromContext } from './utils.js';
-import { getTotalPullRequestsForRepositoryIds } from './pull-requests.js';
+import {
+  getWeeklyPullRequestMerges,
+  getTotalPullRequestsForRepositoryIds,
+} from './pull-requests.js';
 import { pipelineCountForRepo } from './releases.js';
 import {
   getWeeklyPipelinesWithTestsCount,
@@ -289,6 +292,7 @@ export type SummaryStats = {
     ReturnType<typeof getActivePipelineCentralTemplateBuilds>
   >;
   activePipelineBuilds: Awaited<ReturnType<typeof getActivePipelineBuilds>>;
+  pullRequestMerges: Awaited<ReturnType<typeof getWeeklyPullRequestMerges>>;
 };
 
 export const getSummaryAsChunks = async (
@@ -399,6 +403,9 @@ export const getSummaryAsChunks = async (
     ),
     activePipelineWithCentralTemplateCountPromise.then(
       sendChunk('activePipelineWithCentralTemplateCount')
+    ),
+    getWeeklyPullRequestMerges(queryContext, activeRepoIds).then(
+      sendChunk('pullRequestMerges')
     ),
   ]);
 };

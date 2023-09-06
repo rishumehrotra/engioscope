@@ -16,6 +16,15 @@ const summarySchema = new Schema<Summary>(
     collectionName: { type: String, required: true },
     project: { type: String, required: true },
     duration: { type: String, required: true },
+    pullRequestMerges: {
+      weekly: [
+        {
+          weekIndex: { type: Number },
+          mergeCount: { type: Number },
+        },
+      ],
+      average: { type: Number },
+    },
     pipelines: {
       totalCount: { type: Number },
       yamlCount: { type: Number },
