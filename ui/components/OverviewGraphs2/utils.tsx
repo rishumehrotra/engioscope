@@ -237,20 +237,6 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
           // eslint-disable-next-line @typescript-eslint/consistent-type-imports
           drawerComponentName?: keyof typeof import('./Drawers.jsx');
         }) => {
-          const drawer: GraphCardProps<T>['drawer'] = drawerComponentName
-            ? (groupName: string) => ({
-                heading: drawerHeading(
-                  graphName,
-                  config,
-                  sum(witData.flatMap(d => d.countsByWeek.slice(-1).map(c => c.count)))
-                ),
-                children: (() => {
-                  const Component = drawerComponent(drawerComponentName);
-                  return <Component workItemConfig={config} selectedTab={groupName} />;
-                })(),
-              })
-            : undefined;
-
           const internalCombineToValue: GraphCardProps<T>['combineToValue'] =
             combineToValue ||
             (isDateDiff
@@ -264,6 +250,20 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                     sum(values.flatMap(x => x.countsByWeek.map(y => y.count)))
                   ).getOr(0)
               : values => sum(values.flatMap(x => x.countsByWeek).map(x => x.count)));
+
+          const drawer: GraphCardProps<T>['drawer'] = drawerComponentName
+            ? (groupName: string) => ({
+                heading: drawerHeading(
+                  graphName,
+                  config,
+                  internalCombineToValue(witData)
+                ),
+                children: (() => {
+                  const Component = drawerComponent(drawerComponentName);
+                  return <Component workItemConfig={config} selectedTab={groupName} />;
+                })(),
+              })
+            : undefined;
 
           return {
             key: wit.workItemType,
