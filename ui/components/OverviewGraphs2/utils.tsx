@@ -242,7 +242,7 @@ export const useDecorateForGraph = <T extends CountResponse | DateDiffResponse>(
                 heading: drawerHeading(
                   graphName,
                   config,
-                  sum(witData.flatMap(d => d.countsByWeek.map(c => c.count)))
+                  sum(witData.flatMap(d => d.countsByWeek.slice(-1).map(c => c.count)))
                 ),
                 children: (() => {
                   const Component = drawerComponent(drawerComponentName);
