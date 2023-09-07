@@ -634,15 +634,79 @@ export const getWipTrendGraphDataBeforeStartDate = async (graphArgs: GraphArgs) 
       workItemConfig
     )),
     ...addWorkItemDetails(collectionName),
-    { $match: { state: { $nin: workItemConfig.endStates } } },
-    { $group: { _id: '$groupName', count: { $sum: 1 } } },
-    { $project: { _id: 0, groupName: '$_id', count: 1 } },
+    {
+      $lookup: {
+        from: 'workitemstatechanges',
+        let: { workItemId: '$id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$id', '$$workItemId'] },
+              workItemType: graphArgs.workItemType,
+            },
+          },
+          { $limit: 1 },
+          { $project: { stateChanges: 1 } },
+          {
+            $addFields: {
+              stateChanges: filterStateChangesMatching(workItemConfig.endStates),
+            },
+          },
+          {
+            $addFields: {
+              hasEndStates: { $gt: [{ $size: '$stateChanges' }, 0] },
+              date: { $min: '$stateChanges.date' },
+            },
+          },
+        ],
+        as: 'earliestEndStateChange',
+      },
+    },
+    { $unwind: '$earliestEndStateChange' },
+    {
+      $match: {
+        $or: [
+          {
+            $and: [
+              { 'earliestEndStateChange.date': { $gt: startDate } },
+              { 'earliestEndStateChange.hasEndStates': true },
+            ],
+          },
+          { 'earliestEndStateChange.hasEndStates': false },
+        ],
+      },
+    },
+
+    {
+      $group: {
+        _id: '$groupName',
+        count: { $sum: 1 },
+        // For Debug
+        ids: { $push: '$id' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        groupName: '$_id',
+        count: 1,
+        // For Debug
+        ids: 1,
+      },
+    },
+
+    // For Debug
+    // { $project: { _id: 0, id: 1, earliestEndStateChange: 1 } },
   ]);
 };
 
 export const getWipTrendGraphDataFor =
   (stateType: 'startStates' | 'endStates') => async (graphArgs: GraphArgs) => {
-    const { collectionName, project, startDate } = fromContext(graphArgs.queryContext);
+    const { collectionName, project, startDate, endDate } = fromContext(
+      graphArgs.queryContext
+    );
     const workItemConfig = await getWorkItemConfig(
       collectionName,
       project,
@@ -656,10 +720,44 @@ export const getWipTrendGraphDataFor =
         {
           type: 'count',
           states: prop(stateType),
+          dateRange: inDateRange(startDate, endDate),
         },
         graphArgs,
         workItemConfig
       )),
+      // In case of work item with endStates we need to make sure we check,
+      // if said work items have startStates set from the config
+      {
+        $lookup: {
+          from: 'workitemstatechanges',
+          let: { workItemId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                collectionName,
+                project,
+                $expr: { $eq: ['$id', '$$workItemId'] },
+                workItemType: graphArgs.workItemType,
+              },
+            },
+            { $limit: 1 },
+            { $project: { stateChanges: 1 } },
+            {
+              $addFields: {
+                stateChanges: filterStateChangesMatching(workItemConfig.startStates),
+              },
+            },
+            {
+              $addFields: {
+                hasStartStates: { $gt: [{ $size: '$stateChanges' }, 0] },
+              },
+            },
+          ],
+          as: 'states',
+        },
+      },
+      { $unwind: '$states' },
+      { $match: { 'states.hasStartStates': true } },
       {
         $group: {
           _id: { groupName: '$groupName', weekIndex: weekIndexValue(startDate, '$date') },
@@ -674,6 +772,8 @@ export const getWipTrendGraphDataFor =
             $push: {
               weekIndex: '$_id.weekIndex',
               count: { $size: '$workItemIds' },
+              // Debug
+              ids: '$workItemIds',
             },
           },
         },
@@ -719,6 +819,21 @@ const getWipTrendGraphData = async ({
       priority,
     }),
   ]);
+
+  // console.log(
+  //   'wipCountBeforeStartDate :',
+  //   JSON.stringify(wipCountBeforeStartDate, null, 2)
+  // );
+
+  // console.log(
+  //   'workItemsCountWithStartStates :',
+  //   JSON.stringify(workItemsCountWithStartStates, null, 2)
+  // );
+
+  // console.log(
+  //   'workItemsCountWithEndStates :',
+  //   JSON.stringify(workItemsCountWithEndStates, null, 2)
+  // );
 
   const { numberOfIntervals } = createIntervals(startDate, endDate);
 
