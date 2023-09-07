@@ -934,7 +934,50 @@ export const getWipTrendOnDateWorkItems = async ({
     { $unset: 'workItemIds' },
     ...addWorkItemDetails(collectionName, '$workItemId'),
     { $project: { workItemId: 0 } },
-    { $match: { state: { $nin: workItemConfig.endStates } } },
+    {
+      $lookup: {
+        from: 'workitemstatechanges',
+        let: { workItemId: '$id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              project,
+              $expr: { $eq: ['$id', '$$workItemId'] },
+              workItemType,
+            },
+          },
+          { $limit: 1 },
+          { $project: { stateChanges: 1 } },
+          {
+            $addFields: {
+              stateChanges: filterStateChangesMatching(workItemConfig.endStates),
+            },
+          },
+          {
+            $addFields: {
+              hasEndStates: { $gt: [{ $size: '$stateChanges' }, 0] },
+              date: { $min: '$stateChanges.date' },
+            },
+          },
+        ],
+        as: 'earliestEndStateChange',
+      },
+    },
+    { $unwind: '$earliestEndStateChange' },
+    {
+      $match: {
+        $or: [
+          {
+            $and: [
+              { 'earliestEndStateChange.date': { $gt: date } },
+              { 'earliestEndStateChange.hasEndStates': true },
+            ],
+          },
+          { 'earliestEndStateChange.hasEndStates': false },
+        ],
+      },
+    },
   ]);
 };
 
