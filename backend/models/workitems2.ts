@@ -678,13 +678,12 @@ export const getWipTrendGraphDataBeforeStartDate = async (graphArgs: GraphArgs) 
         ],
       },
     },
-
     {
       $group: {
         _id: '$groupName',
         count: { $sum: 1 },
         // For Debug
-        ids: { $push: '$id' },
+        // ids: { $push: '$id' },
       },
     },
     {
@@ -693,7 +692,7 @@ export const getWipTrendGraphDataBeforeStartDate = async (graphArgs: GraphArgs) 
         groupName: '$_id',
         count: 1,
         // For Debug
-        ids: 1,
+        // ids: 1,
       },
     },
 
@@ -773,7 +772,7 @@ export const getWipTrendGraphDataFor =
               weekIndex: '$_id.weekIndex',
               count: { $size: '$workItemIds' },
               // Debug
-              ids: '$workItemIds',
+              // ids: '$workItemIds',
             },
           },
         },
