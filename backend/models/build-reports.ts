@@ -369,7 +369,7 @@ export const getCentralTemplateBuildDefs = async (
   queryContext: QueryContext,
   repoNames: string[]
 ) => {
-  const { collectionName, project } = fromContext(queryContext);
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<{
     buildDefinitionId: string;
@@ -383,6 +383,7 @@ export const getCentralTemplateBuildDefs = async (
         collectionName,
         project,
         repo: { $in: repoNames },
+        createdAt: inDateRange(startDate, endDate),
       },
     },
     {
