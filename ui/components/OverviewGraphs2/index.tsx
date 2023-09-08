@@ -13,7 +13,6 @@ import BugLeakage from './BugLeakage.jsx';
 import PageSection from './PageSection.jsx';
 import FlowEfficiency from './FlowEfficiency.jsx';
 import { useDrawer } from '../common/Drawer.jsx';
-import useFeatureFlag from '../../hooks/use-feature-flag.js';
 
 const ConfigDrawer = React.lazy(() => import('./ConfigDrawer.jsx'));
 
@@ -66,7 +65,6 @@ const OverviewGraphs2 = () => {
   const [layoutType, setLayoutType] = useState<'2-col' | 'full-width'>('2-col');
   const ref = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
-  const showConfigDrawer = useFeatureFlag('config-drawer');
   const [Drawer, drawerProps, openDrawer, , closeDrawer] = useDrawer();
   const [drawerDetails, setDrawerDetails] = useState<{
     heading: ReactNode;
@@ -127,21 +125,19 @@ const OverviewGraphs2 = () => {
           <QueryPeriodSelector />
         </div>
       </div>
-      {showConfigDrawer ? (
-        <div className="relative">
-          <Drawer {...drawerDetails} {...drawerProps} />
-          <div className="absolute right-1">
-            <button onClick={() => openConfig()} name="configure">
-              <div className="flex items-start">
-                <Settings className="text-theme-highlight" />
-                <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
-                  Configure
-                </span>
-              </div>
-            </button>
-          </div>
+      <div className="relative">
+        <Drawer {...drawerDetails} {...drawerProps} />
+        <div className="absolute right-1">
+          <button onClick={() => openConfig()} name="configure">
+            <div className="flex items-start">
+              <Settings className="text-theme-highlight" />
+              <span className="pl-1 leading-snug text-theme-highlight text-base font-medium">
+                Configure
+              </span>
+            </div>
+          </button>
         </div>
-      ) : null}
+      </div>
       {sections.map(({ renderChildren, ...props }, index) => (
         <PageSection {...props} key={props.heading} isOpen={index === 0}>
           {renderChildren(openConfig)}
