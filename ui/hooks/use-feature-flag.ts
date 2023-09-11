@@ -1,6 +1,6 @@
 import useQueryParam, { asBoolean } from './use-query-param.js';
 
-const featureFlags = [] as const;
+const featureFlags = ['popup'] as const;
 
 export default (flagName: (typeof featureFlags)[number]) => {
   const [isEnabled] = useQueryParam(flagName, asBoolean);

@@ -125,7 +125,7 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
         </div>
       </div>
       <div>
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-4 gap-2">
           {groups?.map(group => (
             <li>
               <button
@@ -168,7 +168,7 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
           ))}
         </ul>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto mt-6">
         <ScatterLineGraph
           graphData={[
             {

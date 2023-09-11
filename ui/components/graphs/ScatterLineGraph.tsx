@@ -2,18 +2,19 @@
 import { add, identity, map, range } from 'rambda';
 import React, { Fragment, useCallback, useMemo } from 'react';
 import { asc, byNum } from 'sort-lib';
+import { Tooltip } from 'react-tooltip';
 import hexToHsl from '../../helpers/hex-to-hsl.js';
 import { prettyMS } from '../../helpers/utils.js';
 
 const xAxisLabelAreaHeight = 80;
-const xAxisLabelHeight = 50;
+const xAxisLabelHeight = 80;
 const xAxisLabelWidth = 100;
 const yAxisLabelWidth = 80;
 const graphHeight = 400;
 const scatterWidth = 30;
 const groupSpacing = 70;
 const graphBarXPadding = 30;
-const barSpacingInGroup = 90;
+const barSpacingInGroup = 115;
 const labelOverhang = 10;
 const bubbleSize = 7;
 const gridLinesCount = 5;
@@ -106,7 +107,10 @@ const Bar = <T extends {}>({
         width={xAxisLabelWidth}
         height={xAxisLabelHeight}
       >
-        <div className="text-sm text-gray-700 text-center">{label}</div>
+        <div className="text-sm text-theme-helptext text-center">{label}</div>
+        <div className="text-sm text-theme-icon text-center">
+          Average: {prettyMS(averageValueOfItems)}
+        </div>
       </foreignObject>
       {items.map((item, index) => {
         const fillColorHSL = hexToHsl(pointColor?.(item) || '#197fe6');
@@ -124,7 +128,7 @@ const Bar = <T extends {}>({
               r={bubbleSize}
               fill={fillColorWithJitter}
               stroke="0"
-              data-tooltip-id="react-tooltip"
+              data-tooltip-id="scatter-tooltip"
               data-tooltip-html={tooltip(item, label, yPoint)}
             />
           </a>
@@ -138,10 +142,10 @@ const Bar = <T extends {}>({
           y2={yCoord(averageValueOfItems)}
           stroke="rgba(255,0,0,0.6)"
           strokeWidth={5}
-          data-tooltip-id="react-tooltip"
-          data-tooltip-content={`Average ${label}: ${prettyMS(averageValueOfItems)} of ${
-            items.length
-          } items`}
+          data-tooltip-id="scatter-tooltip"
+          data-tooltip-content={`Average ${label} time: ${prettyMS(
+            averageValueOfItems
+          )} of ${items.length} items`}
         />
       ) : null}
       {items.length ? (
@@ -152,8 +156,8 @@ const Bar = <T extends {}>({
           y2={yCoord(medianValue)}
           stroke="rgba(0,0,255,0.6)"
           strokeWidth={5}
-          data-tooltip-id="react-tooltip"
-          data-tooltip-content={`Median ${label}: ${prettyMS(medianValue)} of ${
+          data-tooltip-id="scatter-tooltip"
+          data-tooltip-content={`Median ${label} time: ${prettyMS(medianValue)} of ${
             items.length
           } items`}
         />
@@ -290,23 +294,30 @@ const ScatterLineGraph = <T extends {}>({
   );
 
   return (
-    <svg
-      viewBox={`0 0 ${computedWidth} ${graphHeight}`}
-      height={height}
-      className={className}
-    >
-      <Axes width={computedWidth} maxValue={maxOfSpread} yCoord={yCoord} />
-      {graphData.map(group => (
-        <BarGroup
-          key={group.label}
-          group={group}
-          xCoord={xCoordForBarGroup(graphData, group)}
-          yCoord={yCoord}
-          pointToColor={pointColor}
-          linkForItem={linkForItem}
-        />
-      ))}
-    </svg>
+    <>
+      <svg
+        viewBox={`0 0 ${computedWidth} ${graphHeight}`}
+        height={height}
+        className={className}
+      >
+        <Axes width={computedWidth} maxValue={maxOfSpread} yCoord={yCoord} />
+        {graphData.map(group => (
+          <BarGroup
+            key={group.label}
+            group={group}
+            xCoord={xCoordForBarGroup(graphData, group)}
+            yCoord={yCoord}
+            pointToColor={pointColor}
+            linkForItem={linkForItem}
+          />
+        ))}
+      </svg>
+      <Tooltip
+        id="scatter-tooltip"
+        className="z-50 text-base"
+        style={{ borderRadius: '0.375rem', fontSize: '0.875rem', lineHeight: '1.25rem' }}
+      />
+    </>
   );
 };
 

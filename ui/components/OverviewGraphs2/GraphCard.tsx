@@ -14,7 +14,7 @@ import type {
 } from '../../../backend/models/workitems2.js';
 import { useModal } from '../common/Modal2.jsx';
 import popups from './popups.jsx';
-import useQueryParam, { asBoolean } from '../../hooks/use-query-param.js';
+import useFeatureFlag from '../../hooks/use-feature-flag.js';
 
 export type GraphCardProps<T extends CountResponse | DateDiffResponse> = {
   workItemConfig?: SingleWorkItemConfig;
@@ -44,7 +44,7 @@ export const GraphCard = <T extends CountResponse | DateDiffResponse>({
   drawer,
   popup,
 }: GraphCardProps<T>) => {
-  const [isPopupEnabled] = useQueryParam<boolean>('popup', asBoolean);
+  const isPopupEnabled = useFeatureFlag('popup');
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
     heading: ReactNode;
