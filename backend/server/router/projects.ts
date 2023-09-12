@@ -5,8 +5,6 @@ import { collectionAndProjectInputParser } from '../../models/helpers.js';
 import { getPipelinesCount as getReleasePipelinesCount } from '../../models/releases.js';
 import { getRepoCount } from '../../models/repos.js';
 import { memoizeForUI, passInputTo, t } from './trpc.js';
-import { filteredReposInputParser } from '../../models/active-repos.js';
-import { getProjectOverviewStats } from '../../models/project-overview.js';
 
 const summary = async ({
   collectionName,
@@ -32,8 +30,4 @@ export default t.router({
   summary: t.procedure
     .input(collectionAndProjectInputParser)
     .query(passInputTo(memoizeForUI(summary))),
-
-  getProjectOverviewStats: t.procedure
-    .input(filteredReposInputParser)
-    .query(passInputTo(getProjectOverviewStats)),
 });

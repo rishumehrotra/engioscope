@@ -1,5 +1,6 @@
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { multiply, prop } from 'rambda';
+import { Info } from 'react-feather';
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
 import useRepoFilters from '../hooks/use-repo-filters.js';
 import useSse from '../hooks/use-merge-over-sse.js';
@@ -70,11 +71,12 @@ const useUpdateSummary = () => {
 };
 
 const OverviewWithMetrics = () => {
-  const sseUrl = useCreateUrlWithFilter('repos/summary');
+  const sseUrl = useCreateUrlWithFilter('overview-v2');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const key = useUpdateSummary();
   const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, key);
   const queryPeriodDays = useQueryPeriodDays();
+
   return (
     <div>
       <div className="text-gray-950 text-2xl font-medium mb-3">Value Metrics</div>
@@ -82,13 +84,81 @@ const OverviewWithMetrics = () => {
         <h2 className="text-gray-950 text-sm font-normal uppercase mb-2">Flow metrics</h2>
         <div className="grid grid-cols-1 gap-4">
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-sm font-medium">Incoming</h4>
+            <h4 className="text-gray-950 text-md font-medium">Incoming</h4>
+            <table className="overview-table text-gray-950 text-base font-normal">
+              <thead>
+                <tr>
+                  <td>Work Item Type</td>
+                  <td>
+                    New
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                {isDefined(projectOverviewStats.workItems?.flowMetrics.incoming.new) &&
+                  projectOverviewStats.workItems?.flowMetrics?.incoming.new.map(item => (
+                    <tr key={item.workItemType}>
+                      <td>{item.workItemType}</td>
+                      <td>{item.count}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-sm font-medium">Completed</h4>
+            <h4 className="text-gray-950 text-md font-medium">Completed</h4>
+            <table className="overview-table text-gray-950 text-base font-normal">
+              <thead>
+                <tr>
+                  <td>Work Item Type</td>
+                  <td>
+                    Velocity
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                  <td>
+                    Cycle Time
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                  <td>
+                    CLT
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                  <td>
+                    Flow Efficiency
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                </tr>
+              </thead>
+              <tbody />
+            </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-sm font-medium">WIP</h4>
+            <h4 className="text-gray-950 text-md font-medium">WIP</h4>
+            <table className="overview-table text-gray-950 text-base font-normal">
+              <thead>
+                <tr>
+                  <td>Work Item Type</td>
+                  <td>
+                    WIP Trend
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                </tr>
+              </thead>
+              <tbody />
+            </table>
           </div>
         </div>
       </div>
@@ -98,13 +168,72 @@ const OverviewWithMetrics = () => {
         </h2>
         <div className="grid grid-cols-1 gap-4">
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-sm font-medium">Incoming</h4>
+            <h4 className="text-gray-950 text-md font-medium">Incoming</h4>
+            <table className="overview-table text-gray-950 text-base font-normal">
+              <thead>
+                <tr>
+                  <td>Work Item Type</td>
+                  <td>
+                    New
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                </tr>
+              </thead>
+            </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-sm font-medium">Completed</h4>
+            <h4 className="text-gray-950 text-md font-medium">Completed</h4>
+            <table className="overview-table text-gray-950 text-base font-normal">
+              <thead>
+                <tr>
+                  <td>Work Item Type</td>
+                  <td>
+                    Velocity
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                  <td>
+                    Cycle Time
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                  <td>
+                    CLT
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                  <td>
+                    Flow Efficiency
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                </tr>
+              </thead>
+              <tbody />
+            </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-sm font-medium">WIP</h4>
+            <h4 className="text-gray-950 text-md font-medium">WIP</h4>
+            <table className="overview-table text-gray-950 text-base font-normal">
+              <thead>
+                <tr>
+                  <td>Work Item Type</td>
+                  <td>
+                    WIP Trend
+                    <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span>
+                  </td>
+                </tr>
+              </thead>
+              <tbody />
+            </table>
           </div>
         </div>
       </div>
@@ -120,7 +249,7 @@ const OverviewWithMetrics = () => {
               {num(
                 projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos
               )}
-            </b>{' '}
+            </b>
             <span
               className="underline decoration-dashed"
               data-tooltip-id="react-tooltip"

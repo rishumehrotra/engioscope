@@ -13,6 +13,7 @@ import { trpcExpressHandler } from './router/index.js';
 import type { RequestWithFilter } from './repo-api-endpoints.js';
 import repoApiEndpoints, { parseSummaryInput } from './repo-api-endpoints.js';
 import { getSummaryAsChunks } from '../models/repo-listing.js';
+import { getProjectOverviewStatsAsChunks } from '../models/project-overview.js';
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
@@ -89,6 +90,24 @@ export default (config: ParsedConfig) => {
       });
 
       await getSummaryAsChunks(parseSummaryInput(req), x => {
+        res.write(`data: ${JSON.stringify(x)}\n\n`);
+        res.flush();
+      });
+
+      res.end('data: done\n\n');
+    }
+  );
+
+  router.get(
+    `/api/:collectionName/:project/overview-v2`,
+    async (req: RequestWithFilter, res) => {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+      });
+
+      await getProjectOverviewStatsAsChunks(parseSummaryInput(req), x => {
         res.write(`data: ${JSON.stringify(x)}\n\n`);
         res.flush();
       });

@@ -33,16 +33,32 @@ import {
 } from './sonar.js';
 import { getTestsAndCoveragesCount, getTestsAndCoverageByWeek } from './testruns.js';
 import { fromContext } from './utils.js';
+import { getWorkItemsOverview } from './workitems2.js';
 
-export type ProjectOverviewStats = SummaryStats;
+type WorkItemsSummaryStats = {
+  workItems: Awaited<ReturnType<typeof getWorkItemsOverview>>;
+};
+
+// type ReleaseStats = {
+//   pipelineCount: number;
+//   startsWithArtifact: number;
+//   runCount: number;
+//   masterOnly: number;
+//   ignoredStagesBefore?: string;
+//   branchPolicy: {
+//     conforms: number;
+//     total: number;
+//   };
+// };
+export type ProjectOverviewStats = SummaryStats & WorkItemsSummaryStats;
 
 export const getProjectOverviewStatsAsChunks = async (
   { queryContext, searchTerms, teams }: z.infer<typeof filteredReposInputParser>,
-  onChunk: (x: Partial<SummaryStats>) => void
+  onChunk: (x: Partial<ProjectOverviewStats>) => void
 ) => {
   const sendChunk =
-    <T extends keyof SummaryStats>(key: T) =>
-    (data: SummaryStats[typeof key]) => {
+    <T extends keyof ProjectOverviewStats>(key: T) =>
+    (data: ProjectOverviewStats[typeof key]) => {
       onChunk({ [key]: data });
     };
 
@@ -148,17 +164,19 @@ export const getProjectOverviewStatsAsChunks = async (
     getWeeklyPullRequestMerges(queryContext, activeRepoIds).then(
       sendChunk('pullRequestMerges')
     ),
+
+    getWorkItemsOverview(queryContext).then(sendChunk('workItems')),
   ]);
 };
 
 export const getProjectOverviewStats = async (
   filterArgs: z.infer<typeof filteredReposInputParser>
 ) => {
-  let mergedChunks = {} as Partial<SummaryStats>;
+  let mergedChunks = {} as Partial<ProjectOverviewStats>;
 
   await getProjectOverviewStatsAsChunks(filterArgs, x => {
     mergedChunks = { ...mergedChunks, ...x };
   });
 
-  return mergedChunks as SummaryStats;
+  return mergedChunks as ProjectOverviewStats;
 };

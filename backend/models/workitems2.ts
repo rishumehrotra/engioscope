@@ -6,6 +6,7 @@ import type { ParsedConfig } from './config.js';
 import { getProjectConfig } from './config.js';
 import { inDateRange } from './helpers.js';
 import { WorkItemStateChangesModel } from './mongoose-models/WorkItemStateChanges.js';
+import type { QueryContext } from './utils.js';
 import { fromContext, queryContextInputParser, weekIndexValue } from './utils.js';
 import { isBugLike, noGroup } from '../../shared/work-item-utils.js';
 import { divide, exists } from '../../shared/utils.js';
@@ -1385,3 +1386,79 @@ export const getGroupByFieldAndStatesForWorkType = async ({
   ])
     .exec()
     .then(x => head(x) || { fields: [], states: [] });
+
+export const getWorkItemsOverview = async (queryContext: QueryContext) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [{ environments }, allWorkItemTypes] = await Promise.all([
+    getPageConfig({ queryContext }),
+    getProjectConfig(collectionName, project).then(
+      x => x.workItemsConfig?.map(x => x.type)
+    ),
+  ]);
+
+  const flowMetrics = {
+    incoming: {
+      new: allWorkItemTypes
+        ? await Promise.all(
+            allWorkItemTypes
+              .filter(x => !isBugLike(x))
+              .map(async x => ({
+                workItemType: x,
+                count: await getNewWorkItems({
+                  queryContext,
+                  workItemType: x,
+                }).then(x => x.length),
+              }))
+          )
+        : [],
+    },
+    completed: {
+      velocity: allWorkItemTypes
+        ? await Promise.all(
+            allWorkItemTypes
+              .filter(x => !isBugLike(x))
+              .map(async x => ({
+                workItemType: x,
+                count: await getCycleTimeWorkItems({
+                  queryContext,
+                  workItemType: x,
+                }).then(x => x.length),
+              }))
+          )
+        : [],
+      cycleTime: allWorkItemTypes
+        ? await Promise.all(
+            allWorkItemTypes
+              .filter(x => !isBugLike(x))
+              .map(async x => ({
+                workItemType: x,
+                count: await getCycleTimeWorkItems({
+                  queryContext,
+                  workItemType: x,
+                }).then(x => x.reduce((acc, curr) => acc + curr.duration, 0)),
+              }))
+          )
+        : [],
+      changeLeadTime: allWorkItemTypes
+        ? await Promise.all(
+            allWorkItemTypes
+              .filter(x => !isBugLike(x))
+              .map(async x => ({
+                workItemType: x,
+                count: await getChangeLeadTimeWorkItems({
+                  queryContext,
+                  workItemType: x,
+                }).then(x => x.reduce((acc, curr) => acc + curr.duration, 0)),
+              }))
+          )
+        : [],
+    },
+  };
+
+  return {
+    flowMetrics,
+    healthMetrics: 1,
+  };
+};
