@@ -125,15 +125,15 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
         </div>
       </div>
       <div>
-        <ul className="grid grid-cols-4 gap-2">
+        <ul className="grid grid-cols-4 gap-2 items-stretch">
           {groups?.map(group => (
             <li>
               <button
                 onClick={() => toggleSelectedGroup(group.groupName)}
                 className={twJoin(
-                  'block h-full border border-l-2 border-theme-seperator rounded-lg p-2 w-full',
+                  'flex flex-col w-full h-full',
+                  'border border-l-2 border-theme-seperator rounded-lg p-2',
                   'text-sm text-left transition-all duration-200 group',
-                  // 'hover:ring-theme-input-highlight hover:ring-1',
                   selectedGroups.includes(group.groupName)
                     ? 'bg-theme-page-content'
                     : 'bg-theme-col-header'
@@ -175,11 +175,11 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
               label: workItemConfig.name[1],
               data: graphData,
               yAxisPoint: x => x.stateTime,
-              tooltip: () => 'foo',
+              tooltip: x => String(x.id),
             },
           ]}
           height={400}
-          linkForItem={() => ''}
+          linkForItem={x => x.url}
         />
       </div>
     </div>

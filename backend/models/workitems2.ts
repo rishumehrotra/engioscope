@@ -1138,6 +1138,7 @@ export const getWorkItemTimeSpent = async ({
   const workItems = await WorkItemStateChangesModel.aggregate<{
     groupName: string;
     id: number;
+    url: string;
     stateChanges: { state: string; date: Date }[];
     cycleTime: number;
   }>([
@@ -1177,14 +1178,32 @@ export const getWorkItemTimeSpent = async ({
     { $addFields: { stateChanges: { $first: '$stateChanges' } } },
     { $addFields: { stateChanges: '$stateChanges.stateChanges' } },
     { $unset: 'stateChanges._id' },
+    {
+      $lookup: {
+        from: 'workitems',
+        let: { id: '$id' },
+        pipeline: [
+          {
+            $match: {
+              collectionName,
+              $expr: { $eq: ['$id', '$$id'] },
+            },
+          },
+          { $project: { _id: 0, url: 1 } },
+        ],
+        as: 'url',
+      },
+    },
+    { $addFields: { url: { $first: '$url.url' } } },
   ]);
 
   return workItems
     .map(wi => ({
       ...wi,
-      stateChanges: wi.stateChanges.slice(
-        wi.stateChanges.findIndex(s => workItemConfig.startStates.includes(s.state))
-      ),
+      // stateChanges: wi.stateChanges.slice(
+      //   wi.stateChanges.findIndex(s => workItemConfig.startStates.includes(s.state))
+      // ),
+      url: wi.url.replace('/_apis/wit/workItems/', '/_workitems/edit/'),
     }))
     .filter(x => x.stateChanges.length !== 0);
 };
