@@ -33,10 +33,31 @@ import {
 } from './sonar.js';
 import { getTestsAndCoveragesCount, getTestsAndCoverageByWeek } from './testruns.js';
 import { fromContext } from './utils.js';
-import { getWorkItemsOverview } from './workitems2.js';
+import {
+  getChangeLoadTimeGraph,
+  getCycleTimeGraph,
+  getFlowEfficiencyGraph,
+  getNewGraph,
+  getPageConfig,
+  getVelocityGraph,
+  getWipGraph,
+  // getWorkItemsOverview,
+} from './workitems2.js';
+import { getProjectConfig } from './config.js';
 
-type WorkItemsSummaryStats = {
-  workItems: Awaited<ReturnType<typeof getWorkItemsOverview>>;
+// type WorkItemsSummaryStats = {
+//   workItems: Awaited<ReturnType<typeof getWorkItemsOverview>>;
+// };
+
+type WorkItemStats = {
+  newWorkItems: Awaited<ReturnType<typeof getNewGraph>>;
+  velocityWorkITems: Awaited<ReturnType<typeof getVelocityGraph>>;
+  cltWorkItems: Awaited<ReturnType<typeof getChangeLoadTimeGraph>>;
+  flowEfficiencyWorkItems: Awaited<ReturnType<typeof getFlowEfficiencyGraph>>;
+  cycleTimeWorkItems: Awaited<ReturnType<typeof getCycleTimeGraph>>;
+  wipTrendWorkItems: Awaited<ReturnType<typeof getWipGraph>>;
+  environMents: string[] | undefined;
+  workItemTypes: string[] | undefined;
 };
 
 // type ReleaseStats = {
@@ -50,7 +71,7 @@ type WorkItemsSummaryStats = {
 //     total: number;
 //   };
 // };
-export type ProjectOverviewStats = SummaryStats & WorkItemsSummaryStats;
+export type ProjectOverviewStats = SummaryStats & WorkItemStats;
 
 export const getProjectOverviewStatsAsChunks = async (
   { queryContext, searchTerms, teams }: z.infer<typeof filteredReposInputParser>,
@@ -165,7 +186,26 @@ export const getProjectOverviewStatsAsChunks = async (
       sendChunk('pullRequestMerges')
     ),
 
-    getWorkItemsOverview(queryContext).then(sendChunk('workItems')),
+    // getWorkItemsOverview(queryContext).then(sendChunk('workItems')),
+
+    getNewGraph({ queryContext }).then(sendChunk('newWorkItems')),
+
+    getVelocityGraph({ queryContext }).then(sendChunk('velocityWorkITems')),
+
+    getChangeLoadTimeGraph({ queryContext }).then(sendChunk('cltWorkItems')),
+
+    getFlowEfficiencyGraph({ queryContext }).then(sendChunk('flowEfficiencyWorkItems')),
+
+    getCycleTimeGraph({ queryContext }).then(sendChunk('cycleTimeWorkItems')),
+
+    getWipGraph({ queryContext }).then(sendChunk('wipTrendWorkItems')),
+
+    getPageConfig({ queryContext })
+      .then(config => config.environments)
+      .then(sendChunk('environMents')),
+    getProjectConfig(collectionName, project)
+      .then(x => x.workItemsConfig?.map(x => x.type))
+      .then(sendChunk('workItemTypes')),
   ]);
 };
 

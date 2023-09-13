@@ -1,18 +1,21 @@
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { multiply, prop } from 'rambda';
+import { identity, multiply, prop, range } from 'rambda';
 import { Info } from 'react-feather';
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
 import useRepoFilters from '../hooks/use-repo-filters.js';
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import type { ProjectOverviewStats } from '../../backend/models/project-overview.js';
-import { minPluralise, num } from '../helpers/utils.js';
+import { minPluralise, num, prettyMS } from '../helpers/utils.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { Stat, SummaryCard } from '../components/SummaryCard.jsx';
-import {
+import TinyAreaGraph, {
+  areaGraphColors,
   decreaseIsBetter,
+  graphConfig,
   increaseIsBetter,
 } from '../components/graphs/TinyAreaGraph.jsx';
+import { isBugLike } from '../../shared/work-item-utils.js';
 
 const YAMLPipelinesDrawer = lazy(
   () => import('../components/repo-summary/YAMLPipelinesDrawer.jsx')
@@ -98,13 +101,26 @@ const OverviewWithMetrics = () => {
                 </tr>
               </thead>
               <tbody>
-                {isDefined(projectOverviewStats.workItems?.flowMetrics.incoming.new) &&
-                  projectOverviewStats.workItems?.flowMetrics?.incoming.new.map(item => (
-                    <tr key={item.workItemType}>
-                      <td>{item.workItemType}</td>
-                      <td>{item.count}</td>
-                    </tr>
-                  ))}
+                {isDefined(projectOverviewStats.newWorkItems) &&
+                isDefined(projectOverviewStats.workItemTypes)
+                  ? projectOverviewStats.workItemTypes
+                      .filter(w => !isBugLike(w))
+                      .map(workItemType => {
+                        return (
+                          <tr key={workItemType}>
+                            <td>{workItemType}</td>
+                            <td>
+                              {num(
+                                projectOverviewStats.newWorkItems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.flatMap(x => x.countsByWeek)
+                                  .reduce((acc, curr) => acc + curr.count, 0) || 0
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                  : null}
               </tbody>
             </table>
           </div>
@@ -140,7 +156,63 @@ const OverviewWithMetrics = () => {
                   </td>
                 </tr>
               </thead>
-              <tbody />
+              <tbody>
+                {isDefined(projectOverviewStats.velocityWorkITems) &&
+                isDefined(projectOverviewStats.workItemTypes) &&
+                isDefined(projectOverviewStats.cycleTimeWorkItems) &&
+                isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
+                isDefined(projectOverviewStats.cltWorkItems)
+                  ? projectOverviewStats.workItemTypes
+                      .filter(w => !isBugLike(w))
+                      .map(workItemType => {
+                        return (
+                          <tr key={workItemType}>
+                            <td>{workItemType}</td>
+                            <td>
+                              {num(
+                                projectOverviewStats.velocityWorkITems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.flatMap(x => x.countsByWeek)
+                                  .reduce((acc, curr) => acc + curr.count, 0) || 0
+                              )}
+                            </td>
+                            <td>
+                              {num(
+                                projectOverviewStats.cycleTimeWorkItems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.flatMap(x => x.countsByWeek)
+                                  .reduce((acc, curr) => acc + curr.count, 0) || 0
+                              )}
+                            </td>
+                            <td>
+                              {num(
+                                projectOverviewStats.cltWorkItems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.flatMap(x =>
+                                    x.countsByWeek.map(y => y.totalDuration)
+                                  )
+                                  .reduce((acc, curr) => acc + curr, 0) || 0
+                              )}
+                            </td>
+                            <td>
+                              {divide(
+                                projectOverviewStats.flowEfficiencyWorkItems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.flatMap(x => x.workCentersDuration)
+                                  .reduce((acc, curr) => acc + curr, 0) || 0,
+                                projectOverviewStats.flowEfficiencyWorkItems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.flatMap(x => x.cycleTime)
+                                  .reduce((acc, curr) => acc + curr, 0) || 0
+                              )
+                                .map(toPercentage)
+                                .getOr('-')}
+                            </td>
+                          </tr>
+                        );
+                      })
+                  : null}
+              </tbody>
             </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
@@ -157,7 +229,28 @@ const OverviewWithMetrics = () => {
                   </td>
                 </tr>
               </thead>
-              <tbody />
+              <tbody>
+                {isDefined(projectOverviewStats.wipTrendWorkItems) &&
+                isDefined(projectOverviewStats.workItemTypes)
+                  ? projectOverviewStats.workItemTypes
+                      .filter(w => !isBugLike(w))
+                      .map(workItemType => {
+                        return (
+                          <tr key={workItemType}>
+                            <td>{workItemType}</td>
+                            <td>
+                              {num(
+                                projectOverviewStats.wipTrendWorkItems
+                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.data.map(x => x.countsByWeek.at(-1)?.count || 0)
+                                  .reduce((acc, curr) => acc + curr) || 0
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                  : null}
+              </tbody>
             </table>
           </div>
         </div>
@@ -181,6 +274,26 @@ const OverviewWithMetrics = () => {
                   </td>
                 </tr>
               </thead>
+              <tbody>
+                {isDefined(projectOverviewStats.newWorkItems)
+                  ? projectOverviewStats.newWorkItems
+                      .find(w => isBugLike(w.workItemType))
+                      ?.data.map(env => {
+                        return (
+                          <tr key={env.groupName}>
+                            <td>{env.groupName}</td>
+                            <td>
+                              {num(
+                                env.countsByWeek
+                                  .map(w => w.count)
+                                  .reduce((acc, curr) => acc + curr) || 0
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                  : null}
+              </tbody>
             </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
@@ -215,7 +328,112 @@ const OverviewWithMetrics = () => {
                   </td>
                 </tr>
               </thead>
-              <tbody />
+              <tbody>
+                {isDefined(projectOverviewStats.velocityWorkITems) &&
+                isDefined(projectOverviewStats.environMents) &&
+                isDefined(projectOverviewStats.cycleTimeWorkItems) &&
+                isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
+                isDefined(projectOverviewStats.cltWorkItems)
+                  ? projectOverviewStats.environMents.map(env => {
+                      return (
+                        <tr key={env}>
+                          <td>{env}</td>
+                          <td>
+                            {num(
+                              projectOverviewStats.velocityWorkITems
+                                ?.find(x => isBugLike(x.workItemType))
+                                ?.data.find(x => x.groupName === env)
+                                ?.countsByWeek.reduce(
+                                  (acc, curr) => acc + curr.count,
+                                  0
+                                ) || 0
+                            )}
+                            <TinyAreaGraph
+                              data={range(0, 12).map(weekIndex => {
+                                return (
+                                  projectOverviewStats.velocityWorkITems
+                                    ?.find(x => isBugLike(x.workItemType))
+                                    ?.data.find(x => x.groupName === env)
+                                    ?.countsByWeek?.find(x => x.weekIndex === weekIndex)
+                                    ?.count || 0
+                                );
+                              })}
+                              itemToValue={identity}
+                              color={areaGraphColors.good}
+                              graphConfig={graphConfig.medium}
+                              className="mb-3 w-24 inline-block"
+                            />
+                          </td>
+                          <td>
+                            {prettyMS(
+                              projectOverviewStats.cycleTimeWorkItems
+                                ?.find(x => isBugLike(x.workItemType))
+                                ?.data.find(x => x.groupName === env)
+                                ?.countsByWeek.reduce(
+                                  (acc, curr) => acc + curr.totalDuration,
+                                  0
+                                ) || 0
+                            )}
+                            <TinyAreaGraph
+                              data={range(0, 12).map(weekIndex => {
+                                return (
+                                  projectOverviewStats.cycleTimeWorkItems
+                                    ?.find(x => isBugLike(x.workItemType))
+                                    ?.data.find(x => x.groupName === env)
+                                    ?.countsByWeek?.find(x => x.weekIndex === weekIndex)
+                                    ?.count || 0
+                                );
+                              })}
+                              itemToValue={identity}
+                              color={areaGraphColors.good}
+                              graphConfig={graphConfig.medium}
+                              className="mb-3 w-24 inline-block"
+                            />
+                          </td>
+                          <td>
+                            {prettyMS(
+                              projectOverviewStats.cltWorkItems
+                                ?.find(x => isBugLike(x.workItemType))
+                                ?.data.find(x => x.groupName === env)
+                                ?.countsByWeek.reduce(
+                                  (acc, curr) => acc + curr.totalDuration,
+                                  0
+                                ) || 0
+                            )}
+                            <TinyAreaGraph
+                              data={range(0, 12).map(weekIndex => {
+                                return (
+                                  projectOverviewStats.cltWorkItems
+                                    ?.find(x => isBugLike(x.workItemType))
+                                    ?.data.find(x => x.groupName === env)
+                                    ?.countsByWeek?.find(x => x.weekIndex === weekIndex)
+                                    ?.count || 0
+                                );
+                              })}
+                              itemToValue={identity}
+                              color={areaGraphColors.good}
+                              graphConfig={graphConfig.medium}
+                              className="mb-3 w-24 inline-block"
+                            />
+                          </td>
+                          <td>
+                            {divide(
+                              projectOverviewStats.flowEfficiencyWorkItems
+                                ?.find(x => isBugLike(x.workItemType))
+                                ?.data.find(x => x.groupName === env)
+                                ?.workCentersDuration || 0,
+                              projectOverviewStats.flowEfficiencyWorkItems
+                                ?.find(x => isBugLike(x.workItemType))
+                                ?.data.find(x => x.groupName === env)?.cycleTime || 0
+                            )
+                              .map(toPercentage)
+                              .getOr('-')}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  : null}
+              </tbody>
             </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
@@ -232,7 +450,34 @@ const OverviewWithMetrics = () => {
                   </td>
                 </tr>
               </thead>
-              <tbody />
+              <tbody>
+                {isDefined(projectOverviewStats.wipTrendWorkItems)
+                  ? projectOverviewStats.wipTrendWorkItems
+                      .find(w => isBugLike(w.workItemType))
+                      ?.data.map(env => {
+                        return (
+                          <tr key={env.groupName}>
+                            <td>{env.groupName}</td>
+                            <td>
+                              {num(env.countsByWeek.at(-1)?.count || 0)}
+                              <TinyAreaGraph
+                                data={range(0, 12).map(weekIndex => {
+                                  return (
+                                    env.countsByWeek?.find(x => x.weekIndex === weekIndex)
+                                      ?.count || 0
+                                  );
+                                })}
+                                itemToValue={identity}
+                                color={areaGraphColors.good}
+                                graphConfig={graphConfig.medium}
+                                className="mb-3 w-24 inline-block"
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })
+                  : null}
+              </tbody>
             </table>
           </div>
         </div>

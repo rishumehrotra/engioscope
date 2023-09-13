@@ -215,3 +215,7 @@ body {
 .table tbody td:first-child {
   @apply pl-6 text-left;
 }
+
+.overview-table td {
+  @apply p-2;
+}
