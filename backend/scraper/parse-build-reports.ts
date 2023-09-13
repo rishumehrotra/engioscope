@@ -1,16 +1,12 @@
-import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
 import { parse as parseHtml } from 'node-html-parser';
 import { decode } from 'html-entities';
-import { glob } from 'glob';
-import { normalizeBranchName } from '../utils.js';
-import { exists } from '../../shared/utils.js';
+import { relative } from 'node:path';
 import type { AzureBuildReport } from '../models/build-reports.js';
 
 export const htmlReportToObj = (htmlContent: string) => {
   const root = parseHtml(htmlContent);
   // eslint-disable-next-line unicorn/prefer-dom-node-text-content
-  const read = (selector: string) => root.querySelector(`#${selector}`)?.innerText;
+  const read = (id: string) => root.querySelector(`#${id}`)?.innerText;
   const buildScript = read('buildScript');
 
   const centralTemplate: Record<string, string> = Object.fromEntries(
@@ -19,6 +15,28 @@ export const htmlReportToObj = (htmlContent: string) => {
       .map(el => [decode(el.getAttribute('data-key')), decode(el.innerText)] as const)
       .filter(([key, value]) => key?.trim() !== '' && value?.trim() !== '')
   );
+
+  const specmaticCoverageString = read('specmaticCoverage');
+  const specmaticStubUsageString = read('specmaticStubUsage');
+  const agentGitRoot = read('BUILD_SOURCESDIRECTORY');
+
+  const specmaticCoverage = specmaticCoverageString
+    ? JSON.parse(decode(specmaticCoverageString))
+    : undefined;
+
+  const specmaticStubUsage = specmaticStubUsageString
+    ? JSON.parse(decode(specmaticStubUsageString))
+    : undefined;
+
+  const specmaticConfigPath = () => {
+    if (!agentGitRoot) return;
+    if (!specmaticCoverage && !specmaticStubUsage) return;
+
+    return relative(
+      agentGitRoot,
+      (specmaticCoverage || specmaticStubUsage)?.specmaticConfigPath as string
+    );
+  };
 
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   return {
@@ -37,36 +55,11 @@ export const htmlReportToObj = (htmlContent: string) => {
     agentName: read('AGENT_NAME'),
     buildScript: buildScript ? decode(buildScript) : undefined,
     centralTemplate: Object.keys(centralTemplate).length ? centralTemplate : undefined,
+    specmaticConfigPath: specmaticConfigPath(),
+    specmaticCoverage:
+      specmaticCoverage?.apiCoverage as AzureBuildReport['specmaticCoverage'],
+    specmaticStubUsage:
+      specmaticStubUsage?.stubUsage as AzureBuildReport['specmaticStubUsage'],
   };
   /* eslint-enable */
 };
-
-const parseReport = async (fileName: string) => {
-  let htmlContent: string;
-
-  try {
-    htmlContent = await fs.readFile(fileName, 'utf8');
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('error parsing build report', error);
-    return null;
-  }
-
-  return htmlReportToObj(htmlContent);
-};
-
-export default (collectionName: string, projectName: string) =>
-  async (repoName: string, branchName: string) => {
-    const buildReportDir = join(
-      process.cwd(),
-      'build-reports',
-      collectionName,
-      projectName,
-      repoName
-    );
-    const matchingBuildReportFiles = await glob(
-      join(buildReportDir, '**', `${normalizeBranchName(branchName)}.html`)
-    );
-
-    return (await Promise.all(matchingBuildReportFiles.map(parseReport))).filter(exists);
-  };

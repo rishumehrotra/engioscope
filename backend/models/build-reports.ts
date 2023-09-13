@@ -12,6 +12,36 @@ import { normalizeBranchName } from '../utils.js';
 
 const { Schema, model } = mongoose;
 
+type SpecmaticCoverageReport = {
+  type: 'git';
+  repository: string;
+  branch: string;
+  specification: string;
+  serviceType: string;
+  operations: {
+    path: string;
+    method: string;
+    responseCode: number;
+    coverageStatus: string;
+    exercised: number;
+  }[];
+}[];
+
+type SpecmaticStubUsageReport = {
+  type: 'git';
+  repository: string;
+  branch: string;
+  specification: string;
+  serviceType: string;
+  operations: {
+    path: string;
+    method: string;
+    responseCode: number;
+    coverageStatus: string;
+    executionCount: number;
+  }[];
+}[];
+
 export type AzureBuildReport = {
   collectionName: string;
   collectionId: string;
@@ -37,6 +67,9 @@ export type AzureBuildReport = {
   sonarProjectKey: string | undefined;
   agentName: string | undefined;
   centralTemplate: boolean | Record<string, string> | undefined; // boolean is for backwards compatibility
+  specmaticConfigPath: string | undefined;
+  specmaticCoverage: SpecmaticCoverageReport | undefined;
+  specmaticStubUsage: SpecmaticStubUsageReport | undefined;
 };
 
 const azureBuildReportSchema = new Schema<AzureBuildReport>(
@@ -57,6 +90,9 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>(
     sonarProjectKey: String,
     agentName: String,
     centralTemplate: Schema.Types.Mixed,
+    specmaticConfigPath: String,
+    specmaticCoverage: Schema.Types.Mixed,
+    specmaticStubUsage: Schema.Types.Mixed,
   },
   {
     timestamps: true,
@@ -106,6 +142,7 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
     {
       $set: {
         repo: report.repo,
+        repoId: report.repoId,
         branch: report.branch,
         branchName: report.branchName,
         buildDefinitionId: report.buildDefinitionId,
@@ -124,6 +161,13 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
             }
           : {}),
         centralTemplate: report.centralTemplate,
+        ...(report.specmaticConfigPath
+          ? {
+              specmaticConfigPath: report.specmaticConfigPath,
+              specmaticCoverage: report.specmaticCoverage,
+              specmaticStubUsage: report.specmaticStubUsage,
+            }
+          : {}),
       },
     },
     { upsert: true }
