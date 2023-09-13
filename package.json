@@ -124,7 +124,7 @@
     "@types/react-dom": "18.2.7",
     "@types/react-modal": "3.16.0",
     "@types/react-router-dom": "5.3.3",
-    "@types/tar": "6.1.5",
+    "@types/tar": "6.1.6",
     "@types/ua-parser-js": "0.7.37",
     "@types/yargs": "17.0.24",
     "@typescript-eslint/eslint-plugin": "6.7.0",
