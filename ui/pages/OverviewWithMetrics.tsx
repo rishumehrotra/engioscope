@@ -265,7 +265,7 @@ const OverviewWithMetrics = () => {
                               </button>
                             </td>
                             <td>
-                              {num(
+                              {prettyMS(
                                 projectOverviewStats.cltWorkItems
                                   ?.find(x => x.workItemType === config.name[0])
                                   ?.data.flatMap(x =>
