@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { identity, multiply, prop, range } from 'rambda';
 import { ExternalLink, Info } from 'react-feather';
@@ -16,6 +17,8 @@ import TinyAreaGraph, {
   increaseIsBetter,
 } from '../components/graphs/TinyAreaGraph.jsx';
 import { isBugLike } from '../../shared/work-item-utils.js';
+import { useDrawer } from '../components/common/Drawer.jsx';
+import { trpc } from '../helpers/trpc.js';
 
 const YAMLPipelinesDrawer = lazy(
   () => import('../components/repo-summary/YAMLPipelinesDrawer.jsx')
@@ -27,6 +30,30 @@ const TestsDrawer = lazy(() => import('../components/repo-summary/TestsDrawer.js
 
 const BuildPipelinesDrawer = lazy(
   () => import('../components/repo-summary/BuildPipelinesDrawer.jsx')
+);
+
+const CycleTimeDrawer = React.lazy(() =>
+  import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
+    default: m.CycleTimeDrawer,
+  }))
+);
+
+const WIPTrendDrawer = React.lazy(() =>
+  import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
+    default: m.WIPTrendDrawer,
+  }))
+);
+
+const NewDrawer = React.lazy(() =>
+  import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
+    default: m.NewDrawer,
+  }))
+);
+
+const ChangeLeadTimeDrawer = React.lazy(() =>
+  import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
+    default: m.ChangeLeadTimeDrawer,
+  }))
 );
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
@@ -79,17 +106,32 @@ const OverviewWithMetrics = () => {
   const key = useUpdateSummary();
   const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, key);
   const queryPeriodDays = useQueryPeriodDays();
+  const queryContext = useQueryContext();
+  const pageConfig = trpc.workItems.getPageConfig.useQuery({
+    queryContext,
+  });
+
+  const [Drawer, drawerProps, openDrawer] = useDrawer();
+  const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
+    heading: ReactNode;
+    children: ReactNode;
+    downloadUrl?: string;
+  }>({
+    heading: 'Loading...',
+    children: 'Loading...',
+  });
 
   return (
     <div>
+      <Drawer {...drawerProps} {...additionalDrawerProps} />
       <div className="text-gray-950 text-2xl font-medium mb-3">Value Metrics</div>
       <div className="mb-2">
         <h2 className="text-gray-950 text-sm font-normal uppercase mb-2">Flow metrics</h2>
         <div className="grid grid-cols-4 gap-4">
           <div className="col-span-1 bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium">Incoming</h4>
-            <table className="overview-table w-full text-gray-950 text-base font-normal">
-              <thead>
+            <h4 className="text-gray-950 text-md font-medium mb-4">Incoming</h4>
+            <table className="overview-table w-full text-gray-950 text-sm font-normal">
+              <thead className="font-medium">
                 <tr>
                   <td>Work Item Type</td>
                   <td>
@@ -102,8 +144,8 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.newWorkItems) &&
-                isDefined(projectOverviewStats.workItemConfig)
-                  ? projectOverviewStats.workItemConfig
+                isDefined(pageConfig.data?.workItemsConfig)
+                  ? pageConfig.data?.workItemsConfig
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
                         return (
@@ -143,7 +185,22 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
-                              <button type="button" title="drawer-button">
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${config.name[1]}`,
+                                    children: (
+                                      <NewDrawer
+                                        selectedTab="all"
+                                        workItemConfig={config}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
                                 <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                               </button>
                             </td>
@@ -155,9 +212,9 @@ const OverviewWithMetrics = () => {
             </table>
           </div>
           <div className="col-span-3 bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium">Completed</h4>
-            <table className="overview-table w-full text-gray-950 text-base font-normal">
-              <thead>
+            <h4 className="text-gray-950 text-md font-medium mb-4">Completed</h4>
+            <table className="overview-table w-full text-gray-950 text-sm font-normal">
+              <thead className="font-medium">
                 <tr>
                   <td>Work Item Type</td>
                   <td>
@@ -188,11 +245,11 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.velocityWorkITems) &&
-                isDefined(projectOverviewStats.workItemConfig) &&
+                isDefined(pageConfig.data?.workItemsConfig) &&
                 isDefined(projectOverviewStats.cycleTimeWorkItems) &&
                 isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
                 isDefined(projectOverviewStats.cltWorkItems)
-                  ? projectOverviewStats.workItemConfig
+                  ? pageConfig.data?.workItemsConfig
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
                         return (
@@ -232,7 +289,22 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
-                              <button type="button" title="drawer-button">
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${config.name[0]}`,
+                                    children: (
+                                      <CycleTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={config}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
                                 <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                               </button>
                             </td>
@@ -260,7 +332,22 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
-                              <button type="button" title="drawer-button">
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${config.name[1]}`,
+                                    children: (
+                                      <CycleTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={config}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
                                 <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                               </button>
                             </td>
@@ -290,7 +377,22 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
-                              <button type="button" title="drawer-button">
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${config.name[1]}`,
+                                    children: (
+                                      <ChangeLeadTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={config}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
                                 <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                               </button>
                             </td>
@@ -307,10 +409,25 @@ const OverviewWithMetrics = () => {
                               )
                                 .map(toPercentage)
                                 .getOr('-')}
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${config.name[0]}`,
+                                    children: (
+                                      <CycleTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={config}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
-                            <button type="button" title="drawer-button">
-                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                            </button>
                           </tr>
                         );
                       })
@@ -319,9 +436,9 @@ const OverviewWithMetrics = () => {
             </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium">WIP</h4>
-            <table className="overview-table w-full text-gray-950 text-base font-normal">
-              <thead>
+            <h4 className="text-gray-950 text-md font-medium mb-4">WIP</h4>
+            <table className="overview-table w-full text-gray-950 text-sm font-normal">
+              <thead className="font-medium">
                 <tr>
                   <td>Work Item Type</td>
                   <td>
@@ -334,8 +451,8 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.wipTrendWorkItems) &&
-                isDefined(projectOverviewStats.workItemConfig)
-                  ? projectOverviewStats.workItemConfig
+                isDefined(pageConfig.data?.workItemsConfig)
+                  ? pageConfig.data?.workItemsConfig
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
                         return (
@@ -375,7 +492,22 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
-                              <button type="button" title="drawer-button">
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${config.name[1]}`,
+                                    children: (
+                                      <WIPTrendDrawer
+                                        selectedTab="all"
+                                        workItemConfig={config}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
                                 <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                               </button>
                             </td>
@@ -394,9 +526,9 @@ const OverviewWithMetrics = () => {
         </h2>
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="col-span-1 text-gray-950 text-md font-medium">Incoming</h4>
-            <table className="overview-table w-full text-gray-950 text-base font-normal">
-              <thead>
+            <h4 className="text-gray-950 text-md font-medium mb-4">Incoming</h4>
+            <table className="overview-table w-full text-gray-950 text-sm font-normal">
+              <thead className="font-medium">
                 <tr>
                   <td>Work Item Type</td>
                   <td>
@@ -418,12 +550,12 @@ const OverviewWithMetrics = () => {
                               <div className="flex flex-row">
                                 <img
                                   src={
-                                    projectOverviewStats.workItemConfig?.find(w =>
+                                    pageConfig.data?.workItemsConfig?.find(w =>
                                       isBugLike(w.name[0])
                                     )?.icon
                                   }
                                   className="px-1"
-                                  alt={`Icon for ${projectOverviewStats.workItemConfig?.find(
+                                  alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
                                     w => isBugLike(w.name[0])
                                   )?.name[1]}`}
                                   width="25px"
@@ -452,7 +584,26 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
-                              <button type="button" title="drawer-button">
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${pageConfig.data?.workItemsConfig?.find(
+                                      w => isBugLike(w.name[0])
+                                    )?.name[1]}`,
+                                    children: (
+                                      <NewDrawer
+                                        selectedTab="all"
+                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                          w => isBugLike(w.name[0])
+                                        )}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
                                 <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                               </button>
                             </td>
@@ -464,9 +615,9 @@ const OverviewWithMetrics = () => {
             </table>
           </div>
           <div className="col-span-3 bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium">Completed</h4>
-            <table className="overview-table w-full text-gray-950 text-base font-normal">
-              <thead>
+            <h4 className="text-gray-950 text-md font-medium mb-4">Completed</h4>
+            <table className="overview-table w-full text-gray-950 text-sm font-normal">
+              <thead className="font-medium">
                 <tr>
                   <td>Work Item Type</td>
                   <td>
@@ -497,23 +648,23 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.velocityWorkITems) &&
-                isDefined(projectOverviewStats.environMents) &&
+                isDefined(pageConfig.data?.environments) &&
                 isDefined(projectOverviewStats.cycleTimeWorkItems) &&
                 isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
                 isDefined(projectOverviewStats.cltWorkItems)
-                  ? projectOverviewStats.environMents.map(env => {
+                  ? pageConfig.data?.environments?.map(env => {
                       return (
                         <tr key={env}>
                           <td>
                             <div className="flex flex-row">
                               <img
                                 src={
-                                  projectOverviewStats.workItemConfig?.find(w =>
+                                  pageConfig.data?.workItemsConfig?.find(w =>
                                     isBugLike(w.name[0])
                                   )?.icon
                                 }
                                 className="px-1"
-                                alt={`Icon for ${projectOverviewStats.workItemConfig?.find(
+                                alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
                                   w => isBugLike(w.name[0])
                                 )?.name[1]}`}
                                 width="25px"
@@ -579,7 +730,26 @@ const OverviewWithMetrics = () => {
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
-                            <button type="button" title="drawer-button">
+                            <button
+                              type="button"
+                              title="drawer-button"
+                              onClick={() => {
+                                setAdditionalDrawerProps({
+                                  heading: `${projectOverviewStats.cycleTimeWorkItems?.find(
+                                    x => isBugLike(x.workItemType)
+                                  )?.workItemType}`,
+                                  children: (
+                                    <CycleTimeDrawer
+                                      selectedTab="all"
+                                      workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                        w => !isBugLike(w.name[0])
+                                      )}
+                                    />
+                                  ),
+                                });
+                                openDrawer();
+                              }}
+                            >
                               <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                             </button>
                           </td>
@@ -626,7 +796,26 @@ const OverviewWithMetrics = () => {
                             )
                               .map(toPercentage)
                               .getOr('-')}
-                            <button type="button" title="drawer-button">
+                            <button
+                              type="button"
+                              title="drawer-button"
+                              onClick={() => {
+                                setAdditionalDrawerProps({
+                                  heading: `${projectOverviewStats.flowEfficiencyWorkItems?.find(
+                                    x => isBugLike(x.workItemType)
+                                  )?.workItemType}`,
+                                  children: (
+                                    <CycleTimeDrawer
+                                      selectedTab="all"
+                                      workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                        w => !isBugLike(w.name[0])
+                                      )}
+                                    />
+                                  ),
+                                });
+                                openDrawer();
+                              }}
+                            >
                               <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                             </button>
                           </td>
@@ -638,9 +827,9 @@ const OverviewWithMetrics = () => {
             </table>
           </div>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium">WIP</h4>
-            <table className="overview-table w-full text-gray-950 text-base font-normal">
-              <thead>
+            <h4 className="text-gray-950 text-md font-medium mb-4">WIP</h4>
+            <table className="overview-table w-full text-gray-950 text-sm font-normal">
+              <thead className="font-medium">
                 <tr>
                   <td>Work Item Type</td>
                   <td>
@@ -662,12 +851,12 @@ const OverviewWithMetrics = () => {
                               <div className="flex flex-row">
                                 <img
                                   src={
-                                    projectOverviewStats.workItemConfig?.find(w =>
+                                    pageConfig.data?.workItemsConfig?.find(w =>
                                       isBugLike(w.name[0])
                                     )?.icon
                                   }
                                   className="px-1"
-                                  alt={`Icon for ${projectOverviewStats.workItemConfig?.find(
+                                  alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
                                     w => isBugLike(w.name[0])
                                   )?.name[1]}`}
                                   width="25px"
@@ -692,6 +881,28 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${projectOverviewStats.wipTrendWorkItems?.find(
+                                      x => isBugLike(x.workItemType)
+                                    )?.workItemType}`,
+                                    children: (
+                                      <WIPTrendDrawer
+                                        selectedTab="all"
+                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                          w => !isBugLike(w.name[0])
+                                        )}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                           </tr>
                         );
@@ -1291,9 +1502,6 @@ const OverviewWithMetrics = () => {
                         ),
                         'used the central template',
                         '</div>',
-                        // ${num(projectOverviewStats.activePipelineWithCentralTemplateCount)} out of ${num(
-                        //   projectOverviewStats.activePipelinesCount
-                        // )}<br>
                       ].join(' ')
                     : undefined
                 }

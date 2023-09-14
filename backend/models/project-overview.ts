@@ -38,16 +38,9 @@ import {
   getCycleTimeGraph,
   getFlowEfficiencyGraph,
   getNewGraph,
-  getPageConfig,
   getVelocityGraph,
   getWipGraph,
-  // getWorkItemsOverview,
 } from './workitems2.js';
-import { getProjectConfig } from './config.js';
-
-// type WorkItemsSummaryStats = {
-//   workItems: Awaited<ReturnType<typeof getWorkItemsOverview>>;
-// };
 
 type WorkItemStats = {
   newWorkItems: Awaited<ReturnType<typeof getNewGraph>>;
@@ -56,9 +49,6 @@ type WorkItemStats = {
   flowEfficiencyWorkItems: Awaited<ReturnType<typeof getFlowEfficiencyGraph>>;
   cycleTimeWorkItems: Awaited<ReturnType<typeof getCycleTimeGraph>>;
   wipTrendWorkItems: Awaited<ReturnType<typeof getWipGraph>>;
-  environMents: string[] | undefined;
-  workItemTypes: string[] | undefined;
-  workItemConfig: Awaited<ReturnType<typeof getPageConfig>>['workItemsConfig'];
 };
 
 // type ReleaseStats = {
@@ -200,16 +190,6 @@ export const getProjectOverviewStatsAsChunks = async (
     getCycleTimeGraph({ queryContext }).then(sendChunk('cycleTimeWorkItems')),
 
     getWipGraph({ queryContext }).then(sendChunk('wipTrendWorkItems')),
-
-    getPageConfig({ queryContext })
-      .then(config => config.environments)
-      .then(sendChunk('environMents')),
-    getProjectConfig(collectionName, project)
-      .then(x => x.workItemsConfig?.map(x => x.type))
-      .then(sendChunk('workItemTypes')),
-    getPageConfig({ queryContext })
-      .then(x => x.workItemsConfig)
-      .then(sendChunk('workItemConfig')),
   ]);
 };
 

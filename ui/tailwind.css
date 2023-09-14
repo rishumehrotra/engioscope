@@ -217,5 +217,5 @@ body {
 }
 
 .overview-table td {
-  @apply p-2;
+  @apply p-1;
 }
