@@ -742,7 +742,7 @@ const OverviewWithMetrics = () => {
                                     <CycleTimeDrawer
                                       selectedTab="all"
                                       workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                        w => !isBugLike(w.name[0])
+                                        w => isBugLike(w.name[0])
                                       )}
                                     />
                                   ),
@@ -780,7 +780,26 @@ const OverviewWithMetrics = () => {
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
-                            <button type="button" title="drawer-button">
+                            <button
+                              type="button"
+                              title="drawer-button"
+                              onClick={() => {
+                                setAdditionalDrawerProps({
+                                  heading: `${projectOverviewStats.cltWorkItems?.find(x =>
+                                    isBugLike(x.workItemType)
+                                  )?.workItemType}`,
+                                  children: (
+                                    <ChangeLeadTimeDrawer
+                                      selectedTab="all"
+                                      workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                        w => isBugLike(w.name[0])
+                                      )}
+                                    />
+                                  ),
+                                });
+                                openDrawer();
+                              }}
+                            >
                               <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
                             </button>
                           </td>
@@ -808,7 +827,7 @@ const OverviewWithMetrics = () => {
                                     <CycleTimeDrawer
                                       selectedTab="all"
                                       workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                        w => !isBugLike(w.name[0])
+                                        w => isBugLike(w.name[0])
                                       )}
                                     />
                                   ),
@@ -893,7 +912,7 @@ const OverviewWithMetrics = () => {
                                       <WIPTrendDrawer
                                         selectedTab="all"
                                         workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                          w => !isBugLike(w.name[0])
+                                          w => isBugLike(w.name[0])
                                         )}
                                       />
                                     ),
