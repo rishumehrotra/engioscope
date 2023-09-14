@@ -1,6 +1,6 @@
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { identity, multiply, prop, range } from 'rambda';
-import { Info } from 'react-feather';
+import { ExternalLink, Info } from 'react-feather';
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
 import useRepoFilters from '../hooks/use-repo-filters.js';
 import useSse from '../hooks/use-merge-over-sse.js';
@@ -133,6 +133,9 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button type="button" title="drawer-button">
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                           </tr>
                         );
@@ -209,13 +212,16 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button type="button" title="drawer-button">
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                             <td>
-                              {num(
+                              {prettyMS(
                                 projectOverviewStats.cycleTimeWorkItems
                                   ?.find(x => x.workItemType === workItemType)
                                   ?.data.flatMap(x => x.countsByWeek)
-                                  .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                  .reduce((acc, curr) => acc + curr.totalDuration, 0) || 0
                               )}
                               <div className="px-2 inline-block">
                                 <TinyAreaGraph
@@ -234,6 +240,9 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button type="button" title="drawer-button">
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                             <td>
                               {num(
@@ -261,6 +270,9 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button type="button" title="drawer-button">
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                             <td>
                               {divide(
@@ -276,6 +288,9 @@ const OverviewWithMetrics = () => {
                                 .map(toPercentage)
                                 .getOr('-')}
                             </td>
+                            <button type="button" title="drawer-button">
+                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                            </button>
                           </tr>
                         );
                       })
@@ -330,6 +345,9 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button type="button" title="drawer-button">
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                           </tr>
                         );
@@ -388,6 +406,9 @@ const OverviewWithMetrics = () => {
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
+                              <button type="button" title="drawer-button">
+                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                              </button>
                             </td>
                           </tr>
                         );
@@ -465,6 +486,9 @@ const OverviewWithMetrics = () => {
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
+                            <button type="button" title="drawer-button">
+                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                            </button>
                           </td>
                           <td>
                             {prettyMS(
@@ -493,6 +517,9 @@ const OverviewWithMetrics = () => {
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
+                            <button type="button" title="drawer-button">
+                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                            </button>
                           </td>
                           <td>
                             {prettyMS(
@@ -521,6 +548,9 @@ const OverviewWithMetrics = () => {
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
+                            <button type="button" title="drawer-button">
+                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                            </button>
                           </td>
                           <td>
                             {divide(
@@ -534,6 +564,9 @@ const OverviewWithMetrics = () => {
                             )
                               .map(toPercentage)
                               .getOr('-')}
+                            <button type="button" title="drawer-button">
+                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                            </button>
                           </td>
                         </tr>
                       );
