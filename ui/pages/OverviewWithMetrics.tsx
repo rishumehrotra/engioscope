@@ -102,26 +102,36 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.newWorkItems) &&
-                isDefined(projectOverviewStats.workItemTypes)
-                  ? projectOverviewStats.workItemTypes
-                      .filter(w => !isBugLike(w))
-                      .map(workItemType => {
+                isDefined(projectOverviewStats.workItemConfig)
+                  ? projectOverviewStats.workItemConfig
+                      .filter(w => !isBugLike(w.name[0]))
+                      .map(config => {
                         return (
-                          <tr key={workItemType}>
-                            <td>{workItemType}</td>
+                          <tr key={config?.name[0]}>
+                            <td>
+                              <div className="flex flex-row">
+                                <img
+                                  src={config.icon}
+                                  className="px-1"
+                                  alt={`Icon for ${config.name[1]}`}
+                                  width="25px"
+                                />
+                                <span className="inline-block">{config.name[0]}</span>
+                              </div>
+                            </td>
                             <td>
                               {num(
                                 projectOverviewStats.newWorkItems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config?.name[0])
                                   ?.data.flatMap(x => x.countsByWeek)
                                   .reduce((acc, curr) => acc + curr.count, 0) || 0
                               )}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.newWorkItems
-                                        ?.find(x => x.workItemType === workItemType)
+                                        ?.find(x => x.workItemType === config?.name[0])
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -129,7 +139,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
@@ -178,29 +188,39 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.velocityWorkITems) &&
-                isDefined(projectOverviewStats.workItemTypes) &&
+                isDefined(projectOverviewStats.workItemConfig) &&
                 isDefined(projectOverviewStats.cycleTimeWorkItems) &&
                 isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
                 isDefined(projectOverviewStats.cltWorkItems)
-                  ? projectOverviewStats.workItemTypes
-                      .filter(w => !isBugLike(w))
-                      .map(workItemType => {
+                  ? projectOverviewStats.workItemConfig
+                      .filter(w => !isBugLike(w.name[0]))
+                      .map(config => {
                         return (
-                          <tr key={workItemType}>
-                            <td>{workItemType}</td>
+                          <tr key={config.name[0]}>
+                            <td>
+                              <div className="flex flex-row">
+                                <img
+                                  src={config.icon}
+                                  className="px-1"
+                                  alt={`Icon for ${config.name[1]}`}
+                                  width="25px"
+                                />
+                                <span className="inline-block">{config.name[0]}</span>
+                              </div>
+                            </td>
                             <td>
                               {num(
                                 projectOverviewStats.velocityWorkITems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config.name[0])
                                   ?.data.flatMap(x => x.countsByWeek)
                                   .reduce((acc, curr) => acc + curr.count, 0) || 0
                               )}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.velocityWorkITems
-                                        ?.find(x => x.workItemType === workItemType)
+                                        ?.find(x => x.workItemType === config.name[0])
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -208,7 +228,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
@@ -219,16 +239,16 @@ const OverviewWithMetrics = () => {
                             <td>
                               {prettyMS(
                                 projectOverviewStats.cycleTimeWorkItems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config.name[0])
                                   ?.data.flatMap(x => x.countsByWeek)
                                   .reduce((acc, curr) => acc + curr.totalDuration, 0) || 0
                               )}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.cycleTimeWorkItems
-                                        ?.find(x => x.workItemType === workItemType)
+                                        ?.find(x => x.workItemType === config.name[0])
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -236,7 +256,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
@@ -247,18 +267,18 @@ const OverviewWithMetrics = () => {
                             <td>
                               {num(
                                 projectOverviewStats.cltWorkItems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config.name[0])
                                   ?.data.flatMap(x =>
                                     x.countsByWeek.map(y => y.totalDuration)
                                   )
                                   .reduce((acc, curr) => acc + curr, 0) || 0
                               )}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.cltWorkItems
-                                        ?.find(x => x.workItemType === workItemType)
+                                        ?.find(x => x.workItemType === config.name[0])
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -266,7 +286,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
@@ -277,11 +297,11 @@ const OverviewWithMetrics = () => {
                             <td>
                               {divide(
                                 projectOverviewStats.flowEfficiencyWorkItems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config.name[0])
                                   ?.data.flatMap(x => x.workCentersDuration)
                                   .reduce((acc, curr) => acc + curr, 0) || 0,
                                 projectOverviewStats.flowEfficiencyWorkItems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config.name[0])
                                   ?.data.flatMap(x => x.cycleTime)
                                   .reduce((acc, curr) => acc + curr, 0) || 0
                               )
@@ -314,26 +334,36 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.wipTrendWorkItems) &&
-                isDefined(projectOverviewStats.workItemTypes)
-                  ? projectOverviewStats.workItemTypes
-                      .filter(w => !isBugLike(w))
-                      .map(workItemType => {
+                isDefined(projectOverviewStats.workItemConfig)
+                  ? projectOverviewStats.workItemConfig
+                      .filter(w => !isBugLike(w.name[0]))
+                      .map(config => {
                         return (
-                          <tr key={workItemType}>
-                            <td>{workItemType}</td>
+                          <tr key={config?.name[0]}>
+                            <td>
+                              <div className="flex flex-row">
+                                <img
+                                  src={config.icon}
+                                  className="px-1"
+                                  alt={`Icon for ${config.name[1]}`}
+                                  width="25px"
+                                />
+                                <span className="inline-block">{config.name[0]}</span>
+                              </div>
+                            </td>
                             <td>
                               {num(
                                 projectOverviewStats.wipTrendWorkItems
-                                  ?.find(x => x.workItemType === workItemType)
+                                  ?.find(x => x.workItemType === config?.name[0])
                                   ?.data.map(x => x.countsByWeek.at(-1)?.count || 0)
                                   .reduce((acc, curr) => acc + curr) || 0
                               )}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.wipTrendWorkItems
-                                        ?.find(x => x.workItemType === workItemType)
+                                        ?.find(x => x.workItemType === config?.name[0])
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -341,7 +371,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
@@ -384,14 +414,30 @@ const OverviewWithMetrics = () => {
                       ?.data.map(env => {
                         return (
                           <tr key={env.groupName}>
-                            <td>{env.groupName}</td>
+                            <td>
+                              <div className="flex flex-row">
+                                <img
+                                  src={
+                                    projectOverviewStats.workItemConfig?.find(w =>
+                                      isBugLike(w.name[0])
+                                    )?.icon
+                                  }
+                                  className="px-1"
+                                  alt={`Icon for ${projectOverviewStats.workItemConfig?.find(
+                                    w => isBugLike(w.name[0])
+                                  )?.name[1]}`}
+                                  width="25px"
+                                />
+                                <span className="inline-block">{env.groupName}</span>
+                              </div>
+                            </td>
                             <td>
                               {num(
                                 env.countsByWeek
                                   .map(w => w.count)
                                   .reduce((acc, curr) => acc + curr) || 0
                               )}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
@@ -402,7 +448,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>
@@ -458,7 +504,23 @@ const OverviewWithMetrics = () => {
                   ? projectOverviewStats.environMents.map(env => {
                       return (
                         <tr key={env}>
-                          <td>{env}</td>
+                          <td>
+                            <div className="flex flex-row">
+                              <img
+                                src={
+                                  projectOverviewStats.workItemConfig?.find(w =>
+                                    isBugLike(w.name[0])
+                                  )?.icon
+                                }
+                                className="px-1"
+                                alt={`Icon for ${projectOverviewStats.workItemConfig?.find(
+                                  w => isBugLike(w.name[0])
+                                )?.name[1]}`}
+                                width="25px"
+                              />
+                              <span className="inline-block">{env}</span>
+                            </div>
+                          </td>
                           <td>
                             {num(
                               projectOverviewStats.velocityWorkITems
@@ -469,7 +531,7 @@ const OverviewWithMetrics = () => {
                                   0
                                 ) || 0
                             )}
-                            <div className="px-2 inline-block">
+                            <div className="inline-block">
                               <TinyAreaGraph
                                 data={range(0, 12).map(weekIndex => {
                                   return (
@@ -482,7 +544,7 @@ const OverviewWithMetrics = () => {
                                 })}
                                 itemToValue={identity}
                                 color={areaGraphColors.good}
-                                graphConfig={graphConfig.medium}
+                                graphConfig={graphConfig.small}
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
@@ -500,7 +562,7 @@ const OverviewWithMetrics = () => {
                                   0
                                 ) || 0
                             )}
-                            <div className="px-2 inline-block">
+                            <div className="inline-block">
                               <TinyAreaGraph
                                 data={range(0, 12).map(weekIndex => {
                                   return (
@@ -513,7 +575,7 @@ const OverviewWithMetrics = () => {
                                 })}
                                 itemToValue={identity}
                                 color={areaGraphColors.good}
-                                graphConfig={graphConfig.medium}
+                                graphConfig={graphConfig.small}
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
@@ -531,7 +593,7 @@ const OverviewWithMetrics = () => {
                                   0
                                 ) || 0
                             )}
-                            <div className="px-2 inline-block">
+                            <div className="inline-block">
                               <TinyAreaGraph
                                 data={range(0, 12).map(weekIndex => {
                                   return (
@@ -544,7 +606,7 @@ const OverviewWithMetrics = () => {
                                 })}
                                 itemToValue={identity}
                                 color={areaGraphColors.good}
-                                graphConfig={graphConfig.medium}
+                                graphConfig={graphConfig.small}
                                 className="mb-3 w-24 inline-block"
                               />
                             </div>
@@ -596,10 +658,26 @@ const OverviewWithMetrics = () => {
                       ?.data.map(env => {
                         return (
                           <tr key={env.groupName}>
-                            <td>{env.groupName}</td>
+                            <td>
+                              <div className="flex flex-row">
+                                <img
+                                  src={
+                                    projectOverviewStats.workItemConfig?.find(w =>
+                                      isBugLike(w.name[0])
+                                    )?.icon
+                                  }
+                                  className="px-1"
+                                  alt={`Icon for ${projectOverviewStats.workItemConfig?.find(
+                                    w => isBugLike(w.name[0])
+                                  )?.name[1]}`}
+                                  width="25px"
+                                />
+                                <span className="inline-block">{env.groupName}</span>
+                              </div>
+                            </td>
                             <td>
                               {num(env.countsByWeek.at(-1)?.count || 0)}
-                              <div className="px-2 inline-block">
+                              <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
@@ -610,7 +688,7 @@ const OverviewWithMetrics = () => {
                                   })}
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
-                                  graphConfig={graphConfig.medium}
+                                  graphConfig={graphConfig.small}
                                   className="mb-3 w-24 inline-block"
                                 />
                               </div>

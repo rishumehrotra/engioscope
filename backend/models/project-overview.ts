@@ -58,6 +58,7 @@ type WorkItemStats = {
   wipTrendWorkItems: Awaited<ReturnType<typeof getWipGraph>>;
   environMents: string[] | undefined;
   workItemTypes: string[] | undefined;
+  workItemConfig: Awaited<ReturnType<typeof getPageConfig>>['workItemsConfig'];
 };
 
 // type ReleaseStats = {
@@ -206,6 +207,9 @@ export const getProjectOverviewStatsAsChunks = async (
     getProjectConfig(collectionName, project)
       .then(x => x.workItemsConfig?.map(x => x.type))
       .then(sendChunk('workItemTypes')),
+    getPageConfig({ queryContext })
+      .then(x => x.workItemsConfig)
+      .then(sendChunk('workItemConfig')),
   ]);
 };
 
