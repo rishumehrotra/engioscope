@@ -613,7 +613,13 @@ const OverviewWithMetrics = () => {
                                       )?.name[1]}`,
                                       children: (
                                         <NewDrawer
-                                          selectedTab="all"
+                                          selectedTab={
+                                            (env.countsByWeek
+                                              .map(w => w.count)
+                                              .reduce((acc, curr) => acc + curr) || 0) > 0
+                                              ? env.groupName
+                                              : 'all'
+                                          }
                                           workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                             w => isBugLike(w.name[0])
                                           )}
@@ -731,7 +737,17 @@ const OverviewWithMetrics = () => {
                                     )?.workItemType}`,
                                     children: (
                                       <CycleTimeDrawer
-                                        selectedTab="all"
+                                        selectedTab={
+                                          (projectOverviewStats.velocityWorkItems
+                                            ?.find(x => isBugLike(x.workItemType))
+                                            ?.data.find(x => x.groupName === env)
+                                            ?.countsByWeek.reduce(
+                                              (acc, curr) => acc + curr.count,
+                                              0
+                                            ) || 0) > 0
+                                            ? env
+                                            : 'all'
+                                        }
                                         workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                           w => isBugLike(w.name[0])
                                         )}
@@ -795,7 +811,17 @@ const OverviewWithMetrics = () => {
                                     )?.workItemType}`,
                                     children: (
                                       <CycleTimeDrawer
-                                        selectedTab="all"
+                                        selectedTab={
+                                          (projectOverviewStats.cycleTimeWorkItems
+                                            ?.find(x => isBugLike(x.workItemType))
+                                            ?.data.find(x => x.groupName === env)
+                                            ?.countsByWeek.reduce(
+                                              (acc, curr) => acc + curr.count,
+                                              0
+                                            ) || 0) > 0
+                                            ? env
+                                            : 'all'
+                                        }
                                         workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                           w => isBugLike(w.name[0])
                                         )}
@@ -859,7 +885,17 @@ const OverviewWithMetrics = () => {
                                     )?.workItemType}`,
                                     children: (
                                       <ChangeLeadTimeDrawer
-                                        selectedTab="all"
+                                        selectedTab={
+                                          (projectOverviewStats.cltWorkItems
+                                            ?.find(x => isBugLike(x.workItemType))
+                                            ?.data.find(x => x.groupName === env)
+                                            ?.countsByWeek.reduce(
+                                              (acc, curr) => acc + curr.count,
+                                              0
+                                            ) || 0) > 0
+                                            ? env
+                                            : 'all'
+                                        }
                                         workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                           w => isBugLike(w.name[0])
                                         )}
@@ -917,7 +953,17 @@ const OverviewWithMetrics = () => {
                                     )?.workItemType}`,
                                     children: (
                                       <CycleTimeDrawer
-                                        selectedTab="all"
+                                        selectedTab={
+                                          (projectOverviewStats.cltWorkItems
+                                            ?.find(x => isBugLike(x.workItemType))
+                                            ?.data.find(x => x.groupName === env)
+                                            ?.countsByWeek.reduce(
+                                              (acc, curr) => acc + curr.count,
+                                              0
+                                            ) || 0) > 0
+                                            ? env
+                                            : 'all'
+                                        }
                                         workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                           w => isBugLike(w.name[0])
                                         )}
@@ -992,7 +1038,11 @@ const OverviewWithMetrics = () => {
                                       )?.workItemType}`,
                                       children: (
                                         <WIPTrendDrawer
-                                          selectedTab="all"
+                                          selectedTab={
+                                            (env.countsByWeek.at(-1)?.count || 0) > 0
+                                              ? env.groupName
+                                              : 'all'
+                                          }
                                           workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                             w => isBugLike(w.name[0])
                                           )}
