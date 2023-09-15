@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, useCallback, useMemo, useState } from 'react';
 import { identity, multiply, prop, range } from 'rambda';
 import { ExternalLink, Info } from 'react-feather';
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
-import useRepoFilters from '../hooks/use-repo-filters.js';
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import type { ProjectOverviewStats } from '../../backend/models/project-overview.js';
@@ -60,16 +59,13 @@ const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
 
 const useCreateUrlWithFilter = (slug: string) => {
-  const filters = useRepoFilters();
   const queryContext = useQueryContext();
   return useMemo(() => {
     return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: filters.queryContext[2].toISOString(),
-      endDate: filters.queryContext[3].toISOString(),
-      ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
-      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
+      startDate: queryContext[2].toISOString(),
+      endDate: queryContext[3].toISOString(),
     }).toString()}`;
-  }, [filters.queryContext, filters.searchTerms, filters.teams, queryContext, slug]);
+  }, [queryContext, slug]);
 };
 
 const useCreateDownloadUrl = () => {
@@ -84,27 +80,10 @@ const useCreateDownloadUrl = () => {
   );
 };
 
-const useUpdateSummary = () => {
-  const [key, setKey] = useState(0);
-
-  useEffect(() => {
-    const updateKey = () => {
-      setKey(x => x + 1);
-    };
-    document.body.addEventListener('teams:updated', updateKey);
-    return () => {
-      document.body.removeEventListener('teams:updated', updateKey);
-    };
-  });
-
-  return key.toString();
-};
-
 const OverviewWithMetrics = () => {
   const sseUrl = useCreateUrlWithFilter('overview-v2');
   const drawerDownloadUrl = useCreateDownloadUrl();
-  const key = useUpdateSummary();
-  const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, key);
+  const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, '0');
   const queryPeriodDays = useQueryPeriodDays();
   const queryContext = useQueryContext();
   const pageConfig = trpc.workItems.getPageConfig.useQuery({
@@ -244,14 +223,16 @@ const OverviewWithMetrics = () => {
                 </tr>
               </thead>
               <tbody>
-                {isDefined(projectOverviewStats.velocityWorkITems) &&
-                isDefined(pageConfig.data?.workItemsConfig) &&
-                isDefined(projectOverviewStats.cycleTimeWorkItems) &&
-                isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
-                isDefined(projectOverviewStats.cltWorkItems)
+                {isDefined(pageConfig.data?.workItemsConfig)
                   ? pageConfig.data?.workItemsConfig
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
+                        const matchingWorkItemType = ({
+                          workItemType,
+                        }: {
+                          workItemType: string;
+                        }) => workItemType === config.name[0];
+
                         return (
                           <tr key={config.name[0]}>
                             <td>
@@ -266,18 +247,20 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {num(
-                                projectOverviewStats.velocityWorkITems
-                                  ?.find(x => x.workItemType === config.name[0])
-                                  ?.data.flatMap(x => x.countsByWeek)
-                                  .reduce((acc, curr) => acc + curr.count, 0) || 0
-                              )}
+                              {isDefined(projectOverviewStats.velocityWorkItems)
+                                ? num(
+                                    projectOverviewStats.velocityWorkItems
+                                      ?.find(matchingWorkItemType)
+                                      ?.data.flatMap(x => x.countsByWeek)
+                                      .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                  )
+                                : null}
                               <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
-                                      projectOverviewStats.velocityWorkITems
-                                        ?.find(x => x.workItemType === config.name[0])
+                                      projectOverviewStats.velocityWorkItems
+                                        ?.find(matchingWorkItemType)
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -309,18 +292,21 @@ const OverviewWithMetrics = () => {
                               </button>
                             </td>
                             <td>
-                              {prettyMS(
-                                projectOverviewStats.cycleTimeWorkItems
-                                  ?.find(x => x.workItemType === config.name[0])
-                                  ?.data.flatMap(x => x.countsByWeek)
-                                  .reduce((acc, curr) => acc + curr.totalDuration, 0) || 0
-                              )}
+                              {isDefined(projectOverviewStats.cycleTimeWorkItems)
+                                ? prettyMS(
+                                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                    projectOverviewStats.cycleTimeWorkItems
+                                      .find(matchingWorkItemType)!
+                                      .data.flatMap(x => x.countsByWeek)
+                                      .reduce((acc, curr) => acc + curr.totalDuration, 0)
+                                  )
+                                : null}
                               <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.cycleTimeWorkItems
-                                        ?.find(x => x.workItemType === config.name[0])
+                                        ?.find(matchingWorkItemType)
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -352,20 +338,22 @@ const OverviewWithMetrics = () => {
                               </button>
                             </td>
                             <td>
-                              {prettyMS(
-                                projectOverviewStats.cltWorkItems
-                                  ?.find(x => x.workItemType === config.name[0])
-                                  ?.data.flatMap(x =>
-                                    x.countsByWeek.map(y => y.totalDuration)
+                              {isDefined(projectOverviewStats.cltWorkItems)
+                                ? prettyMS(
+                                    projectOverviewStats.cltWorkItems
+                                      .find(matchingWorkItemType)
+                                      ?.data.flatMap(x =>
+                                        x.countsByWeek.map(y => y.totalDuration)
+                                      )
+                                      .reduce((acc, curr) => acc + curr, 0) || 0
                                   )
-                                  .reduce((acc, curr) => acc + curr, 0) || 0
-                              )}
+                                : null}
                               <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
                                     return (
                                       projectOverviewStats.cltWorkItems
-                                        ?.find(x => x.workItemType === config.name[0])
+                                        ?.find(matchingWorkItemType)
                                         ?.data.flatMap(x => x.countsByWeek)
                                         .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
@@ -397,18 +385,20 @@ const OverviewWithMetrics = () => {
                               </button>
                             </td>
                             <td>
-                              {divide(
-                                projectOverviewStats.flowEfficiencyWorkItems
-                                  ?.find(x => x.workItemType === config.name[0])
-                                  ?.data.flatMap(x => x.workCentersDuration)
-                                  .reduce((acc, curr) => acc + curr, 0) || 0,
-                                projectOverviewStats.flowEfficiencyWorkItems
-                                  ?.find(x => x.workItemType === config.name[0])
-                                  ?.data.flatMap(x => x.cycleTime)
-                                  .reduce((acc, curr) => acc + curr, 0) || 0
-                              )
-                                .map(toPercentage)
-                                .getOr('-')}
+                              {isDefined(projectOverviewStats.flowEfficiencyWorkItems)
+                                ? divide(
+                                    projectOverviewStats.flowEfficiencyWorkItems
+                                      .find(matchingWorkItemType)
+                                      ?.data.flatMap(x => x.workCentersDuration)
+                                      .reduce((acc, curr) => acc + curr, 0) || 0,
+                                    projectOverviewStats.flowEfficiencyWorkItems
+                                      .find(matchingWorkItemType)
+                                      ?.data.flatMap(x => x.cycleTime)
+                                      ?.reduce((acc, curr) => acc + curr, 0) || 0
+                                  )
+                                    .map(toPercentage)
+                                    .getOr('-')
+                                : null}
                               <button
                                 type="button"
                                 title="drawer-button"
@@ -450,8 +440,7 @@ const OverviewWithMetrics = () => {
                 </tr>
               </thead>
               <tbody>
-                {isDefined(projectOverviewStats.wipTrendWorkItems) &&
-                isDefined(pageConfig.data?.workItemsConfig)
+                {isDefined(pageConfig.data?.workItemsConfig)
                   ? pageConfig.data?.workItemsConfig
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
@@ -469,12 +458,14 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {num(
-                                projectOverviewStats.wipTrendWorkItems
-                                  ?.find(x => x.workItemType === config?.name[0])
-                                  ?.data.map(x => x.countsByWeek.at(-1)?.count || 0)
-                                  .reduce((acc, curr) => acc + curr) || 0
-                              )}
+                              {isDefined(projectOverviewStats.wipTrendWorkItems)
+                                ? num(
+                                    projectOverviewStats.wipTrendWorkItems
+                                      ?.find(x => x.workItemType === config?.name[0])
+                                      ?.data.map(x => x.countsByWeek.at(-1)?.count || 0)
+                                      .reduce((acc, curr) => acc + curr) || 0
+                                  )
+                                : null}
                               <div className="inline-block">
                                 <TinyAreaGraph
                                   data={range(0, 12).map(weekIndex => {
@@ -647,7 +638,7 @@ const OverviewWithMetrics = () => {
                 </tr>
               </thead>
               <tbody>
-                {isDefined(projectOverviewStats.velocityWorkITems) &&
+                {isDefined(projectOverviewStats.velocityWorkItems) &&
                 isDefined(pageConfig.data?.environments) &&
                 isDefined(projectOverviewStats.cycleTimeWorkItems) &&
                 isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
@@ -674,7 +665,7 @@ const OverviewWithMetrics = () => {
                           </td>
                           <td>
                             {num(
-                              projectOverviewStats.velocityWorkITems
+                              projectOverviewStats.velocityWorkItems
                                 ?.find(x => isBugLike(x.workItemType))
                                 ?.data.find(x => x.groupName === env)
                                 ?.countsByWeek.reduce(
@@ -686,7 +677,7 @@ const OverviewWithMetrics = () => {
                               <TinyAreaGraph
                                 data={range(0, 12).map(weekIndex => {
                                   return (
-                                    projectOverviewStats.velocityWorkITems
+                                    projectOverviewStats.velocityWorkItems
                                       ?.find(x => isBugLike(x.workItemType))
                                       ?.data.find(x => x.groupName === env)
                                       ?.countsByWeek?.find(x => x.weekIndex === weekIndex)

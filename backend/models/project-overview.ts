@@ -44,7 +44,7 @@ import {
 
 type WorkItemStats = {
   newWorkItems: Awaited<ReturnType<typeof getNewGraph>>;
-  velocityWorkITems: Awaited<ReturnType<typeof getVelocityGraph>>;
+  velocityWorkItems: Awaited<ReturnType<typeof getVelocityGraph>>;
   cltWorkItems: Awaited<ReturnType<typeof getChangeLoadTimeGraph>>;
   flowEfficiencyWorkItems: Awaited<ReturnType<typeof getFlowEfficiencyGraph>>;
   cycleTimeWorkItems: Awaited<ReturnType<typeof getCycleTimeGraph>>;
@@ -65,7 +65,7 @@ type WorkItemStats = {
 export type ProjectOverviewStats = SummaryStats & WorkItemStats;
 
 export const getProjectOverviewStatsAsChunks = async (
-  { queryContext, searchTerms, teams }: z.infer<typeof filteredReposInputParser>,
+  { queryContext }: z.infer<typeof filteredReposInputParser>,
   onChunk: (x: Partial<ProjectOverviewStats>) => void
 ) => {
   const sendChunk =
@@ -76,7 +76,7 @@ export const getProjectOverviewStatsAsChunks = async (
 
   const { collectionName, project } = fromContext(queryContext);
 
-  const activeRepos = await getActiveRepos(queryContext, searchTerms, teams);
+  const activeRepos = await getActiveRepos(queryContext);
 
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
@@ -143,9 +143,7 @@ export const getProjectOverviewStatsAsChunks = async (
         sendChunk('weeklyCoverageSummary')(coveragesByWeek);
       }
     ),
-    searchAndFilterReposBy({ queryContext, searchTerms, teams }).then(x =>
-      sendChunk('totalRepos')(x.length)
-    ),
+    searchAndFilterReposBy({ queryContext }).then(x => sendChunk('totalRepos')(x.length)),
     getSonarProjectsCount(collectionName, project, activeRepoIds).then(
       sendChunk('sonarProjects')
     ),
@@ -181,7 +179,7 @@ export const getProjectOverviewStatsAsChunks = async (
 
     getNewGraph({ queryContext }).then(sendChunk('newWorkItems')),
 
-    getVelocityGraph({ queryContext }).then(sendChunk('velocityWorkITems')),
+    getVelocityGraph({ queryContext }).then(sendChunk('velocityWorkItems')),
 
     getChangeLoadTimeGraph({ queryContext }).then(sendChunk('cltWorkItems')),
 

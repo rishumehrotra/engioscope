@@ -10,8 +10,8 @@ import { getRepoIdsForTeamNames } from './teams.js';
 
 export const filteredReposInputParser = z.object({
   queryContext: queryContextInputParser,
-  searchTerms: z.union([z.array(z.string()), z.undefined()]),
-  teams: z.union([z.array(z.string()), z.undefined()]),
+  searchTerms: z.array(z.string()).optional(),
+  teams: z.array(z.string()).optional(),
 });
 
 const isExactSearchString = (searchTerm: string) => {
@@ -57,8 +57,8 @@ export const searchAndFilterReposBy = async ({
 
 export const getActiveRepos = async (
   queryContext: QueryContext,
-  searchTerms: string[] | undefined,
-  teams: string[] | undefined
+  searchTerms?: string[],
+  teams?: string[]
 ) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 

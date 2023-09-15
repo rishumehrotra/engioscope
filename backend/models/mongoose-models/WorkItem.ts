@@ -72,4 +72,10 @@ workItemSchema.index({
   state: 1,
 });
 
+workItemSchema.index({
+  collectionName: 1,
+  project: 1,
+  stateChangeDate: 1,
+});
+
 export const WorkItemModel = model<WorkItem>('WorkItem', workItemSchema);

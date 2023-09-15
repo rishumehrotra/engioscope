@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { promises as fs, createReadStream } from 'node:fs';
 import Router from 'express-promise-router';
+import { z } from 'zod';
 import { doesFileExist } from '../utils.js';
 import type { ParsedConfig } from '../scraper/parse-config.js';
 import azure from '../scraper/network/azure.js';
@@ -14,6 +15,22 @@ import type { RequestWithFilter } from './repo-api-endpoints.js';
 import repoApiEndpoints, { parseSummaryInput } from './repo-api-endpoints.js';
 import { getSummaryAsChunks } from '../models/repo-listing.js';
 import { getProjectOverviewStatsAsChunks } from '../models/project-overview.js';
+import { queryContextInputParser } from '../models/utils.js';
+
+const overviewInputParser = z.object({
+  queryContext: queryContextInputParser,
+});
+
+const parseOverviewInput = (req: RequestWithFilter) => {
+  return overviewInputParser.parse({
+    queryContext: [
+      req.params.collectionName,
+      req.params.project,
+      req.query.startDate && new Date(req.query.startDate),
+      req.query.endDate && new Date(req.query.endDate),
+    ],
+  });
+};
 
 export default (config: ParsedConfig) => {
   const { getWorkItemRevisions } = azure(config);
@@ -107,7 +124,7 @@ export default (config: ParsedConfig) => {
         'Cache-Control': 'no-cache',
       });
 
-      await getProjectOverviewStatsAsChunks(parseSummaryInput(req), x => {
+      await getProjectOverviewStatsAsChunks(parseOverviewInput(req), x => {
         res.write(`data: ${JSON.stringify(x)}\n\n`);
         res.flush();
       });
