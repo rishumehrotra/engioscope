@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { lazy, useCallback, useMemo, useState } from 'react';
 import { identity, multiply, prop, range } from 'rambda';
-import { ExternalLink, Info } from 'react-feather';
+import { ExternalLink } from 'react-feather';
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
@@ -18,6 +18,8 @@ import TinyAreaGraph, {
 import { isBugLike } from '../../shared/work-item-utils.js';
 import { useDrawer } from '../components/common/Drawer.jsx';
 import { trpc } from '../helpers/trpc.js';
+
+const style = { boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' };
 
 const YAMLPipelinesDrawer = lazy(
   () => import('../components/repo-summary/YAMLPipelinesDrawer.jsx')
@@ -105,19 +107,22 @@ const OverviewWithMetrics = () => {
       <Drawer {...drawerProps} {...additionalDrawerProps} />
       <div className="text-gray-950 text-2xl font-medium mb-3">Value Metrics</div>
       <div className="mb-2">
-        <h2 className="text-gray-950 text-sm font-normal uppercase mb-2">Flow metrics</h2>
+        <h2 className="mb-2">Flow metrics</h2>
         <div className="grid grid-cols-4 gap-4">
-          <div className="col-span-1 bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium mb-4">Incoming</h4>
-            <table className="overview-table w-full text-gray-950 text-sm font-normal">
-              <thead className="font-medium">
+          <div
+            className="col-span-1 bg-white rounded-lg shadow border border-gray-200 p-3"
+            style={style}
+          >
+            <h4 className="text-gray-950 text-base font-medium mb-4">Incoming</h4>
+            <table className="overview-table w-full">
+              <thead className="text-base font-normal">
                 <tr>
-                  <td>Work Item Type</td>
+                  <td />
                   <td>
                     New
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                 </tr>
               </thead>
@@ -141,47 +146,49 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {num(
-                                projectOverviewStats.newWorkItems
-                                  ?.find(x => x.workItemType === config?.name[0])
-                                  ?.data.flatMap(x => x.countsByWeek)
-                                  .reduce((acc, curr) => acc + curr.count, 0) || 0
-                              )}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
-                                      projectOverviewStats.newWorkItems
-                                        ?.find(x => x.workItemType === config?.name[0])
-                                        ?.data.flatMap(x => x.countsByWeek)
-                                        .filter(x => x.weekIndex === weekIndex)
-                                        .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                              <div className="flex flex-row items-center group">
+                                {num(
+                                  projectOverviewStats.newWorkItems
+                                    ?.find(x => x.workItemType === config?.name[0])
+                                    ?.data.flatMap(x => x.countsByWeek)
+                                    .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                )}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${config.name[1]}`,
+                                      children: (
+                                        <NewDrawer
+                                          selectedTab="all"
+                                          workItemConfig={config}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        projectOverviewStats.newWorkItems
+                                          ?.find(x => x.workItemType === config?.name[0])
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          .filter(x => x.weekIndex === weekIndex)
+                                          .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${config.name[1]}`,
-                                    children: (
-                                      <NewDrawer
-                                        selectedTab="all"
-                                        workItemConfig={config}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
                             </td>
                           </tr>
                         );
@@ -190,35 +197,38 @@ const OverviewWithMetrics = () => {
               </tbody>
             </table>
           </div>
-          <div className="col-span-3 bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium mb-4">Completed</h4>
-            <table className="overview-table w-full text-gray-950 text-sm font-normal">
-              <thead className="font-medium">
+          <div
+            className="col-span-3 bg-white rounded-lg shadow border border-gray-200 p-3"
+            style={style}
+          >
+            <h4 className="text-gray-950 text-base font-medium mb-4">Completed</h4>
+            <table className="overview-table w-full">
+              <thead className="text-base font-normal">
                 <tr>
-                  <td>Work Item Type</td>
+                  <td />
                   <td>
                     Velocity
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                   <td>
                     Cycle Time
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                   <td>
                     CLT
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                   <td>
                     Flow Efficiency
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                 </tr>
               </thead>
@@ -247,176 +257,202 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {isDefined(projectOverviewStats.velocityWorkItems)
-                                ? num(
-                                    projectOverviewStats.velocityWorkItems
-                                      ?.find(matchingWorkItemType)
-                                      ?.data.flatMap(x => x.countsByWeek)
-                                      .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                  )
-                                : null}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
+                              <div className="flex flex-row items-center group">
+                                {isDefined(projectOverviewStats.velocityWorkItems)
+                                  ? num(
                                       projectOverviewStats.velocityWorkItems
                                         ?.find(matchingWorkItemType)
                                         ?.data.flatMap(x => x.countsByWeek)
-                                        .filter(x => x.weekIndex === weekIndex)
                                         .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                                    )
+                                  : null}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${config.name[0]}`,
+                                      children: (
+                                        <CycleTimeDrawer
+                                          selectedTab="all"
+                                          workItemConfig={config}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        projectOverviewStats.velocityWorkItems
+                                          ?.find(matchingWorkItemType)
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          .filter(x => x.weekIndex === weekIndex)
+                                          .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${config.name[0]}`,
-                                    children: (
-                                      <CycleTimeDrawer
-                                        selectedTab="all"
-                                        workItemConfig={config}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
                             </td>
                             <td>
-                              {isDefined(projectOverviewStats.cycleTimeWorkItems)
-                                ? prettyMS(
-                                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                    projectOverviewStats.cycleTimeWorkItems
-                                      .find(matchingWorkItemType)!
-                                      .data.flatMap(x => x.countsByWeek)
-                                      .reduce((acc, curr) => acc + curr.totalDuration, 0)
-                                  )
-                                : null}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
-                                      projectOverviewStats.cycleTimeWorkItems
-                                        ?.find(matchingWorkItemType)
-                                        ?.data.flatMap(x => x.countsByWeek)
-                                        .filter(x => x.weekIndex === weekIndex)
-                                        .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                              <div className="flex flex-row items-center group">
+                                {isDefined(projectOverviewStats.cycleTimeWorkItems)
+                                  ? prettyMS(
+                                      divide(
+                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                        projectOverviewStats.cycleTimeWorkItems
+                                          .find(matchingWorkItemType)!
+                                          .data.flatMap(x => x.countsByWeek)
+                                          .reduce(
+                                            (acc, curr) => acc + curr.totalDuration,
+                                            0
+                                          ),
+                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                        projectOverviewStats.cycleTimeWorkItems
+                                          .find(matchingWorkItemType)!
+                                          .data.flatMap(x => x.countsByWeek)
+                                          .reduce((acc, curr) => acc + curr.count, 0)
+                                      ).getOr(0)
+                                    )
+                                  : null}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${config.name[1]}`,
+                                      children: (
+                                        <CycleTimeDrawer
+                                          selectedTab="all"
+                                          workItemConfig={config}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        projectOverviewStats.cycleTimeWorkItems
+                                          ?.find(matchingWorkItemType)
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          .filter(x => x.weekIndex === weekIndex)
+                                          .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${config.name[1]}`,
-                                    children: (
-                                      <CycleTimeDrawer
-                                        selectedTab="all"
-                                        workItemConfig={config}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
                             </td>
                             <td>
-                              {isDefined(projectOverviewStats.cltWorkItems)
-                                ? prettyMS(
-                                    projectOverviewStats.cltWorkItems
-                                      .find(matchingWorkItemType)
-                                      ?.data.flatMap(x =>
-                                        x.countsByWeek.map(y => y.totalDuration)
-                                      )
-                                      .reduce((acc, curr) => acc + curr, 0) || 0
-                                  )
-                                : null}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
-                                      projectOverviewStats.cltWorkItems
-                                        ?.find(matchingWorkItemType)
-                                        ?.data.flatMap(x => x.countsByWeek)
-                                        .filter(x => x.weekIndex === weekIndex)
-                                        .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                              <div className="flex flex-row items-center group">
+                                {isDefined(projectOverviewStats.cltWorkItems)
+                                  ? prettyMS(
+                                      divide(
+                                        projectOverviewStats.cltWorkItems
+                                          .find(matchingWorkItemType)
+                                          ?.data.flatMap(x =>
+                                            x.countsByWeek.map(y => y.totalDuration)
+                                          )
+                                          .reduce((acc, curr) => acc + curr, 0) || 0,
+                                        projectOverviewStats.cltWorkItems
+                                          .find(matchingWorkItemType)
+                                          ?.data.flatMap(x =>
+                                            x.countsByWeek.map(y => y.count)
+                                          )
+                                          .reduce((acc, curr) => acc + curr, 0) || 0
+                                      ).getOr(0)
+                                    )
+                                  : null}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${config.name[1]}`,
+                                      children: (
+                                        <ChangeLeadTimeDrawer
+                                          selectedTab="all"
+                                          workItemConfig={config}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        projectOverviewStats.cltWorkItems
+                                          ?.find(matchingWorkItemType)
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          .filter(x => x.weekIndex === weekIndex)
+                                          .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${config.name[1]}`,
-                                    children: (
-                                      <ChangeLeadTimeDrawer
-                                        selectedTab="all"
-                                        workItemConfig={config}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
                             </td>
                             <td>
-                              {isDefined(projectOverviewStats.flowEfficiencyWorkItems)
-                                ? divide(
-                                    projectOverviewStats.flowEfficiencyWorkItems
-                                      .find(matchingWorkItemType)
-                                      ?.data.flatMap(x => x.workCentersDuration)
-                                      .reduce((acc, curr) => acc + curr, 0) || 0,
-                                    projectOverviewStats.flowEfficiencyWorkItems
-                                      .find(matchingWorkItemType)
-                                      ?.data.flatMap(x => x.cycleTime)
-                                      ?.reduce((acc, curr) => acc + curr, 0) || 0
-                                  )
-                                    .map(toPercentage)
-                                    .getOr('-')
-                                : null}
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${config.name[0]}`,
-                                    children: (
-                                      <CycleTimeDrawer
-                                        selectedTab="all"
-                                        workItemConfig={config}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
+                              <div className="flex flex-row items-center group">
+                                {isDefined(projectOverviewStats.flowEfficiencyWorkItems)
+                                  ? divide(
+                                      projectOverviewStats.flowEfficiencyWorkItems
+                                        .find(matchingWorkItemType)
+                                        ?.data.flatMap(x => x.workCentersDuration)
+                                        .reduce((acc, curr) => acc + curr, 0) || 0,
+                                      projectOverviewStats.flowEfficiencyWorkItems
+                                        .find(matchingWorkItemType)
+                                        ?.data.flatMap(x => x.cycleTime)
+                                        ?.reduce((acc, curr) => acc + curr, 0) || 0
+                                    )
+                                      .map(toPercentage)
+                                      .getOr('-')
+                                  : null}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${config.name[0]}`,
+                                      children: (
+                                        <CycleTimeDrawer
+                                          selectedTab="all"
+                                          workItemConfig={config}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -425,17 +461,20 @@ const OverviewWithMetrics = () => {
               </tbody>
             </table>
           </div>
-          <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium mb-4">WIP</h4>
-            <table className="overview-table w-full text-gray-950 text-sm font-normal">
-              <thead className="font-medium">
+          <div
+            className="bg-white rounded-lg shadow border border-gray-200 p-3"
+            style={style}
+          >
+            <h4 className="text-gray-950 text-base font-medium mb-4">WIP</h4>
+            <table className="overview-table w-full">
+              <thead className="text-base font-normal">
                 <tr>
-                  <td>Work Item Type</td>
+                  <td />
                   <td>
                     WIP Trend
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                 </tr>
               </thead>
@@ -458,49 +497,51 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {isDefined(projectOverviewStats.wipTrendWorkItems)
-                                ? num(
-                                    projectOverviewStats.wipTrendWorkItems
-                                      ?.find(x => x.workItemType === config?.name[0])
-                                      ?.data.map(x => x.countsByWeek.at(-1)?.count || 0)
-                                      .reduce((acc, curr) => acc + curr) || 0
-                                  )
-                                : null}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
+                              <div className="flex flex-row items-center group">
+                                {isDefined(projectOverviewStats.wipTrendWorkItems)
+                                  ? num(
                                       projectOverviewStats.wipTrendWorkItems
                                         ?.find(x => x.workItemType === config?.name[0])
-                                        ?.data.flatMap(x => x.countsByWeek)
-                                        .filter(x => x.weekIndex === weekIndex)
-                                        .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                                        ?.data.map(x => x.countsByWeek.at(-1)?.count || 0)
+                                        .reduce((acc, curr) => acc + curr) || 0
+                                    )
+                                  : null}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${config.name[1]}`,
+                                      children: (
+                                        <WIPTrendDrawer
+                                          selectedTab="all"
+                                          workItemConfig={config}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        projectOverviewStats.wipTrendWorkItems
+                                          ?.find(x => x.workItemType === config?.name[0])
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          .filter(x => x.weekIndex === weekIndex)
+                                          .reduce((acc, curr) => acc + curr.count, 0) || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${config.name[1]}`,
-                                    children: (
-                                      <WIPTrendDrawer
-                                        selectedTab="all"
-                                        workItemConfig={config}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
                             </td>
                           </tr>
                         );
@@ -512,21 +553,22 @@ const OverviewWithMetrics = () => {
         </div>
       </div>
       <div className="mb-2">
-        <h2 className="text-gray-950 text-sm font-normal uppercase mb-2">
-          Quality metrics
-        </h2>
+        <h2 className="mb-2">Quality metrics</h2>
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium mb-4">Incoming</h4>
-            <table className="overview-table w-full text-gray-950 text-sm font-normal">
-              <thead className="font-medium">
+          <div
+            className="bg-white rounded-lg shadow border border-gray-200 p-3"
+            style={style}
+          >
+            <h4 className="text-gray-950 text-base font-medium mb-4">Incoming</h4>
+            <table className="overview-table w-full">
+              <thead className="text-base font-normal">
                 <tr>
-                  <td>Work Item Type</td>
+                  <td />
                   <td>
                     New
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                 </tr>
               </thead>
@@ -555,36 +597,140 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {num(
-                                env.countsByWeek
-                                  .map(w => w.count)
-                                  .reduce((acc, curr) => acc + curr) || 0
-                              )}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
-                                      env.countsByWeek?.find(
-                                        x => x.weekIndex === weekIndex
-                                      )?.count || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                              <div className="flex flex-row items-center group">
+                                {num(
+                                  env.countsByWeek
+                                    .map(w => w.count)
+                                    .reduce((acc, curr) => acc + curr) || 0
+                                )}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${pageConfig.data?.workItemsConfig?.find(
+                                        w => isBugLike(w.name[0])
+                                      )?.name[1]}`,
+                                      children: (
+                                        <NewDrawer
+                                          selectedTab="all"
+                                          workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                            w => isBugLike(w.name[0])
+                                          )}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        env.countsByWeek?.find(
+                                          x => x.weekIndex === weekIndex
+                                        )?.count || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  : null}
+              </tbody>
+            </table>
+          </div>
+          <div
+            className="col-span-3 bg-white rounded-lg shadow border border-gray-200 p-3"
+            style={style}
+          >
+            <h4 className="text-gray-950 text-base font-medium mb-4">Completed</h4>
+            <table className="overview-table w-full">
+              <thead className="text-base font-normal">
+                <tr>
+                  <td />
+                  <td>
+                    Velocity
+                    {/* <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span> */}
+                  </td>
+                  <td>
+                    Cycle Time
+                    {/* <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span> */}
+                  </td>
+                  <td>
+                    CLT
+                    {/* <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span> */}
+                  </td>
+                  <td>
+                    Flow Efficiency
+                    {/* <span className="inline-block pl-1">
+                      <Info size={15} />
+                    </span> */}
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                {isDefined(pageConfig.data?.environments)
+                  ? pageConfig.data?.environments?.map(env => {
+                      return (
+                        <tr key={env}>
+                          <td>
+                            <div className="flex flex-row items-center group">
+                              <div className="flex flex-row">
+                                <img
+                                  src={
+                                    pageConfig.data?.workItemsConfig?.find(w =>
+                                      isBugLike(w.name[0])
+                                    )?.icon
+                                  }
+                                  className="px-1"
+                                  alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
+                                    w => isBugLike(w.name[0])
+                                  )?.name[1]}`}
+                                  width="25px"
+                                />
+                                <span className="inline-block">{env}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex flex-row items-center group">
+                              {isDefined(projectOverviewStats.velocityWorkItems)
+                                ? num(
+                                    projectOverviewStats.velocityWorkItems
+                                      ?.find(x => isBugLike(x.workItemType))
+                                      ?.data.find(x => x.groupName === env)
+                                      ?.countsByWeek.reduce(
+                                        (acc, curr) => acc + curr.count,
+                                        0
+                                      ) || 0
+                                  )
+                                : null}
                               <button
                                 type="button"
                                 title="drawer-button"
                                 onClick={() => {
                                   setAdditionalDrawerProps({
-                                    heading: `${pageConfig.data?.workItemsConfig?.find(
-                                      w => isBugLike(w.name[0])
-                                    )?.name[1]}`,
+                                    heading: `${projectOverviewStats.velocityWorkItems?.find(
+                                      x => isBugLike(x.workItemType)
+                                    )?.workItemType}`,
                                     children: (
-                                      <NewDrawer
+                                      <CycleTimeDrawer
                                         selectedTab="all"
                                         workItemConfig={pageConfig.data?.workItemsConfig?.find(
                                           w => isBugLike(w.name[0])
@@ -595,239 +741,195 @@ const OverviewWithMetrics = () => {
                                   openDrawer();
                                 }}
                               >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
+                                <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
                               </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                  : null}
-              </tbody>
-            </table>
-          </div>
-          <div className="col-span-3 bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium mb-4">Completed</h4>
-            <table className="overview-table w-full text-gray-950 text-sm font-normal">
-              <thead className="font-medium">
-                <tr>
-                  <td>Work Item Type</td>
-                  <td>
-                    Velocity
-                    <span className="inline-block pl-1">
-                      <Info size={15} />
-                    </span>
-                  </td>
-                  <td>
-                    Cycle Time
-                    <span className="inline-block pl-1">
-                      <Info size={15} />
-                    </span>
-                  </td>
-                  <td>
-                    CLT
-                    <span className="inline-block pl-1">
-                      <Info size={15} />
-                    </span>
-                  </td>
-                  <td>
-                    Flow Efficiency
-                    <span className="inline-block pl-1">
-                      <Info size={15} />
-                    </span>
-                  </td>
-                </tr>
-              </thead>
-              <tbody>
-                {isDefined(projectOverviewStats.velocityWorkItems) &&
-                isDefined(pageConfig.data?.environments) &&
-                isDefined(projectOverviewStats.cycleTimeWorkItems) &&
-                isDefined(projectOverviewStats.flowEfficiencyWorkItems) &&
-                isDefined(projectOverviewStats.cltWorkItems)
-                  ? pageConfig.data?.environments?.map(env => {
-                      return (
-                        <tr key={env}>
-                          <td>
-                            <div className="flex flex-row">
-                              <img
-                                src={
-                                  pageConfig.data?.workItemsConfig?.find(w =>
-                                    isBugLike(w.name[0])
-                                  )?.icon
-                                }
-                                className="px-1"
-                                alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
-                                  w => isBugLike(w.name[0])
-                                )?.name[1]}`}
-                                width="25px"
-                              />
-                              <span className="inline-block">{env}</span>
+                              <div className="w-12">
+                                <TinyAreaGraph
+                                  data={range(0, 12).map(weekIndex => {
+                                    return (
+                                      projectOverviewStats.velocityWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek?.find(
+                                          x => x.weekIndex === weekIndex
+                                        )?.count || 0
+                                    );
+                                  })}
+                                  itemToValue={identity}
+                                  color={areaGraphColors.good}
+                                  graphConfig={{ ...graphConfig.small, width: 50 }}
+                                  className="mb-3 w-24 inline-block"
+                                />
+                              </div>
                             </div>
                           </td>
                           <td>
-                            {num(
-                              projectOverviewStats.velocityWorkItems
-                                ?.find(x => isBugLike(x.workItemType))
-                                ?.data.find(x => x.groupName === env)
-                                ?.countsByWeek.reduce(
-                                  (acc, curr) => acc + curr.count,
-                                  0
-                                ) || 0
-                            )}
-                            <div className="inline-block">
-                              <TinyAreaGraph
-                                data={range(0, 12).map(weekIndex => {
-                                  return (
-                                    projectOverviewStats.velocityWorkItems
+                            <div className="flex flex-row items-center group">
+                              {isDefined(projectOverviewStats.cycleTimeWorkItems)
+                                ? prettyMS(
+                                    divide(
+                                      projectOverviewStats.cycleTimeWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek.reduce(
+                                          (acc, curr) => acc + curr.totalDuration,
+                                          0
+                                        ) || 0,
+                                      projectOverviewStats.cycleTimeWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek.reduce(
+                                          (acc, curr) => acc + curr.count,
+                                          0
+                                        ) || 0
+                                    ).getOr(0)
+                                  )
+                                : null}
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${projectOverviewStats.cycleTimeWorkItems?.find(
+                                      x => isBugLike(x.workItemType)
+                                    )?.workItemType}`,
+                                    children: (
+                                      <CycleTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                          w => isBugLike(w.name[0])
+                                        )}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
+                                <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                              </button>
+                              <div className="w-12">
+                                <TinyAreaGraph
+                                  data={range(0, 12).map(weekIndex => {
+                                    return (
+                                      projectOverviewStats.cycleTimeWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek?.find(
+                                          x => x.weekIndex === weekIndex
+                                        )?.count || 0
+                                    );
+                                  })}
+                                  itemToValue={identity}
+                                  color={areaGraphColors.good}
+                                  graphConfig={{ ...graphConfig.small, width: 50 }}
+                                  className="mb-3 w-24 inline-block"
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex flex-row items-center group">
+                              {isDefined(projectOverviewStats.cltWorkItems)
+                                ? prettyMS(
+                                    divide(
+                                      projectOverviewStats.cltWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek.reduce(
+                                          (acc, curr) => acc + curr.totalDuration,
+                                          0
+                                        ) || 0,
+                                      projectOverviewStats.cltWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek.reduce(
+                                          (acc, curr) => acc + curr.count,
+                                          0
+                                        ) || 0
+                                    ).getOr(0)
+                                  )
+                                : null}
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${projectOverviewStats.cltWorkItems?.find(
+                                      x => isBugLike(x.workItemType)
+                                    )?.workItemType}`,
+                                    children: (
+                                      <ChangeLeadTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                          w => isBugLike(w.name[0])
+                                        )}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
+                                <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                              </button>
+                              <div className="w-12">
+                                <TinyAreaGraph
+                                  data={range(0, 12).map(weekIndex => {
+                                    return (
+                                      projectOverviewStats.cltWorkItems
+                                        ?.find(x => isBugLike(x.workItemType))
+                                        ?.data.find(x => x.groupName === env)
+                                        ?.countsByWeek?.find(
+                                          x => x.weekIndex === weekIndex
+                                        )?.count || 0
+                                    );
+                                  })}
+                                  itemToValue={identity}
+                                  color={areaGraphColors.good}
+                                  graphConfig={{ ...graphConfig.small, width: 50 }}
+                                  className="mb-3 w-24 inline-block"
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex flex-row items-center group">
+                              {isDefined(projectOverviewStats.flowEfficiencyWorkItems)
+                                ? divide(
+                                    projectOverviewStats.flowEfficiencyWorkItems
                                       ?.find(x => isBugLike(x.workItemType))
                                       ?.data.find(x => x.groupName === env)
-                                      ?.countsByWeek?.find(x => x.weekIndex === weekIndex)
-                                      ?.count || 0
-                                  );
-                                })}
-                                itemToValue={identity}
-                                color={areaGraphColors.good}
-                                graphConfig={graphConfig.small}
-                                className="mb-3 w-24 inline-block"
-                              />
-                            </div>
-                            <button type="button" title="drawer-button">
-                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                            </button>
-                          </td>
-                          <td>
-                            {prettyMS(
-                              projectOverviewStats.cycleTimeWorkItems
-                                ?.find(x => isBugLike(x.workItemType))
-                                ?.data.find(x => x.groupName === env)
-                                ?.countsByWeek.reduce(
-                                  (acc, curr) => acc + curr.totalDuration,
-                                  0
-                                ) || 0
-                            )}
-                            <div className="inline-block">
-                              <TinyAreaGraph
-                                data={range(0, 12).map(weekIndex => {
-                                  return (
-                                    projectOverviewStats.cycleTimeWorkItems
+                                      ?.workCentersDuration || 0,
+                                    projectOverviewStats.flowEfficiencyWorkItems
                                       ?.find(x => isBugLike(x.workItemType))
-                                      ?.data.find(x => x.groupName === env)
-                                      ?.countsByWeek?.find(x => x.weekIndex === weekIndex)
-                                      ?.count || 0
-                                  );
-                                })}
-                                itemToValue={identity}
-                                color={areaGraphColors.good}
-                                graphConfig={graphConfig.small}
-                                className="mb-3 w-24 inline-block"
-                              />
+                                      ?.data.find(x => x.groupName === env)?.cycleTime ||
+                                      0
+                                  )
+                                    .map(toPercentage)
+                                    .getOr('-')
+                                : null}
+                              <button
+                                type="button"
+                                title="drawer-button"
+                                onClick={() => {
+                                  setAdditionalDrawerProps({
+                                    heading: `${projectOverviewStats.flowEfficiencyWorkItems?.find(
+                                      x => isBugLike(x.workItemType)
+                                    )?.workItemType}`,
+                                    children: (
+                                      <CycleTimeDrawer
+                                        selectedTab="all"
+                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                          w => isBugLike(w.name[0])
+                                        )}
+                                      />
+                                    ),
+                                  });
+                                  openDrawer();
+                                }}
+                              >
+                                <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              title="drawer-button"
-                              onClick={() => {
-                                setAdditionalDrawerProps({
-                                  heading: `${projectOverviewStats.cycleTimeWorkItems?.find(
-                                    x => isBugLike(x.workItemType)
-                                  )?.workItemType}`,
-                                  children: (
-                                    <CycleTimeDrawer
-                                      selectedTab="all"
-                                      workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                        w => isBugLike(w.name[0])
-                                      )}
-                                    />
-                                  ),
-                                });
-                                openDrawer();
-                              }}
-                            >
-                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                            </button>
-                          </td>
-                          <td>
-                            {prettyMS(
-                              projectOverviewStats.cltWorkItems
-                                ?.find(x => isBugLike(x.workItemType))
-                                ?.data.find(x => x.groupName === env)
-                                ?.countsByWeek.reduce(
-                                  (acc, curr) => acc + curr.totalDuration,
-                                  0
-                                ) || 0
-                            )}
-                            <div className="inline-block">
-                              <TinyAreaGraph
-                                data={range(0, 12).map(weekIndex => {
-                                  return (
-                                    projectOverviewStats.cltWorkItems
-                                      ?.find(x => isBugLike(x.workItemType))
-                                      ?.data.find(x => x.groupName === env)
-                                      ?.countsByWeek?.find(x => x.weekIndex === weekIndex)
-                                      ?.count || 0
-                                  );
-                                })}
-                                itemToValue={identity}
-                                color={areaGraphColors.good}
-                                graphConfig={graphConfig.small}
-                                className="mb-3 w-24 inline-block"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              title="drawer-button"
-                              onClick={() => {
-                                setAdditionalDrawerProps({
-                                  heading: `${projectOverviewStats.cltWorkItems?.find(x =>
-                                    isBugLike(x.workItemType)
-                                  )?.workItemType}`,
-                                  children: (
-                                    <ChangeLeadTimeDrawer
-                                      selectedTab="all"
-                                      workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                        w => isBugLike(w.name[0])
-                                      )}
-                                    />
-                                  ),
-                                });
-                                openDrawer();
-                              }}
-                            >
-                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                            </button>
-                          </td>
-                          <td>
-                            {divide(
-                              projectOverviewStats.flowEfficiencyWorkItems
-                                ?.find(x => isBugLike(x.workItemType))
-                                ?.data.find(x => x.groupName === env)
-                                ?.workCentersDuration || 0,
-                              projectOverviewStats.flowEfficiencyWorkItems
-                                ?.find(x => isBugLike(x.workItemType))
-                                ?.data.find(x => x.groupName === env)?.cycleTime || 0
-                            )
-                              .map(toPercentage)
-                              .getOr('-')}
-                            <button
-                              type="button"
-                              title="drawer-button"
-                              onClick={() => {
-                                setAdditionalDrawerProps({
-                                  heading: `${projectOverviewStats.flowEfficiencyWorkItems?.find(
-                                    x => isBugLike(x.workItemType)
-                                  )?.workItemType}`,
-                                  children: (
-                                    <CycleTimeDrawer
-                                      selectedTab="all"
-                                      workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                        w => isBugLike(w.name[0])
-                                      )}
-                                    />
-                                  ),
-                                });
-                                openDrawer();
-                              }}
-                            >
-                              <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                            </button>
                           </td>
                         </tr>
                       );
@@ -836,17 +938,20 @@ const OverviewWithMetrics = () => {
               </tbody>
             </table>
           </div>
-          <div className="bg-white rounded-lg shadow border border-gray-200 p-3">
-            <h4 className="text-gray-950 text-md font-medium mb-4">WIP</h4>
-            <table className="overview-table w-full text-gray-950 text-sm font-normal">
-              <thead className="font-medium">
+          <div
+            className="bg-white rounded-lg shadow border border-gray-200 p-3"
+            style={style}
+          >
+            <h4 className="text-gray-950 text-base font-medium mb-4">WIP</h4>
+            <table className="overview-table w-full">
+              <thead className="text-base font-normal">
                 <tr>
-                  <td>Work Item Type</td>
+                  <td />
                   <td>
                     WIP Trend
-                    <span className="inline-block pl-1">
+                    {/* <span className="inline-block pl-1">
                       <Info size={15} />
-                    </span>
+                    </span> */}
                   </td>
                 </tr>
               </thead>
@@ -875,44 +980,46 @@ const OverviewWithMetrics = () => {
                               </div>
                             </td>
                             <td>
-                              {num(env.countsByWeek.at(-1)?.count || 0)}
-                              <div className="inline-block">
-                                <TinyAreaGraph
-                                  data={range(0, 12).map(weekIndex => {
-                                    return (
-                                      env.countsByWeek?.find(
-                                        x => x.weekIndex === weekIndex
-                                      )?.count || 0
-                                    );
-                                  })}
-                                  itemToValue={identity}
-                                  color={areaGraphColors.good}
-                                  graphConfig={graphConfig.small}
-                                  className="mb-3 w-24 inline-block"
-                                />
+                              <div className="flex flex-row items-center group">
+                                {num(env.countsByWeek.at(-1)?.count || 0)}
+                                <button
+                                  type="button"
+                                  title="drawer-button"
+                                  onClick={() => {
+                                    setAdditionalDrawerProps({
+                                      heading: `${projectOverviewStats.wipTrendWorkItems?.find(
+                                        x => isBugLike(x.workItemType)
+                                      )?.workItemType}`,
+                                      children: (
+                                        <WIPTrendDrawer
+                                          selectedTab="all"
+                                          workItemConfig={pageConfig.data?.workItemsConfig?.find(
+                                            w => isBugLike(w.name[0])
+                                          )}
+                                        />
+                                      ),
+                                    });
+                                    openDrawer();
+                                  }}
+                                >
+                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
+                                </button>
+                                <div className="w-12">
+                                  <TinyAreaGraph
+                                    data={range(0, 12).map(weekIndex => {
+                                      return (
+                                        env.countsByWeek?.find(
+                                          x => x.weekIndex === weekIndex
+                                        )?.count || 0
+                                      );
+                                    })}
+                                    itemToValue={identity}
+                                    color={areaGraphColors.good}
+                                    graphConfig={{ ...graphConfig.small, width: 50 }}
+                                    className="mb-3 w-24 inline-block"
+                                  />
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                title="drawer-button"
-                                onClick={() => {
-                                  setAdditionalDrawerProps({
-                                    heading: `${projectOverviewStats.wipTrendWorkItems?.find(
-                                      x => isBugLike(x.workItemType)
-                                    )?.workItemType}`,
-                                    children: (
-                                      <WIPTrendDrawer
-                                        selectedTab="all"
-                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                          w => isBugLike(w.name[0])
-                                        )}
-                                      />
-                                    ),
-                                  });
-                                  openDrawer();
-                                }}
-                              >
-                                <ExternalLink className="w-4 mx-2 -mb-0.5 link-text" />
-                              </button>
                             </td>
                           </tr>
                         );
@@ -932,9 +1039,9 @@ const OverviewWithMetrics = () => {
             {`Analyzed ${num(projectOverviewStats.totalActiveRepos)} repos, 
             Excluded `}
             <b className="text-theme-helptext-emphasis">
-              {num(
+              {`${num(
                 projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos
-              )}
+              )} `}
             </b>
             <span
               className="underline decoration-dashed"
@@ -955,10 +1062,10 @@ const OverviewWithMetrics = () => {
           </p>
         ) : null}
       </div>
-      <div className="text-gray-950 text-md font-normal uppercase mb-2">
+      <div className="mb-2">
         Test Automation
-        <div className="grid grid-cols-6 grid-row-2 gap-6">
-          <SummaryCard className="col-span-3 grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-6 grid-row-2 gap-6 mt-2">
+          <SummaryCard className="col-span-3 grid grid-cols-2 gap-6 rounded-lg">
             <div className="border-r border-theme-seperator pr-6">
               <Stat
                 title="Tests"
@@ -1092,10 +1199,10 @@ const OverviewWithMetrics = () => {
           </SummaryCard>
         </div>
       </div>
-      <div className="text-gray-950 text-md font-normal uppercase mb-2">
+      <div className="mb-2">
         Code Quality
-        <div className="grid grid-cols-6 grid-row-2 gap-6">
-          <SummaryCard className="col-span-3 row-span-2 grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-6 grid-row-2 gap-6 mt-2">
+          <SummaryCard className="col-span-3 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
             <div className="row-span-2 border-r border-theme-seperator pr-6">
               <Stat
                 title="SonarQube"
@@ -1264,7 +1371,7 @@ const OverviewWithMetrics = () => {
               />
             </div>
           </SummaryCard>
-          <SummaryCard className="col-span-1 row-span-1">
+          <SummaryCard className="col-span-1 row-span-1 rounded-lg">
             <Stat
               title="Healthy branches"
               tooltip={
@@ -1296,9 +1403,9 @@ const OverviewWithMetrics = () => {
           </SummaryCard>
         </div>
       </div>
-      <div className="text-gray-950 text-md font-normal uppercase mb-2">
+      <div className="mb-2">
         CI Builds
-        <SummaryCard className="col-span-6">
+        <SummaryCard className="col-span-6 rounded-lg mt-2">
           <div className="grid grid-cols-4 gap-6">
             <div className="pr-6 border-r border-theme-seperator">
               <Stat
@@ -1539,9 +1646,9 @@ const OverviewWithMetrics = () => {
           </div>
         </SummaryCard>
       </div>
-      <div className="text-gray-950 text-md font-normal uppercase mb-2">
+      <div className="mb-2">
         Releases
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-4 rounded-lg mt-2">
           <SummaryCard className="col-span-1">
             <div className="grid grid-cols-4 gap-6">
               <div className="col-span-1">
