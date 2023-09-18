@@ -106,8 +106,8 @@ const OverviewWithMetrics = () => {
     <div>
       <Drawer {...drawerProps} {...additionalDrawerProps} />
       <div className="text-gray-950 text-2xl font-medium mb-3">Value Metrics</div>
-      <div className="mb-2">
-        <h2 className="mb-2">Flow metrics</h2>
+      <div className="mt-6">
+        <h2 className="mb-2 uppercase text-sm tracking-wide">Flow metrics</h2>
         <div className="grid grid-cols-4 gap-4">
           <div
             className="col-span-1 bg-white rounded-lg shadow border border-gray-200 p-3"
@@ -149,7 +149,7 @@ const OverviewWithMetrics = () => {
                               <div className="flex flex-row items-center group">
                                 {num(
                                   projectOverviewStats.newWorkItems
-                                    ?.find(x => x.workItemType === config?.name[0])
+                                    ?.find(x => x.workItemType === config.name[0])
                                     ?.data.flatMap(x => x.countsByWeek)
                                     .reduce((acc, curr) => acc + curr.count, 0) || 0
                                 )}
@@ -185,7 +185,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -298,7 +298,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -356,7 +356,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -413,7 +413,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -538,7 +538,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -552,8 +552,8 @@ const OverviewWithMetrics = () => {
           </div>
         </div>
       </div>
-      <div className="mb-2">
-        <h2 className="mb-2">Quality metrics</h2>
+      <div className="mt-6">
+        <h2 className="mb-2 uppercase text-sm tracking-wide">Quality metrics</h2>
         <div className="grid grid-cols-4 gap-4">
           <div
             className="bg-white rounded-lg shadow border border-gray-200 p-3"
@@ -643,7 +643,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -774,7 +774,7 @@ const OverviewWithMetrics = () => {
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
                                   graphConfig={{ ...graphConfig.small, width: 50 }}
-                                  className="mb-3 w-24 inline-block"
+                                  className="mb-3 inline-block"
                                 />
                               </div>
                             </div>
@@ -848,7 +848,7 @@ const OverviewWithMetrics = () => {
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
                                   graphConfig={{ ...graphConfig.small, width: 50 }}
-                                  className="mb-3 w-24 inline-block"
+                                  className="mb-3 inline-block"
                                 />
                               </div>
                             </div>
@@ -922,7 +922,7 @@ const OverviewWithMetrics = () => {
                                   itemToValue={identity}
                                   color={areaGraphColors.good}
                                   graphConfig={{ ...graphConfig.small, width: 50 }}
-                                  className="mb-3 w-24 inline-block"
+                                  className="mb-3 inline-block"
                                 />
                               </div>
                             </div>
@@ -1066,7 +1066,7 @@ const OverviewWithMetrics = () => {
                                     itemToValue={identity}
                                     color={areaGraphColors.good}
                                     graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 w-24 inline-block"
+                                    className="mb-3 inline-block"
                                   />
                                 </div>
                               </div>
@@ -1080,12 +1080,12 @@ const OverviewWithMetrics = () => {
           </div>
         </div>
       </div>
-      <div className="text-gray-950 text-2xl font-medium">Health Metrics</div>
+      <div className="text-2xl font-medium pt-6">Health Metrics</div>
       <div className="mb-3">
         {isDefined(projectOverviewStats.totalRepos) &&
         isDefined(projectOverviewStats.totalActiveRepos) &&
         projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos !== 0 ? (
-          <p className="mt-5 text-theme-helptext ml-1">
+          <p className="text-theme-helptext text-sm">
             {`Analyzed ${num(projectOverviewStats.totalActiveRepos)} repos, 
             Excluded `}
             <b className="text-theme-helptext-emphasis">
@@ -1112,8 +1112,8 @@ const OverviewWithMetrics = () => {
           </p>
         ) : null}
       </div>
-      <div className="mb-2">
-        Test Automation
+      <div className="mt-6">
+        <h3 className="uppercase text-sm tracking-wide">Test Automation</h3>
         <div className="grid grid-cols-6 grid-row-2 gap-6 mt-2">
           <SummaryCard className="col-span-3 grid grid-cols-2 gap-6 rounded-lg">
             <div className="border-r border-theme-seperator pr-6">
@@ -1249,8 +1249,8 @@ const OverviewWithMetrics = () => {
           </SummaryCard>
         </div>
       </div>
-      <div className="mb-2">
-        Code Quality
+      <div className="mt-6">
+        <h3 className="uppercase text-sm tracking-wide">Code quality</h3>
         <div className="grid grid-cols-6 grid-row-2 gap-6 mt-2">
           <SummaryCard className="col-span-3 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
             <div className="row-span-2 border-r border-theme-seperator pr-6">
@@ -1453,8 +1453,8 @@ const OverviewWithMetrics = () => {
           </SummaryCard>
         </div>
       </div>
-      <div className="mb-2">
-        CI Builds
+      <div className="mt-6">
+        <h3 className="uppercase text-sm tracking-wide">CI builds</h3>
         <SummaryCard className="col-span-6 rounded-lg mt-2">
           <div className="grid grid-cols-4 gap-6">
             <div className="pr-6 border-r border-theme-seperator">
@@ -1696,8 +1696,8 @@ const OverviewWithMetrics = () => {
           </div>
         </SummaryCard>
       </div>
-      <div className="mb-2">
-        Releases
+      <div className="mt-6">
+        <h3 className="uppercase text-sm tracking-wide">Releases</h3>
         <div className="grid grid-cols-4 rounded-lg mt-2">
           <SummaryCard className="col-span-1">
             <div className="grid grid-cols-4 gap-6">
