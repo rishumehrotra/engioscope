@@ -308,19 +308,18 @@ const OverviewWithMetrics = () => {
                                 {isDefined(projectOverviewStats.cycleTimeWorkItems)
                                   ? prettyMS(
                                       divide(
-                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                         projectOverviewStats.cycleTimeWorkItems
-                                          .find(matchingWorkItemType)!
-                                          .data.flatMap(x => x.countsByWeek)
-                                          .reduce(
+                                          .find(matchingWorkItemType)
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          ?.reduce(
                                             (acc, curr) => acc + curr.totalDuration,
                                             0
-                                          ),
-                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                          ) || 0,
                                         projectOverviewStats.cycleTimeWorkItems
-                                          .find(matchingWorkItemType)!
-                                          .data.flatMap(x => x.countsByWeek)
-                                          .reduce((acc, curr) => acc + curr.count, 0)
+                                          .find(matchingWorkItemType)
+                                          ?.data.flatMap(x => x.countsByWeek)
+                                          ?.reduce((acc, curr) => acc + curr.count, 0) ||
+                                          0
                                       ).getOr(0)
                                     )
                                   : null}
