@@ -5,7 +5,7 @@ import { configForProject, getConfig } from '../config.js';
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
-import { fromContext } from './utils.js';
+import { fromContext, weekIndexValue } from './utils.js';
 import { getActivePipelineIds } from './build-definitions.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
 import { normalizeBranchName } from '../utils.js';
@@ -522,4 +522,74 @@ export const getActivePipelineCentralTemplateBuilds = async (
   }).count();
 
   return { count } || { count: 0 };
+};
+
+export const getWeeklyApiCoveragePercentage = async (
+  queryContext: QueryContext,
+  repoNames: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate<{
+    weekIndex: number;
+    totalOperations: number;
+    coveredOperations: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repoNames: { $in: repoNames },
+        createdAt: inDateRange(startDate, endDate),
+        specmaticConfigPath: { $exists: true },
+        specmaticCoverage: { $exists: true },
+      },
+    },
+    { $unwind: '$specmaticCoverage' },
+    { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
+    {
+      $addFields: {
+        totalOperations: { $size: '$specmaticCoverage.operations' },
+        coveredOperations: {
+          $size: {
+            $filter: {
+              input: '$specmaticCoverage.operations',
+              as: 'operation',
+              cond: { $eq: ['$$operation.coverageStatus', 'covered'] },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$buildId',
+        buildDefinitionId: { $first: '$buildDefinitionId' },
+        totalOperations: { $sum: '$totalOperations' },
+        coveredOperations: { $sum: '$coveredOperations' },
+        createdAt: { $first: '$createdAt' },
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: {
+          weekIndex: weekIndexValue(startDate, '$createdAt'),
+          buildDefinitionId: '$buildDefinitionId',
+        },
+        totalOperations: { $last: '$totalOperations' },
+        coveredOperations: { $last: '$coveredOperations' },
+        latestBuildId: { $last: '$_id' },
+      },
+    },
+    {
+      $group: {
+        _id: '$_id.weekIndex',
+        weekIndex: { $first: '$_id.weekIndex' },
+        totalOperations: { $sum: '$totalOperations' },
+        coveredOperations: { $sum: '$coveredOperations' },
+      },
+    },
+    { $project: { _id: 0 } },
+  ]);
 };
