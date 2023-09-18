@@ -592,8 +592,7 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
 
 export const getOneOlderApiCoverageForBuildDefinition = async (
   queryContext: QueryContext,
-  buildDefinitionId: string,
-  repoNames: string[]
+  buildDefinitionId: string
 ) => {
   const { collectionName, project, startDate } = fromContext(queryContext);
 
@@ -608,7 +607,6 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
       $match: {
         collectionName,
         project,
-        repoNames: { $in: repoNames },
         buildDefinitionId,
         createdAt: { $lt: startDate },
         specmaticConfigPath: { $exists: true },
@@ -644,5 +642,5 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
     },
     { $addFields: { buildId: '$_id' } },
     { $project: { _id: 0 } },
-  ]);
+  ]).then(results => results[0] || null);
 };
