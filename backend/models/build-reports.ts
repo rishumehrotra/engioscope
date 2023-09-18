@@ -524,10 +524,7 @@ export const getActivePipelineCentralTemplateBuilds = async (
   return { count } || { count: 0 };
 };
 
-export const getWeeklyApiCoveragePercentage = async (
-  queryContext: QueryContext,
-  repoNames: string[]
-) => {
+export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<{
@@ -539,7 +536,6 @@ export const getWeeklyApiCoveragePercentage = async (
       $match: {
         collectionName,
         project,
-        repoNames: { $in: repoNames },
         createdAt: inDateRange(startDate, endDate),
         specmaticConfigPath: { $exists: true },
         specmaticCoverage: { $exists: true },
@@ -590,6 +586,63 @@ export const getWeeklyApiCoveragePercentage = async (
         coveredOperations: { $sum: '$coveredOperations' },
       },
     },
+    { $project: { _id: 0 } },
+  ]);
+};
+
+export const getOneOlderApiCoverageForBuildDefinition = async (
+  queryContext: QueryContext,
+  buildDefinitionId: string,
+  repoNames: string[]
+) => {
+  const { collectionName, project, startDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate<{
+    buildId: string;
+    buildDefinitionId: string;
+    totalOperations: number;
+    coveredOperations: number;
+    createdAt: Date;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        repoNames: { $in: repoNames },
+        buildDefinitionId,
+        createdAt: { $lt: startDate },
+        specmaticConfigPath: { $exists: true },
+        specmaticCoverage: { $exists: true },
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    { $limit: 1 },
+    { $unwind: '$specmaticCoverage' },
+    { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
+    {
+      $addFields: {
+        totalOperations: { $size: '$specmaticCoverage.operations' },
+        coveredOperations: {
+          $size: {
+            $filter: {
+              input: '$specmaticCoverage.operations',
+              as: 'operation',
+              cond: { $eq: ['$$operation.coverageStatus', 'covered'] },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$buildId',
+        buildDefinitionId: { $first: '$buildDefinitionId' },
+        totalOperations: { $sum: '$totalOperations' },
+        coveredOperations: { $sum: '$coveredOperations' },
+        createdAt: { $first: '$createdAt' },
+      },
+    },
+    { $addFields: { buildId: '$_id' } },
     { $project: { _id: 0 } },
   ]);
 };
