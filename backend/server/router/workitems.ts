@@ -33,6 +33,8 @@ import {
   timeSpentArgs,
   getGroupByFieldAndStatesForWorkType,
   groupByFieldAndStatesForWorkTypeParser,
+  getWorkItemTooltipInputParser,
+  getWorkItemTooltip,
 } from '../../models/workitems2.js';
 import { passInputTo, t } from './trpc.js';
 
@@ -105,4 +107,8 @@ export default t.router({
   getGroupByFieldAndStatesForWorkType: t.procedure
     .input(groupByFieldAndStatesForWorkTypeParser)
     .query(passInputTo(getGroupByFieldAndStatesForWorkType)),
+
+  getWorkItemTooltip: t.procedure
+    .input(getWorkItemTooltipInputParser)
+    .query(passInputTo(getWorkItemTooltip)),
 });

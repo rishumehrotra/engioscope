@@ -66,12 +66,15 @@ const xCoordForBarGroup = <T extends {}>(
   yAxisLabelWidth +
   graphBarXPadding;
 
-const randomMap = new WeakMap();
 // Prevents shifting of data on re-render
-const getRandom = <T extends {}>(x: T) => {
-  if (!randomMap.has(x)) randomMap.set(x, Math.random());
-  return randomMap.get(x);
-};
+const getRandom = (<T extends {}>() => {
+  const randomMap = new WeakMap<T, number>();
+  return (x: T) => {
+    if (!randomMap.has(x)) randomMap.set(x, Math.random());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return randomMap.get(x)!;
+  };
+})();
 
 type BarProps<T extends {}> = {
   items: T[];
@@ -82,6 +85,8 @@ type BarProps<T extends {}> = {
   tooltip: (x: T, label: string, yAxisPoint: number) => string;
   label: string;
   linkForItem: (x: T) => string;
+  onPointHover?: (x: T) => void;
+  pointTooltipId?: string;
 };
 
 const Bar = <T extends {}>({
@@ -93,6 +98,8 @@ const Bar = <T extends {}>({
   pointColor,
   label,
   linkForItem,
+  onPointHover,
+  pointTooltipId,
 }: BarProps<T>) => {
   const averageValueOfItems = items.length
     ? items.map(yAxisPoint).reduce(add, 0) / items.length
@@ -115,7 +122,7 @@ const Bar = <T extends {}>({
       {items.map((item, index) => {
         const fillColorHSL = hexToHsl(pointColor?.(item) || '#197fe6');
         const fillColorWithJitter = `hsla(${
-          Math.round(Math.random() * 30) + (fillColorHSL[0] - 15)
+          Math.round(getRandom(item) * 30) + (fillColorHSL[0] - 15)
         }, 80%, 50%, 0.7)`;
         const yPoint = yAxisPoint(item);
 
@@ -128,8 +135,15 @@ const Bar = <T extends {}>({
               r={bubbleSize}
               fill={fillColorWithJitter}
               stroke="0"
-              data-tooltip-id="scatter-tooltip"
-              data-tooltip-html={tooltip(item, label, yPoint)}
+              {...(onPointHover
+                ? {
+                    'onMouseOver': () => onPointHover(item),
+                    'data-tooltip-id': pointTooltipId || 'scatter-tooltip',
+                  }
+                : {
+                    'data-tooltip-id': pointTooltipId || 'scatter-tooltip',
+                    'data-tooltip-html': tooltip(item, label, yPoint),
+                  })}
             />
           </a>
         );
@@ -172,6 +186,8 @@ type BarGroupProps<T extends {}> = {
   yCoord: (x: number) => number;
   pointToColor?: (x: T) => string | null | undefined;
   linkForItem: (x: T) => string;
+  onPointHover?: (x: T) => void;
+  pointTooltipId?: string;
 };
 
 const BarGroup = <T extends {}>({
@@ -180,6 +196,8 @@ const BarGroup = <T extends {}>({
   yCoord,
   linkForItem,
   pointToColor,
+  onPointHover,
+  pointTooltipId,
 }: BarGroupProps<T>) => (
   <g>
     {Object.entries(group.data || {}).length > 1 ? (
@@ -207,6 +225,8 @@ const BarGroup = <T extends {}>({
         pointColor={pointToColor}
         tooltip={group.tooltip}
         linkForItem={linkForItem}
+        onPointHover={onPointHover}
+        pointTooltipId={pointTooltipId}
       />
     ))}
   </g>
@@ -274,6 +294,8 @@ export type ScatterLineGraphProps<T> = {
   linkForItem: (x: T) => string;
   pointColor?: (x: T) => string | null | undefined;
   className?: string;
+  onPointHover?: (x: T) => void;
+  pointTooltipId?: string;
 };
 
 const ScatterLineGraph = <T extends {}>({
@@ -282,6 +304,8 @@ const ScatterLineGraph = <T extends {}>({
   linkForItem,
   className,
   pointColor,
+  onPointHover,
+  pointTooltipId,
 }: ScatterLineGraphProps<T>): React.ReactElement => {
   const maxOfSpread = useMemo(() => Math.max(...valuesUsing(graphData)), [graphData]);
   const computedWidth = useMemo(() => graphWidth(graphData), [graphData]);
@@ -309,6 +333,8 @@ const ScatterLineGraph = <T extends {}>({
             yCoord={yCoord}
             pointToColor={pointColor}
             linkForItem={linkForItem}
+            onPointHover={onPointHover}
+            pointTooltipId={pointTooltipId}
           />
         ))}
       </svg>

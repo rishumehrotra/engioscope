@@ -1405,3 +1405,26 @@ export const getGroupByFieldAndStatesForWorkType = async ({
   ])
     .exec()
     .then(x => head(x) || { fields: [], states: [] });
+
+export const getWorkItemTooltipInputParser = z.object({
+  collectionName: z.string(),
+  id: z.number(),
+});
+
+export const getWorkItemTooltip = async ({
+  collectionName,
+  id,
+}: z.infer<typeof getWorkItemTooltipInputParser>) => {
+  const wi = await WorkItemModel.findOne(
+    { collectionName, id },
+    { _id: 0, title: 1, priority: 1, severity: 1 }
+  );
+
+  if (!wi) return null;
+
+  return {
+    title: wi.title,
+    priority: wi.priority,
+    severity: wi.severity,
+  };
+};

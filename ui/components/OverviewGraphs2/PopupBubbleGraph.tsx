@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { append, filter, prop, sum } from 'rambda';
 import { twJoin } from 'tailwind-merge';
 import { Check } from 'react-feather';
+import { Tooltip } from 'react-tooltip';
 import { trpc, type SingleWorkItemConfig } from '../../helpers/trpc.js';
 import useGraphArgs from './useGraphArgs.js';
 import { exists, num, prettyMS } from '../../helpers/utils.js';
 import { divide } from '../../../shared/utils.js';
 import ScatterLineGraph from '../graphs/ScatterLineGraph.jsx';
+import { useCollectionAndProject } from '../../hooks/query-hooks.js';
 
 type Props = {
   type: 'wip' | 'closed';
@@ -17,12 +19,20 @@ type Props = {
 const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
   const graphArgs = useGraphArgs();
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [selectedTooltipId, setSelectedTooltipId] = useState<number | undefined>();
+  const { collectionName } = useCollectionAndProject();
 
   const workItems = trpc.workItems.getWorkItemTimeSpent.useQuery({
     type,
     ...graphArgs,
     workItemType: workItemConfig.name[0],
   });
+
+  const wiTooltip = trpc.workItems.getWorkItemTooltip.useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    { collectionName, id: selectedTooltipId! },
+    { enabled: Boolean(selectedTooltipId) }
+  );
 
   const wiWithTimeSpent = useMemo(() => {
     return workItems.data?.map(wi => ({
@@ -127,7 +137,7 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
       <div>
         <ul className="grid grid-cols-4 gap-2 items-stretch">
           {groups?.map(group => (
-            <li>
+            <li key={group.groupName}>
               <button
                 onClick={() => toggleSelectedGroup(group.groupName)}
                 className={twJoin(
@@ -145,7 +155,7 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
                     : undefined,
                 }}
               >
-                <div className="grid grid-flow-col justify-between">
+                <div className="grid grid-flow-col justify-between w-full">
                   <div>{group.groupName || 'Unclassified'}</div>
                   <div>
                     <Check
@@ -180,7 +190,26 @@ const PopupBubbleGraph = ({ type, workItemConfig, lineColor }: Props) => {
           ]}
           height={400}
           linkForItem={x => x.url}
+          pointTooltipId="bubble-graph-tooltip"
+          onPointHover={x => setSelectedTooltipId(x.id)}
         />
+        <Tooltip id="bubble-graph-tooltip">
+          <div className="w-96">
+            <div className="font-medium mb-2">
+              <img
+                src={workItemConfig.icon}
+                className="w-4 h-4 mr-2 inline-block"
+                alt={`Icon for ${workItemConfig.name[1]}`}
+              />
+              {wiTooltip.data?.title}
+            </div>
+            <div>
+              Priority:{' '}
+              {wiTooltip.data ? wiTooltip.data.priority ?? 'No priority' : '...'}
+            </div>
+            {wiTooltip.data?.severity && <div>Severity: {wiTooltip.data.severity}</div>}
+          </div>
+        </Tooltip>
       </div>
     </div>
   );
