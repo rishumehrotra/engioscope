@@ -1,14 +1,19 @@
 import mongoose from 'mongoose';
 import yaml from 'yaml';
 import { z } from 'zod';
+import { asc, byNum } from 'sort-lib';
+import { range } from 'rambda';
 import { configForProject, getConfig } from '../config.js';
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
-import { getActivePipelineIds } from './build-definitions.js';
+import {
+  getActivePipelineIds,
+  getDefinitionListWithRepoInfo,
+} from './build-definitions.js';
 import { getDefaultBranchAndNameForRepoIds } from './repos.js';
-import { normalizeBranchName } from '../utils.js';
+import { createIntervals, normalizeBranchName } from '../utils.js';
 
 const { Schema, model } = mongoose;
 
@@ -529,6 +534,7 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
 
   return AzureBuildReportModel.aggregate<{
     weekIndex: number;
+    buildDefinitionId: string;
     totalOperations: number;
     coveredOperations: number;
   }>([
@@ -579,14 +585,24 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
       },
     },
     {
-      $group: {
-        _id: '$_id.weekIndex',
-        weekIndex: { $first: '$_id.weekIndex' },
-        totalOperations: { $sum: '$totalOperations' },
-        coveredOperations: { $sum: '$coveredOperations' },
+      $project: {
+        _id: 0,
+        weekIndex: '$_id.weekIndex',
+        buildDefinitionId: '$_id.buildDefinitionId',
+        totalOperations: 1,
+        coveredOperations: 1,
+        latestBuildId: 1,
       },
     },
-    { $project: { _id: 0 } },
+    // {
+    //   $group: {
+    //     _id: '$_id.weekIndex',
+    //     weekIndex: { $first: '$_id.weekIndex' },
+    //     totalOperations: { $sum: '$totalOperations' },
+    //     coveredOperations: { $sum: '$coveredOperations' },
+    //   },
+    // },
+    // { $project: { _id: 0 } },
   ]);
 };
 
@@ -643,4 +659,146 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
     { $addFields: { buildId: '$_id' } },
     { $project: { _id: 0 } },
   ]).then(results => results[0] || null);
+};
+
+type apiCoverage = {
+  weekIndex: number;
+  buildDefinitionId: string;
+  totalOperations: number;
+  coveredOperations: number;
+};
+
+const makeApiCoverageContinuous = async (
+  queryContext: QueryContext,
+  buildDefId: number,
+  coverageByWeek: apiCoverage[],
+  numberOfIntervals: number
+) => {
+  const firstWeekCoverage = coverageByWeek?.find(coverage => coverage.weekIndex === 0);
+
+  const olderCoverage = await getOneOlderApiCoverageForBuildDefinition(
+    queryContext,
+    buildDefId.toString()
+  );
+
+  const weeklyCoverage = firstWeekCoverage
+    ? coverageByWeek
+    : !firstWeekCoverage && olderCoverage
+    ? [
+        {
+          weekIndex: 0,
+          buildDefinitionId: buildDefId.toString(),
+          totalOperations: olderCoverage.totalOperations,
+          coveredOperations: olderCoverage.coveredOperations,
+        },
+        ...coverageByWeek,
+      ]
+    : [
+        {
+          weekIndex: 0,
+          buildDefinitionId: buildDefId.toString(),
+          totalOperations: 0,
+          coveredOperations: 0,
+        },
+        ...coverageByWeek,
+      ];
+
+  return range(0, numberOfIntervals).reduce<
+    {
+      weekIndex: number;
+      buildDefinitionId: string;
+      totalOperations: number;
+      coveredOperations: number;
+    }[]
+  >(
+    (acc, weekIndex) => {
+      const matchingCoverage = weeklyCoverage.find(
+        coverage => coverage.weekIndex === weekIndex
+      );
+      if (matchingCoverage) {
+        acc.push(matchingCoverage);
+      } else {
+        const lastCoverage = acc.at(-1);
+        acc.push({
+          weekIndex,
+          buildDefinitionId: buildDefId.toString(),
+          totalOperations: lastCoverage?.totalOperations || 0,
+          coveredOperations: lastCoverage?.coveredOperations || 0,
+        });
+      }
+      return acc;
+    },
+    [
+      {
+        weekIndex: 0,
+        buildDefinitionId: buildDefId.toString(),
+        totalOperations: 0,
+        coveredOperations: 0,
+      },
+    ]
+  );
+};
+
+export const getWeeklyApiCoverageSummary = async (
+  queryContext: QueryContext,
+  repositoryIds: string[]
+) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
+  const apiCoveragesForDefs = await getWeeklyApiCoveragePercentage(queryContext);
+
+  const buildDefs = await getDefinitionListWithRepoInfo(
+    collectionName,
+    project,
+    repositoryIds
+  );
+
+  const buildDefsWithCoverage = buildDefs.map(buildDef => {
+    const matchingCoverages = apiCoveragesForDefs.filter(
+      coverage => coverage.buildDefinitionId === buildDef.id.toString()
+    );
+    return {
+      buildDefId: buildDef.id.toString(),
+      coverageByWeek: matchingCoverages.sort(asc(byNum(w => w.weekIndex))),
+    };
+  });
+
+  const continuousCoverage = await Promise.all(
+    buildDefsWithCoverage.map(async ({ buildDefId, coverageByWeek }) => {
+      return {
+        buildDefId,
+        coverageByWeek: await makeApiCoverageContinuous(
+          queryContext,
+          Number(buildDefId),
+          coverageByWeek,
+          numberOfIntervals
+        ),
+      };
+    })
+  );
+
+  return range(0, numberOfIntervals).map(weekIndex => {
+    const weekCoverage = continuousCoverage.reduce<{
+      totalOperations: number;
+      coveredOperations: number;
+    }>(
+      (acc, { coverageByWeek }) => {
+        const matchingCoverage = coverageByWeek.find(
+          coverage => coverage.weekIndex === weekIndex
+        );
+        if (matchingCoverage) {
+          acc.totalOperations += matchingCoverage.totalOperations;
+          acc.coveredOperations += matchingCoverage.coveredOperations;
+        }
+        return acc;
+      },
+      { totalOperations: 0, coveredOperations: 0 }
+    );
+
+    return {
+      weekIndex,
+      totalOperations: weekCoverage.totalOperations,
+      coveredOperations: weekCoverage.coveredOperations,
+    };
+  });
 };
