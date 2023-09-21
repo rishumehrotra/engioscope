@@ -594,15 +594,6 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
         latestBuildId: 1,
       },
     },
-    // {
-    //   $group: {
-    //     _id: '$_id.weekIndex',
-    //     weekIndex: { $first: '$_id.weekIndex' },
-    //     totalOperations: { $sum: '$totalOperations' },
-    //     coveredOperations: { $sum: '$coveredOperations' },
-    //   },
-    // },
-    // { $project: { _id: 0 } },
   ]);
 };
 
