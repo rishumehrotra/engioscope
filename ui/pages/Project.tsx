@@ -19,6 +19,7 @@ import BuildTimelines from './BuildTimelines.jsx';
 import { num } from '../helpers/utils.js';
 import { asString, useDebouncedQueryParam } from '../hooks/use-query-param.js';
 import OverviewWithMetrics from './OverviewWithMetrics.jsx';
+import Contracts from './Contracts.jsx';
 
 const renderStatIfAvailable = (count: number | undefined, label: string) =>
   count ? (
@@ -154,6 +155,7 @@ const Project: React.FC = () => {
         <Route path="build-timelines" element={<BuildTimelines />} />
         <Route path="workitems" element={<WorkItems />} />
         <Route path="overview-v2" element={<OverviewWithMetrics />} />
+        <Route path="contracts" element={<Contracts />} />
         <Route path="" element={<Overview />} />
       </Routes>
     </div>
