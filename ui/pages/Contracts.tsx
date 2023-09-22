@@ -84,14 +84,10 @@ export default () => {
               }
               graphDataPointLabel={x =>
                 [
-                  bold(
-                    num(
-                      divide(x.coveredOperations, x.totalOperations)
-                        .map(multiply(100))
-                        .getOr(0)
-                    )
-                  ),
-                  '% coverage',
+                  bold(num(x.coveredOperations)),
+                  ' covered operations of ',
+                  bold(num(x.totalOperations)),
+                  ' total operations',
                 ].join('')
               }
             />
