@@ -16,6 +16,7 @@ import repoApiEndpoints, { parseSummaryInput } from './repo-api-endpoints.js';
 import { getSummaryAsChunks } from '../models/repo-listing.js';
 import { getProjectOverviewStatsAsChunks } from '../models/project-overview.js';
 import { queryContextInputParser } from '../models/utils.js';
+import { getContractStatsAsChunks } from '../models/contracts.js';
 
 const overviewInputParser = z.object({
   queryContext: queryContextInputParser,
@@ -30,6 +31,15 @@ const parseOverviewInput = (req: RequestWithFilter) => {
       req.query.endDate && new Date(req.query.endDate),
     ],
   });
+};
+
+const parseContractsInput = (req: RequestWithFilter) => {
+  return queryContextInputParser.parse([
+    req.params.collectionName,
+    req.params.project,
+    req.query.startDate && new Date(req.query.startDate),
+    req.query.endDate && new Date(req.query.endDate),
+  ]);
 };
 
 export default (config: ParsedConfig) => {
@@ -125,6 +135,24 @@ export default (config: ParsedConfig) => {
       });
 
       await getProjectOverviewStatsAsChunks(parseOverviewInput(req), x => {
+        res.write(`data: ${JSON.stringify(x)}\n\n`);
+        res.flush();
+      });
+
+      res.end('data: done\n\n');
+    }
+  );
+
+  router.get(
+    `/api/:collectionName/:project/contracts`,
+    async (req: RequestWithFilter, res) => {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+      });
+
+      await getContractStatsAsChunks(parseContractsInput(req), x => {
         res.write(`data: ${JSON.stringify(x)}\n\n`);
         res.flush();
       });

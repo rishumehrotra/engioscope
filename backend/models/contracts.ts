@@ -240,3 +240,22 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
     };
   });
 };
+
+export type ContractStats = {
+  weeklyApiCoverage: Awaited<ReturnType<typeof getWeeklyApiCoverageSummary>>;
+};
+
+export const getContractStatsAsChunks = async (
+  queryContext: QueryContext,
+  onChunk: (x: Partial<ContractStats>) => void
+) => {
+  const sendChunk =
+    <T extends keyof ContractStats>(key: T) =>
+    (data: ContractStats[typeof key]) => {
+      onChunk({ [key]: data });
+    };
+
+  await Promise.all([
+    getWeeklyApiCoverageSummary(queryContext).then(sendChunk('weeklyApiCoverage')),
+  ]);
+};
