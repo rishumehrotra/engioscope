@@ -93,7 +93,102 @@ export default () => {
             />
           </div>
           <div className="pt-6">
-            <Stat title="Number of specs used as stub" value={num(123)} />
+            <Stat
+              title="Number of specs used as stub"
+              tooltip={
+                isDefined(contractsStats.weeklyStubUsage)
+                  ? [
+                      bold(
+                        num(
+                          (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
+                            (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations ||
+                              0)
+                        )
+                      ),
+                      'of',
+                      bold(
+                        num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
+                      ),
+                      minPluralise(
+                        (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
+                          (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0),
+                        'operation has',
+                        'operations have'
+                      ),
+                      'stub usage',
+                      '<br />',
+                      bold(
+                        num(
+                          contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0
+                        )
+                      ),
+                      'of',
+                      bold(
+                        num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
+                      ),
+                      minPluralise(
+                        contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0,
+                        'operation has',
+                        'operations have'
+                      ),
+                      'zero count stub usage',
+                      '<br />',
+                      bold(
+                        num(contractsStats.weeklyStubUsage.at(-1)?.operationsCount || 0)
+                      ),
+                      'operations count',
+                    ].join(' ')
+                  : undefined
+              }
+              value={
+                isDefined(contractsStats.weeklyStubUsage)
+                  ? divide(
+                      (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
+                        (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0),
+                      contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : null
+              }
+              graphPosition="right"
+              graphData={contractsStats.weeklyStubUsage}
+              graphColor={
+                isDefined(contractsStats.weeklyStubUsage)
+                  ? increaseIsBetter(
+                      contractsStats.weeklyStubUsage.map(w =>
+                        divide(
+                          w.totalOperations - w.zeroCountOperations,
+                          w.totalOperations
+                        )
+                          .map(multiply(100))
+                          .getOr(0)
+                      )
+                    )
+                  : null
+              }
+              graphItemToValue={x =>
+                divide(x.totalOperations - x.zeroCountOperations, x.totalOperations)
+                  .map(multiply(100))
+                  .getOr(0)
+              }
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.totalOperations - x.zeroCountOperations)),
+                  ' stub usage of ',
+                  bold(num(x.totalOperations)),
+                  ' total operations',
+                  '<br />',
+                  bold(num(x.zeroCountOperations)),
+                  ' zero count stub usage of ',
+                  bold(num(x.totalOperations)),
+                  ' total operations',
+                  '<br />',
+                  bold(num(x.operationsCount)),
+                  ' operations count',
+                ].join('')
+              }
+            />
           </div>
         </SummaryCard>
       </div>
