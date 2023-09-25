@@ -244,6 +244,27 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
   });
 };
 
+const addFieldsStubUsage: PipelineStage[] = [
+  { $addFields: { specmaticStubs: { $size: '$specmaticStubUsage' } } },
+  { $unwind: '$specmaticStubUsage' },
+  { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
+  {
+    $addFields: {
+      operationsCount: { $sum: '$specmaticStubUsage.operations.count' },
+      totalOperations: { $size: '$specmaticCoverage.operations' },
+      zeroCountOperations: {
+        $size: {
+          $filter: {
+            input: '$specmaticCoverage.operations',
+            as: 'operation',
+            cond: { $eq: ['$$operation.count', 0] },
+          },
+        },
+      },
+    },
+  },
+];
+
 const getStubUsage = async (queryContext: QueryContext) => {
   const { startDate } = fromContext(queryContext);
 
@@ -257,24 +278,7 @@ const getStubUsage = async (queryContext: QueryContext) => {
   }>([
     matchSpecmatic(queryContext),
     { $match: { specmaticStubUsage: { $exists: true } } },
-    { $addFields: { specmaticStubs: { $size: '$specmaticStubUsage' } } },
-    { $unwind: '$specmaticStubUsage' },
-    { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
-    {
-      $addFields: {
-        operationsCount: { $sum: '$specmaticStubUsage.operations.count' },
-        totalOperations: { $size: '$specmaticCoverage.operations' },
-        zeroCountOperations: {
-          $size: {
-            $filter: {
-              input: '$specmaticCoverage.operations',
-              as: 'operation',
-              cond: { $eq: ['$$operation.count', 0] },
-            },
-          },
-        },
-      },
-    },
+    ...addFieldsStubUsage,
     {
       $group: {
         _id: '$buildId',
@@ -327,24 +331,7 @@ const getOneOlderStubUsageForBuildDefinition = async (
     { $match: { specmaticStubUsage: { $exists: true } } },
     { $sort: { createdAt: -1 } },
     { $limit: 1 },
-    { $addFields: { specmaticStubs: { $size: '$specmaticStubUsage' } } },
-    { $unwind: '$specmaticStubUsage' },
-    { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
-    {
-      $addFields: {
-        operationsCount: { $sum: '$specmaticStubUsage.operations.count' },
-        totalOperations: { $size: '$specmaticCoverage.operations' },
-        zeroCountOperations: {
-          $size: {
-            $filter: {
-              input: '$specmaticCoverage.operations',
-              as: 'operation',
-              cond: { $eq: ['$$operation.count', 0] },
-            },
-          },
-        },
-      },
-    },
+    ...addFieldsStubUsage,
     {
       $group: {
         _id: '$buildId',
