@@ -11,6 +11,7 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import type { FlowEfficiencyWorkItems } from '../../../backend/models/workitems2';
 import { FlowEfficiencyHelpText } from './FlowEfficiencyHelpText.jsx';
 import { GraphEmptyState } from './GraphEmptyState.jsx';
+import { noGroup } from '../../../shared/work-item-utils.js';
 
 const CycleTimeDrawer = React.lazy(() =>
   import('./Drawers.jsx').then(m => ({ default: m.CycleTimeDrawer }))
@@ -100,7 +101,11 @@ const FlowEfficiencyGraphCard = ({
                       }}
                     >
                       <div className="flex items-center justify-end">
-                        <span className="truncate">{group.groupName}</span>
+                        <span className="truncate">
+                          {group.groupName === noGroup
+                            ? workItemConfig?.name[1]
+                            : group.groupName}
+                        </span>
                       </div>
                       <div className="bg-gray-100 rounded-md overflow-hidden">
                         <div
