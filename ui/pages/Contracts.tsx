@@ -115,7 +115,7 @@ export default () => {
                         'operation has',
                         'operations have'
                       ),
-                      'stub usage',
+                      'been used as stubs for tests',
                       '<br />',
                       bold(
                         num(
@@ -131,12 +131,8 @@ export default () => {
                         'operation has',
                         'operations have'
                       ),
-                      'zero count stub usage',
+                      "set up stubs for tests but haven't used them",
                       '<br />',
-                      bold(
-                        num(contractsStats.weeklyStubUsage.at(-1)?.operationsCount || 0)
-                      ),
-                      'operations count',
                     ].join(' ')
                   : undefined
               }
