@@ -1,11 +1,31 @@
 import { asc, byNum } from 'sort-lib';
 import { range } from 'rambda';
+import type { PipelineStage } from 'mongoose';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
 import { createIntervals } from '../utils.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { AzureBuildReportModel } from './build-reports.js';
+
+const matchSpecmatic = (
+  queryContext: QueryContext,
+  buildDefinitionId?: string
+): PipelineStage => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  return {
+    $match: {
+      collectionName,
+      project,
+      ...(buildDefinitionId ? { buildDefinitionId } : {}),
+      ...(buildDefinitionId
+        ? { createdAt: { $lt: startDate } }
+        : { createdAt: inDateRange(startDate, endDate) }),
+      specmaticConfigPath: { $exists: true },
+    },
+  };
+};
 
 const addTotalAndCoveredOperationsFields = {
   $addFields: {
@@ -40,18 +60,11 @@ type ApiCoverage = {
 };
 
 export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { startDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<ApiCoverage>([
-    {
-      $match: {
-        collectionName,
-        project,
-        createdAt: inDateRange(startDate, endDate),
-        specmaticConfigPath: { $exists: true },
-        specmaticCoverage: { $exists: true },
-      },
-    },
+    matchSpecmatic(queryContext),
+    { $match: { specmaticCoverage: { $exists: true } } },
     { $unwind: '$specmaticCoverage' },
     { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
     addTotalAndCoveredOperationsFields,
@@ -87,8 +100,6 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
   queryContext: QueryContext,
   buildDefinitionId: string
 ) => {
-  const { collectionName, project, startDate } = fromContext(queryContext);
-
   return AzureBuildReportModel.aggregate<{
     buildId: string;
     buildDefinitionId: string;
@@ -96,16 +107,8 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
     coveredOperations: number;
     createdAt: Date;
   }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        buildDefinitionId,
-        createdAt: { $lt: startDate },
-        specmaticConfigPath: { $exists: true },
-        specmaticCoverage: { $exists: true },
-      },
-    },
+    matchSpecmatic(queryContext, buildDefinitionId),
+    { $match: { specmaticCoverage: { $exists: true } } },
     { $sort: { createdAt: -1 } },
     { $limit: 1 },
     { $unwind: '$specmaticCoverage' },
@@ -242,7 +245,7 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
 };
 
 const getStubUsage = async (queryContext: QueryContext) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { startDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<{
     weekIndex: number;
@@ -252,15 +255,8 @@ const getStubUsage = async (queryContext: QueryContext) => {
     totalOperations: number;
     zeroCountOperations: number;
   }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        createdAt: inDateRange(startDate, endDate),
-        specmaticConfigPath: { $exists: true },
-        specmaticStubUsage: { $exists: true },
-      },
-    },
+    matchSpecmatic(queryContext),
+    { $match: { specmaticStubUsage: { $exists: true } } },
     { $addFields: { specmaticStubs: { $size: '$specmaticStubUsage' } } },
     { $unwind: '$specmaticStubUsage' },
     { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
@@ -318,8 +314,6 @@ const getOneOlderStubUsageForBuildDefinition = async (
   queryContext: QueryContext,
   buildDefinitionId: string
 ) => {
-  const { collectionName, project, startDate } = fromContext(queryContext);
-
   return AzureBuildReportModel.aggregate<{
     buildId: string;
     buildDefinitionId: string;
@@ -329,16 +323,8 @@ const getOneOlderStubUsageForBuildDefinition = async (
     zeroCountOperations: number;
     createdAt: Date;
   }>([
-    {
-      $match: {
-        collectionName,
-        project,
-        buildDefinitionId,
-        createdAt: { $lt: startDate },
-        specmaticConfigPath: { $exists: true },
-        specmaticStubUsage: { $exists: true },
-      },
-    },
+    matchSpecmatic(queryContext, buildDefinitionId),
+    { $match: { specmaticStubUsage: { $exists: true } } },
     { $sort: { createdAt: -1 } },
     { $limit: 1 },
     { $addFields: { specmaticStubs: { $size: '$specmaticStubUsage' } } },

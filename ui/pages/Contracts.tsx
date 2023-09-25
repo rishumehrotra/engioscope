@@ -142,13 +142,8 @@ export default () => {
               }
               value={
                 isDefined(contractsStats.weeklyStubUsage)
-                  ? divide(
-                      (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
-                        (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0),
-                      contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
+                  ? (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
+                    (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0)
                   : null
               }
               graphPosition="right"
@@ -156,22 +151,13 @@ export default () => {
               graphColor={
                 isDefined(contractsStats.weeklyStubUsage)
                   ? increaseIsBetter(
-                      contractsStats.weeklyStubUsage.map(w =>
-                        divide(
-                          w.totalOperations - w.zeroCountOperations,
-                          w.totalOperations
-                        )
-                          .map(multiply(100))
-                          .getOr(0)
+                      contractsStats.weeklyStubUsage.map(
+                        w => w.totalOperations - w.zeroCountOperations
                       )
                     )
                   : null
               }
-              graphItemToValue={x =>
-                divide(x.totalOperations - x.zeroCountOperations, x.totalOperations)
-                  .map(multiply(100))
-                  .getOr(0)
-              }
+              graphItemToValue={x => x.totalOperations - x.zeroCountOperations}
               graphDataPointLabel={x =>
                 [
                   bold(num(x.totalOperations - x.zeroCountOperations)),
