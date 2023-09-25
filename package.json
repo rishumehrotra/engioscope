@@ -126,7 +126,7 @@
     "@types/react-router-dom": "5.3.3",
     "@types/tar": "6.1.6",
     "@types/ua-parser-js": "0.7.37",
-    "@types/yargs": "17.0.24",
+    "@types/yargs": "17.0.25",
     "@typescript-eslint/eslint-plugin": "6.7.2",
     "@typescript-eslint/parser": "6.7.2",
     "@vitejs/plugin-legacy": "^4.0.0",
