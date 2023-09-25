@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 import yaml from 'yaml';
 import { z } from 'zod';
+import md5 from 'md5';
+import { resolve as urlResolve } from 'node:url';
+import path from 'node:path';
 import { configForProject, getConfig } from '../config.js';
 import { collectionAndProjectInputs, inDateRange } from './helpers.js';
 import { BuildModel } from './mongoose-models/BuildModel.js';
@@ -12,34 +15,43 @@ import { normalizeBranchName } from '../utils.js';
 
 const { Schema, model } = mongoose;
 
-type SpecmaticCoverageReport = {
+type SpecmaticSourceGit = {
   type: 'git';
-  repository: string;
-  branch: string;
+  repository?: string;
   specification: string;
-  serviceType: string;
-  operations: {
-    path: string;
-    method: string;
-    responseCode: number;
-    count: number;
-    coverageStatus: 'covered' | 'missing in spec' | 'not implemented';
-  }[];
-}[];
+};
 
-type SpecmaticStubUsageReport = {
-  type: 'git';
-  repository: string;
-  branch: string;
-  specification: string;
+type SpecmaticHTTPOperation = {
+  path: string;
+  method: string;
+  responseCode: number;
+  count: number;
+};
+
+type SpecmaticCoverageReportForHTTP = {
+  serviceType: 'HTTP';
+  operations: (SpecmaticHTTPOperation & {
+    coverageStatus: 'covered' | 'missing in spec' | 'not implemented';
+  })[];
+};
+
+type SpecmaticSource = SpecmaticSourceGit; // Add more here
+type SpecmaticCoverageForProtocol = SpecmaticCoverageReportForHTTP /* Add more here */ & {
+  specId: string; // Not coming from the report, we're adding this for easy querying
+};
+
+type SpecmaticCoverageReport = (SpecmaticSource & SpecmaticCoverageForProtocol)[];
+
+type SpecmaticStubUsageForHTTP = {
   serviceType: string;
-  operations: {
-    path: string;
-    method: string;
-    responseCode: number;
-    count: number;
-  }[];
-}[];
+  operations: SpecmaticHTTPOperation[];
+};
+
+type SpecmaticStubUsageForProtocol = SpecmaticStubUsageForHTTP /* Add more here */ & {
+  specId: string; // Not coming from the report, we're adding this for easy querying
+};
+
+type SpecmaticStubUsageReport = (SpecmaticSource & SpecmaticStubUsageForProtocol)[];
 
 export type AzureBuildReport = {
   collectionName: string;
@@ -131,6 +143,66 @@ const templateRepo = (buildScript: AzureBuildReport['buildScript']) => {
   return possibleTemplate;
 };
 
+const normalizeFilePathInRemoteRepo = (repo: string, path: string) => {
+  return urlResolve(repo.endsWith('/') ? repo : `${repo}/`, path);
+};
+
+const normalizeFilePathInLocalRepo = (
+  repoId: string,
+  specmaticJsonPath: string,
+  specPath: string
+) => {
+  return `${repoId}:${path.relative(
+    process.cwd(),
+    path.resolve(path.dirname(specmaticJsonPath), specPath)
+  )}`;
+};
+
+const getSpecId = (
+  report: Pick<AzureBuildReport, 'repoId' | 'specmaticConfigPath'>,
+  coverageOrStub: SpecmaticCoverageReport[number] | SpecmaticStubUsageReport[number]
+) => {
+  if (coverageOrStub.repository) {
+    // There's a central repo setup for contracts
+    return md5(
+      normalizeFilePathInRemoteRepo(
+        coverageOrStub.repository,
+        coverageOrStub.specification
+      )
+    );
+  }
+
+  // Contract is within the same repo
+  return md5(
+    normalizeFilePathInLocalRepo(
+      report.repoId,
+      // We're checking before calling this function that specmaticConfigPath is defined
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      report.specmaticConfigPath!,
+      coverageOrStub.specification
+    )
+  );
+};
+
+const processSpecmaticData = (
+  report: Pick<
+    AzureBuildReport,
+    'repoId' | 'specmaticConfigPath' | 'specmaticCoverage' | 'specmaticStubUsage'
+  >
+) => {
+  if (!report.specmaticConfigPath) return {};
+
+  return {
+    specmaticConfigPath: report.specmaticConfigPath,
+    specmaticCoverage: report.specmaticCoverage?.map(coverage => {
+      return { ...coverage, specId: getSpecId(report, coverage) };
+    }),
+    specmaticStubUsage: report.specmaticStubUsage?.map(stubUsage => {
+      return { ...stubUsage, specId: getSpecId(report, stubUsage) };
+    }),
+  };
+};
+
 export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) =>
   AzureBuildReportModel.updateOne(
     {
@@ -160,13 +232,7 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
             }
           : {}),
         centralTemplate: report.centralTemplate,
-        ...(report.specmaticConfigPath
-          ? {
-              specmaticConfigPath: report.specmaticConfigPath,
-              specmaticCoverage: report.specmaticCoverage,
-              specmaticStubUsage: report.specmaticStubUsage,
-            }
-          : {}),
+        ...processSpecmaticData(report),
       },
     },
     { upsert: true }
