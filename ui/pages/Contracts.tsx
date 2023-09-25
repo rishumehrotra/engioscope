@@ -165,9 +165,6 @@ export default () => {
                   ' zero count stub usage of ',
                   bold(num(x.totalOperations)),
                   ' total operations',
-                  '<br />',
-                  bold(num(x.operationsCount)),
-                  ' operations count',
                 ].join('')
               }
             />
