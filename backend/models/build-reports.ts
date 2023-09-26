@@ -19,6 +19,7 @@ type SpecmaticSourceGit = {
   type: 'git';
   repository?: string;
   specification: string;
+  branch?: string;
 };
 
 type SpecmaticHTTPOperation = {
