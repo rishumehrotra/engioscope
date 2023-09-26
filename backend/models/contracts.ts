@@ -1,5 +1,5 @@
 import { asc, byNum } from 'sort-lib';
-import { range } from 'rambda';
+import { intersection, range } from 'rambda';
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
@@ -7,6 +7,11 @@ import { fromContext, weekIndexValue } from './utils.js';
 import { createIntervals } from '../utils.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
 import { AzureBuildReportModel } from './build-reports.js';
+
+const getBuildDefIds = (collectionName: string, project: string) =>
+  BuildDefinitionModel.find({ collectionName, project }, { id: 1, _id: 0 }) as Promise<
+    { id: string }[]
+  >;
 
 const buildReportsWithSpecmatic = (
   queryContext: QueryContext,
@@ -194,9 +199,7 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
 
   const [apiCoveragesForDefs, buildDefs] = await Promise.all([
     getWeeklyApiCoveragePercentage(queryContext),
-    BuildDefinitionModel.find({ collectionName, project }, { id: 1, _id: 0 }) as Promise<
-      { id: string }[]
-    >,
+    getBuildDefIds(collectionName, project),
   ]);
 
   const buildDefsWithCoverage = buildDefs.map(buildDef => {
@@ -425,9 +428,7 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
 
   const [stubUsageForDefs, buildDefs] = await Promise.all([
     getStubUsage(queryContext),
-    BuildDefinitionModel.find({ collectionName, project }, { id: 1, _id: 0 }) as Promise<
-      { id: string }[]
-    >,
+    getBuildDefIds(collectionName, project),
   ]);
 
   const buildDefsWithStubUsage = buildDefs.map(buildDef => {
@@ -483,9 +484,293 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
   });
 };
 
+const getConsumerProducerSpecCount = async (queryContext: QueryContext) => {
+  const { startDate, endDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate([
+    buildReportsWithSpecmatic(queryContext, {
+      createdAt: inDateRange(startDate, endDate),
+      $or: [
+        { specmaticCoverage: { $exists: true } },
+        { specmaticStubUsage: { $exists: true } },
+      ],
+    }),
+    {
+      $addFields: {
+        specmaticCoverage: {
+          $filter: {
+            input: '$specmaticCoverage',
+            as: 'coverage',
+            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
+          },
+        },
+        specmaticStubUsage: {
+          $filter: {
+            input: '$specmaticStubUsage',
+            as: 'stub',
+            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        coverageSpecs: {
+          $map: {
+            input: '$specmaticCoverage',
+            as: 'coverage',
+            in: '$$coverage.specId',
+          },
+        },
+        stubSpecs: {
+          $map: {
+            input: '$specmaticStubUsage',
+            as: 'stub',
+            in: '$$stub.specId',
+          },
+        },
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: {
+          weekIndex: weekIndexValue(startDate, '$createdAt'),
+          buildDefinitionId: '$buildDefinitionId',
+        },
+        coverageSpecs: { $last: { $ifNull: ['$coverageSpecs', []] } },
+        stubSpecs: { $last: { $ifNull: ['$stubSpecs', []] } },
+        latestBuildId: { $last: '$_id' },
+      },
+    },
+    {
+      $addFields: {
+        weekIndex: '$_id.weekIndex',
+        buildDefinitionId: '$_id.buildDefinitionId',
+      },
+    },
+  ]);
+};
+
+const getOlderConsumerProducerSpecCountForBuildDefinition = async (
+  queryContext: QueryContext,
+  buildDefinitionId: string
+) => {
+  const { startDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate<{
+    buildId: string;
+    buildDefinitionId: string;
+    coverageSpecs: string[];
+    stubSpecs: string[];
+    createdAt: Date;
+  }>([
+    buildReportsWithSpecmatic(queryContext, {
+      buildDefinitionId,
+      createdAt: { $lt: startDate },
+      $or: [
+        { specmaticCoverage: { $exists: true } },
+        { specmaticStubUsage: { $exists: true } },
+      ],
+    }),
+    { $sort: { createdAt: -1 } },
+    { $limit: 1 },
+    {
+      $addFields: {
+        specmaticCoverage: {
+          $filter: {
+            input: '$specmaticCoverage',
+            as: 'coverage',
+            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
+          },
+        },
+        specmaticStubUsage: {
+          $filter: {
+            input: '$specmaticStubUsage',
+            as: 'stub',
+            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        coverageSpecs: {
+          $map: {
+            input: '$specmaticCoverage',
+            as: 'coverage',
+            in: '$$coverage.specId',
+          },
+        },
+        stubSpecs: {
+          $map: {
+            input: '$specmaticStubUsage',
+            as: 'stub',
+            in: '$$stub.specId',
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        buildId: 1,
+        buildDefinitionId: 1,
+        coverageSpecs: 1,
+        stubSpecs: 1,
+      },
+    },
+  ]).then(results => (results.length ? results[0] : null));
+};
+
+const makeConsumerProducerSpecCountContinuous = async (
+  queryContext: QueryContext,
+  buildDefId: string,
+  consumerProducerSpecCountByWeek: {
+    weekIndex: number;
+    buildDefinitionId: string;
+    coverageSpecs: string[];
+    stubSpecs: string[];
+  }[],
+  numberOfIntervals: number
+) => {
+  const hasFirstWeekConsumerProducerSpecCount = consumerProducerSpecCountByWeek.some(
+    coverage => coverage.weekIndex === 0
+  );
+
+  const weeklyConsumerProducerSpecCount = hasFirstWeekConsumerProducerSpecCount
+    ? consumerProducerSpecCountByWeek
+    : await (async () => {
+        const olderConsumerProducerSpecCount =
+          await getOlderConsumerProducerSpecCountForBuildDefinition(
+            queryContext,
+            buildDefId
+          );
+
+        return [
+          {
+            weekIndex: 0,
+            buildDefinitionId: buildDefId,
+            coverageSpecs: olderConsumerProducerSpecCount?.coverageSpecs || [],
+            stubSpecs: olderConsumerProducerSpecCount?.stubSpecs || [],
+          },
+          ...consumerProducerSpecCountByWeek,
+        ];
+      })();
+  return range(0, numberOfIntervals).reduce<
+    {
+      weekIndex: number;
+      buildDefinitionId: string;
+      coverageSpecs: string[];
+      stubSpecs: string[];
+    }[]
+  >(
+    (acc, weekIndex) => {
+      const matchingConsumerProducerSpecCount = weeklyConsumerProducerSpecCount.find(
+        coverage => coverage.weekIndex === weekIndex
+      );
+
+      if (matchingConsumerProducerSpecCount) {
+        acc.push(matchingConsumerProducerSpecCount);
+        return acc;
+      }
+
+      const lastConsumerProducerSpecCount = acc.at(-1);
+      acc.push({
+        weekIndex,
+        buildDefinitionId: buildDefId,
+        coverageSpecs: lastConsumerProducerSpecCount?.coverageSpecs || [],
+        stubSpecs: lastConsumerProducerSpecCount?.stubSpecs || [],
+      });
+
+      return acc;
+    },
+    [
+      {
+        weekIndex: 0,
+        buildDefinitionId: buildDefId,
+        coverageSpecs: [],
+        stubSpecs: [],
+      },
+    ]
+  );
+};
+
+export const getWeeklyConsumerProducerSpecCount = async (queryContext: QueryContext) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { numberOfIntervals } = createIntervals(startDate, endDate);
+
+  const [consumerProducerSpecCountForDefs, buildDefs] = await Promise.all([
+    getConsumerProducerSpecCount(queryContext),
+    getBuildDefIds(collectionName, project),
+  ]);
+
+  const buildDefsWithConsumerProducerSpecCount = buildDefs.map(buildDef => {
+    const matchingConsumerProducerSpecCount = consumerProducerSpecCountForDefs.filter(
+      coverage => coverage.buildDefinitionId === buildDef.id.toString()
+    );
+    return {
+      buildDefId: buildDef.id.toString(),
+      consumerProducerSpecCountByWeek: matchingConsumerProducerSpecCount.sort(
+        asc(byNum(w => w.weekIndex))
+      ),
+    };
+  });
+
+  const continuousConsumerProducerSpecCount = await Promise.all(
+    buildDefsWithConsumerProducerSpecCount.map(
+      async ({ buildDefId, consumerProducerSpecCountByWeek }) => {
+        return {
+          buildDefId,
+          consumerProducerSpecCountByWeek: await makeConsumerProducerSpecCountContinuous(
+            queryContext,
+            buildDefId,
+            consumerProducerSpecCountByWeek,
+            numberOfIntervals
+          ),
+        };
+      }
+    )
+  );
+
+  return range(0, numberOfIntervals).map(weekIndex => {
+    const weekConsumerProducerSpecCount = continuousConsumerProducerSpecCount.reduce<{
+      coverageSpecs: string[];
+      stubSpecs: string[];
+    }>(
+      (acc, { consumerProducerSpecCountByWeek }) => {
+        const matchingWeek = consumerProducerSpecCountByWeek.find(
+          coverage => coverage.weekIndex === weekIndex
+        );
+        if (matchingWeek) {
+          acc.coverageSpecs = acc.coverageSpecs.concat(matchingWeek.coverageSpecs);
+          acc.stubSpecs = acc.stubSpecs.concat(matchingWeek.stubSpecs);
+        }
+        return acc;
+      },
+      { coverageSpecs: [], stubSpecs: [] }
+    );
+
+    return {
+      weekIndex,
+      count: intersection(
+        weekConsumerProducerSpecCount.coverageSpecs,
+        weekConsumerProducerSpecCount.stubSpecs
+      ).length,
+      total: new Set([
+        ...weekConsumerProducerSpecCount.coverageSpecs,
+        ...weekConsumerProducerSpecCount.stubSpecs,
+      ]).size,
+    };
+  });
+};
+
 export type ContractStats = {
   weeklyApiCoverage: Awaited<ReturnType<typeof getWeeklyApiCoverageSummary>>;
   weeklyStubUsage: Awaited<ReturnType<typeof getWeeklyStubUsageSummary>>;
+  weeklyConsumerProducerSpecs: Awaited<
+    ReturnType<typeof getWeeklyConsumerProducerSpecCount>
+  >;
 };
 
 export const getContractStatsAsChunks = async (
@@ -501,5 +786,8 @@ export const getContractStatsAsChunks = async (
   await Promise.all([
     getWeeklyApiCoverageSummary(queryContext).then(sendChunk('weeklyApiCoverage')),
     getWeeklyStubUsageSummary(queryContext).then(sendChunk('weeklyStubUsage')),
+    getWeeklyConsumerProducerSpecCount(queryContext).then(
+      sendChunk('weeklyConsumerProducerSpecs')
+    ),
   ]);
 };

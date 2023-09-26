@@ -29,7 +29,52 @@ export default () => {
     <div className="grid grid-cols-3 gap-4">
       <div>
         <SummaryCard className="mb-4 rounded-md">
-          <Stat title="Contracs used by both providers and consumers" value={num(123)} />
+          <Stat
+            title="Contracts used by both providers and consumers"
+            tooltip={
+              isDefined(contractsStats.weeklyConsumerProducerSpecs)
+                ? [
+                    bold(
+                      num(contractsStats.weeklyConsumerProducerSpecs.at(-1)?.count || 0)
+                    ),
+                    'out of',
+                    bold(
+                      num(contractsStats.weeklyConsumerProducerSpecs.at(-1)?.total || 0)
+                    ),
+                    minPluralise(
+                      contractsStats.weeklyConsumerProducerSpecs.at(-1)?.count || 0,
+                      'spec has',
+                      'specs have'
+                    ),
+                    'been used by both providers and consumers',
+                  ].join(' ')
+                : undefined
+            }
+            value={
+              isDefined(contractsStats.weeklyConsumerProducerSpecs)
+                ? contractsStats.weeklyConsumerProducerSpecs.at(-1)?.count || 0
+                : null
+            }
+            graphPosition="right"
+            graphData={contractsStats.weeklyConsumerProducerSpecs}
+            graphColor={
+              isDefined(contractsStats.weeklyConsumerProducerSpecs)
+                ? increaseIsBetter(
+                    contractsStats.weeklyConsumerProducerSpecs.map(w => w.count)
+                  )
+                : null
+            }
+            graphItemToValue={x => x.count}
+            graphDataPointLabel={x =>
+              [
+                bold(num(x.count)),
+                'out of',
+                bold(num(x.total)),
+                minPluralise(x.count, 'spec has', 'specs have'),
+                'been used by both providers and consumers',
+              ].join(' ')
+            }
+          />
         </SummaryCard>
         <SummaryCard className="mb-4 rounded-md">
           <div className="border-b border-theme-seperator pb-6">
