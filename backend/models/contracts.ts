@@ -487,7 +487,12 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
 const getConsumerProducerSpecCount = async (queryContext: QueryContext) => {
   const { startDate, endDate } = fromContext(queryContext);
 
-  return AzureBuildReportModel.aggregate([
+  return AzureBuildReportModel.aggregate<{
+    weekIndex: number;
+    buildDefinitionId: string;
+    coverageSpecs: string[];
+    stubSpecs: string[];
+  }>([
     buildReportsWithSpecmatic(queryContext, {
       createdAt: inDateRange(startDate, endDate),
       $or: [
@@ -549,6 +554,7 @@ const getConsumerProducerSpecCount = async (queryContext: QueryContext) => {
         buildDefinitionId: '$_id.buildDefinitionId',
       },
     },
+    { $project: { _id: 0 } },
   ]);
 };
 
