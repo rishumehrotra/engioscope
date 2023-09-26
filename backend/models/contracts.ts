@@ -640,14 +640,14 @@ const makeConsumerProducerSpecCountContinuous = async (
   }[],
   numberOfIntervals: number
 ) => {
-  const hasFirstWeekConsumerProducerSpecCount = consumerProducerSpecCountByWeek.some(
+  const hasFirstWeekConsumerProducerSpecs = consumerProducerSpecCountByWeek.some(
     coverage => coverage.weekIndex === 0
   );
 
-  const weeklyConsumerProducerSpecCount = hasFirstWeekConsumerProducerSpecCount
+  const weeklyConsumerProducerSpecCount = hasFirstWeekConsumerProducerSpecs
     ? consumerProducerSpecCountByWeek
     : await (async () => {
-        const olderConsumerProducerSpecCount =
+        const olderConsumerProducerSpecs =
           await getOlderConsumerProducerSpecCountForBuildDefinition(
             queryContext,
             buildDefId
@@ -657,8 +657,8 @@ const makeConsumerProducerSpecCountContinuous = async (
           {
             weekIndex: 0,
             buildDefinitionId: buildDefId,
-            coverageSpecs: olderConsumerProducerSpecCount?.coverageSpecs || [],
-            stubSpecs: olderConsumerProducerSpecCount?.stubSpecs || [],
+            coverageSpecs: olderConsumerProducerSpecs?.coverageSpecs || [],
+            stubSpecs: olderConsumerProducerSpecs?.stubSpecs || [],
           },
           ...consumerProducerSpecCountByWeek,
         ];
