@@ -621,3 +621,20 @@ export const getContractStatsAsChunks = async (
     ),
   ]);
 };
+
+export type Service = {
+  repoId: string;
+  repoName: string;
+  leafDirectory: string; // This is the leaf directory of the specmaticConfigPath
+  serviceId: string; // Can be skipped, not needed on the UI
+  endpoints: {
+    specId: string;
+    path: string;
+    method: string;
+  }[];
+  dependsOn: {
+    specId: string;
+    path: string;
+    method: string;
+  }[];
+};
