@@ -484,6 +484,45 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
   });
 };
 
+const filterAndAddSpecsList: PipelineStage[] = [
+  {
+    $addFields: {
+      specmaticCoverage: {
+        $filter: {
+          input: '$specmaticCoverage',
+          as: 'coverage',
+          cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
+        },
+      },
+      specmaticStubUsage: {
+        $filter: {
+          input: '$specmaticStubUsage',
+          as: 'stub',
+          cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
+        },
+      },
+    },
+  },
+  {
+    $addFields: {
+      coverageSpecs: {
+        $map: {
+          input: '$specmaticCoverage',
+          as: 'coverage',
+          in: '$$coverage.specId',
+        },
+      },
+      stubSpecs: {
+        $map: {
+          input: '$specmaticStubUsage',
+          as: 'stub',
+          in: '$$stub.specId',
+        },
+      },
+    },
+  },
+];
+
 const getConsumerProducerSpecCount = async (queryContext: QueryContext) => {
   const { startDate, endDate } = fromContext(queryContext);
 
@@ -500,42 +539,7 @@ const getConsumerProducerSpecCount = async (queryContext: QueryContext) => {
         { specmaticStubUsage: { $exists: true } },
       ],
     }),
-    {
-      $addFields: {
-        specmaticCoverage: {
-          $filter: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-          },
-        },
-        specmaticStubUsage: {
-          $filter: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        coverageSpecs: {
-          $map: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            in: '$$coverage.specId',
-          },
-        },
-        stubSpecs: {
-          $map: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            in: '$$stub.specId',
-          },
-        },
-      },
-    },
+    ...filterAndAddSpecsList,
     { $sort: { createdAt: 1 } },
     {
       $group: {
@@ -581,42 +585,7 @@ const getOlderConsumerProducerSpecCountForBuildDefinition = async (
     }),
     { $sort: { createdAt: -1 } },
     { $limit: 1 },
-    {
-      $addFields: {
-        specmaticCoverage: {
-          $filter: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-          },
-        },
-        specmaticStubUsage: {
-          $filter: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        coverageSpecs: {
-          $map: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            in: '$$coverage.specId',
-          },
-        },
-        stubSpecs: {
-          $map: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            in: '$$stub.specId',
-          },
-        },
-      },
-    },
+    ...filterAndAddSpecsList,
     {
       $project: {
         _id: 0,
