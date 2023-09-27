@@ -1,5 +1,5 @@
 import { asc, byNum } from 'sort-lib';
-import { intersection, range } from 'rambda';
+import { intersection, propEq, range } from 'rambda';
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
@@ -132,32 +132,29 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
 
 const makeContinuous = async <T>(
   queryContext: QueryContext,
-  getOneOlderItem: () => Promise<T | null>,
   weeklyData: ({ weekIndex: number } & T)[],
-  emptyValue: T,
-  cleanup: (item: T | null | undefined) => T
+  getOneOlderItem: () => Promise<T | null>,
+  makeNonNull: (item: T | null | undefined) => T,
+  emptyValue: T
 ) => {
   const { startDate, endDate } = fromContext(queryContext);
   const { numberOfIntervals } = createIntervals(startDate, endDate);
-  const hasDataForTheFirstWeek = weeklyData.some(item => item.weekIndex === 0);
+  const hasDataForTheFirstWeek = weeklyData.some(propEq('weekIndex', 0));
 
   const dataByWeek = hasDataForTheFirstWeek
     ? weeklyData
-    : await (async () => {
-        const olderItem = await getOneOlderItem();
-        return [{ weekIndex: 0, ...cleanup(olderItem) }, ...weeklyData];
-      })();
+    : [{ weekIndex: 0, ...makeNonNull(await getOneOlderItem()) }, ...weeklyData];
 
   return range(0, numberOfIntervals).reduce<({ weekIndex: number } & T)[]>(
     (acc, weekIndex) => {
-      const matchingItem = dataByWeek.find(item => item.weekIndex === weekIndex);
+      const matchingItem = dataByWeek.find(propEq('weekIndex', weekIndex));
       if (matchingItem) {
         acc.push(matchingItem);
         return acc;
       }
 
       const lastItem = acc.at(-1);
-      acc.push({ weekIndex, ...cleanup(lastItem) });
+      acc.push({ weekIndex, ...makeNonNull(lastItem) });
       return acc;
     },
     [{ weekIndex: 0, ...emptyValue }]
@@ -189,18 +186,18 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
         buildDefId,
         coverageByWeek: await makeContinuous(
           queryContext,
-          () => getOneOlderApiCoverageForBuildDefinition(queryContext, buildDefId),
           coverageByWeek,
-          {
-            buildDefinitionId: buildDefId,
-            totalOperations: 0,
-            coveredOperations: 0,
-          },
+          () => getOneOlderApiCoverageForBuildDefinition(queryContext, buildDefId),
           item => ({
             buildDefinitionId: buildDefId,
             totalOperations: item?.totalOperations || 0,
             coveredOperations: item?.coveredOperations || 0,
-          })
+          }),
+          {
+            buildDefinitionId: buildDefId,
+            totalOperations: 0,
+            coveredOperations: 0,
+          }
         ),
       };
     })
@@ -356,18 +353,18 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
         buildDefId,
         stubUsageByWeek: await makeContinuous(
           queryContext,
-          () => getOneOlderStubUsageForBuildDefinition(queryContext, buildDefId),
           stubUsageByWeek,
-          {
-            buildDefinitionId: buildDefId,
-            totalOperations: 0,
-            zeroCountOperations: 0,
-          },
+          () => getOneOlderStubUsageForBuildDefinition(queryContext, buildDefId),
           item => ({
             buildDefinitionId: buildDefId,
             totalOperations: item?.totalOperations || 0,
             zeroCountOperations: item?.zeroCountOperations || 0,
-          })
+          }),
+          {
+            buildDefinitionId: buildDefId,
+            totalOperations: 0,
+            zeroCountOperations: 0,
+          }
         ),
       };
     })
@@ -544,22 +541,22 @@ export const getWeeklyConsumerProducerSpecCount = async (queryContext: QueryCont
           buildDefId,
           consumerProducerSpecCountByWeek: await makeContinuous(
             queryContext,
+            consumerProducerSpecCountByWeek,
             () =>
               getOlderConsumerProducerSpecCountForBuildDefinition(
                 queryContext,
                 buildDefId
               ),
-            consumerProducerSpecCountByWeek,
-            {
-              buildDefinitionId: buildDefId,
-              coverageSpecs: [],
-              stubSpecs: [],
-            },
             item => ({
               buildDefinitionId: buildDefId,
               coverageSpecs: item?.coverageSpecs || [],
               stubSpecs: item?.stubSpecs || [],
-            })
+            }),
+            {
+              buildDefinitionId: buildDefId,
+              coverageSpecs: [],
+              stubSpecs: [],
+            }
           ),
         };
       }

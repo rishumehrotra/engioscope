@@ -67,7 +67,7 @@ type BuildDefWithTestsAndCoverage = BuildDef &
   Partial<BranchCoverage>;
 
 const getLatest = <T extends { weekIndex: number }>(weeklyData: T[]) => {
-  return weeklyData.sort(desc(byNum(prop('weekIndex'))))[0];
+  return [...weeklyData].sort(desc(byNum(prop('weekIndex'))))[0];
 };
 
 const makeContinuous = async <T extends { weekIndex: number }>(
