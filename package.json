@@ -114,7 +114,7 @@
     "@types/jest": "29.5.5",
     "@types/md5": "2.3.3",
     "@types/morgan": "1.9.6",
-    "@types/ms": "0.7.31",
+    "@types/ms": "0.7.32",
     "@types/node": "20.7.0",
     "@types/node-fetch": "2.6.6",
     "@types/pluralize": "0.0.31",
