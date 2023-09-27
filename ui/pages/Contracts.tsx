@@ -139,7 +139,7 @@ export default () => {
           </div>
           <div className="pt-6">
             <Stat
-              title="Number of specs used as stub"
+              title="Number of operations used as stub"
               tooltip={
                 isDefined(contractsStats.weeklyStubUsage)
                   ? [
