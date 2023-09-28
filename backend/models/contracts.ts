@@ -1,6 +1,7 @@
 import { asc, byNum } from 'sort-lib';
 import { intersection, propEq, range } from 'rambda';
 import type { FilterQuery, PipelineStage } from 'mongoose';
+import path from 'node:path';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
@@ -595,12 +596,138 @@ export const getWeeklyConsumerProducerSpecCount = async (queryContext: QueryCont
   });
 };
 
+export type Service = {
+  repoId: string;
+  repoName: string;
+  leafDirectory: string; // This is the leaf directory of the specmaticConfigPath
+  serviceId: string; // Can be skipped, not needed on the UI
+  endpoints: {
+    specId: string;
+    path: string;
+    method: string;
+  }[];
+  dependsOn: {
+    specId: string;
+    path: string;
+    method: string;
+  }[];
+};
+
+export const getChordGraphData = async (queryContext: QueryContext) => {
+  const { endDate } = fromContext(queryContext);
+
+  const data = await AzureBuildReportModel.aggregate<Service>([
+    buildReportsWithSpecmatic(queryContext, {
+      createdAt: { $lt: endDate },
+      $or: [
+        { specmaticCoverage: { $exists: true } },
+        { specmaticStubUsage: { $exists: true } },
+      ],
+    }),
+    {
+      $addFields: {
+        specmaticCoverage: {
+          $filter: {
+            input: '$specmaticCoverage',
+            as: 'coverage',
+            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
+          },
+        },
+        specmaticStubUsage: {
+          $filter: {
+            input: '$specmaticStubUsage',
+            as: 'stub',
+            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
+          },
+        },
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$build' } },
+    { $addFields: { serviceId: { $concat: ['$repoId', '$specmaticConfigPath'] } } },
+    {
+      $unwind: {
+        path: '$specmaticCoverage',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $unwind: {
+        path: '$specmaticCoverage.operations',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $unwind: {
+        path: '$specmaticStubUsage',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $unwind: {
+        path: '$specmaticStubUsage.operations',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $group: {
+        _id: '$buildId',
+        repoId: { $first: '$repoId' },
+        repoName: { $first: '$repo' },
+        serviceId: { $first: '$serviceId' },
+        leafDirectory: { $first: '$specmaticConfigPath' },
+        endPoints: {
+          $addToSet: {
+            specId: '$specmaticCoverage.specId',
+            path: '$specmaticCoverage.operations.path',
+            method: '$specmaticCoverage.operations.method',
+          },
+        },
+        dependsOn: {
+          $addToSet: {
+            specId: '$specmaticStubUsage.specId',
+            path: '$specmaticStubUsage.operations.path',
+            method: '$specmaticStubUsage.operations.method',
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        buildDefinitionId: '$_id',
+        endpoints: {
+          $filter: {
+            input: '$endpoints',
+            as: 'endpoint',
+            cond: { $ne: ['$$endpoints', {}] },
+          },
+        },
+        dependsOn: {
+          $filter: {
+            input: '$dependsOn',
+            as: 'dependency',
+            cond: { $ne: ['$$dependency', {}] },
+          },
+        },
+      },
+    },
+    { $project: { _id: 0 } },
+  ]);
+
+  return data.map(x => ({
+    ...x,
+    leafDirectory: path.dirname(x.leafDirectory).split(path.sep).at(-1),
+  }));
+};
+
 export type ContractStats = {
   weeklyApiCoverage: Awaited<ReturnType<typeof getWeeklyApiCoverageSummary>>;
   weeklyStubUsage: Awaited<ReturnType<typeof getWeeklyStubUsageSummary>>;
   weeklyConsumerProducerSpecs: Awaited<
     ReturnType<typeof getWeeklyConsumerProducerSpecCount>
   >;
+  chordGraph: Awaited<ReturnType<typeof getChordGraphData>>;
 };
 
 export const getContractStatsAsChunks = async (
@@ -619,22 +746,6 @@ export const getContractStatsAsChunks = async (
     getWeeklyConsumerProducerSpecCount(queryContext).then(
       sendChunk('weeklyConsumerProducerSpecs')
     ),
+    getChordGraphData(queryContext).then(sendChunk('chordGraph')),
   ]);
-};
-
-export type Service = {
-  repoId: string;
-  repoName: string;
-  leafDirectory: string; // This is the leaf directory of the specmaticConfigPath
-  serviceId: string; // Can be skipped, not needed on the UI
-  endpoints: {
-    specId: string;
-    path: string;
-    method: string;
-  }[];
-  dependsOn: {
-    specId: string;
-    path: string;
-    method: string;
-  }[];
 };
