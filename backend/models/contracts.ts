@@ -677,7 +677,7 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
         repoName: { $first: '$repo' },
         serviceId: { $first: '$serviceId' },
         leafDirectory: { $first: '$specmaticConfigPath' },
-        endPoints: {
+        endpoints: {
           $addToSet: {
             specId: '$specmaticCoverage.specId',
             path: '$specmaticCoverage.operations.path',
@@ -700,7 +700,7 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
           $filter: {
             input: '$endpoints',
             as: 'endpoint',
-            cond: { $ne: ['$$endpoints', {}] },
+            cond: { $ne: ['$$endpoint', {}] },
           },
         },
         dependsOn: {

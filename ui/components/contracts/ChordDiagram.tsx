@@ -13,6 +13,7 @@ type ChordDiagramProps<T> = {
   getRelated: (d: T) => T[];
   display?: typeof defaultDisplay;
   lineColor: (x: T) => string;
+  ribbonTooltip: (source: T | undefined, target: T | undefined) => string | undefined;
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -36,6 +37,7 @@ const ChordDiagram = <T extends {}>({
   getRelated,
   display = defaultDisplay,
   lineColor,
+  ribbonTooltip,
 }: ChordDiagramProps<T>) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [svgDimensions, setSvgDimensions] = useState({ width: 0, height: 0 });
@@ -95,6 +97,11 @@ const ChordDiagram = <T extends {}>({
               key={chord.source.index}
               d={(ribbon(chord as unknown as Ribbon) as unknown as string | null) || ''}
               fill={color}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-html={ribbonTooltip(
+                data?.at(chord.source.index),
+                data?.at(chord.target.index)
+              )}
             />
           );
         })}

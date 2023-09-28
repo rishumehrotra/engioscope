@@ -3,14 +3,11 @@ import { multiply } from 'rambda';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import { Stat, SummaryCard } from '../SummaryCard.jsx';
-import { exists, minPluralise, num } from '../../helpers/utils.js';
+import { minPluralise, num } from '../../helpers/utils.js';
 import { increaseIsBetter } from '../graphs/TinyAreaGraph.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import type { ContractStats } from '../../../backend/models/contracts.js';
-import type { RouterClient } from '../../helpers/trpc.js';
-import { trpc } from '../../helpers/trpc.js';
-import ChordDiagram from './ChordDiagram.jsx';
-import { lineColor } from '../OverviewGraphs2/utils.jsx';
+import ServiceChordDiagram from './ServiceChordDiagram.jsx';
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
@@ -25,32 +22,9 @@ const useCreateUrlWithFilter = (slug: string) => {
   }, [queryContext, slug]);
 };
 
-const serviceServesEndpoint =
-  ({ path, method, specId }: { path: string; method: string; specId: string }) =>
-  (service: RouterClient['contracts']['getServiceGraph'][number]) => {
-    return service.endpoints.some(
-      e => e.path === path && e.method === method && e.specId === specId
-    );
-  };
-
 export default () => {
   const sseUrl = useCreateUrlWithFilter('contracts');
   const contractsStats = useSse<ContractStats>(sseUrl, '0');
-  const queryContext = useQueryContext();
-  const serviceGraph = trpc.contracts.getServiceGraph.useQuery(queryContext);
-
-  const services = useMemo(() => {
-    return serviceGraph.data?.map(service => {
-      return {
-        ...service,
-        dependsOn: service.dependsOn.map(d => ({
-          ...d,
-          serviceId:
-            serviceGraph.data.find(serviceServesEndpoint(d))?.serviceId || 'unknown',
-        })),
-      };
-    });
-  }, [serviceGraph.data]);
 
   return (
     <div className="grid grid-cols-3 gap-4">
@@ -245,15 +219,7 @@ export default () => {
       </div>
       <div className="col-span-2">
         Service dependencies
-        <ChordDiagram
-          data={services}
-          getRelated={service =>
-            service.dependsOn
-              .map(s => services?.find(x => x.serviceId === s.serviceId))
-              .filter(exists)
-          }
-          lineColor={x => lineColor(x.serviceId)}
-        />
+        <ServiceChordDiagram />
       </div>
     </div>
   );
