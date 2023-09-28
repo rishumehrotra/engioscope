@@ -17,6 +17,7 @@ import summary from './summary.js';
 import pullRequests from './pull-requests.js';
 import teams from './teams.js';
 import config from './config.js';
+import contracts from './contracts.js';
 
 export const appRouter = t.router({
   builds,
@@ -34,6 +35,7 @@ export const appRouter = t.router({
   pullRequests,
   teams,
   config,
+  contracts,
   ...others,
 });
 

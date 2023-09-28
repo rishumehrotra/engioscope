@@ -596,7 +596,7 @@ export const getWeeklyConsumerProducerSpecCount = async (queryContext: QueryCont
   });
 };
 
-export type Service = {
+type Service = {
   repoId: string;
   repoName: string;
   leafDirectory: string; // This is the leaf directory of the specmaticConfigPath
@@ -613,7 +613,7 @@ export type Service = {
   }[];
 };
 
-export const getChordGraphData = async (queryContext: QueryContext) => {
+export const getServiceGraph = async (queryContext: QueryContext) => {
   const { endDate } = fromContext(queryContext);
 
   const data = await AzureBuildReportModel.aggregate<Service>([
@@ -727,7 +727,6 @@ export type ContractStats = {
   weeklyConsumerProducerSpecs: Awaited<
     ReturnType<typeof getWeeklyConsumerProducerSpecCount>
   >;
-  chordGraph: Awaited<ReturnType<typeof getChordGraphData>>;
 };
 
 export const getContractStatsAsChunks = async (
@@ -746,6 +745,5 @@ export const getContractStatsAsChunks = async (
     getWeeklyConsumerProducerSpecCount(queryContext).then(
       sendChunk('weeklyConsumerProducerSpecs')
     ),
-    getChordGraphData(queryContext).then(sendChunk('chordGraph')),
   ]);
 };
