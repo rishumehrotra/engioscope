@@ -27,6 +27,14 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "scratch"],
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Launch server",
+      "request": "launch",
+      "runtimeArgs": ["run-script", "start"],
+      "runtimeExecutable": "npm",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node"
     }
   ]
 }

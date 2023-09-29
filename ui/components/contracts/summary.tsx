@@ -76,6 +76,56 @@ export default () => {
               ].join(' ')
             }
           />
+          <Stat
+            title="Operations used by both providers and consumers"
+            tooltip={
+              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                ? [
+                    bold(
+                      num(
+                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                      )
+                    ),
+                    'out of',
+                    bold(
+                      num(
+                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.total || 0
+                      )
+                    ),
+                    minPluralise(
+                      contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0,
+                      'spec has',
+                      'specs have'
+                    ),
+                    'been used by both providers and consumers',
+                  ].join(' ')
+                : undefined
+            }
+            value={
+              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                ? contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                : null
+            }
+            graphPosition="right"
+            graphData={contractsStats.weeklyConsumerProducerSpecAndOps}
+            graphColor={
+              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                ? increaseIsBetter(
+                    contractsStats.weeklyConsumerProducerSpecAndOps.map(w => w.count)
+                  )
+                : null
+            }
+            graphItemToValue={x => x.count}
+            graphDataPointLabel={x =>
+              [
+                bold(num(x.count)),
+                'out of',
+                bold(num(x.total)),
+                minPluralise(x.count, 'spec has', 'specs have'),
+                'been used by both providers and consumers',
+              ].join(' ')
+            }
+          />
         </SummaryCard>
         <SummaryCard className="mb-4 rounded-md">
           <div className="border-b border-theme-seperator pb-6">
