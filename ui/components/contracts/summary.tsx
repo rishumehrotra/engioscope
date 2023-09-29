@@ -31,52 +31,6 @@ export default () => {
       <div>
         <SummaryCard className="mb-4 rounded-md">
           <Stat
-            title="Contracts used by both providers and consumers"
-            tooltip={
-              isDefined(contractsStats.weeklyConsumerProducerSpecs)
-                ? [
-                    bold(
-                      num(contractsStats.weeklyConsumerProducerSpecs.at(-1)?.count || 0)
-                    ),
-                    'out of',
-                    bold(
-                      num(contractsStats.weeklyConsumerProducerSpecs.at(-1)?.total || 0)
-                    ),
-                    minPluralise(
-                      contractsStats.weeklyConsumerProducerSpecs.at(-1)?.count || 0,
-                      'spec has',
-                      'specs have'
-                    ),
-                    'been used by both providers and consumers',
-                  ].join(' ')
-                : undefined
-            }
-            value={
-              isDefined(contractsStats.weeklyConsumerProducerSpecs)
-                ? contractsStats.weeklyConsumerProducerSpecs.at(-1)?.count || 0
-                : null
-            }
-            graphPosition="right"
-            graphData={contractsStats.weeklyConsumerProducerSpecs}
-            graphColor={
-              isDefined(contractsStats.weeklyConsumerProducerSpecs)
-                ? increaseIsBetter(
-                    contractsStats.weeklyConsumerProducerSpecs.map(w => w.count)
-                  )
-                : null
-            }
-            graphItemToValue={x => x.count}
-            graphDataPointLabel={x =>
-              [
-                bold(num(x.count)),
-                'out of',
-                bold(num(x.total)),
-                minPluralise(x.count, 'spec has', 'specs have'),
-                'been used by both providers and consumers',
-              ].join(' ')
-            }
-          />
-          <Stat
             title="Operations used by both providers and consumers"
             tooltip={
               isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
@@ -94,8 +48,8 @@ export default () => {
                     ),
                     minPluralise(
                       contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0,
-                      'spec has',
-                      'specs have'
+                      'operation has',
+                      'operations have'
                     ),
                     'been used by both providers and consumers',
                   ].join(' ')
@@ -121,7 +75,7 @@ export default () => {
                 bold(num(x.count)),
                 'out of',
                 bold(num(x.total)),
-                minPluralise(x.count, 'spec has', 'specs have'),
+                minPluralise(x.count, 'operation has', 'operations have'),
                 'been used by both providers and consumers',
               ].join(' ')
             }

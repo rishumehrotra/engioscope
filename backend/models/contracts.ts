@@ -405,7 +405,7 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
   });
 };
 
-const filterAndAddSpecsList: PipelineStage[] = [
+const filterCoverageAndStubs: PipelineStage[] = [
   {
     $addFields: {
       specmaticCoverage: {
@@ -424,182 +424,34 @@ const filterAndAddSpecsList: PipelineStage[] = [
       },
     },
   },
+];
+
+const unwindCoverageAndStubOperations: PipelineStage[] = [
   {
-    $addFields: {
-      coverageSpecs: {
-        $map: {
-          input: '$specmaticCoverage',
-          as: 'coverage',
-          in: '$$coverage.specId',
-        },
-      },
-      stubSpecs: {
-        $map: {
-          input: '$specmaticStubUsage',
-          as: 'stub',
-          in: '$$stub.specId',
-        },
-      },
+    $unwind: {
+      path: '$specmaticCoverage',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $unwind: {
+      path: '$specmaticCoverage.operations',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $unwind: {
+      path: '$specmaticStubUsage',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $unwind: {
+      path: '$specmaticStubUsage.operations',
+      preserveNullAndEmptyArrays: true,
     },
   },
 ];
-
-const getConsumerProducerSpecCount = async (queryContext: QueryContext) => {
-  const { startDate, endDate } = fromContext(queryContext);
-
-  return AzureBuildReportModel.aggregate<{
-    weekIndex: number;
-    buildDefinitionId: string;
-    coverageSpecs: string[];
-    stubSpecs: string[];
-  }>([
-    buildReportsWithSpecmatic(queryContext, {
-      createdAt: inDateRange(startDate, endDate),
-      $or: [
-        { specmaticCoverage: { $exists: true } },
-        { specmaticStubUsage: { $exists: true } },
-      ],
-    }),
-    ...filterAndAddSpecsList,
-    { $sort: { createdAt: 1 } },
-    {
-      $group: {
-        _id: {
-          weekIndex: weekIndexValue(startDate, '$createdAt'),
-          buildDefinitionId: '$buildDefinitionId',
-        },
-        coverageSpecs: { $last: { $ifNull: ['$coverageSpecs', []] } },
-        stubSpecs: { $last: { $ifNull: ['$stubSpecs', []] } },
-        latestBuildId: { $last: '$_id' },
-      },
-    },
-    {
-      $addFields: {
-        weekIndex: '$_id.weekIndex',
-        buildDefinitionId: '$_id.buildDefinitionId',
-      },
-    },
-    { $project: { _id: 0 } },
-  ]);
-};
-
-const getOlderConsumerProducerSpecCountForBuildDefinition = async (
-  queryContext: QueryContext,
-  buildDefinitionId: string
-) => {
-  const { startDate } = fromContext(queryContext);
-
-  return AzureBuildReportModel.aggregate<{
-    // buildId: string;
-    buildDefinitionId: string;
-    coverageSpecs: string[];
-    stubSpecs: string[];
-    // createdAt: Date;
-  }>([
-    buildReportsWithSpecmatic(queryContext, {
-      buildDefinitionId,
-      createdAt: { $lt: startDate },
-      $or: [
-        { specmaticCoverage: { $exists: true } },
-        { specmaticStubUsage: { $exists: true } },
-      ],
-    }),
-    { $sort: { createdAt: -1 } },
-    { $limit: 1 },
-    ...filterAndAddSpecsList,
-    {
-      $project: {
-        _id: 0,
-        buildId: 1,
-        buildDefinitionId: 1,
-        coverageSpecs: 1,
-        stubSpecs: 1,
-      },
-    },
-  ]).then(results => (results.length ? results[0] : null));
-};
-
-export const getWeeklyConsumerProducerSpecCount = async (queryContext: QueryContext) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
-  const { numberOfIntervals } = createIntervals(startDate, endDate);
-
-  const [consumerProducerSpecCountForDefs, buildDefs] = await Promise.all([
-    getConsumerProducerSpecCount(queryContext),
-    getBuildDefIds(collectionName, project),
-  ]);
-
-  const buildDefsWithConsumerProducerSpecCount = buildDefs.map(buildDef => {
-    const matchingConsumerProducerSpecCount = consumerProducerSpecCountForDefs.filter(
-      coverage => coverage.buildDefinitionId === buildDef.id.toString()
-    );
-    return {
-      buildDefId: buildDef.id.toString(),
-      consumerProducerSpecCountByWeek: matchingConsumerProducerSpecCount.sort(
-        asc(byNum(w => w.weekIndex))
-      ),
-    };
-  });
-
-  const continuousConsumerProducerSpecCount = await Promise.all(
-    buildDefsWithConsumerProducerSpecCount.map(
-      async ({ buildDefId, consumerProducerSpecCountByWeek }) => {
-        return {
-          buildDefId,
-          consumerProducerSpecCountByWeek: await makeContinuous(
-            queryContext,
-            consumerProducerSpecCountByWeek,
-            () =>
-              getOlderConsumerProducerSpecCountForBuildDefinition(
-                queryContext,
-                buildDefId
-              ),
-            item => ({
-              buildDefinitionId: buildDefId,
-              coverageSpecs: item?.coverageSpecs || [],
-              stubSpecs: item?.stubSpecs || [],
-            }),
-            {
-              buildDefinitionId: buildDefId,
-              coverageSpecs: [],
-              stubSpecs: [],
-            }
-          ),
-        };
-      }
-    )
-  );
-
-  return range(0, numberOfIntervals).map(weekIndex => {
-    const weekConsumerProducerSpecCount = continuousConsumerProducerSpecCount.reduce<{
-      coverageSpecs: string[];
-      stubSpecs: string[];
-    }>(
-      (acc, { consumerProducerSpecCountByWeek }) => {
-        const matchingWeek = consumerProducerSpecCountByWeek.find(
-          coverage => coverage.weekIndex === weekIndex
-        );
-        if (matchingWeek) {
-          acc.coverageSpecs = acc.coverageSpecs.concat(matchingWeek.coverageSpecs);
-          acc.stubSpecs = acc.stubSpecs.concat(matchingWeek.stubSpecs);
-        }
-        return acc;
-      },
-      { coverageSpecs: [], stubSpecs: [] }
-    );
-
-    return {
-      weekIndex,
-      count: intersection(
-        weekConsumerProducerSpecCount.coverageSpecs,
-        weekConsumerProducerSpecCount.stubSpecs
-      ).length,
-      total: new Set([
-        ...weekConsumerProducerSpecCount.coverageSpecs,
-        ...weekConsumerProducerSpecCount.stubSpecs,
-      ]).size,
-    };
-  });
-};
 
 type Service = {
   repoId: string;
@@ -629,52 +481,12 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
         { specmaticStubUsage: { $exists: true } },
       ],
     }),
-    {
-      $addFields: {
-        specmaticCoverage: {
-          $filter: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-          },
-        },
-        specmaticStubUsage: {
-          $filter: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
+    ...filterCoverageAndStubs,
     { $sort: { createdAt: 1 } },
     { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$build' } },
     { $addFields: { serviceId: { $concat: ['$repoId', '$specmaticConfigPath'] } } },
-    {
-      $unwind: {
-        path: '$specmaticCoverage',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticCoverage.operations',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticStubUsage',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticStubUsage.operations',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    ...unwindCoverageAndStubOperations,
     {
       $group: {
         _id: '$buildId',
@@ -726,6 +538,51 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
   }));
 };
 
+const groupUniqueCoverageAndStubOperations: PipelineStage[] = [
+  {
+    $group: {
+      _id: '$buildId',
+      buildId: { $first: '$buildId' },
+      buildDefinitionId: { $first: '$buildDefinitionId' },
+      createdAt: { $first: '$createdAt' },
+      coverageOps: {
+        $addToSet: {
+          specId: '$specmaticCoverage.specId',
+          path: '$specmaticCoverage.operations.path',
+          method: '$specmaticCoverage.operations.method',
+          responseCode: '$specmaticCoverage.operations.responseCode',
+        },
+      },
+      stubOps: {
+        $addToSet: {
+          specId: '$specmaticStubUsage.specId',
+          path: '$specmaticStubUsage.operations.path',
+          method: '$specmaticStubUsage.operations.method',
+          responseCode: '$specmaticStubUsage.operations.responseCode',
+        },
+      },
+    },
+  },
+  {
+    $addFields: {
+      coverageOps: {
+        $filter: {
+          input: '$coverageOps',
+          as: 'coverageOp',
+          cond: { $ne: ['$$coverageOp', {}] },
+        },
+      },
+      stubOps: {
+        $filter: {
+          input: '$stubOps',
+          as: 'stubOp',
+          cond: { $ne: ['$$stubOp', {}] },
+        },
+      },
+    },
+  },
+];
+
 const getConsumerProducerSpecAndOperationsCount = async (queryContext: QueryContext) => {
   const { startDate, endDate } = fromContext(queryContext);
 
@@ -746,96 +603,15 @@ const getConsumerProducerSpecAndOperationsCount = async (queryContext: QueryCont
     }[];
   }>([
     buildReportsWithSpecmatic(queryContext, {
-      buildDefinitionId: '29173',
       createdAt: inDateRange(startDate, endDate),
       $or: [
         { specmaticCoverage: { $exists: true } },
         { specmaticStubUsage: { $exists: true } },
       ],
     }),
-    {
-      $addFields: {
-        specmaticCoverage: {
-          $filter: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-          },
-        },
-        specmaticStubUsage: {
-          $filter: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticCoverage',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticCoverage.operations',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticStubUsage',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticStubUsage.operations',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $group: {
-        _id: '$buildId',
-        buildDefinitionId: { $first: '$buildDefinitionId' },
-        createdAt: { $first: '$createdAt' },
-        coverageOps: {
-          $addToSet: {
-            specId: '$specmaticCoverage.specId',
-            path: '$specmaticCoverage.operations.path',
-            method: '$specmaticCoverage.operations.method',
-            responseCode: '$specmaticCoverage.operations.responseCode',
-          },
-        },
-        stubOps: {
-          $addToSet: {
-            specId: '$specmaticStubUsage.specId',
-            path: '$specmaticStubUsage.operations.path',
-            method: '$specmaticStubUsage.operations.method',
-            responseCode: '$specmaticStubUsage.operations.responseCode',
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        coverageOps: {
-          $filter: {
-            input: '$coverageOps',
-            as: 'coverageOp',
-            cond: { $ne: ['$$coverageOp', {}] },
-          },
-        },
-        stubOps: {
-          $filter: {
-            input: '$stubOps',
-            as: 'stubOp',
-            cond: { $ne: ['$$stubOp', {}] },
-          },
-        },
-      },
-    },
+    ...filterCoverageAndStubs,
+    ...unwindCoverageAndStubOperations,
+    ...groupUniqueCoverageAndStubOperations,
     { $sort: { createdAt: 1 } },
     {
       $group: {
@@ -862,7 +638,7 @@ const getOlderConsumerProducerSpecAndOpsForBuildDef = async (
   queryContext: QueryContext,
   buildDefinitionId: string
 ) => {
-  const { endDate } = fromContext(queryContext);
+  const { startDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<{
     // buildId: string;
@@ -883,7 +659,7 @@ const getOlderConsumerProducerSpecAndOpsForBuildDef = async (
   }>([
     buildReportsWithSpecmatic(queryContext, {
       buildDefinitionId,
-      createdAt: { $lt: endDate },
+      createdAt: { $lt: startDate },
       $or: [
         { specmaticCoverage: { $exists: true } },
         { specmaticStubUsage: { $exists: true } },
@@ -891,90 +667,9 @@ const getOlderConsumerProducerSpecAndOpsForBuildDef = async (
     }),
     { $sort: { createdAt: -1 } },
     { $limit: 1 },
-    {
-      $addFields: {
-        specmaticCoverage: {
-          $filter: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-          },
-        },
-        specmaticStubUsage: {
-          $filter: {
-            input: '$specmaticStubUsage',
-            as: 'stub',
-            cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticCoverage',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticCoverage.operations',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticStubUsage',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $unwind: {
-        path: '$specmaticStubUsage.operations',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $group: {
-        _id: '$buildId',
-        buildId: { $first: '$buildId' },
-        buildDefinitionId: { $first: '$buildDefinitionId' },
-        createdAt: { $first: '$createdAt' },
-        coverageOps: {
-          $addToSet: {
-            specId: '$specmaticCoverage.specId',
-            path: '$specmaticCoverage.operations.path',
-            method: '$specmaticCoverage.operations.method',
-            responseCode: '$specmaticCoverage.operations.responseCode',
-          },
-        },
-        stubOps: {
-          $addToSet: {
-            specId: '$specmaticStubUsage.specId',
-            path: '$specmaticStubUsage.operations.path',
-            method: '$specmaticStubUsage.operations.method',
-            responseCode: '$specmaticStubUsage.operations.responseCode',
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        coverageOps: {
-          $filter: {
-            input: '$coverageOps',
-            as: 'coverageOp',
-            cond: { $ne: ['$$coverageOp', {}] },
-          },
-        },
-        stubOps: {
-          $filter: {
-            input: '$stubOps',
-            as: 'stubOp',
-            cond: { $ne: ['$$stubOp', {}] },
-          },
-        },
-      },
-    },
+    ...filterCoverageAndStubs,
+    ...unwindCoverageAndStubOperations,
+    ...groupUniqueCoverageAndStubOperations,
     { $project: { _id: 0 } },
   ]).then(results => (results.length ? results[0] : null));
 };
@@ -990,20 +685,6 @@ export const getWeeklyConsumerProducerSpecAndOperationsCount = async (
   ]);
 
   const buildDefsWithCount = buildDefs.map(buildDef => {
-    if (buildDef.id.toString() === '29173') {
-      // console.log(
-      //   'consumerProducerSpecAndOpsCountForDefs',
-      //   '=========================================================================',
-      //   JSON.stringify(
-      //     consumerProducerSpecAndOpsCountForDefs.filter(
-      //       x => x.buildDefinitionId === '29173'
-      //     ),
-      //     null,
-      //     2
-      //   )
-      // );
-    }
-
     const matchingDefsCount = consumerProducerSpecAndOpsCountForDefs.filter(
       coverage => coverage.buildDefinitionId === buildDef.id.toString()
     );
@@ -1013,26 +694,8 @@ export const getWeeklyConsumerProducerSpecAndOperationsCount = async (
     };
   });
 
-  // console.log(
-  //   'buildDefsWithCount',
-  //   '=========================================================================',
-  //   JSON.stringify(
-  //     buildDefsWithCount.filter(x => x.buildDefId === '29173'),
-  //     null,
-  //     2
-  //   )
-  // );
-
   const continuousCount = await Promise.all(
     buildDefsWithCount.map(async ({ buildDefId, countByWeek }) => {
-      // if (buildDefId === '29173') {
-      //   console.log(
-      //     'countByWeek',
-      //     '=========================================================================',
-      //     JSON.stringify(countByWeek, null, 2)
-      //   );
-      // }
-
       return {
         buildDefId,
         countByWeek: await makeContinuous(
@@ -1053,16 +716,6 @@ export const getWeeklyConsumerProducerSpecAndOperationsCount = async (
       };
     })
   );
-
-  // console.log(
-  //   'continuousCount',
-  //   '=========================================================================',
-  //   JSON.stringify(
-  //     continuousCount.filter(x => x.buildDefId === '29173'),
-  //     null,
-  //     2
-  //   )
-  // );
 
   return range(0, numberOfIntervals).map(weekIndex => {
     const weeklyCount = continuousCount.reduce<{
@@ -1103,9 +756,6 @@ export const getWeeklyConsumerProducerSpecAndOperationsCount = async (
 export type ContractStats = {
   weeklyApiCoverage: Awaited<ReturnType<typeof getWeeklyApiCoverageSummary>>;
   weeklyStubUsage: Awaited<ReturnType<typeof getWeeklyStubUsageSummary>>;
-  weeklyConsumerProducerSpecs: Awaited<
-    ReturnType<typeof getWeeklyConsumerProducerSpecCount>
-  >;
   weeklyConsumerProducerSpecAndOps: Awaited<
     ReturnType<typeof getWeeklyConsumerProducerSpecAndOperationsCount>
   >;
@@ -1124,9 +774,6 @@ export const getContractStatsAsChunks = async (
   await Promise.all([
     getWeeklyApiCoverageSummary(queryContext).then(sendChunk('weeklyApiCoverage')),
     getWeeklyStubUsageSummary(queryContext).then(sendChunk('weeklyStubUsage')),
-    getWeeklyConsumerProducerSpecCount(queryContext).then(
-      sendChunk('weeklyConsumerProducerSpecs')
-    ),
     getWeeklyConsumerProducerSpecAndOperationsCount(queryContext).then(
       sendChunk('weeklyConsumerProducerSpecAndOps')
     ),
