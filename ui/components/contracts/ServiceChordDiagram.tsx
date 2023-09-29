@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import { propEq } from 'rambda';
 import { trpc, type RouterClient } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import ChordDiagram from './ChordDiagram.jsx';
@@ -13,40 +14,44 @@ const serviceServesEndpoint =
     );
   };
 
+const addServiceIds = (services: RouterClient['contracts']['getServiceGraph']) => {
+  return services.map(service => {
+    return {
+      ...service,
+      endpoints: service.endpoints.map(e => ({ ...e, serviceId: service.serviceId })),
+      dependsOn: service.dependsOn.map(d => ({
+        ...d,
+        serviceId: services.find(serviceServesEndpoint(d))?.serviceId || 'unknown',
+      })),
+    };
+  });
+};
+
+type ServiceWithIds = ReturnType<typeof addServiceIds>[number];
+
 const ServiceChordDiagram = () => {
   const queryContext = useQueryContext();
   const serviceGraph = trpc.contracts.getServiceGraph.useQuery(queryContext);
 
-  const services = useMemo(() => {
-    return serviceGraph.data?.map(service => {
-      return {
-        ...service,
-        endpoints: service.endpoints.map(e => ({ ...e, serviceId: service.serviceId })),
-        dependsOn: service.dependsOn.map(d => ({
-          ...d,
-          serviceId:
-            serviceGraph.data.find(serviceServesEndpoint(d))?.serviceId || 'unknown',
-        })),
-      };
-    });
-  }, [serviceGraph.data]);
-
-  type Service = NonNullable<typeof services>[number];
+  const services = useMemo(
+    () => addServiceIds(serviceGraph.data || []),
+    [serviceGraph.data]
+  );
 
   const getRelated = useCallback(
-    (service: Service) => {
+    (service: ServiceWithIds) => {
       return [...service.dependsOn, ...service.endpoints]
-        .map(s => services?.find(x => x.serviceId === s.serviceId))
+        .map(s => services?.find(propEq('serviceId', s.serviceId)))
         .filter(exists);
     },
     [services]
   );
 
   const serviceName = useCallback(
-    (service?: Service) => {
+    (service?: ServiceWithIds) => {
       if (!service) return 'Unknown';
       const isMonorepo =
-        (services?.filter(s => s.repoId === service.repoId) || []).length > 1;
+        (services || [])?.filter(s => s.repoId === service.repoId).length > 1;
 
       return isMonorepo ? service.leafDirectory : service.repoName;
     },
@@ -58,6 +63,7 @@ const ServiceChordDiagram = () => {
       data={services}
       getRelated={getRelated}
       lineColor={x => lineColor(x.serviceId)}
+      getKey={x => x.serviceId}
       ribbonTooltip={(source, target) => {
         if (!source) return 'Unknown';
         return `
@@ -67,6 +73,10 @@ const ServiceChordDiagram = () => {
           </div>
         `;
       }}
+      ribbonWeight={(from, to) => {
+        return from.dependsOn.filter(d => d.serviceId === to.serviceId).length;
+      }}
+      chordTooltip={serviceName}
     />
   );
 };
