@@ -547,7 +547,6 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
     const leafDirectory = path.dirname(s.leafDirectory).split(path.sep).at(-1);
 
     return {
-      leafDirectory,
       name: isMonorepo(s.repoId) ? leafDirectory : s.repoName,
       serviceId: md5(s.serviceId),
       endpoints: s.endpoints.map(endpoint => ({

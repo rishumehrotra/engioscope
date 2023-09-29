@@ -3,9 +3,11 @@ import type { Ribbon } from 'd3-chord';
 import { chordDirected as d3Chord, ribbon as d3Ribbon } from 'd3-chord';
 import type { DefaultArcObject } from 'd3-shape';
 import { arc as d3Arc } from 'd3-shape';
+import { byNum } from 'sort-lib';
+import { identity } from 'rambda';
 
 export const defaultDisplay = {
-  arcTickness: 10,
+  arcTickness: 15,
   gapBetweenChordsRadians: 0.03,
 };
 
@@ -68,7 +70,11 @@ const ChordDiagram = <T extends {}>({
   }, []);
 
   const chords = useMemo(() => {
-    const chord = d3Chord().padAngle(display.gapBetweenChordsRadians);
+    const chord = d3Chord()
+      .padAngle(display.gapBetweenChordsRadians)
+      .sortGroups(byNum(identity))
+      .sortSubgroups(byNum(identity))
+      .sortChords(byNum(identity));
 
     return chord(constructMatrix(data || [], getRelated, ribbonWeight));
   }, [data, display.gapBetweenChordsRadians, getRelated, ribbonWeight]);

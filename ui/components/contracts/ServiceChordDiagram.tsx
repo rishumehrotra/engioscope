@@ -49,7 +49,7 @@ const ribbonTooltip = (source: Service, target: Service) => {
   `;
 };
 
-const whenNonZero = (arr: unknown[], value: string) => (arr.length ? value : '');
+const whenNonZeroLength = (arr: unknown[], value: string) => (arr.length ? value : '');
 const chordTooltip = (services: Service[]) => (service: Service) => {
   const consumers = services.filter(s =>
     s.dependsOn.some(d => d.serviceId === service.serviceId)
@@ -63,7 +63,7 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
 
   return `
     ${serviceNameHtml(service)}
-    ${whenNonZero(
+    ${whenNonZeroLength(
       consumers,
       `<div class="mt-2">
         <strong>Used by</strong>
@@ -72,7 +72,7 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
         </ul>
       </div>`
     )}
-    ${whenNonZero(
+    ${whenNonZeroLength(
       service.endpoints,
       `<div class="mt-1">
         <strong>Exposes</strong>
@@ -81,7 +81,7 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
         </ul>
       </div>`
     )}
-    ${whenNonZero(
+    ${whenNonZeroLength(
       dependsOn,
       `<div class="mt-1">
         <strong>Depends on</strong>
@@ -102,7 +102,7 @@ const ServiceChordDiagram = () => {
   const getRelated = useCallback(
     (service: Service) => {
       return service.dependsOn
-        .map(s => services?.find(propEq('serviceId', s.serviceId)))
+        .map(s => services.find(propEq('serviceId', s.serviceId)))
         .filter(exists);
     },
     [services]
