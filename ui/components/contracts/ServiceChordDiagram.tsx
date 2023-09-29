@@ -27,6 +27,33 @@ const addServiceIds = (services: RouterClient['contracts']['getServiceGraph']) =
   });
 };
 
+const endpointHtml = ({ method, path }: { method: string; path: string }) => {
+  return `
+    <li class="mb-1">
+      <span class="bg-yellow-300 text-theme-base px-1 rounded inline-block mr-2 text-sm font-medium">
+        ${method}
+      </span>
+      ${path}
+    </li>
+  `;
+};
+
+const serviceNameHtml = (
+  service: ServiceWithIds,
+  serviceName: (service: ServiceWithIds) => string | undefined,
+  tag?: string
+) => {
+  return `
+    <div class="flex items-center gap-2">
+      <span class="inline-block w-2 h-2 rounded-full" style="background: ${lineColor(
+        service.serviceId
+      )}"> </span>
+      ${serviceName(service)}
+      ${tag ? `<span class="ml-2 text-sm text-theme-icon">${tag}</span>` : ''}
+    </div>
+  `;
+};
+
 type ServiceWithIds = ReturnType<typeof addServiceIds>[number];
 
 const ServiceChordDiagram = () => {
@@ -40,7 +67,10 @@ const ServiceChordDiagram = () => {
 
   const getRelated = useCallback(
     (service: ServiceWithIds) => {
-      return [...service.dependsOn, ...service.endpoints]
+      return [
+        ...service.dependsOn,
+        // ...service.endpoints,
+      ]
         .map(s => services?.find(propEq('serviceId', s.serviceId)))
         .filter(exists);
     },
@@ -66,17 +96,41 @@ const ServiceChordDiagram = () => {
       getKey={x => x.serviceId}
       ribbonTooltip={(source, target) => {
         if (!source) return 'Unknown';
+
         return `
           <div>
-            Provider: ${serviceName(source)}<br />
-            Consumer: ${serviceName(target)}
+            ${serviceNameHtml(source, serviceName, 'Provider')}
+            ${serviceNameHtml(target, serviceName, 'Consumer')}
+            <div class="mt-1">
+              <strong>Methods used:</strong>
+              <ul>
+                ${target.dependsOn
+                  .filter(d => d.serviceId === source.serviceId)
+                  .map(endpointHtml)
+                  .join('')}
+              </ul>
+            </div>
           </div>
         `;
       }}
       ribbonWeight={(from, to) => {
         return from.dependsOn.filter(d => d.serviceId === to.serviceId).length;
       }}
-      chordTooltip={serviceName}
+      chordTooltip={service => `
+        ${serviceNameHtml(service, serviceName)}
+        ${
+          service.endpoints.length > 0
+            ? `
+            <div class="mt-1">
+              <strong>Exposes</strong>
+              <ul>
+                ${service.endpoints.map(endpointHtml).join('')}
+              </ul>
+            </div>
+            `
+            : ''
+        }
+      `}
     />
   );
 };

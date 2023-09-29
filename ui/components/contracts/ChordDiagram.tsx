@@ -33,10 +33,10 @@ type ChordDiagramProps<T> = {
   getRelated: (d: T) => T[];
   display?: typeof defaultDisplay;
   lineColor: (x: T) => string;
-  ribbonTooltip: (source: T | undefined, target: T | undefined) => string | undefined;
+  ribbonTooltip?: (source: T, target: T) => string | undefined;
   getKey: (x: T) => string;
   ribbonWeight: (from: T, to: T) => number;
-  chordTooltip: (x: T) => string | undefined;
+  chordTooltip?: (x: T) => string | undefined;
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -102,26 +102,25 @@ const ChordDiagram = <T extends {}>({
               fill={lineColor(dataItem)}
               className="hover:opacity-70"
               data-tooltip-id="react-tooltip"
-              data-tooltip-html={chordTooltip(dataItem)}
+              data-tooltip-html={chordTooltip?.(dataItem)}
             />
           );
         })}
 
         {chords.map(chord => {
-          const dataItem = data?.at(chord.source.index);
-          if (!dataItem) return null;
+          const sourceDataItem = data?.at(chord.source.index);
+          const targetDataItem = data?.at(chord.target.index);
+
+          if (!sourceDataItem || !targetDataItem) return null;
 
           return (
             <path
-              key={getKey(dataItem)}
+              key={getKey(sourceDataItem)}
               d={(ribbon(chord as unknown as Ribbon) as unknown as string | null) || ''}
-              fill={`${lineColor(dataItem)}66`}
+              fill={`${lineColor(targetDataItem)}66`}
               className="hover:opacity-70"
               data-tooltip-id="react-tooltip"
-              data-tooltip-html={ribbonTooltip(
-                data?.at(chord.source.index),
-                data?.at(chord.target.index)
-              )}
+              data-tooltip-html={ribbonTooltip?.(targetDataItem, sourceDataItem)}
             />
           );
         })}
