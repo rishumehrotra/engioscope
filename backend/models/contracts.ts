@@ -135,8 +135,7 @@ const makeContinuous = async <T>(
   queryContext: QueryContext,
   weeklyData: ({ weekIndex: number } & T)[],
   getOneOlderItem: () => Promise<T | null>,
-  makeNonNull: (item: T | null | undefined) => T,
-  emptyValue: T
+  makeNonNull: (item: T | null | undefined) => T
 ) => {
   const { startDate, endDate } = fromContext(queryContext);
   const { numberOfIntervals } = createIntervals(startDate, endDate);
@@ -163,7 +162,7 @@ const makeContinuous = async <T>(
       acc.push({ weekIndex, ...makeNonNull(lastItem) });
       return acc;
     },
-    [{ weekIndex: 0, ...emptyValue }]
+    []
   );
 };
 
@@ -198,12 +197,7 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
             buildDefinitionId: buildDefId,
             totalOperations: item?.totalOperations || 0,
             coveredOperations: item?.coveredOperations || 0,
-          }),
-          {
-            buildDefinitionId: buildDefId,
-            totalOperations: 0,
-            coveredOperations: 0,
-          }
+          })
         ),
       };
     })
@@ -365,12 +359,7 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
             buildDefinitionId: buildDefId,
             totalOperations: item?.totalOperations || 0,
             zeroCountOperations: item?.zeroCountOperations || 0,
-          }),
-          {
-            buildDefinitionId: buildDefId,
-            totalOperations: 0,
-            zeroCountOperations: 0,
-          }
+          })
         ),
       };
     })
@@ -706,12 +695,7 @@ export const getWeeklyConsumerProducerSpecAndOperationsCount = async (
             buildDefinitionId: buildDefId,
             coverageOps: item?.coverageOps || [],
             stubOps: item?.stubOps || [],
-          }),
-          {
-            buildDefinitionId: buildDefId,
-            coverageOps: [],
-            stubOps: [],
-          }
+          })
         ),
       };
     })
