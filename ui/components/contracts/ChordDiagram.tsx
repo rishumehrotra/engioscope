@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Ribbon } from 'd3-chord';
-import { chord as d3Chord, ribbon as d3Ribbon } from 'd3-chord';
+import { chordDirected as d3Chord, ribbon as d3Ribbon } from 'd3-chord';
 import type { DefaultArcObject } from 'd3-shape';
 import { arc as d3Arc } from 'd3-shape';
 
