@@ -1,36 +1,17 @@
 import React, { useCallback, useMemo } from 'react';
-import { propEq } from 'rambda';
+import { propEq, uniq } from 'rambda';
 import { trpc, type RouterClient } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import ChordDiagram from './ChordDiagram.jsx';
-import { exists } from '../../helpers/utils.js';
+import { exists, minPluralise } from '../../helpers/utils.js';
 import { lineColor } from '../OverviewGraphs2/utils.jsx';
 
-const serviceServesEndpoint =
-  ({ path, method, specId }: { path: string; method: string; specId: string }) =>
-  (service: RouterClient['contracts']['getServiceGraph'][number]) => {
-    return service.endpoints.some(
-      e => e.path === path && e.method === method && e.specId === specId
-    );
-  };
-
-const addServiceIds = (services: RouterClient['contracts']['getServiceGraph']) => {
-  return services.map(service => {
-    return {
-      ...service,
-      endpoints: service.endpoints.map(e => ({ ...e, serviceId: service.serviceId })),
-      dependsOn: service.dependsOn.map(d => ({
-        ...d,
-        serviceId: services.find(serviceServesEndpoint(d))?.serviceId || 'unknown',
-      })),
-    };
-  });
-};
+type Service = RouterClient['contracts']['getServiceGraph'][number];
 
 const endpointHtml = ({ method, path }: { method: string; path: string }) => {
   return `
     <li class="mb-1">
-      <span class="bg-yellow-300 text-theme-base px-1 rounded inline-block mr-2 text-sm font-medium">
+      <span class="bg-orange-500 text-theme-base px-1 rounded inline-block mr-2 text-xs font-bold">
         ${method}
       </span>
       ${path}
@@ -38,52 +19,91 @@ const endpointHtml = ({ method, path }: { method: string; path: string }) => {
   `;
 };
 
-const serviceNameHtml = (
-  service: ServiceWithIds,
-  serviceName: (service: ServiceWithIds) => string | undefined,
-  tag?: string
-) => {
+const serviceNameHtml = (service: Service, tag?: string) => {
   return `
     <div class="flex items-center gap-2">
       <span class="inline-block w-2 h-2 rounded-full" style="background: ${lineColor(
         service.serviceId
       )}"> </span>
-      ${serviceName(service)}
+      ${service.name}
       ${tag ? `<span class="ml-2 text-sm text-theme-icon">${tag}</span>` : ''}
     </div>
   `;
 };
 
-type ServiceWithIds = ReturnType<typeof addServiceIds>[number];
+const ribbonTooltip = (source: Service, target: Service) => {
+  if (!source) return 'Unknown';
+  const dependsOn = target.dependsOn.filter(d => d.serviceId === source.serviceId);
+
+  return `
+    <div>
+      ${serviceNameHtml(source, 'Provider')}
+      ${serviceNameHtml(target, 'Consumer')}
+      <div class="mt-1">
+        <strong>${minPluralise(dependsOn.length, 'Endpoint', 'Endpoints')} used:</strong>
+        <ul>
+          ${dependsOn.map(endpointHtml).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+};
+
+const whenNonZero = (arr: unknown[], value: string) => (arr.length ? value : '');
+const chordTooltip = (services: Service[]) => (service: Service) => {
+  const consumers = services.filter(s =>
+    s.dependsOn.some(d => d.serviceId === service.serviceId)
+  );
+
+  const dependsOn = uniq(
+    service.dependsOn
+      .map(x => services.find(propEq('serviceId', x.serviceId)))
+      .filter(exists)
+  );
+
+  return `
+    ${serviceNameHtml(service)}
+    ${whenNonZero(
+      consumers,
+      `<div class="mt-2">
+        <strong>Used by</strong>
+        <ul>
+          ${consumers.map(c => serviceNameHtml(c)).join('')}
+        </ul>
+      </div>`
+    )}
+    ${whenNonZero(
+      service.endpoints,
+      `<div class="mt-1">
+        <strong>Exposes</strong>
+        <ul>
+          ${service.endpoints.map(endpointHtml).join('')}
+        </ul>
+      </div>`
+    )}
+    ${whenNonZero(
+      dependsOn,
+      `<div class="mt-1">
+        <strong>Depends on</strong>
+        <ul>
+          ${dependsOn.map(x => serviceNameHtml(x)).join('')}
+        </ul>
+      </div>`
+    )}
+    `;
+};
 
 const ServiceChordDiagram = () => {
   const queryContext = useQueryContext();
   const serviceGraph = trpc.contracts.getServiceGraph.useQuery(queryContext);
 
-  const services = useMemo(
-    () => addServiceIds(serviceGraph.data || []),
-    [serviceGraph.data]
-  );
+  const services = useMemo(() => serviceGraph.data || [], [serviceGraph.data]);
 
   const getRelated = useCallback(
-    (service: ServiceWithIds) => {
-      return [
-        ...service.dependsOn,
-        // ...service.endpoints,
-      ]
+    (service: Service) => {
+      return service.dependsOn
         .map(s => services?.find(propEq('serviceId', s.serviceId)))
         .filter(exists);
-    },
-    [services]
-  );
-
-  const serviceName = useCallback(
-    (service?: ServiceWithIds) => {
-      if (!service) return 'Unknown';
-      const isMonorepo =
-        (services || [])?.filter(s => s.repoId === service.repoId).length > 1;
-
-      return isMonorepo ? service.leafDirectory : service.repoName;
     },
     [services]
   );
@@ -94,43 +114,11 @@ const ServiceChordDiagram = () => {
       getRelated={getRelated}
       lineColor={x => lineColor(x.serviceId)}
       getKey={x => x.serviceId}
-      ribbonTooltip={(source, target) => {
-        if (!source) return 'Unknown';
-
-        return `
-          <div>
-            ${serviceNameHtml(source, serviceName, 'Provider')}
-            ${serviceNameHtml(target, serviceName, 'Consumer')}
-            <div class="mt-1">
-              <strong>Methods used:</strong>
-              <ul>
-                ${target.dependsOn
-                  .filter(d => d.serviceId === source.serviceId)
-                  .map(endpointHtml)
-                  .join('')}
-              </ul>
-            </div>
-          </div>
-        `;
-      }}
+      ribbonTooltip={ribbonTooltip}
       ribbonWeight={(from, to) => {
         return from.dependsOn.filter(d => d.serviceId === to.serviceId).length;
       }}
-      chordTooltip={service => `
-        ${serviceNameHtml(service, serviceName)}
-        ${
-          service.endpoints.length > 0
-            ? `
-            <div class="mt-1">
-              <strong>Exposes</strong>
-              <ul>
-                ${service.endpoints.map(endpointHtml).join('')}
-              </ul>
-            </div>
-            `
-            : ''
-        }
-      `}
+      chordTooltip={chordTooltip(services)}
     />
   );
 };

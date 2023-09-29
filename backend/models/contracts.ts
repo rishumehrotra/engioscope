@@ -2,6 +2,7 @@ import { asc, byNum } from 'sort-lib';
 import { intersection, propEq, range } from 'rambda';
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import path from 'node:path';
+import md5 from 'md5';
 import { inDateRange } from './helpers.js';
 import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
@@ -459,10 +460,20 @@ type Service = {
   }[];
 };
 
+const serviceServesEndpoint =
+  (dependency: Service['dependsOn'][number]) =>
+  (service: Service): boolean =>
+    service.endpoints.some(
+      endpoint =>
+        endpoint.path === dependency.path &&
+        endpoint.method === dependency.method &&
+        endpoint.specId === dependency.specId
+    );
+
 export const getServiceGraph = async (queryContext: QueryContext) => {
   const { endDate } = fromContext(queryContext);
 
-  const data = await AzureBuildReportModel.aggregate<Service>([
+  const services = await AzureBuildReportModel.aggregate<Service>([
     buildReportsWithSpecmatic(queryContext, {
       createdAt: { $lt: endDate },
       $or: [
@@ -521,10 +532,34 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
     { $project: { _id: 0 } },
   ]);
 
-  return data.map(x => ({
-    ...x,
-    leafDirectory: path.dirname(x.leafDirectory).split(path.sep).at(-1),
-  }));
+  const isMonorepo = (() => {
+    const hasRepoBeenSeenTwice = new Map<string, boolean>();
+    services.forEach(service => {
+      if (hasRepoBeenSeenTwice.has(service.repoId)) {
+        hasRepoBeenSeenTwice.set(service.repoId, true);
+      } else hasRepoBeenSeenTwice.set(service.repoId, false);
+    });
+
+    return (repoId: string) => hasRepoBeenSeenTwice.get(repoId) || false;
+  })();
+
+  return services.map(s => {
+    const leafDirectory = path.dirname(s.leafDirectory).split(path.sep).at(-1);
+
+    return {
+      leafDirectory,
+      name: isMonorepo(s.repoId) ? leafDirectory : s.repoName,
+      serviceId: md5(s.serviceId),
+      endpoints: s.endpoints.map(endpoint => ({
+        ...endpoint,
+        serviceId: md5(s.serviceId),
+      })),
+      dependsOn: s.dependsOn.map(dependency => ({
+        ...dependency,
+        serviceId: md5(services.find(serviceServesEndpoint(dependency))?.serviceId || ''),
+      })),
+    };
+  });
 };
 
 const groupUniqueCoverageAndStubOperations: PipelineStage[] = [
