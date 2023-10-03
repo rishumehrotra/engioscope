@@ -34,11 +34,7 @@ const filterNotStartingWithBuildArtifact = (notStartingWithBuildArtifact?: boole
   return { 'artifacts.0': { $exists: false } };
 };
 
-const filterRepos = async (
-  collectionName: string,
-  project: string,
-  teams: string[] | undefined
-) => {
+const filterRepos = async (collectionName: string, project: string, teams?: string[]) => {
   return !teams || teams.length === 0
     ? {}
     : {
@@ -521,7 +517,7 @@ export const getReposConformingToBranchPolicies = async (
   return rest;
 };
 
-const conformsToBranchPoliciesSummary = async (
+export const conformsToBranchPoliciesSummary = async (
   options: z.infer<typeof pipelineFiltersInputParser>
 ) => {
   const filter = await createFilter(options);
@@ -554,6 +550,20 @@ type Summary = {
     used: number;
   }[];
   ignoredStagesBefore?: string;
+};
+
+export const getReleasesSummaryForSse = async (queryContext: QueryContext) => {
+  const { collectionName, project } = fromContext(queryContext);
+
+  const filter = await createFilter({ queryContext });
+
+  const [summary] = await ReleaseModel.aggregate<Summary & { _id: null }>([
+    ...filter,
+    addBooleanFields(collectionName, project),
+    ...createSummary(collectionName, project),
+  ]);
+
+  return { ...omit(['_id'], summary) };
 };
 
 export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {

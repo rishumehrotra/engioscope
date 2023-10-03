@@ -21,6 +21,9 @@ import {
 import { getActivePipelineBuilds } from './builds.js';
 import { getWeeklyPullRequestMerges } from './pull-requests.js';
 import {
+  usageByEnvironment,
+  conformsToBranchPoliciesSummary,
+  getReleasesSummaryForSse,
   getHasReleasesSummary,
   getReposConformingToBranchPolicies,
 } from './release-listing.js';
@@ -51,18 +54,21 @@ type WorkItemStats = {
   wipTrendWorkItems: Awaited<ReturnType<typeof getWipGraph>>;
 };
 
-// type ReleaseStats = {
-//   pipelineCount: number;
-//   startsWithArtifact: number;
-//   runCount: number;
-//   masterOnly: number;
-//   ignoredStagesBefore?: string;
-//   branchPolicy: {
-//     conforms: number;
-//     total: number;
-//   };
-// };
-export type ProjectOverviewStats = SummaryStats & WorkItemStats;
+type ReleaseStats = {
+  // pipelineCount: number;
+  // startsWithArtifact: number;
+  // runCount: number;
+  // masterOnly: number;
+  // ignoredStagesBefore?: string;
+  // branchPolicy: {
+  //   conforms: number;
+  //   total: number;
+  // };
+  releases: Awaited<ReturnType<typeof getReleasesSummaryForSse>>;
+  releasesBranchPolicy: Awaited<ReturnType<typeof conformsToBranchPoliciesSummary>>;
+  usageByEnv: Awaited<ReturnType<typeof usageByEnvironment>>;
+};
+export type ProjectOverviewStats = SummaryStats & WorkItemStats & ReleaseStats;
 
 export const getProjectOverviewStatsAsChunks = async (
   { queryContext }: z.infer<typeof filteredReposInputParser>,
@@ -188,6 +194,14 @@ export const getProjectOverviewStatsAsChunks = async (
     getCycleTimeGraph({ queryContext }).then(sendChunk('cycleTimeWorkItems')),
 
     getWipGraph({ queryContext }).then(sendChunk('wipTrendWorkItems')),
+
+    getReleasesSummaryForSse(queryContext).then(sendChunk('releases')),
+
+    conformsToBranchPoliciesSummary({ queryContext }).then(
+      sendChunk('releasesBranchPolicy')
+    ),
+
+    usageByEnvironment({ queryContext }).then(sendChunk('usageByEnv')),
   ]);
 };
 

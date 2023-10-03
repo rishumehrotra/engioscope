@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
-import React, { lazy, useCallback, useMemo, useState } from 'react';
+import React, { Fragment, lazy, useCallback, useMemo, useState } from 'react';
 import { identity, multiply, prop, range } from 'rambda';
 import { ExternalLink } from 'react-feather';
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import type { ProjectOverviewStats } from '../../backend/models/project-overview.js';
-import { minPluralise, num, prettyMS } from '../helpers/utils.js';
+import { minPluralise, num, pluralise, prettyMS } from '../helpers/utils.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { Stat, SummaryCard } from '../components/SummaryCard.jsx';
 import TinyAreaGraph, {
@@ -18,6 +18,7 @@ import TinyAreaGraph, {
 import { isBugLike } from '../../shared/work-item-utils.js';
 import { useDrawer } from '../components/common/Drawer.jsx';
 import { trpc } from '../helpers/trpc.js';
+import UsageByEnv from '../components/UsageByEnv.jsx';
 
 const style = { boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' };
 
@@ -1697,42 +1698,142 @@ const OverviewWithMetrics = () => {
       </div>
       <div className="mt-6">
         <h3 className="uppercase text-sm tracking-wide">Releases</h3>
-        <div className="grid grid-cols-4 rounded-lg mt-2">
-          <SummaryCard className="col-span-1">
-            <div className="grid grid-cols-4 gap-6">
-              <div className="col-span-1">
-                <Stat
-                  title="Has releases"
-                  tooltip={
-                    isDefined(projectOverviewStats.hasReleasesReposCount) &&
-                    isDefined(projectOverviewStats.totalActiveRepos)
-                      ? [
-                          bold(num(projectOverviewStats.hasReleasesReposCount)),
-                          'out of',
-                          bold(num(projectOverviewStats.totalActiveRepos)),
-                          minPluralise(
-                            projectOverviewStats.totalActiveRepos,
-                            'repository has',
-                            'repositories have'
-                          ),
-                          'made releases',
-                        ].join(' ')
-                      : undefined
-                  }
-                  value={
-                    isDefined(projectOverviewStats.hasReleasesReposCount) &&
-                    isDefined(projectOverviewStats.totalActiveRepos)
-                      ? divide(
-                          projectOverviewStats.hasReleasesReposCount,
-                          projectOverviewStats.totalActiveRepos
-                        )
-                          .map(toPercentage)
-                          .getOr('-')
-                      : null
-                  }
-                />
-              </div>
+        <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 col-span-6">
+          <SummaryCard className="col-span-2 rounded-lg mt-2 gap-6">
+            <div className="grid grid-cols-2 gap-6">
+              {isDefined(projectOverviewStats.releases) &&
+              isDefined(projectOverviewStats.releases?.stagesToHighlight)
+                ? projectOverviewStats.releases.stagesToHighlight.map(stage => (
+                    <Fragment key={stage.name}>
+                      <div className="pr-6 border-r border-theme-seperator">
+                        <Stat
+                          title={`${stage.name}: exists`}
+                          value={divide(
+                            stage.exists,
+                            projectOverviewStats.releases?.pipelineCount || 0
+                          )
+                            .map(toPercentage)
+                            .getOr('-')}
+                          tooltip={`${num(stage.exists)} out of ${pluralise(
+                            projectOverviewStats.releases?.pipelineCount || 0,
+                            'release pipeline has',
+                            'release pipelines have'
+                          )} a stage named (or containing) ${stage.name}.`}
+                        />
+                      </div>
+                      <div>
+                        <Stat
+                          title={`${stage.name}: used`}
+                          value={divide(
+                            stage.used,
+                            projectOverviewStats.releases?.pipelineCount || 0
+                          )
+                            .map(toPercentage)
+                            .getOr('-')}
+                          tooltip={`${num(stage.used)} out of ${pluralise(
+                            projectOverviewStats.releases?.pipelineCount || 0,
+                            'release piipeline has',
+                            'release pipelines have'
+                          )} a successful deployment from ${stage.name}.`}
+                        />
+                      </div>
+                    </Fragment>
+                  ))
+                : null}
             </div>
+          </SummaryCard>
+
+          <SummaryCard className="col-span-1 rounded-lg mt-2 gap-6">
+            <Stat
+              title="Conforms to branch policies"
+              value={
+                isDefined(projectOverviewStats.releasesBranchPolicy)
+                  ? divide(
+                      projectOverviewStats.releasesBranchPolicy.conforms,
+                      projectOverviewStats.releasesBranchPolicy.total
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : undefined
+              }
+              tooltip={
+                isDefined(projectOverviewStats.releasesBranchPolicy) &&
+                isDefined(projectOverviewStats.releases)
+                  ? `${num(
+                      projectOverviewStats.releasesBranchPolicy.conforms
+                    )} out of ${pluralise(
+                      projectOverviewStats.releasesBranchPolicy.total,
+                      'artifact is',
+                      'artifacts are'
+                    )} from branches that conform<br />to the branch policy.${
+                      isDefined(projectOverviewStats.releases.ignoredStagesBefore)
+                        ? `<br />Artifacts that didn't go to ${projectOverviewStats.releases.ignoredStagesBefore} are not considered.`
+                        : ''
+                    }`
+                  : undefined
+              }
+            />
+          </SummaryCard>
+          <SummaryCard className="col-span-1 rounded-lg mt-2 gap-6">
+            <Stat
+              title="Starts with artifact"
+              value={
+                isDefined(projectOverviewStats.releases)
+                  ? divide(
+                      projectOverviewStats.releases.startsWithArtifact,
+                      projectOverviewStats.releases.pipelineCount
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : undefined
+              }
+              tooltip={
+                isDefined(projectOverviewStats.releases)
+                  ? `${num(
+                      projectOverviewStats.releases.startsWithArtifact
+                    )} of ${pluralise(
+                      projectOverviewStats.releases.pipelineCount,
+                      'pipeliine',
+                      'pipelines'
+                    )} started with an artifact`
+                  : undefined
+              }
+            />
+          </SummaryCard>
+        </div>
+        <div className="grid grid-cols-6 grid-row-2 gap-6 mt-2 col-span-6">
+          <SummaryCard className="col-span-3 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
+            {isDefined(projectOverviewStats.usageByEnv) ? (
+              <UsageByEnv perEnvUsage={projectOverviewStats.usageByEnv} />
+            ) : null}
+          </SummaryCard>
+          <SummaryCard className="col-span-1 row-span-1 rounded-lg">
+            <Stat
+              title="Master-only releases"
+              value={
+                isDefined(projectOverviewStats.releases)
+                  ? divide(
+                      projectOverviewStats.releases.masterOnly,
+                      projectOverviewStats.releases.runCount
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : undefined
+              }
+              tooltip={
+                isDefined(projectOverviewStats.releases)
+                  ? `${num(projectOverviewStats.releases.masterOnly)} out of ${pluralise(
+                      projectOverviewStats.releases.runCount,
+                      'release was',
+                      'releases were'
+                    )} exclusively from master.${
+                      projectOverviewStats.releases.ignoredStagesBefore
+                        ? `<br />Pipeline runs that didn't go to ${projectOverviewStats.releases.ignoredStagesBefore} are not considered.`
+                        : ''
+                    }`
+                  : undefined
+              }
+            />
           </SummaryCard>
         </div>
       </div>
