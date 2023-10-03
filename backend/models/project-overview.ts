@@ -55,15 +55,6 @@ type WorkItemStats = {
 };
 
 type ReleaseStats = {
-  // pipelineCount: number;
-  // startsWithArtifact: number;
-  // runCount: number;
-  // masterOnly: number;
-  // ignoredStagesBefore?: string;
-  // branchPolicy: {
-  //   conforms: number;
-  //   total: number;
-  // };
   releases: Awaited<ReturnType<typeof getReleasesSummaryForSse>>;
   releasesBranchPolicy: Awaited<ReturnType<typeof conformsToBranchPoliciesSummary>>;
   usageByEnv: Awaited<ReturnType<typeof usageByEnvironment>>;
