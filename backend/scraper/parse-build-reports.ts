@@ -18,6 +18,7 @@ export const htmlReportToObj = (htmlContent: string) => {
 
   const specmaticCoverageString = read('specmaticCoverage');
   const specmaticStubUsageString = read('specmaticStubUsage');
+  const specmaticCentralRepoReportString = read('specmaticCentralRepoReport');
   const agentGitRoot = read('BUILD_SOURCESDIRECTORY');
 
   const specmaticCoverage = specmaticCoverageString
@@ -26,6 +27,10 @@ export const htmlReportToObj = (htmlContent: string) => {
 
   const specmaticStubUsage = specmaticStubUsageString
     ? JSON.parse(decode(specmaticStubUsageString))
+    : undefined;
+
+  const specmaticCentralRepoReport = specmaticCentralRepoReportString
+    ? JSON.parse(decode(specmaticCentralRepoReportString))
     : undefined;
 
   const specmaticConfigPath = () => {
@@ -47,6 +52,7 @@ export const htmlReportToObj = (htmlContent: string) => {
     project: read('SYSTEM_TEAMPROJECT')!,
     repoName: read('BUILD_REPOSITORY_NAME')!,
     repoId: read('BUILD_REPOSITORY_ID')!,
+    repoUrl: read('BUILD_REPOSITORY_URI')!,
     branch: read('BUILD_SOURCEBRANCH')!,
     branchName: read('BUILD_SOURCEBRANCHNAME')!,
     buildId: read('BUILD_BUILDID')!,
@@ -60,6 +66,8 @@ export const htmlReportToObj = (htmlContent: string) => {
       specmaticCoverage?.apiCoverage as AzureBuildReport['specmaticCoverage'],
     specmaticStubUsage:
       specmaticStubUsage?.stubUsage as AzureBuildReport['specmaticStubUsage'],
+    specmaticCentralRepoReport:
+      specmaticCentralRepoReport?.specifications as AzureBuildReport['specmaticCentralRepoReport'],
   };
   /* eslint-enable */
 };

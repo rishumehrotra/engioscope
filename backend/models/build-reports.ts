@@ -54,12 +54,15 @@ type SpecmaticStubUsageForProtocol = SpecmaticStubUsageForHTTP /* Add more here 
 
 type SpecmaticStubUsageReport = (SpecmaticSource & SpecmaticStubUsageForProtocol)[];
 
+type SpecmaticCentralRepoReport = unknown;
+
 export type AzureBuildReport = {
   collectionName: string;
   collectionId: string;
   project: string;
   repo: string;
   repoId: string;
+  repoUrl: string;
   branch: string;
   branchName: string;
   buildId: string;
@@ -82,6 +85,7 @@ export type AzureBuildReport = {
   specmaticConfigPath: string | undefined;
   specmaticCoverage: SpecmaticCoverageReport | undefined;
   specmaticStubUsage: SpecmaticStubUsageReport | undefined;
+  specmaticCentralRepoReport: SpecmaticCentralRepoReport | undefined;
 };
 
 const azureBuildReportSchema = new Schema<AzureBuildReport>(
@@ -105,10 +109,9 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>(
     specmaticConfigPath: String,
     specmaticCoverage: Schema.Types.Mixed,
     specmaticStubUsage: Schema.Types.Mixed,
+    specmaticCentralRepoReport: Schema.Types.Mixed,
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 azureBuildReportSchema.index({
@@ -204,6 +207,16 @@ const processSpecmaticData = (
   };
 };
 
+const processSpecmaticCentralRepoReport = (
+  report: Pick<AzureBuildReport, 'specmaticCentralRepoReport'>
+) => {
+  if (!report.specmaticCentralRepoReport) return {};
+
+  return {
+    specmaticCentralRepoReport: report.specmaticCentralRepoReport,
+  };
+};
+
 export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) =>
   AzureBuildReportModel.updateOne(
     {
@@ -215,6 +228,7 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
       $set: {
         repo: report.repo,
         repoId: report.repoId,
+        repoUrl: report.repoUrl,
         branch: report.branch,
         branchName: report.branchName,
         buildDefinitionId: report.buildDefinitionId,
@@ -234,6 +248,7 @@ export const saveBuildReport = (report: Omit<AzureBuildReport, 'templateRepo'>) 
           : {}),
         centralTemplate: report.centralTemplate,
         ...processSpecmaticData(report),
+        ...processSpecmaticCentralRepoReport(report),
       },
     },
     { upsert: true }
