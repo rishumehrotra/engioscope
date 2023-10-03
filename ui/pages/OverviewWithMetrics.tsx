@@ -1801,8 +1801,8 @@ const OverviewWithMetrics = () => {
             />
           </SummaryCard>
         </div>
-        <div className="grid grid-cols-6 grid-row-2 gap-6 mt-2 col-span-6">
-          <SummaryCard className="col-span-3 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
+        <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 col-span-6">
+          <SummaryCard className="col-span-2 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
             {isDefined(projectOverviewStats.usageByEnv) ? (
               <UsageByEnv perEnvUsage={projectOverviewStats.usageByEnv} />
             ) : null}
