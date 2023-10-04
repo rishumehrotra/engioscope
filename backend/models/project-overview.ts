@@ -186,7 +186,7 @@ export const getProjectOverviewStatsAsChunks = async (
 
     getWipGraph({ queryContext }).then(sendChunk('wipTrendWorkItems')),
 
-    getReleasesSummaryForSse(queryContext).then(sendChunk('releases')),
+    getReleasesSummaryForSse({ queryContext }).then(sendChunk('releases')),
 
     conformsToBranchPoliciesSummary({ queryContext }).then(
       sendChunk('releasesBranchPolicy')

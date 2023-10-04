@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback } from 'react';
+import React, { Fragment, useCallback, useMemo } from 'react';
 import { num, pluralise } from '../helpers/utils.js';
 import ProjectStat from './ProjectStat.jsx';
 import ProjectStats from './ProjectStats.jsx';
@@ -7,7 +7,11 @@ import { trpc } from '../helpers/trpc.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
 import UsageByEnv from './UsageByEnv.jsx';
 import Loading from './Loading.jsx';
-import { useQueryPeriodDays } from '../hooks/query-hooks.js';
+import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
+import useFeatureFlag from '../hooks/use-feature-flag.js';
+import { Stat, SummaryCard } from './SummaryCard.jsx';
+import useMergeOverSse from '../hooks/use-merge-over-sse.js';
+import type { ReleaseStatsSse } from '../../backend/models/release-listing.js';
 
 const UsageByEnvWrapper = () => {
   const filters = useReleaseFilters();
@@ -20,11 +24,27 @@ const UsageByEnvWrapper = () => {
   );
 };
 
+const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
+
+const useCreateUrlWithFilter = (slug: string) => {
+  const queryContext = useQueryContext();
+  return useMemo(() => {
+    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
+      startDate: queryContext[2].toISOString(),
+      endDate: queryContext[3].toISOString(),
+    }).toString()}`;
+  }, [queryContext, slug]);
+};
+
 const ReleasePipelineSummary2: React.FC = () => {
+  const sseUrl = useCreateUrlWithFilter('release-pipelines');
+
+  const summarySse = useMergeOverSse<ReleaseStatsSse>(sseUrl, '0');
+
   const queryPeriodDays = useQueryPeriodDays();
   const filters = useReleaseFilters();
   const { data: summary } = trpc.releases.summary.useQuery(filters);
-
+  const isSummaryV2Enabled = useFeatureFlag('release-pipelines-v2');
   const showReleasePipelineUsage = useCallback(() => <UsageByEnvWrapper />, []);
 
   if (!summary) {
@@ -39,6 +59,202 @@ const ReleasePipelineSummary2: React.FC = () => {
           ]}
         />
       </ProjectStats>
+    );
+  }
+  if (isSummaryV2Enabled) {
+    return (
+      <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 mb-6">
+        <SummaryCard className="grid grid-cols-2 col-span-2 rounded-lg">
+          <div className="col-span-1 border-r border-theme-seperator">
+            {isDefined(summarySse.releases)
+              ? summarySse.releases.lastEnv && (
+                  <Stat
+                    title={`${summarySse.releases.lastEnv.envName} deploys`}
+                    value={
+                      <>
+                        {num(
+                          Math.round(
+                            summarySse.releases.lastEnv.deploys / queryPeriodDays
+                          )
+                        )}
+                        <span className="font-normal text-sm"> / day</span>
+                      </>
+                    }
+                    tooltip={`${pluralise(
+                      summarySse.releases.lastEnv.deploys,
+                      'deploy',
+                      'deploys'
+                    )} over the last ${pluralise(queryPeriodDays, 'day', 'days')}`}
+                  />
+                )
+              : null}
+          </div>
+          <div className="col-span-1 pl-6">
+            <Stat
+              title="Success"
+              value={
+                isDefined(summarySse.releases)
+                  ? divide(
+                      summarySse.releases.lastEnv.successful,
+                      summarySse.releases.lastEnv.deploys
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : undefined
+              }
+              tooltip={
+                isDefined(summarySse.releases)
+                  ? `${num(summarySse.releases.lastEnv.successful)} of ${pluralise(
+                      summarySse.releases.lastEnv.deploys,
+                      'deploy was',
+                      'deploys were'
+                    )} successful over the last ${pluralise(
+                      queryPeriodDays,
+                      'day',
+                      'days'
+                    )}`
+                  : undefined
+              }
+              onClick={{
+                open: 'drawer',
+                heading: 'Usage by environment',
+                body: (
+                  <div className="p-2">
+                    <UsageByEnvWrapper />
+                  </div>
+                ),
+              }}
+            />
+          </div>
+        </SummaryCard>
+        <SummaryCard className="grid grid-cols-2 col-span-2 rounded-lg">
+          {isDefined(summarySse.releases)
+            ? summarySse.releases.stagesToHighlight.map(stage => (
+                <Fragment key={stage.name}>
+                  <div className="col-span-1 border-r border-theme-seperator">
+                    <Stat
+                      title={`${stage.name}: exists`}
+                      value={
+                        isDefined(summarySse.releases)
+                          ? divide(stage.exists, summarySse.releases.pipelineCount)
+                              .map(toPercentage)
+                              .getOr('-')
+                          : undefined
+                      }
+                      tooltip={
+                        isDefined(summarySse.releases)
+                          ? `${num(stage.exists)} out of ${pluralise(
+                              summarySse.releases.pipelineCount,
+                              'release pipeline has',
+                              'release pipelines have'
+                            )} a stage named (or containing) ${stage.name}.`
+                          : undefined
+                      }
+                    />
+                  </div>
+                  <div className="col-span-1 pl-6">
+                    <Stat
+                      title={`${stage.name}: used`}
+                      value={
+                        isDefined(summarySse.releases)
+                          ? divide(stage.used, summarySse.releases.pipelineCount)
+                              .map(toPercentage)
+                              .getOr('-')
+                          : undefined
+                      }
+                      tooltip={
+                        isDefined(summarySse.releases)
+                          ? `${num(stage.used)} out of ${pluralise(
+                              summarySse.releases.pipelineCount,
+                              'release piipeline has',
+                              'release pipelines have'
+                            )} a successful deployment from ${stage.name}.`
+                          : undefined
+                      }
+                    />
+                  </div>
+                </Fragment>
+              ))
+            : null}
+        </SummaryCard>
+        <SummaryCard className="rounded-lg">
+          <Stat
+            title="Branch policies"
+            value={
+              isDefined(summarySse.releasesBranchPolicy)
+                ? divide(
+                    summarySse.releasesBranchPolicy.conforms,
+                    summarySse.releasesBranchPolicy.total
+                  )
+                    .map(toPercentage)
+                    .getOr('-')
+                : undefined
+            }
+            tooltip={
+              isDefined(summarySse.releasesBranchPolicy)
+                ? `${num(summarySse.releasesBranchPolicy.conforms)} out of ${pluralise(
+                    summarySse.releasesBranchPolicy.total,
+                    'artifact is',
+                    'artifacts are'
+                  )} from branches that conform<br />to the branch policy.${
+                    summarySse.releases?.ignoredStagesBefore
+                      ? `<br />Pipeline runs that didn't go to ${summarySse.releases.ignoredStagesBefore} are not considered.`
+                      : ''
+                  }`
+                : undefined
+            }
+          />
+        </SummaryCard>
+        <SummaryCard className="rounded-lg">
+          <Stat
+            title="Starts with artifact"
+            value={
+              isDefined(summarySse.releases)
+                ? divide(
+                    summarySse.releases.startsWithArtifact,
+                    summarySse.releases.pipelineCount
+                  )
+                    .map(toPercentage)
+                    .getOr('-')
+                : undefined
+            }
+            tooltip={
+              isDefined(summarySse.releases)
+                ? `${num(summarySse.releases.startsWithArtifact)} of ${pluralise(
+                    summarySse.releases.pipelineCount,
+                    'pipeline',
+                    'pipelines'
+                  )} started with an artifact`
+                : undefined
+            }
+          />
+        </SummaryCard>
+        <SummaryCard className="rounded-lg">
+          <Stat
+            title="Master-only releases"
+            value={
+              isDefined(summarySse.releases)
+                ? divide(summarySse.releases.masterOnly, summarySse.releases.runCount)
+                    .map(toPercentage)
+                    .getOr('-')
+                : undefined
+            }
+            tooltip={
+              isDefined(summarySse.releases)
+                ? `${num(summarySse.releases.masterOnly)} out of ${pluralise(
+                    summarySse.releases.runCount,
+                    'release was',
+                    'releases were'
+                  )} exclusively from master.${
+                    summarySse.releases?.ignoredStagesBefore
+                      ? `<br />Pipeline runs that didn't go to ${summarySse.releases.ignoredStagesBefore} are not considered.`
+                      : ''
+                  }`
+                : undefined
+            }
+          />
+        </SummaryCard>
+      </div>
     );
   }
 

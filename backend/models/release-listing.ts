@@ -552,10 +552,12 @@ type Summary = {
   ignoredStagesBefore?: string;
 };
 
-export const getReleasesSummaryForSse = async (queryContext: QueryContext) => {
-  const { collectionName, project } = fromContext(queryContext);
+export const getReleasesSummaryForSse = async (
+  options: z.infer<typeof pipelineFiltersInputParser>
+) => {
+  const { collectionName, project } = fromContext(options.queryContext);
 
-  const filter = await createFilter({ queryContext });
+  const filter = await createFilter(options);
 
   const [summary] = await ReleaseModel.aggregate<Summary & { _id: null }>([
     ...filter,
@@ -565,6 +567,22 @@ export const getReleasesSummaryForSse = async (queryContext: QueryContext) => {
 
   return { ...omit(['_id'], summary) };
 };
+
+// export const getReleasesSummaryForSse = async (
+//   options: z.infer<typeof pipelineFiltersInputParser>
+// ) => {
+//   const { collectionName, project } = fromContext(options.queryContext);
+
+//   const filter = await createFilter({ ...options });
+
+//   const [summary] = await ReleaseModel.aggregate<Summary & { _id: null }>([
+//     ...filter,
+//     addBooleanFields(collectionName, project),
+//     ...createSummary(collectionName, project),
+//   ]);
+
+//   return { ...omit(['_id'], summary) };
+// };
 
 export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const { collectionName, project } = fromContext(options.queryContext);
@@ -1002,4 +1020,39 @@ export const getHasReleasesSummary = async (
   const hasReleasesRepos = repoIds.filter(repoId => result.includes(repoId));
 
   return hasReleasesRepos.length;
+};
+
+export type ReleaseStatsSse = {
+  releases: Awaited<ReturnType<typeof getReleasesSummaryForSse>>;
+  releasesBranchPolicy: Awaited<ReturnType<typeof conformsToBranchPoliciesSummary>>;
+  usageByEnv: Awaited<ReturnType<typeof usageByEnvironment>>;
+};
+
+export const getReleasePipelinesSummaryAsChunks = async (
+  options: z.infer<typeof pipelineFiltersInputParser>,
+  onChunk: (x: Partial<ReleaseStatsSse>) => void
+) => {
+  const sendChunk =
+    <T extends keyof ReleaseStatsSse>(key: T) =>
+    (data: ReleaseStatsSse[typeof key]) => {
+      onChunk({ [key]: data });
+    };
+
+  await Promise.all([
+    getReleasesSummaryForSse(options).then(sendChunk('releases')),
+    conformsToBranchPoliciesSummary(options).then(sendChunk('releasesBranchPolicy')),
+    usageByEnvironment(options).then(sendChunk('usageByEnv')),
+  ]);
+};
+
+export const getReleasePipelinesSummary = async (
+  options: z.infer<typeof pipelineFiltersInputParser>
+) => {
+  let mergedChunks = {} as Partial<ReleaseStatsSse>;
+
+  await getReleasePipelinesSummaryAsChunks(options, x => {
+    mergedChunks = { ...mergedChunks, ...x };
+  });
+
+  return mergedChunks as ReleaseStatsSse;
 };

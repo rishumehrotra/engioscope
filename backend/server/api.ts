@@ -17,10 +17,16 @@ import { getSummaryAsChunks } from '../models/repo-listing.js';
 import { getProjectOverviewStatsAsChunks } from '../models/project-overview.js';
 import { queryContextInputParser } from '../models/utils.js';
 import { getContractStatsAsChunks } from '../models/contracts.js';
+import {
+  getReleasePipelinesSummaryAsChunks,
+  pipelineFiltersInputParser,
+} from '../models/release-listing.js';
 
 const overviewInputParser = z.object({
   queryContext: queryContextInputParser,
 });
+
+const releasePipelinesSummaryInputParser = pipelineFiltersInputParser;
 
 const parseOverviewInput = (req: RequestWithFilter) => {
   return overviewInputParser.parse({
@@ -40,6 +46,19 @@ const parseContractsInput = (req: RequestWithFilter) => {
     req.query.startDate && new Date(req.query.startDate),
     req.query.endDate && new Date(req.query.endDate),
   ]);
+};
+
+const parseReleasePipelinesInput = (req: RequestWithFilter) => {
+  return releasePipelinesSummaryInputParser.parse({
+    queryContext: [
+      req.params.collectionName,
+      req.params.project,
+      req.query.startDate && new Date(req.query.startDate),
+      req.query.endDate && new Date(req.query.endDate),
+    ],
+    searchTerms: req.query.search ? req.query.search.split(',') : undefined,
+    teams: req.query.teams?.split(','),
+  });
 };
 
 export default (config: ParsedConfig) => {
@@ -153,6 +172,24 @@ export default (config: ParsedConfig) => {
       });
 
       await getContractStatsAsChunks(parseContractsInput(req), x => {
+        res.write(`data: ${JSON.stringify(x)}\n\n`);
+        res.flush();
+      });
+
+      res.end('data: done\n\n');
+    }
+  );
+
+  router.get(
+    `/api/:collectionName/:project/release-pipelines`,
+    async (req: RequestWithFilter, res) => {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+      });
+
+      await getReleasePipelinesSummaryAsChunks(parseReleasePipelinesInput(req), x => {
         res.write(`data: ${JSON.stringify(x)}\n\n`);
         res.flush();
       });
