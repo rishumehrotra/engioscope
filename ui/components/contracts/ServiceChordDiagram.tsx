@@ -8,10 +8,19 @@ import { lineColor } from '../OverviewGraphs2/utils.jsx';
 
 type Service = RouterClient['contracts']['getServiceGraph'][number];
 
+const methodBg = (method: string) => {
+  if (method === 'GET') return 'bg-blue-400';
+  if (method === 'DELETE') return 'bg-red-500';
+  if (method === 'PUT') return 'bg-yellow-400';
+  return 'bg-green-500';
+};
+
 const endpointHtml = ({ method, path }: { method: string; path: string }) => {
   return `
     <li class="mb-1">
-      <span class="bg-orange-500 text-theme-base px-1 rounded inline-block mr-2 text-xs font-bold">
+      <span class="${methodBg(
+        method
+      )} w-12 text-theme-base px-1 rounded inline-block mr-2 text-xs font-bold text-center">
         ${method}
       </span>
       ${path}
@@ -19,14 +28,13 @@ const endpointHtml = ({ method, path }: { method: string; path: string }) => {
   `;
 };
 
-const serviceNameHtml = (service: Service, tag?: string) => {
+const serviceNameHtml = (service: Service) => {
   return `
     <div class="flex items-center gap-2">
-      <span class="inline-block w-2 h-2 rounded-full" style="background: ${lineColor(
+      <span class="inline-block w-1 h-4" style="background: ${lineColor(
         service.serviceId
       )}"> </span>
-      ${service.name}
-      ${tag ? `<span class="ml-2 text-sm text-theme-icon">${tag}</span>` : ''}
+      <span class="font-medium">${service.name}</span>
     </div>
   `;
 };
@@ -37,9 +45,15 @@ const ribbonTooltip = (source: Service, target: Service) => {
 
   return `
     <div>
-      ${serviceNameHtml(source, 'Provider')}
-      ${serviceNameHtml(target, 'Consumer')}
-      <div class="mt-1">
+      <div>
+        Provider
+        ${serviceNameHtml(source)}
+      </div>
+      <div class="mt-2">
+        Consumer
+        ${serviceNameHtml(target)}
+      </div>
+      <div class="mt-2">
         <strong>${minPluralise(dependsOn.length, 'Endpoint', 'Endpoints')} used:</strong>
         <ul>
           ${dependsOn.map(endpointHtml).join('')}
@@ -62,10 +76,15 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
   );
 
   return `
-    ${serviceNameHtml(service)}
+    <div class="flex items-center gap-2 text-lg font-medium">
+      <span class="inline-block w-2 h-2" style="background: ${lineColor(
+        service.serviceId
+      )}"> </span>
+      ${service.name}
+    </div>
     ${whenNonZeroLength(
       consumers,
-      `<div class="mt-2">
+      `<div class="mt-3">
         <strong>Used by</strong>
         <ul>
           ${consumers.map(c => serviceNameHtml(c)).join('')}
@@ -74,7 +93,7 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
     )}
     ${whenNonZeroLength(
       service.endpoints,
-      `<div class="mt-1">
+      `<div class="mt-3">
         <strong>Exposes</strong>
         <ul>
           ${service.endpoints.map(endpointHtml).join('')}
@@ -83,7 +102,7 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
     )}
     ${whenNonZeroLength(
       dependsOn,
-      `<div class="mt-1">
+      `<div class="mt-3">
         <strong>Depends on</strong>
         <ul>
           ${dependsOn.map(x => serviceNameHtml(x)).join('')}

@@ -1,6 +1,6 @@
 import React from 'react';
-import Summary from '../components/contracts/summary.jsx';
+import ContractSummary from '../components/contracts/ContractSummary.jsx';
 
 export default () => {
-  return <Summary />;
+  return <ContractSummary />;
 };
