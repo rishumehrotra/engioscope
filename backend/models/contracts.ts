@@ -1,4 +1,4 @@
-import { asc, byNum } from 'sort-lib';
+import { asc, byNum, byString } from 'sort-lib';
 import { intersection, propEq, range } from 'rambda';
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import path from 'node:path';
@@ -543,22 +543,26 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
     return (repoId: string) => hasRepoBeenSeenTwice.get(repoId) || false;
   })();
 
-  return services.map(s => {
-    const leafDirectory = path.dirname(s.leafDirectory).split(path.sep).at(-1);
+  return services
+    .map(s => {
+      const leafDirectory = path.dirname(s.leafDirectory).split(path.sep).at(-1);
 
-    return {
-      name: isMonorepo(s.repoId) ? leafDirectory : s.repoName,
-      serviceId: md5(s.serviceId),
-      endpoints: s.endpoints.map(endpoint => ({
-        ...endpoint,
+      return {
+        name: isMonorepo(s.repoId) ? leafDirectory : s.repoName,
         serviceId: md5(s.serviceId),
-      })),
-      dependsOn: s.dependsOn.map(dependency => ({
-        ...dependency,
-        serviceId: md5(services.find(serviceServesEndpoint(dependency))?.serviceId || ''),
-      })),
-    };
-  });
+        endpoints: s.endpoints.map(endpoint => ({
+          ...endpoint,
+          serviceId: md5(s.serviceId),
+        })),
+        dependsOn: s.dependsOn.map(dependency => ({
+          ...dependency,
+          serviceId: md5(
+            services.find(serviceServesEndpoint(dependency))?.serviceId || ''
+          ),
+        })),
+      };
+    })
+    .sort(byString(x => x.serviceId));
 };
 
 const groupUniqueCoverageAndStubOperations: PipelineStage[] = [
