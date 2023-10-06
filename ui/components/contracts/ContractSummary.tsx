@@ -8,6 +8,7 @@ import { increaseIsBetter } from '../graphs/TinyAreaGraph.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import type { ContractStats } from '../../../backend/models/contracts.js';
 import ServiceChordDiagram from './ServiceChordDiagram.jsx';
+import ServiceBlock from './ServiceBlock.jsx';
 
 const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
@@ -27,204 +28,217 @@ export default () => {
   const contractsStats = useSse<ContractStats>(sseUrl, '0');
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <div>
-        <SummaryCard className="mb-4 rounded-md">
-          <Stat
-            title="Operations used by both providers and consumers"
-            tooltip={
-              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
-                ? [
-                    bold(
-                      num(
-                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
-                      )
-                    ),
-                    'out of',
-                    bold(
-                      num(
-                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.total || 0
-                      )
-                    ),
-                    minPluralise(
-                      contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0,
-                      'operation has',
-                      'operations have'
-                    ),
-                    'been used by both providers and consumers',
-                  ].join(' ')
-                : undefined
-            }
-            value={
-              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
-                ? contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
-                : null
-            }
-            graphPosition="right"
-            graphData={contractsStats.weeklyConsumerProducerSpecAndOps}
-            graphColor={
-              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
-                ? increaseIsBetter(
-                    contractsStats.weeklyConsumerProducerSpecAndOps.map(w => w.count)
-                  )
-                : null
-            }
-            graphItemToValue={x => x.count}
-            graphDataPointLabel={x =>
-              [
-                bold(num(x.count)),
-                'out of',
-                bold(num(x.total)),
-                minPluralise(x.count, 'operation has', 'operations have'),
-                'been used by both providers and consumers',
-              ].join(' ')
-            }
-          />
-        </SummaryCard>
-        <SummaryCard className="mb-4 rounded-md">
-          <div className="border-b border-theme-seperator pb-6">
+    <>
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <SummaryCard className="mb-4 rounded-md">
             <Stat
-              title="API coverage"
+              title="Operations used by both providers and consumers"
               tooltip={
-                isDefined(contractsStats.weeklyApiCoverage)
+                isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
                   ? [
                       bold(
                         num(
-                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0
+                          contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count ||
+                            0
                         )
                       ),
-                      'of',
+                      'out of',
                       bold(
-                        num(contractsStats.weeklyApiCoverage.at(-1)?.totalOperations || 0)
+                        num(
+                          contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.total ||
+                            0
+                        )
                       ),
                       minPluralise(
+                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count ||
+                          0,
+                        'operation has',
+                        'operations have'
+                      ),
+                      'been used by both providers and consumers',
+                    ].join(' ')
+                  : undefined
+              }
+              value={
+                isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                  ? contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                  : null
+              }
+              graphPosition="right"
+              graphData={contractsStats.weeklyConsumerProducerSpecAndOps}
+              graphColor={
+                isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                  ? increaseIsBetter(
+                      contractsStats.weeklyConsumerProducerSpecAndOps.map(w => w.count)
+                    )
+                  : null
+              }
+              graphItemToValue={x => x.count}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.count)),
+                  'out of',
+                  bold(num(x.total)),
+                  minPluralise(x.count, 'operation has', 'operations have'),
+                  'been used by both providers and consumers',
+                ].join(' ')
+              }
+            />
+          </SummaryCard>
+          <SummaryCard className="mb-4 rounded-md">
+            <div className="border-b border-theme-seperator pb-6">
+              <Stat
+                title="API coverage"
+                tooltip={
+                  isDefined(contractsStats.weeklyApiCoverage)
+                    ? [
+                        bold(
+                          num(
+                            contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations ||
+                              0
+                          )
+                        ),
+                        'of',
+                        bold(
+                          num(
+                            contractsStats.weeklyApiCoverage.at(-1)?.totalOperations || 0
+                          )
+                        ),
+                        minPluralise(
+                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
+                          'operation has',
+                          'operations have'
+                        ),
+                        'been covered',
+                      ].join(' ')
+                    : undefined
+                }
+                value={
+                  isDefined(contractsStats.weeklyApiCoverage)
+                    ? divide(
                         contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
-                        'operation has',
-                        'operations have'
-                      ),
-                      'been covered',
-                    ].join(' ')
-                  : undefined
-              }
-              value={
-                isDefined(contractsStats.weeklyApiCoverage)
-                  ? divide(
-                      contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
-                      contractsStats.weeklyApiCoverage.at(-1)?.totalOperations || 0
-                    )
-                      .map(toPercentage)
-                      .getOr('-')
-                  : null
-              }
-              graphPosition="right"
-              graphData={contractsStats.weeklyApiCoverage}
-              graphColor={
-                isDefined(contractsStats.weeklyApiCoverage)
-                  ? increaseIsBetter(
-                      contractsStats.weeklyApiCoverage.map(w =>
-                        divide(w.coveredOperations, w.totalOperations)
-                          .map(multiply(100))
-                          .getOr(0)
+                        contractsStats.weeklyApiCoverage.at(-1)?.totalOperations || 0
                       )
-                    )
-                  : null
-              }
-              graphItemToValue={x =>
-                divide(x.coveredOperations, x.totalOperations).map(multiply(100)).getOr(0)
-              }
-              graphDataPointLabel={x =>
-                [
-                  bold(num(x.coveredOperations)),
-                  ' covered operations of ',
-                  bold(num(x.totalOperations)),
-                  ' total operations',
-                ].join('')
-              }
-            />
-          </div>
-          <div className="pt-6">
-            <Stat
-              title="Number of operations used as stub"
-              tooltip={
-                isDefined(contractsStats.weeklyStubUsage)
-                  ? [
-                      bold(
-                        num(
+                        .map(toPercentage)
+                        .getOr('-')
+                    : null
+                }
+                graphPosition="right"
+                graphData={contractsStats.weeklyApiCoverage}
+                graphColor={
+                  isDefined(contractsStats.weeklyApiCoverage)
+                    ? increaseIsBetter(
+                        contractsStats.weeklyApiCoverage.map(w =>
+                          divide(w.coveredOperations, w.totalOperations)
+                            .map(multiply(100))
+                            .getOr(0)
+                        )
+                      )
+                    : null
+                }
+                graphItemToValue={x =>
+                  divide(x.coveredOperations, x.totalOperations)
+                    .map(multiply(100))
+                    .getOr(0)
+                }
+                graphDataPointLabel={x =>
+                  [
+                    bold(num(x.coveredOperations)),
+                    ' covered operations of ',
+                    bold(num(x.totalOperations)),
+                    ' total operations',
+                  ].join('')
+                }
+              />
+            </div>
+            <div className="pt-6">
+              <Stat
+                title="Number of operations used as stub"
+                tooltip={
+                  isDefined(contractsStats.weeklyStubUsage)
+                    ? [
+                        bold(
+                          num(
+                            (contractsStats.weeklyStubUsage.at(-1)?.totalOperations ||
+                              0) -
+                              (contractsStats.weeklyStubUsage.at(-1)
+                                ?.zeroCountOperations || 0)
+                          )
+                        ),
+                        'of',
+                        bold(
+                          num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
+                        ),
+                        minPluralise(
                           (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
-                            (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations ||
-                              0)
+                            (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0),
+                          'operation has',
+                          'operations have'
+                        ),
+                        'been used as stubs for tests',
+                        '<br />',
+                        bold(
+                          num(
+                            contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations ||
+                              0
+                          )
+                        ),
+                        'of',
+                        bold(
+                          num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
+                        ),
+                        minPluralise(
+                          contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0,
+                          'operation has',
+                          'operations have'
+                        ),
+                        "set up stubs for tests but haven't used them",
+                        '<br />',
+                      ].join(' ')
+                    : undefined
+                }
+                value={
+                  isDefined(contractsStats.weeklyStubUsage)
+                    ? (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
+                      (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0)
+                    : null
+                }
+                graphPosition="right"
+                graphData={contractsStats.weeklyStubUsage}
+                graphColor={
+                  isDefined(contractsStats.weeklyStubUsage)
+                    ? increaseIsBetter(
+                        contractsStats.weeklyStubUsage.map(
+                          w => w.totalOperations - w.zeroCountOperations
                         )
-                      ),
-                      'of',
-                      bold(
-                        num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
-                      ),
-                      minPluralise(
-                        (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
-                          (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0),
-                        'operation has',
-                        'operations have'
-                      ),
-                      'been used as stubs for tests',
-                      '<br />',
-                      bold(
-                        num(
-                          contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0
-                        )
-                      ),
-                      'of',
-                      bold(
-                        num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
-                      ),
-                      minPluralise(
-                        contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0,
-                        'operation has',
-                        'operations have'
-                      ),
-                      "set up stubs for tests but haven't used them",
-                      '<br />',
-                    ].join(' ')
-                  : undefined
-              }
-              value={
-                isDefined(contractsStats.weeklyStubUsage)
-                  ? (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
-                    (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0)
-                  : null
-              }
-              graphPosition="right"
-              graphData={contractsStats.weeklyStubUsage}
-              graphColor={
-                isDefined(contractsStats.weeklyStubUsage)
-                  ? increaseIsBetter(
-                      contractsStats.weeklyStubUsage.map(
-                        w => w.totalOperations - w.zeroCountOperations
                       )
-                    )
-                  : null
-              }
-              graphItemToValue={x => x.totalOperations - x.zeroCountOperations}
-              graphDataPointLabel={x =>
-                [
-                  bold(num(x.totalOperations - x.zeroCountOperations)),
-                  ' stub usage of ',
-                  bold(num(x.totalOperations)),
-                  ' total operations',
-                  '<br />',
-                  bold(num(x.zeroCountOperations)),
-                  ' zero count stub usage of ',
-                  bold(num(x.totalOperations)),
-                  ' total operations',
-                ].join('')
-              }
-            />
-          </div>
-        </SummaryCard>
+                    : null
+                }
+                graphItemToValue={x => x.totalOperations - x.zeroCountOperations}
+                graphDataPointLabel={x =>
+                  [
+                    bold(num(x.totalOperations - x.zeroCountOperations)),
+                    ' stub usage of ',
+                    bold(num(x.totalOperations)),
+                    ' total operations',
+                    '<br />',
+                    bold(num(x.zeroCountOperations)),
+                    ' zero count stub usage of ',
+                    bold(num(x.totalOperations)),
+                    ' total operations',
+                  ].join('')
+                }
+              />
+            </div>
+          </SummaryCard>
+        </div>
+        <div className="col-span-2">
+          Service dependencies
+          <ServiceChordDiagram />
+        </div>
       </div>
-      <div className="col-span-2">
-        Service dependencies
-        <ServiceChordDiagram />
-      </div>
-    </div>
+      <ServiceBlock />
+    </>
   );
 };

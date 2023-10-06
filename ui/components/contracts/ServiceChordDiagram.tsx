@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo } from 'react';
-import { propEq, uniq } from 'rambda';
-import { trpc, type RouterClient } from '../../helpers/trpc.js';
+import { T } from 'rambda';
+import { trpc } from '../../helpers/trpc.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import ChordDiagram from './ChordDiagram.jsx';
-import { exists, minPluralise } from '../../helpers/utils.js';
+import { minPluralise } from '../../helpers/utils.js';
 import { lineColor } from '../OverviewGraphs2/utils.jsx';
-
-type Service = RouterClient['contracts']['getServiceGraph'][number];
+import type { Endpoint, Service, ServiceAccessors } from './utils.jsx';
+import { serviceAccessors } from './utils.jsx';
 
 const methodBg = (method: string) => {
   if (method === 'GET') return 'bg-blue-400';
@@ -16,20 +16,19 @@ const methodBg = (method: string) => {
 };
 
 const endpointHtml =
-  (unused: boolean) =>
-  ({ method, path }: { method: string; path: string }) => {
+  (isEndpointUsed: ServiceAccessors['isEndpointUsed']) => (endpoint: Endpoint) => {
     return `
     <li class="mb-1">
       <span class="${methodBg(
-        method
+        endpoint.method
       )} w-12 text-theme-base px-1 rounded inline-block mr-2 text-xs font-bold text-center">
-        ${method}
+        ${endpoint.method}
       </span>
-      ${path}
+      ${endpoint.path}
       ${
-        unused
-          ? '<span class="text-theme-base-inverted ml-2 inline-block uppercase text-xs bg-slate-600 rounded px-1 py-0.5">Unused</span>'
-          : ''
+        isEndpointUsed(endpoint)
+          ? ''
+          : '<span class="text-theme-base-inverted ml-2 inline-block uppercase text-xs bg-slate-600 rounded px-1 py-0.5">Unused</span>'
       }
     </li>
   `;
@@ -63,7 +62,7 @@ const ribbonTooltip = (source: Service, target: Service) => {
       <div class="mt-2">
         <strong>${minPluralise(dependsOn.length, 'Endpoint', 'Endpoints')} used:</strong>
         <ul>
-          ${dependsOn.map(endpointHtml(false)).join('')}
+          ${dependsOn.map(endpointHtml(T)).join('')}
         </ul>
       </div>
     </div>
@@ -71,16 +70,10 @@ const ribbonTooltip = (source: Service, target: Service) => {
 };
 
 const whenNonZeroLength = (arr: unknown[], value: string) => (arr.length ? value : '');
-const chordTooltip = (services: Service[]) => (service: Service) => {
-  const consumers = services.filter(s =>
-    s.dependsOn.some(d => d.serviceId === service.serviceId)
-  );
 
-  const dependsOn = uniq(
-    service.dependsOn
-      .map(x => services.find(propEq('serviceId', x.serviceId)))
-      .filter(exists)
-  );
+const chordTooltip = (accessors: ServiceAccessors) => (service: Service) => {
+  const consumers = accessors.consumers(service);
+  const providers = accessors.providers(service);
 
   return `
     <div class="flex items-center gap-2 text-lg font-medium">
@@ -94,7 +87,7 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
       `<div class="mt-3">
         <strong>Used by</strong>
         <ul>
-          ${consumers.map(c => serviceNameHtml(c)).join('')}
+          ${consumers.map(serviceNameHtml).join('')}
         </ul>
       </div>`
     )}
@@ -103,29 +96,16 @@ const chordTooltip = (services: Service[]) => (service: Service) => {
       `<div class="mt-3">
         <strong>Exposes</strong>
         <ul>
-          ${service.endpoints
-            .map(e =>
-              endpointHtml(
-                !services.some(s =>
-                  s.dependsOn.some(
-                    e2 =>
-                      e2.path === e.path &&
-                      e2.method === e.method &&
-                      e2.serviceId === service.serviceId
-                  )
-                )
-              )(e)
-            )
-            .join('')}
+          ${service.endpoints.map(endpointHtml(accessors.isEndpointUsed)).join('')}
         </ul>
       </div>`
     )}
     ${whenNonZeroLength(
-      dependsOn,
+      providers,
       `<div class="mt-3">
         <strong>Depends on</strong>
         <ul>
-          ${dependsOn.map(x => serviceNameHtml(x)).join('')}
+          ${providers.map(serviceNameHtml).join('')}
         </ul>
       </div>`
     )}
@@ -136,29 +116,22 @@ const ServiceChordDiagram = () => {
   const queryContext = useQueryContext();
   const serviceGraph = trpc.contracts.getServiceGraph.useQuery(queryContext);
 
-  const services = useMemo(() => serviceGraph.data || [], [serviceGraph.data]);
-
-  const getRelated = useCallback(
-    (service: Service) => {
-      return service.dependsOn
-        .map(s => services.find(propEq('serviceId', s.serviceId)))
-        .filter(exists);
-    },
-    [services]
+  const accessors = useMemo(
+    () => serviceAccessors(serviceGraph.data || []),
+    [serviceGraph.data]
   );
 
   const hasConnections = useCallback(
     (service: Service) =>
-      getRelated(service).length > 0 ||
-      services.some(s => s.dependsOn.some(d => d.serviceId === service.serviceId)),
-    [getRelated, services]
+      accessors.consumers(service).length > 0 || accessors.providers(service).length > 0,
+    [accessors]
   );
 
   return (
     <ChordDiagram
-      data={services}
+      data={serviceGraph.data || []}
       hasConnections={hasConnections}
-      getRelated={getRelated}
+      getRelated={accessors.providers}
       lineColor={x => lineColor(x.serviceId)}
       getKey={x => x.serviceId}
       getTitle={x => x.name || 'Unknown'}
@@ -166,7 +139,7 @@ const ServiceChordDiagram = () => {
       ribbonWeight={(from, to) => {
         return from.dependsOn.filter(d => d.serviceId === to.serviceId).length;
       }}
-      chordTooltip={chordTooltip(services)}
+      chordTooltip={chordTooltip(accessors)}
     />
   );
 };
