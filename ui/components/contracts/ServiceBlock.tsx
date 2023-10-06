@@ -15,13 +15,30 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
       <div className="flex ml-5">
         <ul className="border border-gray-300">
           {accessors.consumers(service).map(x => (
-            <li key={x.serviceId}>{x.name}</li>
+            <li
+              key={x.serviceId}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-html={accessors.serviceTooltip(x)}
+            >
+              {x.name}
+            </li>
           ))}
         </ul>
-        <div>{service.name}</div>
+        <div
+          data-tooltip-id="react-tooltip"
+          data-tooltip-html={accessors.serviceTooltip(service)}
+        >
+          {service.name}
+        </div>
         <ul>
           {accessors.providers(service).map(x => (
-            <li key={x.serviceId}>{x.name}</li>
+            <li
+              key={x.serviceId}
+              data-tooltip-id="react-tooltip"
+              data-tooltip-html={accessors.serviceTooltip(x)}
+            >
+              {x.name}
+            </li>
           ))}
         </ul>
       </div>
