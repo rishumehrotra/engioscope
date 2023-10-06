@@ -24,11 +24,25 @@ import {
 
 const overviewInputParser = z.object({
   queryContext: queryContextInputParser,
+  teams: z.array(z.string()).optional(),
+  filters: z
+    .array(z.object({ label: z.string(), values: z.array(z.string()) }))
+    .optional(),
 });
 
 const releasePipelinesSummaryInputParser = pipelineFiltersInputParser;
 
+// const fromUrlFilter = (urlParam = '') =>
+//   urlParam
+//     ? urlParam
+//         .split(';')
+//         .map(part => part.split(':'))
+//         .map(([label, values]) => ({ label, values: values?.split(',') }))
+//     : [];
+
 const parseOverviewInput = (req: RequestWithFilter) => {
+  // console.log('query', JSON.stringify(req.query, null, 2));
+  // console.log('params', JSON.stringify(req.params, null, 2));
   return overviewInputParser.parse({
     queryContext: [
       req.params.collectionName,
@@ -36,6 +50,9 @@ const parseOverviewInput = (req: RequestWithFilter) => {
       req.query.startDate && new Date(req.query.startDate),
       req.query.endDate && new Date(req.query.endDate),
     ],
+    teams: req.query.teams?.split(','),
+    // #TODO: Add filters
+    // filters: req.query.filters ? fromUrlFilter(req.query.filters) : undefined,
   });
 };
 

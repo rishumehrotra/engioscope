@@ -1,11 +1,10 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 import { intersection, length, prop } from 'rambda';
 import {
   getCentralTemplatePipeline,
   getYamlPipelinesCountSummary,
   type SummaryStats,
 } from './repo-listing.js';
-import type { filteredReposInputParser } from './active-repos.js';
 import { getActiveRepos, searchAndFilterReposBy } from './active-repos.js';
 import { getHealthyBranchesSummary } from './branches.js';
 import {
@@ -35,7 +34,7 @@ import {
   updatedWeeklyReposWithSonarQubeCount,
 } from './sonar.js';
 import { getTestsAndCoveragesCount, getTestsAndCoverageByWeek } from './testruns.js';
-import { fromContext } from './utils.js';
+import { fromContext, queryContextInputParser } from './utils.js';
 import {
   getChangeLoadTimeGraph,
   getCycleTimeGraph,
@@ -61,8 +60,16 @@ type ReleaseStats = {
 };
 export type ProjectOverviewStats = SummaryStats & WorkItemStats & ReleaseStats;
 
+const projectOverViewStatsInputParser = z.object({
+  queryContext: queryContextInputParser,
+  teams: z.array(z.string()).optional(),
+  filters: z
+    .array(z.object({ label: z.string(), values: z.array(z.string()) }))
+    .optional(),
+});
+
 export const getProjectOverviewStatsAsChunks = async (
-  { queryContext }: z.infer<typeof filteredReposInputParser>,
+  { queryContext, filters, teams }: z.infer<typeof projectOverViewStatsInputParser>,
   onChunk: (x: Partial<ProjectOverviewStats>) => void
 ) => {
   const sendChunk =
@@ -72,9 +79,7 @@ export const getProjectOverviewStatsAsChunks = async (
     };
 
   const { collectionName, project } = fromContext(queryContext);
-
-  const activeRepos = await getActiveRepos(queryContext);
-
+  const activeRepos = await getActiveRepos(queryContext, teams);
   const activeRepoIds = activeRepos.map(prop('id'));
   const activeRepoNames = activeRepos.map(prop('name'));
 
@@ -174,34 +179,38 @@ export const getProjectOverviewStatsAsChunks = async (
 
     // getWorkItemsOverview(queryContext).then(sendChunk('workItems')),
 
-    getNewGraph({ queryContext }).then(sendChunk('newWorkItems')),
+    getNewGraph({ queryContext, filters }).then(sendChunk('newWorkItems')),
 
-    getVelocityGraph({ queryContext }).then(sendChunk('velocityWorkItems')),
+    getVelocityGraph({ queryContext, filters }).then(sendChunk('velocityWorkItems')),
 
-    getChangeLoadTimeGraph({ queryContext }).then(sendChunk('cltWorkItems')),
+    getChangeLoadTimeGraph({ queryContext, filters }).then(sendChunk('cltWorkItems')),
 
-    getFlowEfficiencyGraph({ queryContext }).then(sendChunk('flowEfficiencyWorkItems')),
+    getFlowEfficiencyGraph({ queryContext, filters }).then(
+      sendChunk('flowEfficiencyWorkItems')
+    ),
 
-    getCycleTimeGraph({ queryContext }).then(sendChunk('cycleTimeWorkItems')),
+    getCycleTimeGraph({ queryContext, filters }).then(sendChunk('cycleTimeWorkItems')),
 
-    getWipGraph({ queryContext }).then(sendChunk('wipTrendWorkItems')),
+    getWipGraph({ queryContext, filters }).then(sendChunk('wipTrendWorkItems')),
 
-    getReleasesSummaryForSse({ queryContext }).then(sendChunk('releases')),
+    getReleasesSummaryForSse({ queryContext, teams }).then(sendChunk('releases')),
 
-    conformsToBranchPoliciesSummary({ queryContext }).then(
+    conformsToBranchPoliciesSummary({ queryContext, teams }).then(
       sendChunk('releasesBranchPolicy')
     ),
 
-    usageByEnvironment({ queryContext }).then(sendChunk('usageByEnv')),
+    usageByEnvironment({ queryContext, teams }).then(sendChunk('usageByEnv')),
   ]);
 };
 
-export const getProjectOverviewStats = async (
-  filterArgs: z.infer<typeof filteredReposInputParser>
-) => {
+export const getProjectOverviewStats = async ({
+  queryContext,
+  teams,
+  filters,
+}: z.infer<typeof projectOverViewStatsInputParser>) => {
   let mergedChunks = {} as Partial<ProjectOverviewStats>;
 
-  await getProjectOverviewStatsAsChunks(filterArgs, x => {
+  await getProjectOverviewStatsAsChunks({ queryContext, teams, filters }, x => {
     mergedChunks = { ...mergedChunks, ...x };
   });
 

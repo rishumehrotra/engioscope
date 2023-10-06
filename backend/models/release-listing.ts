@@ -568,22 +568,6 @@ export const getReleasesSummaryForSse = async (
   return { ...omit(['_id'], summary) };
 };
 
-// export const getReleasesSummaryForSse = async (
-//   options: z.infer<typeof pipelineFiltersInputParser>
-// ) => {
-//   const { collectionName, project } = fromContext(options.queryContext);
-
-//   const filter = await createFilter({ ...options });
-
-//   const [summary] = await ReleaseModel.aggregate<Summary & { _id: null }>([
-//     ...filter,
-//     addBooleanFields(collectionName, project),
-//     ...createSummary(collectionName, project),
-//   ]);
-
-//   return { ...omit(['_id'], summary) };
-// };
-
 export const summary = async (options: z.infer<typeof pipelineFiltersInputParser>) => {
   const { collectionName, project } = fromContext(options.queryContext);
   const filter = await createFilter(options);

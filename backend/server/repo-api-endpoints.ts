@@ -20,6 +20,7 @@ export type RequestWithFilter = Request<
     endDate: string;
     search: string | undefined;
     teams: string | undefined;
+    filters: string | undefined;
   }
 >;
 

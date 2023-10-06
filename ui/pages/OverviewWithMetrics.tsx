@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react';
-import React, { Fragment, lazy, useCallback, useMemo, useState } from 'react';
+import React, {
+  Fragment,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { identity, multiply, prop, range } from 'rambda';
 import { ExternalLink } from 'react-feather';
+
 import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoints.js';
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
@@ -19,6 +28,11 @@ import { isBugLike } from '../../shared/work-item-utils.js';
 import { useDrawer } from '../components/common/Drawer.jsx';
 import { trpc } from '../helpers/trpc.js';
 import UsageByEnv from '../components/UsageByEnv.jsx';
+import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
+import Filters from '../components/OverviewGraphs2/Filters.jsx';
+import useRepoFilters from '../hooks/use-repo-filters.js';
+import useGraphArgs from '../components/OverviewGraphs2/useGraphArgs.js';
+import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 
 const style = { boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' };
 
@@ -63,12 +77,17 @@ const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
 
 const useCreateUrlWithFilter = (slug: string) => {
   const queryContext = useQueryContext();
+  const repoFilters = useRepoFilters();
+  const graphFilters = useGraphArgs();
+
   return useMemo(() => {
     return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
       startDate: queryContext[2].toISOString(),
       endDate: queryContext[3].toISOString(),
+      ...(repoFilters.teams ? { teams: repoFilters.teams.join(',') } : {}),
+      ...(graphFilters.filters ? { filters: graphFilters.filters.join(';') } : {}),
     }).toString()}`;
-  }, [queryContext, slug]);
+  }, [graphFilters.filters, queryContext, repoFilters.teams, slug]);
 };
 
 const useCreateDownloadUrl = () => {
@@ -103,10 +122,29 @@ const OverviewWithMetrics = () => {
     children: 'Loading...',
   });
 
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const [filterRenderCount, setFilterRenderCount] = useState(0);
+  const [, setLayoutType] = useState<'2-col' | 'full-width'>('2-col');
+
+  const relayout = useCallback(() => {
+    setLayoutType((filtersRef.current?.offsetHeight || 0) > 100 ? 'full-width' : '2-col');
+  }, [setLayoutType]);
+
+  useEffect(() => {
+    relayout();
+
+    window.addEventListener('resize', relayout, false);
+    return () => window.removeEventListener('resize', relayout, false);
+  }, [filterRenderCount, relayout]);
+
   return (
     <div>
+      <div className="text-left mb-6">
+        <QueryPeriodSelector />
+      </div>
       <Drawer {...drawerProps} {...additionalDrawerProps} />
       <div className="text-gray-950 text-2xl font-medium mb-3">Value Metrics</div>
+      <Filters ref={filtersRef} setRenderCount={setFilterRenderCount} />
       <div className="mt-6">
         <h2 className="mb-2 uppercase text-sm tracking-wide">Flow metrics</h2>
         <div className="grid grid-cols-4 gap-4">
@@ -1081,7 +1119,8 @@ const OverviewWithMetrics = () => {
         </div>
       </div>
       <div className="text-2xl font-medium pt-6">Health Metrics</div>
-      <div className="mb-3">
+      <TeamsSelector />
+      <div className="my-3">
         {isDefined(projectOverviewStats.totalRepos) &&
         isDefined(projectOverviewStats.totalActiveRepos) &&
         projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos !== 0 ? (
