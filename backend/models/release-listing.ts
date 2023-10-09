@@ -537,7 +537,7 @@ export const conformsToBranchPoliciesSummary = async (
 type Summary = {
   runCount: number;
   pipelineCount: number;
-  lastEnv: {
+  lastEnv?: {
     envName: string;
     deploys: number;
     successful: number;

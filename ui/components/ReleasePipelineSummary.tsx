@@ -93,7 +93,7 @@ const ReleasePipelineSummary2: React.FC = () => {
             <Stat
               title="Success"
               value={
-                isDefined(summarySse.releases)
+                isDefined(summarySse.releases) && isDefined(summarySse.releases.lastEnv)
                   ? divide(
                       summarySse.releases.lastEnv.successful,
                       summarySse.releases.lastEnv.deploys
@@ -103,7 +103,7 @@ const ReleasePipelineSummary2: React.FC = () => {
                   : undefined
               }
               tooltip={
-                isDefined(summarySse.releases)
+                isDefined(summarySse.releases) && isDefined(summarySse.releases.lastEnv)
                   ? `${num(summarySse.releases.lastEnv.successful)} of ${pluralise(
                       summarySse.releases.lastEnv.deploys,
                       'deploy was',
