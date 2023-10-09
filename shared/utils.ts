@@ -1,4 +1,4 @@
-import { add, multiply } from 'rambda';
+import { add, multiply, range } from 'rambda';
 import { maybe } from './maybe.js';
 import type { QualityGateStatus } from './types.js';
 
@@ -68,3 +68,8 @@ export const shouldNeverReachHere = (x: never) => {
 export const capitalizeFirstLetter = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
+
+export const chunkArray = <T>(array: T[], chunkSize: number) =>
+  range(0, Math.ceil(array.length / chunkSize)).map(i =>
+    array.slice(i * chunkSize, (i + 1) * chunkSize)
+  );
