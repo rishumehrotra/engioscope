@@ -50,7 +50,6 @@ const parseOverviewInput = (req: RequestWithFilter) => {
       req.query.startDate && new Date(req.query.startDate),
       req.query.endDate && new Date(req.query.endDate),
     ],
-    teams: req.query.teams?.split(','),
     // #TODO: Add filters
     // filters: req.query.filters ? fromUrlFilter(req.query.filters) : undefined,
   });
@@ -73,7 +72,6 @@ const parseReleasePipelinesInput = (req: RequestWithFilter) => {
       req.query.startDate && new Date(req.query.startDate),
       req.query.endDate && new Date(req.query.endDate),
     ],
-    searchTerms: req.query.search ? req.query.search.split(',') : undefined,
     teams: req.query.teams?.split(','),
   });
 };

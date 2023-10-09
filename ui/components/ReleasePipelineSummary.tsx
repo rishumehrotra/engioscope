@@ -12,6 +12,7 @@ import useFeatureFlag from '../hooks/use-feature-flag.js';
 import { Stat, SummaryCard } from './SummaryCard.jsx';
 import useMergeOverSse from '../hooks/use-merge-over-sse.js';
 import type { ReleaseStatsSse } from '../../backend/models/release-listing.js';
+import useRepoFilters from '../hooks/use-repo-filters.js';
 
 const UsageByEnvWrapper = () => {
   const filters = useReleaseFilters();
@@ -28,12 +29,14 @@ const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
 const useCreateUrlWithFilter = (slug: string) => {
   const queryContext = useQueryContext();
+  const filters = useRepoFilters();
   return useMemo(() => {
     return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
       startDate: queryContext[2].toISOString(),
       endDate: queryContext[3].toISOString(),
+      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
     }).toString()}`;
-  }, [queryContext, slug]);
+  }, [filters.teams, queryContext, slug]);
 };
 
 const ReleasePipelineSummary2: React.FC = () => {
@@ -66,28 +69,35 @@ const ReleasePipelineSummary2: React.FC = () => {
       <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 mb-6">
         <SummaryCard className="grid grid-cols-2 col-span-2 rounded-lg">
           <div className="col-span-1 border-r border-theme-seperator">
-            {isDefined(summarySse.releases)
-              ? summarySse.releases.lastEnv && (
-                  <Stat
-                    title={`${summarySse.releases.lastEnv.envName} deploys`}
-                    value={
-                      <>
-                        {num(
-                          Math.round(
-                            summarySse.releases.lastEnv.deploys / queryPeriodDays
-                          )
-                        )}
-                        <span className="font-normal text-sm"> / day</span>
-                      </>
-                    }
-                    tooltip={`${pluralise(
+            <Stat
+              title={
+                isDefined(summarySse.releases) && isDefined(summarySse.releases.lastEnv)
+                  ? `${summarySse.releases.lastEnv.envName} deploys`
+                  : 'Deploys'
+              }
+              value={
+                isDefined(summarySse.releases) &&
+                isDefined(summarySse.releases.lastEnv) ? (
+                  <>
+                    {num(
+                      Math.round(summarySse.releases.lastEnv.deploys / queryPeriodDays)
+                    )}
+                    <span className="font-normal text-sm"> / day</span>
+                  </>
+                ) : (
+                  '-'
+                )
+              }
+              tooltip={
+                isDefined(summarySse.releases) && isDefined(summarySse.releases.lastEnv)
+                  ? `${pluralise(
                       summarySse.releases.lastEnv.deploys,
                       'deploy',
                       'deploys'
-                    )} over the last ${pluralise(queryPeriodDays, 'day', 'days')}`}
-                  />
-                )
-              : null}
+                    )} over the last ${pluralise(queryPeriodDays, 'day', 'days')}`
+                  : undefined
+              }
+            />
           </div>
           <div className="col-span-1 pl-6">
             <Stat
@@ -95,12 +105,12 @@ const ReleasePipelineSummary2: React.FC = () => {
               value={
                 isDefined(summarySse.releases) && isDefined(summarySse.releases.lastEnv)
                   ? divide(
-                      summarySse.releases.lastEnv.successful,
+                      summarySse.releases.lastEnv.successful || 0,
                       summarySse.releases.lastEnv.deploys
                     )
                       .map(toPercentage)
                       .getOr('-')
-                  : undefined
+                  : '-'
               }
               tooltip={
                 isDefined(summarySse.releases) && isDefined(summarySse.releases.lastEnv)
@@ -115,67 +125,87 @@ const ReleasePipelineSummary2: React.FC = () => {
                     )}`
                   : undefined
               }
-              onClick={{
-                open: 'drawer',
-                heading: 'Usage by environment',
-                body: (
-                  <div className="p-2">
-                    <UsageByEnvWrapper />
-                  </div>
-                ),
-              }}
+              {...(isDefined(summarySse.releases) &&
+              isDefined(summarySse.releases.lastEnv)
+                ? {
+                    onClick: {
+                      open: 'drawer',
+                      heading: 'Usage by environment',
+                      body: (
+                        <div className="p-2">
+                          <UsageByEnvWrapper />
+                        </div>
+                      ),
+                    },
+                  }
+                : {})}
+
+              // onClick={{
+              //   open: 'drawer',
+              //   heading: 'Usage by environment',
+              //   body: (
+              //     <div className="p-2">
+              //       <UsageByEnvWrapper />
+              //     </div>
+              //   ),
+              // }}
             />
           </div>
         </SummaryCard>
         <SummaryCard className="grid grid-cols-2 col-span-2 rounded-lg">
-          {isDefined(summarySse.releases)
-            ? summarySse.releases.stagesToHighlight.map(stage => (
-                <Fragment key={stage.name}>
-                  <div className="col-span-1 border-r border-theme-seperator">
-                    <Stat
-                      title={`${stage.name}: exists`}
-                      value={
-                        isDefined(summarySse.releases)
-                          ? divide(stage.exists, summarySse.releases.pipelineCount)
-                              .map(toPercentage)
-                              .getOr('-')
-                          : undefined
-                      }
-                      tooltip={
-                        isDefined(summarySse.releases)
-                          ? `${num(stage.exists)} out of ${pluralise(
-                              summarySse.releases.pipelineCount,
-                              'release pipeline has',
-                              'release pipelines have'
-                            )} a stage named (or containing) ${stage.name}.`
-                          : undefined
-                      }
-                    />
-                  </div>
-                  <div className="col-span-1 pl-6">
-                    <Stat
-                      title={`${stage.name}: used`}
-                      value={
-                        isDefined(summarySse.releases)
-                          ? divide(stage.used, summarySse.releases.pipelineCount)
-                              .map(toPercentage)
-                              .getOr('-')
-                          : undefined
-                      }
-                      tooltip={
-                        isDefined(summarySse.releases)
-                          ? `${num(stage.used)} out of ${pluralise(
-                              summarySse.releases.pipelineCount,
-                              'release piipeline has',
-                              'release pipelines have'
-                            )} a successful deployment from ${stage.name}.`
-                          : undefined
-                      }
-                    />
-                  </div>
-                </Fragment>
-              ))
-            : null}
+          {isDefined(summarySse.releases) &&
+          isDefined(summarySse.releases.stagesToHighlight) ? (
+            summarySse.releases.stagesToHighlight.map(stage => (
+              <Fragment key={stage.name}>
+                <div className="col-span-1 border-r border-theme-seperator">
+                  <Stat
+                    title={`${stage.name}: exists`}
+                    value={
+                      isDefined(summarySse.releases)
+                        ? divide(stage.exists, summarySse.releases.pipelineCount)
+                            .map(toPercentage)
+                            .getOr('-')
+                        : undefined
+                    }
+                    tooltip={
+                      isDefined(summarySse.releases)
+                        ? `${num(stage.exists)} out of ${pluralise(
+                            summarySse.releases.pipelineCount,
+                            'release pipeline has',
+                            'release pipelines have'
+                          )} a stage named (or containing) ${stage.name}.`
+                        : undefined
+                    }
+                  />
+                </div>
+                <div className="col-span-1 pl-6">
+                  <Stat
+                    title={`${stage.name}: used`}
+                    value={
+                      isDefined(summarySse.releases)
+                        ? divide(stage.used, summarySse.releases.pipelineCount)
+                            .map(toPercentage)
+                            .getOr('-')
+                        : undefined
+                    }
+                    tooltip={
+                      isDefined(summarySse.releases)
+                        ? `${num(stage.used)} out of ${pluralise(
+                            summarySse.releases.pipelineCount,
+                            'release piipeline has',
+                            'release pipelines have'
+                          )} a successful deployment from ${stage.name}.`
+                        : undefined
+                    }
+                  />
+                </div>
+              </Fragment>
+            ))
+          ) : (
+            <div className="col-span-2">
+              <Stat title="Stages to highlight" value="-" />
+            </div>
+          )}
         </SummaryCard>
         <SummaryCard className="rounded-lg">
           <Stat
@@ -188,7 +218,7 @@ const ReleasePipelineSummary2: React.FC = () => {
                   )
                     .map(toPercentage)
                     .getOr('-')
-                : undefined
+                : '-'
             }
             tooltip={
               isDefined(summarySse.releasesBranchPolicy)
@@ -216,7 +246,7 @@ const ReleasePipelineSummary2: React.FC = () => {
                   )
                     .map(toPercentage)
                     .getOr('-')
-                : undefined
+                : '-'
             }
             tooltip={
               isDefined(summarySse.releases)
@@ -237,7 +267,7 @@ const ReleasePipelineSummary2: React.FC = () => {
                 ? divide(summarySse.releases.masterOnly, summarySse.releases.runCount)
                     .map(toPercentage)
                     .getOr('-')
-                : undefined
+                : '-'
             }
             tooltip={
               isDefined(summarySse.releases)

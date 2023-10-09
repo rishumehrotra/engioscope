@@ -33,6 +33,8 @@ import Filters from '../components/OverviewGraphs2/Filters.jsx';
 import useRepoFilters from '../hooks/use-repo-filters.js';
 import useGraphArgs from '../components/OverviewGraphs2/useGraphArgs.js';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
+import type { SummaryStats } from '../../backend/models/repo-listing.js';
+import type { ReleaseStatsSse } from '../../backend/models/release-listing.js';
 
 const style = { boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' };
 
@@ -90,9 +92,35 @@ const useCreateUrlWithFilter = (slug: string) => {
   }, [graphFilters.filters, queryContext, repoFilters.teams, slug]);
 };
 
+const useCreateUrlWithFilterForRepoSummary = (slug: string) => {
+  const filters = useRepoFilters();
+  const queryContext = useQueryContext();
+
+  return useMemo(() => {
+    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
+      startDate: filters.queryContext[2].toISOString(),
+      endDate: filters.queryContext[3].toISOString(),
+      ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
+      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
+    }).toString()}`;
+  }, [filters.queryContext, filters.searchTerms, filters.teams, queryContext, slug]);
+};
+
+const useCreateUrlWithFilterForReleasePipelines = (slug: string) => {
+  const queryContext = useQueryContext();
+  const filters = useRepoFilters();
+  return useMemo(() => {
+    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
+      startDate: queryContext[2].toISOString(),
+      endDate: queryContext[3].toISOString(),
+      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
+    }).toString()}`;
+  }, [filters.teams, queryContext, slug]);
+};
+
 const useCreateDownloadUrl = () => {
   // Dirty hack, but works
-  const url = useCreateUrlWithFilter('overview-v2/::placeholder::');
+  const url = useCreateUrlWithFilterForRepoSummary('overview-v2/::placeholder::');
 
   return useCallback(
     (slug: DrawerDownloadSlugs) => {
@@ -104,8 +132,16 @@ const useCreateDownloadUrl = () => {
 
 const OverviewWithMetrics = () => {
   const sseUrl = useCreateUrlWithFilter('overview-v2');
+  const repoSummarySseUrl = useCreateUrlWithFilterForRepoSummary('repos/summary');
+  const releasePipelinesSseUrl =
+    useCreateUrlWithFilterForReleasePipelines('release-pipelines');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, '0');
+  const repoSummaryStats = useSse<SummaryStats>(repoSummarySseUrl, '0');
+  const releasePipelinesSummaryStats = useSse<ReleaseStatsSse>(
+    releasePipelinesSseUrl,
+    '0'
+  );
   const queryPeriodDays = useQueryPeriodDays();
   const queryContext = useQueryContext();
   const pageConfig = trpc.workItems.getPageConfig.useQuery({
@@ -1121,16 +1157,14 @@ const OverviewWithMetrics = () => {
       <div className="text-2xl font-medium pt-6">Health Metrics</div>
       <TeamsSelector />
       <div className="my-3">
-        {isDefined(projectOverviewStats.totalRepos) &&
-        isDefined(projectOverviewStats.totalActiveRepos) &&
-        projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos !== 0 ? (
+        {isDefined(repoSummaryStats.totalRepos) &&
+        isDefined(repoSummaryStats.totalActiveRepos) &&
+        repoSummaryStats.totalRepos - repoSummaryStats.totalActiveRepos !== 0 ? (
           <p className="text-theme-helptext text-sm">
-            {`Analyzed ${num(projectOverviewStats.totalActiveRepos)} repos, 
+            {`Analyzed ${num(repoSummaryStats.totalActiveRepos)} repos, 
             Excluded `}
             <b className="text-theme-helptext-emphasis">
-              {`${num(
-                projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos
-              )} `}
+              {`${num(repoSummaryStats.totalRepos - repoSummaryStats.totalActiveRepos)} `}
             </b>
             <span
               className="underline decoration-dashed"
@@ -1142,7 +1176,7 @@ const OverviewWithMetrics = () => {
               ].join(' ')}
             >
               {`inactive ${minPluralise(
-                projectOverviewStats.totalRepos - projectOverviewStats.totalActiveRepos,
+                repoSummaryStats.totalRepos - repoSummaryStats.totalActiveRepos,
                 'repository',
                 'repositories'
               )}`}
@@ -1159,15 +1193,15 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="Tests"
                 tooltip={
-                  isDefined(projectOverviewStats.defSummary) &&
-                  isDefined(projectOverviewStats.totalActiveRepos)
+                  isDefined(repoSummaryStats.defSummary) &&
+                  isDefined(repoSummaryStats.totalActiveRepos)
                     ? [
                         'Total number of tests from the<br />',
-                        bold(num(projectOverviewStats.defSummary.reposWithTests)),
+                        bold(num(repoSummaryStats.defSummary.reposWithTests)),
                         'out of',
-                        bold(num(projectOverviewStats.totalActiveRepos)),
+                        bold(num(repoSummaryStats.totalActiveRepos)),
                         minPluralise(
-                          projectOverviewStats.totalActiveRepos,
+                          repoSummaryStats.totalActiveRepos,
                           'repository',
                           'repositories'
                         ),
@@ -1176,8 +1210,8 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={(() => {
-                  if (!isDefined(projectOverviewStats.weeklyTestsSummary)) return null;
-                  const lastMatch = projectOverviewStats.weeklyTestsSummary.findLast(
+                  if (!isDefined(repoSummaryStats.weeklyTestsSummary)) return null;
+                  const lastMatch = repoSummaryStats.weeklyTestsSummary.findLast(
                     x => x.hasTests
                   );
                   if (!lastMatch) return '0';
@@ -1187,11 +1221,11 @@ const OverviewWithMetrics = () => {
                   return num(lastMatch.totalTests);
                 })()}
                 graphPosition="right"
-                graphData={projectOverviewStats.weeklyTestsSummary}
+                graphData={repoSummaryStats.weeklyTestsSummary}
                 graphColor={
-                  isDefined(projectOverviewStats.weeklyTestsSummary)
+                  isDefined(repoSummaryStats.weeklyTestsSummary)
                     ? increaseIsBetter(
-                        projectOverviewStats.weeklyTestsSummary.map(x =>
+                        repoSummaryStats.weeklyTestsSummary.map(x =>
                           x.hasTests ? x.totalTests : 0
                         )
                       )
@@ -1207,7 +1241,7 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'Test & coverage details',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('tests-coverage-pipelines'),
                   body: <TestsDrawer pipelineType="all" />,
                 }}
@@ -1217,15 +1251,15 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="Branch coverage"
                 tooltip={
-                  isDefined(projectOverviewStats.defSummary) &&
-                  isDefined(projectOverviewStats.totalActiveRepos)
+                  isDefined(repoSummaryStats.defSummary) &&
+                  isDefined(repoSummaryStats.totalActiveRepos)
                     ? [
                         'Coverage numbers are from only the<br />',
-                        bold(num(projectOverviewStats.defSummary.reposWithCoverage)),
+                        bold(num(repoSummaryStats.defSummary.reposWithCoverage)),
                         'out of',
-                        bold(num(projectOverviewStats.totalActiveRepos)),
+                        bold(num(repoSummaryStats.totalActiveRepos)),
                         minPluralise(
-                          projectOverviewStats.totalActiveRepos,
+                          repoSummaryStats.totalActiveRepos,
                           'repository',
                           'repositories'
                         ),
@@ -1234,8 +1268,8 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={(() => {
-                  if (!isDefined(projectOverviewStats.weeklyCoverageSummary)) return null;
-                  const lastMatch = projectOverviewStats.weeklyCoverageSummary.findLast(
+                  if (!isDefined(repoSummaryStats.weeklyCoverageSummary)) return null;
+                  const lastMatch = repoSummaryStats.weeklyCoverageSummary.findLast(
                     x => x.hasCoverage
                   );
                   if (!lastMatch) return '-';
@@ -1247,11 +1281,11 @@ const OverviewWithMetrics = () => {
                     .getOr('-');
                 })()}
                 graphPosition="right"
-                graphData={projectOverviewStats.weeklyCoverageSummary}
+                graphData={repoSummaryStats.weeklyCoverageSummary}
                 graphColor={
-                  isDefined(projectOverviewStats.weeklyCoverageSummary)
+                  isDefined(repoSummaryStats.weeklyCoverageSummary)
                     ? increaseIsBetter(
-                        projectOverviewStats.weeklyCoverageSummary.map(week => {
+                        repoSummaryStats.weeklyCoverageSummary.map(week => {
                           return divide(
                             week.hasCoverage ? week.coveredBranches : 0,
                             week.hasCoverage ? week.totalBranches : 0
@@ -1296,14 +1330,14 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="SonarQube"
                 tooltip={
-                  isDefined(projectOverviewStats.reposWithSonarQube) &&
-                  isDefined(projectOverviewStats.totalActiveRepos)
+                  isDefined(repoSummaryStats.reposWithSonarQube) &&
+                  isDefined(repoSummaryStats.totalActiveRepos)
                     ? [
-                        bold(num(projectOverviewStats.reposWithSonarQube)),
+                        bold(num(repoSummaryStats.reposWithSonarQube)),
                         'of',
-                        bold(num(projectOverviewStats.totalActiveRepos)),
+                        bold(num(repoSummaryStats.totalActiveRepos)),
                         minPluralise(
-                          projectOverviewStats.totalActiveRepos,
+                          repoSummaryStats.totalActiveRepos,
                           'repository has',
                           'repositories have'
                         ),
@@ -1312,24 +1346,22 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={
-                  isDefined(projectOverviewStats.reposWithSonarQube) &&
-                  isDefined(projectOverviewStats.totalActiveRepos)
+                  isDefined(repoSummaryStats.reposWithSonarQube) &&
+                  isDefined(repoSummaryStats.totalActiveRepos)
                     ? divide(
-                        projectOverviewStats.reposWithSonarQube,
-                        projectOverviewStats.totalActiveRepos
+                        repoSummaryStats.reposWithSonarQube,
+                        repoSummaryStats.totalActiveRepos
                       )
                         .map(toPercentage)
                         .getOr('-')
                     : null
                 }
                 graphPosition="bottom"
-                graphData={projectOverviewStats.weeklyReposWithSonarQubeCount}
+                graphData={repoSummaryStats.weeklyReposWithSonarQubeCount}
                 graphColor={
-                  isDefined(projectOverviewStats.weeklyReposWithSonarQubeCount)
+                  isDefined(repoSummaryStats.weeklyReposWithSonarQubeCount)
                     ? increaseIsBetter(
-                        projectOverviewStats.weeklyReposWithSonarQubeCount.map(
-                          w => w.count
-                        )
+                        repoSummaryStats.weeklyReposWithSonarQubeCount.map(w => w.count)
                       )
                     : null
                 }
@@ -1343,7 +1375,7 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'SonarQube',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('sonar-projects'),
                   body: <SonarReposDrawer projectsType="all" />,
                 }}
@@ -1353,14 +1385,14 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="Ok"
                 tooltip={
-                  isDefined(projectOverviewStats.sonarProjects)
+                  isDefined(repoSummaryStats.sonarProjects)
                     ? [
-                        bold(num(projectOverviewStats.sonarProjects.passedProjects)),
+                        bold(num(repoSummaryStats.sonarProjects.passedProjects)),
                         'of',
-                        bold(num(projectOverviewStats.sonarProjects.totalProjects)),
+                        bold(num(repoSummaryStats.sonarProjects.totalProjects)),
                         'SonarQube',
                         minPluralise(
-                          projectOverviewStats.sonarProjects.totalProjects,
+                          repoSummaryStats.sonarProjects.totalProjects,
                           'project has',
                           'projects have'
                         ),
@@ -1369,22 +1401,22 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={
-                  isDefined(projectOverviewStats.sonarProjects)
+                  isDefined(repoSummaryStats.sonarProjects)
                     ? divide(
-                        projectOverviewStats.sonarProjects.passedProjects,
-                        projectOverviewStats.sonarProjects.totalProjects
+                        repoSummaryStats.sonarProjects.passedProjects,
+                        repoSummaryStats.sonarProjects.totalProjects
                       )
                         .map(toPercentage)
                         .getOr('-')
                     : null
                 }
                 graphPosition="right"
-                graphData={projectOverviewStats.weeklySonarProjectsCount}
+                graphData={repoSummaryStats.weeklySonarProjectsCount}
                 graphItemToValue={prop('passedProjects')}
                 graphColor={
-                  isDefined(projectOverviewStats.weeklySonarProjectsCount)
+                  isDefined(repoSummaryStats.weeklySonarProjectsCount)
                     ? increaseIsBetter(
-                        projectOverviewStats.weeklySonarProjectsCount.map(
+                        repoSummaryStats.weeklySonarProjectsCount.map(
                           s => s.passedProjects
                         )
                       )
@@ -1400,7 +1432,7 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'SonarQube',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('sonar-projects'),
                   body: <SonarReposDrawer projectsType="pass" />,
                 }}
@@ -1410,14 +1442,14 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="Fail"
                 tooltip={
-                  isDefined(projectOverviewStats.sonarProjects)
+                  isDefined(repoSummaryStats.sonarProjects)
                     ? [
-                        bold(num(projectOverviewStats.sonarProjects.failedProjects)),
+                        bold(num(repoSummaryStats.sonarProjects.failedProjects)),
                         'of',
-                        bold(num(projectOverviewStats.sonarProjects.totalProjects)),
+                        bold(num(repoSummaryStats.sonarProjects.totalProjects)),
                         'SonarQube',
                         minPluralise(
-                          projectOverviewStats.sonarProjects.failedProjects,
+                          repoSummaryStats.sonarProjects.failedProjects,
                           'project has',
                           'projects have'
                         ),
@@ -1426,21 +1458,20 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={
-                  isDefined(projectOverviewStats.sonarProjects)
+                  isDefined(repoSummaryStats.sonarProjects)
                     ? divide(
-                        projectOverviewStats.sonarProjects.failedProjects,
-                        projectOverviewStats.sonarProjects.totalProjects
+                        repoSummaryStats.sonarProjects.failedProjects,
+                        repoSummaryStats.sonarProjects.totalProjects
                       )
                         .map(toPercentage)
                         .getOr('-')
                     : null
                 }
                 graphPosition="right"
-                graphData={projectOverviewStats.weeklySonarProjectsCount}
+                graphData={repoSummaryStats.weeklySonarProjectsCount}
                 graphColor={decreaseIsBetter(
-                  projectOverviewStats.weeklySonarProjectsCount?.map(
-                    s => s.failedProjects
-                  ) || []
+                  repoSummaryStats.weeklySonarProjectsCount?.map(s => s.failedProjects) ||
+                    []
                 )}
                 graphItemToValue={prop('failedProjects')}
                 graphDataPointLabel={x =>
@@ -1453,7 +1484,7 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'SonarQube',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('sonar-projects'),
                   body: <SonarReposDrawer projectsType="fail" />,
                 }}
@@ -1464,13 +1495,13 @@ const OverviewWithMetrics = () => {
             <Stat
               title="Healthy branches"
               tooltip={
-                isDefined(projectOverviewStats.healthyBranches)
+                isDefined(repoSummaryStats.healthyBranches)
                   ? [
-                      bold(num(projectOverviewStats.healthyBranches.healthy)),
+                      bold(num(repoSummaryStats.healthyBranches.healthy)),
                       'out of',
-                      bold(num(projectOverviewStats.healthyBranches.total)),
+                      bold(num(repoSummaryStats.healthyBranches.total)),
                       minPluralise(
-                        projectOverviewStats.healthyBranches.total,
+                        repoSummaryStats.healthyBranches.total,
                         'branch is',
                         'branches are'
                       ),
@@ -1479,10 +1510,10 @@ const OverviewWithMetrics = () => {
                   : undefined
               }
               value={
-                isDefined(projectOverviewStats.healthyBranches)
+                isDefined(repoSummaryStats.healthyBranches)
                   ? divide(
-                      projectOverviewStats.healthyBranches.healthy,
-                      projectOverviewStats.healthyBranches.total
+                      repoSummaryStats.healthyBranches.healthy,
+                      repoSummaryStats.healthyBranches.total
                     )
                       .map(toPercentage)
                       .getOr('-')
@@ -1501,26 +1532,26 @@ const OverviewWithMetrics = () => {
                 title="Builds"
                 tooltip="Total number of builds across all matching repos"
                 value={
-                  isDefined(projectOverviewStats.totalBuilds)
-                    ? num(projectOverviewStats.totalBuilds.count)
+                  isDefined(repoSummaryStats.totalBuilds)
+                    ? num(repoSummaryStats.totalBuilds.count)
                     : null
                 }
                 onClick={{
                   open: 'drawer',
                   heading: 'Build details',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('build-pipelines'),
                   body: <BuildPipelinesDrawer pipelineType="all" />,
                 }}
                 graphPosition="right"
                 graphColor={
-                  isDefined(projectOverviewStats.totalBuilds)
+                  isDefined(repoSummaryStats.totalBuilds)
                     ? increaseIsBetter(
-                        projectOverviewStats.totalBuilds.byWeek.map(week => week.count)
+                        repoSummaryStats.totalBuilds.byWeek.map(week => week.count)
                       )
                     : null
                 }
-                graphData={projectOverviewStats.totalBuilds?.byWeek}
+                graphData={repoSummaryStats.totalBuilds?.byWeek}
                 graphDataPointLabel={x => `${bold(num(x.count))} builds`}
                 graphItemToValue={prop('count')}
               />
@@ -1529,14 +1560,14 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="Success"
                 tooltip={
-                  isDefined(projectOverviewStats.successfulBuilds) &&
-                  isDefined(projectOverviewStats.totalBuilds)
+                  isDefined(repoSummaryStats.successfulBuilds) &&
+                  isDefined(repoSummaryStats.totalBuilds)
                     ? [
-                        bold(num(projectOverviewStats.successfulBuilds.count)),
+                        bold(num(repoSummaryStats.successfulBuilds.count)),
                         'out of',
-                        bold(num(projectOverviewStats.totalBuilds.count)),
+                        bold(num(repoSummaryStats.totalBuilds.count)),
                         minPluralise(
-                          projectOverviewStats.totalBuilds.count,
+                          repoSummaryStats.totalBuilds.count,
                           'build has',
                           'builds have'
                         ),
@@ -1545,11 +1576,11 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={
-                  isDefined(projectOverviewStats.successfulBuilds) &&
-                  isDefined(projectOverviewStats.totalBuilds)
+                  isDefined(repoSummaryStats.successfulBuilds) &&
+                  isDefined(repoSummaryStats.totalBuilds)
                     ? divide(
-                        projectOverviewStats.successfulBuilds.count,
-                        projectOverviewStats.totalBuilds.count
+                        repoSummaryStats.successfulBuilds.count,
+                        repoSummaryStats.totalBuilds.count
                       )
                         .map(toPercentage)
                         .getOr('-')
@@ -1558,19 +1589,19 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'Build details',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('build-pipelines'),
                   body: <BuildPipelinesDrawer pipelineType="currentlySucceeding" />,
                 }}
                 graphPosition="right"
                 graphColor={
-                  isDefined(projectOverviewStats.totalBuilds)
+                  isDefined(repoSummaryStats.totalBuilds)
                     ? increaseIsBetter(
-                        projectOverviewStats.totalBuilds.byWeek.map(build => {
+                        repoSummaryStats.totalBuilds.byWeek.map(build => {
                           const successfulBuildsForWeek = isDefined(
-                            projectOverviewStats.successfulBuilds
+                            repoSummaryStats.successfulBuilds
                           )
-                            ? projectOverviewStats.successfulBuilds.byWeek.find(
+                            ? repoSummaryStats.successfulBuilds.byWeek.find(
                                 s => s.weekIndex === build.weekIndex
                               )
                             : null;
@@ -1581,12 +1612,12 @@ const OverviewWithMetrics = () => {
                       )
                     : null
                 }
-                graphData={projectOverviewStats.totalBuilds?.byWeek}
+                graphData={repoSummaryStats.totalBuilds?.byWeek}
                 graphItemToValue={build => {
                   const successfulBuildsForWeek = isDefined(
-                    projectOverviewStats.successfulBuilds
+                    repoSummaryStats.successfulBuilds
                   )
-                    ? projectOverviewStats.successfulBuilds.byWeek.find(
+                    ? repoSummaryStats.successfulBuilds.byWeek.find(
                         s => s.weekIndex === build.weekIndex
                       )
                     : undefined;
@@ -1596,9 +1627,9 @@ const OverviewWithMetrics = () => {
                 }}
                 graphDataPointLabel={build => {
                   const successfulBuildsForWeek = isDefined(
-                    projectOverviewStats.successfulBuilds
+                    repoSummaryStats.successfulBuilds
                   )
-                    ? projectOverviewStats.successfulBuilds.byWeek.find(
+                    ? repoSummaryStats.successfulBuilds.byWeek.find(
                         s => s.weekIndex === build.weekIndex
                       )
                     : undefined;
@@ -1617,13 +1648,13 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="YAML pipelines"
                 tooltip={
-                  isDefined(projectOverviewStats.pipelines)
+                  isDefined(repoSummaryStats.pipelines)
                     ? [
-                        bold(num(projectOverviewStats.pipelines.yamlCount)),
+                        bold(num(repoSummaryStats.pipelines.yamlCount)),
                         'of',
-                        bold(num(projectOverviewStats.pipelines.totalCount)),
+                        bold(num(repoSummaryStats.pipelines.totalCount)),
                         minPluralise(
-                          projectOverviewStats.pipelines.totalCount,
+                          repoSummaryStats.pipelines.totalCount,
                           'pipeline is',
                           'pipelines are'
                         ),
@@ -1632,10 +1663,10 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={
-                  isDefined(projectOverviewStats.pipelines)
+                  isDefined(repoSummaryStats.pipelines)
                     ? divide(
-                        projectOverviewStats.pipelines.yamlCount,
-                        projectOverviewStats.pipelines.totalCount
+                        repoSummaryStats.pipelines.yamlCount,
+                        repoSummaryStats.pipelines.totalCount
                       )
                         .map(toPercentage)
                         .getOr('-')
@@ -1644,12 +1675,12 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'Pipeline details',
-                  enabledIf: (projectOverviewStats?.pipelines?.totalCount || 0) > 0,
+                  enabledIf: (repoSummaryStats?.pipelines?.totalCount || 0) > 0,
                   downloadUrl: drawerDownloadUrl('yaml-pipelines'),
                   body: (
                     <YAMLPipelinesDrawer
-                      totalPipelines={projectOverviewStats?.pipelines?.totalCount || 0}
-                      yamlPipelines={projectOverviewStats?.pipelines?.yamlCount || 0}
+                      totalPipelines={repoSummaryStats?.pipelines?.totalCount || 0}
+                      yamlPipelines={repoSummaryStats?.pipelines?.yamlCount || 0}
                     />
                   ),
                 }}
@@ -1659,50 +1690,46 @@ const OverviewWithMetrics = () => {
               <Stat
                 title="Central template"
                 tooltip={
-                  isDefined(projectOverviewStats.centralTemplatePipeline) &&
-                  isDefined(projectOverviewStats.pipelines) &&
-                  isDefined(projectOverviewStats.centralTemplateUsage) &&
-                  isDefined(projectOverviewStats.totalBuilds) &&
-                  isDefined(projectOverviewStats.activePipelinesCount) &&
-                  isDefined(
-                    projectOverviewStats.activePipelineWithCentralTemplateCount
-                  ) &&
-                  isDefined(projectOverviewStats.activePipelineCentralTemplateBuilds) &&
-                  isDefined(projectOverviewStats.activePipelineBuilds)
+                  isDefined(repoSummaryStats.centralTemplatePipeline) &&
+                  isDefined(repoSummaryStats.pipelines) &&
+                  isDefined(repoSummaryStats.centralTemplateUsage) &&
+                  isDefined(repoSummaryStats.totalBuilds) &&
+                  isDefined(repoSummaryStats.activePipelinesCount) &&
+                  isDefined(repoSummaryStats.activePipelineWithCentralTemplateCount) &&
+                  isDefined(repoSummaryStats.activePipelineCentralTemplateBuilds) &&
+                  isDefined(repoSummaryStats.activePipelineBuilds)
                     ? [
                         bold(
                           num(
-                            projectOverviewStats.centralTemplatePipeline
+                            repoSummaryStats.centralTemplatePipeline
                               .totalCentralTemplatePipelines
                           )
                         ),
                         'out of',
-                        bold(num(projectOverviewStats.pipelines.totalCount)),
+                        bold(num(repoSummaryStats.pipelines.totalCount)),
                         minPluralise(
-                          projectOverviewStats.centralTemplatePipeline.central,
+                          repoSummaryStats.centralTemplatePipeline.central,
                           'build pipeline',
                           'build pipelines'
                         ),
                         'use the central template',
                         '<div class="mt-1">',
-                        bold(num(projectOverviewStats.centralTemplatePipeline.central)),
+                        bold(num(repoSummaryStats.centralTemplatePipeline.central)),
                         'out of',
-                        bold(num(projectOverviewStats.pipelines.totalCount)),
+                        bold(num(repoSummaryStats.pipelines.totalCount)),
                         minPluralise(
-                          projectOverviewStats.centralTemplatePipeline.central,
+                          repoSummaryStats.centralTemplatePipeline.central,
                           'build pipeline',
                           'build pipelines'
                         ),
                         'use the central template on the master branch',
                         '</div>',
                         '<div class="mt-1">',
-                        bold(
-                          num(projectOverviewStats.centralTemplateUsage.templateUsers)
-                        ),
+                        bold(num(repoSummaryStats.centralTemplateUsage.templateUsers)),
                         'out of',
-                        bold(num(projectOverviewStats.totalBuilds.count)),
+                        bold(num(repoSummaryStats.totalBuilds.count)),
                         minPluralise(
-                          projectOverviewStats.centralTemplateUsage.templateUsers,
+                          repoSummaryStats.centralTemplateUsage.templateUsers,
                           'build run',
                           'build runs'
                         ),
@@ -1712,12 +1739,12 @@ const OverviewWithMetrics = () => {
                     : undefined
                 }
                 value={
-                  isDefined(projectOverviewStats.centralTemplatePipeline) &&
-                  isDefined(projectOverviewStats.pipelines)
+                  isDefined(repoSummaryStats.centralTemplatePipeline) &&
+                  isDefined(repoSummaryStats.pipelines)
                     ? divide(
-                        projectOverviewStats.centralTemplatePipeline
+                        repoSummaryStats.centralTemplatePipeline
                           .totalCentralTemplatePipelines,
-                        projectOverviewStats.pipelines.totalCount
+                        repoSummaryStats.pipelines.totalCount
                       )
                         .map(toPercentage)
                         .getOr('-')
@@ -1726,7 +1753,7 @@ const OverviewWithMetrics = () => {
                 onClick={{
                   open: 'drawer',
                   heading: 'Build details',
-                  enabledIf: (projectOverviewStats?.totalActiveRepos || 0) > 0,
+                  enabledIf: (repoSummaryStats?.totalActiveRepos || 0) > 0,
                   downloadUrl: drawerDownloadUrl('build-pipelines'),
                   body: <BuildPipelinesDrawer pipelineType="usingCentralTemplate" />,
                 }}
@@ -1740,21 +1767,21 @@ const OverviewWithMetrics = () => {
         <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 col-span-6">
           <SummaryCard className="col-span-2 rounded-lg mt-2 gap-6">
             <div className="grid grid-cols-2 gap-6">
-              {isDefined(projectOverviewStats.releases) &&
-              isDefined(projectOverviewStats.releases?.stagesToHighlight)
-                ? projectOverviewStats.releases.stagesToHighlight.map(stage => (
+              {isDefined(releasePipelinesSummaryStats.releases) &&
+              isDefined(releasePipelinesSummaryStats.releases?.stagesToHighlight)
+                ? releasePipelinesSummaryStats.releases.stagesToHighlight.map(stage => (
                     <Fragment key={stage.name}>
                       <div className="pr-6 border-r border-theme-seperator">
                         <Stat
                           title={`${stage.name}: exists`}
                           value={divide(
                             stage.exists,
-                            projectOverviewStats.releases?.pipelineCount || 0
+                            releasePipelinesSummaryStats.releases?.pipelineCount || 0
                           )
                             .map(toPercentage)
                             .getOr('-')}
                           tooltip={`${num(stage.exists)} out of ${pluralise(
-                            projectOverviewStats.releases?.pipelineCount || 0,
+                            releasePipelinesSummaryStats.releases?.pipelineCount || 0,
                             'release pipeline has',
                             'release pipelines have'
                           )} a stage named (or containing) ${stage.name}.`}
@@ -1765,12 +1792,12 @@ const OverviewWithMetrics = () => {
                           title={`${stage.name}: used`}
                           value={divide(
                             stage.used,
-                            projectOverviewStats.releases?.pipelineCount || 0
+                            releasePipelinesSummaryStats.releases?.pipelineCount || 0
                           )
                             .map(toPercentage)
                             .getOr('-')}
                           tooltip={`${num(stage.used)} out of ${pluralise(
-                            projectOverviewStats.releases?.pipelineCount || 0,
+                            releasePipelinesSummaryStats.releases?.pipelineCount || 0,
                             'release piipeline has',
                             'release pipelines have'
                           )} a successful deployment from ${stage.name}.`}
@@ -1786,27 +1813,27 @@ const OverviewWithMetrics = () => {
             <Stat
               title="Conforms to branch policies"
               value={
-                isDefined(projectOverviewStats.releasesBranchPolicy)
+                isDefined(releasePipelinesSummaryStats.releasesBranchPolicy)
                   ? divide(
-                      projectOverviewStats.releasesBranchPolicy.conforms,
-                      projectOverviewStats.releasesBranchPolicy.total
+                      releasePipelinesSummaryStats.releasesBranchPolicy.conforms,
+                      releasePipelinesSummaryStats.releasesBranchPolicy.total
                     )
                       .map(toPercentage)
                       .getOr('-')
-                  : undefined
+                  : '-'
               }
               tooltip={
-                isDefined(projectOverviewStats.releasesBranchPolicy) &&
-                isDefined(projectOverviewStats.releases)
+                isDefined(releasePipelinesSummaryStats.releasesBranchPolicy) &&
+                isDefined(releasePipelinesSummaryStats.releases)
                   ? `${num(
-                      projectOverviewStats.releasesBranchPolicy.conforms
+                      releasePipelinesSummaryStats.releasesBranchPolicy.conforms
                     )} out of ${pluralise(
-                      projectOverviewStats.releasesBranchPolicy.total,
+                      releasePipelinesSummaryStats.releasesBranchPolicy.total,
                       'artifact is',
                       'artifacts are'
                     )} from branches that conform<br />to the branch policy.${
-                      isDefined(projectOverviewStats.releases.ignoredStagesBefore)
-                        ? `<br />Artifacts that didn't go to ${projectOverviewStats.releases.ignoredStagesBefore} are not considered.`
+                      isDefined(releasePipelinesSummaryStats.releases.ignoredStagesBefore)
+                        ? `<br />Artifacts that didn't go to ${releasePipelinesSummaryStats.releases.ignoredStagesBefore} are not considered.`
                         : ''
                     }`
                   : undefined
@@ -1817,21 +1844,21 @@ const OverviewWithMetrics = () => {
             <Stat
               title="Starts with artifact"
               value={
-                isDefined(projectOverviewStats.releases)
+                isDefined(releasePipelinesSummaryStats.releases)
                   ? divide(
-                      projectOverviewStats.releases.startsWithArtifact,
-                      projectOverviewStats.releases.pipelineCount
+                      releasePipelinesSummaryStats.releases.startsWithArtifact,
+                      releasePipelinesSummaryStats.releases.pipelineCount
                     )
                       .map(toPercentage)
                       .getOr('-')
-                  : undefined
+                  : '-'
               }
               tooltip={
-                isDefined(projectOverviewStats.releases)
+                isDefined(releasePipelinesSummaryStats.releases)
                   ? `${num(
-                      projectOverviewStats.releases.startsWithArtifact
+                      releasePipelinesSummaryStats.releases.startsWithArtifact
                     )} of ${pluralise(
-                      projectOverviewStats.releases.pipelineCount,
+                      releasePipelinesSummaryStats.releases.pipelineCount,
                       'pipeliine',
                       'pipelines'
                     )} started with an artifact`
@@ -1842,32 +1869,34 @@ const OverviewWithMetrics = () => {
         </div>
         <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 col-span-6">
           <SummaryCard className="col-span-2 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
-            {isDefined(projectOverviewStats.usageByEnv) ? (
-              <UsageByEnv perEnvUsage={projectOverviewStats.usageByEnv} />
+            {isDefined(releasePipelinesSummaryStats.usageByEnv) ? (
+              <UsageByEnv perEnvUsage={releasePipelinesSummaryStats.usageByEnv} />
             ) : null}
           </SummaryCard>
           <SummaryCard className="col-span-1 row-span-1 rounded-lg">
             <Stat
               title="Master-only releases"
               value={
-                isDefined(projectOverviewStats.releases)
+                isDefined(releasePipelinesSummaryStats.releases)
                   ? divide(
-                      projectOverviewStats.releases.masterOnly,
-                      projectOverviewStats.releases.runCount
+                      releasePipelinesSummaryStats.releases.masterOnly,
+                      releasePipelinesSummaryStats.releases.runCount
                     )
                       .map(toPercentage)
                       .getOr('-')
-                  : undefined
+                  : '-'
               }
               tooltip={
-                isDefined(projectOverviewStats.releases)
-                  ? `${num(projectOverviewStats.releases.masterOnly)} out of ${pluralise(
-                      projectOverviewStats.releases.runCount,
+                isDefined(releasePipelinesSummaryStats.releases)
+                  ? `${num(
+                      releasePipelinesSummaryStats.releases.masterOnly
+                    )} out of ${pluralise(
+                      releasePipelinesSummaryStats.releases.runCount,
                       'release was',
                       'releases were'
                     )} exclusively from master.${
-                      projectOverviewStats.releases.ignoredStagesBefore
-                        ? `<br />Pipeline runs that didn't go to ${projectOverviewStats.releases.ignoredStagesBefore} are not considered.`
+                      releasePipelinesSummaryStats.releases.ignoredStagesBefore
+                        ? `<br />Pipeline runs that didn't go to ${releasePipelinesSummaryStats.releases.ignoredStagesBefore} are not considered.`
                         : ''
                     }`
                   : undefined
