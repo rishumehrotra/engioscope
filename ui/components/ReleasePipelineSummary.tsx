@@ -139,16 +139,6 @@ const ReleasePipelineSummary2: React.FC = () => {
                     },
                   }
                 : {})}
-
-              // onClick={{
-              //   open: 'drawer',
-              //   heading: 'Usage by environment',
-              //   body: (
-              //     <div className="p-2">
-              //       <UsageByEnvWrapper />
-              //     </div>
-              //   ),
-              // }}
             />
           </div>
         </SummaryCard>
@@ -270,7 +260,9 @@ const ReleasePipelineSummary2: React.FC = () => {
                 : '-'
             }
             tooltip={
-              isDefined(summarySse.releases)
+              isDefined(summarySse.releases) &&
+              isDefined(summarySse.releases.masterOnly) &&
+              isDefined(summarySse.releases.runCount)
                 ? `${num(summarySse.releases.masterOnly)} out of ${pluralise(
                     summarySse.releases.runCount,
                     'release was',

@@ -1768,44 +1768,48 @@ const OverviewWithMetrics = () => {
           <SummaryCard className="col-span-2 rounded-lg mt-2 gap-6">
             <div className="grid grid-cols-2 gap-6">
               {isDefined(releasePipelinesSummaryStats.releases) &&
-              isDefined(releasePipelinesSummaryStats.releases?.stagesToHighlight)
-                ? releasePipelinesSummaryStats.releases.stagesToHighlight.map(stage => (
-                    <Fragment key={stage.name}>
-                      <div className="pr-6 border-r border-theme-seperator">
-                        <Stat
-                          title={`${stage.name}: exists`}
-                          value={divide(
-                            stage.exists,
-                            releasePipelinesSummaryStats.releases?.pipelineCount || 0
-                          )
-                            .map(toPercentage)
-                            .getOr('-')}
-                          tooltip={`${num(stage.exists)} out of ${pluralise(
-                            releasePipelinesSummaryStats.releases?.pipelineCount || 0,
-                            'release pipeline has',
-                            'release pipelines have'
-                          )} a stage named (or containing) ${stage.name}.`}
-                        />
-                      </div>
-                      <div>
-                        <Stat
-                          title={`${stage.name}: used`}
-                          value={divide(
-                            stage.used,
-                            releasePipelinesSummaryStats.releases?.pipelineCount || 0
-                          )
-                            .map(toPercentage)
-                            .getOr('-')}
-                          tooltip={`${num(stage.used)} out of ${pluralise(
-                            releasePipelinesSummaryStats.releases?.pipelineCount || 0,
-                            'release piipeline has',
-                            'release pipelines have'
-                          )} a successful deployment from ${stage.name}.`}
-                        />
-                      </div>
-                    </Fragment>
-                  ))
-                : null}
+              isDefined(releasePipelinesSummaryStats.releases?.stagesToHighlight) ? (
+                releasePipelinesSummaryStats.releases.stagesToHighlight.map(stage => (
+                  <Fragment key={stage.name}>
+                    <div className="pr-6 border-r border-theme-seperator">
+                      <Stat
+                        title={`${stage.name}: exists`}
+                        value={divide(
+                          stage.exists,
+                          releasePipelinesSummaryStats.releases?.pipelineCount || 0
+                        )
+                          .map(toPercentage)
+                          .getOr('-')}
+                        tooltip={`${num(stage.exists)} out of ${pluralise(
+                          releasePipelinesSummaryStats.releases?.pipelineCount || 0,
+                          'release pipeline has',
+                          'release pipelines have'
+                        )} a stage named (or containing) ${stage.name}.`}
+                      />
+                    </div>
+                    <div>
+                      <Stat
+                        title={`${stage.name}: used`}
+                        value={divide(
+                          stage.used,
+                          releasePipelinesSummaryStats.releases?.pipelineCount || 0
+                        )
+                          .map(toPercentage)
+                          .getOr('-')}
+                        tooltip={`${num(stage.used)} out of ${pluralise(
+                          releasePipelinesSummaryStats.releases?.pipelineCount || 0,
+                          'release piipeline has',
+                          'release pipelines have'
+                        )} a successful deployment from ${stage.name}.`}
+                      />
+                    </div>
+                  </Fragment>
+                ))
+              ) : (
+                <div className="col-span-2">
+                  <Stat title="Stages to highlight" value="-" />
+                </div>
+              )}
             </div>
           </SummaryCard>
 
@@ -1870,8 +1874,17 @@ const OverviewWithMetrics = () => {
         <div className="grid grid-cols-4 grid-row-2 gap-6 mt-2 col-span-6">
           <SummaryCard className="col-span-2 row-span-2 grid grid-cols-2 gap-6 rounded-lg">
             {isDefined(releasePipelinesSummaryStats.usageByEnv) ? (
-              <UsageByEnv perEnvUsage={releasePipelinesSummaryStats.usageByEnv} />
-            ) : null}
+              <div className="col-span-2">
+                <h3 className="font-semibold mb-3 flex items-center">
+                  Usage By Environments
+                </h3>
+                <UsageByEnv perEnvUsage={releasePipelinesSummaryStats.usageByEnv} />
+              </div>
+            ) : (
+              <div className="col-span-2">
+                <Stat title="Usage By Environments" value="-" />
+              </div>
+            )}
           </SummaryCard>
           <SummaryCard className="col-span-1 row-span-1 rounded-lg">
             <Stat

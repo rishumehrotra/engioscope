@@ -978,6 +978,8 @@ export const usageByEnvironment = async (
     },
   ]);
 
+  if (!result[0]) return;
+
   return projectConfig?.environments?.reduce<
     Record<string, { total: number; successful: number }>
   >((acc, env) => {
