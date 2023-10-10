@@ -1,5 +1,5 @@
 import React, { Fragment, useCallback, useMemo } from 'react';
-import { num, pluralise } from '../helpers/utils.js';
+import { isDefined, num, pluralise } from '../helpers/utils.js';
 import ProjectStat from './ProjectStat.jsx';
 import ProjectStats from './ProjectStats.jsx';
 import { divide, toPercentage } from '../../shared/utils.js';
@@ -24,8 +24,6 @@ const UsageByEnvWrapper = () => {
     </div>
   );
 };
-
-const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
 const useCreateUrlWithFilter = (slug: string) => {
   const queryContext = useQueryContext();

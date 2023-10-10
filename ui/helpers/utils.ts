@@ -185,3 +185,6 @@ export const combinedQualityGate = (qualityGateStatus: QualityGateStatus[]) => {
     .map(toPercentage)
     .getOr('-')} pass`;
 };
+
+export const isDefined = <T>(val: T | undefined): val is T => val !== undefined;
+export const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;

@@ -1,7 +1,7 @@
 import { multiply, prop, sum } from 'rambda';
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
-import { minPluralise, num } from '../../helpers/utils.js';
+import { isDefined, minPluralise, num } from '../../helpers/utils.js';
 import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
@@ -15,8 +15,6 @@ const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
 const TestsDrawer = lazy(() => import('./TestsDrawer.jsx'));
 
 const BuildPipelinesDrawer = lazy(() => import('./BuildPipelinesDrawer.jsx'));
-
-const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
 
 const useCreateUrlWithFilter = (slug: string) => {
   const filters = useRepoFilters();

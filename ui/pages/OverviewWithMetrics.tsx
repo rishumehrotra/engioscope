@@ -15,7 +15,14 @@ import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoint
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import type { ProjectOverviewStats } from '../../backend/models/project-overview.js';
-import { minPluralise, num, pluralise, prettyMS } from '../helpers/utils.js';
+import {
+  bold,
+  isDefined,
+  minPluralise,
+  num,
+  pluralise,
+  prettyMS,
+} from '../helpers/utils.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { Stat, SummaryCard } from '../components/SummaryCard.jsx';
 import TinyAreaGraph, {
@@ -72,9 +79,6 @@ const ChangeLeadTimeDrawer = React.lazy(() =>
     default: m.ChangeLeadTimeDrawer,
   }))
 );
-
-const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
-const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
 
 const useCreateUrlWithFilter = (slug: string) => {
   const queryContext = useQueryContext();
