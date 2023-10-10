@@ -10,6 +10,8 @@ import { minPluralise } from '../../helpers/utils.js';
 
 const itemsPerColumn = 5;
 
+const generateId = () => Math.random().toString(36).slice(2, 11);
+
 type ServiceBlockProps = {
   service: Service;
   accessors: ServiceAccessors;
@@ -19,6 +21,20 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
   const consumers = accessors.consumers(service);
   const providers = accessors.providers(service);
   const serviceRef = React.useRef<HTMLDivElement>(null);
+
+  const consumerIds = useMemo(() => {
+    return consumers.reduce((acc, x) => {
+      acc.set(x, generateId());
+      return acc;
+    }, new Map<Service, string>());
+  }, [consumers]);
+
+  const providerIds = useMemo(() => {
+    return providers.reduce((acc, x) => {
+      acc.set(x, generateId());
+      return acc;
+    }, new Map<Service, string>());
+  }, [providers]);
 
   return (
     <Xwrapper>
@@ -30,34 +46,31 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
               {chunkArray(consumers, itemsPerColumn).map((column, columnIndex) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <ul key={columnIndex} className="mr-4 z-10">
-                  {column.map(x => {
-                    const consumerId = `${service.serviceId}-consumer-${x.serviceId}`;
-
-                    return (
-                      <Fragment key={x.serviceId}>
-                        <li
-                          data-tooltip-id="react-tooltip"
-                          data-tooltip-html={accessors.serviceTooltip(x)}
-                          className="border-r-[24px] border-theme-success text-right py-1 px-4 my-3 max-w-xs"
-                          id={consumerId}
-                        >
-                          <h3 className="font-medium">{x.name}</h3>
-                          <div className="text-theme-helptext text-sm">
-                            {x.endpoints.length}{' '}
-                            {minPluralise(x.endpoints.length, 'endpoint', 'endpoints')}
-                          </div>
-                        </li>
-                        <Xarrow
-                          start={consumerId}
-                          end={serviceRef}
-                          color="rgba(202, 138, 4, 0.2)"
-                          curveness={0.5}
-                          strokeWidth={20}
-                          headSize={3}
-                        />
-                      </Fragment>
-                    );
-                  })}
+                  {column.map(x => (
+                    <Fragment key={x.serviceId}>
+                      <li
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-html={accessors.serviceTooltip(x)}
+                        className="border-r-[24px] border-theme-success text-right py-1 px-4 my-3 max-w-xs"
+                        id={consumerIds.get(x)}
+                      >
+                        <h3 className="font-medium">{x.name}</h3>
+                        <div className="text-theme-helptext text-sm">
+                          {x.endpoints.length}{' '}
+                          {minPluralise(x.endpoints.length, 'endpoint', 'endpoints')}
+                        </div>
+                      </li>
+                      <Xarrow
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        start={consumerIds.get(x)!}
+                        end={serviceRef}
+                        color="rgba(202, 138, 4, 0.2)"
+                        curveness={0.5}
+                        strokeWidth={20}
+                        headSize={3}
+                      />
+                    </Fragment>
+                  ))}
                 </ul>
               ))}
             </div>
@@ -84,34 +97,31 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
               {chunkArray(providers, itemsPerColumn).map((column, columnIndex) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <ul key={columnIndex} className="ml-4">
-                  {column.map(x => {
-                    const providerId = `${service.serviceId}-provider-${x.serviceId}`;
-
-                    return (
-                      <Fragment key={x.serviceId}>
-                        <li
-                          id={providerId}
-                          data-tooltip-id="react-tooltip"
-                          data-tooltip-html={accessors.serviceTooltip(x)}
-                          className="border-l-[24px] border-theme-input-highlight text-left py-1 px-4 my-3 max-w-xs"
-                        >
-                          <h3 className="font-medium">{x.name}</h3>
-                          <div className="text-theme-helptext text-sm">
-                            {x.endpoints.length}{' '}
-                            {minPluralise(x.endpoints.length, 'endpoint', 'endpoints')}
-                          </div>
-                        </li>
-                        <Xarrow
-                          start={serviceRef}
-                          end={providerId}
-                          color="rgba(202, 138, 4, 0.2)"
-                          curveness={0.5}
-                          strokeWidth={20}
-                          headSize={3}
-                        />
-                      </Fragment>
-                    );
-                  })}
+                  {column.map(x => (
+                    <Fragment key={x.serviceId}>
+                      <li
+                        id={providerIds.get(x)}
+                        data-tooltip-id="react-tooltip"
+                        data-tooltip-html={accessors.serviceTooltip(x)}
+                        className="border-l-[24px] border-theme-input-highlight text-left py-1 px-4 my-3 max-w-xs"
+                      >
+                        <h3 className="font-medium">{x.name}</h3>
+                        <div className="text-theme-helptext text-sm">
+                          {x.endpoints.length}{' '}
+                          {minPluralise(x.endpoints.length, 'endpoint', 'endpoints')}
+                        </div>
+                      </li>
+                      <Xarrow
+                        start={serviceRef}
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        end={providerIds.get(x)!}
+                        color="rgba(202, 138, 4, 0.2)"
+                        curveness={0.5}
+                        strokeWidth={20}
+                        headSize={3}
+                      />
+                    </Fragment>
+                  ))}
                 </ul>
               ))}
             </div>
