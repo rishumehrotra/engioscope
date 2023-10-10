@@ -1,4 +1,4 @@
-import { add, multiply } from 'rambda';
+import { add, multiply, range } from 'rambda';
 import { maybe } from './maybe.js';
 import type { QualityGateStatus } from './types.js';
 
@@ -84,3 +84,8 @@ export const fromUrlFilter = (urlParam = '') =>
         .map(part => part.split(':'))
         .map(([label, tags]) => ({ label, tags: tags.split(',') }))
     : [];
+
+export const chunkArray = <T>(array: T[], chunkSize: number) =>
+  range(0, Math.ceil(array.length / chunkSize)).map(i =>
+    array.slice(i * chunkSize, (i + 1) * chunkSize)
+  );

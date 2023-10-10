@@ -443,7 +443,7 @@ const unwindCoverageAndStubOperations: PipelineStage[] = [
   },
 ];
 
-type Service = {
+type ServiceFromDB = {
   repoId: string;
   repoName: string;
   leafDirectory: string; // This is the leaf directory of the specmaticConfigPath
@@ -460,9 +460,26 @@ type Service = {
   }[];
 };
 
+type Service = {
+  name: string | undefined;
+  serviceId: string;
+  endpoints: {
+    serviceId: string;
+    specId: string;
+    path: string;
+    method: string;
+  }[];
+  dependsOn: {
+    serviceId: string;
+    specId: string;
+    path: string;
+    method: string;
+  }[];
+};
+
 const serviceServesEndpoint =
-  (dependency: Service['dependsOn'][number]) =>
-  (service: Service): boolean =>
+  (dependency: ServiceFromDB['dependsOn'][number]) =>
+  (service: ServiceFromDB): boolean =>
     service.endpoints.some(
       endpoint =>
         endpoint.path === dependency.path &&
@@ -473,7 +490,7 @@ const serviceServesEndpoint =
 export const getServiceGraph = async (queryContext: QueryContext) => {
   const { endDate } = fromContext(queryContext);
 
-  const services = await AzureBuildReportModel.aggregate<Service>([
+  const services = await AzureBuildReportModel.aggregate<ServiceFromDB>([
     buildReportsWithSpecmatic(queryContext, {
       createdAt: { $lt: endDate },
       $or: [
@@ -543,7 +560,7 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
     return (repoId: string) => hasRepoBeenSeenTwice.get(repoId) || false;
   })();
 
-  return services
+  const servicesMap = services
     .map(s => {
       const leafDirectory = path.dirname(s.leafDirectory).split(path.sep).at(-1);
 
@@ -562,7 +579,15 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
         })),
       };
     })
-    .sort(byString(x => x.serviceId));
+    .reduce((acc, service) => {
+      const existingService = acc.get(service.serviceId);
+      if (!existingService) {
+        acc.set(service.serviceId, service);
+      }
+      return acc;
+    }, new Map<string, Service>());
+
+  return [...servicesMap.values()].sort(byString(x => x.serviceId));
 };
 
 const groupUniqueCoverageAndStubOperations: PipelineStage[] = [

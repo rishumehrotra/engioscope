@@ -11,6 +11,8 @@ import type { ParsedConfig } from './scraper/parse-config.js';
 import { HTTPError } from './scraper/network/http-error.js';
 import { oneDayInMs } from '../shared/utils.js';
 
+export { chunkArray } from '../shared/utils.js';
+
 export const pastDate = (past?: string) => {
   if (!past) return new Date();
 
@@ -44,11 +46,6 @@ export const doesFileExist = async (filePath: string) => {
     return false;
   }
 };
-
-export const chunkArray = <T>(array: T[], chunkSize: number) =>
-  range(0, Math.ceil(array.length / chunkSize)).map(i =>
-    array.slice(i * chunkSize, (i + 1) * chunkSize)
-  );
 
 export const unique = <T>(xs: T[]) => [...new Set(xs)];
 
