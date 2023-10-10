@@ -31,7 +31,7 @@ const ServiceChordDiagram = () => {
       getTitle={x => x.name || 'Unknown'}
       ribbonTooltip={accessors.connectionTooltip}
       ribbonWeight={(from, to) => {
-        return from.dependsOn.filter(d => d.serviceId === to.serviceId).length;
+        return from.dependsOn.filter(d => d.serviceId === to.serviceId).length || 1;
       }}
       chordTooltip={accessors.serviceTooltip}
     />

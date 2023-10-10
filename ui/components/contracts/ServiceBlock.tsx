@@ -31,6 +31,7 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
               <ul key={columnIndex} className="mr-4 z-10">
                 {column.map(x => {
                   const consumerId = `${service.serviceId}-consumer-${x.serviceId}`;
+
                   return (
                     <Fragment key={x.serviceId}>
                       <li
@@ -84,6 +85,7 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
               <ul key={columnIndex} className="ml-4">
                 {column.map(x => {
                   const providerId = `${service.serviceId}-provider-${x.serviceId}`;
+
                   return (
                     <Fragment key={x.serviceId}>
                       <li
