@@ -1,5 +1,4 @@
 import React from 'react';
-import { multiply } from 'rambda';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import { Stat, SummaryCard } from '../SummaryCard.jsx';
 import { bold, isDefined, minPluralise, num } from '../../helpers/utils.js';
@@ -86,12 +85,14 @@ export default () => {
                               0
                           )
                         ),
-                        'of',
-                        bold(
-                          num(
-                            contractsStats.weeklyApiCoverage.at(-1)?.totalOperations || 0
-                          )
-                        ),
+                        ...(contractsStats.specmaticCentralRepoReportOperations
+                          ? [
+                              'of',
+                              bold(
+                                num(contractsStats.specmaticCentralRepoReportOperations)
+                              ),
+                            ]
+                          : []),
                         minPluralise(
                           contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
                           'operation has',
@@ -103,12 +104,16 @@ export default () => {
                 }
                 value={
                   isDefined(contractsStats.weeklyApiCoverage)
-                    ? divide(
-                        contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
-                        contractsStats.weeklyApiCoverage.at(-1)?.totalOperations || 0
-                      )
-                        .map(toPercentage)
-                        .getOr('-')
+                    ? contractsStats.specmaticCentralRepoReportOperations
+                      ? divide(
+                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
+                          contractsStats.specmaticCentralRepoReportOperations
+                        )
+                          .map(toPercentage)
+                          .getOr('-')
+                      : num(
+                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0
+                        )
                     : null
                 }
                 graphPosition="right"
@@ -116,26 +121,13 @@ export default () => {
                 graphColor={
                   isDefined(contractsStats.weeklyApiCoverage)
                     ? increaseIsBetter(
-                        contractsStats.weeklyApiCoverage.map(w =>
-                          divide(w.coveredOperations, w.totalOperations)
-                            .map(multiply(100))
-                            .getOr(0)
-                        )
+                        contractsStats.weeklyApiCoverage.map(w => w.coveredOperations)
                       )
                     : null
                 }
-                graphItemToValue={x =>
-                  divide(x.coveredOperations, x.totalOperations)
-                    .map(multiply(100))
-                    .getOr(0)
-                }
+                graphItemToValue={x => x.coveredOperations}
                 graphDataPointLabel={x =>
-                  [
-                    bold(num(x.coveredOperations)),
-                    ' covered operations of ',
-                    bold(num(x.totalOperations)),
-                    ' total operations',
-                  ].join('')
+                  [bold(num(x.coveredOperations)), ' operations covered.'].join('')
                 }
               />
             </div>
@@ -146,20 +138,18 @@ export default () => {
                   isDefined(contractsStats.weeklyStubUsage)
                     ? [
                         bold(
-                          num(
-                            (contractsStats.weeklyStubUsage.at(-1)?.totalOperations ||
-                              0) -
-                              (contractsStats.weeklyStubUsage.at(-1)
-                                ?.zeroCountOperations || 0)
-                          )
+                          num(contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0)
                         ),
-                        'of',
-                        bold(
-                          num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
-                        ),
+                        ...(contractsStats.specmaticCentralRepoReportOperations
+                          ? [
+                              'of',
+                              bold(
+                                num(contractsStats.specmaticCentralRepoReportOperations)
+                              ),
+                            ]
+                          : []),
                         minPluralise(
-                          (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
-                            (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0),
+                          contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0,
                           'operation has',
                           'operations have'
                         ),
@@ -171,10 +161,16 @@ export default () => {
                               0
                           )
                         ),
-                        'of',
-                        bold(
-                          num(contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0)
-                        ),
+                        ...(contractsStats.specmaticCentralRepoReportOperations
+                          ? [
+                              'of',
+                              bold(
+                                num(
+                                  contractsStats.specmaticCentralRepoReportOperations || 0
+                                )
+                              ),
+                            ]
+                          : []),
                         minPluralise(
                           contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0,
                           'operation has',
@@ -187,8 +183,7 @@ export default () => {
                 }
                 value={
                   isDefined(contractsStats.weeklyStubUsage)
-                    ? (contractsStats.weeklyStubUsage.at(-1)?.totalOperations || 0) -
-                      (contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0)
+                    ? contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0
                     : null
                 }
                 graphPosition="right"
@@ -196,24 +191,18 @@ export default () => {
                 graphColor={
                   isDefined(contractsStats.weeklyStubUsage)
                     ? increaseIsBetter(
-                        contractsStats.weeklyStubUsage.map(
-                          w => w.totalOperations - w.zeroCountOperations
-                        )
+                        contractsStats.weeklyStubUsage.map(w => w.usedOperations)
                       )
                     : null
                 }
-                graphItemToValue={x => x.totalOperations - x.zeroCountOperations}
+                graphItemToValue={x => x.usedOperations}
                 graphDataPointLabel={x =>
                   [
-                    bold(num(x.totalOperations - x.zeroCountOperations)),
-                    ' stub usage of ',
-                    bold(num(x.totalOperations)),
-                    ' total operations',
+                    bold(num(x.usedOperations)),
+                    ' stub usage operations ',
                     '<br />',
                     bold(num(x.zeroCountOperations)),
-                    ' zero count stub usage of ',
-                    bold(num(x.totalOperations)),
-                    ' total operations',
+                    ' zero count stub usage operations',
                   ].join('')
                 }
               />
