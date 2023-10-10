@@ -32,17 +32,15 @@ const overviewInputParser = z.object({
 
 const releasePipelinesSummaryInputParser = pipelineFiltersInputParser;
 
-// const fromUrlFilter = (urlParam = '') =>
-//   urlParam
-//     ? urlParam
-//         .split(';')
-//         .map(part => part.split(':'))
-//         .map(([label, values]) => ({ label, values: values?.split(',') }))
-//     : [];
+const fromUrlFilter = (urlParam = '') =>
+  urlParam
+    ? urlParam
+        .split(';')
+        .map(part => part.split(':'))
+        .map(([label, tags]) => ({ label, tags: tags.split(',') }))
+    : [];
 
 const parseOverviewInput = (req: RequestWithFilter) => {
-  // console.log('query', JSON.stringify(req.query, null, 2));
-  // console.log('params', JSON.stringify(req.params, null, 2));
   return overviewInputParser.parse({
     queryContext: [
       req.params.collectionName,
@@ -50,8 +48,12 @@ const parseOverviewInput = (req: RequestWithFilter) => {
       req.query.startDate && new Date(req.query.startDate),
       req.query.endDate && new Date(req.query.endDate),
     ],
-    // #TODO: Add filters
-    // filters: req.query.filters ? fromUrlFilter(req.query.filters) : undefined,
+    filters: req.query.filters
+      ? fromUrlFilter(req.query.filters).map(({ label, tags }) => ({
+          label,
+          values: tags,
+        }))
+      : undefined,
   });
 };
 

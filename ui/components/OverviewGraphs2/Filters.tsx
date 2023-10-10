@@ -39,7 +39,13 @@ export const useFilter = () => {
 
   const selectedFilters = useMemo(() => fromUrlFilter(urlFilter), [urlFilter]);
 
-  return { filters: pageConfig.data?.filters, selectedFilters, setSelectedFilters };
+  return {
+    filters: pageConfig.data?.filters,
+    selectedFilters,
+    setSelectedFilters,
+    fromUrlFilter,
+    toUrlFilter,
+  };
 };
 
 const Filters = forwardRef<

@@ -29,9 +29,8 @@ import { useDrawer } from '../components/common/Drawer.jsx';
 import { trpc } from '../helpers/trpc.js';
 import UsageByEnv from '../components/UsageByEnv.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
-import Filters from '../components/OverviewGraphs2/Filters.jsx';
+import Filters, { useFilter } from '../components/OverviewGraphs2/Filters.jsx';
 import useRepoFilters from '../hooks/use-repo-filters.js';
-import useGraphArgs from '../components/OverviewGraphs2/useGraphArgs.js';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import type { SummaryStats } from '../../backend/models/repo-listing.js';
 import type { ReleaseStatsSse } from '../../backend/models/release-listing.js';
@@ -79,17 +78,15 @@ const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
 
 const useCreateUrlWithFilter = (slug: string) => {
   const queryContext = useQueryContext();
-  const repoFilters = useRepoFilters();
-  const graphFilters = useGraphArgs();
+  const { selectedFilters, toUrlFilter } = useFilter();
 
   return useMemo(() => {
     return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
       startDate: queryContext[2].toISOString(),
       endDate: queryContext[3].toISOString(),
-      ...(repoFilters.teams ? { teams: repoFilters.teams.join(',') } : {}),
-      ...(graphFilters.filters ? { filters: graphFilters.filters.join(';') } : {}),
+      ...(selectedFilters.length ? { filters: toUrlFilter(selectedFilters) } : {}),
     }).toString()}`;
-  }, [graphFilters.filters, queryContext, repoFilters.teams, slug]);
+  }, [queryContext, selectedFilters, slug, toUrlFilter]);
 };
 
 const useCreateUrlWithFilterForRepoSummary = (slug: string) => {
