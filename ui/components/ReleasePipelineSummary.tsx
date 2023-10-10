@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useMemo } from 'react';
+import React, { Fragment, useCallback } from 'react';
 import { isDefined, num, pluralise } from '../helpers/utils.js';
 import ProjectStat from './ProjectStat.jsx';
 import ProjectStats from './ProjectStats.jsx';
@@ -7,12 +7,12 @@ import { trpc } from '../helpers/trpc.js';
 import useReleaseFilters from '../hooks/use-release-filters.js';
 import UsageByEnv from './UsageByEnv.jsx';
 import Loading from './Loading.jsx';
-import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
+import { useQueryPeriodDays } from '../hooks/query-hooks.js';
 import useFeatureFlag from '../hooks/use-feature-flag.js';
 import { Stat, SummaryCard } from './SummaryCard.jsx';
 import useMergeOverSse from '../hooks/use-merge-over-sse.js';
 import type { ReleaseStatsSse } from '../../backend/models/release-listing.js';
-import useRepoFilters from '../hooks/use-repo-filters.js';
+import { useCreateUrlForReleasePipelinesSummary } from '../helpers/sseUrlConfigs.js';
 
 const UsageByEnvWrapper = () => {
   const filters = useReleaseFilters();
@@ -25,23 +25,9 @@ const UsageByEnvWrapper = () => {
   );
 };
 
-const useCreateUrlWithFilter = (slug: string) => {
-  const queryContext = useQueryContext();
-  const filters = useRepoFilters();
-  return useMemo(() => {
-    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: queryContext[2].toISOString(),
-      endDate: queryContext[3].toISOString(),
-      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
-    }).toString()}`;
-  }, [filters.teams, queryContext, slug]);
-};
-
 const ReleasePipelineSummary2: React.FC = () => {
-  const sseUrl = useCreateUrlWithFilter('release-pipelines');
-
+  const sseUrl = useCreateUrlForReleasePipelinesSummary('release-pipelines');
   const summarySse = useMergeOverSse<ReleaseStatsSse>(sseUrl, '0');
-
   const queryPeriodDays = useQueryPeriodDays();
   const filters = useReleaseFilters();
   const { data: summary } = trpc.releases.summary.useQuery(filters);

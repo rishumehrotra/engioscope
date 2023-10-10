@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { multiply } from 'rambda';
-import { useQueryContext } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import { Stat, SummaryCard } from '../SummaryCard.jsx';
 import { bold, isDefined, minPluralise, num } from '../../helpers/utils.js';
@@ -9,19 +8,10 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import type { ContractStats } from '../../../backend/models/contracts.js';
 import ServiceChordDiagram from './ServiceChordDiagram.jsx';
 import ServiceBlock from './ServiceBlock.jsx';
-
-const useCreateUrlWithFilter = (slug: string) => {
-  const queryContext = useQueryContext();
-  return useMemo(() => {
-    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: queryContext[2].toISOString(),
-      endDate: queryContext[3].toISOString(),
-    }).toString()}`;
-  }, [queryContext, slug]);
-};
+import { useCreateUrlForContractsSummary } from '../../helpers/sseUrlConfigs.js';
 
 export default () => {
-  const sseUrl = useCreateUrlWithFilter('contracts');
+  const sseUrl = useCreateUrlForContractsSummary('contracts');
   const contractsStats = useSse<ContractStats>(sseUrl, '0');
 
   return (
