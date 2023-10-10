@@ -68,3 +68,19 @@ export const shouldNeverReachHere = (x: never) => {
 export const capitalizeFirstLetter = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
+
+export type Filter = { label: string; tags: string[] };
+
+export const toUrlFilter = (filter: Filter[]) =>
+  filter
+    .filter(({ tags }) => tags.length)
+    .map(({ label, tags }) => `${label}:${tags.join(',')}`)
+    .join(';') || undefined;
+
+export const fromUrlFilter = (urlParam = '') =>
+  urlParam
+    ? urlParam
+        .split(';')
+        .map(part => part.split(':'))
+        .map(([label, tags]) => ({ label, tags: tags.split(',') }))
+    : [];

@@ -21,6 +21,7 @@ import {
   getReleasePipelinesSummaryAsChunks,
   pipelineFiltersInputParser,
 } from '../models/release-listing.js';
+import { fromUrlFilter } from '../../shared/utils.js';
 
 const overviewInputParser = z.object({
   queryContext: queryContextInputParser,
@@ -31,14 +32,6 @@ const overviewInputParser = z.object({
 });
 
 const releasePipelinesSummaryInputParser = pipelineFiltersInputParser;
-
-const fromUrlFilter = (urlParam = '') =>
-  urlParam
-    ? urlParam
-        .split(';')
-        .map(part => part.split(':'))
-        .map(([label, tags]) => ({ label, tags: tags.split(',') }))
-    : [];
 
 const parseOverviewInput = (req: RequestWithFilter) => {
   return overviewInputParser.parse({

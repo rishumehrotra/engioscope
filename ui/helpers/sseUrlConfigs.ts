@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { useQueryContext } from '../hooks/query-hooks.js';
 import { useFilter } from '../components/OverviewGraphs2/Filters.jsx';
 import useRepoFilters from '../hooks/use-repo-filters.js';
+import { toUrlFilter } from '../../shared/utils.js';
 
 const useCreateUrlForOverview = (slug: string) => {
   const queryContext = useQueryContext();
-  const { selectedFilters, toUrlFilter } = useFilter();
+  const { selectedFilters } = useFilter();
 
   return useMemo(() => {
     return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
@@ -13,7 +14,7 @@ const useCreateUrlForOverview = (slug: string) => {
       endDate: queryContext[3].toISOString(),
       ...(selectedFilters.length ? { filters: toUrlFilter(selectedFilters) } : {}),
     }).toString()}`;
-  }, [queryContext, selectedFilters, slug, toUrlFilter]);
+  }, [queryContext, selectedFilters, slug]);
 };
 
 const useCreateUrlForRepoSummary = (slug: string) => {
