@@ -1,13 +1,5 @@
 import type { ReactNode } from 'react';
-import React, {
-  Fragment,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { Fragment, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { identity, multiply, prop, range } from 'rambda';
 import { ExternalLink } from 'react-feather';
 
@@ -15,7 +7,14 @@ import type { DrawerDownloadSlugs } from '../../backend/server/repo-api-endpoint
 import useSse from '../hooks/use-merge-over-sse.js';
 import { useQueryContext, useQueryPeriodDays } from '../hooks/query-hooks.js';
 import type { ProjectOverviewStats } from '../../backend/models/project-overview.js';
-import { minPluralise, num, pluralise, prettyMS } from '../helpers/utils.js';
+import {
+  bold,
+  isDefined,
+  minPluralise,
+  num,
+  pluralise,
+  prettyMS,
+} from '../helpers/utils.js';
 import { divide, toPercentage } from '../../shared/utils.js';
 import { Stat, SummaryCard } from '../components/SummaryCard.jsx';
 import TinyAreaGraph, {
@@ -30,14 +29,16 @@ import { trpc } from '../helpers/trpc.js';
 import UsageByEnv from '../components/UsageByEnv.jsx';
 import QueryPeriodSelector from '../components/QueryPeriodSelector.jsx';
 import Filters from '../components/OverviewGraphs2/Filters.jsx';
-import useRepoFilters from '../hooks/use-repo-filters.js';
-import useGraphArgs from '../components/OverviewGraphs2/useGraphArgs.js';
 import TeamsSelector from '../components/teams-selector/TeamsSelector.jsx';
 import type { SummaryStats } from '../../backend/models/repo-listing.js';
 import type { ReleaseStatsSse } from '../../backend/models/release-listing.js';
+import {
+  useCreateUrlForOverview,
+  useCreateUrlForReleasePipelinesSummary,
+  useCreateUrlForRepoSummary,
+} from '../helpers/sseUrlConfigs.js';
 
 const style = { boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' };
-
 const YAMLPipelinesDrawer = lazy(
   () => import('../components/repo-summary/YAMLPipelinesDrawer.jsx')
 );
@@ -45,83 +46,33 @@ const SonarReposDrawer = lazy(
   () => import('../components/repo-summary/SonarReposDrawer.jsx')
 );
 const TestsDrawer = lazy(() => import('../components/repo-summary/TestsDrawer.jsx'));
-
 const BuildPipelinesDrawer = lazy(
   () => import('../components/repo-summary/BuildPipelinesDrawer.jsx')
 );
-
 const CycleTimeDrawer = React.lazy(() =>
   import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
     default: m.CycleTimeDrawer,
   }))
 );
-
 const WIPTrendDrawer = React.lazy(() =>
   import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
     default: m.WIPTrendDrawer,
   }))
 );
-
 const NewDrawer = React.lazy(() =>
   import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
     default: m.NewDrawer,
   }))
 );
-
 const ChangeLeadTimeDrawer = React.lazy(() =>
   import('../components/OverviewGraphs2/Drawers.jsx').then(m => ({
     default: m.ChangeLeadTimeDrawer,
   }))
 );
 
-const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
-const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
-
-const useCreateUrlWithFilter = (slug: string) => {
-  const queryContext = useQueryContext();
-  const repoFilters = useRepoFilters();
-  const graphFilters = useGraphArgs();
-
-  return useMemo(() => {
-    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: queryContext[2].toISOString(),
-      endDate: queryContext[3].toISOString(),
-      ...(repoFilters.teams ? { teams: repoFilters.teams.join(',') } : {}),
-      ...(graphFilters.filters ? { filters: graphFilters.filters.join(';') } : {}),
-    }).toString()}`;
-  }, [graphFilters.filters, queryContext, repoFilters.teams, slug]);
-};
-
-const useCreateUrlWithFilterForRepoSummary = (slug: string) => {
-  const filters = useRepoFilters();
-  const queryContext = useQueryContext();
-
-  return useMemo(() => {
-    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: filters.queryContext[2].toISOString(),
-      endDate: filters.queryContext[3].toISOString(),
-      ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
-      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
-    }).toString()}`;
-  }, [filters.queryContext, filters.searchTerms, filters.teams, queryContext, slug]);
-};
-
-const useCreateUrlWithFilterForReleasePipelines = (slug: string) => {
-  const queryContext = useQueryContext();
-  const filters = useRepoFilters();
-  return useMemo(() => {
-    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: queryContext[2].toISOString(),
-      endDate: queryContext[3].toISOString(),
-      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
-    }).toString()}`;
-  }, [filters.teams, queryContext, slug]);
-};
-
 const useCreateDownloadUrl = () => {
   // Dirty hack, but works
-  const url = useCreateUrlWithFilterForRepoSummary('overview-v2/::placeholder::');
-
+  const url = useCreateUrlForRepoSummary('overview-v2/::placeholder::');
   return useCallback(
     (slug: DrawerDownloadSlugs) => {
       return url.replace('::placeholder::', slug);
@@ -131,10 +82,10 @@ const useCreateDownloadUrl = () => {
 };
 
 const OverviewWithMetrics = () => {
-  const sseUrl = useCreateUrlWithFilter('overview-v2');
-  const repoSummarySseUrl = useCreateUrlWithFilterForRepoSummary('repos/summary');
+  const sseUrl = useCreateUrlForOverview('overview-v2');
+  const repoSummarySseUrl = useCreateUrlForRepoSummary('repos/summary');
   const releasePipelinesSseUrl =
-    useCreateUrlWithFilterForReleasePipelines('release-pipelines');
+    useCreateUrlForReleasePipelinesSummary('release-pipelines');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, '0');
   const repoSummaryStats = useSse<SummaryStats>(repoSummarySseUrl, '0');

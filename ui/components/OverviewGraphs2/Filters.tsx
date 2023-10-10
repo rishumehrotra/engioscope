@@ -4,22 +4,8 @@ import { useQueryContext } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import { MultiSelectDropdownWithLabel } from '../common/MultiSelectDropdown.jsx';
 import useQueryParam, { asString } from '../../hooks/use-query-param.js';
-
-export type Filter = { label: string; tags: string[] };
-
-const toUrlFilter = (filter: Filter[]) =>
-  filter
-    .filter(({ tags }) => tags.length)
-    .map(({ label, tags }) => `${label}:${tags.join(',')}`)
-    .join(';') || undefined;
-
-const fromUrlFilter = (urlParam = '') =>
-  urlParam
-    ? urlParam
-        .split(';')
-        .map(part => part.split(':'))
-        .map(([label, tags]) => ({ label, tags: tags.split(',') }))
-    : [];
+import type { Filter } from '../../../shared/utils.js';
+import { fromUrlFilter, toUrlFilter } from '../../../shared/utils.js';
 
 export const useFilter = () => {
   const queryContext = useQueryContext();
@@ -39,7 +25,11 @@ export const useFilter = () => {
 
   const selectedFilters = useMemo(() => fromUrlFilter(urlFilter), [urlFilter]);
 
-  return { filters: pageConfig.data?.filters, selectedFilters, setSelectedFilters };
+  return {
+    filters: pageConfig.data?.filters,
+    selectedFilters,
+    setSelectedFilters,
+  };
 };
 
 const Filters = forwardRef<

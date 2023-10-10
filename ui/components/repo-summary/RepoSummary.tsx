@@ -1,40 +1,22 @@
 import { multiply, prop, sum } from 'rambda';
-import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, useCallback, useEffect, useState } from 'react';
 import { divide, toPercentage } from '../../../shared/utils.js';
-import { minPluralise, num } from '../../helpers/utils.js';
-import { useQueryContext, useQueryPeriodDays } from '../../hooks/query-hooks.js';
+import { bold, isDefined, minPluralise, num } from '../../helpers/utils.js';
+import { useQueryPeriodDays } from '../../hooks/query-hooks.js';
 import useSse from '../../hooks/use-merge-over-sse.js';
 import type { SummaryStats } from '../../../backend/models/repo-listing.js';
 import { Stat, SummaryCard } from '../SummaryCard.jsx';
-import useRepoFilters from '../../hooks/use-repo-filters.js';
 import type { DrawerDownloadSlugs } from '../../../backend/server/repo-api-endpoints.js';
 import { decreaseIsBetter, increaseIsBetter } from '../graphs/TinyAreaGraph.jsx';
+import { useCreateUrlForRepoSummary } from '../../helpers/sseUrlConfigs.js';
 
 const YAMLPipelinesDrawer = lazy(() => import('./YAMLPipelinesDrawer.jsx'));
 const SonarReposDrawer = lazy(() => import('./SonarReposDrawer.jsx'));
 const TestsDrawer = lazy(() => import('./TestsDrawer.jsx'));
-
 const BuildPipelinesDrawer = lazy(() => import('./BuildPipelinesDrawer.jsx'));
-
-const isDefined = <T,>(val: T | undefined): val is T => val !== undefined;
-
-const useCreateUrlWithFilter = (slug: string) => {
-  const filters = useRepoFilters();
-  const queryContext = useQueryContext();
-
-  return useMemo(() => {
-    return `/api/${queryContext[0]}/${queryContext[1]}/${slug}?${new URLSearchParams({
-      startDate: filters.queryContext[2].toISOString(),
-      endDate: filters.queryContext[3].toISOString(),
-      ...(filters.searchTerms?.length ? { search: filters.searchTerms?.join(',') } : {}),
-      ...(filters.teams ? { teams: filters.teams.join(',') } : {}),
-    }).toString()}`;
-  }, [filters.queryContext, filters.searchTerms, filters.teams, queryContext, slug]);
-};
-
 const useCreateDownloadUrl = () => {
   // Dirty hack, but works
-  const url = useCreateUrlWithFilter('repos/::placeholder::');
+  const url = useCreateUrlForRepoSummary('repos/::placeholder::');
 
   return useCallback(
     (slug: DrawerDownloadSlugs) => {
@@ -60,10 +42,8 @@ const useUpdateSummary = () => {
   return key.toString();
 };
 
-const bold = (x: string | number) => `<span class="font-medium">${x}</span>`;
-
 const StreamingRepoSummary: React.FC = () => {
-  const sseUrl = useCreateUrlWithFilter('repos/summary');
+  const sseUrl = useCreateUrlForRepoSummary('repos/summary');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const key = useUpdateSummary();
   const queryPeriodDays = useQueryPeriodDays();

@@ -2,6 +2,7 @@ import { allPass } from 'rambda';
 import { useCallback, useMemo } from 'react';
 import type { UIWorkItem } from '../../../../shared/types.js';
 import useQueryParam, { asString } from '../../../hooks/use-query-param.js';
+import { fromUrlFilter, toUrlFilter } from '../../../../shared/utils.js';
 
 export type Filter = { label: string; tags: string[] };
 
@@ -31,7 +32,6 @@ const combinedFilter = (selectedFilters: Filter[]) => {
   return allPass(
     selectedFilters.map(({ label, tags }) => {
       const filter = collectedFilters[label];
-
       return (workItem: UIWorkItem) => {
         if (!tags.length) return true; // No filter selected
 
@@ -44,20 +44,6 @@ const combinedFilter = (selectedFilters: Filter[]) => {
     })
   );
 };
-
-const toUrlFilter = (filter: Filter[]) =>
-  filter
-    .filter(({ tags }) => tags.length)
-    .map(({ label, tags }) => `${label}:${tags.join(',')}`)
-    .join(';') || undefined;
-
-const fromUrlFilter = (urlParam = '') =>
-  urlParam
-    ? urlParam
-        .split(';')
-        .map(part => part.split(':'))
-        .map(([label, tags]) => ({ label, tags: tags.split(',') }))
-    : [];
 
 export default (workItems: UIWorkItem[]) => {
   const [urlFilter, setUrlFilter] = useQueryParam('filter', asString);
