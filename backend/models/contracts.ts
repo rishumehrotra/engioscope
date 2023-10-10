@@ -838,7 +838,7 @@ export const getSpecmaticCentralRepoReportOperations = async (
     { $sort: { createdAt: 1 } },
     {
       $group: {
-        _id: 'buildDefinitionId',
+        _id: '$buildDefinitionId',
         build: { $last: '$$ROOT' },
       },
     },
@@ -882,6 +882,44 @@ export const getSpecmaticCentralRepoReportOperations = async (
   ]).then(results => (results.length ? results[0].totalOps : null));
 };
 
+export const getStubsCountIn =
+  (repoType: 'centralRepo' | 'projectRepo') => async (queryContext: QueryContext) => {
+    const { collectionName, project, endDate } = fromContext(queryContext);
+
+    return AzureBuildReportModel.aggregate<{ count: number }>([
+      {
+        $match: {
+          collectionName,
+          project,
+          specmaticStubUsage: { $exists: true },
+          createdAt: { $lt: endDate },
+        },
+      },
+      { $sort: { createdAt: 1 } },
+      {
+        $group: {
+          _id: '$buildDefinitionId',
+          build: {
+            $last: '$$ROOT',
+          },
+        },
+      },
+      { $replaceRoot: { newRoot: '$build' } },
+      { $unwind: '$specmaticStubUsage' },
+      {
+        $match: {
+          'specmaticStubUsage.repository': {
+            $exists: repoType !== 'projectRepo',
+          },
+        },
+      },
+      { $count: 'count' },
+    ]).then(results => (results.length ? results[0].count : null));
+  };
+
+export const getStubsCountInCentralRepo = getStubsCountIn('centralRepo');
+export const getStubsCountInProjectRepo = getStubsCountIn('projectRepo');
+
 export type ContractStats = {
   weeklyApiCoverage: Awaited<ReturnType<typeof getWeeklyApiCoverageSummary>>;
   weeklyStubUsage: Awaited<ReturnType<typeof getWeeklyStubUsageSummary>>;
@@ -891,6 +929,8 @@ export type ContractStats = {
   specmaticCentralRepoReportOperations: Awaited<
     ReturnType<typeof getSpecmaticCentralRepoReportOperations>
   >;
+  centralRepoStubsCount: Awaited<ReturnType<typeof getStubsCountInCentralRepo>>;
+  projectRepoStubsCount: Awaited<ReturnType<typeof getStubsCountInProjectRepo>>;
 };
 
 export const getContractStatsAsChunks = async (
@@ -912,5 +952,7 @@ export const getContractStatsAsChunks = async (
     getSpecmaticCentralRepoReportOperations(queryContext).then(
       sendChunk('specmaticCentralRepoReportOperations')
     ),
+    getStubsCountInCentralRepo(queryContext).then(sendChunk('centralRepoStubsCount')),
+    getStubsCountInProjectRepo(queryContext).then(sendChunk('projectRepoStubsCount')),
   ]);
 };

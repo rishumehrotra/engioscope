@@ -15,205 +15,211 @@ export default () => {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <SummaryCard className="mb-4 rounded-md">
+      <div className="grid grid-cols-4 gap-6">
+        <SummaryCard className="col-span-1 mb-4 rounded-md">
+          <Stat
+            title="Operations used by both providers and consumers"
+            tooltip={
+              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                ? [
+                    bold(
+                      num(
+                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                      )
+                    ),
+                    'out of',
+                    bold(
+                      num(
+                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.total || 0
+                      )
+                    ),
+                    minPluralise(
+                      contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0,
+                      'operation has',
+                      'operations have'
+                    ),
+                    'been used by both providers and consumers',
+                  ].join(' ')
+                : undefined
+            }
+            value={
+              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                ? contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                : null
+            }
+            graphPosition="bottom"
+            graphData={contractsStats.weeklyConsumerProducerSpecAndOps}
+            graphColor={
+              isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                ? increaseIsBetter(
+                    contractsStats.weeklyConsumerProducerSpecAndOps.map(w => w.count)
+                  )
+                : null
+            }
+            graphItemToValue={x => x.count}
+            graphDataPointLabel={x =>
+              [
+                bold(num(x.count)),
+                'out of',
+                bold(num(x.total)),
+                minPluralise(x.count, 'operation has', 'operations have'),
+                'been used by both providers and consumers',
+              ].join(' ')
+            }
+          />
+        </SummaryCard>
+        <SummaryCard className="col-span-3 mb-4 rounded-md grid grid-cols-3">
+          <div className="border-r border-theme-seperator pr-6 col-span-1">
             <Stat
-              title="Operations used by both providers and consumers"
+              title="API coverage"
               tooltip={
-                isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                isDefined(contractsStats.weeklyApiCoverage)
                   ? [
                       bold(
                         num(
-                          contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count ||
-                            0
+                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0
                         )
                       ),
-                      'out of',
-                      bold(
-                        num(
-                          contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.total ||
-                            0
-                        )
-                      ),
+                      ...(contractsStats.specmaticCentralRepoReportOperations
+                        ? [
+                            'of',
+                            bold(
+                              num(contractsStats.specmaticCentralRepoReportOperations)
+                            ),
+                          ]
+                        : []),
                       minPluralise(
-                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count ||
-                          0,
+                        contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
                         'operation has',
                         'operations have'
                       ),
-                      'been used by both providers and consumers',
+                      'been covered',
                     ].join(' ')
                   : undefined
               }
               value={
-                isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
-                  ? contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                isDefined(contractsStats.weeklyApiCoverage)
+                  ? contractsStats.specmaticCentralRepoReportOperations
+                    ? divide(
+                        contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
+                        contractsStats.specmaticCentralRepoReportOperations
+                      )
+                        .map(toPercentage)
+                        .getOr('-')
+                    : num(contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0)
                   : null
               }
-              graphPosition="right"
-              graphData={contractsStats.weeklyConsumerProducerSpecAndOps}
+              graphPosition="bottom"
+              graphData={contractsStats.weeklyApiCoverage}
               graphColor={
-                isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
+                isDefined(contractsStats.weeklyApiCoverage)
                   ? increaseIsBetter(
-                      contractsStats.weeklyConsumerProducerSpecAndOps.map(w => w.count)
+                      contractsStats.weeklyApiCoverage.map(w => w.coveredOperations)
                     )
                   : null
               }
-              graphItemToValue={x => x.count}
+              graphItemToValue={x => x.coveredOperations}
               graphDataPointLabel={x =>
-                [
-                  bold(num(x.count)),
-                  'out of',
-                  bold(num(x.total)),
-                  minPluralise(x.count, 'operation has', 'operations have'),
-                  'been used by both providers and consumers',
-                ].join(' ')
+                [bold(num(x.coveredOperations)), ' operations covered.'].join('')
               }
             />
-          </SummaryCard>
-          <SummaryCard className="mb-4 rounded-md">
-            <div className="border-b border-theme-seperator pb-6">
+          </div>
+          <div className="border-r border-theme-seperator px-6 col-span-1">
+            <Stat
+              title="Number of operations used as stub"
+              tooltip={
+                isDefined(contractsStats.weeklyStubUsage)
+                  ? [
+                      bold(
+                        num(contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0)
+                      ),
+                      ...(contractsStats.specmaticCentralRepoReportOperations
+                        ? [
+                            'of',
+                            bold(
+                              num(contractsStats.specmaticCentralRepoReportOperations)
+                            ),
+                          ]
+                        : []),
+                      minPluralise(
+                        contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0,
+                        'operation has',
+                        'operations have'
+                      ),
+                      'been used as stubs for tests',
+                      '<br />',
+                      bold(
+                        num(
+                          contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0
+                        )
+                      ),
+                      ...(contractsStats.specmaticCentralRepoReportOperations
+                        ? [
+                            'of',
+                            bold(
+                              num(
+                                contractsStats.specmaticCentralRepoReportOperations || 0
+                              )
+                            ),
+                          ]
+                        : []),
+                      minPluralise(
+                        contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0,
+                        'operation has',
+                        'operations have'
+                      ),
+                      "set up stubs for tests but haven't used them",
+                      '<br />',
+                    ].join(' ')
+                  : undefined
+              }
+              value={
+                isDefined(contractsStats.weeklyStubUsage)
+                  ? contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0
+                  : null
+              }
+              graphPosition="bottom"
+              graphData={contractsStats.weeklyStubUsage}
+              graphColor={
+                isDefined(contractsStats.weeklyStubUsage)
+                  ? increaseIsBetter(
+                      contractsStats.weeklyStubUsage.map(w => w.usedOperations)
+                    )
+                  : null
+              }
+              graphItemToValue={x => x.usedOperations}
+              graphDataPointLabel={x =>
+                [
+                  bold(num(x.usedOperations)),
+                  ' stub usage operations ',
+                  '<br />',
+                  bold(num(x.zeroCountOperations)),
+                  ' zero count stub usage operations',
+                ].join('')
+              }
+            />
+          </div>
+          <div className="pl-6 col-span-1">
+            <div className="pb-6">
               <Stat
-                title="API coverage"
-                tooltip={
-                  isDefined(contractsStats.weeklyApiCoverage)
-                    ? [
-                        bold(
-                          num(
-                            contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations ||
-                              0
-                          )
-                        ),
-                        ...(contractsStats.specmaticCentralRepoReportOperations
-                          ? [
-                              'of',
-                              bold(
-                                num(contractsStats.specmaticCentralRepoReportOperations)
-                              ),
-                            ]
-                          : []),
-                        minPluralise(
-                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
-                          'operation has',
-                          'operations have'
-                        ),
-                        'been covered',
-                      ].join(' ')
-                    : undefined
-                }
-                value={
-                  isDefined(contractsStats.weeklyApiCoverage)
-                    ? contractsStats.specmaticCentralRepoReportOperations
-                      ? divide(
-                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0,
-                          contractsStats.specmaticCentralRepoReportOperations
-                        )
-                          .map(toPercentage)
-                          .getOr('-')
-                      : num(
-                          contractsStats.weeklyApiCoverage.at(-1)?.coveredOperations || 0
-                        )
-                    : null
-                }
-                graphPosition="right"
-                graphData={contractsStats.weeklyApiCoverage}
-                graphColor={
-                  isDefined(contractsStats.weeklyApiCoverage)
-                    ? increaseIsBetter(
-                        contractsStats.weeklyApiCoverage.map(w => w.coveredOperations)
-                      )
-                    : null
-                }
-                graphItemToValue={x => x.coveredOperations}
-                graphDataPointLabel={x =>
-                  [bold(num(x.coveredOperations)), ' operations covered.'].join('')
-                }
+                title="Number of stubs in central repo"
+                value={contractsStats.centralRepoStubsCount}
               />
             </div>
-            <div className="pt-6">
+            <div>
               <Stat
-                title="Number of operations used as stub"
-                tooltip={
-                  isDefined(contractsStats.weeklyStubUsage)
-                    ? [
-                        bold(
-                          num(contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0)
-                        ),
-                        ...(contractsStats.specmaticCentralRepoReportOperations
-                          ? [
-                              'of',
-                              bold(
-                                num(contractsStats.specmaticCentralRepoReportOperations)
-                              ),
-                            ]
-                          : []),
-                        minPluralise(
-                          contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0,
-                          'operation has',
-                          'operations have'
-                        ),
-                        'been used as stubs for tests',
-                        '<br />',
-                        bold(
-                          num(
-                            contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations ||
-                              0
-                          )
-                        ),
-                        ...(contractsStats.specmaticCentralRepoReportOperations
-                          ? [
-                              'of',
-                              bold(
-                                num(
-                                  contractsStats.specmaticCentralRepoReportOperations || 0
-                                )
-                              ),
-                            ]
-                          : []),
-                        minPluralise(
-                          contractsStats.weeklyStubUsage.at(-1)?.zeroCountOperations || 0,
-                          'operation has',
-                          'operations have'
-                        ),
-                        "set up stubs for tests but haven't used them",
-                        '<br />',
-                      ].join(' ')
-                    : undefined
-                }
-                value={
-                  isDefined(contractsStats.weeklyStubUsage)
-                    ? contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0
-                    : null
-                }
-                graphPosition="right"
-                graphData={contractsStats.weeklyStubUsage}
-                graphColor={
-                  isDefined(contractsStats.weeklyStubUsage)
-                    ? increaseIsBetter(
-                        contractsStats.weeklyStubUsage.map(w => w.usedOperations)
-                      )
-                    : null
-                }
-                graphItemToValue={x => x.usedOperations}
-                graphDataPointLabel={x =>
-                  [
-                    bold(num(x.usedOperations)),
-                    ' stub usage operations ',
-                    '<br />',
-                    bold(num(x.zeroCountOperations)),
-                    ' zero count stub usage operations',
-                  ].join('')
-                }
+                title="Number of stubs in project repo"
+                value={contractsStats.projectRepoStubsCount}
               />
             </div>
-          </SummaryCard>
-        </div>
-        <div className="col-span-2">
-          Service dependencies
-          <ServiceChordDiagram />
-        </div>
+          </div>
+        </SummaryCard>
       </div>
+      <div className="w-full h-[30rem] py-12">
+        <h3 className="font-semibold mb-3 flex items-center">Service dependencies</h3>
+        <ServiceChordDiagram />
+      </div>
+
       <ServiceBlock />
     </>
   );
