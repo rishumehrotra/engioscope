@@ -22,10 +22,13 @@ type SpecmaticSourceGit = {
   branch?: string;
 };
 
-type SpecmaticHTTPOperation = {
+type SpecmaticHTTPOperationBase = {
   path: string;
   method: string;
   responseCode: number;
+};
+
+type SpecmaticHTTPOperation = SpecmaticHTTPOperationBase & {
   count: number;
 };
 
@@ -54,7 +57,17 @@ type SpecmaticStubUsageForProtocol = SpecmaticStubUsageForHTTP /* Add more here 
 
 type SpecmaticStubUsageReport = (SpecmaticSource & SpecmaticStubUsageForProtocol)[];
 
-type SpecmaticCentralRepoReport = unknown;
+type SpecmaticCentralRepoReportSpecForHTTP = {
+  serviceType: 'HTTP';
+  operations: SpecmaticHTTPOperationBase[];
+};
+
+type SpecmaticCentralRepoReportSpecForProtocol =
+  SpecmaticCentralRepoReportSpecForHTTP /* Add more here */ & { specId: string }; // Not coming from the report, we're adding this for easy querying
+
+type SpecmaticCentralRepoReportSpec = SpecmaticCentralRepoReportSpecForProtocol & {
+  specification: string;
+};
 
 export type AzureBuildReport = {
   collectionName: string;
@@ -85,7 +98,7 @@ export type AzureBuildReport = {
   specmaticConfigPath: string | undefined;
   specmaticCoverage: SpecmaticCoverageReport | undefined;
   specmaticStubUsage: SpecmaticStubUsageReport | undefined;
-  specmaticCentralRepoReport: SpecmaticCentralRepoReport | undefined;
+  specmaticCentralRepoReport: SpecmaticCentralRepoReportSpec[] | undefined;
 };
 
 const azureBuildReportSchema = new Schema<AzureBuildReport>(
@@ -95,6 +108,7 @@ const azureBuildReportSchema = new Schema<AzureBuildReport>(
     project: { type: String, required: true },
     repo: { type: String, required: true },
     repoId: { type: String, required: true },
+    repoUrl: { type: String }, // Should have required: true, but leaving it off for backwards compatibility
     branch: { type: String, required: true },
     branchName: { type: String, required: true },
     buildId: { type: String, required: true },
@@ -207,13 +221,26 @@ const processSpecmaticData = (
   };
 };
 
+const getSpecIdForCentralRepo = (repoUrl: string) => (specification: string) => {
+  // if (/* we're in a mono-repo */) {
+  //   return /* the spec id */;
+  // } else ...
+
+  return md5(normalizeFilePathInRemoteRepo(repoUrl, specification));
+};
+
 const processSpecmaticCentralRepoReport = (
-  report: Pick<AzureBuildReport, 'specmaticCentralRepoReport'>
+  report: Pick<AzureBuildReport, 'specmaticCentralRepoReport' | 'repoUrl'>
 ) => {
   if (!report.specmaticCentralRepoReport) return {};
 
+  const getSpecId = getSpecIdForCentralRepo(report.repoUrl);
+
   return {
-    specmaticCentralRepoReport: report.specmaticCentralRepoReport,
+    specmaticCentralRepoReport: report.specmaticCentralRepoReport.map(x => ({
+      ...x,
+      specId: getSpecId(x.specification),
+    })),
   };
 };
 
