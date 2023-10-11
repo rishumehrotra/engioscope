@@ -215,7 +215,46 @@ export default () => {
             <div>
               <Stat
                 title="Number of stubs in project repo"
-                value={contractsStats.projectRepoStubsCount}
+                value={
+                  isDefined(contractsStats.stubOperationsCount)
+                    ? contractsStats.stubOperationsCount.projectRepOpsCount
+                    : '-'
+                }
+                tooltip={
+                  isDefined(contractsStats.stubOperationsCount)
+                    ? [
+                        bold(num(contractsStats.stubOperationsCount.centralRepOpsCount)),
+                        'out of',
+                        bold(
+                          num(
+                            contractsStats.stubOperationsCount.centralRepOpsCount +
+                              contractsStats.stubOperationsCount.projectRepOpsCount
+                          )
+                        ),
+                        minPluralise(
+                          contractsStats.stubOperationsCount?.centralRepOpsCount,
+                          'operation is',
+                          'operations are'
+                        ),
+                        'from project repository',
+                        '<br />',
+                        bold(num(contractsStats.stubOperationsCount.projectRepOpsCount)),
+                        'out of',
+                        bold(
+                          num(
+                            contractsStats.stubOperationsCount.centralRepOpsCount +
+                              contractsStats.stubOperationsCount.projectRepOpsCount
+                          )
+                        ),
+                        minPluralise(
+                          contractsStats.stubOperationsCount.centralRepOpsCount,
+                          'operation is',
+                          'operations are'
+                        ),
+                        'from central repository',
+                      ].join(' ')
+                    : undefined
+                }
               />
             </div>
           </div>

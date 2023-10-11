@@ -861,39 +861,59 @@ export const getSpecmaticCentralRepoReportOperations = async (
   ]).then(results => (results.length ? results[0].totalOps : null));
 };
 
-export const getStubsCountIn =
-  (repoType: 'centralRepo' | 'projectRepo') => async (queryContext: QueryContext) => {
-    const { collectionName, project, endDate } = fromContext(queryContext);
+export const getStubOperationsCount = async (queryContext: QueryContext) => {
+  const { collectionName, project, endDate } = fromContext(queryContext);
 
-    return AzureBuildReportModel.aggregate<{ count: number }>([
-      {
-        $match: {
-          collectionName,
-          project,
-          specmaticStubUsage: { $exists: true },
-          createdAt: { $lt: endDate },
-        },
+  return AzureBuildReportModel.aggregate<{
+    centralRepOpsCount: number;
+    projectRepOpsCount: number;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        specmaticStubUsage: { $exists: true },
+        createdAt: { $lt: endDate },
       },
-      { $sort: { createdAt: 1 } },
-      {
-        $group: {
-          _id: '$buildDefinitionId',
-          build: { $last: '$$ROOT' },
-        },
+    },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: '$buildDefinitionId',
+        build: { $last: '$$ROOT' },
       },
-      { $replaceRoot: { newRoot: '$build' } },
-      { $unwind: '$specmaticStubUsage' },
-      {
-        $match: {
-          'specmaticStubUsage.repository': {
-            $exists: repoType !== 'projectRepo',
+    },
+    { $replaceRoot: { newRoot: '$build' } },
+    { $unwind: '$specmaticStubUsage' },
+    { $unwind: '$specmaticStubUsage.operations' },
+    {
+      $group: {
+        _id: null,
+        centralRepOpsCount: {
+          $sum: {
+            $cond: {
+              if: { $ifNull: ['$specmaticStubUsage.repository', false] },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        projectRepOpsCount: {
+          $sum: {
+            $cond: {
+              if: { $ifNull: ['$specmaticStubUsage.repository', false] },
+              then: 0,
+              else: 1,
+            },
           },
         },
       },
-      { $count: 'count' },
-    ]).then(results => (results.length ? results[0].count : null));
-  };
-export const getStubsCountInProjectRepo = getStubsCountIn('projectRepo');
+    },
+    { $project: { _id: 0 } },
+  ]).then(results =>
+    results.length ? results[0] : { centralRepOpsCount: 0, projectRepOpsCount: 0 }
+  );
+};
 
 export type ContractStats = {
   weeklyApiCoverage: Awaited<ReturnType<typeof getWeeklyApiCoverageSummary>>;
@@ -904,7 +924,7 @@ export type ContractStats = {
   specmaticCentralRepoReportOperations: Awaited<
     ReturnType<typeof getSpecmaticCentralRepoReportOperations>
   >;
-  projectRepoStubsCount: Awaited<ReturnType<typeof getStubsCountInProjectRepo>>;
+  stubOperationsCount: Awaited<ReturnType<typeof getStubOperationsCount>>;
 };
 
 export const getContractStatsAsChunks = async (
@@ -926,6 +946,6 @@ export const getContractStatsAsChunks = async (
     getSpecmaticCentralRepoReportOperations(queryContext).then(
       sendChunk('specmaticCentralRepoReportOperations')
     ),
-    getStubsCountInProjectRepo(queryContext).then(sendChunk('projectRepoStubsCount')),
+    getStubOperationsCount(queryContext).then(sendChunk('stubOperationsCount')),
   ]);
 };
