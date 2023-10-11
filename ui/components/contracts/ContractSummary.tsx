@@ -27,12 +27,12 @@ export default () => {
                         contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
                       )
                     ),
-                    'out of',
-                    bold(
-                      num(
-                        contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.total || 0
-                      )
-                    ),
+                    ...(contractsStats.specmaticCentralRepoReportOperations
+                      ? [
+                          'out of',
+                          bold(num(contractsStats.specmaticCentralRepoReportOperations)),
+                        ]
+                      : []),
                     minPluralise(
                       contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0,
                       'operation has',
@@ -44,7 +44,14 @@ export default () => {
             }
             value={
               isDefined(contractsStats.weeklyConsumerProducerSpecAndOps)
-                ? contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
+                ? contractsStats.specmaticCentralRepoReportOperations
+                  ? divide(
+                      contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0,
+                      contractsStats.specmaticCentralRepoReportOperations
+                    )
+                      .map(toPercentage)
+                      .getOr('-')
+                  : contractsStats.weeklyConsumerProducerSpecAndOps.at(-1)?.count || 0
                 : null
             }
             graphPosition="bottom"
@@ -60,8 +67,6 @@ export default () => {
             graphDataPointLabel={x =>
               [
                 bold(num(x.count)),
-                'out of',
-                bold(num(x.total)),
                 minPluralise(x.count, 'operation has', 'operations have'),
                 'been used by both providers and consumers',
               ].join(' ')
@@ -175,7 +180,14 @@ export default () => {
               }
               value={
                 isDefined(contractsStats.weeklyStubUsage)
-                  ? contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0
+                  ? contractsStats.specmaticCentralRepoReportOperations
+                    ? divide(
+                        contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0,
+                        contractsStats.specmaticCentralRepoReportOperations
+                      )
+                        .map(toPercentage)
+                        .getOr('-')
+                    : num(contractsStats.weeklyStubUsage.at(-1)?.usedOperations || 0)
                   : null
               }
               graphPosition="bottom"
@@ -200,12 +212,6 @@ export default () => {
             />
           </div>
           <div className="pl-6 col-span-1">
-            <div className="pb-6">
-              <Stat
-                title="Number of stubs in central repo"
-                value={contractsStats.centralRepoStubsCount}
-              />
-            </div>
             <div>
               <Stat
                 title="Number of stubs in project repo"

@@ -34,7 +34,6 @@ const buildReportsWithSpecmatic = (
 
 const addTotalAndCoveredOperationsFields = {
   $addFields: {
-    totalOperations: { $size: '$specmaticCoverage.operations' },
     coveredOperations: {
       $size: {
         $filter: {
@@ -51,7 +50,6 @@ const groupByBuildId = {
   $group: {
     _id: '$buildId',
     buildDefinitionId: { $first: '$buildDefinitionId' },
-    totalOperations: { $sum: '$totalOperations' },
     coveredOperations: { $sum: '$coveredOperations' },
     createdAt: { $first: '$createdAt' },
   },
@@ -60,7 +58,6 @@ const groupByBuildId = {
 type ApiCoverage = {
   weekIndex: number;
   buildDefinitionId: string;
-  totalOperations: number;
   coveredOperations: number;
 };
 
@@ -83,7 +80,6 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
           weekIndex: weekIndexValue(startDate, '$createdAt'),
           buildDefinitionId: '$buildDefinitionId',
         },
-        totalOperations: { $last: '$totalOperations' },
         coveredOperations: { $last: '$coveredOperations' },
         // for debugging
         latestBuildId: { $last: '$_id' },
@@ -94,7 +90,6 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
         _id: 0,
         weekIndex: '$_id.weekIndex',
         buildDefinitionId: '$_id.buildDefinitionId',
-        totalOperations: 1,
         coveredOperations: 1,
         // for debugging
         latestBuildId: 1,
@@ -112,7 +107,6 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
   return AzureBuildReportModel.aggregate<{
     // buildId: string;
     buildDefinitionId: string;
-    totalOperations: number;
     coveredOperations: number;
     // createdAt: Date;
   }>([
@@ -196,7 +190,6 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
           () => getOneOlderApiCoverageForBuildDefinition(queryContext, buildDefId),
           item => ({
             buildDefinitionId: buildDefId,
-            totalOperations: item?.totalOperations || 0,
             coveredOperations: item?.coveredOperations || 0,
           })
         ),
@@ -206,7 +199,6 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
 
   return range(0, numberOfIntervals).map(weekIndex => {
     const weekCoverage = continuousCoverage.reduce<{
-      totalOperations: number;
       coveredOperations: number;
     }>(
       (acc, { coverageByWeek }) => {
@@ -214,17 +206,15 @@ export const getWeeklyApiCoverageSummary = async (queryContext: QueryContext) =>
           coverage => coverage.weekIndex === weekIndex
         );
         if (matchingCoverage) {
-          acc.totalOperations += matchingCoverage.totalOperations;
           acc.coveredOperations += matchingCoverage.coveredOperations;
         }
         return acc;
       },
-      { totalOperations: 0, coveredOperations: 0 }
+      { coveredOperations: 0 }
     );
 
     return {
       weekIndex,
-      totalOperations: weekCoverage.totalOperations,
       coveredOperations: weekCoverage.coveredOperations,
     };
   });
@@ -235,7 +225,6 @@ const addFieldsStubUsage: PipelineStage[] = [
   { $match: { 'specmaticStubUsage.serviceType': 'HTTP' } },
   {
     $addFields: {
-      totalOperations: { $size: '$specmaticStubUsage.operations' },
       zeroCountOperations: {
         $size: {
           $filter: {
@@ -264,7 +253,6 @@ const getStubUsage = async (queryContext: QueryContext) => {
   return AzureBuildReportModel.aggregate<{
     weekIndex: number;
     buildDefinitionId: string;
-    totalOperations: number;
     zeroCountOperations: number;
     usedOperations: number;
   }>([
@@ -277,7 +265,6 @@ const getStubUsage = async (queryContext: QueryContext) => {
       $group: {
         _id: '$buildId',
         buildDefinitionId: { $first: '$buildDefinitionId' },
-        totalOperations: { $sum: '$totalOperations' },
         zeroCountOperations: { $sum: '$zeroCountOperations' },
         usedOperations: { $sum: '$usedOperations' },
         createdAt: { $first: '$createdAt' },
@@ -290,7 +277,6 @@ const getStubUsage = async (queryContext: QueryContext) => {
           weekIndex: weekIndexValue(startDate, '$createdAt'),
           buildDefinitionId: '$buildDefinitionId',
         },
-        totalOperations: { $last: '$totalOperations' },
         zeroCountOperations: { $last: '$zeroCountOperations' },
         usedOperations: { $last: '$usedOperations' },
         latestBuildId: { $last: '$_id' },
@@ -315,7 +301,6 @@ const getOneOlderStubUsageForBuildDefinition = async (
   return AzureBuildReportModel.aggregate<{
     // buildId: string;
     buildDefinitionId: string;
-    totalOperations: number;
     zeroCountOperations: number;
     usedOperations: number;
     // createdAt: Date;
@@ -332,7 +317,6 @@ const getOneOlderStubUsageForBuildDefinition = async (
       $group: {
         _id: '$buildId',
         buildDefinitionId: { $first: '$buildDefinitionId' },
-        totalOperations: { $sum: '$totalOperations' },
         zeroCountOperations: { $sum: '$zeroCountOperations' },
         usedOperations: { $sum: '$usedOperations' },
         createdAt: { $first: '$createdAt' },
@@ -372,7 +356,6 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
           () => getOneOlderStubUsageForBuildDefinition(queryContext, buildDefId),
           item => ({
             buildDefinitionId: buildDefId,
-            totalOperations: item?.totalOperations || 0,
             zeroCountOperations: item?.zeroCountOperations || 0,
             usedOperations: item?.usedOperations || 0,
           })
@@ -383,7 +366,6 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
 
   return range(0, numberOfIntervals).map(weekIndex => {
     const weekStubUsage = continuousStubUsage.reduce<{
-      totalOperations: number;
       zeroCountOperations: number;
       usedOperations: number;
     }>(
@@ -392,14 +374,12 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
           coverage => coverage.weekIndex === weekIndex
         );
         if (matchingStubUsage) {
-          acc.totalOperations += matchingStubUsage.totalOperations;
           acc.zeroCountOperations += matchingStubUsage.zeroCountOperations;
           acc.usedOperations += matchingStubUsage.usedOperations;
         }
         return acc;
       },
       {
-        totalOperations: 0,
         zeroCountOperations: 0,
         usedOperations: 0,
       }
@@ -407,7 +387,6 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
 
     return {
       weekIndex,
-      totalOperations: weekStubUsage.totalOperations,
       zeroCountOperations: weekStubUsage.zeroCountOperations,
       usedOperations: weekStubUsage.usedOperations,
     };
@@ -838,7 +817,7 @@ export const getSpecmaticCentralRepoReportOperations = async (
     { $sort: { createdAt: 1 } },
     {
       $group: {
-        _id: '$buildDefinitionId',
+        _id: '$repoId',
         build: { $last: '$$ROOT' },
       },
     },
@@ -899,9 +878,7 @@ export const getStubsCountIn =
       {
         $group: {
           _id: '$buildDefinitionId',
-          build: {
-            $last: '$$ROOT',
-          },
+          build: { $last: '$$ROOT' },
         },
       },
       { $replaceRoot: { newRoot: '$build' } },
