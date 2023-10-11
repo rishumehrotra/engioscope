@@ -9,7 +9,7 @@ import { identity } from 'rambda';
 export const defaultDisplay = {
   arcTickness: 15,
   gapBetweenChordsRadians: 0.03,
-  labelWidth: 500,
+  labelWidth: 300,
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
