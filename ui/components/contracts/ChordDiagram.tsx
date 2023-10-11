@@ -97,14 +97,6 @@ const ChordDiagram = <T extends {}>({
     [innerRadius, outerRadius]
   );
 
-  const labelArc = useMemo(
-    () =>
-      d3Arc()
-        .innerRadius(innerRadius)
-        .outerRadius(outerRadius + display.labelDistanceFromArc),
-    [display.labelDistanceFromArc, innerRadius, outerRadius]
-  );
-
   const ribbon = useMemo(() => d3Ribbon().radius(innerRadius), [innerRadius]);
 
   return (
@@ -119,12 +111,7 @@ const ChordDiagram = <T extends {}>({
           const dataItem = data?.at(group.index);
           if (!dataItem) return null;
 
-          const centeroid = labelArc.centroid(group as unknown as DefaultArcObject);
-          const labelPosition = {
-            x: centeroid[0] > 0 ? centeroid[0] + 10 : centeroid[0] - 10,
-            y: centeroid[1],
-            textAnchor: centeroid[0] > 0 ? 'start' : 'end',
-          };
+          const angle = (group.endAngle + group.startAngle) / 2;
 
           return (
             <Fragment key={`${getKey(dataItem)}-${group.index}-frag`}>
@@ -135,13 +122,22 @@ const ChordDiagram = <T extends {}>({
                 data-tooltip-id="react-tooltip"
                 data-tooltip-html={chordTooltip?.(dataItem)}
               />
-              <text
-                {...labelPosition}
-                data-tooltip-id="react-tooltip"
-                data-tooltip-html={chordTooltip?.(dataItem)}
+              <g
+                transform={`rotate(${
+                  (angle * 180) / Math.PI - 90
+                }), translate(${outerRadius},0)`}
               >
-                {getTitle(dataItem)}
-              </text>
+                <text
+                  x="8"
+                  dy="0.35em"
+                  transform={angle > Math.PI ? 'rotate(180) translate(-16)' : undefined}
+                  style={{
+                    textAnchor: angle > Math.PI ? 'end' : undefined,
+                  }}
+                >
+                  {getTitle(dataItem)}
+                </text>
+              </g>
             </Fragment>
           );
         })}
@@ -152,17 +148,29 @@ const ChordDiagram = <T extends {}>({
 
           if (!sourceDataItem || !targetDataItem) return null;
 
-          return (
-            <path
-              // eslint-disable-next-line react/no-array-index-key
-              key={`${getKey(sourceDataItem) + getKey(targetDataItem)}-${chordIndex}path`}
-              d={(ribbon(chord as unknown as Ribbon) as unknown as string | null) || ''}
-              fill={`${lineColor(targetDataItem)}66`}
-              className="hover:opacity-70"
-              data-tooltip-id="react-tooltip"
-              data-tooltip-html={ribbonTooltip?.(targetDataItem, sourceDataItem)}
-            />
-          );
+          try {
+            // TODO: For some reason, this could throw a 'negative radius' error
+            // when the component re-renders, such as HMR or when navigating back to page
+            const ribbonPath = ribbon(chord as unknown as Ribbon) as unknown as
+              | string
+              | null;
+
+            return (
+              <path
+                // eslint-disable-next-line react/no-array-index-key
+                key={`${
+                  getKey(sourceDataItem) + getKey(targetDataItem)
+                }-${chordIndex}path`}
+                d={ribbonPath || ''}
+                fill={`${lineColor(targetDataItem)}66`}
+                className="hover:opacity-70"
+                data-tooltip-id="react-tooltip"
+                data-tooltip-html={ribbonTooltip?.(targetDataItem, sourceDataItem)}
+              />
+            );
+          } catch {
+            return null;
+          }
         })}
       </g>
     </svg>
