@@ -893,8 +893,6 @@ export const getStubsCountIn =
       { $count: 'count' },
     ]).then(results => (results.length ? results[0].count : null));
   };
-
-export const getStubsCountInCentralRepo = getStubsCountIn('centralRepo');
 export const getStubsCountInProjectRepo = getStubsCountIn('projectRepo');
 
 export type ContractStats = {
@@ -906,7 +904,6 @@ export type ContractStats = {
   specmaticCentralRepoReportOperations: Awaited<
     ReturnType<typeof getSpecmaticCentralRepoReportOperations>
   >;
-  centralRepoStubsCount: Awaited<ReturnType<typeof getStubsCountInCentralRepo>>;
   projectRepoStubsCount: Awaited<ReturnType<typeof getStubsCountInProjectRepo>>;
 };
 
@@ -929,7 +926,6 @@ export const getContractStatsAsChunks = async (
     getSpecmaticCentralRepoReportOperations(queryContext).then(
       sendChunk('specmaticCentralRepoReportOperations')
     ),
-    getStubsCountInCentralRepo(queryContext).then(sendChunk('centralRepoStubsCount')),
     getStubsCountInProjectRepo(queryContext).then(sendChunk('projectRepoStubsCount')),
   ]);
 };
