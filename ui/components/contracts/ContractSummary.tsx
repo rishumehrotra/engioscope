@@ -221,7 +221,7 @@ export default () => {
           </div>
         </SummaryCard>
       </div>
-      <div className="w-full h-[30rem] py-12">
+      <div className="w-full h-[100vh] py-12">
         <h3 className="font-semibold mb-3 flex items-center">Service dependencies</h3>
         <ServiceChordDiagram />
       </div>

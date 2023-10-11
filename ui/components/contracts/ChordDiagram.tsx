@@ -9,7 +9,7 @@ import { identity } from 'rambda';
 export const defaultDisplay = {
   arcTickness: 15,
   gapBetweenChordsRadians: 0.03,
-  labelDistanceFromArc: 30,
+  labelWidth: 500,
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -87,8 +87,8 @@ const ChordDiagram = <T extends {}>({
 
   const outerRadius =
     Math.min(
-      svgDimensions.width - display.labelDistanceFromArc,
-      svgDimensions.height - display.labelDistanceFromArc
+      svgDimensions.width - display.labelWidth,
+      svgDimensions.height - display.labelWidth
     ) * 0.5;
   const innerRadius = outerRadius - display.arcTickness;
 
@@ -134,6 +134,8 @@ const ChordDiagram = <T extends {}>({
                   style={{
                     textAnchor: angle > Math.PI ? 'end' : undefined,
                   }}
+                  data-tooltip-id="react-tooltip"
+                  data-tooltip-html={chordTooltip?.(dataItem)}
                 >
                   {getTitle(dataItem)}
                 </text>
