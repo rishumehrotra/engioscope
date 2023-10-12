@@ -8,6 +8,7 @@ import type { QueryContext } from './utils.js';
 import { fromContext, weekIndexValue } from './utils.js';
 import { createIntervals } from '../utils.js';
 import { BuildDefinitionModel } from './mongoose-models/BuildDefinitionModel.js';
+import type { SpecmaticCentralRepoReportSpec } from './build-reports.js';
 import { AzureBuildReportModel } from './build-reports.js';
 
 const getBuildDefIds = (collectionName: string, project: string) =>
@@ -948,4 +949,52 @@ export const getContractStatsAsChunks = async (
     ),
     getStubOperationsCount(queryContext).then(sendChunk('stubOperationsCount')),
   ]);
+};
+
+export const getSpecmaticContractsListing = async (queryContext: QueryContext) => {
+  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+
+  const specmaticCentralRepoReportDocs = await AzureBuildReportModel.aggregate<{
+    buildDefinitionId: string;
+    repoId: string;
+    repo: string;
+    repoUrl: string;
+    specmaticCentralRepoReport: SpecmaticCentralRepoReportSpec;
+  }>([
+    {
+      $match: {
+        collectionName,
+        project,
+        specmaticCentralRepoReport: { $exists: true },
+        createdAt: inDateRange(startDate, endDate),
+      },
+    },
+    { $unwind: '$specmaticCentralRepoReport' },
+    {
+      $project: {
+        _id: 0,
+        buildDefinitionId: 1,
+        repoId: 1,
+        repo: 1,
+        repoUrl: 1,
+        specmaticCentralRepoReport: 1,
+      },
+    },
+  ]);
+
+  return specmaticCentralRepoReportDocs.map(doc => {
+    const { repoUrl, specmaticCentralRepoReport } = doc;
+
+    const separatedDirectories = path
+      .dirname(specmaticCentralRepoReport.specification)
+      .split(path.sep);
+
+    return {
+      repoUrl,
+      specification: specmaticCentralRepoReport.specification,
+      directoryName: separatedDirectories.at(0),
+      childDirectory: path.join(...separatedDirectories.slice(1)),
+      specId: specmaticCentralRepoReport.specId,
+    };
+  });
 };

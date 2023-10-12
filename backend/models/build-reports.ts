@@ -65,7 +65,7 @@ type SpecmaticCentralRepoReportSpecForHTTP = {
 type SpecmaticCentralRepoReportSpecForProtocol =
   SpecmaticCentralRepoReportSpecForHTTP /* Add more here */ & { specId: string }; // Not coming from the report, we're adding this for easy querying
 
-type SpecmaticCentralRepoReportSpec = SpecmaticCentralRepoReportSpecForProtocol & {
+export type SpecmaticCentralRepoReportSpec = SpecmaticCentralRepoReportSpecForProtocol & {
   specification: string;
 };
 
