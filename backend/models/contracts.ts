@@ -1,5 +1,5 @@
 import { asc, byNum, byString } from 'sort-lib';
-import { intersection, propEq, range, union } from 'rambda';
+import { groupBy, intersection, prop, propEq, range, union } from 'rambda';
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import path from 'node:path';
 import md5 from 'md5';
@@ -951,6 +951,12 @@ export const getContractStatsAsChunks = async (
   ]);
 };
 
+type ContractDirectory = {
+  directoryName: string; // FeaturePhoneDoa
+  childDirectories: ContractDirectory[];
+  specIds: string[];
+};
+
 export const getSpecmaticContractsListing = async (queryContext: QueryContext) => {
   const { collectionName, project, startDate, endDate } = fromContext(queryContext);
 
@@ -982,72 +988,38 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
     },
   ]);
 
-  const withPathsSplit = specmaticCentralRepoReportDocs.map(
-    ({ repoUrl, specmaticCentralRepoReport }) => {
-      const separatedDirectories = path
-        .dirname(specmaticCentralRepoReport.specification)
-        .split(path.sep);
-
-      return {
-        repoUrl,
-        specification: specmaticCentralRepoReport.specification,
-        directories: separatedDirectories,
-        fileName: path.basename(specmaticCentralRepoReport.specification),
-        // directoryName: separatedDirectories.at(0),
-        // childDirectory: path.join(...separatedDirectories.slice(1)),
-        specId: specmaticCentralRepoReport.specId,
-      };
-    }
-  );
-
-  withPathsSplit[0].directories = ['a', 'b', 'c'];
-  withPathsSplit[0].specification = 'a/b/c/spec.yaml';
-  withPathsSplit[0].fileName = 'spec.yaml';
-
-  type ContractDirectory = {
-    directoryName: string; // FeaturePhoneDoa
-    childDirectories: ContractDirectory[];
-    specIds: string[];
-  };
-
-  // type ContractsListing = {
-  //   repoUrl: string;
-  //   childDirectories: ContractDirectory[];
-  // };
+  // specmaticCentralRepoReportDocs[0].specmaticCentralRepoReport.specification =
+  //   'a/b/c/spec.yaml';
 
   const mergeIntoTree = (
     directoryTree: ContractDirectory[],
-    specItem: (typeof withPathsSplit)[number],
-    pathSoFar: string[] = []
+    specItem: (typeof specmaticCentralRepoReportDocs)[number]['specmaticCentralRepoReport']
   ) => {
-    return specItem.directories
-      .slice(pathSoFar.length)
-      .reduce<ContractDirectory[]>((acc, directoryName) => {
-        const existingDirectory = acc.find(propEq('directoryName', directoryName));
+    const pathParts = specItem.specification.split('/');
 
-        if (existingDirectory) {
-          existingDirectory.specIds.push(specItem.specId);
-          existingDirectory.childDirectories = mergeIntoTree(
-            existingDirectory.childDirectories,
-            specItem,
-            [...pathSoFar, directoryName]
-          );
-        } else {
-          const newDirectory: ContractDirectory = {
-            directoryName,
-            childDirectories: mergeIntoTree([], specItem, [...pathSoFar, directoryName]),
-            specIds: [specItem.specId],
-          };
+    if (pathParts.length === 1) return directoryTree;
 
-          acc.push(newDirectory);
-        }
+    directoryTree.push({
+      directoryName: pathParts[0],
+      childDirectories: mergeIntoTree([], {
+        ...specItem,
+        specification: pathParts.slice(1).join('/'),
+      }),
+      specIds: [specItem.specId],
+    });
 
-        return acc;
-      }, directoryTree);
+    return directoryTree;
   };
 
-  return withPathsSplit.reduce<ContractDirectory[]>(
-    (acc, x) => mergeIntoTree(acc, x),
-    []
-  );
+  const byRepoUrl = groupBy(prop('repoUrl'), specmaticCentralRepoReportDocs);
+
+  return Object.values(byRepoUrl).map(specmaticCentralRepoReportDocs => {
+    return {
+      repoUrl: specmaticCentralRepoReportDocs[0].repoUrl,
+      dirs: specmaticCentralRepoReportDocs.reduce<ContractDirectory[]>(
+        (acc, x) => mergeIntoTree(acc, x.specmaticCentralRepoReport),
+        []
+      ),
+    };
+  });
 };
