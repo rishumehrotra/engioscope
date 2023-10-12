@@ -982,19 +982,72 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
     },
   ]);
 
-  return specmaticCentralRepoReportDocs.map(doc => {
-    const { repoUrl, specmaticCentralRepoReport } = doc;
+  const withPathsSplit = specmaticCentralRepoReportDocs.map(
+    ({ repoUrl, specmaticCentralRepoReport }) => {
+      const separatedDirectories = path
+        .dirname(specmaticCentralRepoReport.specification)
+        .split(path.sep);
 
-    const separatedDirectories = path
-      .dirname(specmaticCentralRepoReport.specification)
-      .split(path.sep);
+      return {
+        repoUrl,
+        specification: specmaticCentralRepoReport.specification,
+        directories: separatedDirectories,
+        fileName: path.basename(specmaticCentralRepoReport.specification),
+        // directoryName: separatedDirectories.at(0),
+        // childDirectory: path.join(...separatedDirectories.slice(1)),
+        specId: specmaticCentralRepoReport.specId,
+      };
+    }
+  );
 
-    return {
-      repoUrl,
-      specification: specmaticCentralRepoReport.specification,
-      directoryName: separatedDirectories.at(0),
-      childDirectory: path.join(...separatedDirectories.slice(1)),
-      specId: specmaticCentralRepoReport.specId,
-    };
-  });
+  withPathsSplit[0].directories = ['a', 'b', 'c'];
+  withPathsSplit[0].specification = 'a/b/c/spec.yaml';
+  withPathsSplit[0].fileName = 'spec.yaml';
+
+  type ContractDirectory = {
+    directoryName: string; // FeaturePhoneDoa
+    childDirectories: ContractDirectory[];
+    specIds: string[];
+  };
+
+  // type ContractsListing = {
+  //   repoUrl: string;
+  //   childDirectories: ContractDirectory[];
+  // };
+
+  const mergeIntoTree = (
+    directoryTree: ContractDirectory[],
+    specItem: (typeof withPathsSplit)[number],
+    pathSoFar: string[] = []
+  ) => {
+    return specItem.directories
+      .slice(pathSoFar.length)
+      .reduce<ContractDirectory[]>((acc, directoryName) => {
+        const existingDirectory = acc.find(propEq('directoryName', directoryName));
+
+        if (existingDirectory) {
+          existingDirectory.specIds.push(specItem.specId);
+          existingDirectory.childDirectories = mergeIntoTree(
+            existingDirectory.childDirectories,
+            specItem,
+            [...pathSoFar, directoryName]
+          );
+        } else {
+          const newDirectory: ContractDirectory = {
+            directoryName,
+            childDirectories: mergeIntoTree([], specItem, [...pathSoFar, directoryName]),
+            specIds: [specItem.specId],
+          };
+
+          acc.push(newDirectory);
+        }
+
+        return acc;
+      }, directoryTree);
+  };
+
+  return withPathsSplit.reduce<ContractDirectory[]>(
+    (acc, x) => mergeIntoTree(acc, x),
+    []
+  );
 };
