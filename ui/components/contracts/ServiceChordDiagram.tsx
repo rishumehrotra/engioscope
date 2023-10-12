@@ -25,7 +25,8 @@ const ServiceChordDiagram = () => {
     <ChordDiagram
       data={serviceGraph.data || []}
       hasConnections={hasConnections}
-      getRelated={accessors.providers}
+      getParents={accessors.providers}
+      getChildren={accessors.consumers}
       lineColor={x => lineColor(x.serviceId)}
       getKey={x => x.serviceId}
       getTitle={x => x.name || 'Unknown'}

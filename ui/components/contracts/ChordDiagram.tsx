@@ -1,10 +1,18 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Ribbon } from 'd3-chord';
 import { chordDirected as d3Chord, ribbon as d3Ribbon } from 'd3-chord';
 import type { DefaultArcObject } from 'd3-shape';
 import { arc as d3Arc } from 'd3-shape';
 import { byNum } from 'sort-lib';
 import { identity } from 'rambda';
+import { twJoin } from 'tailwind-merge';
 
 export const defaultDisplay = {
   arcTickness: 15,
@@ -16,12 +24,12 @@ export const defaultDisplay = {
 const constructMatrix = <T extends {}>(
   data: T[],
   hasConnections: (d: T) => boolean,
-  getRelated: (d: T) => T[],
+  getParents: (d: T) => T[],
   weight: (from: T, to: T) => number
 ) => {
   const matrix: number[][] = [];
   data.filter(hasConnections).forEach((dataItem, i) => {
-    const related = getRelated(dataItem);
+    const related = getParents(dataItem);
     const row = Array.from({ length: data.length }).fill(0) as number[];
     related.forEach(r => {
       const j = data.indexOf(r);
@@ -32,9 +40,79 @@ const constructMatrix = <T extends {}>(
   return matrix;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+type ChordDiagramHoveredItem<T extends unknown> =
+  | {
+      type: 'chord';
+      item: T;
+    }
+  | {
+      type: 'ribbon';
+      source: T;
+      target: T;
+    };
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+const useHoveredItem = <T extends unknown>(getRelated: (x: T) => T[]) => {
+  const [hoveredItem, setHoveredItem] = useState<
+    ChordDiagramHoveredItem<T> | undefined
+  >();
+
+  const mouseHandlers = useCallback(
+    (item: ChordDiagramHoveredItem<T>) => ({
+      onMouseOver: () => setHoveredItem(item),
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      onMouseOut: () => setHoveredItem(undefined),
+    }),
+    []
+  );
+
+  const shouldHighlightChord = useCallback(
+    (item: T) => {
+      if (!hoveredItem) return true;
+
+      if (hoveredItem.type === 'chord') {
+        return hoveredItem.item === item || getRelated(item).includes(hoveredItem.item);
+      }
+
+      if (hoveredItem.type === 'ribbon') {
+        return hoveredItem.source === item || hoveredItem.target === item;
+      }
+    },
+    [getRelated, hoveredItem]
+  );
+
+  const shouldHighlightRibbon = useCallback(
+    (item: { source: T; target: T }) => {
+      if (!hoveredItem) return true;
+
+      if (hoveredItem.type === 'chord') {
+        // return item.source === hoveredItem.item || item.target === hoveredItem.item;
+        const related = [item.source, item.target];
+        return related.includes(hoveredItem.item);
+      }
+
+      if (hoveredItem.type === 'ribbon') {
+        return (
+          (hoveredItem.source === item.source && hoveredItem.target === item.target) ||
+          (hoveredItem.source === item.target && hoveredItem.target === item.source)
+        );
+      }
+    },
+    [hoveredItem]
+  );
+
+  return {
+    shouldHighlightChord,
+    shouldHighlightRibbon,
+    mouseHandlers,
+  };
+};
+
 type ChordDiagramProps<T> = {
   data?: T[];
-  getRelated: (d: T) => T[];
+  getParents: (d: T) => T[];
+  getChildren: (d: T) => T[];
   hasConnections: (d: T) => boolean;
   display?: typeof defaultDisplay;
   lineColor: (x: T) => string;
@@ -48,7 +126,8 @@ type ChordDiagramProps<T> = {
 // eslint-disable-next-line @typescript-eslint/ban-types
 const ChordDiagram = <T extends {}>({
   data,
-  getRelated,
+  getParents,
+  getChildren,
   hasConnections,
   display = defaultDisplay,
   lineColor,
@@ -60,6 +139,8 @@ const ChordDiagram = <T extends {}>({
 }: ChordDiagramProps<T>) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [svgDimensions, setSvgDimensions] = useState({ width: 0, height: 0 });
+  const { shouldHighlightChord, shouldHighlightRibbon, mouseHandlers } =
+    useHoveredItem<T>(x => [...getParents(x), ...getChildren(x)]);
 
   useEffect(() => {
     const setDimensions = () => {
@@ -82,8 +163,8 @@ const ChordDiagram = <T extends {}>({
       .sortSubgroups(byNum(identity))
       .sortChords(byNum(identity));
 
-    return chord(constructMatrix(data || [], hasConnections, getRelated, ribbonWeight));
-  }, [data, display.gapBetweenChordsRadians, getRelated, hasConnections, ribbonWeight]);
+    return chord(constructMatrix(data || [], hasConnections, getParents, ribbonWeight));
+  }, [data, display.gapBetweenChordsRadians, getParents, hasConnections, ribbonWeight]);
 
   const outerRadius =
     Math.min(
@@ -118,9 +199,13 @@ const ChordDiagram = <T extends {}>({
               <path
                 d={arc(group as unknown as DefaultArcObject) || undefined}
                 fill={lineColor(dataItem)}
-                className="hover:opacity-70"
+                className={twJoin(
+                  'transition-opacity duration-200 ease-in-out',
+                  shouldHighlightChord(dataItem) ? '' : 'opacity-20'
+                )}
                 data-tooltip-id="react-tooltip"
                 data-tooltip-html={chordTooltip?.(dataItem)}
+                {...mouseHandlers({ type: 'chord', item: dataItem })}
               />
               <g
                 transform={`rotate(${
@@ -134,8 +219,13 @@ const ChordDiagram = <T extends {}>({
                   style={{
                     textAnchor: angle > Math.PI ? 'end' : undefined,
                   }}
+                  className={twJoin(
+                    'transition-opacity duration-200 ease-in-out',
+                    shouldHighlightChord(dataItem) ? '' : 'opacity-20'
+                  )}
                   data-tooltip-id="react-tooltip"
                   data-tooltip-html={chordTooltip?.(dataItem)}
+                  {...mouseHandlers({ type: 'chord', item: dataItem })}
                 >
                   {getTitle(dataItem)}
                 </text>
@@ -165,9 +255,22 @@ const ChordDiagram = <T extends {}>({
                 }-${chordIndex}path`}
                 d={ribbonPath || ''}
                 fill={`${lineColor(targetDataItem)}66`}
-                className="hover:opacity-70"
+                className={twJoin(
+                  'transition-opacity duration-200 ease-in-out',
+                  shouldHighlightRibbon({
+                    source: sourceDataItem,
+                    target: targetDataItem,
+                  })
+                    ? ''
+                    : 'opacity-20'
+                )}
                 data-tooltip-id="react-tooltip"
                 data-tooltip-html={ribbonTooltip?.(targetDataItem, sourceDataItem)}
+                {...mouseHandlers({
+                  type: 'ribbon',
+                  source: sourceDataItem,
+                  target: targetDataItem,
+                })}
               />
             );
           } catch {

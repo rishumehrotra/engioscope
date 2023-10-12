@@ -13,6 +13,14 @@ const itemsPerColumn = 5;
 
 const generateId = () => Math.random().toString(36).slice(2, 11);
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+const generateIds = <T extends unknown>(items: T[]) => {
+  return items.reduce((acc, x) => {
+    acc.set(x, generateId());
+    return acc;
+  }, new Map<T, string>());
+};
+
 type ServiceBlockProps = {
   service: Service;
   accessors: ServiceAccessors;
@@ -24,19 +32,8 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
   const archerRef = useRef<ArcherContainerRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const consumerIds = useMemo(() => {
-    return consumers.reduce((acc, x) => {
-      acc.set(x, generateId());
-      return acc;
-    }, new Map<Service, string>());
-  }, [consumers]);
-
-  const providerIds = useMemo(() => {
-    return providers.reduce((acc, x) => {
-      acc.set(x, generateId());
-      return acc;
-    }, new Map<Service, string>());
-  }, [providers]);
+  const consumerIds = useMemo(() => generateIds(consumers), [consumers]);
+  const providerIds = useMemo(() => generateIds(providers), [providers]);
 
   return (
     <div className="overflow-x-scroll overflow-y-hidden w-auto" ref={containerRef}>
