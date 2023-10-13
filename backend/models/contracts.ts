@@ -951,14 +951,177 @@ export const getContractStatsAsChunks = async (
   ]);
 };
 
+export const getLatestApiCoverageForSpecIds = async (queryContext: QueryContext) => {
+  const { endDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate([
+    buildReportsWithSpecmatic(queryContext, {
+      createdAt: { $lt: endDate },
+      specmaticCoverage: { $exists: true },
+    }),
+    {
+      $addFields: {
+        specmaticCoverage: {
+          $filter: {
+            input: '$specmaticCoverage',
+            as: 'coverage',
+            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
+          },
+        },
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$build' } },
+    { $unwind: '$specmaticCoverage' },
+    {
+      $addFields: {
+        coveredOperations: {
+          $size: {
+            $filter: {
+              input: '$specmaticCoverage.operations',
+              as: 'operation',
+              cond: { $eq: ['$$operation.coverageStatus', 'covered'] },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$specmaticCoverage.specId',
+        coveredOperations: { $sum: '$coveredOperations' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        specId: '$_id',
+        coveredOperations: 1,
+      },
+    },
+  ]);
+};
+
+export const getLatestStubUsageForSpecIds = async (queryContext: QueryContext) => {
+  const { endDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate<{
+    specId: string;
+    zeroCountOperations: number;
+    usedOperations: number;
+  }>([
+    buildReportsWithSpecmatic(queryContext, {
+      createdAt: { $lt: endDate },
+      specmaticStubUsage: { $exists: true },
+    }),
+    {
+      $addFields: {
+        specmaticStubUsage: {
+          $filter: {
+            input: '$specmaticStubUsage',
+            as: 'usage',
+            cond: { $eq: ['$$usage.serviceType', 'HTTP'] },
+          },
+        },
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$build' } },
+    { $unwind: '$specmaticStubUsage' },
+    {
+      $addFields: {
+        zeroCountOperations: {
+          $size: {
+            $filter: {
+              input: '$specmaticStubUsage.operations',
+              as: 'operation',
+              cond: { $eq: ['$$operation.count', 0] },
+            },
+          },
+        },
+        usedOperations: {
+          $size: {
+            $filter: {
+              input: '$specmaticStubUsage.operations',
+              as: 'operation',
+              cond: { $ne: ['$$operation.count', 0] },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$specmaticStubUsage.specId',
+        zeroCountOperations: { $sum: '$zeroCountOperations' },
+        usedOperations: { $sum: '$usedOperations' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        specId: '$_id',
+        zeroCountOperations: 1,
+        usedOperations: 1,
+      },
+    },
+  ]);
+};
+
+export const getTotalOperationsForSpecIds = async (queryContext: QueryContext) => {
+  const { collectionName, project, endDate } = fromContext(queryContext);
+
+  return AzureBuildReportModel.aggregate([
+    {
+      $match: {
+        collectionName,
+        project,
+        specmaticCentralRepoReport: { $exists: true },
+        createdAt: { $lt: endDate },
+      },
+    },
+    {
+      $addFields: {
+        specmaticCentralRepoReport: {
+          $filter: {
+            input: '$specmaticCentralRepoReport',
+            as: 'report',
+            cond: { $eq: ['$$report.serviceType', 'HTTP'] },
+          },
+        },
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$build' } },
+    {
+      $addFields: {
+        totalOps: {
+          $sum: {
+            $map: {
+              input: '$specmaticCentralRepoReport',
+              as: 'report',
+              in: { $size: '$$report.operations' },
+            },
+          },
+        },
+      },
+    },
+    { $group: { _id: null, totalOps: { $sum: '$totalOps' } } },
+    { $project: { _id: 0, totalOps: 1 } },
+  ]);
+};
+
 export type ContractDirectory = {
-  directoryName: string; // FeaturePhoneDoa
+  directoryName: string;
   childDirectories: ContractDirectory[];
   specIds: string[];
 };
 
 export const getSpecmaticContractsListing = async (queryContext: QueryContext) => {
-  const { collectionName, project, startDate, endDate } = fromContext(queryContext);
+  const { collectionName, project, endDate } = fromContext(queryContext);
 
   const specmaticCentralRepoReportDocs = await AzureBuildReportModel.aggregate<{
     buildDefinitionId: string;
@@ -972,9 +1135,17 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
         collectionName,
         project,
         specmaticCentralRepoReport: { $exists: true },
-        createdAt: inDateRange(startDate, endDate),
+        createdAt: { $lt: endDate },
       },
     },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: '$buildDefinitionId',
+        build: { $last: '$$ROOT' },
+      },
+    },
+    { $replaceRoot: { newRoot: '$build' } },
     { $unwind: '$specmaticCentralRepoReport' },
     {
       $project: {
@@ -1012,6 +1183,12 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
   };
 
   const byRepoUrl = groupBy(prop('repoUrl'), specmaticCentralRepoReportDocs);
+
+  // const coverageBySpecIds = await getLatestApiCoverageForSpecIds(queryContext);
+
+  // const stubUsageBySpecIds = await getLatestStubUsageForSpecIds(queryContext);
+
+  // const totalOpsBySpecIds = await getTotalOperationsForSpecIds(queryContext);
 
   return Object.values(byRepoUrl).map(specmaticCentralRepoReportDocs => {
     return {
