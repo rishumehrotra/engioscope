@@ -2,10 +2,8 @@ import React, { useMemo, useRef } from 'react';
 import { twMerge } from 'tailwind-merge';
 import type { ArcherContainerRef } from 'react-archer';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import { useQueryContext } from '../../hooks/query-hooks.js';
-import { trpc } from '../../helpers/trpc.js';
+import { XCircle } from 'react-feather';
 import type { Service, ServiceAccessors } from './utils.jsx';
-import { serviceAccessors } from './utils.jsx';
 import { chunkArray } from '../../../shared/utils.js';
 import { minPluralise } from '../../helpers/utils.js';
 
@@ -82,7 +80,19 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
                   </ul>
                 ))}
               </div>
-            ) : null}
+            ) : (
+              <div
+                className={twMerge(
+                  'text-center mr-10 ml-4 relative',
+                  'before:border-t before:border-dashed before:border-t-gray-400',
+                  'before:content-[""] before:absolute',
+                  'before:w-20 before:top-1/2 before:z-0 before:translate-x-7'
+                )}
+              >
+                <XCircle className="inline-block mt-6 text-theme-icon" size={30} />
+                <div>No consumers</div>
+              </div>
+            )}
             <ArcherElement
               id={service.serviceId}
               relations={providers.map(x => ({
@@ -101,7 +111,7 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
                 className={twMerge(
                   consumers.length > 0 && 'ml-48',
                   providers.length > 0 && 'mr-32',
-                  'border border-theme-input rounded-md px-12 py-3 min-w-fit text-center'
+                  'border border-gray-400 rounded-md px-12 py-3 min-w-fit text-center bg-theme-page-content'
                 )}
               >
                 <h3 className="font-medium">{service.name}</h3>
@@ -137,7 +147,19 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
                   </ul>
                 ))}
               </div>
-            ) : null}
+            ) : (
+              <div
+                className={twMerge(
+                  'text-center mr-10 pl-4 relative',
+                  'before:border-t before:border-dashed before:border-t-gray-400',
+                  'before:content-[""] before:absolute',
+                  'before:w-12 before:top-1/2 before:z-0 before:-translate-x-12'
+                )}
+              >
+                <XCircle className="inline-block mt-6 text-theme-icon" size={30} />
+                <div>No providers</div>
+              </div>
+            )}
           </div>
         </ArcherContainer>
       </div>
@@ -145,23 +167,4 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
   );
 };
 
-export default () => {
-  const queryContext = useQueryContext();
-  const serviceGraph = trpc.contracts.getServiceGraph.useQuery(queryContext);
-
-  const accessors = useMemo(
-    () => serviceAccessors(serviceGraph.data || []),
-    [serviceGraph.data]
-  );
-
-  return (
-    <ul>
-      {serviceGraph.data?.map(service => (
-        <li key={service.serviceId} className="py-6">
-          <h2 className="text-lg font-semibold">{service.name}</h2>
-          <ServiceBlock service={service} accessors={accessors} />
-        </li>
-      ))}
-    </ul>
-  );
-};
+export default ServiceBlock;

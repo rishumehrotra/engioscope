@@ -6,8 +6,9 @@ import { increaseIsBetter } from '../graphs/TinyAreaGraph.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import type { ContractStats } from '../../../backend/models/contracts.js';
 import ServiceChordDiagram from './ServiceChordDiagram.jsx';
-import ServiceBlock from './ServiceBlock.jsx';
 import { useCreateUrlForContractsSummary } from '../../helpers/sseUrlConfigs.js';
+
+const ServiceListing = React.lazy(() => import('./ServiceListing.jsx'));
 
 export default () => {
   const sseUrl = useCreateUrlForContractsSummary('contracts');
@@ -265,7 +266,7 @@ export default () => {
         <ServiceChordDiagram />
       </div>
 
-      <ServiceBlock />
+      <ServiceListing />
     </>
   );
 };

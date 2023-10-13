@@ -1114,8 +1114,8 @@ export const getTotalOperationsForSpecIds = async (queryContext: QueryContext) =
   ]);
 };
 
-type ContractDirectory = {
-  directoryName: string; // FeaturePhoneDoa
+export type ContractDirectory = {
+  directoryName: string;
   childDirectories: ContractDirectory[];
   specIds: string[];
 };
