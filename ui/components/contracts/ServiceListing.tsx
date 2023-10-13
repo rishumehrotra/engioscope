@@ -59,34 +59,57 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
     [dirsAndhServices]
   );
 
-  return (
-    <ul>
-      {dirsHavingServices.sort(byString(prop('directoryName'))).map(dir => {
-        const matchingServices = services.filter(service =>
-          service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
-        );
+  const dirsNotHavingServices = useMemo(
+    () => dirsAndhServices.filter(dir => dir.services.length === 0),
+    [dirsAndhServices]
+  );
 
-        return (
-          <li
-            key={dir.directoryName}
-            className="border border-theme-seperator rounded-md bg-theme-page-content mb-4"
-          >
-            <div className="p-4 flex">
-              <h2 className="text-lg font-semibold">{dir.directoryName}</h2>
-            </div>
-            <div className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
-              {matchingServices.map(service => (
-                <ServiceBlock
-                  key={service.serviceId}
-                  service={service}
-                  accessors={accessors}
-                />
-              ))}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+  return (
+    <>
+      {dirsNotHavingServices.length > 0 && (
+        <details className="mb-4">
+          <summary className=""> Spec directories without any services</summary>
+          <ul>
+            {dirsNotHavingServices.map(dir => (
+              <li
+                key={dir.directoryName}
+                className="inline-block px-2 py-1 border border-theme-seperator m-1 rounded"
+              >
+                {dir.directoryName}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <ul>
+        {dirsHavingServices.sort(byString(prop('directoryName'))).map(dir => {
+          const matchingServices = services.filter(service =>
+            service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
+          );
+
+          return (
+            <li
+              key={dir.directoryName}
+              className="border border-theme-seperator rounded-md bg-theme-page-content mb-4"
+            >
+              <div className="p-4 flex">
+                <h2 className="text-lg font-semibold">{dir.directoryName}</h2>
+              </div>
+              <div className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
+                {matchingServices.map(service => (
+                  <ServiceBlock
+                    key={service.serviceId}
+                    service={service}
+                    accessors={accessors}
+                  />
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 };
 
