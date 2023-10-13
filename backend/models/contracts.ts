@@ -951,7 +951,7 @@ export const getContractStatsAsChunks = async (
   ]);
 };
 
-type ContractDirectory = {
+export type ContractDirectory = {
   directoryName: string; // FeaturePhoneDoa
   childDirectories: ContractDirectory[];
   specIds: string[];

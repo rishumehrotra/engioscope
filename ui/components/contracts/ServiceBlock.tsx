@@ -2,10 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { twMerge } from 'tailwind-merge';
 import type { ArcherContainerRef } from 'react-archer';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import { useQueryContext } from '../../hooks/query-hooks.js';
-import { trpc } from '../../helpers/trpc.js';
 import type { Service, ServiceAccessors } from './utils.jsx';
-import { serviceAccessors } from './utils.jsx';
 import { chunkArray } from '../../../shared/utils.js';
 import { minPluralise } from '../../helpers/utils.js';
 
@@ -145,23 +142,4 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
   );
 };
 
-export default () => {
-  const queryContext = useQueryContext();
-  const serviceGraph = trpc.contracts.getServiceGraph.useQuery(queryContext);
-
-  const accessors = useMemo(
-    () => serviceAccessors(serviceGraph.data || []),
-    [serviceGraph.data]
-  );
-
-  return (
-    <ul>
-      {serviceGraph.data?.map(service => (
-        <li key={service.serviceId} className="py-6">
-          <h2 className="text-lg font-semibold">{service.name}</h2>
-          <ServiceBlock service={service} accessors={accessors} />
-        </li>
-      ))}
-    </ul>
-  );
-};
+export default ServiceBlock;
