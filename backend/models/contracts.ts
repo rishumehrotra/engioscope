@@ -951,10 +951,13 @@ export const getContractStatsAsChunks = async (
   ]);
 };
 
-export const getLatestApiCoverageForSpecIds = async (queryContext: QueryContext) => {
+export const getLatestApiCoverageBySpecIds = async (queryContext: QueryContext) => {
   const { endDate } = fromContext(queryContext);
 
-  return AzureBuildReportModel.aggregate([
+  return AzureBuildReportModel.aggregate<{
+    specId: string;
+    coveredOperations: number;
+  }>([
     buildReportsWithSpecmatic(queryContext, {
       createdAt: { $lt: endDate },
       specmaticCoverage: { $exists: true },
@@ -1003,7 +1006,7 @@ export const getLatestApiCoverageForSpecIds = async (queryContext: QueryContext)
   ]);
 };
 
-export const getLatestStubUsageForSpecIds = async (queryContext: QueryContext) => {
+export const getLatestStubUsageBySpecIds = async (queryContext: QueryContext) => {
   const { endDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<{
@@ -1070,10 +1073,12 @@ export const getLatestStubUsageForSpecIds = async (queryContext: QueryContext) =
   ]);
 };
 
-export const getTotalOperationsForSpecIds = async (queryContext: QueryContext) => {
+export const getTotalOperationsBySpecIds = async (queryContext: QueryContext) => {
   const { collectionName, project, endDate } = fromContext(queryContext);
 
-  return AzureBuildReportModel.aggregate([
+  return AzureBuildReportModel.aggregate<{
+    totalOps: number;
+  }>([
     {
       $match: {
         collectionName,
@@ -1111,7 +1116,7 @@ export const getTotalOperationsForSpecIds = async (queryContext: QueryContext) =
     },
     { $group: { _id: null, totalOps: { $sum: '$totalOps' } } },
     { $project: { _id: 0, totalOps: 1 } },
-  ]);
+  ]).then(results => (results.length ? results[0] : { totalOps: 0 }));
 };
 
 export type ContractDirectory = {
@@ -1183,20 +1188,52 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
   };
 
   const byRepoUrl = groupBy(prop('repoUrl'), specmaticCentralRepoReportDocs);
+  const coverageBySpecIds = await getLatestApiCoverageBySpecIds(queryContext);
+  const stubUsageBySpecIds = await getLatestStubUsageBySpecIds(queryContext);
+  const totalOpsBySpecIds = await getTotalOperationsBySpecIds(queryContext);
 
-  // const coverageBySpecIds = await getLatestApiCoverageForSpecIds(queryContext);
+  const traverseChildDirectoriesAndAddSpecIds = (
+    directoryTree: ContractDirectory[]
+  ): ContractDirectory[] => {
+    return directoryTree.map(directory => ({
+      ...directory,
+      childDirectories: traverseChildDirectoriesAndAddSpecIds(directory.childDirectories),
+      specIds: [
+        ...directory.specIds,
+        ...directory.childDirectories.flatMap(x => x.specIds),
+      ],
+    }));
+  };
 
-  // const stubUsageBySpecIds = await getLatestStubUsageForSpecIds(queryContext);
+  const filterCoverageForSpecIds = (
+    coverageBySpecIds: Awaited<ReturnType<typeof getLatestApiCoverageBySpecIds>>,
+    specIds: string[]
+  ) => coverageBySpecIds.filter(coverage => specIds.includes(coverage.specId));
 
-  // const totalOpsBySpecIds = await getTotalOperationsForSpecIds(queryContext);
+  const filterStubUsageForSpecIds = (
+    stubUsageBySpecIds: Awaited<ReturnType<typeof getLatestStubUsageBySpecIds>>,
+    specIds: string[]
+  ) => stubUsageBySpecIds.filter(stubUsage => specIds.includes(stubUsage.specId));
 
-  return Object.values(byRepoUrl).map(specmaticCentralRepoReportDocs => {
-    return {
-      repoUrl: specmaticCentralRepoReportDocs[0].repoUrl,
-      dirs: specmaticCentralRepoReportDocs.reduce<ContractDirectory[]>(
-        (acc, x) => mergeIntoTree(acc, x.specmaticCentralRepoReport),
-        []
-      ),
-    };
-  });
+  const directoryListing = Object.values(byRepoUrl).map(
+    specmaticCentralRepoReportDocs => {
+      return {
+        repoUrl: specmaticCentralRepoReportDocs[0].repoUrl,
+        dirs: specmaticCentralRepoReportDocs.reduce<ContractDirectory[]>(
+          (acc, x) => mergeIntoTree(acc, x.specmaticCentralRepoReport),
+          []
+        ),
+      };
+    }
+  );
+
+  return directoryListing.map(({ repoUrl, dirs }) => ({
+    repoUrl,
+    dirs: traverseChildDirectoriesAndAddSpecIds(dirs).map(directory => ({
+      ...directory,
+      coverage: filterCoverageForSpecIds(coverageBySpecIds, directory.specIds),
+      stubUsage: filterStubUsageForSpecIds(stubUsageBySpecIds, directory.specIds),
+      totalOps: totalOpsBySpecIds.totalOps,
+    })),
+  }));
 };
