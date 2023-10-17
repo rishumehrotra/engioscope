@@ -1195,9 +1195,11 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
   };
 
   const byRepoUrl = groupBy(prop('repoUrl'), specmaticCentralRepoReportDocs);
-  const coverageBySpecIds = await getLatestApiCoverageBySpecIds(queryContext);
-  const stubUsageBySpecIds = await getLatestStubUsageBySpecIds(queryContext);
-  const totalOpsBySpecIds = await getTotalOperationsBySpecIds(queryContext);
+  const [coverageBySpecIds, stubUsageBySpecIds, totalOpsBySpecIds] = await Promise.all([
+    getLatestApiCoverageBySpecIds(queryContext),
+    getLatestStubUsageBySpecIds(queryContext),
+    getTotalOperationsBySpecIds(queryContext),
+  ]);
 
   const traverseChildDirectoriesAndAddSpecIds = (
     directoryTree: ContractDirectory[]
