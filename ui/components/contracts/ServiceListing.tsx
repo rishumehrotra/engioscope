@@ -7,7 +7,69 @@ import { trpc } from '../../helpers/trpc.js';
 import type { Service } from './utils.jsx';
 import { serviceAccessors } from './utils.jsx';
 import ServiceBlock from './ServiceBlock.jsx';
+import { divide, toPercentage } from '../../../shared/utils.js';
 import type { ContractDirectory } from '../../../backend/models/contracts.js';
+
+const ChildServices = ({
+  parentDirectory,
+  currentChildDirectory,
+}: {
+  parentDirectory: RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'][0];
+  currentChildDirectory: ContractDirectory[];
+}) => {
+  return (
+    <div>
+      <table className="w-full">
+        <thead className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
+          <tr>
+            <td>Service Name</td>
+            <td>API Coverage</td>
+            <td>Total Operations</td>
+            <td>Stub Usage</td>
+          </tr>
+        </thead>
+        <tbody>
+          {currentChildDirectory.map(cd => {
+            return (
+              <tr key={cd.directoryName}>
+                <td>{cd.directoryName}</td>
+                <td>
+                  {divide(
+                    parentDirectory.coverage
+                      .filter(x => cd.specIds.includes(x.specId))
+                      .reduce((acc, curr) => acc + curr.coveredOperations, 0),
+                    parentDirectory.totalOps
+                      .filter(x => cd.specIds.includes(x.specId))
+                      .reduce((acc, curr) => acc + curr.totalOps, 0)
+                  )
+                    .map(toPercentage)
+                    .getOr('-')}
+                </td>
+                <td>
+                  {parentDirectory.totalOps
+                    .filter(x => cd.specIds.includes(x.specId))
+                    .reduce((acc, curr) => acc + curr.totalOps, 0)}
+                </td>
+                <td>
+                  {divide(
+                    parentDirectory.stubUsage
+                      .filter(x => cd.specIds.includes(x.specId))
+                      .reduce((acc, curr) => acc + curr.usedOperations, 0),
+                    parentDirectory.totalOps
+                      .filter(x => cd.specIds.includes(x.specId))
+                      .reduce((acc, curr) => acc + curr.totalOps, 0)
+                  )
+                    .map(toPercentage)
+                    .getOr('-')}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 const ServiceListingUsingServiceGraph = ({
   services,
@@ -37,7 +99,7 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
   // repoUrl: string;
-  dirs: ContractDirectory[];
+  dirs: RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'];
 }) => {
   const dirsAndhServices = useMemo(
     () =>
@@ -93,18 +155,70 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
               key={dir.directoryName}
               className="border border-theme-seperator rounded-md bg-theme-page-content mb-4"
             >
-              <div className="p-4 flex">
-                <h2 className="text-lg font-semibold">{dir.directoryName}</h2>
-              </div>
-              <div className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
-                {matchingServices.map(service => (
-                  <ServiceBlock
-                    key={service.serviceId}
-                    service={service}
-                    accessors={accessors}
-                  />
-                ))}
-              </div>
+              <details>
+                <summary className="p-4 flex justify-between cursor-pointer">
+                  <h2 className="text-lg font-semibold">{dir.directoryName}</h2>
+                  <div className="flex gap-6">
+                    <div>
+                      <h2 className="text-lg font-semibold text-right">
+                        {divide(
+                          dir.coverage.reduce(
+                            (acc, curr) => acc + curr.coveredOperations,
+                            0
+                          ),
+                          dir.totalOps.reduce((acc, curr) => acc + curr.totalOps, 0)
+                        )
+                          .map(toPercentage)
+                          .getOr('-')}
+                      </h2>
+                      <p className="text-gray-600 text-sm font-normal uppercase text-right">
+                        API Coverage
+                      </p>
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-right">
+                        {dir.totalOps.reduce((acc, curr) => acc + curr.totalOps, 0)}
+                      </h2>
+                      <p className="text-gray-600 text-sm font-normal uppercase text-right">
+                        Total Operations
+                      </p>
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-right">
+                        {divide(
+                          dir.stubUsage.reduce(
+                            (acc, curr) => acc + curr.usedOperations,
+                            0
+                          ),
+                          dir.totalOps.reduce((acc, curr) => acc + curr.totalOps, 0)
+                        )
+                          .map(toPercentage)
+                          .getOr('-')}
+                      </h2>
+                      <p className="text-gray-600 text-sm font-normal uppercase text-right">
+                        Stub Usage
+                      </p>
+                    </div>
+                  </div>
+                </summary>
+                <div>
+                  {dir.childDirectories.length > 0 ? (
+                    <ChildServices
+                      parentDirectory={dir}
+                      currentChildDirectory={dir.childDirectories}
+                    />
+                  ) : null}
+                  <div className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
+                    {matchingServices.map(service => (
+                      <ServiceBlock
+                        key={service.serviceId}
+                        service={service}
+                        accessors={accessors}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </details>
             </li>
           );
         })}

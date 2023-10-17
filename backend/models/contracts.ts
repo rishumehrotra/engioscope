@@ -1077,6 +1077,7 @@ export const getTotalOperationsBySpecIds = async (queryContext: QueryContext) =>
   const { collectionName, project, endDate } = fromContext(queryContext);
 
   return AzureBuildReportModel.aggregate<{
+    specId: string;
     totalOps: number;
   }>([
     {
@@ -1087,36 +1088,42 @@ export const getTotalOperationsBySpecIds = async (queryContext: QueryContext) =>
         createdAt: { $lt: endDate },
       },
     },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: '$repoId',
+        build: { $last: '$$ROOT' },
+      },
+    },
+    { $replaceRoot: { newRoot: '$build' } },
     {
       $addFields: {
         specmaticCentralRepoReport: {
           $filter: {
             input: '$specmaticCentralRepoReport',
             as: 'report',
-            cond: { $eq: ['$$report.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
-    { $sort: { createdAt: 1 } },
-    { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
-    { $replaceRoot: { newRoot: '$build' } },
-    {
-      $addFields: {
-        totalOps: {
-          $sum: {
-            $map: {
-              input: '$specmaticCentralRepoReport',
-              as: 'report',
-              in: { $size: '$$report.operations' },
+            cond: {
+              $eq: ['$$report.serviceType', 'HTTP'],
             },
           },
         },
       },
     },
-    { $group: { _id: null, totalOps: { $sum: '$totalOps' } } },
-    { $project: { _id: 0, totalOps: 1 } },
-  ]).then(results => (results.length ? results[0] : { totalOps: 0 }));
+    { $unwind: '$specmaticCentralRepoReport' },
+    {
+      $group: {
+        _id: '$specmaticCentralRepoReport.specId',
+        totalOps: { $sum: { $size: '$specmaticCentralRepoReport.operations' } },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        specId: '$_id',
+        totalOps: 1,
+      },
+    },
+  ]);
 };
 
 export type ContractDirectory = {
@@ -1215,6 +1222,11 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
     specIds: string[]
   ) => stubUsageBySpecIds.filter(stubUsage => specIds.includes(stubUsage.specId));
 
+  const filterTotalOpsForSpecIds = (
+    totalOpsBySpecIds: Awaited<ReturnType<typeof getTotalOperationsBySpecIds>>,
+    specIds: string[]
+  ) => totalOpsBySpecIds.filter(totalOps => specIds.includes(totalOps.specId));
+
   const directoryListing = Object.values(byRepoUrl).map(
     specmaticCentralRepoReportDocs => {
       return {
@@ -1233,7 +1245,7 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
       ...directory,
       coverage: filterCoverageForSpecIds(coverageBySpecIds, directory.specIds),
       stubUsage: filterStubUsageForSpecIds(stubUsageBySpecIds, directory.specIds),
-      totalOps: totalOpsBySpecIds.totalOps,
+      totalOps: filterTotalOpsForSpecIds(totalOpsBySpecIds, directory.specIds),
     })),
   }));
 };
