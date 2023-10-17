@@ -1,23 +1,12 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
-import type { ArcherContainerRef } from 'react-archer';
 import { ArcherContainer, ArcherElement } from 'react-archer';
 import { XCircle } from 'react-feather';
-import type { Service, ServiceAccessors } from './utils.jsx';
+import { generateIds, type Service, type ServiceAccessors } from './utils.js';
 import { chunkArray } from '../../../shared/utils.js';
 import { minPluralise } from '../../helpers/utils.js';
 
 const itemsPerColumn = 5;
-
-const generateId = () => Math.random().toString(36).slice(2, 11);
-
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
-const generateIds = <T extends unknown>(items: T[]) => {
-  return items.reduce((acc, x) => {
-    acc.set(x, generateId());
-    return acc;
-  }, new Map<T, string>());
-};
 
 type ServiceBlockProps = {
   service: Service;
@@ -27,19 +16,16 @@ type ServiceBlockProps = {
 const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
   const consumers = accessors.consumers(service);
   const providers = accessors.providers(service);
-  const archerRef = useRef<ArcherContainerRef>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const consumerIds = useMemo(() => generateIds(consumers), [consumers]);
   const providerIds = useMemo(() => generateIds(providers), [providers]);
 
   return (
-    <div className="overflow-x-scroll overflow-y-hidden w-auto" ref={containerRef}>
+    <div className="overflow-x-scroll overflow-y-hidden w-auto">
       <div className="relative w-max">
         <ArcherContainer
           strokeColor="rgba(202, 138, 4, 0.2)"
           endShape={{ arrow: { arrowLength: 2, arrowThickness: 3 } }}
-          ref={archerRef}
         >
           <div className="inline-grid grid-flow-col items-center">
             {/* Container for consumers */}

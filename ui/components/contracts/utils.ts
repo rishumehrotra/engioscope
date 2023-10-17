@@ -154,3 +154,13 @@ export const serviceAccessors = (services: Service[]) => {
 };
 
 export type ServiceAccessors = ReturnType<typeof serviceAccessors>;
+
+const generateId = () => Math.random().toString(36).slice(2, 11);
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
+export const generateIds = <T extends unknown>(items: T[]) => {
+  return items.reduce((acc, x) => {
+    acc.set(x, generateId());
+    return acc;
+  }, new Map<T, string>());
+};

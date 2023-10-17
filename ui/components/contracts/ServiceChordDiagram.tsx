@@ -4,7 +4,7 @@ import { useQueryContext } from '../../hooks/query-hooks.js';
 import ChordDiagram from './ChordDiagram.jsx';
 import { lineColor } from '../OverviewGraphs2/utils.jsx';
 import type { Service } from './utils.jsx';
-import { serviceAccessors } from './utils.jsx';
+import { serviceAccessors } from './utils.js';
 
 const ServiceChordDiagram = () => {
   const queryContext = useQueryContext();
