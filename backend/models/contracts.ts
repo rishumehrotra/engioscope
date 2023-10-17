@@ -1153,7 +1153,7 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
     { $sort: { createdAt: 1 } },
     {
       $group: {
-        _id: '$buildDefinitionId',
+        _id: '$repoId',
         build: { $last: '$$ROOT' },
       },
     },
