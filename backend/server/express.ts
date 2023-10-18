@@ -18,7 +18,7 @@ const configureExpress = (config: ParsedConfig) => {
   const app = express();
 
   app.use(express.json());
-  app.use(express.text({ type: 'text/html' }));
+  app.use(express.text({ type: 'text/html', limit: '1mb' }));
 
   app.use(cookieParser());
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
