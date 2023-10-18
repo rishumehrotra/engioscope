@@ -6,7 +6,7 @@ import type { AzureBuildReport } from '../models/build-reports.js';
 export const htmlReportToObj = (htmlContent: string) => {
   const root = parseHtml(htmlContent);
   // eslint-disable-next-line unicorn/prefer-dom-node-text-content
-  const read = (id: string) => root.querySelector(`#${id}`)?.innerText;
+  const read = (id: string) => root.querySelector(`#${id}`)?.innerText.trim();
   const buildScript = read('buildScript');
 
   const centralTemplate: Record<string, string> = Object.fromEntries(
