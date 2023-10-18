@@ -5,6 +5,7 @@ import { useQueryContext } from '../../hooks/query-hooks.js';
 import { trpc } from '../../helpers/trpc.js';
 import type { Service } from './utils.js';
 import { serviceAccessors } from './utils.js';
+import { minPluralise } from '../../helpers/utils.js';
 
 type ServiceWithChildren = {
   service: Service;
@@ -36,8 +37,16 @@ const ServiceAndProviders = ({
             },
           }))}
         >
-          <div className="py-1 px-4 border border-gray-500 rounded-md mr-32 my-4">
-            {service.name}d
+          <div
+            className="py-3 px-12 border border-gray-500 rounded-md mr-32 my-4 text-center"
+            data-tooltip-id="react-tooltip"
+            data-tooltip-html={accessors.serviceTooltip(service)}
+          >
+            <h3 className="font-medium">{service.name}</h3>
+            <div className="text-theme-helptext text-sm">
+              {service.endpoints.length}{' '}
+              {minPluralise(service.endpoints.length, 'endpoint', 'endpoints')}
+            </div>
           </div>
         </ArcherElement>
       </div>
