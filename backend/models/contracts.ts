@@ -33,7 +33,7 @@ const buildReportsWithSpecmatic = (
   };
 };
 
-const addTotalAndCoveredOperationsFields = {
+const addCoveredOperationsFields = {
   $addFields: {
     coveredOperations: {
       $size: {
@@ -72,7 +72,7 @@ export const getWeeklyApiCoveragePercentage = async (queryContext: QueryContext)
     }),
     { $unwind: '$specmaticCoverage' },
     { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
-    addTotalAndCoveredOperationsFields,
+    addCoveredOperationsFields,
     groupByBuildId,
     { $sort: { createdAt: 1 } },
     {
@@ -120,7 +120,7 @@ export const getOneOlderApiCoverageForBuildDefinition = async (
     { $limit: 1 },
     { $unwind: '$specmaticCoverage' },
     { $match: { 'specmaticCoverage.serviceType': 'HTTP' } },
-    addTotalAndCoveredOperationsFields,
+    addCoveredOperationsFields,
     groupByBuildId,
     { $addFields: { buildId: '$_id' } },
     { $project: { _id: 0 } },
@@ -394,26 +394,22 @@ export const getWeeklyStubUsageSummary = async (queryContext: QueryContext) => {
   });
 };
 
-const filterCoverageAndStubs: PipelineStage[] = [
-  {
+const filterByServiceType = (
+  inputKey: string,
+  serviceType: string
+): PipelineStage.AddFields => {
+  return {
     $addFields: {
-      specmaticCoverage: {
+      [inputKey]: {
         $filter: {
-          input: '$specmaticCoverage',
-          as: 'coverage',
-          cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-        },
-      },
-      specmaticStubUsage: {
-        $filter: {
-          input: '$specmaticStubUsage',
-          as: 'stub',
-          cond: { $eq: ['$$stub.serviceType', 'HTTP'] },
+          input: `$${inputKey}`,
+          as: 'item',
+          cond: { $eq: ['$$item.serviceType', serviceType] },
         },
       },
     },
-  },
-];
+  };
+};
 
 const unwindCoverageAndStubOperations: PipelineStage[] = [
   {
@@ -486,6 +482,20 @@ const serviceServesEndpoint =
         endpoint.specId === dependency.specId
     );
 
+const filterEmptyObjectsFrom = (inputKey: string): PipelineStage.AddFields => {
+  return {
+    $addFields: {
+      [inputKey]: {
+        $filter: {
+          input: `$${inputKey}`,
+          as: 'item',
+          cond: { $ne: ['$$item', {}] },
+        },
+      },
+    },
+  };
+};
+
 export const getServiceGraph = async (queryContext: QueryContext) => {
   const { endDate } = fromContext(queryContext);
 
@@ -497,7 +507,8 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
         { specmaticStubUsage: { $exists: true } },
       ],
     }),
-    ...filterCoverageAndStubs,
+    filterByServiceType('specmaticCoverage', 'HTTP'),
+    filterByServiceType('specmaticStubUsage', 'HTTP'),
     { $sort: { createdAt: 1 } },
     { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$build' } },
@@ -526,25 +537,8 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
         },
       },
     },
-    {
-      $addFields: {
-        buildDefinitionId: '$_id',
-        endpoints: {
-          $filter: {
-            input: '$endpoints',
-            as: 'endpoint',
-            cond: { $ne: ['$$endpoint', {}] },
-          },
-        },
-        dependsOn: {
-          $filter: {
-            input: '$dependsOn',
-            as: 'dependency',
-            cond: { $ne: ['$$dependency', {}] },
-          },
-        },
-      },
-    },
+    filterEmptyObjectsFrom('endpoints'),
+    filterEmptyObjectsFrom('dependsOn'),
     { $project: { _id: 0 } },
   ]);
 
@@ -555,7 +549,6 @@ export const getServiceGraph = async (queryContext: QueryContext) => {
         hasRepoBeenSeenTwice.set(service.repoId, true);
       } else hasRepoBeenSeenTwice.set(service.repoId, false);
     });
-
     return (repoId: string) => hasRepoBeenSeenTwice.get(repoId) || false;
   })();
 
@@ -614,24 +607,8 @@ const groupUniqueCoverageAndStubOperations: PipelineStage[] = [
       },
     },
   },
-  {
-    $addFields: {
-      coverageOps: {
-        $filter: {
-          input: '$coverageOps',
-          as: 'coverageOp',
-          cond: { $ne: ['$$coverageOp', {}] },
-        },
-      },
-      stubOps: {
-        $filter: {
-          input: '$stubOps',
-          as: 'stubOp',
-          cond: { $ne: ['$$stubOp', {}] },
-        },
-      },
-    },
-  },
+  filterEmptyObjectsFrom('coverageOps'),
+  filterEmptyObjectsFrom('stubOps'),
 ];
 
 const getConsumerProducerSpecAndOperationsCount = async (queryContext: QueryContext) => {
@@ -660,7 +637,8 @@ const getConsumerProducerSpecAndOperationsCount = async (queryContext: QueryCont
         { specmaticStubUsage: { $exists: true } },
       ],
     }),
-    ...filterCoverageAndStubs,
+    filterByServiceType('specmaticCoverage', 'HTTP'),
+    filterByServiceType('specmaticStubUsage', 'HTTP'),
     ...unwindCoverageAndStubOperations,
     ...groupUniqueCoverageAndStubOperations,
     { $sort: { createdAt: 1 } },
@@ -718,7 +696,8 @@ const getOlderConsumerProducerSpecAndOpsForBuildDef = async (
     }),
     { $sort: { createdAt: -1 } },
     { $limit: 1 },
-    ...filterCoverageAndStubs,
+    filterByServiceType('specmaticCoverage', 'HTTP'),
+    filterByServiceType('specmaticStubUsage', 'HTTP'),
     ...unwindCoverageAndStubOperations,
     ...groupUniqueCoverageAndStubOperations,
     { $project: { _id: 0 } },
@@ -823,17 +802,7 @@ export const getSpecmaticCentralRepoReportOperations = async (
       },
     },
     { $replaceRoot: { newRoot: '$build' } },
-    {
-      $addFields: {
-        specmaticCentralRepoReport: {
-          $filter: {
-            input: '$specmaticCentralRepoReport',
-            as: 'report',
-            cond: { $eq: ['$$report.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
+    filterByServiceType('specmaticCentralRepoReport', 'HTTP'),
     {
       $addFields: {
         totalOps: {
@@ -847,18 +816,8 @@ export const getSpecmaticCentralRepoReportOperations = async (
         },
       },
     },
-    {
-      $group: {
-        _id: null,
-        totalOps: { $sum: '$totalOps' },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        totalOps: 1,
-      },
-    },
+    { $group: { _id: null, totalOps: { $sum: '$totalOps' } } },
+    { $project: { _id: 0, totalOps: 1 } },
   ]).then(results => (results.length ? results[0].totalOps : null));
 };
 
@@ -878,12 +837,7 @@ export const getStubOperationsCount = async (queryContext: QueryContext) => {
       },
     },
     { $sort: { createdAt: 1 } },
-    {
-      $group: {
-        _id: '$buildDefinitionId',
-        build: { $last: '$$ROOT' },
-      },
-    },
+    { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$build' } },
     { $unwind: '$specmaticStubUsage' },
     { $unwind: '$specmaticStubUsage.operations' },
@@ -962,17 +916,7 @@ export const getLatestApiCoverageBySpecIds = async (queryContext: QueryContext) 
       createdAt: { $lt: endDate },
       specmaticCoverage: { $exists: true },
     }),
-    {
-      $addFields: {
-        specmaticCoverage: {
-          $filter: {
-            input: '$specmaticCoverage',
-            as: 'coverage',
-            cond: { $eq: ['$$coverage.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
+    filterByServiceType('specmaticCoverage', 'HTTP'),
     { $sort: { createdAt: 1 } },
     { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$build' } },
@@ -996,13 +940,7 @@ export const getLatestApiCoverageBySpecIds = async (queryContext: QueryContext) 
         coveredOperations: { $sum: '$coveredOperations' },
       },
     },
-    {
-      $project: {
-        _id: 0,
-        specId: '$_id',
-        coveredOperations: 1,
-      },
-    },
+    { $project: { _id: 0, specId: '$_id', coveredOperations: 1 } },
   ]);
 };
 
@@ -1018,17 +956,7 @@ export const getLatestStubUsageBySpecIds = async (queryContext: QueryContext) =>
       createdAt: { $lt: endDate },
       specmaticStubUsage: { $exists: true },
     }),
-    {
-      $addFields: {
-        specmaticStubUsage: {
-          $filter: {
-            input: '$specmaticStubUsage',
-            as: 'usage',
-            cond: { $eq: ['$$usage.serviceType', 'HTTP'] },
-          },
-        },
-      },
-    },
+    filterByServiceType('specmaticStubUsage', 'HTTP'),
     { $sort: { createdAt: 1 } },
     { $group: { _id: '$buildDefinitionId', build: { $last: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$build' } },
@@ -1089,26 +1017,9 @@ export const getTotalOperationsBySpecIds = async (queryContext: QueryContext) =>
       },
     },
     { $sort: { createdAt: 1 } },
-    {
-      $group: {
-        _id: '$repoId',
-        build: { $last: '$$ROOT' },
-      },
-    },
+    { $group: { _id: '$repoId', build: { $last: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$build' } },
-    {
-      $addFields: {
-        specmaticCentralRepoReport: {
-          $filter: {
-            input: '$specmaticCentralRepoReport',
-            as: 'report',
-            cond: {
-              $eq: ['$$report.serviceType', 'HTTP'],
-            },
-          },
-        },
-      },
-    },
+    filterByServiceType('specmaticCentralRepoReport', 'HTTP'),
     { $unwind: '$specmaticCentralRepoReport' },
     {
       $group: {
@@ -1116,13 +1027,7 @@ export const getTotalOperationsBySpecIds = async (queryContext: QueryContext) =>
         totalOps: { $sum: { $size: '$specmaticCentralRepoReport.operations' } },
       },
     },
-    {
-      $project: {
-        _id: 0,
-        specId: '$_id',
-        totalOps: 1,
-      },
-    },
+    { $project: { _id: 0, specId: '$_id', totalOps: 1 } },
   ]);
 };
 
@@ -1195,11 +1100,6 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
   };
 
   const byRepoUrl = groupBy(prop('repoUrl'), specmaticCentralRepoReportDocs);
-  const [coverageBySpecIds, stubUsageBySpecIds, totalOpsBySpecIds] = await Promise.all([
-    getLatestApiCoverageBySpecIds(queryContext),
-    getLatestStubUsageBySpecIds(queryContext),
-    getTotalOperationsBySpecIds(queryContext),
-  ]);
 
   const traverseChildDirectoriesAndAddSpecIds = (
     directoryTree: ContractDirectory[]
@@ -1213,6 +1113,12 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
       ],
     }));
   };
+
+  const [coverageBySpecIds, stubUsageBySpecIds, totalOpsBySpecIds] = await Promise.all([
+    getLatestApiCoverageBySpecIds(queryContext),
+    getLatestStubUsageBySpecIds(queryContext),
+    getTotalOperationsBySpecIds(queryContext),
+  ]);
 
   const filterCoverageForSpecIds = (
     coverageBySpecIds: Awaited<ReturnType<typeof getLatestApiCoverageBySpecIds>>,

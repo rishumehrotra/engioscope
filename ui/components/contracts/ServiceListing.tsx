@@ -10,11 +10,26 @@ import ServiceBlock from './ServiceBlock.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import type { ContractDirectory } from '../../../backend/models/contracts.js';
 
+type directories =
+  RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'][0];
+
+const aggregateCoverage = (coverage: directories['coverage']) => {
+  return coverage.reduce((acc, curr) => acc + curr.coveredOperations, 0);
+};
+
+const aggregateTotalOps = (totalOps: directories['totalOps']) => {
+  return totalOps.reduce((acc, curr) => acc + curr.totalOps, 0);
+};
+
+const aggregateStubUsage = (stubUsage: directories['stubUsage']) => {
+  return stubUsage.reduce((acc, curr) => acc + curr.usedOperations, 0);
+};
+
 const ChildServices = ({
   parentDirectory,
   currentChildDirectory,
 }: {
-  parentDirectory: RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'][0];
+  parentDirectory: directories;
   currentChildDirectory: ContractDirectory[];
 }) => {
   return (
@@ -35,29 +50,29 @@ const ChildServices = ({
                 <td>{cd.directoryName}</td>
                 <td>
                   {divide(
-                    parentDirectory.coverage
-                      .filter(x => cd.specIds.includes(x.specId))
-                      .reduce((acc, curr) => acc + curr.coveredOperations, 0),
-                    parentDirectory.totalOps
-                      .filter(x => cd.specIds.includes(x.specId))
-                      .reduce((acc, curr) => acc + curr.totalOps, 0)
+                    aggregateCoverage(
+                      parentDirectory.coverage.filter(x => cd.specIds.includes(x.specId))
+                    ),
+                    aggregateTotalOps(
+                      parentDirectory.totalOps.filter(x => cd.specIds.includes(x.specId))
+                    )
                   )
                     .map(toPercentage)
                     .getOr('-')}
                 </td>
                 <td>
-                  {parentDirectory.totalOps
-                    .filter(x => cd.specIds.includes(x.specId))
-                    .reduce((acc, curr) => acc + curr.totalOps, 0)}
+                  {aggregateTotalOps(
+                    parentDirectory.totalOps.filter(x => cd.specIds.includes(x.specId))
+                  )}
                 </td>
                 <td>
                   {divide(
-                    parentDirectory.stubUsage
-                      .filter(x => cd.specIds.includes(x.specId))
-                      .reduce((acc, curr) => acc + curr.usedOperations, 0),
-                    parentDirectory.totalOps
-                      .filter(x => cd.specIds.includes(x.specId))
-                      .reduce((acc, curr) => acc + curr.totalOps, 0)
+                    aggregateStubUsage(
+                      parentDirectory.stubUsage.filter(x => cd.specIds.includes(x.specId))
+                    ),
+                    aggregateTotalOps(
+                      parentDirectory.totalOps.filter(x => cd.specIds.includes(x.specId))
+                    )
                   )
                     .map(toPercentage)
                     .getOr('-')}
@@ -162,11 +177,8 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
                     <div>
                       <h2 className="text-lg font-semibold text-right">
                         {divide(
-                          dir.coverage.reduce(
-                            (acc, curr) => acc + curr.coveredOperations,
-                            0
-                          ),
-                          dir.totalOps.reduce((acc, curr) => acc + curr.totalOps, 0)
+                          aggregateCoverage(dir.coverage),
+                          aggregateTotalOps(dir.totalOps)
                         )
                           .map(toPercentage)
                           .getOr('-')}
@@ -177,7 +189,7 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-right">
-                        {dir.totalOps.reduce((acc, curr) => acc + curr.totalOps, 0)}
+                        {aggregateTotalOps(dir.totalOps)}
                       </h2>
                       <p className="text-gray-600 text-sm font-normal uppercase text-right">
                         Total Operations
@@ -186,11 +198,8 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
                     <div>
                       <h2 className="text-lg font-semibold text-right">
                         {divide(
-                          dir.stubUsage.reduce(
-                            (acc, curr) => acc + curr.usedOperations,
-                            0
-                          ),
-                          dir.totalOps.reduce((acc, curr) => acc + curr.totalOps, 0)
+                          aggregateStubUsage(dir.stubUsage),
+                          aggregateTotalOps(dir.totalOps)
                         )
                           .map(toPercentage)
                           .getOr('-')}
