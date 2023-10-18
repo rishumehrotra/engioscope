@@ -114,7 +114,7 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
   // repoUrl: string;
-  dirs: RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'];
+  dirs: directories[];
 }) => {
   const dirsAndhServices = useMemo(
     () =>
