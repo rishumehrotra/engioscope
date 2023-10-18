@@ -88,6 +88,23 @@ const OverviewWithMetrics = () => {
     useCreateUrlForReleasePipelinesSummary('release-pipelines');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, '0');
+  const allWorkItemTypes = projectOverviewStats
+    ? [
+        ...new Set([
+          ...(projectOverviewStats.newWorkItems || []).map(x => x.workItemType),
+          ...(projectOverviewStats.wipTrendWorkItems || []).map(x => x.workItemType),
+          ...(projectOverviewStats.velocityWorkItems || []).map(x => x.workItemType),
+          ...(projectOverviewStats.cycleTimeWorkItems || []).map(x => x.workItemType),
+          ...(projectOverviewStats.cltWorkItems || []).map(x => x.workItemType),
+          ...(projectOverviewStats.flowEfficiencyWorkItems || []).map(
+            x => x.workItemType
+          ),
+        ]),
+      ]
+    : undefined;
+
+  // const bugLikeWorkItemTypes = allWorkItemTypes?.filter(isBugLike);
+
   const repoSummaryStats = useSse<SummaryStats>(repoSummarySseUrl, '0');
   const releasePipelinesSummaryStats = useSse<ReleaseStatsSse>(
     releasePipelinesSseUrl,
@@ -98,6 +115,12 @@ const OverviewWithMetrics = () => {
   const pageConfig = trpc.workItems.getPageConfig.useQuery({
     queryContext,
   });
+
+  const allWorkItemConfigs = allWorkItemTypes
+    ? (pageConfig.data?.workItemsConfig || []).filter(w =>
+        allWorkItemTypes.includes(w.name[0])
+      )
+    : undefined;
 
   const [Drawer, drawerProps, openDrawer] = useDrawer();
   const [additionalDrawerProps, setAdditionalDrawerProps] = useState<{
@@ -154,8 +177,8 @@ const OverviewWithMetrics = () => {
               </thead>
               <tbody>
                 {isDefined(projectOverviewStats.newWorkItems) &&
-                isDefined(pageConfig.data?.workItemsConfig)
-                  ? pageConfig.data?.workItemsConfig
+                isDefined(allWorkItemConfigs)
+                  ? allWorkItemConfigs
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
                         return (
@@ -241,8 +264,8 @@ const OverviewWithMetrics = () => {
                 </tr>
               </thead>
               <tbody>
-                {isDefined(pageConfig.data?.workItemsConfig)
-                  ? pageConfig.data?.workItemsConfig
+                {isDefined(allWorkItemConfigs)
+                  ? allWorkItemConfigs
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
                         return (
@@ -348,8 +371,8 @@ const OverviewWithMetrics = () => {
                 </tr>
               </thead>
               <tbody>
-                {isDefined(pageConfig.data?.workItemsConfig)
-                  ? pageConfig.data?.workItemsConfig
+                {isDefined(allWorkItemConfigs)
+                  ? allWorkItemConfigs
                       .filter(w => !isBugLike(w.name[0]))
                       .map(config => {
                         const matchingWorkItemType = ({
@@ -608,13 +631,12 @@ const OverviewWithMetrics = () => {
                               <div className="flex flex-row">
                                 <img
                                   src={
-                                    pageConfig.data?.workItemsConfig?.find(w =>
-                                      isBugLike(w.name[0])
-                                    )?.icon
+                                    allWorkItemConfigs?.find(w => isBugLike(w.name[0]))
+                                      ?.icon
                                   }
                                   className="px-1"
-                                  alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
-                                    w => isBugLike(w.name[0])
+                                  alt={`Icon for ${allWorkItemConfigs?.find(w =>
+                                    isBugLike(w.name[0])
                                   )?.name[1]}`}
                                   width="25px"
                                 />
@@ -633,8 +655,8 @@ const OverviewWithMetrics = () => {
                                   title="drawer-button"
                                   onClick={() => {
                                     setAdditionalDrawerProps({
-                                      heading: `${pageConfig.data?.workItemsConfig?.find(
-                                        w => isBugLike(w.name[0])
+                                      heading: `${allWorkItemConfigs?.find(w =>
+                                        isBugLike(w.name[0])
                                       )?.name[1]}`,
                                       children: (
                                         <NewDrawer
@@ -645,8 +667,8 @@ const OverviewWithMetrics = () => {
                                               ? env.groupName
                                               : 'all'
                                           }
-                                          workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                            w => isBugLike(w.name[0])
+                                          workItemConfig={allWorkItemConfigs?.find(w =>
+                                            isBugLike(w.name[0])
                                           )}
                                         />
                                       ),
@@ -708,13 +730,12 @@ const OverviewWithMetrics = () => {
                               <div className="flex flex-row">
                                 <img
                                   src={
-                                    pageConfig.data?.workItemsConfig?.find(w =>
-                                      isBugLike(w.name[0])
-                                    )?.icon
+                                    allWorkItemConfigs?.find(w => isBugLike(w.name[0]))
+                                      ?.icon
                                   }
                                   className="px-1"
-                                  alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
-                                    w => isBugLike(w.name[0])
+                                  alt={`Icon for ${allWorkItemConfigs?.find(w =>
+                                    isBugLike(w.name[0])
                                   )?.name[1]}`}
                                   width="25px"
                                 />
@@ -739,8 +760,8 @@ const OverviewWithMetrics = () => {
                                               ? env.groupName
                                               : 'all'
                                           }
-                                          workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                            w => isBugLike(w.name[0])
+                                          workItemConfig={allWorkItemConfigs?.find(w =>
+                                            isBugLike(w.name[0])
                                           )}
                                         />
                                       ),
@@ -819,13 +840,12 @@ const OverviewWithMetrics = () => {
                               <div className="flex flex-row">
                                 <img
                                   src={
-                                    pageConfig.data?.workItemsConfig?.find(w =>
-                                      isBugLike(w.name[0])
-                                    )?.icon
+                                    allWorkItemConfigs?.find(w => isBugLike(w.name[0]))
+                                      ?.icon
                                   }
                                   className="px-1"
-                                  alt={`Icon for ${pageConfig.data?.workItemsConfig?.find(
-                                    w => isBugLike(w.name[0])
+                                  alt={`Icon for ${allWorkItemConfigs?.find(w =>
+                                    isBugLike(w.name[0])
                                   )?.name[1]}`}
                                   width="25px"
                                 />
@@ -867,8 +887,8 @@ const OverviewWithMetrics = () => {
                                             ? env
                                             : 'all'
                                         }
-                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                          w => isBugLike(w.name[0])
+                                        workItemConfig={allWorkItemConfigs?.find(w =>
+                                          isBugLike(w.name[0])
                                         )}
                                       />
                                     ),
@@ -941,8 +961,8 @@ const OverviewWithMetrics = () => {
                                             ? env
                                             : 'all'
                                         }
-                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                          w => isBugLike(w.name[0])
+                                        workItemConfig={allWorkItemConfigs?.find(w =>
+                                          isBugLike(w.name[0])
                                         )}
                                       />
                                     ),
@@ -1015,8 +1035,8 @@ const OverviewWithMetrics = () => {
                                             ? env
                                             : 'all'
                                         }
-                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                          w => isBugLike(w.name[0])
+                                        workItemConfig={allWorkItemConfigs?.find(w =>
+                                          isBugLike(w.name[0])
                                         )}
                                       />
                                     ),
@@ -1083,8 +1103,8 @@ const OverviewWithMetrics = () => {
                                             ? env
                                             : 'all'
                                         }
-                                        workItemConfig={pageConfig.data?.workItemsConfig?.find(
-                                          w => isBugLike(w.name[0])
+                                        workItemConfig={allWorkItemConfigs?.find(w =>
+                                          isBugLike(w.name[0])
                                         )}
                                       />
                                     ),
