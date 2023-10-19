@@ -15,7 +15,7 @@ import {
   pluralise,
   prettyMS,
 } from '../helpers/utils.js';
-import { divide, toPercentage } from '../../shared/utils.js';
+import { divide, toPercentage, unique } from '../../shared/utils.js';
 import { Stat, SummaryCard } from '../components/SummaryCard.jsx';
 import TinyAreaGraph, {
   areaGraphColors,
@@ -88,21 +88,15 @@ const OverviewWithMetrics = () => {
     useCreateUrlForReleasePipelinesSummary('release-pipelines');
   const drawerDownloadUrl = useCreateDownloadUrl();
   const projectOverviewStats = useSse<ProjectOverviewStats>(sseUrl, '0');
-  const allWorkItemTypes = projectOverviewStats
-    ? [
-        ...new Set([
-          ...(projectOverviewStats.newWorkItems || []).map(x => x.workItemType),
-          ...(projectOverviewStats.wipTrendWorkItems || []).map(x => x.workItemType),
-          ...(projectOverviewStats.velocityWorkItems || []).map(x => x.workItemType),
-          ...(projectOverviewStats.cycleTimeWorkItems || []).map(x => x.workItemType),
-          ...(projectOverviewStats.cltWorkItems || []).map(x => x.workItemType),
-          ...(projectOverviewStats.flowEfficiencyWorkItems || []).map(
-            x => x.workItemType
-          ),
-        ]),
-      ]
-    : undefined;
-
+  const allWorkItems = [
+    ...(projectOverviewStats?.newWorkItems || []),
+    ...(projectOverviewStats?.wipTrendWorkItems || []),
+    ...(projectOverviewStats?.velocityWorkItems || []),
+    ...(projectOverviewStats?.cycleTimeWorkItems || []),
+    ...(projectOverviewStats?.cltWorkItems || []),
+    ...(projectOverviewStats?.flowEfficiencyWorkItems || []),
+  ];
+  const allWorkItemTypes = unique(allWorkItems.map(x => x.workItemType));
   const repoSummaryStats = useSse<SummaryStats>(repoSummarySseUrl, '0');
   const releasePipelinesStats = useSse<ReleaseStatsSse>(releasePipelinesSseUrl, '0');
   const queryPeriodDays = useQueryPeriodDays();
@@ -110,33 +104,18 @@ const OverviewWithMetrics = () => {
   const pageConfig = trpc.workItems.getPageConfig.useQuery({
     queryContext,
   });
-
   const allWorkItemConfigs = allWorkItemTypes
     ? (pageConfig.data?.workItemsConfig || []).filter(w =>
         allWorkItemTypes.includes(w.name[0])
       )
     : undefined;
-
   const findEnvsForBugLikeCompletedWorkItem = (workItemType: string) => {
-    if (!projectOverviewStats) return;
+    if (!projectOverviewStats || allWorkItemTypes.length > 0) return;
 
-    const envList = [
-      ...new Set([
-        ...((projectOverviewStats.velocityWorkItems || [])
-          .find(x => x.workItemType === workItemType)
-          ?.data.map(x => x.groupName) || []),
-        ...((projectOverviewStats.cycleTimeWorkItems || [])
-          .find(x => x.workItemType === workItemType)
-          ?.data.map(x => x.groupName) || []),
-        ...((projectOverviewStats.cltWorkItems || [])
-          .find(x => x.workItemType === workItemType)
-          ?.data.map(x => x.groupName) || []),
-        ...((projectOverviewStats.flowEfficiencyWorkItems || [])
-          .find(x => x.workItemType === workItemType)
-          ?.data.map(x => x.groupName) || []),
-      ]),
-    ];
-
+    const envList =
+      allWorkItems
+        .find(x => x.workItemType === workItemType)
+        ?.data.map(x => x.groupName) || [];
     return [...envList].sort((a, b) => {
       if (!pageConfig.data?.environments) return 1;
 
