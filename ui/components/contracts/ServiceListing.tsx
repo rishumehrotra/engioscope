@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { byString } from 'sort-lib';
-import { prop } from 'rambda';
+import { prop, sum } from 'rambda';
+import { Plus } from 'react-feather';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
@@ -8,81 +9,139 @@ import type { Service } from './utils.js';
 import { serviceAccessors } from './utils.js';
 import ServiceBlock from './ServiceBlock.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
-import type { ContractDirectory } from '../../../backend/models/contracts.js';
+import AnimateHeight from '../common/AnimateHeight.jsx';
 
-type directories =
-  RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'][0];
+type Directory = RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'][0];
 
-const aggregateCoverage = (coverage: directories['coverage']) => {
-  return coverage.reduce((acc, curr) => acc + curr.coveredOperations, 0);
+const aggregateCoverage = (coverage: Directory['coverage']) => {
+  return sum(coverage.map(prop('coveredOperations')));
 };
 
-const aggregateTotalOps = (totalOps: directories['totalOps']) => {
-  return totalOps.reduce((acc, curr) => acc + curr.totalOps, 0);
+const aggregateTotalOps = (totalOps: Directory['totalOps']) => {
+  return sum(totalOps.map(prop('totalOps')));
 };
 
-const aggregateStubUsage = (stubUsage: directories['stubUsage']) => {
-  return stubUsage.reduce((acc, curr) => acc + curr.usedOperations, 0);
+const aggregateStubUsage = (stubUsage: Directory['stubUsage']) => {
+  return sum(stubUsage.map(prop('usedOperations')));
 };
 
-const ChildServices = ({
-  parentDirectory,
-  currentChildDirectory,
+const ChildDirectories = ({
+  services,
+  directory,
+  // indentLevel,
+  accessors,
 }: {
-  parentDirectory: directories;
-  currentChildDirectory: ContractDirectory[];
+  directory: Directory;
+  services: Service[];
+  accessors: ReturnType<typeof serviceAccessors>;
+  // indentLevel: number;
 }) => {
+  const [expandedDirectories, setExpandedDirectories] = useState<
+    Record<string, 'open' | 'closing' | 'closed'>
+  >(
+    directory.childDirectories.reduce(
+      (acc, dir) => ({ ...acc, [dir.directoryName]: 'closed' }),
+      {}
+    )
+  );
+
+  const onCollapsedDirectory = useCallback(
+    (directoryName: string) => {
+      return () => {
+        setExpandedDirectories({ ...expandedDirectories, [directoryName]: 'closed' });
+      };
+    },
+    [expandedDirectories]
+  );
+
+  const toggleExpand = useCallback(
+    (directoryName: string) => {
+      return () => {
+        setExpandedDirectories({
+          ...expandedDirectories,
+          [directoryName]:
+            expandedDirectories[directoryName] === 'open' ? 'closing' : 'open',
+        });
+      };
+    },
+    [expandedDirectories]
+  );
+
+  const childServices = useMemo(() => {
+    return services.filter(service =>
+      service.endpoints.some(
+        endpoint =>
+          directory.specIds.includes(endpoint.specId) &&
+          directory.childDirectories.some(d =>
+            d.specIds.some(s => directory.specIds.includes(s))
+          )
+      )
+    );
+  }, [directory.childDirectories, directory.specIds, services]);
+
   return (
-    <div>
-      <table className="w-full">
-        <thead className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
-          <tr>
-            <td>Service Name</td>
-            <td>API Coverage</td>
-            <td>Total Operations</td>
-            <td>Stub Usage</td>
+    <>
+      {directory.childDirectories.map(dir => (
+        <>
+          <tr
+            key={dir.directoryName}
+            onClick={toggleExpand(dir.directoryName)}
+            className="cursor-pointer"
+          >
+            <td className="pl-6 py-2">
+              <span className="inline-block">
+                <Plus className="inline-block mr-2" size={16} />
+                {dir.directoryName}
+              </span>
+            </td>
+            <td className="py-2">
+              {divide(
+                aggregateCoverage(
+                  directory.coverage.filter(x => dir.specIds.includes(x.specId))
+                ),
+                aggregateTotalOps(
+                  directory.totalOps.filter(x => dir.specIds.includes(x.specId))
+                )
+              )
+                .map(toPercentage)
+                .getOr('-')}
+            </td>
+            <td className="py-2">
+              {aggregateTotalOps(
+                directory.totalOps.filter(x => dir.specIds.includes(x.specId))
+              )}
+            </td>
+            <td className="py-2">
+              {divide(
+                aggregateStubUsage(
+                  directory.stubUsage.filter(x => dir.specIds.includes(x.specId))
+                ),
+                aggregateTotalOps(
+                  directory.totalOps.filter(x => dir.specIds.includes(x.specId))
+                )
+              )
+                .map(toPercentage)
+                .getOr('-')}
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {currentChildDirectory.map(cd => {
-            return (
-              <tr key={cd.directoryName}>
-                <td>{cd.directoryName}</td>
-                <td>
-                  {divide(
-                    aggregateCoverage(
-                      parentDirectory.coverage.filter(x => cd.specIds.includes(x.specId))
-                    ),
-                    aggregateTotalOps(
-                      parentDirectory.totalOps.filter(x => cd.specIds.includes(x.specId))
-                    )
-                  )
-                    .map(toPercentage)
-                    .getOr('-')}
-                </td>
-                <td>
-                  {aggregateTotalOps(
-                    parentDirectory.totalOps.filter(x => cd.specIds.includes(x.specId))
-                  )}
-                </td>
-                <td>
-                  {divide(
-                    aggregateStubUsage(
-                      parentDirectory.stubUsage.filter(x => cd.specIds.includes(x.specId))
-                    ),
-                    aggregateTotalOps(
-                      parentDirectory.totalOps.filter(x => cd.specIds.includes(x.specId))
-                    )
-                  )
-                    .map(toPercentage)
-                    .getOr('-')}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+          {expandedDirectories[dir.directoryName] === 'closed' ? null : (
+            <AnimateHeight
+              collapse={expandedDirectories[dir.directoryName] === 'closing'}
+              onCollapsed={onCollapsedDirectory(dir.directoryName)}
+            >
+              {/* <ChildDirectories directory={dir} indentLevel={indentLevel + 1} /> */}
+              {childServices.map(service => (
+                <ServiceBlock
+                  key={service.serviceId}
+                  service={service}
+                  accessors={accessors}
+                />
+              ))}
+            </AnimateHeight>
+          )}
+        </>
+      ))}
+    </>
   );
 };
 
@@ -114,7 +173,7 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
   // repoUrl: string;
-  dirs: directories[];
+  dirs: Directory[];
 }) => {
   const dirsAndhServices = useMemo(
     () =>
@@ -132,13 +191,50 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
   );
 
   const dirsHavingServices = useMemo(
-    () => dirsAndhServices.filter(dir => dir.services.length > 0),
+    () =>
+      dirsAndhServices
+        .filter(dir => dir.services.length > 0)
+        .sort(byString(prop('directoryName'))),
     [dirsAndhServices]
   );
 
   const dirsNotHavingServices = useMemo(
-    () => dirsAndhServices.filter(dir => dir.services.length === 0),
+    () =>
+      dirsAndhServices
+        .filter(dir => dir.services.length === 0)
+        .sort(byString(prop('directoryName'))),
     [dirsAndhServices]
+  );
+
+  const [expandedDirectories, setExpandedDirectories] = useState<
+    Record<string, 'open' | 'closing' | 'closed'>
+  >(
+    dirsHavingServices.reduce(
+      (acc, dir) => ({ ...acc, [dir.directoryName]: 'closed' }),
+      {}
+    )
+  );
+
+  const onCollapsedDirectory = useCallback(
+    (directoryName: string) => {
+      return () => {
+        setExpandedDirectories({ ...expandedDirectories, [directoryName]: 'closed' });
+      };
+    },
+    [expandedDirectories]
+  );
+
+  const toggleExpand = useCallback(
+    (directoryName: string) => {
+      return () => {
+        setExpandedDirectories({
+          ...expandedDirectories,
+          [directoryName]:
+            expandedDirectories[directoryName] === 'open' ? 'closing' : 'open',
+        });
+      };
+    },
+    [expandedDirectories]
   );
 
   return (
@@ -160,77 +256,83 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
       )}
 
       <ul>
-        {dirsHavingServices.sort(byString(prop('directoryName'))).map(dir => {
-          const matchingServices = services.filter(service =>
-            service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
-          );
-
-          return (
-            <li
-              key={dir.directoryName}
-              className="border border-theme-seperator rounded-md bg-theme-page-content mb-4"
+        {dirsHavingServices.map(dir => (
+          <li
+            key={dir.directoryName}
+            className="border border-theme-seperator rounded-md mb-4"
+          >
+            <button
+              onClick={toggleExpand(dir.directoryName)}
+              className="bg-theme-page-content w-full"
             >
-              <details>
-                <summary className="p-4 flex justify-between cursor-pointer">
-                  <h2 className="text-lg font-semibold">{dir.directoryName}</h2>
-                  <div className="flex gap-6">
-                    <div>
-                      <h2 className="text-lg font-semibold text-right">
-                        {divide(
-                          aggregateCoverage(dir.coverage),
-                          aggregateTotalOps(dir.totalOps)
-                        )
-                          .map(toPercentage)
-                          .getOr('-')}
-                      </h2>
-                      <p className="text-gray-600 text-sm font-normal uppercase text-right">
-                        API Coverage
-                      </p>
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-right">
-                        {aggregateTotalOps(dir.totalOps)}
-                      </h2>
-                      <p className="text-gray-600 text-sm font-normal uppercase text-right">
-                        Total Operations
-                      </p>
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-right">
-                        {divide(
-                          aggregateStubUsage(dir.stubUsage),
-                          aggregateTotalOps(dir.totalOps)
-                        )
-                          .map(toPercentage)
-                          .getOr('-')}
-                      </h2>
-                      <p className="text-gray-600 text-sm font-normal uppercase text-right">
-                        Stub Usage
-                      </p>
-                    </div>
+              <div className="px-6 py-3 flex justify-between cursor-pointer items-center">
+                <h2 className="text-lg font-semibold">{dir.directoryName}</h2>
+                <div className="flex gap-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-right">
+                      {divide(
+                        aggregateCoverage(dir.coverage),
+                        aggregateTotalOps(dir.totalOps)
+                      )
+                        .map(toPercentage)
+                        .getOr('-')}
+                    </h2>
+                    <p className="text-gray-600 text-sm font-normal uppercase text-right">
+                      API Coverage
+                    </p>
                   </div>
-                </summary>
-                <div>
-                  {dir.childDirectories.length > 0 ? (
-                    <ChildServices
-                      parentDirectory={dir}
-                      currentChildDirectory={dir.childDirectories}
-                    />
-                  ) : null}
-                  <div className="bg-theme-page border-t border-theme-seperator shadow-inner px-4">
-                    {matchingServices.map(service => (
-                      <ServiceBlock
-                        key={service.serviceId}
-                        service={service}
-                        accessors={accessors}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="text-lg font-semibold text-right">
+                      {aggregateTotalOps(dir.totalOps)}
+                    </h2>
+                    <p className="text-gray-600 text-sm font-normal uppercase text-right">
+                      Total Operations
+                    </p>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-right">
+                      {divide(
+                        aggregateStubUsage(dir.stubUsage),
+                        aggregateTotalOps(dir.totalOps)
+                      )
+                        .map(toPercentage)
+                        .getOr('-')}
+                    </h2>
+                    <p className="text-gray-600 text-sm font-normal uppercase text-right">
+                      Stub Usage
+                    </p>
                   </div>
                 </div>
-              </details>
-            </li>
-          );
-        })}
+              </div>
+            </button>
+            {expandedDirectories[dir.directoryName] === 'closed' ? null : (
+              <AnimateHeight
+                collapse={expandedDirectories[dir.directoryName] === 'closing'}
+                onCollapsed={onCollapsedDirectory(dir.directoryName)}
+              >
+                {dir.childDirectories.length > 0 ? (
+                  <table className="w-full bg-theme-page-content">
+                    <thead className="bg-theme-page border-t border-theme-seperator px-4">
+                      <tr className="uppercase border-b border-theme-seperator text-xs">
+                        <th className="font-normal px-6 sr-only">Directory</th>
+                        <th className="w-[7.5rem] py-2 font-normal">API Coverage</th>
+                        <th className="w-40 py-2 font-normal">Total Operations</th>
+                        <th className="w-28 py-2 font-normal">Stub Usage</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ChildDirectories
+                        directory={dir}
+                        accessors={accessors}
+                        services={services}
+                      />
+                    </tbody>
+                  </table>
+                ) : null}
+              </AnimateHeight>
+            )}
+          </li>
+        ))}
       </ul>
     </>
   );

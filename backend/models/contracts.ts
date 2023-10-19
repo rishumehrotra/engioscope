@@ -1087,6 +1087,22 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
 
     if (pathParts.length === 1) return directoryTree;
 
+    const matchingDirectory = directoryTree.find(
+      directory => directory.directoryName === pathParts[0]
+    );
+
+    if (matchingDirectory) {
+      matchingDirectory.childDirectories = mergeIntoTree(
+        matchingDirectory.childDirectories,
+        {
+          ...specItem,
+          specification: pathParts.slice(1).join('/'),
+        }
+      );
+      matchingDirectory.specIds.push(specItem.specId);
+      return directoryTree;
+    }
+
     directoryTree.push({
       directoryName: pathParts[0],
       childDirectories: mergeIntoTree([], {
