@@ -12,11 +12,6 @@ import { divide, toPercentage } from '../../../shared/utils.js';
 import AnimateHeight from '../common/AnimateHeight.jsx';
 import type { ContractDirectory } from '../../../backend/models/contracts.js';
 
-type ContractDirectoryWithServices = Omit<ContractDirectory, 'childDirectories'> & {
-  childDirectories: ContractDirectoryWithServices[];
-  services: Service[];
-};
-
 const aggregateCoverage = (coverage: ContractDirectory['coverage']) => {
   return sum(coverage.map(prop('coveredOperations')));
 };
@@ -35,7 +30,7 @@ const ChildDirectories = ({
   indentLevel,
   accessors,
 }: {
-  directory: ContractDirectoryWithServices;
+  directory: ContractDirectory;
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
   indentLevel: number;
@@ -132,13 +127,6 @@ const ChildDirectories = ({
                     accessors={accessors}
                     services={services}
                   />
-                  {dir.services.map(service => (
-                    <ServiceBlock
-                      key={service.serviceId}
-                      service={service}
-                      accessors={accessors}
-                    />
-                  ))}
                 </AnimateHeight>
               </td>
             </tr>
@@ -168,47 +156,38 @@ const ServiceListingUsingServiceGraph = ({
   );
 };
 
-const addServicesToDirectories = (
-  dirs: ContractDirectory[],
-  services: Service[]
-): ContractDirectoryWithServices[] => {
-  return dirs.map(dir => {
-    const matchingServices = services.filter(service =>
-      service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
-    );
-
-    return {
-      ...dir,
-      childDirectories: addServicesToDirectories(dir.childDirectories, services),
-      services: matchingServices,
-    };
-  });
+const servicesForDirectory = (
+  services: Service[],
+  directory: ContractDirectory
+): Service[] => {
+  return [
+    ...services.filter(service =>
+      service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
+    ),
+    ...directory.childDirectories.flatMap(dir => servicesForDirectory(services, dir)),
+  ];
 };
 
 const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services,
   accessors,
   // repoUrl,
-  dirs,
+  rootDirectory,
 }: {
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
   // repoUrl: string;
-  dirs: ContractDirectory[];
+  rootDirectory: ContractDirectory;
 }) => {
   const dirsAndhServices = useMemo(
-    () => addServicesToDirectories(dirs, services),
-    // dirs.map(dir => {
-    //   const matchingServices = services.filter(service =>
-    //     service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
-    //   );
-
-    //   return {
-    //     ...dir,
-    //     services: matchingServices,
-    //   };
-    // }),
-    [dirs, services]
+    () =>
+      rootDirectory.childDirectories.map(dir => {
+        return {
+          ...dir,
+          services: servicesForDirectory(services, dir),
+        };
+      }),
+    [rootDirectory.childDirectories, services]
   );
 
   const dirsHavingServices = useMemo(
@@ -369,12 +348,12 @@ const ServiceListingUsingCentralRepoListing = ({
   repoTree: RouterClient['contracts']['getSpecmaticContractsListing'];
   accessors: ReturnType<typeof serviceAccessors>;
 }) => {
-  return repoTree.map(({ repoUrl, dirs }) => (
+  return repoTree.map(({ repoUrl, dir }) => (
     <ServiceListingUsingCentralRepoListingForOneRepo
       key={repoUrl}
       services={services}
       accessors={accessors}
-      dirs={dirs}
+      rootDirectory={dir}
     />
   ));
 };

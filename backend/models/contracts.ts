@@ -1054,51 +1054,47 @@ export type ContractDirectory = {
 export const getSpecmaticContractsListing = async (queryContext: QueryContext) => {
   const { collectionName, project, endDate } = fromContext(queryContext);
 
-  const [
-    specmaticCentralRepoReportDocs,
-    coverageBySpecIds,
-    stubUsageBySpecIds,
-    totalOpsBySpecIds,
-  ] = await Promise.all([
-    AzureBuildReportModel.aggregate<{
-      buildDefinitionId: string;
-      repoId: string;
-      repo: string;
-      repoUrl: string;
-      specmaticCentralRepoReport: SpecmaticCentralRepoReportSpec;
-    }>([
-      {
-        $match: {
-          collectionName,
-          project,
-          specmaticCentralRepoReport: { $exists: true },
-          createdAt: { $lt: endDate },
+  const [specs, coverageBySpecIds, stubUsageBySpecIds, totalOpsBySpecIds] =
+    await Promise.all([
+      AzureBuildReportModel.aggregate<{
+        buildDefinitionId: string;
+        repoId: string;
+        repo: string;
+        repoUrl: string;
+        specmaticCentralRepoReport: SpecmaticCentralRepoReportSpec;
+      }>([
+        {
+          $match: {
+            collectionName,
+            project,
+            specmaticCentralRepoReport: { $exists: true },
+            createdAt: { $lt: endDate },
+          },
         },
-      },
-      { $sort: { createdAt: 1 } },
-      {
-        $group: {
-          _id: '$repoId',
-          build: { $last: '$$ROOT' },
+        { $sort: { createdAt: 1 } },
+        {
+          $group: {
+            _id: '$repoId',
+            buildReport: { $last: '$$ROOT' },
+          },
         },
-      },
-      { $replaceRoot: { newRoot: '$build' } },
-      { $unwind: '$specmaticCentralRepoReport' },
-      {
-        $project: {
-          _id: 0,
-          buildDefinitionId: 1,
-          repoId: 1,
-          repo: 1,
-          repoUrl: 1,
-          specmaticCentralRepoReport: 1,
+        { $replaceRoot: { newRoot: '$buildReport' } },
+        { $unwind: '$specmaticCentralRepoReport' },
+        {
+          $project: {
+            _id: 0,
+            buildDefinitionId: 1,
+            repoId: 1,
+            repo: 1,
+            repoUrl: 1,
+            specmaticCentralRepoReport: 1,
+          },
         },
-      },
-    ]),
-    getLatestApiCoverageBySpecIds(queryContext),
-    getLatestStubUsageBySpecIds(queryContext),
-    getTotalOperationsBySpecIds(queryContext),
-  ]);
+      ]),
+      getLatestApiCoverageBySpecIds(queryContext),
+      getLatestStubUsageBySpecIds(queryContext),
+      getTotalOperationsBySpecIds(queryContext),
+    ]);
 
   const filterCoverageForSpecIds = (
     coverageBySpecIds: Awaited<ReturnType<typeof getLatestApiCoverageBySpecIds>>,
@@ -1119,78 +1115,74 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
   //   'a/b/c/spec.yaml';
 
   const mergeIntoTree = (
-    directoryTree: ContractDirectory[],
-    specItem: (typeof specmaticCentralRepoReportDocs)[number]['specmaticCentralRepoReport'],
-    isChildTraversal = false
-  ) => {
+    dir: ContractDirectory,
+    specItem: (typeof specs)[number]['specmaticCentralRepoReport']
+  ): ContractDirectory => {
     const pathParts = specItem.specification.split('/');
 
-    if (pathParts.length === 1) return directoryTree;
+    if (pathParts.length === 1) {
+      // We should add stats for this file
+      dir.specIds.push(specItem.specId);
+      dir.coverage = filterCoverageForSpecIds(coverageBySpecIds, dir.specIds);
+      dir.stubUsage = filterStubUsageForSpecIds(stubUsageBySpecIds, dir.specIds);
+      dir.totalOps = filterTotalOpsForSpecIds(totalOpsBySpecIds, dir.specIds);
 
-    const matchingDirectory = directoryTree.find(
+      return dir;
+    }
+
+    const matchingChildDirectoryIndex = dir.childDirectories.findIndex(
       directory => directory.directoryName === pathParts[0]
     );
 
-    if (matchingDirectory) {
-      matchingDirectory.childDirectories = mergeIntoTree(
-        matchingDirectory.childDirectories,
-        {
+    if (matchingChildDirectoryIndex !== -1) {
+      // Found a matching child directory
+
+      dir.childDirectories = dir.childDirectories.map((directory, index) => {
+        if (index !== matchingChildDirectoryIndex) return directory;
+        return mergeIntoTree(directory, {
           ...specItem,
           specification: pathParts.slice(1).join('/'),
-        },
-        true
-      );
-      if (isChildTraversal) {
-        matchingDirectory.specIds.push(specItem.specId);
-        matchingDirectory.coverage = filterCoverageForSpecIds(
-          coverageBySpecIds,
-          matchingDirectory.specIds
-        );
-        matchingDirectory.stubUsage = filterStubUsageForSpecIds(
-          stubUsageBySpecIds,
-          matchingDirectory.specIds
-        );
-        matchingDirectory.totalOps = filterTotalOpsForSpecIds(
-          totalOpsBySpecIds,
-          matchingDirectory.specIds
-        );
-      }
-      return directoryTree;
+        });
+      });
+
+      return dir;
     }
 
-    directoryTree.push({
-      directoryName: pathParts[0],
-      childDirectories: mergeIntoTree(
-        [],
+    dir.childDirectories.push(
+      mergeIntoTree(
+        {
+          directoryName: pathParts[0],
+          childDirectories: [],
+          specIds: [],
+          coverage: [],
+          stubUsage: [],
+          totalOps: [],
+        },
         {
           ...specItem,
           specification: pathParts.slice(1).join('/'),
-        },
-        true
-      ),
-      specIds: [specItem.specId],
-      coverage: isChildTraversal
-        ? filterCoverageForSpecIds(coverageBySpecIds, [specItem.specId])
-        : [],
-      stubUsage: isChildTraversal
-        ? filterStubUsageForSpecIds(stubUsageBySpecIds, [specItem.specId])
-        : [],
-      totalOps: isChildTraversal
-        ? filterTotalOpsForSpecIds(totalOpsBySpecIds, [specItem.specId])
-        : [],
-    });
+        }
+      )
+    );
 
-    return directoryTree;
+    return dir;
   };
 
-  const byRepoUrl = groupBy(prop('repoUrl'), specmaticCentralRepoReportDocs);
+  const specsByRepoUrl = groupBy(prop('repoUrl'), specs);
 
-  return Object.values(byRepoUrl).map(specmaticCentralRepoReportDocs => {
+  return Object.values(specsByRepoUrl).map(specs => {
     return {
-      repoUrl: specmaticCentralRepoReportDocs[0].repoUrl,
-      dirs: specmaticCentralRepoReportDocs.reduce<ContractDirectory[]>(
-        (acc, x) => mergeIntoTree(acc, x.specmaticCentralRepoReport),
-        []
+      repoUrl: specs[0].repoUrl,
+      dir: specs.reduce<ContractDirectory>(
+        (acc, spec) => mergeIntoTree(acc, spec.specmaticCentralRepoReport),
+        {
+          directoryName: 'root',
+          childDirectories: [],
+          specIds: [],
+          coverage: [],
+          stubUsage: [],
+          totalOps: [],
+        }
       ),
     };
   });
