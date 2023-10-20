@@ -24,14 +24,13 @@ const aggregateStubUsage = (stubUsage: ContractDirectory['stubUsage']) => {
   return sum(stubUsage.map(prop('usedOperations')));
 };
 
-const servicesForDirectory = (
-  services: Service[],
-  directory: ContractDirectory
-): Service[] => {
-  return services.filter(service =>
-    service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
-  );
-};
+const servicesForDirectory =
+  (services: Service[]) =>
+  (directory: ContractDirectory): Service[] => {
+    return services.filter(service =>
+      service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
+    );
+  };
 
 const directoryHasServicesSomewhere = (
   services: Service[],
@@ -140,7 +139,7 @@ const ChildDirectories = ({
           </tr>
           {expandedDirectories[dir.directoryName] === 'closed' ? null : (
             <tr>
-              <td>
+              <td colSpan={4}>
                 <AnimateHeight
                   collapse={expandedDirectories[dir.directoryName] === 'closing'}
                   onCollapsed={onCollapsedDirectory(dir.directoryName)}
@@ -151,17 +150,21 @@ const ChildDirectories = ({
                     accessors={accessors}
                     services={services}
                   />
-                  {servicesForDirectory(services, dir).map(service => (
-                    <ServiceBlock
-                      key={service.serviceId}
-                      service={service}
-                      accessors={accessors}
-                    />
-                  ))}
                 </AnimateHeight>
               </td>
             </tr>
           )}
+          {servicesForDirectory(services)(dir).map(service => (
+            <tr key={service.serviceId}>
+              <td colSpan={4}>
+                <ServiceBlock
+                  key={service.serviceId}
+                  service={service}
+                  accessors={accessors}
+                />
+              </td>
+            </tr>
+          ))}
         </Fragment>
       ))}
     </>
