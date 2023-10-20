@@ -1120,7 +1120,8 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
 
   const mergeIntoTree = (
     directoryTree: ContractDirectory[],
-    specItem: (typeof specmaticCentralRepoReportDocs)[number]['specmaticCentralRepoReport']
+    specItem: (typeof specmaticCentralRepoReportDocs)[number]['specmaticCentralRepoReport'],
+    isChildTraversal = false
   ) => {
     const pathParts = specItem.specification.split('/');
 
@@ -1136,22 +1137,47 @@ export const getSpecmaticContractsListing = async (queryContext: QueryContext) =
         {
           ...specItem,
           specification: pathParts.slice(1).join('/'),
-        }
+        },
+        true
       );
-      matchingDirectory.specIds.push(specItem.specId);
+      if (isChildTraversal) {
+        matchingDirectory.specIds.push(specItem.specId);
+        matchingDirectory.coverage = filterCoverageForSpecIds(
+          coverageBySpecIds,
+          matchingDirectory.specIds
+        );
+        matchingDirectory.stubUsage = filterStubUsageForSpecIds(
+          stubUsageBySpecIds,
+          matchingDirectory.specIds
+        );
+        matchingDirectory.totalOps = filterTotalOpsForSpecIds(
+          totalOpsBySpecIds,
+          matchingDirectory.specIds
+        );
+      }
       return directoryTree;
     }
 
     directoryTree.push({
       directoryName: pathParts[0],
-      childDirectories: mergeIntoTree([], {
-        ...specItem,
-        specification: pathParts.slice(1).join('/'),
-      }),
+      childDirectories: mergeIntoTree(
+        [],
+        {
+          ...specItem,
+          specification: pathParts.slice(1).join('/'),
+        },
+        true
+      ),
       specIds: [specItem.specId],
-      coverage: filterCoverageForSpecIds(coverageBySpecIds, [specItem.specId]),
-      stubUsage: filterStubUsageForSpecIds(stubUsageBySpecIds, [specItem.specId]),
-      totalOps: filterTotalOpsForSpecIds(totalOpsBySpecIds, [specItem.specId]),
+      coverage: isChildTraversal
+        ? filterCoverageForSpecIds(coverageBySpecIds, [specItem.specId])
+        : [],
+      stubUsage: isChildTraversal
+        ? filterStubUsageForSpecIds(stubUsageBySpecIds, [specItem.specId])
+        : [],
+      totalOps: isChildTraversal
+        ? filterTotalOpsForSpecIds(totalOpsBySpecIds, [specItem.specId])
+        : [],
     });
 
     return directoryTree;
