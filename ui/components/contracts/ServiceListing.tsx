@@ -24,6 +24,30 @@ const aggregateStubUsage = (stubUsage: ContractDirectory['stubUsage']) => {
   return sum(stubUsage.map(prop('usedOperations')));
 };
 
+const servicesForDirectory = (
+  services: Service[],
+  directory: ContractDirectory
+): Service[] => {
+  return services.filter(service =>
+    service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
+  );
+};
+
+const directoryHasServicesSomewhere = (
+  services: Service[],
+  directory: ContractDirectory
+): boolean => {
+  if (directory.specIds.length) {
+    return services.some(service =>
+      service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
+    );
+  }
+
+  return directory.childDirectories.some(dir =>
+    directoryHasServicesSomewhere(services, dir)
+  );
+};
+
 const ChildDirectories = ({
   services,
   directory,
@@ -127,6 +151,13 @@ const ChildDirectories = ({
                     accessors={accessors}
                     services={services}
                   />
+                  {servicesForDirectory(services, dir).map(service => (
+                    <ServiceBlock
+                      key={service.serviceId}
+                      service={service}
+                      accessors={accessors}
+                    />
+                  ))}
                 </AnimateHeight>
               </td>
             </tr>
@@ -156,18 +187,6 @@ const ServiceListingUsingServiceGraph = ({
   );
 };
 
-const servicesForDirectory = (
-  services: Service[],
-  directory: ContractDirectory
-): Service[] => {
-  return [
-    ...services.filter(service =>
-      service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
-    ),
-    ...directory.childDirectories.flatMap(dir => servicesForDirectory(services, dir)),
-  ];
-};
-
 const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services,
   accessors,
@@ -179,31 +198,20 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
   // repoUrl: string;
   rootDirectory: ContractDirectory;
 }) => {
-  const dirsAndhServices = useMemo(
-    () =>
-      rootDirectory.childDirectories.map(dir => {
-        return {
-          ...dir,
-          services: servicesForDirectory(services, dir),
-        };
-      }),
-    [rootDirectory.childDirectories, services]
-  );
-
   const dirsHavingServices = useMemo(
     () =>
-      dirsAndhServices
-        .filter(dir => dir.services.length > 0)
+      rootDirectory.childDirectories
+        .filter(dir => directoryHasServicesSomewhere(services, dir))
         .sort(byString(prop('directoryName'))),
-    [dirsAndhServices]
+    [rootDirectory.childDirectories, services]
   );
 
   const dirsNotHavingServices = useMemo(
     () =>
-      dirsAndhServices
-        .filter(dir => dir.services.length === 0)
+      rootDirectory.childDirectories
+        .filter(dir => !directoryHasServicesSomewhere(services, dir))
         .sort(byString(prop('directoryName'))),
-    [dirsAndhServices]
+    [rootDirectory.childDirectories, services]
   );
 
   const [expandedDirectories, setExpandedDirectories] = useState<
