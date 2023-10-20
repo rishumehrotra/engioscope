@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { Fragment, useCallback, useMemo, useState } from 'react';
 import { byString } from 'sort-lib';
 import { prop, sum } from 'rambda';
-import { Plus } from 'react-feather';
+import { Minus, Plus } from 'react-feather';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import { trpc } from '../../helpers/trpc.js';
@@ -10,31 +10,35 @@ import { serviceAccessors } from './utils.js';
 import ServiceBlock from './ServiceBlock.jsx';
 import { divide, toPercentage } from '../../../shared/utils.js';
 import AnimateHeight from '../common/AnimateHeight.jsx';
+import type { ContractDirectory } from '../../../backend/models/contracts.js';
 
-type Directory = RouterClient['contracts']['getSpecmaticContractsListing'][0]['dirs'][0];
+type ContractDirectoryWithServices = Omit<ContractDirectory, 'childDirectories'> & {
+  childDirectories: ContractDirectoryWithServices[];
+  services: Service[];
+};
 
-const aggregateCoverage = (coverage: Directory['coverage']) => {
+const aggregateCoverage = (coverage: ContractDirectory['coverage']) => {
   return sum(coverage.map(prop('coveredOperations')));
 };
 
-const aggregateTotalOps = (totalOps: Directory['totalOps']) => {
+const aggregateTotalOps = (totalOps: ContractDirectory['totalOps']) => {
   return sum(totalOps.map(prop('totalOps')));
 };
 
-const aggregateStubUsage = (stubUsage: Directory['stubUsage']) => {
+const aggregateStubUsage = (stubUsage: ContractDirectory['stubUsage']) => {
   return sum(stubUsage.map(prop('usedOperations')));
 };
 
 const ChildDirectories = ({
   services,
   directory,
-  // indentLevel,
+  indentLevel,
   accessors,
 }: {
-  directory: Directory;
+  directory: ContractDirectoryWithServices;
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
-  // indentLevel: number;
+  indentLevel: number;
 }) => {
   const [expandedDirectories, setExpandedDirectories] = useState<
     Record<string, 'open' | 'closing' | 'closed'>
@@ -67,30 +71,21 @@ const ChildDirectories = ({
     [expandedDirectories]
   );
 
-  const childServices = useMemo(() => {
-    return services.filter(service =>
-      service.endpoints.some(
-        endpoint =>
-          directory.specIds.includes(endpoint.specId) &&
-          directory.childDirectories.some(d =>
-            d.specIds.some(s => directory.specIds.includes(s))
-          )
-      )
-    );
-  }, [directory.childDirectories, directory.specIds, services]);
-
   return (
     <>
       {directory.childDirectories.map(dir => (
-        <>
+        <Fragment key={dir.directoryName}>
           <tr
-            key={dir.directoryName}
             onClick={toggleExpand(dir.directoryName)}
-            className="cursor-pointer"
+            className="cursor-pointer border-b border-theme-seperator"
           >
             <td className="pl-6 py-2">
-              <span className="inline-block">
-                <Plus className="inline-block mr-2" size={16} />
+              <span className="inline-block" style={{ paddingLeft: `${indentLevel}rem` }}>
+                {expandedDirectories[dir.directoryName] === 'open' ? (
+                  <Minus className="inline-block mr-2" size={16} />
+                ) : (
+                  <Plus className="inline-block mr-2" size={16} />
+                )}
                 {dir.directoryName}
               </span>
             </td>
@@ -125,21 +120,30 @@ const ChildDirectories = ({
             </td>
           </tr>
           {expandedDirectories[dir.directoryName] === 'closed' ? null : (
-            <AnimateHeight
-              collapse={expandedDirectories[dir.directoryName] === 'closing'}
-              onCollapsed={onCollapsedDirectory(dir.directoryName)}
-            >
-              {/* <ChildDirectories directory={dir} indentLevel={indentLevel + 1} /> */}
-              {childServices.map(service => (
-                <ServiceBlock
-                  key={service.serviceId}
-                  service={service}
-                  accessors={accessors}
-                />
-              ))}
-            </AnimateHeight>
+            <tr>
+              <td>
+                <AnimateHeight
+                  collapse={expandedDirectories[dir.directoryName] === 'closing'}
+                  onCollapsed={onCollapsedDirectory(dir.directoryName)}
+                >
+                  <ChildDirectories
+                    directory={dir}
+                    indentLevel={indentLevel + 1}
+                    accessors={accessors}
+                    services={services}
+                  />
+                  {dir.services.map(service => (
+                    <ServiceBlock
+                      key={service.serviceId}
+                      service={service}
+                      accessors={accessors}
+                    />
+                  ))}
+                </AnimateHeight>
+              </td>
+            </tr>
           )}
-        </>
+        </Fragment>
       ))}
     </>
   );
@@ -164,6 +168,23 @@ const ServiceListingUsingServiceGraph = ({
   );
 };
 
+const addServicesToDirectories = (
+  dirs: ContractDirectory[],
+  services: Service[]
+): ContractDirectoryWithServices[] => {
+  return dirs.map(dir => {
+    const matchingServices = services.filter(service =>
+      service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
+    );
+
+    return {
+      ...dir,
+      childDirectories: addServicesToDirectories(dir.childDirectories, services),
+      services: matchingServices,
+    };
+  });
+};
+
 const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services,
   accessors,
@@ -173,20 +194,20 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
   services: Service[];
   accessors: ReturnType<typeof serviceAccessors>;
   // repoUrl: string;
-  dirs: Directory[];
+  dirs: ContractDirectory[];
 }) => {
   const dirsAndhServices = useMemo(
-    () =>
-      dirs.map(dir => {
-        const matchingServices = services.filter(service =>
-          service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
-        );
+    () => addServicesToDirectories(dirs, services),
+    // dirs.map(dir => {
+    //   const matchingServices = services.filter(service =>
+    //     service.endpoints.some(endpoint => dir.specIds.includes(endpoint.specId))
+    //   );
 
-        return {
-          ...dir,
-          services: matchingServices,
-        };
-      }),
+    //   return {
+    //     ...dir,
+    //     services: matchingServices,
+    //   };
+    // }),
     [dirs, services]
   );
 
@@ -325,6 +346,7 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
                         directory={dir}
                         accessors={accessors}
                         services={services}
+                        indentLevel={0}
                       />
                     </tbody>
                   </table>
