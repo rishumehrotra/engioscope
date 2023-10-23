@@ -3,7 +3,6 @@ import useSse from '../../hooks/use-merge-over-sse.js';
 import { useQueryContext } from '../../hooks/query-hooks.js';
 import type { ProjectOverviewStats } from '../../../backend/models/project-overview.js';
 import { trpc } from '../../helpers/trpc.js';
-import QueryPeriodSelector from '../QueryPeriodSelector.jsx';
 import Filters from '../OverviewGraphs2/Filters.jsx';
 import { useCreateUrlForOverview } from '../../helpers/sseUrlConfigs.js';
 import QualityMetrics from './QualityMetrics.jsx';
@@ -34,9 +33,6 @@ const ValueMetrics = () => {
 
   return (
     <div>
-      <div className="text-left mb-6">
-        <QueryPeriodSelector />
-      </div>
       <div className="text-gray-950 text-2xl font-medium mb-3">Value Metrics</div>
       <Filters ref={filtersRef} setRenderCount={setFilterRenderCount} />
       <FlowMetrics stats={projectOverviewStats} pageConfig={pageConfig?.data} />
