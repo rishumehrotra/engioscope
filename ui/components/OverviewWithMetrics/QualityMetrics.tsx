@@ -104,6 +104,8 @@ const QualityMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) =>
         const environments = sortedEnvs(workItemType);
         const config = pageConfig?.workItemsConfig?.find(w => w.name[0] === workItemType);
 
+        if (!config) return null;
+
         return (
           <div className="mt-6" key={workItemType}>
             <h2 className="mb-2 uppercase text-sm tracking-wide flex">

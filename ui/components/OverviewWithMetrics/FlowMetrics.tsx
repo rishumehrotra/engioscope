@@ -10,7 +10,7 @@ import { useDrawer } from '../common/Drawer.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import type { ProjectOverviewStats } from '../../../backend/models/project-overview.js';
 import RowLabel from './RowLabel.jsx';
-import CellValue, { valueTypes } from './CellValue.jsx';
+import CellValue from './CellValue.jsx';
 
 type QualityMetricsProps = {
   stats: Partial<ProjectOverviewStats>;
@@ -80,8 +80,7 @@ const FlowMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) => {
                             </td>
                             <td>
                               <CellValue
-                                value={stats.newWorkItems}
-                                valueType={valueTypes.new}
+                                data={CellValue.newGraph(stats.newWorkItems)}
                                 workItemConfig={config}
                                 setDrawerProps={setAdditionalDrawerProps}
                                 openDrawer={openDrawer}
