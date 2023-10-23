@@ -9,6 +9,7 @@ import { isBugLike } from '../../../shared/work-item-utils.js';
 import { useDrawer } from '../common/Drawer.js';
 import type { RouterClient } from '../../helpers/trpc.js';
 import type { ProjectOverviewStats } from '../../../backend/models/project-overview.js';
+import RowLabel from './RowLabel.jsx';
 
 const style = { boxShadow: '0px 4px 8px rgba(30, 41, 59, 0.05)' };
 const CycleTimeDrawer = React.lazy(() =>
@@ -135,15 +136,9 @@ const QualityMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) =>
                             return (
                               <tr key={env.groupName}>
                                 <td>
-                                  <div className="flex flex-row">
-                                    <img
-                                      src={config?.icon}
-                                      className="px-1"
-                                      alt={`Icon for ${config?.name[1]}`}
-                                      width="25px"
-                                    />
-                                    <span className="inline-block">{env.groupName}</span>
-                                  </div>
+                                  {config ? (
+                                    <RowLabel config={config} label={env.groupName} />
+                                  ) : null}
                                 </td>
                                 <td>
                                   <div className="flex flex-row items-center group">
@@ -231,15 +226,9 @@ const QualityMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) =>
                             return (
                               <tr key={env.groupName}>
                                 <td>
-                                  <div className="flex flex-row">
-                                    <img
-                                      src={config?.icon}
-                                      className="px-1"
-                                      alt={`Icon for ${config?.name[1]}`}
-                                      width="25px"
-                                    />
-                                    <span className="inline-block">{env.groupName}</span>
-                                  </div>
+                                  {config ? (
+                                    <RowLabel config={config} label={env.groupName} />
+                                  ) : null}
                                 </td>
                                 <td>
                                   <div className="flex flex-row items-center group">
@@ -335,15 +324,9 @@ const QualityMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) =>
                             <tr key={env}>
                               <td>
                                 <div className="flex flex-row items-center group">
-                                  <div className="flex flex-row">
-                                    <img
-                                      src={config?.icon}
-                                      className="px-1"
-                                      alt={`Icon for ${config?.name[1]}`}
-                                      width="25px"
-                                    />
-                                    <span className="inline-block">{env}</span>
-                                  </div>
+                                  {config ? (
+                                    <RowLabel config={config} label={env} />
+                                  ) : null}
                                 </div>
                               </td>
                               <td>

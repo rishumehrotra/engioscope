@@ -9,6 +9,8 @@ import { isBugLike } from '../../../shared/work-item-utils.js';
 import { useDrawer } from '../common/Drawer.jsx';
 import type { RouterClient } from '../../helpers/trpc.js';
 import type { ProjectOverviewStats } from '../../../backend/models/project-overview.js';
+import RowLabel from './RowLabel.jsx';
+import CellValue, { valueTypes } from './CellValue.jsx';
 
 type QualityMetricsProps = {
   stats: Partial<ProjectOverviewStats>;
@@ -24,11 +26,6 @@ const CycleTimeDrawer = React.lazy(() =>
 const WIPTrendDrawer = React.lazy(() =>
   import('../OverviewGraphs2/Drawers.jsx').then(m => ({
     default: m.WIPTrendDrawer,
-  }))
-);
-const NewDrawer = React.lazy(() =>
-  import('../OverviewGraphs2/Drawers.jsx').then(m => ({
-    default: m.NewDrawer,
   }))
 );
 const ChangeLeadTimeDrawer = React.lazy(() =>
@@ -79,60 +76,16 @@ const FlowMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) => {
                         return (
                           <tr key={config?.name[0]}>
                             <td>
-                              <div className="flex flex-row">
-                                <img
-                                  src={config.icon}
-                                  className="px-1"
-                                  alt={`Icon for ${config.name[1]}`}
-                                  width="25px"
-                                />
-                                <span className="inline-block">{config.name[0]}</span>
-                              </div>
+                              <RowLabel config={config} label={config.name[0]} />
                             </td>
                             <td>
-                              <div className="flex flex-row items-center group">
-                                {num(
-                                  stats.newWorkItems
-                                    ?.find(x => x.workItemType === config.name[0])
-                                    ?.data.flatMap(x => x.countsByWeek)
-                                    .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                )}
-                                <button
-                                  type="button"
-                                  title="drawer-button"
-                                  onClick={() => {
-                                    setAdditionalDrawerProps({
-                                      heading: `${config.name[1]}`,
-                                      children: (
-                                        <NewDrawer
-                                          selectedTab="all"
-                                          workItemConfig={config}
-                                        />
-                                      ),
-                                    });
-                                    openDrawer();
-                                  }}
-                                >
-                                  <ExternalLink className="w-4 mx-2 link-text opacity-0 group-hover:opacity-100" />
-                                </button>
-                                <div className="w-12">
-                                  <TinyAreaGraph
-                                    data={range(0, 12).map(weekIndex => {
-                                      return (
-                                        stats.newWorkItems
-                                          ?.find(x => x.workItemType === config?.name[0])
-                                          ?.data.flatMap(x => x.countsByWeek)
-                                          .filter(x => x.weekIndex === weekIndex)
-                                          .reduce((acc, curr) => acc + curr.count, 0) || 0
-                                      );
-                                    })}
-                                    itemToValue={identity}
-                                    color={areaGraphColors.good}
-                                    graphConfig={{ ...graphConfig.small, width: 50 }}
-                                    className="mb-3 inline-block"
-                                  />
-                                </div>
-                              </div>
+                              <CellValue
+                                value={stats.newWorkItems}
+                                valueType={valueTypes.new}
+                                workItemConfig={config}
+                                setDrawerProps={setAdditionalDrawerProps}
+                                openDrawer={openDrawer}
+                              />
                             </td>
                           </tr>
                         );
@@ -165,15 +118,7 @@ const FlowMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) => {
                     return (
                       <tr key={config?.name[0]}>
                         <td>
-                          <div className="flex flex-row">
-                            <img
-                              src={config.icon}
-                              className="px-1"
-                              alt={`Icon for ${config.name[1]}`}
-                              width="25px"
-                            />
-                            <span className="inline-block">{config.name[0]}</span>
-                          </div>
+                          <RowLabel config={config} label={config.name[0]} />
                         </td>
                         <td>
                           <div className="flex flex-row items-center group">
@@ -276,15 +221,7 @@ const FlowMetrics: React.FC<QualityMetricsProps> = ({ stats, pageConfig }) => {
                     return (
                       <tr key={config.name[0]}>
                         <td>
-                          <div className="flex flex-row">
-                            <img
-                              src={config.icon}
-                              className="px-1"
-                              alt={`Icon for ${config.name[1]}`}
-                              width="25px"
-                            />
-                            <span className="inline-block">{config.name[0]}</span>
-                          </div>
+                          <RowLabel config={config} label={config.name[0]} />
                         </td>
                         <td>
                           <div className="flex flex-row items-center group">
