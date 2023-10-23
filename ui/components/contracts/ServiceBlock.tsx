@@ -143,7 +143,7 @@ const ServiceBlock = ({ service, accessors }: ServiceBlockProps) => {
                 )}
               >
                 <XCircle className="inline-block mt-6 text-theme-icon" size={30} />
-                <div>No providers</div>
+                <div>No dependencies</div>
               </div>
             )}
           </div>

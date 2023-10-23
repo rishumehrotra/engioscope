@@ -28,17 +28,18 @@ const stubUsage = (directory: ContractDirectory): number =>
   sum(directory.stubUsage.map(prop('usedOperations'))) +
   sum(directory.childDirectories.map(stubUsage));
 
-const servicesForDirectory =
-  (services: Service[]) =>
-  (directory: ContractDirectory): Service[] => {
-    return services.filter(service =>
-      service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
-    );
-  };
+const servicesForDirectory = (
+  directory: ContractDirectory,
+  services: Service[]
+): Service[] => {
+  return services.filter(service =>
+    service.endpoints.some(endpoint => directory.specIds.includes(endpoint.specId))
+  );
+};
 
 const hasChildren = (directory: ContractDirectory, services: Service[]) =>
   directory.childDirectories.length > 0 ||
-  servicesForDirectory(services)(directory).length > 0;
+  servicesForDirectory(directory, services).length > 0;
 
 const directoryHasServicesSomewhere =
   (services: Service[]) =>
@@ -143,7 +144,7 @@ const ChildDirectories = ({
                   accessors={accessors}
                   services={services}
                 />
-                {servicesForDirectory(services)(dir).map(service => (
+                {servicesForDirectory(dir, services).map(service => (
                   <div
                     key={service.serviceId}
                     style={{ paddingLeft: `${indentLevel + 1}rem` }}
@@ -334,6 +335,15 @@ const ServiceListingUsingCentralRepoListingForOneRepo = ({
                       />
                     </div>
                   ) : null}
+                  {servicesForDirectory(dir, services).map(service => (
+                    <div key={service.serviceId} className="pl-4">
+                      <ServiceBlock
+                        key={service.serviceId}
+                        service={service}
+                        accessors={accessors}
+                      />
+                    </div>
+                  ))}
                 </AnimateHeight>
               )}
             </li>
